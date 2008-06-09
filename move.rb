@@ -159,9 +159,11 @@ class Move
   end
 
   def self.to_junior
-    # Move to line without / at end
-    Line.next if Line.matches(/^ +[a-zA-Z-].+[^\/\n]$/)
-    re_search_forward "^ +[a-zA-Z-].+[^\/\n]$"
-    Line.to_words
+    Keys.prefix_times.times do
+      # Move to line without / at end
+      Line.next if Line.matches(/^ +[a-zA-Z-].+[^\/\n]$/)
+      re_search_forward "^ +[a-zA-Z-].+[^\/\n]$"
+      Line.to_words
+    end
   end
 end

@@ -9,11 +9,12 @@ class Repository
   def self.svn_command command, dir=nil
     dir ||= View.dir
     #dir ||= "tr"
-    switch_to_buffer generate_new_buffer("*svn command")
+    switch_to_buffer generate_new_buffer("*repository command")
     elvar.default_directory = Bookmarks.expand(dir)
     shell current_buffer
-    cm_universal_diff_format
-    difflog_highlight
+    #cm_universal_diff_format
+    self.styles
+    
     self.local_keys
     #difflog_highlight
     insert command
@@ -21,14 +22,20 @@ class Repository
   end
 
   def self.diff_dir
-    if Line.matches(/^r(\d+)/)
-      r = Line.value[/\d+/]
-      self.svn_command("echo; svn status; svn diff -x -w -r#{r.to_i - 1}:#{r}")
-      #cm_subversion_command "echo; svn status; svn diff -x -w -r#{r.to_i - 1}:#{r}"
-      return
+    # if .svn dir found
+    if File.exists?("#{View.dir}.svn")
+      self.svn_command("echo; svn status; svn diff -x -w")
+    else
+      self.svn_command("echo; git status; git diff -w")
     end
-    self.svn_command("echo; svn status; svn diff -x -w")
-#    cm_subversion_command("echo; svn status; svn diff -x -w")
+
+#     if Line.matches(/^r(\d+)/)
+#       r = Line.value[/\d+/]
+#       self.svn_command("echo; svn status; svn diff -x -w -r#{r.to_i - 1}:#{r}")
+#       #cm_subversion_command "echo; svn status; svn diff -x -w -r#{r.to_i - 1}:#{r}"
+#       return
+#     end
+
   end
 
   def self.diff right=nil, left=nil, bookmark=nil
@@ -76,21 +83,68 @@ class Repository
   end
 
   def self.local_keys
-
 #    elvar.repository_mode_map = make_sparse_keymap
       # Inherit notes_mode_map!
     Keys.CN(:cm_diff_map) do
       Line.to_right
-      re_search_forward "^Index: "
+      re_search_forward "^index:? "
       Line.to_left
       recenter 0
     end
     Keys.CP(:cm_diff_map) do
       Line.to_left
-      re_search_backward "^Index: "
+      re_search_backward "^index:? "
       recenter 0
+    end
+
+    define_key :cm_diff_map, kbd("M-m") do   # Recenter
+      orig = View.cursor
+      Search.backward "^@@"
+      inbetween = View.txt orig, View.cursor
+      inbetween.gsub!(/^-.+\n/, '')
+      inbetween = inbetween.split(/\n/).size
+      line = Line.value[/\+(\d+)/, 1]
+      Search.backward "^---"
+      file = Line.value[/^--- (.+)/, 1]
+      file.sub!(/\t.+/, '')  # svn
+      file.sub!(/^[ab]\//, '')  # git
+      goto_char orig
+      View.open(file)
+      View.to_line(line.to_i + (inbetween - 1))
+      Color.colorize :o
     end
 
   end
 
+  def self.styles_define
+    Styles.define :face_difflog_path_outline_rest,
+      :fg => "000077",
+      :bg => "7070bb",
+      :font => "arial"
+
+    # - foo (r): <here>
+    Styles.define :diff_subhead,
+      :bg => "333366", :fg => "88b", :size => "-3"
+
+    #:box => nil
+    #:height => "
+  end
+
+  def self.styles
+    cm_universal_diff_format
+    difflog_highlight
+    Styles.apply "^diff.+\n", :diff_subhead
+    Styles.apply "^Index:? .+\n", :diff_subhead
+    Styles.apply "^===+\n", :diff_subhead
+    Styles.apply "^--- .+\n", :notes_h1
+    Styles.apply "^\\+\\+\\+ .+\n", :diff_subhead
+    Styles.apply "^\\\\.+", :cm_lighter_bold
+    Styles.apply "^\\*.+\n", :treels_f_blank
+    Styles.apply "^@@.+\n", :diff_subhead
+#       (0 'cm-hbar-front))))
+# ;      (0 'face-difflog-path-outline-rest))))
+
+  end
+
 end
+Repository.styles_define

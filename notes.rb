@@ -153,22 +153,17 @@ class Notes
     # |...
     #h1_size = "+2"
 
-    h1_bg = "9999cc"
-
-#     if Styles.inverse
-      h1_bg = "333366"
-#     end
-
     Styles.define :notes_h1,
       :face => 'arial', :size => "+2",
-      :fg => 'ffffff', :bg => h1_bg,
-#      :fg => 'ffffff', :bg => "aaaadd",
+      :fg => 'ffffff', :bg => "9999cc",
       :bold =>  true
 
     Styles.define :notes_h1_pipe,
       :face => 'arial', :size => "+2",
       :fg => 'ddddf2', :bg => "9999cc",
       :bold => true
+
+
 
     Styles.define :notes_h1i,
       :face => 'arial', :size => "+2",
@@ -229,6 +224,7 @@ class Notes
 #      :fg => 'ddddf0', :bg => "aaaacc",
       :bold =>  true
 
+
     # |||...
     Styles.define :notes_h3,
       :face => 'arial', :size => "-1",
@@ -272,7 +268,23 @@ class Notes
     Styles.define :notes_yellow, :fg => "CC0"
     Styles.define :notes_green, :fg => "0C0"
 
+    if Styles.inverse
 
+      Styles.define :notes_h1,
+        :fg => 'ffffff', :bg => "333366"
+      Styles.define :notes_h1_pipe,
+        :fg => '7777aa', :bg => "333366"
+
+      Styles.define :notes_h2,
+        :bg => "181833"
+      Styles.define :notes_h2_pipe,
+        :fg => '333366', :bg => "181833"
+
+      Styles.define :notes_h1e,
+        :bg => "666633"
+      Styles.define :notes_h1e_pipe,
+        :fg => 'aaaa77', :bg => "666633"
+    end
   end
 
   def self.apply_styles
@@ -385,9 +397,17 @@ class Notes
   end
 
   def self.bullet
+    # Make extra line if none there yet
+    if Line.matches(/./)
+      Line.to_right
+      View.insert "\n"
+    end
+
     # Get bullet indent of previous line
     prev = Line.value(0)[/^ *- /]
-    insert prev ? "  #{prev}" : "- "
+    prev = prev ? "  #{prev}" : "- "
+    prev.sub!(/^  /, '') if Keys.prefix_u   # Don't indent if U
+    insert prev
     control_lock_enable if elvar.control_lock_mode_p
   end
 

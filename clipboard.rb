@@ -9,6 +9,9 @@ class Clipboard
   @@hash = {}
 
   def self.copy loc=nil
+    left, right = View.range
+    Effects.blink :left => left, :right => right
+
     # Use string if user types it quickly
     loc ||= Keys.input(:one_char => true, :prompt => "Enter one char (to store this as): ") || "0"
     str = buffer_substring(region_beginning, region_end)
@@ -111,6 +114,7 @@ class Clipboard
     set_mark right
     goto_char left
     Effects.blink(:left => left, :right => right)
+    Keys.clear_prefix
     Clipboard.copy("0")
   end
 
@@ -137,4 +141,16 @@ class Clipboard
   def self.as_object
     set("0", thing_at_point(:symbol))
   end
+
+  def self.copy_everything
+    Effects.blink :what => :all
+    Clipboard.set("0", buffer_string)
+    set_mark(point_max)
+  end
+
+  def self.as_line
+    Clipboard.set("0", Line.value + "\n")
+    Effects.blink :what => :line
+  end
+
 end

@@ -64,8 +64,19 @@ class Color
 
     Styles.define :color_rb_glow1, :bg => "ffcc99"
     Styles.define :color_rb_glow2, :bg => "ff9933"
+
+    if Styles.inverse
+      Styles.define :color_rb_red, :bg => "330000"
+      Styles.define :color_rb_orange, :bg => "331100"
+      Styles.define :color_rb_yellow, :bg => "333300"
+      Styles.define :color_rb_green, :bg => "003300"
+      Styles.define :color_rb_blue, :bg => "000033"
+      Styles.define :color_rb_purple, :bg => "110033"
+    end
+
   end
 
 end
 Color.define_styles
+
 # comment

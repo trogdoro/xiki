@@ -21,9 +21,8 @@ class Styles
   end
 
   def self.inverse
-#     custom_variable_p(:background_mode_type) &&
-#      elvar.background_mode_type.to_s == 'dark'
-true
+    boundp(:background_mode_type) &&
+      elvar.background_mode_type.to_s == 'dark'
   end
 
   def self.define name, options
@@ -68,9 +67,17 @@ true
 
   def self.init
 
-    if self.inverse
-      #customize_set_variable :background_mode_type, :dark
+    set_face_background :trailing_whitespace, "#eee"
 
+    Styles.define :default,
+      :bg => 'ffffff',
+      :fg => '000000'
+    Styles.define :cursor,
+      :bg => '000000',
+      :fg => 'ffffff'
+
+    if self.inverse
+      set_face_background :trailing_whitespace, "#333"
       Styles.define :default,
         :bg => '000000',
         :fg => 'ffffff'

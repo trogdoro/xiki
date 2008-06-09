@@ -12,7 +12,8 @@ class Shell
     #dir=nil, sync=nil, buffer_name=nil
     dir = options[:dir]
     sync = options[:sync]
-    buffer_name = options[:buffer]
+    buffer = options[:buffer]
+    reuse_buffer = options[:reuse_buffer]
 
     # Nil out dir if blank
     dir = nil if dir && dir.length == 0
@@ -50,8 +51,11 @@ class Shell
       if View.in_bar?
         View.to_after_bar
       end
-      buffer_name ||= "*shell*"
-      switch_to_buffer generate_new_buffer(buffer_name)
+      buffer ||= "*shell*"
+
+      buffer = generate_new_buffer(buffer) unless reuse_buffer
+      View.to_buffer buffer
+      erase_buffer if reuse_buffer
       elvar.default_directory = dir if dir
       shell current_buffer
       Move.bottom

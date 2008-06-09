@@ -215,10 +215,10 @@ class LineLauncher
       browse_url line[/(http|file).?:\/\/.+/]
     end
 
-    self.add(/^[^\|@]+[\/\w\-]+\.\w+:[0-9]+/) do |line|  # Stack traces, etc
+    self.add(/^[^\|@]+[\/\w\-]+\.\w+:\d+/) do |line|  # Stack traces, etc
 
       # Match again (necessary)
-      line =~ /([\/.\w\-]+):([0-9]+)/
+      line =~ /([\/.\w\-]+):(\d+)/
       path, line = $1, $2
 
       # If it doesn't have path, add it

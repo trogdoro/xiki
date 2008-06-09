@@ -68,6 +68,7 @@ class View
     # If prefix is 3, do Vertical split
     if prefix == 3 || Keys.prefix_u
       split_window_horizontally
+      other_window 1
     else
       split_window_vertically
       other_window 1 unless prefix
@@ -370,8 +371,10 @@ class View
     View.clear if options[:clear]
   end
 
-  def self.txt
-    buffer_string
+  def self.txt left=nil, right=nil
+    left ||= point_min
+    right ||= point_max
+    buffer_substring left, right
   end
 
   # Returns bounds of block in the form [left, after_header, right].
@@ -532,4 +535,11 @@ class View
     $el.message how_many(Keys.input('pattern to count: a'), left, right).to_s
   end
 
+  def self.line_number
+    Line.number
+  end
+
+  def self.cursor
+    point
+  end
 end

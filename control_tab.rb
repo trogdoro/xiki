@@ -26,6 +26,9 @@ class ControlTab
 
     first_tab_in_sequence = ! last_char_typed[/tab$/]
 
+    # If first tab, clear edited
+    @@edited = nil if first_tab_in_sequence
+
     if Keys.prefix_u   # If U prefix (must be first alt-tab in sequence)
       # Go to last edited file, and store list
       @@edited = elvar.editedhistory_history.to_a
@@ -43,15 +46,10 @@ class ControlTab
       return
     end
 
-    # Not C-u, so clear it
-    @@edited = nil
-
-
 #     ml "ControlTab: 2.0"
     # If this was the first tab in this sequence
     if first_tab_in_sequence# || last_was_modeline_click
 
-      puts "ControlTab: 3.0"
       # Store original order, and windows originally opened
       @@original = buffer_list.to_a
       @@open_windows = window_list.collect {|b| window_buffer b}

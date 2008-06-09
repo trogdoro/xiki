@@ -1,4 +1,5 @@
 require "hide"
+require 'control_lock'
 
 class Search
   extend ElMixin
@@ -34,6 +35,12 @@ class Search
     match = self.match
     exchange_point_and_mark
     insert "\#{#{match}}"
+  end
+
+  def self.isearch_delete_rest
+    self.isearch_pull_in_sexp
+    self.isearch_delete
+    ControlLock.disable
   end
 
   def self.isearch_delete
@@ -152,7 +159,7 @@ class Search
       Keys.bookmark_as_path
 
     # Do search
-    regex = Regexp.new(match, Regexp::IGNORECASE)
+    regex = Regexp.new(Regexp.quote(match), Regexp::IGNORECASE)
 
     TreeLs.grep dir, regex, :bar => true
   end

@@ -197,12 +197,20 @@ class TreeLs
       :fg => "aaa",
       :bold => true,
       :size => "-2"
+
     Styles.define :diff_red,
       :bg => "ffdddd", :fg => "cc4444",
       :size => "-1"
     Styles.define :diff_green,
       :bg => "ddffcc", :fg => "337744",
       :size => "-1"
+
+    if Styles.inverse
+      Styles.define :diff_red,
+        :bg => "440000", :fg => "ff6666"
+      Styles.define :diff_green,
+        :bg => "113300", :fg => "44dd33"
+    end
 
     # dir/
     Styles.define :ls_dir,
@@ -533,7 +541,7 @@ class TreeLs
     when ";"  # Show methods, or outline
       delete_region(Line.left(2), right)  # Delete other files
       if Line.matches(/\.rb$/)
-        self.enter_lines(/^ +(def|class|module) /)
+        self.enter_lines(/^ *(def|class|module|it|describe) /)
       else
         self.enter_lines(/^\| /)
       end
@@ -1151,7 +1159,8 @@ class TreeLs
         return
       end
       if Line.matches(/\.rb$/)
-        self.enter_lines(/^ +(def|class|module) /)
+        self.enter_lines(/^ *(def|class|module|it|describe) /)
+        #self.enter_lines(/^ +(def|class|module) /)
       elsif Line.matches(/\.notes$/)
         self.enter_lines(/^\| /)
       else
@@ -1415,15 +1424,11 @@ class TreeLs
   end
 
   def self.copy_path
-
     dir = TreeLs.construct_path
-
     dir = View.file unless dir =~ /^\//
-
     Clipboard["0"] = dir
     #insert dir.inspect
   end
-
 
 end
 TreeLs.define_styles

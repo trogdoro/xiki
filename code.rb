@@ -102,8 +102,7 @@ class Code
   end
 
   def self.show_el4r_error
-    file = Dir["/tmp/el4r*log"][0]
-    View.open file
+    View.open elvar.el4r_log_path
     revert_buffer(true, true, true)
     View.wrap
     View.to_end
@@ -144,19 +143,28 @@ class Code
   end
 
   def self.do_as_rspec
+
+    test = ""
+    # If not U, only run this test
+    unless Keys.prefix_u
+      orig = Location.new
+      Line.next
+      if Search.backward("^ *it ")
+        test = " -e " + Line.value[/".+"/]
+        orig.go
+      else
+        beep
+        message("Not currently in a spec!")
+        Line.previous
+        return
+      end
+    end
+
     path = buffer_file_name
     # Chop off up until before /spec/
-    path.sub!(/.+\/spec\//, "spec/")
+    dir, spec = path.match(/(.+)\/(spec\/.+)/)[1,2]
+    Shell.run "spec #{spec}#{test}", :dir => dir, :buffer => '*spec', :reuse_buffer => true
 
-    # Todo switch to existing buffer if open
-    # - Otherwise, split, to create new
-    #   - Like 8DR
-    # Switch to buffer and insert
-    View.to_buffer("*specs")
-    erase_buffer
-    Move.bottom
-    insert "spec #{path}"
-    comint_send_input
   end
 
   def self.load_this_file

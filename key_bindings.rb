@@ -1,3 +1,4 @@
+require 'trouble_shooting'
 require 'notes'
 require 'text_util'
 require 'app'
@@ -85,13 +86,13 @@ class KeyBindings
     Keys.as_clipboard { Clipboard.copy("0") }   # **
     Keys.as_directory { TreeLs.copy_path }   # copy dir to clipboard from tree
     # D
-    Keys.as_everything { set_mark(point_min);  Clipboard.set("0", buffer_string) }
+    Keys.as_everything { Clipboard.copy_everything }
     Keys.as_file { DiffLog.save }   # save (or, with prefix, save as) **
     # H
     # I
     # J
     # K
-    Keys.as_line { Clipboard.set("0", buffer_substring(point_at_bol(1), point_at_bol(2))) }
+    Keys.as_line { Clipboard.as_line }
     Keys.as_macro { Macros.record }   # start recording macro *
     Keys.as_name { Clipboard.copy }   # copies using key (prompted for)
     Keys.as_object { Clipboard.as_object }   # copy object / symbol at point
@@ -427,13 +428,14 @@ class KeyBindings
     Keys._E(:isearch_mode_map) { Search.insert_tree_at_spot }   # Enter
     Keys._F(:isearch_mode_map) { Search.isearch_open }   # Find file
     Keys._G(:isearch_mode_map) { Search.isearch_google }   # Find file
-    Keys._O(:isearch_mode_map) { Search.isearch_find_in_buffers }   # Outline (all buffers)
-    Keys._R(:isearch_mode_map) { Search.paste_here }   # Replace: insert clipboard, replacing match
-    Keys._M(:isearch_mode_map) { Search.isearch_tree_grep_method }   # Method: do tree grep (prompt for dir)
-    Keys._S(:isearch_mode_map) { Search.isearch_tree_grep }   # Search: do tree grep (prompt for dir)
-    Keys._V(:isearch_mode_map) { Search.insert_var_at_search_start }
     Keys._H(:isearch_mode_map) { Hide.show;  Search.hide }
     Keys._L(:isearch_mode_map) { Search.isearch_move_line }
+    Keys._M(:isearch_mode_map) { Search.isearch_tree_grep_method }   # Method: do tree grep (prompt for dir)
+    Keys._O(:isearch_mode_map) { Search.isearch_find_in_buffers }   # Outline (all buffers)
+    Keys._R(:isearch_mode_map) { Search.paste_here }   # Replace: insert clipboard, replacing match
+    Keys._S(:isearch_mode_map) { Search.isearch_tree_grep }   # Search: do tree grep (prompt for dir)
+    Keys._V(:isearch_mode_map) { Search.insert_var_at_search_start }
+    Keys._X(:isearch_mode_map) { Search.isearch_delete_rest }
 
     define_key :isearch_mode_map, kbd("M-1") do   # pull in 1 word
       Search.isearch_pull_in_words 1
@@ -491,7 +493,7 @@ class KeyBindings
       el_require :ruby_mode
       define_key :ruby_mode_map, kbd("C-\\") do
         Hide.show
-        Hide.hide_unless /(def |class |module |create_table )/
+        Hide.hide_unless /^ *(def|class|module|create_table|it|describe) /
         recenter -2
         Hide.search
       end
