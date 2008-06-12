@@ -338,7 +338,7 @@ class KeyBindings
     Keys.layout_dimensions_medium { set_frame_size(View.frame, 145, 50) }
     Keys.layout_dimensions_small { set_frame_size(View.frame, 90, 35) }
     Keys.layout_expand { View.enlarge }   # *
-    # F
+    Keys.layout_files { TreeLs.open_in_bar; View.to_nth 1 }
     Keys.layout_hide { View.hide }   # **
     Keys.layout_indent { Hide.hide_by_indent }   # only show lines indented less than x
     # J
