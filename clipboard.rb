@@ -114,9 +114,8 @@ class Clipboard
     if just_return
       return [View.txt(left, right), left, right]
     end
-
-    set_mark left
-    goto_char right
+    goto_char left
+    set_mark right
     Effects.blink(:left => left, :right => right)
     Keys.clear_prefix
     Clipboard.copy("0")
