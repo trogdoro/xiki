@@ -148,7 +148,7 @@ class KeyBindings
     Keys.open_search { History.open_current :bar => true, :all => true }   # hide search via outline *
     Keys.open_tree { TreeLs.launch }   # draw a tree, prompting for bookmark tag *
     Keys.open_up { View.show_dir }   # open enclosing dir **
-    Keys.open_viewing { CodeTree.display_menu("Files.current", :prefix_arg => 20) }   # show currently open files and buffers **
+    Keys.open_viewing { CodeTree.display_menu("Files.current", :prefix_arg => 200) }   # show currently open files and buffers **
 #    Keys.OV { Keys.prefix_u ? History.open_unsaved : cm_show_buffers }   # Open Viewing: open buffer list **
     Keys.open_windows { View.restore }   # open window configuration by tag
     Keys.open_xiki_docs { Help.display_docs }
