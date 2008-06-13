@@ -79,4 +79,33 @@ class TreeLsTest < Test::Unit::TestCase
     assert ! ("  mar_xu_rb" =~ re)
   end
 
+  def test_search_dir_names
+    tree =
+      "  /docs/
+          emacs/
+            elisp.notes
+            todo/
+              files.notes
+        /projects/
+          app/
+            controllers/
+              pages.rb
+            helpers/
+              pages_helper.rb
+      ".gsub(/^      /, '').split("\n")
+
+    after =
+      "  /docs/
+          emacs/
+            todo/
+              files.notes
+        /projects/
+          app/
+            controllers/
+            helpers/
+      ".gsub(/^      /, '').split("\n")
+
+    assert_equal after, TreeLs.search_dir_names(tree, /todo/)
+  end
+
 end

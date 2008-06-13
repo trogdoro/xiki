@@ -452,6 +452,13 @@ class TreeLs
           ch = char_to_string(read_char)
         end
         pattern << Regexp.quote(ch)
+
+        if pattern =~ /[A-Z]$/   # If upper, remove any lower
+          pattern.sub!(/^[a-z]+/, '')
+        elsif pattern =~ /[a-z]$/   # If lower, remove any upper
+          pattern.sub!(/^[A-Z]+/, '')
+        end
+
         acronym = acronym_regexp(pattern)
         delete_region left, right
 
@@ -462,8 +469,10 @@ class TreeLs
         regexp = "\\/|#{regexp}" if recursive
         regexp = /#{regexp}/i
 
-        if regexp =~ /[A-Z]$/   # If capital at end
-        else   # If lower-case, just search dir
+        lines_new = nil
+        if pattern =~ /[A-Z]$/   # If upper, search in directory
+          lines_new = search_dir_names(lines, /#{pattern}/i)
+        else
           lines_new = lines.grep(regexp)
         end
         # If search not found, don't delete all
@@ -1339,7 +1348,6 @@ class TreeLs
         message str
       end
     end
-
   end
 
   def self.indentify_path path
@@ -1402,6 +1410,7 @@ class TreeLs
   def self.create_dir
     make_directory(elvar.default_directory)
 
+    # TODO: if in tree, create dir in tree
     # Construct path
     # Prompt for name
     #Keys.input
@@ -1430,7 +1439,31 @@ class TreeLs
     dir = TreeLs.construct_path
     dir = View.file unless dir =~ /^\//
     Clipboard["0"] = dir
-    #insert dir.inspect
+  end
+
+private
+  def self.search_dir_names(lines, regexp)
+    result = []
+    stack = [0]
+    last_indent = lines[0][/^ +/].size / 2
+    lines.each do |l|
+      indent, name = l.match(/^( +)(.+)/)[1..2]
+      indent = indent.size / 2
+      if indent > last_indent
+        stack << 0
+      elsif indent < last_indent
+        (last_indent - indent).times { stack.pop }
+      end
+      stack[stack.size-1] = name
+      # If file, remove this line if path doesn't match
+      if stack.last !~ /\/$/
+        next unless stack.join =~ regexp
+      end
+      result << l
+      p stack
+      last_indent = indent
+    end
+    result
   end
 
 end
