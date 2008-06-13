@@ -542,4 +542,13 @@ class View
   def self.cursor
     point
   end
+
+  def self.delete left, right
+    $el.delete_region left, right
+  end
+
+  def self.char
+    buffer_substring(point, point+1)
+  end
+
 end

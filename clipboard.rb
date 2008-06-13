@@ -135,8 +135,21 @@ class Clipboard
   end
 
   def self.as_thing
-    Clipboard.set("0", thing_at_point(:sexp) ) 
+    skip_chars_forward " "
+    left, right = bounds_of_thing_at_point(:sexp).to_a
+    goto_char right
+    set_mark left
+    Effects.blink(:what => :sexp)
+    Clipboard.set("0", thing_at_point(:sexp) )
   end
+
+#   def self.as_indented
+#     left, right = bounds_of_thing_at_point(:sexp).to_a
+#     goto_char right
+#     set_mark left
+#     Effects.blink(:what => :sexp)
+#     Clipboard.set("0", thing_at_point(:sexp) )
+#   end
 
   def self.as_object
     set("0", thing_at_point(:symbol))
@@ -151,6 +164,16 @@ class Clipboard
   def self.as_line
     Clipboard.set("0", Line.value + "\n")
     Effects.blink :what => :line
+  end
+
+  def self.enter_replacement
+    # If on whitespace, move to off of it
+    skip_chars_forward " "
+
+    orig = point
+    Move.to_other_bracket
+    View.delete orig, point
+    View.insert Clipboard['0']
   end
 
 end

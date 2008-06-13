@@ -19,6 +19,9 @@ class Effects
     when :line
       left, right = Line.bounds
       right += 1
+    when :sexp
+      left, right = bounds_of_thing_at_point(:sexp).to_a
+      return unless left
     end
 
     left = options[:left] if options[:left]

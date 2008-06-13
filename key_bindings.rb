@@ -89,7 +89,7 @@ class KeyBindings
     Keys.as_everything { Clipboard.copy_everything }
     Keys.as_file { DiffLog.save }   # save (or, with prefix, save as) **
     # H
-    # I
+    #Keys.as_indented { Clipboard.as_indented }
     # J
     # K
     Keys.as_line { Clipboard.as_line }
@@ -179,6 +179,7 @@ class KeyBindings
     Keys.enter_history { History.enter_history }   # enter recently viewed files
     #Keys.EH { TreeLs.enter_lines(/^\| /) }
     Keys.enter_insert_date { App.enter_date }    # insert date string (and time if C-u)
+    Keys.enter_insert_command { insert("- (/): "); ControlLock.disable }    # insert date string (and time if C-u)
     Keys.enter_in_tree { TreeLs.enter_snippet }   # enter tree quote of region in $T
     # J
     # K
@@ -190,7 +191,7 @@ class KeyBindings
     # Find new key for thisKeys.EO { DiffLog.enter_old }   # Enter Old: enter newly-deleted from last save
     # P
     Keys.enter_quoted { TreeLs.enter_as_quoted }
-    Keys.enter_ruby_log { Code.enter_ruby_log }
+    Keys.enter_replacement { Clipboard.enter_replacement }
     Keys.enter_spot { Location.enter_at_spot }   # enter selected text at spot
     Keys.enter_tree { TreeLs.launch( :here => true ) }
     Keys.enter_under { TreeLs.enter_under }
@@ -338,7 +339,9 @@ class KeyBindings
     Keys.layout_dimensions_medium { set_frame_size(View.frame, 145, 50) }
     Keys.layout_dimensions_small { set_frame_size(View.frame, 90, 35) }
     Keys.layout_expand { View.enlarge }   # *
+    # F
     Keys.layout_files { TreeLs.open_in_bar; View.to_nth 1 }
+
     Keys.layout_hide { View.hide }   # **
     Keys.layout_indent { Hide.hide_by_indent }   # only show lines indented less than x
     # J
@@ -351,7 +354,7 @@ class KeyBindings
     # Q
     Keys.layout_reveal { widen; Hide.show }   # reveal all hidden text
     Keys.layout_search { Keys.prefix_u ? Search.find_in_buffers(Keys.input) : Hide.search }   # *
-    Keys.layout_tree { TreeLs.open_in_bar }   # show bar on left with the quick bookmark named "-t" *
+    Keys.layout_todo { TreeLs.open_in_bar }   # show bar on left with the quick bookmark named "-t" *
     # U
     # V
     Keys.layout_wrap { toggle_truncate_lines }   # wrap lines **
@@ -391,11 +394,14 @@ class KeyBindings
     end
 
     # Control keys during isearch
-    Keys.A(:isearch_mode_map) { Search.isearch_start }   # Start of line
-    # B: leave unmapped for backward char
-    Keys.C(:isearch_mode_map) { Search.copy }   # Copy
+    #Keys.A(:isearch_mode_map) { Search.isearch_start }   # Start of line
+    # Reduntand!
+    Keys.A(:isearch_mode_map) { Search.copy }   # As (clipboard)
+    #Keys.B(:isearch_mode_map) { Search.insert_at_spot }   # Enter: jump to point p and insert match
+    Keys.B(:isearch_mode_map) { Search.insert_at_search_start }
+    Keys.C(:isearch_mode_map) { Search.copy }   # Clipboard
     Keys.D(:isearch_mode_map) { Search.isearch_delete }   # Delete
-    Keys.E(:isearch_mode_map) { Search.insert_at_spot }   # Enter: jump to point p and insert match
+    Keys.E(:isearch_mode_map) { Search.paste_here }   # Replace: insert clipboard, replacing match
     Keys.F(:isearch_mode_map) { Search.go_to_end }   # Forward
     # G: leave unmapped for escaping
     Keys.H(:isearch_mode_map) { Search.hide }   # Hide: hide non-matching
@@ -404,14 +410,16 @@ class KeyBindings
     # I: leave unmapped - had issues using it
     Keys.L(:isearch_mode_map) { Search.line }   # Line: copy line back to search start
     # M: leave unmapped for stop
-    # N: leave unmapped for next line
+    # N
     Keys.O(:isearch_mode_map) { Search.isearch_find_in_buffers(:current_only => true) }   # Outline
     # Q: leave unmapped for quoting
-    # P: leave unmapped for previous
+    # P
+    Keys.P(:isearch_mode_map) { Search.insert_at_spot }   # Point?: jump to point p and insert match
     # R: leave unmapped for reverse
     # S: leave unmapped for search
     Keys.T(:isearch_mode_map) { Search.isearch_open_last_edited }   # To: open file / jump to method
     Keys.U(:isearch_mode_map) { Search.isearch_pull_in_sexp }  # like C-w, but pulls in sexp
+    # Redundant!!!
     Keys.V(:isearch_mode_map) { Search.insert_at_search_start }
     # W: leave unmapped for search
     Keys.X(:isearch_mode_map) { Search.cut }
@@ -432,7 +440,6 @@ class KeyBindings
     Keys._L(:isearch_mode_map) { Search.isearch_move_line }
     Keys._M(:isearch_mode_map) { Search.isearch_tree_grep_method }   # Method: do tree grep (prompt for dir)
     Keys._O(:isearch_mode_map) { Search.isearch_find_in_buffers }   # Outline (all buffers)
-    Keys._R(:isearch_mode_map) { Search.paste_here }   # Replace: insert clipboard, replacing match
     Keys._S(:isearch_mode_map) { Search.isearch_tree_grep }   # Search: do tree grep (prompt for dir)
     Keys._V(:isearch_mode_map) { Search.insert_var_at_search_start }
     Keys._X(:isearch_mode_map) { Search.isearch_delete_rest }
