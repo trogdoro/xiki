@@ -94,11 +94,6 @@ class Hide
 #  p self.char_from_user
 
   def self.search search=nil, options={}
-#     ml "self.search"
-# #     ml @@already_hidden.size
-#     ml @@visible.size
-#    @@already_hidden = {}
-#    @@visible = {}
     if search
       if search.class == String
         search = /#{Regexp.escape(search)}/i
@@ -113,15 +108,13 @@ class Hide
 
     first_search = true
 
-#     @@visible = {} unless @@visible
-
     while true
-      break unless ch =~ /[-a-zA-Z ._=@\/\\#\t,;*<>-]/
+      break unless ch =~ /[-a-zA-Z ._=@\/\\#,;*<>-]/
       search += ch
       message "hide-search for: #{search}"
 
       # If a tab, clear search and keep going
-      if ch == "\t" or ch == ","
+      if ch == ","
         search = ""
         ch = self.char_from_user
         next
@@ -144,9 +137,11 @@ class Hide
       ch = self.char_from_user
     end
 
+    # If a tab, treat it like C-1
+    ch = 9 if ch.to_i == 1
+
     # If num
     if 1 <= ch.to_i && ch.to_i <= 9
-#      ml @@visible[1]
       if @@visible.size > 0
         if @@visible[ch.to_i - 1]
           goto_char @@visible[ch.to_i - 1]

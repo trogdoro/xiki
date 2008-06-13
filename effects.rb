@@ -16,6 +16,8 @@ class Effects
     case what
     when :all
       left, right = View.top, View.bottom
+    when :region
+      left, right = View.range
     when :line
       left, right = Line.bounds
       right += 1

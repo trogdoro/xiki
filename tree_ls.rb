@@ -458,11 +458,14 @@ class TreeLs
         # Replace out lines that don't match (and aren't dirs)
         regexp = Keys.prefix == 5 ?
           "#{acronym}" :
-          "#{pattern}|#{acronym}"
+          "#{acronym}|#{pattern}"
         regexp = "\\/|#{regexp}" if recursive
         regexp = /#{regexp}/i
 
-        lines_new = lines.grep(regexp)
+        if regexp =~ /[A-Z]$/   # If capital at end
+        else   # If lower-case, just search dir
+          lines_new = lines.grep(regexp)
+        end
         # If search not found, don't delete all
         lines = lines_new unless lines_new.size == 0
 
@@ -812,7 +815,7 @@ class TreeLs
 
     unless two_views_in_bar  # Unless u prefix, open $tl as well (under bar)
       # If 2nd view is $tl, just go to it
-      if buffer_file_name( window_buffer( View.list[1] ) ) == Bookmarks["$tl"]
+      if buffer_file_name( window_buffer( View.list[1] ) ) == Bookmarks["$f"]
         View.to_nth 1
       end
 

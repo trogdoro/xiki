@@ -437,12 +437,13 @@ class KeyBindings
     Keys._F(:isearch_mode_map) { Search.isearch_open }   # Find file
     Keys._G(:isearch_mode_map) { Search.isearch_google }   # Find file
     Keys._H(:isearch_mode_map) { Hide.show;  Search.hide }
+    Keys._I(:isearch_mode_map) { Search.isearch_select_inner }
     Keys._L(:isearch_mode_map) { Search.isearch_move_line }
     Keys._M(:isearch_mode_map) { Search.isearch_tree_grep_method }   # Method: do tree grep (prompt for dir)
     Keys._O(:isearch_mode_map) { Search.isearch_find_in_buffers }   # Outline (all buffers)
     Keys._S(:isearch_mode_map) { Search.isearch_tree_grep }   # Search: do tree grep (prompt for dir)
     Keys._V(:isearch_mode_map) { Search.insert_var_at_search_start }
-    Keys._X(:isearch_mode_map) { Search.isearch_delete_rest }
+#    Keys._X(:isearch_mode_map) { Search.isearch_delete_rest }
 
     define_key :isearch_mode_map, kbd("M-1") do   # pull in 1 word
       Search.isearch_pull_in_words 1
@@ -514,6 +515,14 @@ class KeyBindings
     #LineLauncher.init_default_launchers
 
     #Keys.TT {insert "xyz"}
+
+    Keys.set("C-e C-\\") {
+      txt, left, right = Clipboard.copy_paragraph :just_return
+      View.delete left, right
+      txt.gsub! /$/, ' \\'
+      txt.sub! " \\\n \\", "\n"
+      View.insert txt
+    }
 
   end
 

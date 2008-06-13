@@ -101,7 +101,7 @@ class Clipboard
     insert TextUtil.camel_case(word)
   end
 
-  def self.copy_paragraph
+  def self.copy_paragraph just_return=nil
     if Keys.prefix_u  # If U prefix
       # Get rest of paragraph
       left, right = Line.left, bounds_of_thing_at_point(:paragraph).to_a[1]
@@ -111,8 +111,12 @@ class Clipboard
     end
     left += 1 if char_after(left) == 10    # Left might include blank line
 
-    set_mark right
-    goto_char left
+    if just_return
+      return [View.txt(left, right), left, right]
+    end
+
+    set_mark left
+    goto_char right
     Effects.blink(:left => left, :right => right)
     Keys.clear_prefix
     Clipboard.copy("0")
@@ -137,10 +141,14 @@ class Clipboard
   def self.as_thing
     skip_chars_forward " "
     left, right = bounds_of_thing_at_point(:sexp).to_a
+    if Keys.prefix_u
+      left += 1
+      right -= 1
+    end
+    Effects.blink(:left => left, :right => right)
+    Clipboard.set("0", buffer_substring(left, right) )
     goto_char right
     set_mark left
-    Effects.blink(:what => :sexp)
-    Clipboard.set("0", thing_at_point(:sexp) )
   end
 
 #   def self.as_indented
@@ -164,6 +172,8 @@ class Clipboard
   def self.as_line
     Clipboard.set("0", Line.value + "\n")
     Effects.blink :what => :line
+    set_mark Line.left
+    Line.next
   end
 
   def self.enter_replacement

@@ -37,10 +37,17 @@ class Search
     insert "\#{#{match}}"
   end
 
-  def self.isearch_delete_rest
-    self.isearch_pull_in_sexp
-    self.isearch_delete
-    ControlLock.disable
+#   def self.isearch_delete_rest
+#     self.isearch_pull_in_sexp
+#     self.isearch_delete
+#     ControlLock.disable
+#   end
+
+  def self.isearch_select_inner
+    self.clear
+    set_mark match_beginning(0) + 1
+    goto_char match_end(0) - 1
+    Effects.blink :what => :region
   end
 
   def self.isearch_delete
