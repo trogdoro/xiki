@@ -87,13 +87,25 @@ class History
   end
 
   def self.enter_history
-
     orig = Location.new
     self.insert_history self.prefix_times
     right = point
     orig.go
     TreeLs.search :recursive => true, :left => point, :right => right
+  end
 
+  def self.insert_viewing times
+    paths = ( buffer_list.map { |b| buffer_file_name(b) }.select{|path| path})
+    paths = paths[0..(times-1)] if times  # Limit to number if prefix passed
+    insert TreeLs.paths_to_tree(paths)
+  end
+
+  def self.enter_viewing
+    orig = Location.new
+    self.insert_viewing self.prefix_times
+    right = point
+    orig.go
+    TreeLs.search :recursive => true, :left => point, :right => right
   end
 
   def self.open_unsaved

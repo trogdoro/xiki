@@ -1445,10 +1445,12 @@ private
   def self.search_dir_names(lines, regexp)
     result = []
     stack = [0]
-    last_indent = lines[0][/^ +/].size / 2
+    indent = indent_size(lines[0])
     lines.each do |l|
-      indent, name = l.match(/^( +)(.+)/)[1..2]
-      indent = indent.size / 2
+      last_indent = indent
+
+      indent, name = l.match(/^( *)(.+)/)[1..2]
+      indent = indent_size(indent)
       if indent > last_indent
         stack << 0
       elsif indent < last_indent
@@ -1457,13 +1459,17 @@ private
       stack[stack.size-1] = name
       # If file, remove this line if path doesn't match
       if stack.last !~ /\/$/
-        next unless stack.join =~ regexp
+        next unless stack[0..-2].join =~ regexp
       end
       result << l
-      p stack
-      last_indent = indent
     end
     result
+  end
+
+  def self.indent_size(line)
+    spaces = line[/^ +/]
+    return 0 unless spaces
+    spaces.size / 2
   end
 
 end

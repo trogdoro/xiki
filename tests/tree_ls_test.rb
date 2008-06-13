@@ -90,6 +90,7 @@ class TreeLsTest < Test::Unit::TestCase
           app/
             controllers/
               pages.rb
+              pages2.rb
             helpers/
               pages_helper.rb
       ".gsub(/^      /, '').split("\n")
@@ -103,6 +104,19 @@ class TreeLsTest < Test::Unit::TestCase
           app/
             controllers/
             helpers/
+      ".gsub(/^      /, '').split("\n")
+
+    assert_equal after, TreeLs.search_dir_names(tree, /todo/)
+  end
+
+  def test_search_dir_names_no_indent
+    tree =
+      "/docs/
+        elisp.notes
+      ".gsub(/^      /, '').split("\n")
+
+    after =
+      "/docs/
       ".gsub(/^      /, '').split("\n")
 
     assert_equal after, TreeLs.search_dir_names(tree, /todo/)

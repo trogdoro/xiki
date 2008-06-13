@@ -123,7 +123,7 @@ class KeyBindings
     Keys.open_a_shell { Shell.open }   # Open A Shell *
     Keys.open_as_tail { Files.open_tail }
     Keys.open_bookmark { Bookmarks.go }
-    Keys.open_current { CodeTree.display_menu("Files.current", :prefix_arg => 20) }   # show currently open files and buffers **
+    Keys.open_current { CodeTree.display_menu("Buffers.menu") }   # open buffer list **
     Keys.open_difflog { DiffLog.open }   # shows diffs of what you've edited *
     Keys.open_edited { CodeTree.display_menu("Files.edited", :prefix_arg => 20) }   # show recently edited files *
     Keys.open_file { Files.open }
@@ -148,7 +148,7 @@ class KeyBindings
     Keys.open_search { History.open_current :bar => true, :all => true }   # hide search via outline *
     Keys.open_tree { TreeLs.launch }   # draw a tree, prompting for bookmark tag *
     Keys.open_up { View.show_dir }   # open enclosing dir **
-    Keys.open_viewing { CodeTree.display_menu("Buffers.menu") }   # open buffer list **
+    Keys.open_viewing { CodeTree.display_menu("Files.current", :prefix_arg => 20) }   # show currently open files and buffers **
 #    Keys.OV { Keys.prefix_u ? History.open_unsaved : cm_show_buffers }   # Open Viewing: open buffer list **
     Keys.open_windows { View.restore }   # open window configuration by tag
     Keys.open_xiki_docs { Help.display_docs }
@@ -169,6 +169,7 @@ class KeyBindings
     Keys.enter_as_filename { insert Clipboard.get(".") }
     #Keys.enter_as_path { insert Clipboard.get("/") }
     Keys.enter_as_snakecase { insert TextUtil.snake_case(Clipboard.get(0)) }
+    Keys.enter_as_variable { insert "\#{#{Clipboard.get(0)}}" }
     Keys.enter_bullet { Notes.bullet }
     Keys.enter_clipboard { Clipboard.paste("0") }   # paste **
     # D
@@ -195,7 +196,7 @@ class KeyBindings
     Keys.enter_spot { Location.enter_at_spot }   # enter selected text at spot
     Keys.enter_tree { TreeLs.launch( :here => true ) }
     Keys.enter_under { TreeLs.enter_under }
-    Keys.enter_variable { insert "\#{#{Clipboard.get(0)}}" }
+    Keys.enter_viewing { History.enter_viewing }
     # W
     # X
     # Y
