@@ -99,19 +99,14 @@ class CodeTree
     ""
   end
 
-  def self.display_menu menu, options={}
+  def self.display_menu menu
     if Keys.prefix_u
       View.bar
     end
-    View.to_buffer("*CodeTree #{menu.gsub('.', ' ')}")
+    View.to_buffer("*CodeTree #{menu.gsub(/[.,]/, ' ')}")
     View.clear
     $el.notes_mode
 
-    if options[:prefix_arg]   # If :prefix_arg, pass prefix or it onto the end
-      arg = Keys.prefix.to_s =~ /^\d+$/ ? Keys.prefix : nil
-      arg ||= options[:prefix_arg]
-      menu << " #{arg}"
-    end
     insert "- #{menu}/"
     open_line 1
     CodeTree.launch

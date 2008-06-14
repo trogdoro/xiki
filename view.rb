@@ -467,7 +467,6 @@ class View
       collect {|b| window_buffer b}.
       collect {|u| buffer_name u}.
       member?(name)
-    #buffer_list.find{|b| buffer_name(b) == name}
   end
 
   def self.wrap on_or_off=:on

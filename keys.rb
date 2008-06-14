@@ -6,7 +6,7 @@ class Keys
 
   @@key_queue =[]  # For defining menus (must be done in reverse)
 
-  CODE_SAMPLES = %q<
+  CODE_SAMPLES = %q[
     # Map C-c C-a
     Keys.CA { View.insert "foo" }
 
@@ -14,8 +14,11 @@ class Keys
     Keys._X(:shell_mode_map) { View.insert "foooo" }
 
     # Get user input
-    puts Keys.input("Name: ")
-  >
+    - A String
+      - puts Keys.input(:prompt => "Name: ")
+    - Just one char
+      - puts Keys.input(:one_char => true)
+  ]
 
   def self.method_missing(meth, *args, &block)
 

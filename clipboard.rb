@@ -107,9 +107,8 @@ class Clipboard
       left, right = Line.left, bounds_of_thing_at_point(:paragraph).to_a[1]
     else  # If no prefix
       # Get whole paragraph
-      left, right = bounds_of_thing_at_point(:paragraph).to_a
+      left, right = self.paragraph(:bounds => true)
     end
-    left += 1 if char_after(left) == 10    # Left might include blank line
 
     if just_return
       return [View.txt(left, right), left, right]
@@ -171,8 +170,6 @@ class Clipboard
   def self.as_line
     Clipboard.set("0", Line.value + "\n")
     Effects.blink :what => :line
-    set_mark Line.left
-    Line.next
   end
 
   def self.enter_replacement
@@ -183,6 +180,15 @@ class Clipboard
     Move.to_other_bracket
     View.delete orig, point
     View.insert Clipboard['0']
+  end
+
+  def self.paragraph(options)
+    left, right = bounds_of_thing_at_point(:paragraph).to_a
+    left += 1 if char_after(left) == 10    # Left might include blank line
+    txt = View.txt(left, right)
+    View.delete(left, right) if options[:delete]
+    return [left, right] if options[:bounds]
+    txt
   end
 
 end

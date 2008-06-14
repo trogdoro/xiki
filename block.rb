@@ -14,4 +14,16 @@ class Block
       res << point
     end
   end
+
+  def self.do_as_wrap
+    if Keys.prefix_u
+      Line.to_left
+      View.insert "> "
+      fill_paragraph nil
+      txt = Clipboard.paragraph(:delete => true)
+      View.insert txt.gsub(/^  /, '> ')
+      return
+    end
+    fill_paragraph nil
+  end
 end

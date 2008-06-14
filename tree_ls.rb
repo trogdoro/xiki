@@ -835,7 +835,7 @@ class TreeLs
 
       # Open $tl in 2nd view
       View.to_nth 1
-      find_file Bookmarks["$tl"]
+      find_file Bookmarks["$f"]
       View.to_nth 0
     end
   end

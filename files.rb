@@ -1,5 +1,14 @@
 class Files
   extend ElMixin
+
+  @@dir_hash = {
+    'r' => '.rb',
+    'm' => '/models/',
+    'v' => '/views/',
+    'c' => '/controllers/',
+    'n' => '.notes',
+    }
+
   # Lets user open a file
   def self.open
     if elvar.current_prefix_arg
@@ -84,22 +93,73 @@ class Files
       "
   end
 
-  def self.current times=nil
-    times ||= History.prefix_times
+  def self.viewing_array
+    buffer_list.map { |b| buffer_file_name(b) }.select{|path| path}
+  end
 
-    paths = ( buffer_list.map { |b| buffer_file_name(b) }.select{|path| path})
-    paths = paths[0..(times-1)]
+  def self.viewing times=0, options={}
+    times ||= History.prefix_times
+    paths = viewing_array[0..(times-1)]
+    if options[:dir]
+      paths = paths.grep(Regexp.new(Regexp.escape(options[:dir])))
+    end
     puts CodeTree.tree_search + TreeLs.paths_to_tree(paths)
   end
 
-  def self.edited times=nil
+  def self.edited_array
+    elvar.editedhistory_history.to_a
+  end
+
+  def self.edited times=nil, options={}
     times ||= History.prefix_times
-    puts CodeTree.tree_search + TreeLs.paths_to_tree(elvar.editedhistory_history.to_a[0..(times-1)])
+    paths = edited_array[0..(times-1)]
+    if options[:dir]
+      paths = paths.grep(Regexp.new(Regexp.escape(options[:dir])))
+    end
+    puts CodeTree.tree_search + TreeLs.paths_to_tree(paths)
+  end
+
+  def self.history_array
+    elvar.recentf_list.to_a
   end
 
   def self.history times=nil
     times ||= History.prefix_times
-    puts CodeTree.tree_search + TreeLs.paths_to_tree(elvar.recentf_list.to_a[0..(times-1)])
+    puts CodeTree.tree_search + TreeLs.paths_to_tree(history_array[0..(times-1)])
+  end
+
+  def self.open_just
+    key = Keys.input(:prompt => "Open just currently open files of type (enter a letter): ", :one_char => true)
+    dir = @@dir_hash[key]
+    return message("No dir matching '#{key}' found.  See Files\#@@dir_hash") unless dir
+    if Keys.prefix_u
+      Keys.clear_prefix
+      CodeTree.display_menu("Files.edited(100, :dir => '#{dir}')")
+    else
+      CodeTree.display_menu("Files.viewing(0, :dir => '#{dir}')")
+    end
+  end
+
+  def self.open_last
+    key = Keys.input(:prompt => "Open just currently open files of type (enter a letter): ", :one_char => true)
+    dir = @@dir_hash[key]
+    View.open Files.edited_array.grep((Regexp.new(Regexp.escape(dir)))).first
+  end
+
+  def self.open_edited
+    if Keys.prefix == 0
+      CodeTree.display_menu("Files.edited") 
+    else
+      CodeTree.display_menu("Files.edited 20") 
+    end
+  end
+
+  def self.open_history
+    if Keys.prefix == 0
+      CodeTree.display_menu("Files.history") 
+    else
+      CodeTree.display_menu("Files.history 20") 
+    end
   end
 
 end

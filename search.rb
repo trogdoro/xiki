@@ -139,6 +139,12 @@ class Search
     end
   end
 
+  def self.isearch_query_replace
+    self.clear
+    match = self.match
+    query_replace_regexp(match, Keys.input(:prompt => "Change instances of '#{match}' to: "))
+  end
+
   def self.grep
     cm_grep("./", read_from_minibuffer("Grep for pattern: "))
   end
@@ -478,4 +484,13 @@ class Search
     exchange_point_and_mark
     insert line
   end
+
+  def self.outline_search
+    if Keys.prefix_u
+      History.open_current :bar => true, :all => true
+    else
+      History.open_current :all => true
+    end
+  end
+
 end

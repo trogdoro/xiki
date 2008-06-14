@@ -120,7 +120,7 @@ class Notes
     Keys.CH(:notes_mode_map) { Notes.insert_heading }  # Insert ||... etc. heading
     Keys.CN(:notes_mode_map) { Notes.to_block }  # Go to block after next block
     Keys.CP(:notes_mode_map) { Notes.to_block true }  # Go to block before next block
-    Keys.CE(:notes_mode_map) { Notes.expand_block }  # Insert ||... etc. heading
+    Keys.CE(:notes_mode_map) { Notes.expand_block }  # Show just block
 
     Keys.CF(:notes_mode_map) { Notes.move_block }  # Move block down to after next block
     Keys.CB(:notes_mode_map) { Notes.move_block true }  # Move block up to before next block

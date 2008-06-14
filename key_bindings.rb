@@ -125,31 +125,31 @@ class KeyBindings
     Keys.open_bookmark { Bookmarks.go }
     Keys.open_current { CodeTree.display_menu("Buffers.menu") }   # open buffer list **
     Keys.open_difflog { DiffLog.open }   # shows diffs of what you've edited *
-    Keys.open_edited { CodeTree.display_menu("Files.edited", :prefix_arg => 20) }   # show recently edited files *
+    Keys.open_edited { Files.open_edited }   # show recently edited files *
     Keys.open_file { Files.open }
     # G: leave unmapped for escape
-    Keys.open_history { CodeTree.display_menu("Files.history", :prefix_arg => 20) }   # show recently viewed files
+    Keys.open_history { Files.open_history }   # show recently viewed files
     Keys.open_in_bar { View.open_in_bar }
     Keys.open_in_right { View.open_in_right }
     Keys.open_in_os { shell_command("open #{View.file || View.path}") }
-    # J
+    Keys.open_just { Files.open_just }
+
     Keys.open_list_bookmarks { CodeTree.display_menu("Bookmarks.tree") }
-    Keys.open_list_clipboards { Clipboard.list }
     Keys.open_list_faces { list_faces_display }
     Keys.open_lisp_error { Code.show_el4r_error }
     Keys.open_lisp_info { info("elisp") }
+    Keys.open_list_names { Clipboard.list }
     Keys.open_link_top { Links.open_first }   # open first hyperlink on page
     Keys.open_menu { CodeTree.display_menu("CodeTree.menu") }   # Open all menus and show them **
     Keys.open_newly_edited { History.open_unsaved }
     Keys.OO { open_line elvar.current_prefix_arg || 1 }   # OO - open line (O's default)
-    # P
+    Keys.open_previous { Files.open_last }
     Keys.open_quick { Bookmarks.go :q }   # like OB but uses different temporary namespace
     Keys.open_region_path { find_file buffer_substring(region_beginning, region_end) }
-    Keys.open_search { History.open_current :bar => true, :all => true }   # hide search via outline *
+    Keys.open_search { Search.outline_search }   # hide search via outline *
     Keys.open_tree { TreeLs.launch }   # draw a tree, prompting for bookmark tag *
     Keys.open_up { View.show_dir }   # open enclosing dir **
-    Keys.open_viewing { CodeTree.display_menu("Files.current", :prefix_arg => 200) }   # show currently open files and buffers **
-#    Keys.OV { Keys.prefix_u ? History.open_unsaved : cm_show_buffers }   # Open Viewing: open buffer list **
+    Keys.open_viewing { CodeTree.display_menu("Files.viewing") }   # show currently open files and buffers **
     Keys.open_windows { View.restore }   # open window configuration by tag
     Keys.open_xiki_docs { Help.display_docs }
     Keys.open_xiki_help { CodeTree.display_menu("Help.menu") }   # **
@@ -181,7 +181,7 @@ class KeyBindings
     #Keys.EH { TreeLs.enter_lines(/^\| /) }
     Keys.enter_insert_date { App.enter_date }    # insert date string (and time if C-u)
     Keys.enter_insert_command { insert("- (/): "); ControlLock.disable }    # insert date string (and time if C-u)
-    Keys.enter_in_tree { TreeLs.enter_snippet }   # enter tree quote of region in $T
+    Keys.enter_in_todo { TreeLs.enter_snippet }   # enter tree quote of region in $T
     # J
     # K
     #Keys.EK { Clipboard.paste }   # Enter Clipboard: paste
@@ -217,7 +217,7 @@ class KeyBindings
     #Keys.DAL { Code.load_this_file }   # Do As Load: do a ruby load on the file
     Keys.do_as_rspec { Code.do_as_rspec }
     Keys.do_as_snakecase { Clipboard.do_as_snake_case }   # Change word to snake case (like_that)
-    Keys.do_as_wrap { fill_paragraph nil }
+    Keys.do_as_wrap { Block.do_as_wrap }
     Keys.do_backward { backward_kill_word(Keys.prefix || 1) }   # delete word backward
     Keys.do_code_align { Code.do_code_align }
     Keys.do_code_comment { Code.comment }
@@ -248,7 +248,6 @@ class KeyBindings
     #Keys.DK1 { KeyBindings.keys }   # Do Keys 1: load key bindings "1" (currently this file)
     Keys.do_kill_all { erase_buffer }   # kill all text in buffer
     Keys.do_kill_filter { Search.kill_filter }
-#     Keys.DKL { Search.kill_search_paragraph }   # Do Kill Lines: incrementall search, killing lines up to end of paragraph
     Keys.do_kill_siblings { TreeLs.kill_siblings }   # kill adjacent lines at same indent as this one
     Keys.do_kill_thing { delete_region(* bounds_of_thing_at_point( :sexp )) }   # kill adjacent lines at same indent as this one
     Keys.do_last_command { Shell.do_last_command }
@@ -377,7 +376,6 @@ class KeyBindings
     #   - If you put it at end of path or as tree node, it should make it into path
     #     - So look at it when opening path and optionally jump
     #  - narrow block to region:
-
   end
 
   def self.isearch
@@ -396,33 +394,31 @@ class KeyBindings
 
     # Control keys during isearch
     #Keys.A(:isearch_mode_map) { Search.isearch_start }   # Start of line
-    # Reduntand!
     Keys.A(:isearch_mode_map) { Search.copy }   # As (clipboard)
-    #Keys.B(:isearch_mode_map) { Search.insert_at_spot }   # Enter: jump to point p and insert match
     Keys.B(:isearch_mode_map) { Search.insert_at_search_start }
-    Keys.C(:isearch_mode_map) { Search.copy }   # Clipboard
+    Keys.C(:isearch_mode_map) { Search.isearch_query_replace }   # Clipboard
     Keys.D(:isearch_mode_map) { Search.isearch_delete }   # Delete
     Keys.E(:isearch_mode_map) { Search.paste_here }   # Replace: insert clipboard, replacing match
     Keys.F(:isearch_mode_map) { Search.go_to_end }   # Forward
     # G: leave unmapped for escaping
     Keys.H(:isearch_mode_map) { Search.hide }   # Hide: hide non-matching
-    # J: leave unmapped for linebreak
-#     Keys.J(:isearch_mode_map) { Search.highlight_found }   # Jot: highlighting yellow
     # I: leave unmapped - had issues using it
+    # J: leave unmapped for linebreak
+    # K:
+    # Keys.J(:isearch_mode_map) { Search.highlight_found }   # Jot: highlighting yellow
     Keys.L(:isearch_mode_map) { Search.line }   # Line: copy line back to search start
     # M: leave unmapped for stop
     # N
     Keys.O(:isearch_mode_map) { Search.isearch_find_in_buffers(:current_only => true) }   # Outline
+    Keys.P(:isearch_mode_map) { Search.insert_at_spot }   # Put: jump to point p and insert match
     # Q: leave unmapped for quoting
-    # P
-    Keys.P(:isearch_mode_map) { Search.insert_at_spot }   # Point?: jump to point p and insert match
     # R: leave unmapped for reverse
     # S: leave unmapped for search
     Keys.T(:isearch_mode_map) { Search.isearch_open_last_edited }   # To: open file / jump to method
     Keys.U(:isearch_mode_map) { Search.isearch_pull_in_sexp }  # like C-w, but pulls in sexp
     # Redundant!!!
     Keys.V(:isearch_mode_map) { Search.insert_at_search_start }
-    # W: leave unmapped for search
+    # W: leave unmapped for pulling into search
     Keys.X(:isearch_mode_map) { Search.cut }
     # Y: leave unmapped for yank
     # Z
@@ -444,7 +440,6 @@ class KeyBindings
     Keys._O(:isearch_mode_map) { Search.isearch_find_in_buffers }   # Outline (all buffers)
     Keys._S(:isearch_mode_map) { Search.isearch_tree_grep }   # Search: do tree grep (prompt for dir)
     Keys._V(:isearch_mode_map) { Search.insert_var_at_search_start }
-#    Keys._X(:isearch_mode_map) { Search.isearch_delete_rest }
 
     define_key :isearch_mode_map, kbd("M-1") do   # pull in 1 word
       Search.isearch_pull_in_words 1
