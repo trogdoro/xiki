@@ -139,10 +139,13 @@ class Search
     end
   end
 
-  def self.isearch_query_replace
+  def self.isearch_query_replace start_with_search_string=false
     self.clear
     match = self.match
-    query_replace_regexp(match, Keys.input(:prompt => "Change instances of '#{match}' to: "))
+    to = start_with_search_string ?
+      Keys.input(:prompt => "Change instances of '#{match}' to: ", :initial_input => match) :
+      Keys.input(:prompt => "Change instances of '#{match}' to: ")
+    query_replace_regexp(match, to)
   end
 
   def self.grep
@@ -491,6 +494,11 @@ class Search
     else
       History.open_current :all => true
     end
+  end
+
+  def self.upcase
+    Search.clear
+    upcase_region(match_beginning(0), match_end(0))
   end
 
 end

@@ -12,9 +12,9 @@ class Files
   # Lets user open a file
   def self.open
     if elvar.current_prefix_arg
-      find_file Keys.input(:prompt => "Open file: ")
-    else
       find_file read_file_name("Open: ")
+    else
+      find_file Keys.input(:prompt => "Open file: ")
     end
   end
   #

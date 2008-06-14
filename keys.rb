@@ -158,16 +158,6 @@ class Keys
 
       prompt = "temppppppppppppppppppppp: "
       c = read_char(prompt)
-      # If control is char, stop at one char
-      if c < 27
-
-        # TODO: Check with control-lock
-        p "controlll"
-
-      # If non-control, keep getting input until pause
-      else
-        p "not controlll"
-      end
       Cursor.restore :before_input
       return c
     end
@@ -181,6 +171,7 @@ class Keys
     # If simple un-timed input, just get string and return it
     unless options[:timed] or options[:optional]
       Cursor.restore :before_input
+      return $el.read_string(prompt, options[:initial_input]) if options[:initial_input]
       return $el.read_string(prompt)
     end
 

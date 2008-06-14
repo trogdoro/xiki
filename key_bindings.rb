@@ -394,9 +394,9 @@ class KeyBindings
 
     # Control keys during isearch
     #Keys.A(:isearch_mode_map) { Search.isearch_start }   # Start of line
-    Keys.A(:isearch_mode_map) { Search.copy }   # As (clipboard)
+    Keys.A(:isearch_mode_map) { Search.isearch_query_replace }   # Alter
     Keys.B(:isearch_mode_map) { Search.insert_at_search_start }
-    Keys.C(:isearch_mode_map) { Search.isearch_query_replace }   # Clipboard
+    Keys.C(:isearch_mode_map) { Search.copy }   # Clipboard (copy)
     Keys.D(:isearch_mode_map) { Search.isearch_delete }   # Delete
     Keys.E(:isearch_mode_map) { Search.paste_here }   # Replace: insert clipboard, replacing match
     Keys.F(:isearch_mode_map) { Search.go_to_end }   # Forward
@@ -427,8 +427,9 @@ class KeyBindings
 
   def self.isearch_meta
     # Meta keys during isearch
-    Keys._A(:isearch_mode_map) { Search.isearch_tree_grep("$a") }   # All: find in $a bookmark
-    Keys._C(:isearch_mode_map) { Search.copy_and_comment }   # comment line and copy it to starting point
+    Keys._A(:isearch_mode_map) { Search.isearch_query_replace :start_with_search_string }   # Alter: query-replace, using search string as initial input
+#    Keys._A(:isearch_mode_map) { Search.isearch_tree_grep("$a") }   # All: find in $a bookmark
+    Keys._B(:isearch_mode_map) { Search.copy_and_comment }   # Backup: comment line and copy it to starting point
     Keys._D(:isearch_mode_map) { Search.jump_to_difflog }   # Diff: find original string in difflog
     Keys._E(:isearch_mode_map) { Search.insert_tree_at_spot }   # Enter
     Keys._F(:isearch_mode_map) { Search.isearch_open }   # Find file
@@ -439,6 +440,7 @@ class KeyBindings
     Keys._M(:isearch_mode_map) { Search.isearch_tree_grep_method }   # Method: do tree grep (prompt for dir)
     Keys._O(:isearch_mode_map) { Search.isearch_find_in_buffers }   # Outline (all buffers)
     Keys._S(:isearch_mode_map) { Search.isearch_tree_grep }   # Search: do tree grep (prompt for dir)
+    Keys._U(:isearch_mode_map) { Search.upcase }   # Upcase
     Keys._V(:isearch_mode_map) { Search.insert_var_at_search_start }
 
     define_key :isearch_mode_map, kbd("M-1") do   # pull in 1 word
