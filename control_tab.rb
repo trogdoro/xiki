@@ -81,7 +81,7 @@ class ControlTab
         @@consider_test = lambda{|b| buffer_file_name(b) =~ /\.rb$/}
       when 8
         # Shells ("shell" or "**" in buffer name)
-        @@consider_test = lambda{|b| name = buffer_name(b);  name[/\*shell/i] || name[/\*/]}
+        @@consider_test = lambda{|b| name = buffer_name(b);  (name[/\*shell/i] || name[/\*/]) && ! buffer_name(b)[/Minibuf/] }
       else
         puts "ControlTab: 4"
 

@@ -357,6 +357,7 @@ class KeyBindings
     Keys.layout_todo { TreeLs.open_in_bar }   # show bar on left with the quick bookmark named "-t" *
     # U
     # V
+    Keys.layout_visibility { View.visibility }
     Keys.layout_wrap { toggle_truncate_lines }   # wrap lines **
     # X
     # Y
@@ -499,6 +500,7 @@ class KeyBindings
       el_require :ruby_mode
       define_key :ruby_mode_map, kbd("C-\\") do
         Hide.show
+        #Hide.hide_unless /^ *(def|module) /
         Hide.hide_unless /^ *(def|class|module|create_table|it|describe) /
         recenter -2
         Hide.search

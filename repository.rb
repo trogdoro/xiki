@@ -14,7 +14,6 @@ class Repository
     shell current_buffer
     #cm_universal_diff_format
     self.styles
-    
     self.local_keys
     #difflog_highlight
     insert command
@@ -22,11 +21,13 @@ class Repository
   end
 
   def self.diff_dir
+
     # if .svn dir found
     if File.exists?("#{View.dir}.svn")
       self.svn_command("echo; svn status; svn diff -x -w")
     else
-      self.svn_command("echo; git status; git diff -w")
+      options = Keys.prefix_u ? "$tr" : nil
+      self.svn_command("echo; git status; git diff -w", options)
     end
 
 #     if Line.matches(/^r(\d+)/)

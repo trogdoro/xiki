@@ -2,10 +2,12 @@ class Files
   extend ElMixin
 
   @@dir_hash = {
+    'j' => '.js',
     'r' => '.rb',
-    'm' => '/models/',
-    'v' => '/views/',
-    'c' => '/controllers/',
+    'r' => '/spec/',
+    'm' => '/app/models/',
+    'v' => '/app/views/',
+    'c' => '/app/controllers/',
     'n' => '.notes',
     }
 

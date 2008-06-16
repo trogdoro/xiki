@@ -263,8 +263,8 @@ class Notes
       :bold => true, :underline => true
 
     Styles.define :notes_g, :fg => "00B"
-    Styles.define :notes_blue, :fg => "00C"
-    Styles.define :notes_red, :fg => "C00"
+    Styles.define :notes_blue, :fg => "46f"
+    Styles.define :notes_red, :fg => "c00"
     Styles.define :notes_yellow, :fg => "CC0"
     Styles.define :notes_green, :fg => "0C0"
 

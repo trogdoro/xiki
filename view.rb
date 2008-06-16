@@ -550,4 +550,18 @@ class View
     buffer_substring(point, point+1)
   end
 
+  def self.visibility
+    c = Keys.input(:one_char => true, :prompt => 'Layout Visibility: [o]paque, [d]im, [m]edium, [t]ransparent')
+    case c.to_sym
+    when :o
+      el4r_lisp_eval "(set-frame-parameter nil 'alpha 100)"
+    when :d
+      el4r_lisp_eval "(set-frame-parameter nil 'alpha 96)"
+    when :m
+      el4r_lisp_eval "(set-frame-parameter nil 'alpha 50)"
+    when :t
+      el4r_lisp_eval "(set-frame-parameter nil 'alpha 25)"
+    end
+  end
+
 end
