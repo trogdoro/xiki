@@ -94,7 +94,7 @@ class TreeLs
     dir.sub!(/\/$/, '')  # Remove slash from end
 
     # Turn regex into a regex, if a string
-    regex = Regexp.new(regex) if regex.is_a? String
+    regex = Regexp.new(regex, Regexp::IGNORECASE) if regex.is_a? String
 
     unless raw
       View.bar if options[:bar]
@@ -108,7 +108,7 @@ class TreeLs
 
     files = options[:files]
     if files
-      files = Regexp.new(files) if files.is_a? String
+      files = Regexp.new(files, Regexp::IGNORECASE) if files.is_a? String
       t.file_regex = files
     end
     t.list << "#{dir}/"

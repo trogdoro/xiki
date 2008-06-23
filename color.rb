@@ -22,7 +22,8 @@ class Color
     char = char.to_s
 
     # If h, just show all colors
-    if char == "h"
+    case char
+    when "h"
       Hide.hide_unless_block { |l, bol, eol|
         # Whether current line contains an overlay of this color
         overlays_in(bol, eol).to_a.find{ |o|
@@ -32,12 +33,16 @@ class Color
       recenter(-3)
       Hide.search
       return
-
-    # Delete if d
-    elsif char == "d"
+    when "d"
       return delete_overlay( overlays_at(next_overlay_change(point_at_bol - 1))[0] )
-    elsif char == "x"
-      remove_overlays
+    when "x"
+      return remove_overlays
+    end
+
+    if Keys.prefix_u
+      over = make_overlay(*View.range)
+      overlay_put over, :face, @@colors[char]
+      return
     end
 
     # Otherwise, just colorize line

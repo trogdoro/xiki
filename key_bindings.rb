@@ -169,6 +169,7 @@ class KeyBindings
     Keys.enter_as_filename { insert Clipboard.get(".") }
     #Keys.enter_as_path { insert Clipboard.get("/") }
     Keys.enter_as_snakecase { insert TextUtil.snake_case(Clipboard.get(0)) }
+    Keys.enter_as_trunk { View.insert "$tr/###{Clipboard[0]}/";  LineLauncher.launch }
     Keys.enter_as_variable { insert "\#{#{Clipboard.get(0)}}" }
     Keys.enter_bullet { Notes.bullet }
     Keys.enter_clipboard { Clipboard.paste("0") }   # paste **

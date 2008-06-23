@@ -256,6 +256,9 @@ class Notes
       :face => 'arial black', :size => "0",
       :fg => "55aa22", :bold => true
 
+    # Strikethrough
+    Styles.define(:strike, :strike => true)
+
     # - <here> (r): foo
     Styles.define :notes_label_link,
       :face => 'verdana', :size => "-1",
@@ -333,6 +336,8 @@ class Notes
     Styles.apply("^[ \t]*\\(-\\) \\(.+?:\\) ", nil, :notes_bullet, :notes_bullet)
     Styles.apply("^[ \t]*\\(-\\) \\([^:\n]+?:\\)$", nil, :notes_bullet, :notes_bullet)
 
+    Styles.apply("^[ \t]*\\(x\\) \\(.+\\)", nil, :notes_bullet, :strike)
+
     Styles.apply("^\\([ \t]*\\)\\(-\\) \\(.+?:\\) +\\(|.*\n\\)", nil, :default, :notes_bullet, :notes_bullet, :ls_quote)
 
     # - item exclamation! / todo
@@ -403,11 +408,17 @@ class Notes
       View.insert "\n"
     end
 
-    # Get bullet indent of previous line
-    prev = Line.value(0)[/^ *- /]
-    prev = prev ? "  #{prev}" : "- "
-    prev.sub!(/^  /, '') if Keys.prefix_u   # Don't indent if U
-    insert prev
+    prefix = Keys.prefix
+
+    if prefix.is_a? Fixnum   # If numeric prefix, indent by n
+      insert (" " * prefix) + "- "
+    else   # Get bullet indent of previous line
+      prev = Line.value(0)[/^ *- /]
+      prev = prev ? "  #{prev}" : "- "
+      prev.sub!(/^  /, '') if Keys.prefix_u   # Don't indent if U
+      insert prev
+    end
+
     control_lock_enable if elvar.control_lock_mode_p
   end
 

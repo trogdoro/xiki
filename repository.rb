@@ -20,14 +20,18 @@ class Repository
     Shell.enter
   end
 
+  def self.svn?
+    File.exists?("#{View.dir}.svn")
+  end
+
   def self.diff_dir
 
     # if .svn dir found
-    if File.exists?("#{View.dir}.svn")
+    if self.svn?
       self.svn_command("echo; svn status; svn diff -x -w")
     else
       options = Keys.prefix_u ? "$tr" : nil
-      self.svn_command("echo; git status; git diff -w", options)
+      self.svn_command("git status; git diff -w", options)
     end
 
 #     if Line.matches(/^r(\d+)/)
@@ -80,7 +84,15 @@ class Repository
       cm_compare_one_svn_file
       return
     end
-    cm_subversion_command("echo; svn diff -x -w #{file_name_nondirectory(buffer_file_name)}")
+
+    if self.svn?
+      cm_subversion_command("echo; svn diff -x -w #{file_name_nondirectory(buffer_file_name)}")
+    else
+      Shell.run("git diff '#{View.file}'")
+      #cm_subversion_command("echo; svn diff -x -w #{file_name_nondirectory(buffer_file_name)}")
+      self.styles
+      self.local_keys
+    end
   end
 
   def self.local_keys
