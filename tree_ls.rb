@@ -1041,10 +1041,26 @@ class TreeLs
   end
 
   # Enter what's in clipboard with | to on the left margin, with appropriate indent
-  def self.enter_as_quoted
+  def self.enter_quoted
 
     Line.to_left
-    clip = Clipboard.get("0", :ending_with_linebreak => true)
+    clip = Clipboard.get(0, :add_linebreak => true)
+
+    # If current line is path
+    if Line.matches(/\/$/)
+      dir = self.construct_path
+      t = Clipboard.get("=")
+      ml ''
+      ml dir
+      ml t
+      t = t.gsub(/^#{dir}/, '')
+      t.gsub!(/\A\n/, '')
+      ml t
+      Line.next
+      View.insert "#{t}\n".gsub(/^/, '  ')
+      return
+    end
+
 
     # If C-u or whole thing is quoted already
     if Keys.prefix_u || clip =~ /\A  +[-+]?\|/

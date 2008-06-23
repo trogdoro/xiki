@@ -198,4 +198,14 @@ class Code
     txt.gsub!(/\\\z/, '')  # Remove last \
     insert txt
   end
+
+  def self.enter_as_trunk
+    if Keys.prefix_u
+      View.insert "$tr/##/"
+      $el.backward_char
+      return ControlLock.disable
+    end
+    View.insert "$tr/###{Clipboard[0]}/"
+    LineLauncher.launch
+  end
 end

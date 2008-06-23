@@ -81,7 +81,7 @@ class Notes
     #open_line 1
 
     # Exit control lock mode if on
-    control_lock_enable if elvar.control_lock_mode_p
+    ControlLock.disable
 #     # Read in one key, then upcase it
 #     a = Keys.input(:one_char => true)
 #     insert a.upcase
@@ -419,7 +419,7 @@ class Notes
       insert prev
     end
 
-    control_lock_enable if elvar.control_lock_mode_p
+    ControlLock.disable
   end
 
   def self.help_wiki_format

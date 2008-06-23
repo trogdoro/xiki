@@ -68,7 +68,7 @@ class Shell
   end
 
   def self.open
-    control_lock_enable if elvar.control_lock_mode_p
+    ControlLock.disable
     dir = elvar.default_directory
     switch_to_buffer generate_new_buffer("*shell*")
     elvar.default_directory = dir

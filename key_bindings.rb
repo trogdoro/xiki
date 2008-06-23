@@ -169,7 +169,7 @@ class KeyBindings
     Keys.enter_as_filename { insert Clipboard.get(".") }
     #Keys.enter_as_path { insert Clipboard.get("/") }
     Keys.enter_as_snakecase { insert TextUtil.snake_case(Clipboard.get(0)) }
-    Keys.enter_as_trunk { View.insert "$tr/###{Clipboard[0]}/";  LineLauncher.launch }
+    Keys.enter_as_trunk { Code.enter_as_trunk }
     Keys.enter_as_variable { insert "\#{#{Clipboard.get(0)}}" }
     Keys.enter_bullet { Notes.bullet }
     Keys.enter_clipboard { Clipboard.paste("0") }   # paste **
@@ -192,7 +192,7 @@ class KeyBindings
     Keys.enter_outline { TreeLs.enter_lines }   # in tree, enter methods or headings
     # Find new key for thisKeys.EO { DiffLog.enter_old }   # Enter Old: enter newly-deleted from last save
     # P
-    Keys.enter_quoted { TreeLs.enter_as_quoted }
+    Keys.enter_quoted { TreeLs.enter_quoted }
     Keys.enter_replacement { Clipboard.enter_replacement }
     Keys.enter_spot { Location.enter_at_spot }   # enter selected text at spot
     Keys.enter_tree { TreeLs.launch( :here => true ) }
