@@ -519,6 +519,10 @@ class View
     Move.to_line n
   end
 
+  def self.to n
+    goto_char n
+  end
+
   def self.focus
     x_focus_frame(selected_frame)
   end

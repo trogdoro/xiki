@@ -433,7 +433,7 @@ class TreeLs
     ch = char_to_string(ch_raw)
 
     # While narrowing down list (and special check for C-.)
-    while (ch =~ /[\\() ~#">a-zA-Z!*_,~#-]/ && ch_raw != 67108910) ||
+    while (ch =~ /[\\() ~">a-zA-Z!_,~-]/ && ch_raw != 67108910) ||
         (recursive && ch_raw == 2 || ch_raw == 6)
       # Slash means enter in a dir
       break if recursive && ch == '/'
@@ -546,7 +546,7 @@ class TreeLs
       Keys.clear_prefix
       LineLauncher.launch
       #self.expand_or_open
-      Line.to_words
+      #Line.to_words
     when "delete"  # If backspace, cancel last action and exit
       goto_char left
       Line.next if options[:recursive]
@@ -554,6 +554,11 @@ class TreeLs
       Line.previous
       Line.to_words
       self.search(:left => Line.left, :right => Line.left(2))
+    when ch == "/"  # If /, run this line ???
+      Keys.prefix = 2
+      delete_region(Line.left(2), right)
+      self.open
+
     when ";"  # Show methods, or outline
       delete_region(Line.left(2), right)  # Delete other files
       if Line.matches(/\.rb$/)
@@ -561,6 +566,17 @@ class TreeLs
       else
         self.enter_lines(/^\| /)
       end
+
+    when "#"  # Show ##.../ search
+      self.stop_and_insert left, right, pattern
+      View.insert TreeLs.indent("##/", 0)
+      View.to(Line.right - 1)
+
+    when "*"  # Show **.../ search
+      self.stop_and_insert left, right, pattern
+      View.insert TreeLs.indent("**/", 0)
+      View.to(Line.right - 1)
+
     when "8"
       # If a quote, insert lines indented lower
       if Line.matches(/\|/)
@@ -579,11 +595,6 @@ class TreeLs
       Keys.clear_prefix
       # Expand or open
       self.expand_or_open
-
-    when ch == "/"  # If /, run this line ???
-      Keys.prefix = 2
-      delete_region(Line.left(2), right)
-      self.open
 
     when "1".."7"
       Keys.clear_prefix
@@ -1463,8 +1474,8 @@ class TreeLs
   end
 
   # Indent txt to be one level lower than current line
-  def self.indent txt
-    indent = Line.indent
+  def self.indent txt, line=1
+    indent = Line.indent(Line.value(line))
     txt.gsub!(/^/, "#{indent}  ")
   end
 
@@ -1507,6 +1518,17 @@ private
     spaces = line[/^ +/]
     return 0 unless spaces
     spaces.size / 2
+  end
+
+  def self.stop_and_insert left, right, pattern
+    goto_char left
+    #Line.next if options[:recursive]
+    # TODO: delete left if recursive - emulate what "delete" does to delete, first
+    pattern == "" ?
+      delete_region(point, right) :
+      Line.next
+    $el.open_line 1
+    ControlLock.disable
   end
 
 end

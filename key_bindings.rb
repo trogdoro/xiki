@@ -173,10 +173,8 @@ class KeyBindings
     Keys.enter_as_variable { insert "\#{#{Clipboard.get(0)}}" }
     Keys.enter_bullet { Notes.bullet }
     Keys.enter_clipboard { Clipboard.paste("0") }   # paste **
-    # D
-    #Keys.ED { App.enter_directory }   # Enter Directory
-    Keys.EE { end_of_line }   # EE - end of line (E's default) **
     Keys.enter_difflog { App.enter_from_difflog }   # Save point and go to difflog to search
+    Keys.EE { end_of_line }   # EE - end of line (E's default) **
     #Keys.enter_from_quoted { Keys.insert_from_q }   # insert what was inserted with Q
     Keys.enter_history { History.enter_history }   # enter recently viewed files
     #Keys.EH { TreeLs.enter_lines(/^\| /) }
@@ -186,7 +184,6 @@ class KeyBindings
     Keys.enter_junior { Notes.bullet("") }
     # K
     #Keys.EK { Clipboard.paste }   # Enter Clipboard: paste
-    # M
     Keys.enter_menu { CodeTree.insert_menus }
     Keys.enter_name { Clipboard.paste }   # paste thing saved as name
     Keys.enter_outline { TreeLs.enter_lines }   # in tree, enter methods or headings
