@@ -156,7 +156,7 @@ class Keys
     # Not completely implemented
     if options[:control]
 
-      prompt = "temppppppppppppppppppppp: "
+      prompt = "todo - implement this: "
       c = read_char(prompt)
       Cursor.restore :before_input
       return c

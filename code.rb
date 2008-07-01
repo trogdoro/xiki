@@ -200,12 +200,15 @@ class Code
   end
 
   def self.enter_as_trunk
+    bm = Keys.input(:timed => true, :input => 'Enter bookmark: ')
+    bm = Bookmarks["$#{bm}"]
     if Keys.prefix_u
-      View.insert "$tr/##/"
+      View.insert "#{bm}\n  ##/"
       $el.backward_char
       return ControlLock.disable
     end
-    View.insert "$tr/###{Clipboard[0]}/"
+    View.insert "#{bm}\n  ###{Clipboard[0]}/"
+    #View.insert "$tr/###{Clipboard[0]}/"
     LineLauncher.launch
   end
 end

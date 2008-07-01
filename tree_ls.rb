@@ -131,6 +131,18 @@ class TreeLs
 
   end
 
+  def self.grep_one_file(f, regex, indent)
+    result = []
+    IO.foreach(f) do |line|
+      line.sub!(/[\r\n]+$/, '')
+      if regex
+        next unless line =~ regex
+      end
+      result << "#{indent}|#{line}"
+    end
+    result
+  end
+
   def grep_inner path, regex
 
     path.sub!(/\/$/, '')
@@ -157,18 +169,9 @@ class TreeLs
       indent = "  " * (f.count('/') - @@indent_count) unless indent
 
       if regex
-        # Search in file contents
-        result = []
-        IO.foreach(f) do |line|
-          line.sub!(/[\r\n]+$/, '')
-          if regex
-            next unless line =~ regex
-          end
-          result << "#{indent}|#{line}"
-        end
+        result = TreeLs.grep_one_file(f, regex, indent)   # Search in file contents
 
-        # Add if any files were found
-        if result.size > 0
+        if result.size > 0   # Add if any files were found
           @list << clean(f, @@indent)
           @list += result
         end
@@ -178,7 +181,6 @@ class TreeLs
     end
 
   end
-
 
   # Does ls in current buffer, without making any modifications to the environment
   def self.ls_here dir
@@ -297,13 +299,15 @@ class TreeLs
       break unless line =~ /^ /  # If at left margin, assume it's the parent
       Line.value =~ /^  ( *)(.+)/
       spaces, item = $1, $2
-      item = self.clean_path item
+      item = self.clean_path item unless options[:raw]
       path.unshift item  # Add item to list
       search_backward_regexp "^#{spaces}[^\t \n]"
       line = Line.value
     end
     # Add root of tree
-    path.unshift self.clean_path(Line.value.sub(/^ +/, ''))
+    root = Line.value.sub(/^ +/, '')
+    root = self.clean_path(root) unless options[:raw]
+    path.unshift root
     #path.unshift Line.value.sub(/^ +/, '')
 
     goto_char orig
@@ -430,7 +434,7 @@ class TreeLs
 
     # While narrowing down list (and special check for C-.)
     while (ch =~ /[\\() ~#">a-zA-Z!*_,~#-]/ && ch_raw != 67108910) ||
-        (options[:recursive] && ch_raw == 2 || ch_raw == 6)
+        (recursive && ch_raw == 2 || ch_raw == 6)
       # Slash means enter in a dir
       break if recursive && ch == '/'
       if ch == ','
@@ -1140,36 +1144,52 @@ class TreeLs
   # Expand if dir, or open if file
   def self.expand_or_open
     line = Line.value
+    indent = Line.indent
+    list = nil
     case line
     when /\*\*|##/  # *foo or ## means do grep
-
+      dir = self.construct_path
+      raw = self.construct_path(:raw => true, :list => true)
       files = contents = nil
-      case line
+      case raw.join('')
       when /\*\*(.+)##(.+)/  # *foo means search in files
-        files, contents = $1, $2
+        files, contents = $1, $2.sub!(/\/$/, '')
       when /\*\*(.+)/  # *foo means search in files
         files = $1
       when /##(.+)/  # ##foo means search in filenames
-        contents = $1
+        contents = $1.sub!(/\/$/, '')
+        if raw[-2] =~ /\*\*(.+)/   # If prev is **, use it
+          files = $1
+        elsif raw[-2] =~ /(.+[^\/])$/   # If prev line is file, just show matches
+          contents = Regexp.new(contents, Regexp::IGNORECASE)
+          list = TreeLs.grep_one_file(Bookmarks.expand(dir), contents, "  ")
+          #files = "^#{$1}$"
+        end
+        #files = $1 if Line.value(0) =~ /\*\*(.+)/
       end
 
       files.sub!(/\/$/, '') if files
-      contents.sub!(/\/$/, '') if contents
-      dir = self.construct_path
-
+      #contents.sub!(/\/$/, '') if contents
       options = {:raw => true}
       options.merge!({:files => files}) if files
 
-      list = self.grep dir, contents, options
-      indent = Line.indent
+      unless list   # If not already gotten
+        list = self.grep dir, contents, options
+        list.shift  # Pull off first dir, so they'll be relative
+      end
       Line.to_next
       left = point
-      list.shift  # Pull off first dir, so they'll be relative
       tree = list.join("\n") + "\n"
       insert tree.gsub(/^/, indent)
-#       right = point
+      right = point
       goto_char left
-#       self.search :recursive => true, :left => left, :right => right
+      #Move.to_line_text_beginning
+      if Line.matches(/^\s*$/)  # Do nothing
+      elsif Line.matches(/^\s+\|/)
+        self.search :left => left, :right => right
+      else
+        Move.to_junior
+      end
 
     when /\/$/  # foo/ is a dir
       self.dir
@@ -1188,7 +1208,8 @@ class TreeLs
       end
       if Line.matches(/\.rb$/)
         self.enter_lines(/^ *(def|class|module|it|describe) /)
-        #self.enter_lines(/^ +(def|class|module) /)
+      elsif Line.matches(/\.js$/)
+        self.enter_lines(/^ *(function) /)
       elsif Line.matches(/\.notes$/)
         self.enter_lines(/^\| /)
       else

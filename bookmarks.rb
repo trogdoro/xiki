@@ -18,19 +18,73 @@ class Bookmarks
     if arg && arg.type == Symbol
       prefix = arg.to_s
     elsif arg && arg.type == String
-      bookmark_set(arg.sub(/^\$/, ""))
+      self.set(arg.sub(/^\$/, ""))
       return
     end
     # Use input from user or "default"
     keys = Keys.input(:timed => true) || "0"
-    bookmark_set "#{prefix}#{keys}"
+    self.set "#{prefix}#{keys}"
 
     # Append to bookmark file
-    log_path = "/tmp/bookmark_log.notes"
+    log_path = "/temp/bookmark_log.notes"
     if File.exists?(log_path)
-      File.open(log_path, "a") { |f| f << "| $#{prefix}#{keys}\n#{View.path}\n\n" }
+      File.open(log_path, "a") { |f| f << "| $#{prefix}#{keys}\n#{View.file}\n\n" }
     end
   end
+
+  # Like bookmark-set, but accepts buffers
+  def self.set name
+    # Just create normal bookmark if file
+    return bookmark_set name if View.file
+
+    # Must be buffer
+
+    # Load bookmarks.yml
+    bookmarks_yml = File.expand_path("~/bookmarks.yml")
+    if File.exists?(bookmarks_yml)
+      bookmarks = YAML::load IO.read(bookmarks_yml)
+    end
+    bookmarks = [] unless bookmarks
+
+    # Delete if there
+    already_here = bookmarks.find {|bm| bm[0] == name}
+    bookmarks.delete(already_here) if already_here
+
+    # Add to end
+    bookmarks << [name, View.name]
+
+    # Save file
+    File.open(bookmarks_yml, "w") { |f| f << bookmarks.to_yaml }
+
+  end
+
+  # Like bookmark-bookmark_jump, but accepts buffers
+  def self.jump name
+    # If normal bookmark found, use it
+    return bookmark_jump(name) if bookmark_get_filename(name)
+
+    # Load bookmarks.yml
+    bookmarks_yml = File.expand_path("~/bookmarks.yml")
+    return nil unless File.exists?(bookmarks_yml)
+    bookmarks = YAML::load IO.read(bookmarks_yml)
+    bookmarks = [] unless bookmarks
+
+    # Get buffer name
+    found = bookmarks.find {|bm| bm[0] == name}
+    return nil unless found
+
+
+    unless View.buffer_open?(found[1])
+      View.message "Buffer '#{found[1]}' not currently open."
+      return true
+    end
+# Do nothing if already open
+
+
+    View.to_buffer found[1]
+    true
+  end
+
 
   # If string passed, go to file+point of bookmark.
   # If nothing passed, go to file of user-prompted text
@@ -42,8 +96,7 @@ class Bookmarks
     if bookmark && bookmark.type == Symbol
       prefix_to_bm = bookmark.to_s
     elsif bookmark && bookmark.type == String
-      bookmark_jump(bookmark.sub(/^\$/, ""))
-      return
+      return self.jump(bookmark.sub(/^\$/, ""))
     end
 
     # Use input from user or "default"
@@ -51,17 +104,18 @@ class Bookmarks
 
     # Open file or jump to if already open
     path = bookmark_get_filename( "#{prefix_to_bm}#{keys}" )
-    if path.nil?
+    if path.nil?   # If not found, try buffer in bookmarks.yml
+      return if self.jump( "#{prefix_to_bm}#{keys}" )
       message("no path found")
       return
     end
 
     case Keys.prefix
     when :u  # If u, go to point
-      bookmark_jump "#{prefix_to_bm}#{keys}"
+      self.jump "#{prefix_to_bm}#{keys}"
     when 9  # If 9, open in bar
       View.bar
-      bookmark_jump "#{prefix_to_bm}#{keys}"
+      self.jump "#{prefix_to_bm}#{keys}"
     else
       Location.go path, :stay_in_bar => true
     end
@@ -151,21 +205,22 @@ class Bookmarks
       "
   end
 
-  def self.list bookmark=nil
-    unless bookmark   # Print all bookmarks
+  def self.list path=nil
+    unless path   # Print all bookmarks
       all = elvar.bookmark_alist.collect { |bm|
         item = bm.to_a
         [item[0], item[1].to_a[0][1]]
       }
       all.sort.each do |l|
         n, p = l
-        puts "- #{n}: #{p}"
+        puts "- #{n.ljust(7)} #{p.sub(/\/$/,'')}"
+        #puts "- #{n}: #{p}"
       end
       return
     end
 
-    # Open single bookmark
-    View.open bookmark
+    # Open single path
+    View.open path[/ ([~\/].+)/, 1]
   end
 
   def self.tree

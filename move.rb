@@ -87,7 +87,7 @@ class Move
   # Move to the specified column.
   def self.to_column n=nil
     n = n || elvar.current_prefix_arg || Keys.input(:prompt => "Enter number of column to go to: ").to_i
-    move_to_column n
+    move_to_column n - 1
   end
 
   def self.to_line_text_beginning

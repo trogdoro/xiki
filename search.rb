@@ -30,6 +30,15 @@ class Search
     insert match
   end
 
+  def self.move_to_search_start
+    self.clear
+    match = self.match
+    delete_region match_beginning(0), match_end(0)
+    exchange_point_and_mark
+    insert match
+  end
+
+
   def self.insert_var_at_search_start
     self.clear
     match = self.match
@@ -225,18 +234,6 @@ class Search
       # Do nothing
     else
       command_execute ch
-    end
-  end
-
-  def self.to_clipboard
-    find_this = Clipboard.get(Keys.prefix || "0")
-
-    # Move forward if already there
-    if find_this == buffer_substring(point, point + find_this.size)
-      forward_char
-    end
-    if search_forward(find_this).to_s
-      goto_char match_beginning(0)
     end
   end
 

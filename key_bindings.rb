@@ -183,7 +183,7 @@ class KeyBindings
     Keys.enter_insert_date { App.enter_date }    # insert date string (and time if C-u)
     Keys.enter_insert_command { insert("- (/): "); ControlLock.disable }    # insert date string (and time if C-u)
     Keys.enter_in_todo { TreeLs.enter_snippet }   # enter tree quote of region in $T
-    # J
+    Keys.enter_junior { Notes.bullet("") }
     # K
     #Keys.EK { Clipboard.paste }   # Enter Clipboard: paste
     # M
@@ -276,9 +276,7 @@ class KeyBindings
     Keys.do_tree { TreeLs.launch( :recursive => true ) }   # draw filesystem tree for current dir or bookmark
     Keys.display_up { message TreeLs.construct_path( :indented => true ) }   # display path to root of file
     # V
-    Keys.delete_whitespace {   # delete blank lines
-      Deletes.delete_whitespace
-    }
+    Keys.delete_whitespace { Deletes.delete_whitespace }   # delete blank lines
     # X
     # Z
     Keys.do_zip_next { Files.zip }
@@ -301,7 +299,7 @@ class KeyBindings
     # Use T prefix for: moving cursor, jumping to specific points
     Keys.to_apex { View.to_top }   # to beginning of file **
     Keys.to_backward { backward_word(Keys.prefix || 1) }   # move backward one word
-    Keys.to_clipboard { Search.to_clipboard }   # move cursor to next instance of clipboard
+    Keys.to_clipboard { Search.to Clipboard[0] }   # move cursor to next instance of clipboard
     # D
     Keys.to_end { View.to_bottom }   # **
     Keys.to_forward { forward_word(Keys.prefix || 1) }   # move forward one word
@@ -348,7 +346,7 @@ class KeyBindings
     # J
     Keys.layout_kill { kill_this_buffer }   # **
     Keys.LL { recenter(elvar.current_prefix_arg) }   # LL - recenter (L's default) *
-    # M
+    Keys.layout_menu { CodeTree.layout_menu }   # show menu bare in current state
     Keys.layout_next { View.next }   # next view **
     Keys.layout_open { View.create }   # open new view **
     Keys.layout_previous { View.previous }   # previous view **
@@ -400,13 +398,13 @@ class KeyBindings
     Keys.B(:isearch_mode_map) { Search.insert_at_search_start }
     Keys.C(:isearch_mode_map) { Search.copy }   # Clipboard (copy)
     Keys.D(:isearch_mode_map) { Search.isearch_delete }   # Delete
-    Keys.E(:isearch_mode_map) { Search.paste_here }   # Replace: insert clipboard, replacing match
+    Keys.E(:isearch_mode_map) { Search.paste_here }   # Enter: insert clipboard, replacing match
     Keys.F(:isearch_mode_map) { Search.go_to_end }   # Forward
-    # G: leave unmapped for escaping
+    Keys.G(:isearch_mode_map) { Search.stop }   # Stop searching
     Keys.H(:isearch_mode_map) { Search.hide }   # Hide: hide non-matching
     # I: leave unmapped - had issues using it
     # J: leave unmapped for linebreak
-    # K:
+    Keys.K(:isearch_mode_map) { Search.move_to_search_start }   # Kick: move match back to start
     # Keys.J(:isearch_mode_map) { Search.highlight_found }   # Jot: highlighting yellow
     Keys.L(:isearch_mode_map) { Search.line }   # Line: copy line back to search start
     # M: leave unmapped for stop
@@ -424,14 +422,13 @@ class KeyBindings
     Keys.X(:isearch_mode_map) { Search.cut }
     # Y: leave unmapped for yank
     # Z
-    Keys.G(:isearch_mode_map) { Search.stop }
   end
 
   def self.isearch_meta
     # Meta keys during isearch
     Keys._A(:isearch_mode_map) { Search.isearch_query_replace :start_with_search_string }   # Alter: query-replace, using search string as initial input
 #    Keys._A(:isearch_mode_map) { Search.isearch_tree_grep("$a") }   # All: find in $a bookmark
-    Keys._B(:isearch_mode_map) { Search.copy_and_comment }   # Backup: comment line and copy it to starting point
+    #Keys._B(:isearch_mode_map) { Search.copy_and_comment }   # Backup: comment line and copy it to starting point
     Keys._D(:isearch_mode_map) { Search.jump_to_difflog }   # Diff: find original string in difflog
     Keys._E(:isearch_mode_map) { Search.insert_tree_at_spot }   # Enter
     Keys._F(:isearch_mode_map) { Search.isearch_open }   # Find file

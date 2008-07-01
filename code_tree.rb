@@ -100,9 +100,7 @@ class CodeTree
   end
 
   def self.display_menu menu
-    if Keys.prefix_u
-      View.bar
-    end
+    View.bar if Keys.prefix_u
     View.to_buffer("*CodeTree #{menu.gsub(/[.,]/, ' ')}")
     View.clear
     $el.notes_mode
@@ -112,12 +110,27 @@ class CodeTree
     CodeTree.launch
   end
 
+  def self.layout_menu
+    View.bar if Keys.prefix_u
+
+    buffer = "*CodeTree CodeTree menu"
+    if View.buffer_open? buffer   # If open, switch to it
+      View.to_buffer(buffer)
+    else # Else open it
+      self.display_menu("CodeTree.menu")
+    end
+    #self.display_menu("CodeTree.menu")
+    # TODO: Make U prefix open in bar
+
+  end
+
   def self.insert_menus
     # Implement
     insert "- CodeTree.menu/"
     open_line 1
     CodeTree.launch
   end
+
 
   # Determine whether path is code_tree or tree_ls
   def self.is_code_tree_path list

@@ -53,12 +53,20 @@ class Line
     point_at_eol
   end
 
+  def self.at_right
+    point_at_eol == point
+  end
+
   def self.blank?
     self.matches /^$/
   end
 
   def self.left down=1
     point_at_bol down
+  end
+
+  def self.at_left
+    point_at_bol == point
   end
 
   def self.without_indent

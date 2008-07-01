@@ -401,7 +401,7 @@ class Notes
     notes_mode
   end
 
-  def self.bullet
+  def self.bullet bullet_text="- "
     # Make extra line if none there yet
     if Line.matches(/./)
       Line.to_right
@@ -411,10 +411,10 @@ class Notes
     prefix = Keys.prefix
 
     if prefix.is_a? Fixnum   # If numeric prefix, indent by n
-      insert (" " * prefix) + "- "
+      insert (" " * prefix) + bullet_text
     else   # Get bullet indent of previous line
-      prev = Line.value(0)[/^ *- /]
-      prev = prev ? "  #{prev}" : "- "
+      prev = Line.value(0)[/^( *)#{bullet_text}/, 1]
+      prev = prev ? "  #{prev}#{bullet_text}" : bullet_text
       prev.sub!(/^  /, '') if Keys.prefix_u   # Don't indent if U
       insert prev
     end
