@@ -22,7 +22,6 @@ class Hide
 
   def self.hide_unless_block options={}, &block
 
-
 #    elvar.line_move_ignore_invisible = true
 
 #     @@already_hidden = {}
@@ -138,7 +137,7 @@ class Hide
     end
 
     # If a tab, treat it like C-1
-    ch = 9 if ch.to_i == 1
+    ch = 1 if ch.to_i == 9
 
     # If num
     if 1 <= ch.to_i && ch.to_i <= 9

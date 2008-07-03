@@ -10,10 +10,10 @@ class Clipboard
 
   def self.copy loc=nil
     left, right = View.range
-    Effects.blink :left => left, :right => right
 
     # Use string if user types it quickly
     loc ||= Keys.input(:one_char => true, :prompt => "Enter one char (to store this as): ") || "0"
+    Effects.blink :left => left, :right => right
     str = buffer_substring(region_beginning, region_end)
     self.set(loc, str, Keys.prefix)
   end
