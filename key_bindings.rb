@@ -41,6 +41,7 @@ require 'buffers'
 require 'links'
 require 'computer'
 require 'menu'
+require 'safari'
 
 # TODO
 # - Key to just pick file

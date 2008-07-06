@@ -145,6 +145,11 @@ class Notes
       :fg => "bbb"
 
     # - foo (r): <here>
+    Styles.define :variable,
+      :face => 'arial' #, :size => "+2"
+
+
+    # - foo (r): <here>
     Styles.define :notes_label_parens,
       :fg => "bbb",
       :size => "-2",
@@ -245,7 +250,8 @@ class Notes
 
     # Bullets, labels, emphasis
     Styles.define :notes_bullet,
-      :face => 'arial black', :size => "0",  # Mac
+      #:face => 'arial black', :size => "0",  # Mac
+      :face => 'courier', :size => "0",  # Mac
       :fg => "dd7700", :bold => true
 
     Styles.define :notes_bullet_parens,
@@ -332,13 +338,15 @@ class Notes
     Styles.apply("\\(~\\)\\(.+?\\)\\(~\\)", :notes_bullet)
 
     # - bullets
-    Styles.apply("^[ \t]*\\(-\\) ", nil, :notes_bullet)
-    Styles.apply("^[ \t]*\\(-\\) \\(.+?:\\) ", nil, :notes_bullet, :notes_bullet)
-    Styles.apply("^[ \t]*\\(-\\) \\([^:\n]+?:\\)$", nil, :notes_bullet, :notes_bullet)
+    Styles.apply("^[ \t]*\\([+-]\\)\\( \\)", nil, :notes_bullet, :variable)
+    Styles.apply("^[ \t]*\\([+-]\\) \\(.+?:\\) ", nil, :notes_bullet, :notes_bullet)
+    Styles.apply("^[ \t]*\\([+-]\\) \\([^:\n]+?:\\)$", nil, :notes_bullet, :notes_bullet)
 
-    Styles.apply("^[ \t]*\\(x\\) \\(.+\\)", nil, :notes_bullet, :strike)
+    #Styles.apply("^[ \t]*\\(\\+\\)\\( \\)", nil, :notes_bullet, :variable)
 
-    Styles.apply("^\\([ \t]*\\)\\(-\\) \\(.+?:\\) +\\(|.*\n\\)", nil, :default, :notes_bullet, :notes_bullet, :ls_quote)
+    Styles.apply("^[ \t]*\\(x\\)\\( \\)\\(.+\\)", nil, :notes_bullet, :variable, :strike)
+
+    Styles.apply("^\\([ \t]*\\)\\([+-]\\) \\(.+?:\\) +\\(|.*\n\\)", nil, :default, :notes_bullet, :notes_bullet, :ls_quote)
 
     # - item exclamation! / todo
     Styles.apply("^[ \t]*\\(-\\) \\(.+!\\)$", nil, :notes_exclamation, :notes_exclamation)

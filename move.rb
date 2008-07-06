@@ -8,7 +8,9 @@ class Move
   def self.to_indent
     indent = Keys.prefix
     # If no prefix, go down to same indent as this one
-    if Keys.prefix_u || Line.matches(/^ *(end|\]|\}|\))$/)
+    if Line.matches(/^ *(end|\]|\}|\))$/)
+      return Keys.prefix_u ? self.to_same_indent : self.to_same_indent(:up)
+    elsif Keys.prefix_u
       return self.to_same_indent(:up)
     elsif indent == nil
       return self.to_same_indent
@@ -87,7 +89,7 @@ class Move
   # Move to the specified column.
   def self.to_column n=nil
     n = n || elvar.current_prefix_arg || Keys.input(:prompt => "Enter number of column to go to: ").to_i
-    move_to_column n - 1
+    move_to_column n# - 1
   end
 
   def self.to_line_text_beginning
@@ -161,8 +163,8 @@ class Move
   def self.to_junior
     Keys.prefix_times.times do
       # Move to line without / at end
-      Line.next if Line.matches(/^ +[a-zA-Z-].+[^\/\n]$/)
-      re_search_forward "^ +[a-zA-Z-].+[^\/\n]$"
+      Line.next if Line.matches(/^ +[a-zA-Z_-].+[^\/\n]$/)
+      re_search_forward "^ +[a-zA-Z_-].+[^\/\n]$"
       Line.to_words
     end
   end

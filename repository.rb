@@ -30,8 +30,8 @@ class Repository
     if self.svn?
       self.svn_command("echo; svn status; svn diff -x -w")
     else
-      options = Keys.prefix_u ? "$tr" : nil
-      self.svn_command("git status; git diff -w", options)
+      options = Keys.prefix_u ? "$tr" : View.dir
+      self.svn_command("git status; git diff -w . ", options)
     end
 
 #     if Line.matches(/^r(\d+)/)
@@ -117,8 +117,8 @@ class Repository
       inbetween.gsub!(/^-.+\n/, '')
       inbetween = inbetween.split(/\n/).size
       line = Line.value[/\+(\d+)/, 1]
-      Search.backward "^---"
-      file = Line.value[/^--- (.+)/, 1]
+      Search.backward "^\+\+\+"
+      file = Line.value[/^\+\+\+ (.+)/, 1]
       file.sub!(/\t.+/, '')  # svn
       file.sub!(/^[ab]\//, '')  # git
       goto_char orig
@@ -149,8 +149,8 @@ class Repository
     Styles.apply "^diff.+\n", :diff_subhead
     Styles.apply "^Index:? .+\n", :diff_subhead
     Styles.apply "^===+\n", :diff_subhead
-    Styles.apply "^--- .+\n", :notes_h1
-    Styles.apply "^\\+\\+\\+ .+\n", :diff_subhead
+    Styles.apply "^--- .+\n", :diff_subhead
+    Styles.apply "^\\+\\+\\+ .+\n", :notes_h1
     Styles.apply "^\\\\.+", :cm_lighter_bold
     Styles.apply "^\\*.+\n", :treels_f_blank
     Styles.apply "^@@.+\n", :diff_subhead

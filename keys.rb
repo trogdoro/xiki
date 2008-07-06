@@ -356,7 +356,7 @@ class Keys
 
   def self.add_menu_items
     @@key_queue.reverse.each do |i|
-      Menu.add_item i[0], i[1]
+      Menu.add_item ['Xiki', i[0]], i[1], "#{i[0].downcase}-#{i[1].downcase.gsub(' ', '-')}"
     end
     @@key_queue = []
   end

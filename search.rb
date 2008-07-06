@@ -9,17 +9,14 @@ class Search
     #hidesearch_show_all_invisible
     Hide.show
     Location.go :_0
-    #bookmark_jump "_"
     insert match
   end
 
   def self.insert_tree_at_spot
     self.clear
-    # Grab symbol
-    txt = TreeLs.snippet()
+    txt = TreeLs.snippet()   # Grab symbol
     Hide.show
     Location.go :_0
-    #bookmark_jump "_"
     insert txt + "\n"
   end
 
@@ -140,8 +137,7 @@ class Search
       query_replace_regexp(Clipboard.get("0"), Keys.input(:prompt => "Replace with (pause when done): ", :timed => true))
     # If they typed 'c', use clipboard and prompt for 2nd arg
     elsif first == "l"
-      left, right = elvar.query_replace_defaults.to_a
-      query_replace_regexp(left, right)
+      query_replace_regexp(@@query_from, @@query_to)
     # Otherwise, just get more input and use it
     else
       query_replace_regexp(first, Keys.input(:timed => true))
@@ -154,6 +150,7 @@ class Search
     to = start_with_search_string ?
       Keys.input(:prompt => "Change instances of '#{match}' to: ", :initial_input => match) :
       Keys.input(:prompt => "Change instances of '#{match}' to: ")
+    @@query_from, @@query_to = match, to
     query_replace_regexp(match, to)
   end
 

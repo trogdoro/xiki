@@ -170,6 +170,7 @@ class Clipboard
   def self.as_line
     Clipboard.set("0", Line.value + "\n")
     Effects.blink :what => :line
+    $el.set_mark Line.right
   end
 
   def self.enter_replacement

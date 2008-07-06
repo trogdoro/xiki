@@ -251,7 +251,7 @@ class TreeLs
     # Dir line
     #Styles.apply('^\\([A-Za-z]\\)$', nil, :ls_dir)  # Most dirs
     #Styles.apply("\\([A-Za-z][^:\n]+/\\)$", nil, :ls_dir)  # Most dirs
-    Styles.apply('^[ -]*\\(.+/\\)$', nil, :ls_dir)  # Most dirs
+    Styles.apply('^[ +-]*\\(.+/\\)$', nil, :ls_dir)  # Most dirs
     #Styles.apply('^[ -]*\\([ a-zA-Z0-9\/_\.$-]*\\w/\\)$', nil, :ls_dir)  # Most dirs
     Styles.apply('^ *\\(//?\\)$', nil, :ls_dir)  # /
     Styles.apply('^ *\\(\./\\)$', nil, :ls_dir)  # ./
