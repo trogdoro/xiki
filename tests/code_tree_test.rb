@@ -3,6 +3,11 @@ require 'el_mixin'
 $:.unshift "../"
 require '../code_tree'
 
+def ml txt
+  File.open("/temp/log.notes", "a") { |f| f << "#{txt}\n" }
+  txt
+end
+
 class CodeTreeTest < Test::Unit::TestCase
 
   def test_extract_method
@@ -267,5 +272,11 @@ class CodeTreeTest < Test::Unit::TestCase
 
 #     assert CodeTree.definite_code_tree_root('.you()')
 #     assert ! CodeTree.definite_code_tree_root('.svn')
+
+  # Should get class from parent
+  def test_with_params
+    code = CodeTree.determine_code_from_path(["Foo.menu/", ".php(10)/", "mt"])
+    assert_equal('Foo.php(10, "mt")', code)
+  end
 
 end

@@ -159,5 +159,22 @@ class Repository
 
   end
 
+  def self.status_tree
+
+    dir = Bookmarks['$tr']
+
+    View.to_buffer "*repository status"
+    View.clear
+    View.dir = dir
+    TreeLs.apply_styles
+    use_local_map elvar.notes_mode_map
+
+    status = Shell.run("svn st", :dir => dir, :sync => true)
+    # Remove question files
+    status = status.split("\n")#.select{|l| l !~ /^\?/}
+    status = status.each{|l| l.sub!(/^. +/, dir)}
+    View.insert TreeLs.paths_to_tree(status)
+  end
+
 end
 Repository.styles_define

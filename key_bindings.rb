@@ -140,6 +140,7 @@ class KeyBindings
     Keys.open_lisp_error { Code.show_el4r_error }
     Keys.open_lisp_info { info("elisp") }
     Keys.open_list_names { Clipboard.list }
+    Keys.open_list_repository { Repository.status_tree }
     Keys.open_link_top { Links.open_first }   # open first hyperlink on page
     Keys.open_menu { CodeTree.display_menu("CodeTree.menu") }   # Open all menus and show them **
     Keys.open_newly_edited { History.open_unsaved }

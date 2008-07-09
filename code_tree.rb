@@ -230,7 +230,7 @@ class CodeTree
     # Either class or bol
     result = l[/\b[A-Z][A-Za-z0-9]*\.([a-z].*)/, 1] ||  # Class and method
       l[/^\.([a-z].*)/, 1]  # Method at beginning of line
-    result.sub(/\/$/, '')
+    result ? result.sub(/\/$/, '') : nil
   end
 
   def self.paramify l

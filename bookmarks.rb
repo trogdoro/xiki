@@ -35,7 +35,7 @@ class Bookmarks
   # Like bookmark-set, but accepts buffers
   def self.set name
     # Just create normal bookmark if file
-    return bookmark_set name if View.file
+    return bookmark_set name if View.file || $el.elvar.dired_directory
 
     # Must be buffer
 
