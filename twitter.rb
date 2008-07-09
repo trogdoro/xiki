@@ -50,7 +50,7 @@ class Twitter
   end
 
   def self.menu options={}
-    puts "- in tree: .tree"
+    puts "+ in tree: .tree/"
     puts "- async: .list"
     puts "- post: .post 'foo'"
   end

@@ -5,7 +5,7 @@ class DataMapper
 
   def self.auto_menu
     puts "
-      - .docs_links/
+      + .docs_links/
         - index: http://datamapper.org/docs/
         - finding: http://datamapper.org/docs/find.html
         - saving: http://datamapper.org/docs/create_and_destroy.html

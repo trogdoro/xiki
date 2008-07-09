@@ -12,7 +12,7 @@ class Redmine
 
   def self.menu
     puts "
-      - .pages
+      + .pages/
       - .start
       - local: http://localhost:3401/wiki/gateway
       - remote: http://rlitio.chase.com:3401/wiki/1

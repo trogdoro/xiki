@@ -6,8 +6,8 @@ class Merb
   def self.menu name=nil, port=nil
     unless name  # Print menu
       puts "
-        - name, port: ., 4000
-        - .links/
+        + name, port: ., 4000
+        + .links/
         - .snippets
         "
     else  # Print options
@@ -15,11 +15,11 @@ class Merb
         - .create
         - .start
         - .url '/'
-        - .shells/
-        - .generate/
-        - .rake/
-        - .db/
-        - .dirs/
+        + .shells/
+        + .generate/
+        + .rake/
+        + .db/
+        + .dirs/
         "
     end
   end

@@ -1,7 +1,7 @@
 class Computer
 
   def self.menu
-    puts "- .ip/"
+    puts "+ .ip/"
   end
 
   def self.ip

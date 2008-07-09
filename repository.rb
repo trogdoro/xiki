@@ -117,7 +117,7 @@ class Repository
       inbetween.gsub!(/^-.+\n/, '')
       inbetween = inbetween.split(/\n/).size
       line = Line.value[/\+(\d+)/, 1]
-      Search.backward "^\+\+\+"
+      Search.backward "^\\+\\+\\+"
       file = Line.value[/^\+\+\+ (.+)/, 1]
       file.sub!(/\t.+/, '')  # svn
       file.sub!(/^[ab]\//, '')  # git

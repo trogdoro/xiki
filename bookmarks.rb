@@ -200,8 +200,8 @@ class Bookmarks
 
   def self.menu
     puts "
-      - .tree/
-      - .list/
+      + .tree/
+      + .list/
       "
   end
 

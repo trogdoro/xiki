@@ -195,6 +195,13 @@ class TreeLs
 
   def self.define_styles
 
+    # Bullets
+    Styles.define :ls_bullet,
+      #:face => 'arial black', :size => "0",  # Mac
+      :face => 'courier', :size => "0",  # Mac
+      #:fg => "444444", :bold => true
+      :fg => "dd7700", :bold => true
+
     Styles.define :diff_line_number,
       :fg => "aaa",
       :bold => true,
@@ -240,6 +247,9 @@ class TreeLs
 
   def self.apply_styles
     el4r_lisp_eval "(setq font-lock-defaults '(nil t))"
+
+    # - bullets
+    Styles.apply("^[ \t]*\\([+-]\\)\\( \\)", nil, :ls_bullet, :variable)
 
     # With numbers
     Styles.apply("^ +\\(:[0-9]+\\)\\(|.*\n\\)", nil, :ls_quote_line_number, :ls_quote)
@@ -322,7 +332,9 @@ class TreeLs
   end
 
   def self.clean_path path
-    path.sub!(/^ *- .+: /, "- ")  # Treat "- foo:" text as comments (ignore)
+    path.sub!(/^ *[+-] .+: /, '')  # Treat "- foo:" text as comments (ignore)
+    path.sub!(/^ *[+-] /, '')  # Treat "- foo:" text as comments (ignore)
+    #path.sub!(/^ *[+-] .+: /, "- ")  # Treat "- foo:" text as comments (ignore)
     path.sub!(/^([^|\n-]*)##.+/, "\\1")  # Ignore "##"
     path.sub!(/^([^|\n-]*)\*\*.+/, "\\1")  # Ignore "\*\*"
     path
@@ -552,6 +564,7 @@ class TreeLs
       Line.next if options[:recursive]
       delete_region(point, right)
       Line.previous
+      self.minus_to_plus
       Line.to_words
       self.search(:left => Line.left, :right => Line.left(2))
     when ch == "/"  # If /, run this line ???
@@ -561,11 +574,7 @@ class TreeLs
 
     when ";"  # Show methods, or outline
       delete_region(Line.left(2), right)  # Delete other files
-      if Line.matches(/\.rb$/)
-        self.enter_lines(/^ *(def|class|module|it|describe) /)
-      else
-        self.enter_lines(/^\| /)
-      end
+      self.enter_lines
 
     when "#"  # Show ##.../ search
       self.stop_and_insert left, right, pattern
@@ -771,6 +780,7 @@ class TreeLs
       View.clear
       View.dir = Bookmarks.dir_only dir
       self.apply_styles
+      use_local_map elvar.notes_mode_map
     end
 
     # If recursive
@@ -796,7 +806,7 @@ class TreeLs
         return
       end
 
-      insert "#{dir}\n"
+      insert "+ #{dir}\n"
       previous_line
       self.dir  # Draw actual tree
     end
@@ -869,6 +879,7 @@ class TreeLs
 
   # Recursively display dir in tree  # Insert dir contents at point (usually in existing tree)
   def self.dir
+    self.plus_to_minus_maybe
     beginning_of_line
     Dir.chdir elvar.default_directory
     if Keys.prefix == 8
@@ -908,8 +919,7 @@ class TreeLs
   end
 
   def self.dir_one_level
-    Line.start
-    # Get dir, then insert each line
+    Line.to_left
     line = Line.value
     indent = line[/^ */] + "  "  # Get indent
     dir = Bookmarks.expand(self.construct_path)
@@ -931,10 +941,10 @@ class TreeLs
     dirs, files = self.files_in_dir(dir)
 
     # Change path to proper indent
-    dirs.collect!{|i| i.sub(/.*\/(.+)/, "#{indent}\\1/")}
+    dirs.collect!{|i| i.sub(/.*\/(.+)/, "#{indent}+ \\1/")}
 
     # Change path to proper indent
-    files.collect!{|i| i.sub(/.*\/(.+)/, "#{indent}\\1")}
+    files.collect!{|i| i.sub(/.*\/(.+)/, "#{indent}+ \\1")}
 
     next_line
     beginning_of_line
@@ -1065,12 +1075,8 @@ class TreeLs
     if Line.matches(/\/$/)
       dir = self.construct_path
       t = Clipboard.get("=")
-      ml ''
-      ml dir
-      ml t
       t = t.gsub(/^#{dir}/, '')
       t.gsub!(/\A\n/, '')
-      ml t
       Line.next
       View.insert "#{t}\n".gsub(/^/, '  ')
       return
@@ -1111,23 +1117,25 @@ class TreeLs
 
   # Remove the following lines indented more than the current one
   def self.kill_under
+    self.minus_to_plus_maybe
     kill_this_also = Keys.prefix_u
-    orig = point
+    orig = Location.new
     line = Line.value.sub('|', '')
 
     # Get indent of current line
     indent = line[/^ */]
 
     # Go to next line
-    Line.start
+    #Line.start
     Line.next
     left = Line.left
-    while(Line.next == 0)
+    while((Line.value.sub('|', '') =~ /^#{indent} /) and Line.next == 0)
+      # Do nothing
       # Keep going unless line not indented more
-      break unless Line.value.sub('|', '') =~ /^#{indent} /
+      #break unless 
     end
     delete_region left, Line.left
-    goto_char orig
+    orig.go
     Line.delete if kill_this_also
   end
 
@@ -1138,14 +1146,14 @@ class TreeLs
     # Remove lines before
     while(true)
       previous_line
-      break unless Line.indent == indent
+      break if (Line.indent != indent) || Line.blank?
       kill_line
     end
 
     # Remove lines after
     next_line 2
     while(true)
-      break unless Line.indent == indent
+      break if (Line.indent != indent) || Line.blank?
       kill_line
     end
     previous_line
@@ -1154,54 +1162,13 @@ class TreeLs
 
   # Expand if dir, or open if file
   def self.expand_or_open
+    self.plus_to_minus_maybe
     line = Line.value
     indent = Line.indent
     list = nil
     case line
     when /\*\*|##/  # *foo or ## means do grep
-      dir = self.construct_path
-      raw = self.construct_path(:raw => true, :list => true)
-      files = contents = nil
-      case raw.join('')
-      when /\*\*(.+)##(.+)/  # *foo means search in files
-        files, contents = $1, $2.sub!(/\/$/, '')
-      when /\*\*(.+)/  # *foo means search in files
-        files = $1
-      when /##(.+)/  # ##foo means search in filenames
-        contents = $1.sub!(/\/$/, '')
-        if raw[-2] =~ /\*\*(.+)/   # If prev is **, use it
-          files = $1
-        elsif raw[-2] =~ /(.+[^\/])$/   # If prev line is file, just show matches
-          contents = Regexp.new(contents, Regexp::IGNORECASE)
-          list = TreeLs.grep_one_file(Bookmarks.expand(dir), contents, "  ")
-          #files = "^#{$1}$"
-        end
-        #files = $1 if Line.value(0) =~ /\*\*(.+)/
-      end
-
-      files.sub!(/\/$/, '') if files
-      #contents.sub!(/\/$/, '') if contents
-      options = {:raw => true}
-      options.merge!({:files => files}) if files
-
-      unless list   # If not already gotten
-        list = self.grep dir, contents, options
-        list.shift  # Pull off first dir, so they'll be relative
-      end
-      Line.to_next
-      left = point
-      tree = list.join("\n") + "\n"
-      insert tree.gsub(/^/, indent)
-      right = point
-      goto_char left
-      #Move.to_line_text_beginning
-      if Line.matches(/^\s*$/)  # Do nothing
-      elsif Line.matches(/^\s+\|/)
-        self.search :left => left, :right => right
-      else
-        Move.to_junior
-      end
-
+      self.grep_syntax indent
     when /\/$/  # foo/ is a dir
       self.dir
     else
@@ -1210,7 +1177,10 @@ class TreeLs
   end
 
   # Grabs matching lines in file and starts hide search
-  def self.enter_lines pattern=nil
+  def self.enter_lines pattern=nil, options={}
+
+    TreeLs.plus_to_minus
+
     unless pattern
       if Line.blank?  # If blank line, get bookmark and enter into current file
         #dir = Bookmarks.input(:prompt => "Enter bookmark from which to enter outline: ")
@@ -1452,7 +1422,8 @@ class TreeLs
 
   def self.is_root? path
     # It's the root if it matches a pattern, or is at left margin
-    path =~ /^ *(\/|\.\/|\$)/ || path !~ /^ /
+    result = path =~ /^ *[-+]? ?(\/|\.\/|\$)/ || path !~ /^ /
+    result
   end
 
   def self.create_dir
@@ -1530,6 +1501,88 @@ private
     $el.open_line 1
     ControlLock.disable
   end
+
+  def self.grep_syntax indent
+    dir = self.construct_path
+    raw = self.construct_path(:raw => true, :list => true)
+    files = contents = nil
+    case raw.join('')
+    when /\*\*(.+)##(.+)/  # *foo means search in files
+      files, contents = $1, $2.sub!(/\/$/, '')
+    when /\*\*(.+)/  # *foo means search in files
+      files = $1
+    when /##(.+)/  # ##foo means search in filenames
+      contents = $1.sub!(/\/$/, '')
+      if raw[-2] =~ /\*\*(.+)/   # If prev is **, use it
+        files = $1
+      elsif raw[-2] =~ /(.+[^\/])$/   # If prev line is file, just show matches
+        contents = Regexp.new(contents, Regexp::IGNORECASE)
+        list = TreeLs.grep_one_file(Bookmarks.expand(dir), contents, "  ")
+        #files = "^#{$1}$"
+      end
+      #files = $1 if Line.value(0) =~ /\*\*(.+)/
+    end
+    files.sub!(/\/$/, '') if files
+    #contents.sub!(/\/$/, '') if contents
+    options = {:raw => true}
+    options.merge!({:files => files}) if files
+
+    unless list   # If not already gotten
+      list = self.grep dir, contents, options
+      list.shift  # Pull off first dir, so they'll be relative
+    end
+    Line.to_next
+    left = point
+    tree = list.join("\n") + "\n"
+    insert tree.gsub(/^/, indent)
+    right = point
+    goto_char left
+    #Move.to_line_text_beginning
+    if Line.matches(/^\s*$/)  # Do nothing
+    elsif Line.matches(/^\s+\|/)
+      self.search :left => left, :right => right
+    else
+      Move.to_junior
+    end
+
+  end
+
+  def self.toggle_plus_and_minus
+    #ml "toggle_plus_and_minus: #{caller(0).join("\n")}"
+    orig = Location.new
+    l = Line.value 1, :delete => true
+    case l[/^\s*([+-])/, 1]
+    when '+'
+      View.insert l.sub(/^(\s*)([+-]) /, "\\1- ")
+      orig.go
+      '+'
+    when '-'
+      View.insert l.sub(/^(\s*)([+-]) /, "\\1+ ")
+      orig.go
+      '-'
+    else
+      View.insert l
+      orig.go
+      nil
+    end
+  end
+
+  def self.plus_to_minus
+    self.toggle_plus_and_minus if Line.matches(/^\s*\+ /)
+  end
+
+  def self.plus_to_minus_maybe
+    self.plus_to_minus if Line.matches(/(^\s*[+-] [a-z]|\/$)/)
+  end
+
+  def self.minus_to_plus
+    self.toggle_plus_and_minus if Line.matches(/^\s*- /)
+  end
+
+  def self.minus_to_plus_maybe
+    self.minus_to_plus if Line.matches(/(^\s*[+-] [a-z]|\/$)/)
+  end
+
 
 end
 TreeLs.define_styles

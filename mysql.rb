@@ -1,7 +1,7 @@
 class Mysql
   def self.menu
     puts "
-      - foo
+      + foo/
         - .create_db
         - .drop_db
       "

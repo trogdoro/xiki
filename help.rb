@@ -9,9 +9,9 @@ class Help
 
   def self.menu
     puts "
-      - .keys/
-      - .docs
-      - .classes/
+      + .keys/
+      + .docs/
+      + .classes/
       "
   end
 
@@ -19,21 +19,21 @@ class Help
 
     unless type  # No type, so display list
       puts "
-        - all/
-        - intermediate/
-        - basic/
+        + all/
+        + intermediate/
+        + basic/
         "
       return
     end
 
     unless prefix   # No prefix, so show them
       puts "
-        - As...
-        - Open...
-        - Enter...
-        - Do...
-        - To...
-        - Layout...
+        + As...
+        + Open...
+        + Enter...
+        + Do...
+        + To...
+        + Layout...
         "
       return
     end
@@ -58,7 +58,7 @@ class Help
         comment.sub!(/ \*+$/, '')  # Remove asterixes
 
         # Print, omitting details
-        puts "- #{comment.sub(/:.+/, '')}"
+        puts "+ #{comment.sub(/:.+/, '')}"
       }
       return
     end
@@ -80,7 +80,7 @@ class Help
         next unless f =~ /\.rb$/
         f.sub!(/\.rb$/, '')  # Remove extension
         f = TextUtil.camel_case f
-        puts "- #{f}"
+        puts "+ #{f}"
       end
       return
     end
@@ -181,7 +181,7 @@ class Help
 
     # Get classes that have doc string
     classes.each do |c|
-      outline << "- #{c}\n"
+      outline << "+ #{c}\n"
       docs = c::CODE_SAMPLES.strip
       docs.gsub!(/^    /, '')
       docs.gsub!(/^# /, '|| ')

@@ -167,6 +167,7 @@ class KeyBindings
     # Use E prefix for: inserting
 #     Keys.EAB { Code.enter_as_backslash }   # Enter As Bash: enter with \ at eol's
     Keys.enter_as_camelcase { insert TextUtil.camel_case(Clipboard.get(0)) }
+    Keys.enter_as_debug { Code.enter_as_debug }
     Keys.enter_as_filename { insert Clipboard.get(".") }
     #Keys.enter_as_path { insert Clipboard.get("/") }
     Keys.enter_as_snakecase { insert TextUtil.snake_case(Clipboard.get(0)) }
@@ -243,7 +244,6 @@ class KeyBindings
     # H
     # G: leave unmapped for escape
     Keys.do_indent { Code.indent_to }
-    Keys.delete_junior { TreeLs.kill_under }   # kill tree children (lines indented more)
     #Keys.DK1 { KeyBindings.keys }   # Do Keys 1: load key bindings "1" (currently this file)
     Keys.do_kill_all { erase_buffer }   # kill all text in buffer
     Keys.do_kill_filter { Search.kill_filter }
@@ -272,7 +272,8 @@ class KeyBindings
     Keys.do_search { Search.tree_grep }   # do grep search *
 #    Keys.DS { elvar.current_prefix_arg ? johns_thing : Search.grep }   # Do Search: do grep search
     Keys.do_tree { TreeLs.launch( :recursive => true ) }   # draw filesystem tree for current dir or bookmark
-    Keys.display_up { message TreeLs.construct_path( :indented => true ) }   # display path to root of file
+    Keys.delete_under { TreeLs.kill_under }   # kill tree children (lines indented more)
+    #Keys.display_up { message TreeLs.construct_path( :indented => true ) }   # display path to root of file
     # V
     Keys.delete_whitespace { Deletes.delete_whitespace }   # delete blank lines
     # X

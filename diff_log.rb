@@ -55,12 +55,12 @@ class DiffLog
 
   # Appends diff to difflog, then saves.  Map to AF.
   def self.save
-    save_buffer
     unless View.file_name == "difflog.notes"
       diff = self.saved_diff
       # Write to temporary file
       File.open(@@log, "a") { |f| f << diff } unless diff.count("\n") <= 2
     end
+    save_buffer
     # If U, reload safari
     sleep(0.3)
     Safari.reload if Keys.prefix_u

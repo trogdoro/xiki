@@ -9,7 +9,7 @@ class Notes
   extend ElMixin
 
   def self.menu
-    puts ".help_wiki_format"
+    puts "- .help_wiki_format"
   end
 
   def self.block regex="^| "
@@ -134,7 +134,8 @@ class Notes
 
     # Make right-click launch a line
     define_key(:notes_mode_map, kbd("<mouse-3>"), :notes_mouse_launch)
-    define_key(:notes_mode_map, kbd("<double-mouse-1>"), :notes_mouse_toggle)
+    define_key(:notes_mode_map, kbd("<double-mouse-1>"), :notes_mouse_double_click)
+    define_key(:notes_mode_map, kbd("<mouse-1>"), :notes_mouse_toggle)
 
   end
 
@@ -146,8 +147,7 @@ class Notes
 
     # - foo (r): <here>
     Styles.define :variable,
-      :face => 'arial' #, :size => "+2"
-
+      :face => 'verdana' #, :size => "+2"
 
     # - foo (r): <here>
     Styles.define :notes_label_parens,
@@ -248,10 +248,10 @@ class Notes
       :face => 'arial', :size => "-2",
       :fg => 'ddddf0'
 
-    # Bullets, labels, emphasis
-    Styles.define :notes_bullet,
-      #:face => 'arial black', :size => "0",  # Mac
-      :face => 'courier', :size => "0",  # Mac
+    # Labels, emphasis
+    Styles.define :notes_label,
+      :face => 'arial black', :size => "0",  # Mac
+      #:face => 'courier', :size => "0",  # Mac
       :fg => "dd7700", :bold => true
 
     Styles.define :notes_bullet_parens,
@@ -335,18 +335,18 @@ class Notes
     Styles.apply("^\\(|||| ?\\)\\(.+\n\\)", nil, :notes_h4_pipe, :notes_h4)
 
     # ~emphasis~ strings
-    Styles.apply("\\(~\\)\\(.+?\\)\\(~\\)", :notes_bullet)
+    Styles.apply("\\(~\\)\\(.+?\\)\\(~\\)", :ls_bullet)
 
-    # - bullets
-    Styles.apply("^[ \t]*\\([+-]\\)\\( \\)", nil, :notes_bullet, :variable)
-    Styles.apply("^[ \t]*\\([+-]\\) \\(.+?:\\) ", nil, :notes_bullet, :notes_bullet)
-    Styles.apply("^[ \t]*\\([+-]\\) \\([^:\n]+?:\\)$", nil, :notes_bullet, :notes_bullet)
+    # - bullets with labels
+    #Styles.apply("^[ \t]*\\([+-]\\)\\( \\)", nil, :ls_bullet, :variable)
+    Styles.apply("^[ \t]*\\([+-]\\) \\(.+?:\\) ", nil, :ls_bullet, :notes_label)
+    Styles.apply("^[ \t]*\\([+-]\\) \\([^:\n]+?:\\)$", nil, :ls_bullet, :notes_label)
 
-    #Styles.apply("^[ \t]*\\(\\+\\)\\( \\)", nil, :notes_bullet, :variable)
+    #Styles.apply("^[ \t]*\\(\\+\\)\\( \\)", nil, :ls_bullet, :variable)
 
-    Styles.apply("^[ \t]*\\(x\\)\\( \\)\\(.+\\)", nil, :notes_bullet, :variable, :strike)
+    Styles.apply("^[ \t]*\\(x\\)\\( \\)\\(.+\\)", nil, :ls_bullet, :variable, :strike)
 
-    Styles.apply("^\\([ \t]*\\)\\([+-]\\) \\(.+?:\\) +\\(|.*\n\\)", nil, :default, :notes_bullet, :notes_bullet, :ls_quote)
+    Styles.apply("^\\([ \t]*\\)\\([+-]\\) \\(.+?:\\) +\\(|.*\n\\)", nil, :default, :ls_bullet, :ls_bullet, :ls_quote)
 
     # - item exclamation! / todo
     Styles.apply("^[ \t]*\\(-\\) \\(.+!\\)$", nil, :notes_exclamation, :notes_exclamation)
@@ -355,7 +355,7 @@ class Notes
     Styles.apply("^ *- \\(.*\\)\\( ([a-z]+):\\) ", nil, :notes_label_link, :notes_label_parens)
 
     # - google:
-    Styles.apply "^ *\\(-\\) \\(g\\)\\(o\\)\\(o\\)\\(g\\)\\(l\\)\\(e:\\) .*", nil, :notes_bullet,
+    Styles.apply "^ *\\(-\\) \\(g\\)\\(o\\)\\(o\\)\\(g\\)\\(l\\)\\(e:\\) .*", nil, :ls_bullet,
       :notes_blue,
       :notes_red,
       :notes_yellow,
@@ -378,15 +378,22 @@ class Notes
       LineLauncher.launch# :no_search => true
     end
 
+
+    defun(:notes_mouse_double_click, :interactive => "e") do |e|
+      if Line.matches(/\/$/)   # If dir, kill siblings first
+        TreeLs.kill_siblings
+      end
+
+      LineLauncher.launch
+
+    end
+
     defun(:notes_mouse_toggle, :interactive => "e") do |e|
       mouse_set_point(e)
-      # If next line is indented more, kill children
-      if Line.indent(Line.next_value) > Line.indent
-        TreeLs.kill_under
-      else # Else, launch
-        LineLauncher.launch# :no_search => true
-      end
+      Notes.mouse_toggle
     end
+
+
 
     defun(:notes_mode, :interactive => "", :docstring => "Apply notes styles, etc") {# |point|
       el4r_lisp_eval "(setq font-lock-defaults '(nil t))"
@@ -461,6 +468,25 @@ class Notes
     View.to_top
 
   end
+
+  def self.mouse_toggle
+    # If next line is indented more, kill children
+    # If starts with plus or minus, and on plus or minus, launch
+    if Line.matches(/^\s*[+-]/) and View.char =~ /[+-]/
+      plus_or_minus = TreeLs.toggle_plus_and_minus
+      if plus_or_minus == '+'   # If +, expand (launch
+        if Line.matches(/\/$/)   # If on a dir
+          LineLauncher.launch
+        else   # If on a file, enter outline
+          TreeLs.enter_lines
+        end
+      else   # If -, kill under
+        TreeLs.kill_under
+        Move.to_line_text_beginning
+      end
+    end
+  end
+
 end
 Notes.define_styles
 #Notes.keys  # Define local keys

@@ -12,14 +12,14 @@ class CodeTree
 
   # Mapped to C-.
   def self.launch options={}
+    TreeLs.plus_to_minus_maybe
     orig = Location.new
     Line.to_left
     line = Line.without_indent
     path = TreeLs.construct_path :list => true
-
     path.each do |l|
       # if '- .xx:/", get rid of trailing slash
-      l.sub!(/^(- .*\..+)\/$/, "\\1")
+      l.sub!(/^([+-] .*\..+)\/$/, "\\1")
     end
 
     # Determine code to eval
@@ -27,11 +27,11 @@ class CodeTree
     b = View.buffer
     orig.go
     orig_left = point
-    returned, stdout, exception = Code.eval(code)  # Eval code
+    returned, stdout, e = Code.eval(code)  # Eval code
 
-    if exception
+    if e
       returned = ''
-      stdout = "#{stdout}- error evaluating '#{code}': #{exception.message}\n"
+      stdout = "#{stdout}- error evaluating '#{code}': #{e.message}\n#{e.backtrace.join("\n")}\n"
     end
 
     buffer_changed = b != View.buffer  # Remember whether we left the buffer
@@ -79,7 +79,6 @@ class CodeTree
       elsif !options[:no_search] && !buffer_changed && point == orig_left
         goto_char left
         Line.to_words
-        #insert "No change in place"
         TreeLs.search(:left => left, :right => right, :number_means_enter => true)
       end
     end
@@ -94,7 +93,7 @@ class CodeTree
     l.map! {|c| c.sub(/^#.+::/, '')}
     l.sort.each do |c|
       next if c == "CodeTree"
-      puts "- #{c}.menu/"
+      puts "+ #{c}.menu/"
     end
     ""
   end
@@ -105,7 +104,7 @@ class CodeTree
     View.clear
     $el.notes_mode
 
-    insert "- #{menu}/"
+    insert "+ #{menu}/"
     open_line 1
     CodeTree.launch
   end
@@ -167,26 +166,22 @@ class CodeTree
   # - append all ancestor data nodes as params
   #   - include self if a data node
   def self.determine_code_from_path path
-
     path
     data = []
     clazz = nil
     metho = nil
     i = -1
-
     # Climb up path
     path.reverse.each do |l|
       i += 1
       metho_tmp = self.extract_method(l)
       clazz_tmp = self.extract_class(l)
-      has_bullet = l =~ /^ *- /
+      l.sub(/^(\s+)[+-] /, "\\1")   # Remove bullets
       is_first = i + 1 == path.size
-
       code_node = false
       if metho_tmp  # If line has method
         if clazz_tmp  # If line has class
-          # It must have bullet (or be 1st) to be class or method
-          if has_bullet || is_first
+          if is_first || self.definite_code_tree_root(l)
             metho ||= metho_tmp
             code_node = true
             clazz ||= clazz_tmp
@@ -208,7 +203,7 @@ class CodeTree
 
     # If one line, return it literally
     if i == 0
-      return Line.without_label(path[-1])
+      return Line.without_label(path[-1]).sub(/\/$/, '')
     end
 
     method_with_params, params = metho.match(/(\w+\??)(.*)/)[1..2]
@@ -222,7 +217,6 @@ class CodeTree
     end
     # TODO Get rid of comma if there is one
     params.sub!(/^, /, '')
-
     "#{clazz}.#{method_with_params}(#{params})"
 
   end
@@ -232,10 +226,11 @@ class CodeTree
   end
 
   def self.extract_method l
-    l = l.sub(/^- .+?: /, '').sub(/^- /, '')  # Remove bullets
+    l = l.sub(/^[+-] .+?: /, '').sub(/^[+-] /, '')  # Remove bullets
     # Either class or bol
-    l[/\b[A-Z][A-Za-z0-9]*\.([a-z].*)/, 1] ||  # Class and method
+    result = l[/\b[A-Z][A-Za-z0-9]*\.([a-z].*)/, 1] ||  # Class and method
       l[/^\.([a-z].*)/, 1]  # Method at beginning of line
+    result.sub(/\/$/, '')
   end
 
   def self.paramify l
@@ -310,6 +305,18 @@ class CodeTree
 
   def self.tree_search
     ":code_tree_option_tree_search\n"
+  end
+
+  def self.definite_code_tree_root line
+    line =~ /^[\s+-]*[A-Z].+\..+[\/)]$/
+  end
+
+  def self.maybe_code_tree_root line
+    line =~ /^[\s+-]*[A-Z].+\.[a-z]/
+  end
+
+  def self.definite_dir_tree_root line
+    line =~ /^[\s+-]*\//
   end
 
 end

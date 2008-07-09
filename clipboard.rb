@@ -159,6 +159,8 @@ class Clipboard
 
   def self.as_object
     set("0", thing_at_point(:symbol))
+    left, right = bounds_of_thing_at_point(:symbol).to_a
+    Effects.blink(:left => left, :right => right)
   end
 
   def self.copy_everything

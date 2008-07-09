@@ -211,4 +211,23 @@ class Code
     #View.insert "$tr/###{Clipboard[0]}/"
     LineLauncher.launch
   end
+
+  def self.enter_as_debug
+
+    orig = View.range[0]
+    txt = View.selection :delete => true
+    count = 0
+    txt.gsub!(/^.+/) { |m|
+      if m =~ /^\s+(end|else|elsif|})/
+        m
+      else
+        count += 1;
+        (count & 1 == 0) ? " ml #{count}\n#{m}" : m
+      end
+    }
+
+    View.insert txt
+    View.to orig
+  end
+
 end

@@ -8,7 +8,7 @@ class Rails
 
   def self.menu name=nil, port=nil
     unless name  # Print menu
-      puts "- name, port: foo, 3000"
+      puts "+ name, port: foo, 3000/"
     else  # Print options
       puts "
         - .create

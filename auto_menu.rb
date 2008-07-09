@@ -6,9 +6,9 @@ module AutoMenu
       extend AutoMenu
 
       def self.auto_menu item=nil
-        "- .reminders
-         - .backup
-           - .backup_code()
+        "+ .reminders
+         + .backup
+           + .backup_code()
          ".gsub(/^       /, '')
       end
 
@@ -31,7 +31,7 @@ module AutoMenu
 
     # If they called menu(), print out top-level bullets
     if func == :menu
-      return puts(tree.grep(/^-/).join(''))
+      return puts(tree.grep(/^[+-]/).join(''))
     end
 
     # Otherwise, print out level immediately underneath method they called
@@ -50,7 +50,7 @@ module AutoMenu
     tree.split("\n").each do |l|
       # Start outputting if found
       if ! found
-        if l =~ /^( *)- \.#{node}\/?$/
+        if l =~ /^( *)[+-] \.#{node}\/?$/
           found = $1.size  # Remember indent
         end
       else

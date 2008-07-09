@@ -89,9 +89,9 @@ class Files
 
   def self.menu
     puts "
-      - .current 20/
-      - .edited 20/
-      - .history 20/
+      + .current 20/
+      + .edited 20/
+      + .history 20/
       "
   end
 

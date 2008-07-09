@@ -1,7 +1,7 @@
 class Ruby
   def self.menu
     puts "
-      - .list_classes
+      + .list_classes/
       - .re_index_fast_ri
       "
 

@@ -12,7 +12,7 @@ class Svn
       return
     end
 
-    puts "- list"
+    puts "+ list/"
   end
 
 
