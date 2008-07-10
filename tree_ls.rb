@@ -73,14 +73,16 @@ class TreeLs
     # Process dirs
     entries.each{ |f|
       next unless FileTest.directory?(f)
-      @res += "#{clean f}/\n"
+      cleaned = clean f
+      @res += "#{cleaned.sub(/(^ *)/, "\\1- ")}/\n"
       traverse f
     }
 
     # Process files
     entries.each{ |f|
       next unless FileTest.file?(f)
-      @res += "#{clean f}\n"
+      cleaned = clean f
+      @res += "#{cleaned.sub(/(^ *)/, "\\1+ ")}\n"
     }
 
   end
@@ -111,7 +113,7 @@ class TreeLs
       files = Regexp.new(files, Regexp::IGNORECASE) if files.is_a? String
       t.file_regex = files
     end
-    t.list << "#{dir}/"
+    t.list << "- #{dir}/"
     t.grep_inner dir, regex
 
     list = t.list
@@ -151,7 +153,8 @@ class TreeLs
     # Process dirs
     entries.each{ |f|
       next unless FileTest.directory?(f)
-      @list << "#{clean(f, @@indent)}/"
+      cleaned = clean(f, @@indent)
+      @list << "#{cleaned.sub(/(^ *)/, "\\1- ")}/"
       grep_inner f, regex
     }
 
@@ -172,11 +175,11 @@ class TreeLs
         result = TreeLs.grep_one_file(f, regex, indent)   # Search in file contents
 
         if result.size > 0   # Add if any files were found
-          @list << clean(f, @@indent)
+          @list << clean(f, @@indent).sub(/(^ *)/, "\\1+ ")
           @list += result
         end
       else
-        @list << clean(f, @@indent)
+        @list << clean(f, @@indent).sub(/(^ *)/, "\\1+ ")
       end
     end
 
@@ -187,7 +190,7 @@ class TreeLs
     Dir.chdir dir
     t = self.new
     t.traverse "."
-    insert "#{dir}\n"
+    insert "- #{dir}\n"
     insert t.res
     #select_next_file
   end
@@ -578,12 +581,12 @@ class TreeLs
 
     when "#"  # Show ##.../ search
       self.stop_and_insert left, right, pattern
-      View.insert TreeLs.indent("##/", 0)
+      View.insert TreeLs.indent("- ##/", 0)
       View.to(Line.right - 1)
 
     when "*"  # Show **.../ search
       self.stop_and_insert left, right, pattern
-      View.insert TreeLs.indent("**/", 0)
+      View.insert TreeLs.indent("- **/", 0)
       View.to(Line.right - 1)
 
     when "8"

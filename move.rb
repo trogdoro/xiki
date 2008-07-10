@@ -163,8 +163,8 @@ class Move
   def self.to_junior
     Keys.prefix_times.times do
       # Move to line without / at end
-      Line.next if Line.matches(/^ +[a-zA-Z_-].+[^\/\n]$/)
-      re_search_forward "^ +[a-zA-Z_-].+[^\/\n]$"
+      Line.next if Line.matches(/^ +[+-] ?[a-zA-Z_-].+[^\/\n]$/)
+      re_search_forward "^ +[+-] ?[a-zA-Z_-].+[^\/\n]$"
       Line.to_words
     end
   end
