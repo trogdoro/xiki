@@ -200,8 +200,10 @@ class TreeLs
 
     # Bullets
     Styles.define :ls_bullet,
+      :face => 'courier', :size => "+2",  # Mac
+      #:face => 'courier new', :size => "+4",  # Mac
       #:face => 'arial black', :size => "0",  # Mac
-      :face => 'courier', :size => "0",  # Mac
+      #:face => 'Monaco', :size => "0",  # Mac
       #:fg => "444444", :bold => true
       :fg => "dd7700", :bold => true
 
@@ -953,6 +955,9 @@ class TreeLs
     beginning_of_line
     left = point
 
+    # Move .notes files to top
+    files = files.select{|i| i =~ /\.notes$/} + files.select{|i| i !~ /\.notes$/}
+
     insert (dirs + files).join("\n") + "\n"
     right = point
     goto_char left
@@ -1076,12 +1081,13 @@ class TreeLs
 
     # If current line is path
     if Line.matches(/\/$/)
+      indent = Line.indent
       dir = self.construct_path
       t = Clipboard.get("=")
       t = t.gsub(/^#{dir}/, '')
-      t.gsub!(/\A\n/, '')
+      t.gsub!(/\A\n  /, '')
       Line.next
-      View.insert "#{t}\n".gsub(/^/, '  ')
+      View.insert "#{t}\n".gsub(/^/, "#{indent}  ")
       return
     end
 

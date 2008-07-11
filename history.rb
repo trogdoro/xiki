@@ -35,7 +35,9 @@ class History
 
     else  # If entering in new buffer
 
-      View.bar if options[:bar]  # If to go to bar
+      # By default happen in same view
+      View.bar if Keys.prefix_u or options[:bar]  # If to go to bar
+
       #View.bar
       View.to_buffer("*tree of current")
       View.clear;  notes_mode

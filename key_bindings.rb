@@ -173,7 +173,7 @@ class KeyBindings
     #Keys.enter_as_path { insert Clipboard.get("/") }
     Keys.enter_as_snakecase { insert TextUtil.snake_case(Clipboard.get(0)) }
     Keys.enter_as_trunk { Code.enter_as_trunk }
-    Keys.enter_as_variable { insert "\#{#{Clipboard.get(0)}}" }
+    Keys.enter_as_interpolated { insert "\#{#{Clipboard.get(0)}}" }
     Keys.enter_bullet { Notes.bullet }
     Keys.enter_clipboard { Clipboard.paste("0") }   # paste **
     Keys.enter_difflog { App.enter_from_difflog }   # Save point and go to difflog to search
@@ -310,7 +310,7 @@ class KeyBindings
     Keys.to_line { Move.to_line }   # move to line number *
     Keys.to_matching { Move.to_other_bracket }   # to matching bracket, etc
     Keys.to_next { Move.to_next_paragraph }   # to next paragraph *
-    Keys.to_outline { History.open_current :outline => true, :bar => true }   # *
+    Keys.to_outline { History.open_current :outline => true }   # *
     Keys.to_previous { Move.to_previous_paragraph }   # to beginning of previous paragraph *
     Keys.to_quote { Move.to_quote }   # move to next ...|... quote
     Keys.to_relative { Search.to_relative }   # go to nth line, relative to top of window
@@ -379,19 +379,6 @@ class KeyBindings
   end
 
   def self.isearch
-    define_key :isearch_mode_map, kbd("C-1") do
-      Search.isearch_copy_as("1")
-    end
-    define_key :isearch_mode_map, kbd("C-2") do
-      Search.isearch_copy_as("2")
-    end
-    define_key :isearch_mode_map, kbd("C-3") do
-      Search.isearch_copy_as("3")
-    end
-    define_key :isearch_mode_map, kbd("C-4") do
-      Search.isearch_copy_as("4")
-    end
-
     # Control keys during isearch
     #Keys.A(:isearch_mode_map) { Search.isearch_start }   # Start of line
     Keys.A(:isearch_mode_map) { Search.isearch_query_replace }   # Alter
@@ -417,30 +404,47 @@ class KeyBindings
     Keys.T(:isearch_mode_map) { Search.isearch_open_last_edited }   # To: open file / jump to method
     Keys.U(:isearch_mode_map) { Search.isearch_pull_in_sexp }  # like C-w, but pulls in sexp
     # Redundant!!!
-    Keys.V(:isearch_mode_map) { Search.insert_at_search_start }
+    Keys.V(:isearch_mode_map) { Search.isearch_find_in_buffers }   # Visited: show matches in visited files
+#    Keys.V(:isearch_mode_map) { Search.insert_at_search_start }
     # W: leave unmapped for pulling into search
     Keys.X(:isearch_mode_map) { Search.cut }
     # Y: leave unmapped for yank
     # Z
+
+    define_key :isearch_mode_map, kbd("C-1") do
+      Search.isearch_copy_as("1")
+    end
+    define_key :isearch_mode_map, kbd("C-2") do
+      Search.isearch_copy_as("2")
+    end
+    define_key :isearch_mode_map, kbd("C-3") do
+      Search.isearch_copy_as("3")
+    end
+    define_key :isearch_mode_map, kbd("C-4") do
+      Search.isearch_copy_as("4")
+    end
   end
 
   def self.isearch_meta
     # Meta keys during isearch
     Keys._A(:isearch_mode_map) { Search.isearch_query_replace :start_with_search_string }   # Alter: query-replace, using search string as initial input
 #    Keys._A(:isearch_mode_map) { Search.isearch_tree_grep("$a") }   # All: find in $a bookmark
-    #Keys._B(:isearch_mode_map) { Search.copy_and_comment }   # Backup: comment line and copy it to starting point
+    Keys._B(:isearch_mode_map) { Search.isearch_find_in_buffers }   # Outline (all buffers)
+    Keys._C(:isearch_mode_map) { Search.copy_and_comment }   # Backup: comment line and copy it to starting point
     Keys._D(:isearch_mode_map) { Search.jump_to_difflog }   # Diff: find original string in difflog
     Keys._E(:isearch_mode_map) { Search.insert_tree_at_spot }   # Enter
     Keys._F(:isearch_mode_map) { Search.isearch_open }   # Find file
     Keys._G(:isearch_mode_map) { Search.isearch_google }   # Find file
     Keys._H(:isearch_mode_map) { Hide.show;  Search.hide }
-    Keys._I(:isearch_mode_map) { Search.isearch_select_inner }
+    Keys._I(:isearch_mode_map) { Search.insert_var_at_search_start }   # Interpolate: paste as interpolated variable
     Keys._L(:isearch_mode_map) { Search.isearch_move_line }
     Keys._M(:isearch_mode_map) { Search.isearch_tree_grep_method }   # Method: do tree grep (prompt for dir)
-    Keys._O(:isearch_mode_map) { Search.isearch_find_in_buffers }   # Outline (all buffers)
+    Keys._O(:isearch_mode_map) { Search.isearch_find_in_buffers(:current_only => true, :in_bar => true) }   # Outline: in side bar
     Keys._S(:isearch_mode_map) { Search.isearch_tree_grep }   # Search: do tree grep (prompt for dir)
     Keys._U(:isearch_mode_map) { Search.upcase }   # Upcase
-    Keys._V(:isearch_mode_map) { Search.insert_var_at_search_start }
+    Keys._V(:isearch_mode_map) { Search.isearch_find_in_buffers(:in_bar => true) }   # Visited: show matches in visited files
+    #Keys._V(:isearch_mode_map) { Search.insert_var_at_search_start }
+    Keys._W(:isearch_mode_map) { Search.isearch_select_inner }   # Within: select 1 char within match
 
     define_key :isearch_mode_map, kbd("M-1") do   # pull in 1 word
       Search.isearch_pull_in_words 1

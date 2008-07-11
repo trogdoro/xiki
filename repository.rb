@@ -73,10 +73,25 @@ class Repository
 
   def self.menu options={}
     puts %Q[
+      - .log/
       - Set repository: Repository.url = "http://svn.foo.com/svn/repos/foo"
       - Diff with previous version: Repository.diff(10, nil, "bookmark")
       - Create tag: Repository.tag("tags/v1_0")
       ].strip.gsub(/^      /, '')
+  end
+
+  def self.log
+    orig = View.current
+    View.to_after_bar
+    dir = View.dir
+    View.to_window orig
+    log = Shell.run('git log', :sync => true, :dir => dir)
+    # Replace commit... into separators
+    a = log.split(/\n?^commit .+\n.+\n.+\n\n/)
+    a.each {|l| l.gsub!(/^    /, '- ')}
+    a.each {|l| l.gsub!(/^- - /, '- ')}
+    a.each {|l| l.gsub!(/\n/, "  ")}
+    puts a.join("\n")
   end
 
   def self.diff_one_file
@@ -161,7 +176,7 @@ class Repository
 
   def self.status_tree
 
-    dir = Bookmarks['$tr']
+    dir = Keys.prefix_u ? Bookmarks['$tr'] : View.dir
 
     View.to_buffer "*repository status"
     View.clear
@@ -169,11 +184,27 @@ class Repository
     TreeLs.apply_styles
     use_local_map elvar.notes_mode_map
 
-    status = Shell.run("svn st", :dir => dir, :sync => true)
-    # Remove question files
-    status = status.split("\n")#.select{|l| l !~ /^\?/}
-    status = status.each{|l| l.sub!(/^. +/, dir)}
-    View.insert TreeLs.paths_to_tree(status)
+    if self.svn?
+      status = Shell.run "svn st", :dir => dir, :sync => true
+      # Remove question files
+      status = status.split("\n")#.select{|l| l !~ /^\?/}
+      status = status.each{|l| l.sub!(/^. +/, dir)}
+      View.insert TreeLs.paths_to_tree(status)
+    else   # git
+      status = Shell.run "git status", :dir => dir, :sync => true
+
+      # Grab out modified:...
+      found = status.scan(/^#\s+modified: +(.+)/)
+      result = []
+      found.each do |m|
+        result << "#{dir}#{m[0]}"
+      end
+      View.insert TreeLs.paths_to_tree(result)
+    end
+    View.to_top
+    Move.to_junior
+    TreeLs.search :recursive => true
+
   end
 
 end

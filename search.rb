@@ -23,7 +23,7 @@ class Search
   def self.insert_at_search_start
     self.clear
     match = self.match
-    exchange_point_and_mark
+    goto_char(elvar.isearch_opoint)  # Go back to start
     insert match
   end
 
@@ -31,7 +31,7 @@ class Search
     self.clear
     match = self.match
     delete_region match_beginning(0), match_end(0)
-    exchange_point_and_mark
+    goto_char(elvar.isearch_opoint)  # Go back to start
     insert match
   end
 
@@ -39,15 +39,9 @@ class Search
   def self.insert_var_at_search_start
     self.clear
     match = self.match
-    exchange_point_and_mark
+    goto_char(elvar.isearch_opoint)  # Go back to start
     insert "\#{#{match}}"
   end
-
-#   def self.isearch_delete_rest
-#     self.isearch_pull_in_sexp
-#     self.isearch_delete
-#     ControlLock.disable
-#   end
 
   def self.isearch_select_inner
     self.clear
@@ -72,7 +66,7 @@ class Search
     line = thing_at_point(:line).sub("\n", "")
     Line.to_left
     insert "#"
-    exchange_point_and_mark
+    goto_char(elvar.isearch_opoint)  # Go back to start
     insert line
   end
 
@@ -241,7 +235,7 @@ class Search
   def self.isearch_find_in_buffers options={}
     self.clear
     match = self.match
-    self.find_in_buffers match, options.merge({:in_bar => true})
+    self.find_in_buffers match, options#.merge({:in_bar => true})
   end
 
   def self.find_in_buffers string, options={}
@@ -269,7 +263,7 @@ class Search
       while(true)
         break unless search_forward(string, nil, true)
         unless found_yet
-          found << "#{file.sub(/(.+)\//, "\\1\/\n  ")}\n"
+          found << "- #{file.sub(/(.+)\//, "\\1\/\n  - ")}\n"
 
           found_yet = true
         end
@@ -294,15 +288,17 @@ class Search
       goto_line 3
       Line.to_words
     else  # Goto first match in 2nd file
+
       goto_line 2
-      re_search_forward "^/", nil, true
+      re_search_forward "^-", nil, true
       Line.next 2
       Line.to_words
+
     end
 
     # Do search if only one file
     if list.size == 1
-      TreeLs.search(:recursive => true, :left => View.top, :right => View.bottom)
+      TreeLs.search(:recursive => false, :left => Line.left, :right => View.bottom)
     end
 
   end
@@ -327,7 +323,7 @@ class Search
   def self.line
     self.clear
     line = thing_at_point(:line).sub("\n", "")
-    exchange_point_and_mark
+    goto_char(elvar.isearch_opoint)  # Go back to start
     insert line
   end
 
@@ -434,7 +430,7 @@ class Search
 
   def self.stop
     Search.clear
-    exchange_point_and_mark
+    goto_char(elvar.isearch_opoint)  # Go back to start
   end
 
   def self.match
@@ -478,7 +474,7 @@ class Search
     isearch_clean_overlays
     line = buffer_substring point_at_bol, point_at_eol + 1
     delete_region point_at_bol, point_at_eol + 1
-    exchange_point_and_mark
+    goto_char(elvar.isearch_opoint)  # Go back to start
     insert line
   end
 
