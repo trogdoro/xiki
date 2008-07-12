@@ -124,7 +124,7 @@ class KeyBindings
     Keys.open_a_shell { Shell.open }   # Open A Shell *
     Keys.open_as_tail { Files.open_tail }
     Keys.open_bookmark { Bookmarks.go }
-    Keys.open_current { CodeTree.display_menu("Buffers.menu") }   # open buffer list **
+    Keys.open_current { CodeTree.display_menu("Buffers.current") }   # open buffer list **
     Keys.open_difflog { DiffLog.open }   # shows diffs of what you've edited *
     Keys.open_edited { Files.open_edited }   # show recently edited files *
     Keys.open_file { Files.open }
@@ -151,7 +151,7 @@ class KeyBindings
     Keys.open_search { Search.outline_search }   # hide search via outline *
     Keys.open_tree { TreeLs.launch }   # draw a tree, prompting for bookmark tag *
     Keys.open_up { View.show_dir }   # open enclosing dir **
-    Keys.open_viewing { CodeTree.display_menu("Files.viewing") }   # show currently open files and buffers **
+    Keys.open_viewing { CodeTree.display_menu("Buffers.tree") }   # show currently open files and buffers **
     Keys.open_windows { View.restore }   # open window configuration by tag
     Keys.open_xiki_docs { Help.display_docs }
     Keys.open_xiki_help { CodeTree.display_menu("Help.menu") }   # **
@@ -429,7 +429,7 @@ class KeyBindings
     # Meta keys during isearch
     Keys._A(:isearch_mode_map) { Search.isearch_query_replace :start_with_search_string }   # Alter: query-replace, using search string as initial input
 #    Keys._A(:isearch_mode_map) { Search.isearch_tree_grep("$a") }   # All: find in $a bookmark
-    Keys._B(:isearch_mode_map) { Search.isearch_find_in_buffers }   # Outline (all buffers)
+    #Keys._B(:isearch_mode_map) { Search.isearch_find_in_buffers }   # Outline (all buffers)
     Keys._C(:isearch_mode_map) { Search.copy_and_comment }   # Backup: comment line and copy it to starting point
     Keys._D(:isearch_mode_map) { Search.jump_to_difflog }   # Diff: find original string in difflog
     Keys._E(:isearch_mode_map) { Search.insert_tree_at_spot }   # Enter

@@ -95,19 +95,6 @@ class Files
       "
   end
 
-  def self.viewing_array
-    buffer_list.map { |b| buffer_file_name(b) }.select{|path| path}
-  end
-
-  def self.viewing times=0, options={}
-    times ||= History.prefix_times
-    paths = viewing_array[0..(times-1)]
-    if options[:dir]
-      paths = paths.grep(Regexp.new(Regexp.escape(options[:dir])))
-    end
-    puts CodeTree.tree_search + TreeLs.paths_to_tree(paths)
-  end
-
   def self.edited_array
     elvar.editedhistory_history.to_a
   end
@@ -138,7 +125,7 @@ class Files
       Keys.clear_prefix
       CodeTree.display_menu("Files.edited(100, :dir => '#{dir}')")
     else
-      CodeTree.display_menu("Files.viewing(0, :dir => '#{dir}')")
+      CodeTree.display_menu("Buffers.tree(0, :dir => '#{dir}')")
     end
   end
 

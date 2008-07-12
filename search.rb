@@ -239,67 +239,32 @@ class Search
   end
 
   def self.find_in_buffers string, options={}
-    options[:current_only] ?
-      list = [View.buffer] :
-      list = buffer_list
-
     View.bar if options[:in_bar]
-
-    orig = current_buffer
-    found = ""
-    list.to_a.each do |b|  # Each buffer open
-
-      file = buffer_file_name(b)
-      # Skip if not actual file
-      next unless file
-      # Skip if a verboten file
-      unless options[:current_only]
-        next if file =~ /(\/difflog\.notes|\.log|\/\.emacs)$/
-      end
-      set_buffer b
-      started = point
-      beginning_of_buffer
-      found_yet = nil
-      while(true)
-        break unless search_forward(string, nil, true)
-        unless found_yet
-          found << "- #{file.sub(/(.+)\//, "\\1\/\n  - ")}\n"
-
-          found_yet = true
-        end
-        found << "    |#{Line.value}\n"
-        Line.end
-      end
-      goto_char started
-    end
+    new_args = "\"#{string}\""
+    new_options = {}
+    new_options[:buffer] = View.buffer_name if options[:current_only]
+    new_args << ", #{new_options.inspect[1..-2]}" unless new_options.empty?
 
     switch_to_buffer "*tree find in buffers"
     notes_mode
     erase_buffer
-    # If nothing found, just insert message
-    if found.size == 0
-      return insert("| Note\n- ~Nothing found~\n")
-    end
-    insert found
-    beginning_of_buffer
-    highlight_regexp string, :ls_quote_highlight
-
-    if options[:current_only]  # Goto first match
-      goto_line 3
+    View.insert "+ Buffers.search #{new_args}/"
+    open_line 1
+    CodeTree.launch :no_search => true
+    if new_options[:buffer]   # Goto first match
+      $el.goto_line 4
       Line.to_words
+      TreeLs.search(:recursive => false, :left => Line.left, :right => View.bottom)
     else  # Goto first match in 2nd file
-
-      goto_line 2
-      re_search_forward "^-", nil, true
+      $el.goto_line 2
+      $el.re_search_forward "^  -", nil, true
       Line.next 2
       Line.to_words
-
     end
-
     # Do search if only one file
-    if list.size == 1
-      TreeLs.search(:recursive => false, :left => Line.left, :right => View.bottom)
-    end
+#     if list.size == 1
+#       TreeLs.search(:recursive => false, :left => Line.left, :right => View.bottom)
+#     end
 
   end
 

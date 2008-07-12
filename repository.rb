@@ -200,8 +200,6 @@ class Repository
         result << "#{dir}#{m[0]}"
       end
       tree = TreeLs.paths_to_tree(result)
-      tree.gsub! /^( *)(.+\/)$/, "\\1- \\2"
-      tree.gsub! /^( *)(.+[^\/\n])$/, "\\1+ \\2"
       View.insert tree
     end
     View.to_top

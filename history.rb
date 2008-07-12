@@ -29,7 +29,7 @@ class History
         TreeLs.ls :here => true, :dir => path
         return
       end
-      insert TreeLs.filename_to_next_line(paths.to_s)
+      insert "- " + TreeLs.filename_to_next_line(paths.to_s)
       open_line 1
       TreeLs.enter_lines
 

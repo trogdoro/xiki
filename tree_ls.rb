@@ -452,7 +452,7 @@ class TreeLs
     ch = char_to_string(ch_raw)
 
     # While narrowing down list (and special check for C-.)
-    while (ch =~ /[\\() ~">a-zA-Z!_,~-]/ && ch_raw != 67108910) ||
+    while (ch =~ /[\\() ~">a-zA-Z!_,~.-]/ && ch_raw != 67108910) ||
         (recursive && ch_raw == 2 || ch_raw == 6)
       # Slash means enter in a dir
       break if recursive && ch == '/'
@@ -535,7 +535,7 @@ class TreeLs
 
     # Special check for C-.
     ch = "enter" if ch_raw == 7
-    ch = "period" if ch == "." || ch_raw == 67108910
+    ch = "period" if ch_raw == 67108910
     ch = "delete" if ch_raw == 127
 
     # Options during search
@@ -1079,22 +1079,22 @@ class TreeLs
 
   # Enter what's in clipboard with | to on the left margin, with appropriate indent
   def self.enter_quoted
-
     Line.to_left
     clip = Clipboard.get(0, :add_linebreak => true)
-
     # If current line is path
     if Line.matches(/\/$/)
       indent = Line.indent
       dir = self.construct_path
       t = Clipboard.get("=")
       t = t.gsub(/^#{dir}/, '')
-      t.gsub!(/\A\n  /, '')
+
+      if t.sub!(/\A\n/, '')   # If no dir left, indent one over
+        t.gsub!(/^  /, '')
+      end
       Line.next
       View.insert "#{t}\n".gsub(/^/, "#{indent}  ")
       return
     end
-
 
     # If C-u or whole thing is quoted already
     if Keys.prefix_u || clip =~ /\A  +[-+]?\|/
@@ -1125,6 +1125,7 @@ class TreeLs
     unless on_comment_line
       indent = "#{indent}  "
     end
+
     insert clip.gsub(/^/, "#{indent}\|")
   end
 
@@ -1417,6 +1418,8 @@ class TreeLs
       end
       stack = split
     end
+    result.gsub! /^( *)(.+\/)$/, "\\1- \\2"
+    result.gsub! /^( *)(.+[^\/\n])$/, "\\1+ \\2"
     result
   end
 
@@ -1430,7 +1433,7 @@ class TreeLs
 #   end
 
   def self.filename_to_next_line path
-    path.sub(/(.+)\//, "\\1/\n  ")  # Add linebreak before filename
+    path.sub(/(.+)\//, "\\1/\n  - ")  # Add linebreak before filename
   end
 
   def self.is_root? path

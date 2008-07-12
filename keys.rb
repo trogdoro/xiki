@@ -157,7 +157,15 @@ class Keys
     if options[:control]
 
       prompt = "todo - implement this: "
+
+      elvar.inhibit_quit = true
       c = read_char(prompt)
+      elvar.inhibit_quit = nil
+      if c == 7
+        Cursor.restore :before_input
+        keyboard_quit
+      end
+
       Cursor.restore :before_input
       return c
     end
@@ -171,22 +179,38 @@ class Keys
     # If simple un-timed input, just get string and return it
     unless options[:timed] or options[:optional]
       Cursor.restore :before_input
-      return $el.read_string(prompt, options[:initial_input]) if options[:initial_input]
-      return $el.read_string(prompt)
+      c = $el.read_string(prompt, options[:initial_input])
+      return c
+
     end
 
     keys = ""
 
+
+    $el.elvar.inhibit_quit = true
+
+    c = nil
     # If not optional, wait for input initially
     unless options[:optional]
-      keys = $el.read_char(prompt)
-      keys = self.to_letter(keys)
+      c = $el.read_char(prompt)
+      keys = self.to_letter(c)
+    end
+
+    if c == 7
+      Cursor.restore :before_input
+      $el.elvar.inhibit_quit = nil
+      $el.keyboard_quit
     end
 
     while(c = $el.read_char("#{prompt}#{keys}", nil, 0.35))
       keys += self.to_letter(c)
+      if c == 7
+        Cursor.restore :before_input
+        $el.elvar.inhibit_quit = nil
+        $el.keyboard_quit
+      end
     end
-
+    $el.elvar.inhibit_quit = nil
     Cursor.restore :before_input
 
     $el.message ""
