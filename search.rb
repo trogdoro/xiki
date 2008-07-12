@@ -474,7 +474,8 @@ class Search
     isearch_clean_overlays
     line = buffer_substring point_at_bol, point_at_eol + 1
     delete_region point_at_bol, point_at_eol + 1
-    goto_char(elvar.isearch_opoint)  # Go back to start
+    #goto_char(elvar.isearch_opoint)  # Go back to start
+    exchange_point_and_mark
     insert line
   end
 

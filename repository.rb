@@ -199,7 +199,10 @@ class Repository
       found.each do |m|
         result << "#{dir}#{m[0]}"
       end
-      View.insert TreeLs.paths_to_tree(result)
+      tree = TreeLs.paths_to_tree(result)
+      tree.gsub! /^( *)(.+\/)$/, "\\1- \\2"
+      tree.gsub! /^( *)(.+[^\/\n])$/, "\\1+ \\2"
+      View.insert tree
     end
     View.to_top
     Move.to_junior

@@ -241,7 +241,7 @@ class KeyBindings
     Keys.DC1 { Clipboard.diff_1_and_2 }
     Keys.DD { delete_char elvar.current_prefix_arg || 1 }   # DD - delete character (D's default) **
     Keys.do_expand { dabbrev_expand nil }   # expand abbreviation
-    Keys.delete_forword { kill_word(Keys.prefix || 1) }   # delete word forward
+    Keys.do_forword { kill_word(Keys.prefix || 1) }   # delete word forward
     # H
     # G: leave unmapped for escape
     Keys.do_indent { Code.indent_to }
@@ -254,7 +254,7 @@ class KeyBindings
     Keys.do_linebreaks_dos { set_buffer_file_coding_system :dos }
     Keys.do_load_emacs { App.load_emacs }   # *
     Keys.do_load_file { revert_buffer(true, true, true) }
-    Keys.delete_lines_having {   # delete lines matching a regex
+    Keys.do_lines_having {   # delete lines matching a regex
       unless elvar.current_prefix_arg
         delete_matching_lines( Keys.input(:prompt => "Delete lines having: ") )
       else
@@ -273,10 +273,10 @@ class KeyBindings
     Keys.do_search { Search.tree_grep }   # do grep search *
 #    Keys.DS { elvar.current_prefix_arg ? johns_thing : Search.grep }   # Do Search: do grep search
     Keys.do_tree { TreeLs.launch( :recursive => true ) }   # draw filesystem tree for current dir or bookmark
-    Keys.delete_under { TreeLs.kill_under }   # kill tree children (lines indented more)
+    Keys.do_under { TreeLs.kill_under }   # kill tree children (lines indented more)
     #Keys.display_up { message TreeLs.construct_path( :indented => true ) }   # display path to root of file
     # V
-    Keys.delete_whitespace { Deletes.delete_whitespace }   # delete blank lines
+    Keys.do_whitespace { Deletes.delete_whitespace }   # delete blank lines
     # X
     # Z
     Keys.do_zip_next { Files.zip }

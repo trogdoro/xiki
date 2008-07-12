@@ -442,7 +442,9 @@ class TreeLs
     message "Show files matching: "
     ch_raw = nil
     begin
+      elvar.inhibit_quit = true
       ch_raw = read_char
+      elvar.inhibit_quit = nil
     rescue Exception => e  # Assume it was a mouse event
       Cursor.restore :before_tree_ls
       return
@@ -517,7 +519,9 @@ class TreeLs
       end
       message "Show files matching: %s", pattern
       begin
+        elvar.inhibit_quit = true
         ch_raw = read_char
+        elvar.inhibit_quit = nil
       rescue Exception => e  # Assume it was a mouse event
         Cursor.restore :before_tree_ls
         return
@@ -530,7 +534,7 @@ class TreeLs
     Cursor.restore :before_tree_ls
 
     # Special check for C-.
-    ch = "enter" if ch == "\C-m"
+    ch = "enter" if ch_raw == 7
     ch = "period" if ch == "." || ch_raw == 67108910
     ch = "delete" if ch_raw == 127
 
@@ -554,7 +558,7 @@ class TreeLs
 #       # Erase |'s and put back
 #       insert text.gsub(/^ +\|/, '')
 
-    when "period"  # If C-., go in but don't collapse siblings
+    when "\C-m", "period"  # If C-., go in but don't collapse siblings
       Keys.clear_prefix
       LineLauncher.launch
 
