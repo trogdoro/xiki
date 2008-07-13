@@ -245,6 +245,7 @@ class KeyBindings
     # H
     # G: leave unmapped for escape
     Keys.do_indent { Code.indent_to }
+    Keys.do_junior { TreeLs.move_dir_to_junior }   # Move a dir to next line, and indent
     #Keys.DK1 { KeyBindings.keys }   # Do Keys 1: load key bindings "1" (currently this file)
     Keys.do_kill_all { erase_buffer }   # kill all text in buffer
     Keys.do_kill_filter { Search.kill_filter }

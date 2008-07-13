@@ -102,11 +102,9 @@ class Clipboard
   end
 
   def self.copy_paragraph just_return=nil
-    if Keys.prefix_u  # If U prefix
-      # Get rest of paragraph
-      left, right = Line.left, bounds_of_thing_at_point(:paragraph).to_a[1]
-    else  # If no prefix
-      # Get whole paragraph
+    if Keys.prefix_u  # If U prefix, get rest of paragraph
+      left, right = self.paragraph(:bounds => true, :start_here => true)
+    else  # If no prefix, get whole paragraph
       left, right = self.paragraph(:bounds => true)
     end
 
@@ -188,6 +186,7 @@ class Clipboard
   def self.paragraph(options)
     left, right = bounds_of_thing_at_point(:paragraph).to_a
     left += 1 if char_after(left) == 10    # Left might include blank line
+    left = Line.left if options[:start_here]
     txt = View.txt(left, right)
     View.delete(left, right) if options[:delete]
     return [left, right] if options[:bounds]

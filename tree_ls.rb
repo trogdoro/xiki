@@ -1083,6 +1083,7 @@ class TreeLs
     clip = Clipboard.get(0, :add_linebreak => true)
     # If current line is path
     if Line.matches(/\/$/)
+      self.plus_to_minus_maybe
       indent = Line.indent
       dir = self.construct_path
       t = Clipboard.get("=")
@@ -1091,6 +1092,7 @@ class TreeLs
       if t.sub!(/\A\n/, '')   # If no dir left, indent one over
         t.gsub!(/^  /, '')
       end
+      self.add_pluses_and_minses t, '-', '-'
       Line.next
       View.insert "#{t}\n".gsub(/^/, "#{indent}  ")
       return
@@ -1110,7 +1112,8 @@ class TreeLs
       # Indent prefix spaces, or 2
       indent = Keys.prefix || 0
       t = t.gsub(/^/, " " * indent)
-      insert t
+      self.add_pluses_and_minses t#, '-', '-'
+      View.insert t
       set_mark(Line.left(2))
       goto_char start
       return
@@ -1418,12 +1421,17 @@ class TreeLs
       end
       stack = split
     end
-    result.gsub! /^( *)(.+\/)$/, "\\1- \\2"
-    result.gsub! /^( *)(.+[^\/\n])$/, "\\1+ \\2"
+    self.add_pluses_and_minses result
     result
   end
 
+  def self.add_pluses_and_minses tree, dirs='-', files='+'
+    tree.gsub! /^( *)(.+\/)$/, "\\1#{dirs} \\2"
+    tree.gsub! /^( *)([^ \n|].*[^\/\n])$/, "\\1#{files} \\2"
+  end
+
   def self.tree_to_paths tree
+    # TODO: implement
   end
 
 #   def self.list_to_path path
@@ -1599,6 +1607,24 @@ private
     self.minus_to_plus if Line.matches(/(^\s*[+-] [a-z]|\/$)/)
   end
 
+  def self.move_dir_to_junior
+    Keys.prefix_times.times do
+      orig = Location.new
+      indent = Line.indent
+      txt = Clipboard.paragraph(:start_here => true, :delete => true)
+      first, rest = txt.match(/(.+?)\n(.+)/m)[1..2]
+      if Keys.prefix_u
+        rest.sub! /^\s*[+-] /, ''
+        rest.gsub! /^  /, ''
+        View.insert "#{first}#{rest}"
+      else
+        first.sub! /(.+\/)(.+\/)$/, "\\1\n  - \\2"
+        rest.gsub! /^/, "#{indent}  "
+        View.insert "#{first}\n#{rest}"
+      end
+      orig.go
+    end
+  end
 
 end
 TreeLs.define_styles

@@ -46,6 +46,17 @@ class Styles
         "  :weight 'bold\n" :
         "  :weight 'normal\n"
     end
+    if options[:border]
+      border = options[:border]
+      code <<
+        if border.class == Symbol
+          ":box nil\n"
+        elsif border.class == String
+          ":box '(:line-width 1 :color \"##{border}\")\n"
+        elsif border.class == Array
+          ":box '(:line-width #{border[1]} :color \"##{border[0]}\")\n"
+        end
+    end
 #    code << ":box '(:line-width -1 :style released-button)\n" if options[:raised]
 #    code << ":box '(:line-width -1 :style released-button)\n" if options[:raised]
     code << "  )"
@@ -68,25 +79,6 @@ class Styles
   end
 
   def self.init
-
-    set_face_background :trailing_whitespace, "#eee"
-
-    Styles.define :default,
-      :bg => 'ffffff',
-      :fg => '000000'
-    Styles.define :cursor,
-      :bg => '000000',
-      :fg => 'ffffff'
-
-    if self.inverse
-      set_face_background :trailing_whitespace, "#333"
-      Styles.define :default,
-        :bg => '000000',
-        :fg => 'ffffff'
-      Styles.define :cursor,
-        :bg => 'ffffff',
-        :fg => '000000'
-    end
 
     # Make 'arial black' work in Linux
     el4r_lisp_eval %q<
@@ -117,5 +109,28 @@ class Styles
     @@size + relative * 5
   end
 
+  def self.use_xiki_color_scheme
+    # Use black if
+    return self.use_xiki_color_scheme_black if Styles.inverse
+
+    set_face_background :trailing_whitespace, "#eeeeee"
+    Styles.define :default, :bg => 'ffffff', :fg => '000000'
+    Styles.define :cursor, :bg => '000000', :fg => 'ffffff'
+    Styles.define :fringe, :bg => 'cccccc', :fg => '999999'
+    Styles.define :mode_line, :fg => '000000', :bg => '666666', :border => ['666666', 2]
+    Styles.define :mode_line_inactive, :fg => '999999', :bg => 'cccccc', :border => ['cccccc', 2]
+
+  end
+
+  def self.use_xiki_color_scheme_black
+
+    set_face_background :trailing_whitespace, "#333333"
+    Styles.define :default, :bg => '000000', :fg => 'ffffff'
+    Styles.define :cursor, :bg => 'ffffff', :fg => '000000'
+    Styles.define :fringe, :bg => '333333', :fg => '666666'
+    Styles.define :mode_line, :fg => 'ffffff', :bg => '888888', :border => ['888888', 2]
+    Styles.define :mode_line_inactive, :fg => '666666', :bg => '333333', :border => ['333333', 2]
+
+  end
 end
 Styles.init

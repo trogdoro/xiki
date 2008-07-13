@@ -239,12 +239,12 @@ class Search
   end
 
   def self.find_in_buffers string, options={}
-    View.bar if options[:in_bar]
     new_args = "\"#{string}\""
     new_options = {}
     new_options[:buffer] = View.buffer_name if options[:current_only]
     new_args << ", #{new_options.inspect[1..-2]}" unless new_options.empty?
 
+    View.bar if options[:in_bar]
     switch_to_buffer "*tree find in buffers"
     notes_mode
     erase_buffer

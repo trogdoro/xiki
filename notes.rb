@@ -160,12 +160,12 @@ class Notes
 
     Styles.define :notes_h1,
       :face => 'arial', :size => "+2",
-      :fg => 'ffffff', :bg => "9999cc",
+      :fg => 'ffffff', :bg => "666699",
       :bold =>  true
 
     Styles.define :notes_h1_pipe,
       :face => 'arial', :size => "+2",
-      :fg => 'ddddf2', :bg => "9999cc",
+      :fg => '9999cc', :bg => "666699",
       :bold => true
 
 
@@ -335,7 +335,7 @@ class Notes
     Styles.apply("^\\(|||| ?\\)\\(.+\n\\)", nil, :notes_h4_pipe, :notes_h4)
 
     # ~emphasis~ strings
-    Styles.apply("\\(~\\)\\(.+?\\)\\(~\\)", :ls_bullet)
+    Styles.apply("\\(~\\)\\(.+?\\)\\(~\\)", :notes_label)
 
     # - bullets with labels
     #Styles.apply("^[ \t]*\\([+-]\\)\\( \\)", nil, :ls_bullet, :variable)
