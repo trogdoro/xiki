@@ -356,6 +356,7 @@ class KeyBindings
     Keys.layout_reveal { widen; Hide.show }   # reveal all hidden text
     Keys.layout_search { Keys.prefix_u ? Search.find_in_buffers(Keys.input) : Hide.search }   # *
     Keys.layout_todo { TreeLs.open_in_bar }   # show bar on left with the quick bookmark named "-t" *
+    Keys.layout_upper { View.to_after_bar }   # go to uppermost view after bar
     # U
     # V
     Keys.layout_visibility { View.visibility }

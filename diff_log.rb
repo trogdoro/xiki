@@ -101,7 +101,7 @@ class DiffLog
 private
   # Util function used by public functions
   def self.saved_diff
-    File.open(@@temp_path, "w") { |f| f << View.txt }
+    $el.write_region View.top, View.bottom, @@temp_path
     diff = shell_command_to_string "diff -w -U 0 \"#{buffer_file_name}\" \"#{@@temp_path}\""
     self.format(View.path, View.file_name, diff)
   end

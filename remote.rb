@@ -7,6 +7,8 @@ require 'timeout'
 class Remote
   extend ElMixin
 
+  @@temp_dir = "/tmp/remote_rb"
+
   @@connections = {}
   @@default_dirs ||= []
 
@@ -37,7 +39,7 @@ class Remote
         action = path_append.pop
         if action == "save"
           path << "#{path_append.join('')}"  # append to path
-          return self.save_file(path, @@connections["#{user}@#{server}:#{port}"], remote_buffer_name(server, path))
+          return self.save_file(path, @@connections["#{user}@#{server}:#{port}"])
         else
           return puts "- Action '#{action}' unimplemented!"
         end
@@ -48,8 +50,7 @@ class Remote
     end
 
     timeout(6) do
-      # If a dir
-      if path =~ /\/$/
+      if path =~ /\/$/   # If a dir
         out = @@connections["#{user}@#{server}:#{port}"].exec!("ls -p #{path}")
         # Weed out #...#
         out = out.grep(/^[^#]+$/).join("")
@@ -60,35 +61,26 @@ class Remote
 
         puts out
 
-      # If a file
-      else
-        out = @@connections["#{user}@#{server}:#{port}"].exec!("cat #{path}")
-        out.gsub!(/\C-m/, '')
+      else   # If a file
 
-        # Get buffer name
-        buffer = remote_buffer_name(server, path)
-        was_open = View.buffer_open? buffer
-        View.to_after_bar
-        View.to_buffer buffer
+        Dir.mkdir @@temp_dir unless File.exists? @@temp_dir
+        local_path = self.calculate_local_path path
+        #local_path = "#{@@temp_dir}/#{path.gsub('/', '-')[1..-1]}"
 
-        # If open already
-        if was_open
-          if View.txt == out  # Compare buffer to remote
-            # If same, do nothing
-          else  # If different
-            beep
-            puts "- warning: Version on server is different than buffer"
-            # TODO: Save current window configuration
-            # Put server version in a different dir
-            # Diff buffers
-          end
-        # Otherwise, open and insert
-        else
-          puts "- save"
-          Notes.mode
-          insert out
-          View.to_top
+        was_open = Files.open? local_path
+
+        # Download if not open already
+        unless was_open
+          ftp = @@connections["#{user}@#{server}:#{port}"].sftp.connect
+          ftp.download!(path, local_path)
         end
+
+        View.to_after_bar
+        View.open local_path
+        puts "- save" unless was_open
+
+        # TODO save timestamp in buffer var
+        # - Use it to determine whether file changed when saving
 
       end
     end
@@ -123,30 +115,25 @@ class Remote
     "*remote #{file} (#{server}:#{dir})"
   end
 
-  def self.save_file(path, connection, buffer)
+  def self.save_file path, connection
+    local_path = self.calculate_local_path path
     # If not open, print error
-    return puts "- File no longer open!" unless View.buffer_open? buffer
-
-    # Get text from buffer
-    View.to_after_bar
-    View.to_buffer buffer
-    txt = View.txt
-
-    Effects.blink :what => :all
+    return puts "- File no longer open!" unless Files.open? local_path
 
     begin
       # Do save
       sftp = connection.sftp.connect
 
-      # open and write to a pseudo-IO for a remote file
-      sftp.file.open(path, "w") do |f|
-        result = f.puts txt
-        puts "- success!"
-      end
-
+      sftp.upload!(local_path, path)
+      puts "- success!"
     rescue Exception => e
       puts "- error: #{e.message}"
     end
 
   end
+
+  def self.calculate_local_path path
+    "#{@@temp_dir}/#{path.gsub('/', '-')[1..-1]}"
+  end
+
 end
