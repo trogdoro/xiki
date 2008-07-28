@@ -127,7 +127,6 @@ class Remote
     # If not open, print error
     return puts "- File no longer open!" unless View.buffer_open? buffer
 
-
     # Get text from buffer
     View.to_after_bar
     View.to_buffer buffer
@@ -138,7 +137,6 @@ class Remote
     begin
       # Do save
       sftp = connection.sftp.connect
-
 
       # open and write to a pseudo-IO for a remote file
       sftp.file.open(path, "w") do |f|

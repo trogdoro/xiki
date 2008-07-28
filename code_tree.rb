@@ -31,7 +31,9 @@ class CodeTree
 
     if e
       returned = ''
-      stdout = "#{stdout}- error evaluating '#{code}': #{e.message}\n#{e.backtrace.join("\n")}\n"
+      stdout = e.is_a?(ScriptError) ?
+        "- #{e.message.sub(/.+: /, '')}!\n" :
+        "#{stdout}- error evaluating '#{code}': #{e.message}\n#{e.backtrace.join("\n")}\n"
     end
 
     buffer_changed = b != View.buffer  # Remember whether we left the buffer

@@ -1,9 +1,9 @@
 class Schedule
   def self.menu
-    puts "$td"
+    puts "$t"
     txt = nil
     $el.with(:save_window_excursion) do
-      View.open("$td")
+      View.open("$t")
       txt = View.txt
     end
     puts txt.grep(/^\| e /).join("").gsub(/^/, '  ')

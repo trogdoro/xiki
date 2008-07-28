@@ -29,7 +29,9 @@ class RubyConsole
   def connect
     timeout(10) do
       open_channel  # Connect
+
       #usec = Time.now.usec
+# TODO: try to indent this
       send_it %Q[conf.echo = false
 $out_bufr = ''
 module Kernel
@@ -80,13 +82,13 @@ $stdout.print out
 
   def open_channel
     @session = if @server
-        user, server, port = Remote.split_root @server
+      user, server, port = Remote.split_root @server
 #         $el.ml [user, server, port]
 #         $el.ml @console_command
-        Remote.create_connection(user, server, port)
-      else
-        Net::SSH.start('localhost', ENV['USER'] || ENV['USERNAME'])
-      end
+      Remote.create_connection(user, server, port)
+    else
+      Net::SSH.start('localhost', ENV['USER'] || ENV['USERNAME'])
+    end
 
     @channel = @session.open_channel do |ch|
       ch.exec @console_command do |ch, success|
@@ -105,6 +107,7 @@ $stdout.print out
         ch.on_close { puts "done!" }
       end
     end
+
   end
 
   def run the_command
@@ -138,6 +141,11 @@ $stdout.print out
 
   def self.at key, the_command
     self[key].run the_command
+  end
+
+  def session
+    connect unless @channel
+    @session
   end
 
 end

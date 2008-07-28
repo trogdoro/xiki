@@ -42,6 +42,7 @@ require 'links'
 require 'computer'
 require 'menu'
 require 'safari'
+require 'ml'
 
 # TODO
 # - Key to just pick file
@@ -404,7 +405,6 @@ class KeyBindings
     # S: leave unmapped for search
     Keys.T(:isearch_mode_map) { Search.isearch_open_last_edited }   # To: open file / jump to method
     Keys.U(:isearch_mode_map) { Search.isearch_pull_in_sexp }  # like C-w, but pulls in sexp
-    # Redundant!!!
     Keys.V(:isearch_mode_map) { Search.isearch_find_in_buffers }   # Visited: show matches in visited files
 #    Keys.V(:isearch_mode_map) { Search.insert_at_search_start }
     # W: leave unmapped for pulling into search

@@ -29,10 +29,16 @@ class Search
 
   def self.move_to_search_start
     self.clear
+    was_reverse = elvar.isearch_opoint > point
     match = self.match
     delete_region match_beginning(0), match_end(0)
     goto_char(elvar.isearch_opoint)  # Go back to start
+
+    # If reverse, move back width of thing deleted
+    Move.backward match.length if was_reverse
+
     insert match
+
   end
 
 

@@ -8,7 +8,7 @@ class Rails
 
   def self.menu name=nil, port=nil
     unless name  # Print menu
-      puts "+ name, port: foo, 3000/"
+      puts "+ name, port: /tmp/foo, 3001"
     else  # Print options
       puts "
         - .create
@@ -16,8 +16,9 @@ class Rails
         - .url
         - .controller(:bar, :index)
         - .migration(:bar)
-        - .dirs
+        - .shell
         - .console
+        - .dirs/
         - .snippets
         "
     end
@@ -47,14 +48,16 @@ class Rails
   end
 
   def self.console dir, port=nil
-    Shell.run "script/console", :dir => dir, :buffer => "*console"
+    Shell.run "script/console", :dir => dir, :buffer => "*#{dir} console"
+  end
+
+  def self.shell dir, port=nil
+    Shell.run "", :dir => dir, :buffer => "*#{dir} shell"
   end
 
   def self.dirs dir, port=3000
     puts "
-      ./#{dir}/
-        app/
-        db/
+      + #{dir}/
       "
   end
 

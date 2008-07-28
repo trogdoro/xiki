@@ -576,10 +576,11 @@ class TreeLs
       self.minus_to_plus
       Line.to_words
       self.search(:left => Line.left, :right => Line.left(2))
-    when ch == "/"  # If /, run this line ???
-      Keys.prefix = 2
-      delete_region(Line.left(2), right)
-      self.open
+#     when ch == "/"  # If /, put on same line
+#       Keys.prefix = 2
+#       delete_region(Line.left(2), right)
+# View.insert "-----"
+# #      self.open
 
     when ";"  # Show methods, or outline
       delete_region(Line.left(2), right)  # Delete other files
@@ -678,8 +679,12 @@ class TreeLs
         delete_horizontal_space
         delete_backward_char 1
 
-        # Open if a dir
-        Line.matches(/\/$/) ?
+        # delete -|+ if there
+        if View.txt(View.cursor, Line.right) =~ /^[+-] /
+          $el.delete_char 2
+        end
+
+        Line.matches(/\/$/) ?   # Open if a dir
           self.expand_or_open :
           Line.end
 
@@ -1566,7 +1571,7 @@ private
     elsif Line.matches(/^\s+\|/)
       self.search :left => left, :right => right
     else
-      Move.to_junior
+      #Move.to_junior
     end
 
   end
