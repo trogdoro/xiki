@@ -1,48 +1,11 @@
-require 'trouble_shooting'
-require 'notes'
-require 'text_util'
-require 'app'
-require 'bookmarks'
-require 'clipboard'
-require 'code'
-require 'color'
-require 'control_tab'
-require 'deletes'
-require 'diff_log'
-require 'files'
-require 'history'
-require 'keys'
-require 'macros'
-require 'move'
-require 'search'
-require 'tree_ls'
-require 'repository'
-require 'line_launcher'
-require 'effects'
-require 'twitter'
-require 'shell'
-require 'rails'
-require 'merb'
-require 'data_mapper'
-require 'code_tree'
-require 'docs'
-require 'svn'
-require 'remote'
-require 'redmine'
-require 'schedule'
-require 'irc'
-require 'mysql'
-require 'cursor'
-require 'core_ext'
-require 'help'
-require 'ruby'
-require 'ruby_console'
-require 'buffers'
-require 'links'
-require 'computer'
-require 'menu'
-require 'safari'
-require 'ml'
+%w[
+  trouble_shooting notes text_util app bookmarks clipboard code color
+  control_tab deletes diff_log files history keys macros move search
+  tree_ls repository line_launcher effects twitter shell rails merb
+  data_mapper code_tree docs svn remote redmine schedule irc mysql
+  cursor core_ext help ruby ruby_console buffers links computer menu
+  safari ml book
+  ].each { |l| require l }
 
 # TODO
 # - Key to just pick file
@@ -77,7 +40,6 @@ class KeyBindings
     Keys.add_menu_items
 #       @@key_queue << [menu, item]
 #       #Menu.add_item menu, item
-
   end
 
   def self.a_keys

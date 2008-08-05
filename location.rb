@@ -103,6 +103,9 @@ class Location
     # Save location in corresponding register
     # @@hash[name] = Location.new
     bookmark_set(name)
+
+    # If 0, remember window index
+    set :location_rb_index, View.index
   end
 
   def self.jump path=nil

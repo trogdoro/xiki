@@ -274,6 +274,7 @@ class Keys
     # Do pause for space
     when :u
       PauseMeansSpace.go
+      return
     when 0
       View.insert Keys.input(:prompt => "Insert text to insert: ")
       return

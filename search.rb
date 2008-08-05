@@ -6,9 +6,18 @@ class Search
   def self.insert_at_spot
     self.clear
     match = self.match
-    #hidesearch_show_all_invisible
     Hide.show
+
     Location.go :_0
+
+    # If as_spot happened in other window, go back to that window if still there
+    if boundp(:location_rb_index) and
+        View.index != elvar.location_rb_index and
+        View.nth elvar.location_rb_index
+      View.to_nth elvar.location_rb_index
+    end
+
+    View.to_nth elvar.location_rb_index
     insert match
   end
 

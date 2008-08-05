@@ -143,9 +143,24 @@ class View
     if n+1 > self.list.size
       return select_window(self.list.last)
     end
-
     # Otherwise, open nth
     select_window(self.list[n])
+  end
+
+  def self.nth n
+    orig = View.window
+    View.to_nth n
+    win = View.window
+    View.to_window orig
+    win
+  end
+
+  def self.file_of_nth n
+    orig = View.window
+    View.to_nth n
+    file = View.file
+    View.to_window orig
+    file
   end
 
   def self.dir_of_nth n
