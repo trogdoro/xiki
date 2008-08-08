@@ -320,13 +320,22 @@ class Search
   # During isearch, pull next sexp into the search string
   def self.isearch_pull_in_sexp
     # If on the beginning of a grouping char, move back to catch the sexp
+
     el4r_lisp_eval %q=
       (isearch-yank-internal
         (lambda ()
-          (if (and (string-match "[{<\\\\\"'(\\\\[]" (char-to-string (char-before (point))))
-            (not (string-match "[{<\\\\\"'(\\\\[]" (char-to-string (char-after (point))))))
+          (if (string-match "[{<\\\\\"'(\\\\[]" (char-to-string (char-before (point))))
             (backward-char))
           (forward-sexp) (point)))=
+
+#     el4r_lisp_eval %q=
+#       (isearch-yank-internal
+#         (lambda ()
+#           (if (and (string-match "[{<\\\\\"'(\\\\[]" (char-to-string (char-before (point))))
+#             (not (string-match "[{<\\\\\"'(\\\\[]" (char-to-string (char-after (point))))))
+#             (backward-char))
+#           (forward-sexp) (point)))=
+
   end
 
   # During isearch, open most recently edited file with the search string in its name
