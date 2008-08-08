@@ -230,4 +230,10 @@ class Code
     View.to orig
   end
 
+  def self.do_kill_duplicates
+    txt = View.selection :delete => true
+    l = txt.split("\n")
+    View.insert l.uniq.join("\n")
+  end
+
 end

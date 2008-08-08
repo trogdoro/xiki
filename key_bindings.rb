@@ -114,7 +114,7 @@ class KeyBindings
     Keys.open_search { Search.outline_search }   # hide search via outline *
     Keys.open_tree { TreeLs.launch }   # draw a tree, prompting for bookmark tag *
     Keys.open_up { View.show_dir }   # open enclosing dir **
-    Keys.open_viewing { CodeTree.display_menu("Buffers.tree") }   # show currently open files and buffers **
+    Keys.open_viewing { Buffers.open_viewing }   # show currently open files and buffers **
     Keys.open_windows { View.restore }   # open window configuration by tag
     Keys.open_xiki_docs { Help.display_docs }
     Keys.open_xiki_help { CodeTree.display_menu("Help.menu") }   # **
@@ -211,6 +211,7 @@ class KeyBindings
     Keys.do_junior { TreeLs.move_dir_to_junior }   # Move a dir to next line, and indent
     #Keys.DK1 { KeyBindings.keys }   # Do Keys 1: load key bindings "1" (currently this file)
     Keys.do_kill_all { erase_buffer }   # kill all text in buffer
+    Keys.do_kill_duplicates { Code.do_kill_duplicates }
     Keys.do_kill_filter { Search.kill_filter }
     Keys.do_kill_siblings { TreeLs.kill_siblings }   # kill adjacent lines at same indent as this one
     Keys.do_kill_thing { delete_region(* bounds_of_thing_at_point( :sexp )) }   # kill adjacent lines at same indent as this one
