@@ -125,4 +125,26 @@ class Location
     View.set_mark
     insert txt
   end
+
+  def self.as_spot
+
+    if View.file   # If file exists, just save in location
+      Location.save(elvar.current_prefix_arg || "0")
+      return @@spot = nil
+    end
+
+    # Must be a buffer
+    @@spot = [buffer_name(View.buffer), point]
+
+    # remember point in file *
+  end
+
+  def self.to_spot
+    # If file, just jump
+    return Location.jump(elvar.current_prefix_arg || "0") unless @@spot
+
+    View.to_buffer @@spot[0]
+    View.to @@spot[1]
+
+  end
 end

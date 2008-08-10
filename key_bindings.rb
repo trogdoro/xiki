@@ -63,7 +63,7 @@ class KeyBindings
     Keys.as_paragraph { Clipboard.copy_paragraph }   # copy paragraph
     Keys.as_quick { Bookmarks.save :q }   # like AB but uses different temporary namespace
     Keys.as_rename { rename_buffer Keys.input( :prompt => "Rename buffer to: " ) }   # buffer)
-    Keys.as_spot { Location.save(elvar.current_prefix_arg || "0") }   # remember point in file *
+    Keys.as_spot { Location.as_spot }   # remember point in file *
     Keys.as_thing { Clipboard.as_thing }  # copy sexp at point
     #Keys.as_update_remote { TreeLs.save_remote }
     Keys.as_version { cm_backup_file }   # creates backup
@@ -281,7 +281,7 @@ class KeyBindings
     Keys.to_previous { Move.to_previous_paragraph }   # to beginning of previous paragraph *
     Keys.to_quote { Move.to_quote }   # move to next ...|... quote
     Keys.to_relative { Search.to_relative }   # go to nth line, relative to top of window
-    Keys.to_spot { Location.jump(elvar.current_prefix_arg || "0") }   # *
+    Keys.to_spot { Location.to_spot }   # *
     Keys.TT { transpose_chars elvar.current_prefix_arg }   # TT - toggle character (T's default)
     Keys.to_up { TreeLs.to_parent }   # to parent (last line indented less)
     Keys.to_words { Move.to_line_text_beginning }   # move to start of words on line *
