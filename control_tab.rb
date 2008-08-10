@@ -152,18 +152,6 @@ class ControlTab
     end
   end
 
-#   def self.switch_to_nth n
-#     # Switch to nth file
-#     found = 0
-#     buffer_list.to_a.each do |b|
-
-#       found += 1
-#       if found == n
-#         switch_to_buffer b
-#         break
-#       end
-#     end
-#   end
 
   def self.keys
 

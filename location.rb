@@ -104,8 +104,6 @@ class Location
     # @@hash[name] = Location.new
     bookmark_set(name)
 
-    # If 0, remember window index
-    set :location_rb_index, View.index
   end
 
   def self.jump path=nil
@@ -128,23 +126,27 @@ class Location
 
   def self.as_spot
 
-    if View.file   # If file exists, just save in location
+    @@spot_index = View.index   # Remember window (in case buffer in 2 windows)
+
+    if View.file   # If buffer has a file, just save in location
       Location.save(elvar.current_prefix_arg || "0")
       return @@spot = nil
     end
 
     # Must be a buffer
     @@spot = [buffer_name(View.buffer), point]
-
-    # remember point in file *
   end
 
   def self.to_spot
-    # If file, just jump
-    return Location.jump(elvar.current_prefix_arg || "0") unless @@spot
-
-    View.to_buffer @@spot[0]
-    View.to @@spot[1]
-
+    if @@spot
+      View.to_buffer @@spot[0]
+      View.to @@spot[1]
+    else    # If file, just jump
+      # If original window/buffer still there, go back
+      if buffer_file_name(window_buffer(View.nth(@@spot_index))) == Bookmarks["$_0"]
+        View.to_nth @@spot_index
+      end
+      Location.jump("0")
+    end
   end
 end
