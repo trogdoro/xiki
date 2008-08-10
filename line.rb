@@ -133,7 +133,11 @@ class Line
 
   class << self
     alias :start :beginning
-    alias :to_left :beginning
+    #alias :to_left :beginning
+  end
+
+  def self.to_left
+    self.beginning
   end
 
   def self.end

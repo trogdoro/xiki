@@ -401,9 +401,16 @@ class TreeLs
 
     # If numeric prefix, jump to nth window
     if (! ignore_prefix) and Keys.prefix
+
+      # If number larger than number of windows, open new one first
+      if Keys.prefix > View.list.size
+        View.to_nth(View.list.size - 1)
+        View.create
+      end
+
       View.to_nth(Keys.prefix - 1)
-    # Otherwise, move to after bar if the bar is open
-    else
+
+    else   # Otherwise, move to after bar if the bar is open
       #View.to_after_bar
       # Only go to bar if after bar (for example, after OE)
       View.to_after_bar if View.in_bar?

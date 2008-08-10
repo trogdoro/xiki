@@ -74,7 +74,7 @@ class LineLauncher
   def self.init_default_launchers
     @@launchers = []
 
-    self.add /^  +\+?-?\|/ do |line|  # | TreeLs quoted text
+    self.add /^  +[+-]?\|/ do |line|  # | TreeLs quoted text
       TreeLs.open
     end
 
@@ -222,11 +222,11 @@ class LineLauncher
 
     end
 
-    self.add(/^[^|-]+\*\*/) do |line|  # Tree grep in dir
+    self.add(/^[^|-]+\*\*/) do |line|  # **.../: Tree grep in dir
       TreeLs.expand_or_open
     end
 
-    self.add(/^[^|]+##/) do |line|  # Tree grep in dir
+    self.add(/^[^|]+##/) do |line|  # ##.../: Tree grep in dir
       TreeLs.expand_or_open
     end
 
