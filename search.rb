@@ -168,16 +168,13 @@ class Search
   end
 
   def self.tree_grep
-    # Get path (from bookmark)
-    dir = Keys.bookmark_as_path
+    dir = Keys.bookmark_as_path   # Get path (from bookmark)
 
-    # Do search
-    input = Keys.prefix_u ?
+    input = Keys.prefix_u ?   # Do search
       Clipboard.get("0") :
       Keys.input
-    regex = Regexp.new(input, Regexp::IGNORECASE)
 
-    TreeLs.grep dir, regex, :bar => true
+    TreeLs.grep_with_hashes dir, input
   end
 
   def self.isearch_tree_grep bookmark=nil

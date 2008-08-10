@@ -130,7 +130,15 @@ class TreeLs
     View.to_top
     highlight_regexp(regex, :ls_quote_highlight) if regex
     re_search_forward "|"
+  end
 
+  def self.grep_with_hashes(dir, regex)
+    View.to_buffer "*tree grep";  View.dir = dir
+    View.clear;  notes_mode
+
+    View.insert "- #{dir}\n  - ###{regex}/\n"
+    goto_line(2)
+    self.expand_or_open
   end
 
   def self.grep_one_file(f, regex, indent)
@@ -233,6 +241,13 @@ class TreeLs
       :size => "-2",
       :bold => true
 
+    # ##search/
+    Styles.define :ls_search,
+      :fg => "dd7700",
+      :face => "verdana",
+      :size => "-2",
+      :bold => true
+
     #   | Quoted text
     Styles.define :ls_quote,
       :size => "-1",
@@ -270,9 +285,11 @@ class TreeLs
     #Styles.apply('^[ -]*\\([ a-zA-Z0-9\/_\.$-]*\\w/\\)$', nil, :ls_dir)  # Most dirs
     Styles.apply('^ *\\(//?\\)$', nil, :ls_dir)  # /
     Styles.apply('^ *\\(\./\\)$', nil, :ls_dir)  # ./
+    Styles.apply('^ *[+-] \\(##.+/\\)$', nil, :ls_search)  # ##_/
 
     #   |... lines
     Styles.apply("^ +\\(|.*\n\\)", nil, :ls_quote)
+
   end
 
   # Define key
@@ -1086,8 +1103,8 @@ class TreeLs
   def self.enter_quoted
     Line.to_left
     clip = Clipboard.get(0, :add_linebreak => true)
-    # If current line is path
-    if Line.matches(/\/$/)
+
+    if Line.matches(/\/$/)   # If current line is path
       self.plus_to_minus_maybe
       indent = Line.indent
       dir = self.construct_path
@@ -1117,7 +1134,7 @@ class TreeLs
       # Indent prefix spaces, or 2
       indent = Keys.prefix || 0
       t = t.gsub(/^/, " " * indent)
-      self.add_pluses_and_minses t#, '-', '-'
+      self.add_pluses_and_minses t, '-', '-'
       View.insert t
       set_mark(Line.left(2))
       goto_char start

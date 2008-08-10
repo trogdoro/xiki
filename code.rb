@@ -236,4 +236,15 @@ class Code
     View.insert l.uniq.join("\n")
   end
 
+
+  def self.do_next_paragraph
+    orig = Location.new
+    line = Line.value 1, :include_linebreak => true, :delete => true   # Get line
+    Move.backward
+    Search.forward "\n\n+"
+    View.insert line
+
+    orig.go
+  end
+
 end

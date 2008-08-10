@@ -147,6 +147,40 @@ class Rails
     model = TextUtil.snake_case(model).gsub('::', '/')
     puts "#{Bookmarks['$tr']}app/models/\n  #{model}.rb\n"
   end
+
+  def self.tree_from_log
+
+    orig = View.buffer
+    set_buffer "*tail of /projects/rsam/trunk/log/development.log"
+    txt = View.txt
+    txt.sub!(/.+^(Processing )/m, "\\1")   # Delete except for last Processing...
+    View.to_buffer orig
+
+    c = txt.select{|l| l =~ /^Processing (\w+)#\w+ \(/}
+    c = c.collect{|l|
+      c, m = l.match(/^Processing (\w+)#(\w+) \(/)[1..2]
+      c = TextUtil.snake_case(c)
+      c = "/projects/rsam/trunk/app/controllers/#{c}.rb"
+      "#{c}|  def #{m}"
+    }
+
+    v = txt.select{|l| l =~ /^Render\w+ [\w\/]+\//}
+    v = v.collect{|l|
+      l = l[/[\/\w]+\/[\/\w]+/]
+      l = l.sub(/^\//, '')
+      "/projects/rsam/trunk/app/views/#{l}.rhtml"
+    }
+    View.to_buffer "* Open List Log", :clear => true
+    View.clear
+    Notes.mode
+
+    View.insert TreeLs.paths_to_tree(
+      (c + v).sort.uniq )
+
+    View.to_top
+    Move.to_junior
+  end
+
 end
 
 Keys.ORM { CodeTree.display_menu("Rails.models") }   # Open Rails Models

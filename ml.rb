@@ -1,6 +1,6 @@
 class Ml
   def self.<< txt
-    File.open("/temp/log.notes", "a") { |f| f << "#{txt}\n" }
+    File.open("/tmp/log.notes", "a") { |f| f << "#{txt}\n" }
     txt
   end
 end

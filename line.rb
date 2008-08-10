@@ -24,11 +24,15 @@ class Line
 
   # Text on current line (minus linebreak)
   def self.value n=1, options={}
-    result = el4r_lisp_eval("(buffer-substring (point-at-bol #{n}) (point-at-eol #{n}))")
-    #thing_at_point(:line).sub("\n", "")
+    eol = "(point-at-eol #{n})"
+
+    # Optionally include linebreak
+    eol = "(+ 1 #{eol})" if options[:include_linebreak]
+
+    result = el4r_lisp_eval("(buffer-substring (point-at-bol #{n}) #{eol})")
 
     if options[:delete]
-      el4r_lisp_eval("(delete-region (point-at-bol #{n}) (point-at-eol #{n}))")
+      el4r_lisp_eval("(delete-region (point-at-bol #{n}) #{eol})")
     end
 
     result

@@ -102,6 +102,7 @@ class KeyBindings
     Keys.open_list_faces { list_faces_display }
     Keys.open_lisp_error { Code.show_el4r_error }
     Keys.open_lisp_info { info("elisp") }
+    Keys.open_list_log { Rails.tree_from_log }
     Keys.open_list_names { Clipboard.list }
     Keys.open_list_repository { Repository.status_tree }
     Keys.open_link_top { Links.open_first }   # open first hyperlink on page
@@ -231,6 +232,7 @@ class KeyBindings
     Keys.do_linebreaks_unix { set_buffer_file_coding_system :unix }
     Keys.do_macro { Macros.run }   # do last macro *
     Keys.do_name_files { wdired_change_to_wdired_mode }
+    Keys.do_next_paragraph { Code.do_next_paragraph }   # Move line to start of next paragraph
     Keys.do_outline { History.open_current :outline => true, :prompt_for_bookmark => true }
     #Keys.DP { Twitter.post_or_list }   # Do Post
     Keys.do_query { Search.query_replace }   # do query replace *

@@ -27,16 +27,13 @@ class LineLauncher
 
   # Call the appropriate launcher if we find one, passing it line
   def self.launch options={}
-    # Get paren from line
-    line = options[:line] || Line.value
+    line = options[:line] || Line.value   # Get paren from line
     label = Line.label(line)
     paren = label[/\((.+)\)/, 1] if label
 
-    # Effects.blink
-    View.bar if Keys.prefix == 9
+    View.bar if Keys.prefix == 9   # Effects.blink
 
-    # Split label off, if there
-    if line =~ /^( *)- .+?: (.+)/
+    if line =~ /^( *)- .+?: (.+)/   # Split label off, if there
       line = $1 + $2
     end
 
@@ -46,8 +43,7 @@ class LineLauncher
       return
     end
 
-    # For each potential match
-    @@launchers.each do |launcher|
+    @@launchers.each do |launcher|   # For each potential match
       regex, label_regex, block = launcher
       # If we found a match, launch it
       if (!regex || line =~ regex) && (!label_regex || (label && label =~ label_regex))
@@ -61,7 +57,6 @@ class LineLauncher
       end
     end
 
-
     # It must be code_tree node or tree_ls node
     # Still don't know which, so check root
     path = TreeLs.construct_path :list => true
@@ -74,7 +69,6 @@ class LineLauncher
     else  # Otherwise, run treels
       TreeLs.expand_or_open
     end
-
   end
 
   def self.init_default_launchers
