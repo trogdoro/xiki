@@ -147,14 +147,6 @@ class Clipboard
     set_mark left
   end
 
-#   def self.as_indented
-#     left, right = bounds_of_thing_at_point(:sexp).to_a
-#     goto_char right
-#     set_mark left
-#     Effects.blink(:what => :sexp)
-#     Clipboard.set("0", thing_at_point(:sexp) )
-#   end
-
   def self.as_object
     set("0", thing_at_point(:symbol))
     left, right = bounds_of_thing_at_point(:symbol).to_a

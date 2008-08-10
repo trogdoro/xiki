@@ -50,10 +50,6 @@ class Color
   end
 
   def self.colorize_line face
-#    overlay_put make_overlay(point_at_bol, point_at_eol), :face, :cm_hi_red
-#    overlay_put make_overlay(point_at_bol, point_at_eol), :face, :cm_h1
-#    overlay_put make_overlay(Line.left, Line.right+1), :face, :cm_h1
-#    over = make_overlay(Line.left, point_at_eol())
     over = make_overlay(Line.left, Line.right+1)
     overlay_put over, :face, face
   end

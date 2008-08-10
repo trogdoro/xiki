@@ -1,7 +1,11 @@
 require 'keys'
+
 class PauseMeansSpace
   extend ElMixin
   def self.go
+    Cursor.remember :before_q
+    Cursor.green
+
     while(inserted = insert_until_pause)
       next if inserted == 127
       if inserted == "."
@@ -14,6 +18,7 @@ class PauseMeansSpace
     delete_backward_char 1
     message "Typing finished"
 
+    Cursor.restore :before_q
     # TODO print ---- if enter
   end
 

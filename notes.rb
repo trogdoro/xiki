@@ -74,14 +74,17 @@ class Notes
 
   def self.insert_heading
     Line.start
-    (Keys.prefix || 1).times do
-      insert "|"
-    end
+
+    times = Keys.prefix_u ? 1 : (Keys.prefix || 1)
+    times.times { insert "|" }
     insert " "
-    #open_line 1
+
+    open_line(4) if Keys.prefix_u   # If U create blank lines.
+
+    PauseMeansSpace.go
 
     # Exit control lock mode if on
-    ControlLock.disable
+    #ControlLock.disable
 #     # Read in one key, then upcase it
 #     a = Keys.input(:one_char => true)
 #     insert a.upcase

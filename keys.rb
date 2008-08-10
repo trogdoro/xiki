@@ -267,7 +267,6 @@ class Keys
   end
 
   def self.timed_insert options={}
-
     prefix = Keys.prefix
     # If prefix of 0, insert in a way that works with macros
     case prefix
