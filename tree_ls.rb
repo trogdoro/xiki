@@ -1191,13 +1191,13 @@ class TreeLs
     indent = Line.indent
     # Remove lines before
     while(true)
-      previous_line
+      Line.previous
       break if (Line.indent != indent) || Line.blank?
       kill_line
     end
 
     # Remove lines after
-    next_line 2
+    Line.next 2
     while(true)
       break if (Line.indent != indent) || Line.blank?
       kill_line

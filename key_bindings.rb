@@ -158,7 +158,8 @@ class KeyBindings
     # P
     Keys.enter_quoted { TreeLs.enter_quoted }
     Keys.enter_replacement { Clipboard.enter_replacement }
-    Keys.enter_spot { Location.enter_at_spot }   # enter selected text at spot
+    Keys.enter_search { Search.enter_search }
+    #Keys.enter_spot { Location.enter_at_spot }   # enter selected text at spot
     Keys.enter_tree { TreeLs.launch( :here => true ) }
     Keys.enter_under { TreeLs.enter_under }
     Keys.enter_viewing { History.enter_viewing }

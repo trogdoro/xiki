@@ -81,10 +81,10 @@ class Notes
 
     open_line(4) if Keys.prefix_u   # If U create blank lines.
 
-    PauseMeansSpace.go
+    #PauseMeansSpace.go
 
     # Exit control lock mode if on
-    #ControlLock.disable
+    ControlLock.disable
 #     # Read in one key, then upcase it
 #     a = Keys.input(:one_char => true)
 #     insert a.upcase

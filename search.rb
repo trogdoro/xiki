@@ -470,4 +470,30 @@ class Search
     upcase_region(match_beginning(0), match_end(0))
   end
 
+  def self.enter_search
+    bm = Keys.input(:timed => true, :prompt => "Enter bookmark in which to search: ")
+    return unless bm
+    input = Keys.prefix_u ?   # Do search
+      Clipboard.get("0") :
+      Keys.input
+
+    if bm == "."   # Do tree in dir from bookmark
+      if Line.blank?
+        dir = $el.elvar.default_directory
+      else
+        dir = nil
+      end
+    else
+      dir = Bookmarks.expand("$#{bm}")
+    end
+
+    View.insert(dir || "")
+    indent = Line.indent
+    Line.to_right
+    View.insert("\n#{indent}  - ###{input}/")
+    TreeLs.expand_or_open
+
+    #View.insert dir
+  end
+
 end
