@@ -68,7 +68,9 @@ class TreeLs
   # Recursively draws out tree
   def traverse path
 
-    entries = Dir["#{path}/*"].entries.sort
+    entries = Dir.glob("#{path}/*", File::FNM_DOTMATCH).
+      select {|i| i !~ /\/\.(\.*|svn|git)$/}.
+      sort
 
     # Process dirs
     entries.each{ |f|
@@ -1373,7 +1375,9 @@ class TreeLs
     if self.is_remote?(dir)
       self.remote_files_in_dir(dir)
     else
-      all = Dir["#{dir}/*"].entries
+      all = Dir.glob("#{dir}/*", File::FNM_DOTMATCH).
+        select {|i| i !~ /\/\.(\.*|svn|git)$/}
+
       dirs = all.select{|i| FileTest.directory?(i)}.sort
       files = all.select{|i| FileTest.file?(i)}.sort
       [dirs, files]
