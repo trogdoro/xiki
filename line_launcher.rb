@@ -248,7 +248,8 @@ class LineLauncher
     self.add(/^ *$/) do |line|  # Empty line: open dir
 #       Line.to_right
 #       CodeTree.insert_menus
-      CodeTree.display_menu("CodeTree.menu")
+      View.insert("- CodeTree.menu/")
+      LineLauncher.launch
     end
 
     self.add(/^ *\*/) do |line|  # *... buffer

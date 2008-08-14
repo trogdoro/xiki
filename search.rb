@@ -164,7 +164,7 @@ class Search
 
     input = Keys.prefix_u ?   # Do search
       Clipboard.get("0") :
-      Keys.input
+      Keys.input(:prompt => "Text to search for: ")
 
     TreeLs.grep_with_hashes dir, input
   end
@@ -181,18 +181,18 @@ class Search
     # Do search
     regex = Regexp.new(Regexp.quote(match), Regexp::IGNORECASE)
 
-    TreeLs.grep dir, regex, :bar => true
+    TreeLs.grep dir, regex
   end
 
   def self.isearch_tree_grep_method
     self.clear
     match = self.match
 
-#     # Get bookmark
-#     dir = Keys.bookmark_as_path
+  #     # Get bookmark
+  #     dir = Keys.bookmark_as_path
     dir = Bookmarks.expand("$a")
 
-#    insert "\\bdef .*#{match}"
+  #    insert "\\bdef .*#{match}"
 
     # Do search
     regex = Regexp.new("\\bdef .*#{match}\\b", Regexp::IGNORECASE)
@@ -266,9 +266,9 @@ class Search
       Line.to_words
     end
     # Do search if only one file
-#     if list.size == 1
-#       TreeLs.search(:recursive => false, :left => Line.left, :right => View.bottom)
-#     end
+  #     if list.size == 1
+  #       TreeLs.search(:recursive => false, :left => Line.left, :right => View.bottom)
+  #     end
 
   end
 
@@ -317,13 +317,13 @@ class Search
             (backward-char))
           (forward-sexp) (point)))=
 
-#     el4r_lisp_eval %q=
-#       (isearch-yank-internal
-#         (lambda ()
-#           (if (and (string-match "[{<\\\\\"'(\\\\[]" (char-to-string (char-before (point))))
-#             (not (string-match "[{<\\\\\"'(\\\\[]" (char-to-string (char-after (point))))))
-#             (backward-char))
-#           (forward-sexp) (point)))=
+  #     el4r_lisp_eval %q=
+  #       (isearch-yank-internal
+  #         (lambda ()
+  #           (if (and (string-match "[{<\\\\\"'(\\\\[]" (char-to-string (char-before (point))))
+  #             (not (string-match "[{<\\\\\"'(\\\\[]" (char-to-string (char-after (point))))))
+  #             (backward-char))
+  #           (forward-sexp) (point)))=
 
   end
 
@@ -443,7 +443,7 @@ class Search
     Search.clear
     term = self.match
     term.gsub!(' ', '%20')
-#return insert term
+  #return insert term
     browse_url "http://google.com/search?q=#{term}"
   end
 
@@ -475,7 +475,7 @@ class Search
     return unless bm
     input = Keys.prefix_u ?   # Do search
       Clipboard.get("0") :
-      Keys.input
+      Keys.input(:prompt => "Text to search for: ")
 
     if bm == "."   # Do tree in dir from bookmark
       if Line.blank?
