@@ -402,7 +402,7 @@ class TreeLs
     end
 
     # If numeric prefix, jump to nth window
-    if (! ignore_prefix) and Keys.prefix
+    if (! ignore_prefix) and Keys.prefix and Keys.prefix != 9
 
       # If number larger than number of windows, open new one first
       if Keys.prefix > View.list.size
@@ -875,33 +875,30 @@ class TreeLs
       return
     end
 
-    # If already open, just go there
-    if View.bar?
-      select_window(View.first)
-      #return
-    else
+    unless View.bar?   # If already open, just go there
       View.bar
     end
+    View.to_nth 0
     find_file Bookmarks.expand("$t")
 
-    two_views_in_bar = Keys.prefix_u
-    two_views_in_bar = ! two_views_in_bar if @@one_view_in_bar_by_default
-
-    unless two_views_in_bar  # Unless u prefix, open $tl as well (under bar)
-      # If 2nd view is $tl, just go to it
-      if buffer_file_name( window_buffer( View.list[1] ) ) == Bookmarks["$f"]
-        View.to_nth 1
-      end
+    only_one_view_in_bar = Keys.prefix_u
+    only_one_view_in_bar = ! only_one_view_in_bar if @@one_view_in_bar_by_default
+    unless only_one_view_in_bar  # Unless u prefix, open $tl as well (under bar)
 
       # If 2nd view isn't at left margin, open 2nd view
       if View.left_edge(View.list[1]) != 0
         View.create
       end
 
-      # Open $tl in 2nd view
       View.to_nth 1
-      find_file Bookmarks["$f"]
+
+      # If 2nd view isn't $f, open it
+      if buffer_file_name( window_buffer( View.list[1] ) ) != Bookmarks["$f"]
+        find_file Bookmarks["$f"]
+      end
+
       View.to_nth 0
+
     end
   end
 

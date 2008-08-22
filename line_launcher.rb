@@ -79,14 +79,24 @@ class LineLauncher
     end
 
     self.add_paren("o") do  # - (t): Insert "Test"
-
       txt = Line.without_label  # Grab line
       View.to_after_bar  # Insert after bar
       insert txt
 
       command_execute "\C-m"
-
     end
+
+    self.add_paren("html") do   # Run in browser
+      file = Line.without_label  # Grab line
+      if Keys.prefix_u
+        View.open file
+
+      else
+        browse_url file
+        browse_url "#{View.dir}#{file}"
+      end
+    end
+
 
     self.add_paren("rc") do  # - (rc): Run in rails console
 

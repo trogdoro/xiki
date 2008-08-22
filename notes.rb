@@ -129,7 +129,8 @@ class Notes
     Keys.CB(:notes_mode_map) { Notes.move_block true }  # Move block up to before next block
 
     define_key :notes_mode_map, kbd("C-\\") do
-      Hide.show
+
+      widen; Hide.show
       Hide.hide_unless /^\| /
       recenter -2
       Hide.search

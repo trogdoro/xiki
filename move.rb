@@ -38,7 +38,7 @@ class Move
       line = Line.value
       indent = Line.indent(line).length
       # Found if same indent, and at least one char after indent
-      break if indent == orig_indent && line.length > indent# && line !~ /^\s*#/
+      break if indent == orig_indent && line.length > indent && line !~ /^\s*#/
     end
     move_to_column c
   end

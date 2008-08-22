@@ -185,4 +185,14 @@ class Clipboard
     txt
   end
 
+  def self.as_clipboard
+    # If numeric prefix, get next n lines and put in clipboard
+    if Keys.prefix and ! Keys.prefix_u
+      l, r = Line.left, Line.left(Keys.prefix + 1)
+      Effects.blink :left => l, :right => r
+      Clipboard["0"] = View.txt(l, r)
+      return
+    end
+    Clipboard.copy("0")
+  end
 end

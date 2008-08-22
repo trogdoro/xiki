@@ -247,4 +247,15 @@ class Code
     orig.go
   end
 
+  def self.enter_log
+    if Keys.prefix_u
+      clip = Clipboard[0]
+      View.insert "Ml << \"#{clip}: \#{#{clip}}\""
+      return
+    end
+
+    View.insert "Ml << \"\""
+    Move.backward
+  end
+
 end

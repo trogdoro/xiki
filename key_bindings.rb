@@ -47,7 +47,8 @@ class KeyBindings
     # Use A prefix for: remembering, saving
     Keys.AA { beginning_of_line }   # AA - beginning of line (A's default) **
     Keys.as_bookmark { Bookmarks.save }   # remember bookmark
-    Keys.as_clipboard { Clipboard.copy("0") }   # **
+
+    Keys.as_clipboard { Clipboard.as_clipboard }   # **
     Keys.as_directory { TreeLs.copy_path }   # copy dir to clipboard from tree
     # D
     Keys.as_everything { Clipboard.copy_everything }
@@ -151,6 +152,7 @@ class KeyBindings
     Keys.enter_junior { Notes.bullet("") }
     # K
     #Keys.EK { Clipboard.paste }   # Enter Clipboard: paste
+    Keys.enter_log { Code.enter_log }
     Keys.enter_menu { CodeTree.insert_menus }
     Keys.enter_name { Clipboard.paste }   # paste thing saved as name
     Keys.enter_outline { TreeLs.enter_lines }   # in tree, enter methods or headings

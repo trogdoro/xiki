@@ -80,7 +80,7 @@ class View
   # By default it will open in 2nd view if we're in the bar view.
   def self.open path, options={}
     # Open after bar if in bar
-    if View.in_bar? && ! options[:stay_in_bar]
+    if View.in_bar? && (! options[:stay_in_bar]) && path != "$0"
       View.to_after_bar
     end
 
