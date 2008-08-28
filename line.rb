@@ -115,7 +115,6 @@ class Line
 
   def self.next times=nil
     forward_line times
-    #next_line times
   end
 
   def self.previous times=nil
@@ -123,7 +122,6 @@ class Line
       -times :
       -1
     forward_line times
-    #previous_line times
   end
 
   def self.beginning

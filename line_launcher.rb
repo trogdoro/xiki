@@ -82,7 +82,6 @@ class LineLauncher
       txt = Line.without_label  # Grab line
       View.to_after_bar  # Insert after bar
       insert txt
-
       command_execute "\C-m"
     end
 
@@ -174,6 +173,14 @@ class LineLauncher
       insert stdout
       goto_char started
     end
+
+    self.add_paren("line") do
+      line, path = Line.without_label.split(', ')
+
+      View.open path
+      View.to_line line
+    end
+
 
 
     self.add nil, /\(elisp\)/ do |line|  # Run lines like this: - foo (elisp): (bar)

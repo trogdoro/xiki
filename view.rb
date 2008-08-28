@@ -278,14 +278,14 @@ class View
     end
   end
 
-  def self.next
-    Keys.prefix_times.times do
+  def self.next times=1
+    (times || Keys.prefix_times).times do
       other_window 1
     end
   end
 
-  def self.previous
-    Keys.prefix_times.times do
+  def self.previous times=1
+    (times || Keys.prefix_times).times do
       other_window -1
     end
   end
@@ -345,6 +345,13 @@ class View
 
   def self.handle_bar
     self.to_after_bar if self.in_bar?
+  end
+
+  def self.to_upper
+    View.to_after_bar
+    (Keys.prefix_times - 1).times do
+      View.next
+    end
   end
 
   def self.to_after_bar
@@ -495,8 +502,8 @@ class View
       )")
   end
 
-  def self.set_mark
-    set_mark_command nil
+  def self.set_mark pos=nil
+    $el.set_mark pos
   end
 
   def self.insert txt

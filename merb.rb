@@ -9,6 +9,7 @@ class Merb
         + name, port: ., 4000
         + .links/
         - .snippets
+        + .models/
         "
     else  # Print options
       puts "
@@ -163,6 +164,66 @@ class Merb
     # If ., grab path of window after bar
     dir = View.dir_of_after_bar if dir == "."
     Bookmarks.expand(dir, :absolute => true)
+  end
+
+  def self.models model=nil
+
+    # If no model specified, show all
+    unless model
+      Dir.foreach(Bookmarks['$mo']) { |m|
+        next unless m =~ /(.+)\.rb$/
+        puts "+ #{TextUtil.camel_case($1)}/"
+      }
+      return
+    end
+
+    # Show options
+    puts "
+    + .first/
+    + .recent 1/
+    + .all/
+    + .count/
+    + .first \":name => 'foo'\"/
+    + .recent 1, \":name => 'foo'\"/
+    + .all \":name => 'foo'\"/
+    + .count \":name => 'foo'\"/
+    "
+  end
+
+  def self.first *args
+    # If 2 args, it's where, model
+    where = (args.size == 2) ? "(#{args.shift})" : ''
+    model = args.shift
+    model.sub! /\/$/, ''
+    puts RubyConsole.at(:ml, "y #{model}.first#{where}")
+  end
+
+  def self.all *args
+    # If 2 args, it's where, model
+    where = (args.size == 2) ? "(#{args.shift})" : ''
+    model = args.shift
+    model.sub! /\/$/, ''
+    puts RubyConsole.at(:ml, "y #{model}.all#{where}")
+  end
+
+  def self.count *args
+    # If 2 args, it's where, model
+    where = (args.size == 2) ? "(#{args.shift})" : ''
+    model = args.shift
+    model.sub! /\/$/, ''
+    puts RubyConsole.at(:ml, "puts #{model}.count#{where}")
+  end
+
+  def self.recent *args
+    number = args.shift
+    where = (args.size == 2) ? "#{args.shift}, " : ''
+    model = args.shift
+    model.sub! /\/$/, ''
+
+    number ||= 1
+
+    model.sub! /\/$/, ''
+    puts RubyConsole.at(:ml, "y #{model}.all(#{where}:order => [:updated_at.desc], :limit => #{number})")
   end
 
 end

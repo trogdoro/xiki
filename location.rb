@@ -6,7 +6,7 @@ class Location
   extend ElMixin
   include ElMixin
 
-  #@@hash = {}
+  @@spots = {}
 
   # Save file and location
   def initialize *args
@@ -124,29 +124,33 @@ class Location
     insert txt
   end
 
-  def self.as_spot
+  def self.as_spot key='0'
 
-    @@spot_index = View.index   # Remember window (in case buffer in 2 windows)
+    # Remember window (in case buffer in 2 windows)
+    @@spot_index = View.index if key == '0'
 
     if View.file   # If buffer has a file, just save in location
-      Location.save(elvar.current_prefix_arg || "0")
+      Location.save(key)
       return @@spot = nil
     end
 
     # Must be a buffer
-    @@spot = [buffer_name(View.buffer), point]
+    @@spots[key] = [buffer_name(View.buffer), point]
   end
 
-  def self.to_spot
-    if @@spot
-      View.to_buffer @@spot[0]
-      View.to @@spot[1]
+  def self.to_spot key='0'
+    if @@spots[key]
+      View.to_buffer @@spots[key][0]
+      View.to @@spots[key][1]
     else    # If file, just jump
       # If original window/buffer still there, go back
-      if buffer_file_name(window_buffer(View.nth(@@spot_index))) == Bookmarks["$_0"]
-        View.to_nth @@spot_index
+      if key == '0'
+        if buffer_file_name(window_buffer(View.nth(@@spot_index))) == Bookmarks["$_0"]
+          View.to_nth @@spot_index
+        end
       end
-      Location.jump("0")
+      Location.jump(key)
     end
   end
+
 end

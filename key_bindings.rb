@@ -56,7 +56,7 @@ class KeyBindings
     # H
     #Keys.as_indented { Clipboard.as_indented }
     # J
-    # K
+    Keys.as_kill { Clipboard.cut("0"); Location.as_spot('deleted') }   # cut) **
     Keys.as_line { Clipboard.as_line }
     Keys.as_macro { Macros.record }   # start recording macro *
     Keys.as_name { Clipboard.copy }   # copies using key (prompted for)
@@ -103,7 +103,10 @@ class KeyBindings
     Keys.open_list_faces { list_faces_display }
     Keys.open_lisp_error { Code.show_el4r_error }
     Keys.open_lisp_info { info("elisp") }
-    Keys.open_list_log { Rails.tree_from_log }
+    Keys.open_log_tree { Rails.tree_from_log }
+    Keys.open_log_view { Code.open_log_view }
+    Keys.open_list_models { CodeTree.display_menu("Merb.models") }
+
     Keys.open_list_names { Clipboard.list }
     Keys.open_list_repository { Repository.status_tree }
     Keys.open_link_top { Links.open_first }   # open first hyperlink on page
@@ -152,7 +155,11 @@ class KeyBindings
     Keys.enter_junior { Notes.bullet("") }
     # K
     #Keys.EK { Clipboard.paste }   # Enter Clipboard: paste
-    Keys.enter_log { Code.enter_log }
+    Keys.enter_label_bullet { Notes.enter_label_bullet }
+    Keys.enter_log_console { Code.enter_log_console }
+    Keys.enter_list_models { CodeTree.insert_menu("Merb.models") }
+    Keys.enter_log_statement { Code.enter_log }
+    Keys.enter_log_line { View.insert("Ml.line") }
     Keys.enter_menu { CodeTree.insert_menus }
     Keys.enter_name { Clipboard.paste }   # paste thing saved as name
     Keys.enter_outline { TreeLs.enter_lines }   # in tree, enter methods or headings
@@ -188,7 +195,7 @@ class KeyBindings
     Keys.do_as_wrap { Block.do_as_wrap }
     Keys.do_backward { backward_kill_word(Keys.prefix || 1) }   # delete word backward
     Keys.do_code_align { Code.do_code_align }
-    Keys.do_code_comment { Code.comment }
+    Keys.do_code_comment { Code.comment; Code.indent }
     Keys.do_create_directory { TreeLs.create_dir }
     Keys.do_compare_file { Repository.diff_one_file }   # compare current file with subversion
     Keys.do_code_indent { Code.indent }
@@ -270,7 +277,7 @@ class KeyBindings
     Keys.to_apex { View.to_top }   # to beginning of file **
     Keys.to_backward { backward_word(Keys.prefix || 1) }   # move backward one word
     Keys.to_clipboard { Search.to Clipboard[0] }   # move cursor to next instance of clipboard
-    # D
+    Keys.to_deleted { Location.to_spot('deleted') }   # **
     Keys.to_end { View.to_bottom }   # **
     Keys.to_forward { forward_word(Keys.prefix || 1) }   # move forward one word
     # H
@@ -324,7 +331,7 @@ class KeyBindings
     Keys.layout_reveal { widen; Hide.show }   # reveal all hidden text
     Keys.layout_search { Keys.prefix_u ? Search.find_in_buffers(Keys.input) : Hide.search }   # *
     Keys.layout_todo { TreeLs.open_in_bar }   # show bar on left with the quick bookmark named "-t" *
-    Keys.layout_upper { View.to_after_bar }   # go to uppermost view after bar
+    Keys.layout_upper { View.to_upper }   # go to uppermost view after bar
     # U
     # V
     Keys.layout_visibility { View.visibility }
@@ -351,7 +358,6 @@ class KeyBindings
 
   def self.isearch
     # Control keys during isearch
-    #Keys.A(:isearch_mode_map) { Search.isearch_start }   # Start of line
     Keys.A(:isearch_mode_map) { Search.isearch_query_replace }   # Alter
     Keys.B(:isearch_mode_map) { Search.insert_at_search_start }
     Keys.C(:isearch_mode_map) { Search.copy }   # Clipboard (copy)
@@ -366,7 +372,7 @@ class KeyBindings
     # Keys.J(:isearch_mode_map) { Search.highlight_found }   # Jot: highlighting yellow
     Keys.L(:isearch_mode_map) { Search.line }   # Line: copy line back to search start
     # M: leave unmapped for stop
-    # N
+    # N: leave unmapped for next
     Keys.O(:isearch_mode_map) { Search.isearch_find_in_buffers(:current_only => true) }   # Outline
     Keys.P(:isearch_mode_map) { Search.insert_at_spot }   # Put: jump to point p and insert match
     # Q: leave unmapped for quoting
@@ -377,9 +383,9 @@ class KeyBindings
     Keys.V(:isearch_mode_map) { Search.isearch_find_in_buffers }   # Visited: show matches in visited files
 #    Keys.V(:isearch_mode_map) { Search.insert_at_search_start }
     # W: leave unmapped for pulling into search
-    Keys.X(:isearch_mode_map) { Search.cut }
+    Keys.X(:isearch_mode_map) { Search.cut; Location.as_spot('deleted') }
     # Y: leave unmapped for yank
-    # Z
+    # same as C-M-w
 
     define_key :isearch_mode_map, kbd("C-1") do
       Search.isearch_copy_as("1")
@@ -393,6 +399,16 @@ class KeyBindings
     define_key :isearch_mode_map, kbd("C-4") do
       Search.isearch_copy_as("4")
     end
+
+    define_key :isearch_mode_map, kbd("C-=") do   # Add one char from isearch
+      $el.isearch_yank_char
+    end
+    define_key :isearch_mode_map, kbd("C--") do   # Remove one char from isearch
+      $el.isearch_del_char
+    end
+    define_key :isearch_mode_map, kbd("C-/") do   # Remove last action from search results
+      $el.isearch_delete_char
+    end
   end
 
   def self.isearch_meta
@@ -404,7 +420,7 @@ class KeyBindings
     Keys._D(:isearch_mode_map) { Search.jump_to_difflog }   # Diff: find original string in difflog
     Keys._E(:isearch_mode_map) { Search.insert_tree_at_spot }   # Enter
     Keys._F(:isearch_mode_map) { Search.isearch_open }   # Find file
-    Keys._G(:isearch_mode_map) { Search.isearch_google }   # Find file
+    Keys._G(:isearch_mode_map) { Search.isearch_google }   # Google search
     Keys._H(:isearch_mode_map) { Hide.show;  Search.hide }
     Keys._I(:isearch_mode_map) { Search.insert_var_at_search_start }   # Interpolate: paste as interpolated variable
     Keys._L(:isearch_mode_map) { Search.isearch_move_line }
@@ -417,7 +433,8 @@ class KeyBindings
     Keys._W(:isearch_mode_map) { Search.isearch_select_inner }   # Within: select 1 char within match
 
     define_key :isearch_mode_map, kbd("M-1") do   # pull in 1 word
-      Search.isearch_pull_in_words 1
+      $el.isearch_yank_char
+      #Search.isearch_pull_in_words 1
     end
     define_key :isearch_mode_map, kbd("M-2") do   # pull in 2 word
       Search.isearch_pull_in_words 2

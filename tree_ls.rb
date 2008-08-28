@@ -288,6 +288,7 @@ class TreeLs
     Styles.apply('^ *\\(//?\\)$', nil, :ls_dir)  # /
     Styles.apply('^ *\\(\./\\)$', nil, :ls_dir)  # ./
     Styles.apply('^ *[+-] \\(##.+/\\)$', nil, :ls_search)  # ##_/
+    Styles.apply('^ *[+-] \\(\*\*.+/\\)$', nil, :ls_search)  # ##_/
 
     #   |... lines
     Styles.apply("^ +\\(|.*\n\\)", nil, :ls_quote)
@@ -1353,6 +1354,7 @@ class TreeLs
   def self.to_parent
     (Keys.prefix || 1).times do
       indent = Line.value[/^  ( *)/, 1]
+      #search_backward_regexp "^#{indent}[^\t \n#]"
       search_backward_regexp "^#{indent}[^\t \n]"
       Move.to_line_text_beginning
     end

@@ -420,6 +420,12 @@ class Notes
     notes_mode
   end
 
+  def self.enter_label_bullet
+    Line.to_left
+    View.insert "- : "
+    Move.backward 2
+  end
+
   def self.bullet bullet_text="- "
     # Make extra line if none there yet
     if Line.matches(/./)

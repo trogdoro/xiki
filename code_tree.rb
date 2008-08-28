@@ -125,6 +125,12 @@ class CodeTree
 
   end
 
+  def self.insert_menu menu
+    insert "- #{menu}/"
+    open_line 1
+    CodeTree.launch
+  end
+
   def self.insert_menus
     # Implement
     insert "- CodeTree.menu/"

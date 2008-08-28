@@ -33,6 +33,8 @@ class Search
     was_reverse = elvar.isearch_opoint > point
     match = self.match
     delete_region match_beginning(0), match_end(0)
+
+    Location.as_spot('deleted')
     goto_char(elvar.isearch_opoint)  # Go back to start
 
     # If reverse, move back width of thing deleted
@@ -71,10 +73,10 @@ class Search
   def self.copy_and_comment
     self.clear
     line = thing_at_point(:line).sub("\n", "")
-    Line.to_left
-    insert "#"
+    Code.comment Line.left, Line.right
     goto_char(elvar.isearch_opoint)  # Go back to start
-    insert line
+    insert "#{line}"
+    Move.to_line_text_beginning
   end
 
   def self.isearch_open

@@ -48,7 +48,7 @@ class Shell
       return result
 
     else
-      if View.in_bar?
+      if View.in_bar? and ! options[:dont_leave_bar]
         View.to_after_bar
       end
       buffer ||= "*shell*"

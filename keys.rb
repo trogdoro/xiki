@@ -360,8 +360,8 @@ class Keys
   def self.bookmark_as_path
     bm = Keys.input(:timed => true, :prompt => "Enter bookmark in which to search: ")
     if bm and !(bm == ".")  # Do tree in dir from bookmark
-      dir = "$#{bm}"
       dir = Bookmarks.expand("$#{bm}")
+      dir << "/" unless dir =~ /\/$/
     else  # If no input, do tree in current dir
       dir = $el.elvar.default_directory
     end

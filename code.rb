@@ -16,8 +16,10 @@ class Code
     [file, line]
   end
 
-  def self.comment
-    comment_or_uncomment_region(region_beginning, region_end)
+  def self.comment left=nil, right=nil
+    left ||= region_beginning
+    right ||= region_end
+    comment_or_uncomment_region(left, right)
   end
 
   def self.run   # Evaluates file, paragraph, or next x lines using el4r
@@ -256,6 +258,49 @@ class Code
 
     View.insert "Ml << \"\""
     Move.backward
+  end
+
+  def self.enter_log_console
+    View.insert "console.log(\"\");"
+    Move.backward 3
+  end
+
+  def self.open_log_view
+
+    buffer = "*tail of /tmp/log.notes"
+
+    # If already open, just go to it
+    if View.buffer_visible?(buffer)
+      return View.to_buffer(buffer)
+    end
+
+    # If 2 or more windows open
+    if View.list.size == 2
+      View.to_nth(1)   # Go to 2rd
+    elsif View.list.size >= 3
+      View.to_nth(2)
+      unless View.left_edge == 0   # If 3nd notat left, go to 2nd
+        View.to_nth(1)
+        unless View.left_edge == 0   # If not at left, go to first
+          View.to_nth(0)
+        end
+        View.create
+      end
+    end
+
+    # If buffer open, just switch to it
+    if View.buffer_open? buffer
+      return View.to_buffer buffer
+    end
+
+    path = Bookmarks["$l"]
+    return if path.nil? or path.empty?
+
+    # Create file if not there
+    `touch #{path}` unless File.exists?(path)
+
+    Shell.run "tail -f #{path}", :buffer => buffer, :dir => '/tmp', :dont_leave_bar => true
+
   end
 
 end

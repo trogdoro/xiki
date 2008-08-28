@@ -38,7 +38,7 @@ class Move
       line = Line.value
       indent = Line.indent(line).length
       # Found if same indent, and at least one char after indent
-      break if indent == orig_indent && line.length > indent && line !~ /^\s*#/
+      break if indent == orig_indent && line.length > indent && line !~ /^\s*[#\/]/
     end
     move_to_column c
   end
@@ -93,6 +93,9 @@ class Move
   end
 
   def self.to_line_text_beginning
+    (Keys.prefix_times-1).times do
+      Move.next
+    end
     beginning_of_line
     skip_chars_forward "[^ \t]"
   end
@@ -122,9 +125,9 @@ class Move
     count ||= Keys.prefix :clear => true
     count ||= 1
     case count
-    when :u; backward_kill_word 1
-    when :uu; backward_kill_word 2
-    when :uuu; backward_kill_word 3
+    when :u; backward_word 1
+    when :uu; backward_word 2
+    when :uuu; backward_word 3
     else
       backward_char(count)
     end
@@ -135,11 +138,11 @@ class Move
     count ||= 1
     case count
     when :u
-      kill_word 1
+      forward_word 1
     when :uu
-      kill_word 2
+      forward_word 2
     when :uuu
-      kill_word 3
+      forward_word 3
     else
       forward_char(count)
     end
@@ -168,4 +171,13 @@ class Move
       Line.to_words
     end
   end
+
+  def self.next times=nil
+    Line.next times
+  end
+
+  def self.previous times=nil
+    Line.previous times
+  end
+
 end

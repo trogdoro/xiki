@@ -136,8 +136,7 @@ class Hide
       ch = self.char_from_user
     end
 
-    # If a tab, treat it like C-1
-    ch = 1 if ch.to_i == 9
+    ch = 1 if ch == "\t"   # If a tab, treat it like C-1
 
     # If num
     if 1 <= ch.to_i && ch.to_i <= 9

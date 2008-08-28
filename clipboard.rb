@@ -104,7 +104,12 @@ class Clipboard
   def self.copy_paragraph just_return=nil
     if Keys.prefix_u  # If U prefix, get rest of paragraph
       left, right = self.paragraph(:bounds => true, :start_here => true)
-    else  # If no prefix, get whole paragraph
+    else
+      if Keys.prefix   # If numeric prefix
+        self.as_line
+        return
+      end
+  # If no prefix, get whole paragraph
       left, right = self.paragraph(:bounds => true)
     end
 
@@ -159,10 +164,13 @@ class Clipboard
     set_mark(point_max)
   end
 
-  def self.as_line
-    Clipboard.set("0", Line.value + "\n")
-    Effects.blink :what => :line
-    $el.set_mark Line.right
+  def self.as_line many=nil
+    many ||= Keys.prefix || 1
+    left = Line.left
+    right = Line.left(many+1)
+    Clipboard.set("0", View.txt(left, right))
+    Effects.blink :left => left, :right => right
+    $el.set_mark(right-1)
   end
 
   def self.enter_replacement
@@ -191,6 +199,9 @@ class Clipboard
       l, r = Line.left, Line.left(Keys.prefix + 1)
       Effects.blink :left => l, :right => r
       Clipboard["0"] = View.txt(l, r)
+
+      View.set_mark(r)
+
       return
     end
     Clipboard.copy("0")
