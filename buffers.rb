@@ -96,4 +96,8 @@ class Buffers
     end
   end
 
+  def self.rename
+    $el.rename_buffer Keys.input(:prompt => "Rename buffer to: ")
+  end
+
 end

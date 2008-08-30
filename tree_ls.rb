@@ -146,7 +146,7 @@ class TreeLs
   def self.grep_one_file(f, regex, indent)
     result = []
     IO.foreach(f) do |line|
-      line.sub!(/[\r\n]+$/, '')
+      line.gsub!(/[\r\n\c@]+/, '')
       if regex
         next unless line =~ regex
       end
@@ -173,6 +173,7 @@ class TreeLs
     # Process files
     entries.each do |f|
       next unless FileTest.file?(f)
+
       # If matching filename, skip if no match
       if file_regex
         stem = f[/[^\/]+$/]
@@ -371,6 +372,8 @@ class TreeLs
   def self.open ignore_prefix=nil
     path = construct_path
 
+    return Files.open_in_os(path) if Keys.prefix == 0
+
     # Split off |... if it's there (search string)
     path =~ /(.*?)-?\+?\|(.*)/
     path, search_string = $1, $2 if $2
@@ -398,7 +401,7 @@ class TreeLs
       return
     when 1
       # Implement: grab code after delete runs
-    when 0
+    when 9
       return self.drill
     end
 
@@ -569,6 +572,12 @@ class TreeLs
     case ch  # Do option based on last char, or run as command
     when "enter"  # Enter key
       # Do nothing (end search)
+    when "0"
+      file = self.construct_path  # Expand out ~
+      shell_command("open #{file}")
+    when "\C-l"
+      file = self.construct_path  # Expand out ~
+      shell_command("open #{file}")
     when "\C-a"
       Line.to_left
     when "\C-e"
@@ -915,8 +924,10 @@ class TreeLs
     end
   end
 
-  # Recursively display dir in tree  # Insert dir contents at point (usually in existing tree)
+  # Recursively display dir in tree   # Insert dir contents at point (usually in existing tree)
   def self.dir
+    return Files.open_in_os(construct_path) if Keys.prefix == 0
+
     self.plus_to_minus_maybe
     beginning_of_line
     Dir.chdir elvar.default_directory

@@ -156,6 +156,10 @@ class Files
     buffer_list.find{|b| buffer_file_name(b) == name}
   end
 
+  def self.open_in_os path
+    shell_command("open #{path}")
+  end
+
 end
 
 $el.el4r_lisp_eval("(require 'recentf)")

@@ -63,7 +63,7 @@ class KeyBindings
     Keys.as_object { Clipboard.as_object }   # copy object / symbol at point
     Keys.as_paragraph { Clipboard.copy_paragraph }   # copy paragraph
     Keys.as_quick { Bookmarks.save :q }   # like AB but uses different temporary namespace
-    Keys.as_rename { rename_buffer Keys.input( :prompt => "Rename buffer to: " ) }   # buffer)
+    Keys.as_rest { Clipboard.copy_paragraph(:rest => true) }
     Keys.as_spot { Location.as_spot }   # remember point in file *
     Keys.as_thing { Clipboard.as_thing }  # copy sexp at point
     #Keys.as_update_remote { TreeLs.save_remote }
@@ -96,7 +96,7 @@ class KeyBindings
     Keys.open_history { Files.open_history }   # show recently viewed files
     Keys.open_in_bar { View.open_in_bar }
     Keys.open_in_right { View.open_in_right }
-    Keys.open_in_os { shell_command("open #{View.file || View.path}") }
+    Keys.open_in_os { Files.open_in_os }
     Keys.open_just { Files.open_just }
 
     Keys.open_list_bookmarks { CodeTree.display_menu("Bookmarks.tree") }
@@ -241,6 +241,7 @@ class KeyBindings
     Keys.do_lines_sort { sort_lines(nil, region_beginning, region_end) }
     Keys.do_linebreaks_unix { set_buffer_file_coding_system :unix }
     Keys.do_macro { Macros.run }   # do last macro *
+    Keys.do_name_buffer { Buffers.rename }
     Keys.do_name_files { wdired_change_to_wdired_mode }
     Keys.do_next_paragraph { Code.do_next_paragraph }   # Move line to start of next paragraph
     Keys.do_outline { History.open_current :outline => true, :prompt_for_bookmark => true }
@@ -332,7 +333,6 @@ class KeyBindings
     Keys.layout_search { Keys.prefix_u ? Search.find_in_buffers(Keys.input) : Hide.search }   # *
     Keys.layout_todo { TreeLs.open_in_bar }   # show bar on left with the quick bookmark named "-t" *
     Keys.layout_upper { View.to_upper }   # go to uppermost view after bar
-    # U
     # V
     Keys.layout_visibility { View.visibility }
     Keys.layout_wrap { toggle_truncate_lines }   # wrap lines **
@@ -506,7 +506,7 @@ class KeyBindings
     #Keys.TT {insert "xyz"}
 
     Keys.set("C-e C-\\") {
-      txt, left, right = Clipboard.copy_paragraph :just_return
+      txt, left, right = Clipboard.copy_paragraph(:just_return => true)
       View.delete left, right
       txt.gsub! /$/, ' \\'
       txt.sub! " \\\n \\", "\n"

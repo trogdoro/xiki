@@ -101,19 +101,19 @@ class Clipboard
     insert TextUtil.camel_case(word)
   end
 
-  def self.copy_paragraph just_return=nil
-    if Keys.prefix_u  # If U prefix, get rest of paragraph
+  def self.copy_paragraph options
+    if Keys.prefix_u or options[:rest]   # If U prefix, get rest of paragraph
       left, right = self.paragraph(:bounds => true, :start_here => true)
     else
       if Keys.prefix   # If numeric prefix
         self.as_line
         return
       end
-  # If no prefix, get whole paragraph
+      # If no prefix, get whole paragraph
       left, right = self.paragraph(:bounds => true)
     end
 
-    if just_return
+    if options[:just_return]
       return [View.txt(left, right), left, right]
     end
     goto_char left

@@ -131,7 +131,7 @@ class Location
 
     if View.file   # If buffer has a file, just save in location
       Location.save(key)
-      return @@spot = nil
+      return @@spots[key] = nil
     end
 
     # Must be a buffer
