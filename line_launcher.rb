@@ -106,7 +106,7 @@ class LineLauncher
         View.to_after_bar
       end
       # Go to console
-      View.to_buffer "**console"
+      View.to_buffer "*console"
       erase_buffer
       end_of_buffer
       insert "reload!"
@@ -200,26 +200,23 @@ class LineLauncher
       other_window -1
     end
 
+    self.add(/ *(.*)!!!(.+)/) do |line|  # !!!shell command inline
+
+      line =~ / *(.*)!!!(.+)/
+      dir, command = $1, $2
+      output = Shell.run command, :dir => dir, :sync => true
+
+      output.gsub!(/^/, '|')
+      TreeLs.indent(output)
+      TreeLs.insert_quoted_and_search output#.gsub!(/^/, "#{indent}  |")
+
+    end
+
     self.add(/ *(.*)!!(.+)/) do |line|  # !!shell command
       View.handle_bar
       line =~ / *(.*)!!(.+)/
       dir, command = $1, $2
       Shell.run command, :dir => dir
-    end
-
-    self.add(/ *(.*)!!!(.+)/) do |line|  # !!!shell command inline
-      line =~ / *(.*)!!!(.+)/
-      dir, command = $1, $2
-      output = Shell.run command, :dir => dir, :sync => true
-
-      # Insert under
-      indent = Line.indent
-      Line.start
-      started = point
-      Line.next
-
-      output.gsub!(/^/, "#{indent}  |")
-      insert output
     end
 
     self.add(/(http|file).?:\/\/.+/) do |line|  # url

@@ -401,8 +401,8 @@ class TreeLs
       return
     when 1
       # Implement: grab code after delete runs
-    when 9
-      return self.drill
+      #     when 9
+      #       return self.drill
     end
 
     # If numeric prefix, jump to nth window

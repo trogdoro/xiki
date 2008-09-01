@@ -20,6 +20,7 @@ class Code
     left ||= region_beginning
     right ||= region_end
     comment_or_uncomment_region(left, right)
+    Code.indent
   end
 
   def self.run   # Evaluates file, paragraph, or next x lines using el4r
@@ -267,7 +268,8 @@ class Code
 
   def self.open_log_view
 
-    buffer = "*tail of /tmp/log.notes"
+    file = Bookmarks["$o"]
+    buffer = "*tail of #{file}"
 
     # If already open, just go to it
     if View.buffer_visible?(buffer)
@@ -293,13 +295,12 @@ class Code
       return View.to_buffer buffer
     end
 
-    path = Bookmarks["$l"]
-    return if path.nil? or path.empty?
+    return if file.nil? or file.empty?
 
     # Create file if not there
-    `touch #{path}` unless File.exists?(path)
+    `touch #{file}` unless File.exists?(file)
 
-    Shell.run "tail -f #{path}", :buffer => buffer, :dir => '/tmp', :dont_leave_bar => true
+    Shell.run "tail -f #{file}", :buffer => buffer, :dir => '/tmp', :dont_leave_bar => true
 
   end
 

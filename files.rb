@@ -156,7 +156,8 @@ class Files
     buffer_list.find{|b| buffer_file_name(b) == name}
   end
 
-  def self.open_in_os path
+  def self.open_in_os path=nil
+    path ||= View.file
     shell_command("open #{path}")
   end
 

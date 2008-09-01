@@ -279,13 +279,13 @@ class View
   end
 
   def self.next times=1
-    (times || Keys.prefix_times).times do
+    (Keys.prefix_times || times).times do
       other_window 1
     end
   end
 
   def self.previous times=1
-    (times || Keys.prefix_times).times do
+    (Keys.prefix_times || times).times do
       other_window -1
     end
   end

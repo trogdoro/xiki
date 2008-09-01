@@ -104,7 +104,7 @@ class KeyBindings
     Keys.open_lisp_error { Code.show_el4r_error }
     Keys.open_lisp_info { info("elisp") }
     Keys.open_log_tree { Rails.tree_from_log }
-    Keys.open_log_view { Code.open_log_view }
+
     Keys.open_list_models { CodeTree.display_menu("Merb.models") }
 
     Keys.open_list_names { Clipboard.list }
@@ -195,7 +195,7 @@ class KeyBindings
     Keys.do_as_wrap { Block.do_as_wrap }
     Keys.do_backward { backward_kill_word(Keys.prefix || 1) }   # delete word backward
     Keys.do_code_align { Code.do_code_align }
-    Keys.do_code_comment { Code.comment; Code.indent }
+    Keys.do_code_comment { Code.comment }
     Keys.do_create_directory { TreeLs.create_dir }
     Keys.do_compare_file { Repository.diff_one_file }   # compare current file with subversion
     Keys.do_code_indent { Code.indent }
@@ -239,6 +239,7 @@ class KeyBindings
     }
     Keys.do_list_revisions { cm_subversion_command "echo \"\"; svn log --limit 10" }
     Keys.do_lines_sort { sort_lines(nil, region_beginning, region_end) }
+    Keys.do_load_test { Memorizable.load_test_url }
     Keys.do_linebreaks_unix { set_buffer_file_coding_system :unix }
     Keys.do_macro { Macros.run }   # do last macro *
     Keys.do_name_buffer { Buffers.rename }
@@ -311,7 +312,7 @@ class KeyBindings
     # Use L prefix for: adjusting the layout, changing what is visible
     Keys.layout_all { View.hide_others }   # *
     Keys.layout_balance { View.balance }   # balance windows *
-    Keys.layout_color { Color.colorize }   # colorize line, etc
+    Keys.layout_create { View.create }   # open new view **
     Keys.layout_dimensions_large { set_frame_size(View.frame, 145, 58);  set_frame_position(View.frame, 40, 40) }
     Keys.layout_dimensions_medium { set_frame_size(View.frame, 145, 50) }
     Keys.layout_dimensions_small { set_frame_size(View.frame, 90, 35) }
@@ -324,9 +325,11 @@ class KeyBindings
     # J
     Keys.layout_kill { kill_this_buffer }   # **
     Keys.LL { recenter(elvar.current_prefix_arg) }   # LL - recenter (L's default) *
-    Keys.layout_menu { CodeTree.layout_menu }   # show menu bare in current state
+    Keys.layout_mark { Color.colorize }   # colorize line, etc
+    #Keys.layout_menu { CodeTree.layout_menu }   # show menu bare in current state
     Keys.layout_next { View.next }   # next view **
-    Keys.layout_open { View.create }   # open new view **
+    Keys.layout_output { Code.open_log_view }
+    #Keys.layout_open { View.create }   # open new view **
     Keys.layout_previous { View.previous }   # previous view **
     # Q
     Keys.layout_reveal { widen; Hide.show }   # reveal all hidden text

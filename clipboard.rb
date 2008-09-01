@@ -101,7 +101,7 @@ class Clipboard
     insert TextUtil.camel_case(word)
   end
 
-  def self.copy_paragraph options
+  def self.copy_paragraph options={}
     if Keys.prefix_u or options[:rest]   # If U prefix, get rest of paragraph
       left, right = self.paragraph(:bounds => true, :start_here => true)
     else

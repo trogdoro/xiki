@@ -97,7 +97,9 @@ class Buffers
   end
 
   def self.rename
-    $el.rename_buffer Keys.input(:prompt => "Rename buffer to: ")
+    options = {:prompt => "Rename buffer to: "}
+    options[:initial_input] = $el.buffer_name if Keys.prefix_u
+    $el.rename_buffer Keys.input(options)
   end
 
 end
