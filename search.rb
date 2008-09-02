@@ -472,6 +472,11 @@ class Search
     upcase_region(match_beginning(0), match_end(0))
   end
 
+  def self.downcase
+    Search.clear
+    downcase_region(match_beginning(0), match_end(0))
+  end
+
   def self.enter_search
     bm = Keys.input(:timed => true, :prompt => "Enter bookmark in which to search: ")
     return unless bm

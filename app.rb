@@ -29,10 +29,4 @@ class App
     isearch_backward
   end
 
-  def self.load_emacs
-    switch_to_buffer "*el4r:process*"
-    kill_buffer "*el4r:process*"
-    load_file "~/.emacs"
-  end
-
 end

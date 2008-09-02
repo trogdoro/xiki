@@ -21,14 +21,12 @@ class CodeTree
       # if '- .xx:/", get rid of trailing slash
       l.sub!(/^([+-] .*\..+)\/$/, "\\1")
     end
-
     # Determine code to eval
     code = self.determine_code_from_path path
     b = View.buffer
     orig.go
     orig_left = point
     returned, stdout, e = Code.eval(code)  # Eval code
-
     if e
       returned = ''
       stdout = e.is_a?(ScriptError) ?
@@ -37,8 +35,7 @@ class CodeTree
     end
 
     buffer_changed = b != View.buffer  # Remember whether we left the buffer
-    message(returned.to_s) if returned and returned.size < 500
-
+    message(returned.to_s) if returned and (!returned.is_a?(String) or returned.size < 500)
     # Insert output if there was any
     unless stdout.nil? || stdout.size == 0
       # Pull out flags
@@ -111,6 +108,10 @@ class CodeTree
     CodeTree.launch
   end
 
+  def self.open_menu
+    CodeTree.display_menu("CodeTree.menu")
+  end
+
   def self.layout_menu
     View.bar if Keys.prefix_u
 
@@ -120,9 +121,6 @@ class CodeTree
     else # Else open it
       self.display_menu("CodeTree.menu")
     end
-    #self.display_menu("CodeTree.menu")
-    # TODO: Make U prefix open in bar
-
   end
 
   def self.insert_menu menu

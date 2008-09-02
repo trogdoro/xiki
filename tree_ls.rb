@@ -57,7 +57,7 @@ class TreeLs
 
   # Change dirs into spaces, etc
   def clean path, indent=0
-#     path.gsub(/.+?\//, "  ")
+    #     path.gsub(/.+?\//, "  ")
     path = path.gsub(/.+?\//, "  ")
     indent == 0 ?
       path :
@@ -299,27 +299,27 @@ class TreeLs
   # Define key
   def self.define_keys
 
-#     make_local_variable :tab_width
-#     elvar.tab_width = 3
+  #     make_local_variable :tab_width
+  #     elvar.tab_width = 3
 
-#     elvar.treels_mode_keymap = make_sparse_keymap
-#     use_local_map elvar.treels_mode_keymap
+  #     elvar.treels_mode_keymap = make_sparse_keymap
+  #     use_local_map elvar.treels_mode_keymap
 
-#     # Previous file
-#     Keys.P(:treels_mode_keymap) do
-#       beginning_of_line
-#       TreeLs.select_previous_file
-#     end
-#     # Next file
-#     Keys.N(:treels_mode_keymap) do
-#       end_of_line
-#       TreeLs.select_next_file
-#     end
+  #     # Previous file
+  #     Keys.P(:treels_mode_keymap) do
+  #       beginning_of_line
+  #       TreeLs.select_previous_file
+  #     end
+  #     # Next file
+  #     Keys.N(:treels_mode_keymap) do
+  #       end_of_line
+  #       TreeLs.select_next_file
+  #     end
 
-#     # Enter should open the file
-#     Keys.M(:treels_mode_keymap) do
-#       TreeLs.open
-#     end
+  #     # Enter should open the file
+  #     Keys.M(:treels_mode_keymap) do
+  #       TreeLs.open
+  #     end
 
   end
 
@@ -563,10 +563,11 @@ class TreeLs
     # Exiting, so restore cursor
     Cursor.restore :before_tree_ls
 
-    # Special check for C-.
+    # Special check for C-. and other sequences
     ch = "enter" if ch_raw == 7
     ch = "period" if ch_raw == 67108910
     ch = "delete" if ch_raw == 127
+    ch = "slash" if ch_raw == 67108911
 
     # Options during search
     case ch  # Do option based on last char, or run as command
@@ -705,6 +706,9 @@ class TreeLs
 
     when "\C-s"
       isearch_forward
+
+    when "slash"
+      undo
 
     when "/"  # If slash, append selected dir to parent dir
 

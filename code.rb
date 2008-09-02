@@ -301,6 +301,7 @@ class Code
     `touch #{file}` unless File.exists?(file)
 
     Shell.run "tail -f #{file}", :buffer => buffer, :dir => '/tmp', :dont_leave_bar => true
+    Notes.apply_styles
 
   end
 

@@ -305,7 +305,7 @@ class Notes
     Styles.clear
 
     # |... lines
-    Styles.apply("^\\(| \\)\\(.+\n\\)", nil, :notes_h1_pipe, :notes_h1)
+    Styles.apply("^\\(| \\)\\(.*\n\\)", nil, :notes_h1_pipe, :notes_h1)
     Styles.apply("^\\(| .+?: \\)\\(.+\n\\)", nil, :notes_h1_pipe, :notes_h1)
 
     # | i ... lines

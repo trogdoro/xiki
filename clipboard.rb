@@ -170,7 +170,7 @@ class Clipboard
     right = Line.left(many+1)
     Clipboard.set("0", View.txt(left, right))
     Effects.blink :left => left, :right => right
-    $el.set_mark(right-1)
+    $el.set_mark(right)
   end
 
   def self.enter_replacement

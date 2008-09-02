@@ -72,7 +72,7 @@ class Color
       Styles.define :color_rb_orange, :bg => "552200"
       Styles.define :color_rb_yellow, :bg => "4a4a00"
       Styles.define :color_rb_green, :bg => "004400"
-      Styles.define :color_rb_blue, :bg => "000066"
+      Styles.define :color_rb_blue, :bg => "000077"
       Styles.define :color_rb_purple, :bg => "330044"
 
     end

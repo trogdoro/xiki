@@ -38,8 +38,8 @@ class KeyBindings
     self.misc
 
     Keys.add_menu_items
-#       @@key_queue << [menu, item]
-#       #Menu.add_item menu, item
+    #       @@key_queue << [menu, item]
+    #       #Menu.add_item menu, item
   end
 
   def self.a_keys
@@ -110,7 +110,7 @@ class KeyBindings
     Keys.open_list_names { Clipboard.list }
     Keys.open_list_repository { Repository.status_tree }
     Keys.open_link_top { Links.open_first }   # open first hyperlink on page
-    Keys.open_menu { CodeTree.display_menu("CodeTree.menu") }   # Open all menus and show them **
+    Keys.open_menu { CodeTree.open_menu }   # Open all menus and show them **
     Keys.open_newly_edited { History.open_unsaved }
     Keys.OO { open_line elvar.current_prefix_arg || 1 }   # OO - open line (O's default)
     Keys.open_previous { Files.open_last }
@@ -134,7 +134,7 @@ class KeyBindings
   def self.e_keys
     # E: enter...
     # Use E prefix for: inserting
-#     Keys.EAB { Code.enter_as_backslash }   # Enter As Bash: enter with \ at eol's
+    #     Keys.EAB { Code.enter_as_backslash }   # Enter As Bash: enter with \ at eol's
     Keys.enter_as_camelcase { insert TextUtil.camel_case(Clipboard.get(0)) }
     Keys.enter_as_debug { Code.enter_as_debug }
     Keys.enter_as_filename { insert Clipboard.get(".") }
@@ -228,7 +228,7 @@ class KeyBindings
     Keys.do_kill_thing { delete_region(* bounds_of_thing_at_point( :sexp )) }   # kill adjacent lines at same indent as this one
     Keys.do_last_command { Shell.do_last_command }
     Keys.do_linebreaks_dos { set_buffer_file_coding_system :dos }
-    Keys.do_load_emacs { App.load_emacs }   # *
+    #     Keys.do_load_emacs { App.load_emacs }   # *
     Keys.do_load_file { revert_buffer(true, true, true) }
     Keys.do_lines_having {   # delete lines matching a regex
       unless elvar.current_prefix_arg
@@ -250,7 +250,7 @@ class KeyBindings
     Keys.do_query { Search.query_replace }   # do query replace *
     Keys.do_ruby { Code.run }   # run code as ruby *
     Keys.do_search { Search.tree_grep }   # do grep search *
-#    Keys.DS { elvar.current_prefix_arg ? johns_thing : Search.grep }   # Do Search: do grep search
+    #    Keys.DS { elvar.current_prefix_arg ? johns_thing : Search.grep }   # Do Search: do grep search
     Keys.do_tree { TreeLs.launch( :recursive => true ) }   # draw filesystem tree for current dir or bookmark
     Keys.do_under { TreeLs.kill_under }   # kill tree children (lines indented more)
     #Keys.display_up { message TreeLs.construct_path( :indented => true ) }   # display path to root of file
@@ -350,7 +350,7 @@ class KeyBindings
     Keys.L9 { Move.to_window 9 }
 
     # Todo: if prefix passed, expand window, but leave other windows open with that much space in each
-#    Keys.LCR { Colors.highlight  }   # Layout Tree: show bar on left with the quick bookmark named "-t"
+    #    Keys.LCR { Colors.highlight  }   # Layout Tree: show bar on left with the quick bookmark named "-t"
 
     # Todo:
     # - Make it recognize :n when opening
@@ -384,7 +384,7 @@ class KeyBindings
     Keys.T(:isearch_mode_map) { Search.isearch_open_last_edited }   # To: open file / jump to method
     Keys.U(:isearch_mode_map) { Search.isearch_pull_in_sexp }  # like C-w, but pulls in sexp
     Keys.V(:isearch_mode_map) { Search.isearch_find_in_buffers }   # Visited: show matches in visited files
-#    Keys.V(:isearch_mode_map) { Search.insert_at_search_start }
+    #    Keys.V(:isearch_mode_map) { Search.insert_at_search_start }
     # W: leave unmapped for pulling into search
     Keys.X(:isearch_mode_map) { Search.cut; Location.as_spot('deleted') }
     # Y: leave unmapped for yank
@@ -415,9 +415,12 @@ class KeyBindings
   end
 
   def self.isearch_meta
+    #Find shortcut for downcasing found
+    #Keys._?(:isearch_mode_map) { Search.downcase }   # Upcase
+
     # Meta keys during isearch
     Keys._A(:isearch_mode_map) { Search.isearch_query_replace :start_with_search_string }   # Alter: query-replace, using search string as initial input
-#    Keys._A(:isearch_mode_map) { Search.isearch_tree_grep("$a") }   # All: find in $a bookmark
+    #    Keys._A(:isearch_mode_map) { Search.isearch_tree_grep("$a") }   # All: find in $a bookmark
     #Keys._B(:isearch_mode_map) { Search.isearch_find_in_buffers }   # Outline (all buffers)
     Keys._C(:isearch_mode_map) { Search.copy_and_comment }   # Backup: comment line and copy it to starting point
     Keys._D(:isearch_mode_map) { Search.jump_to_difflog }   # Diff: find original string in difflog
@@ -486,7 +489,7 @@ class KeyBindings
 
     # Misc Configuration
     #Search.isearch_n
-#    Notes.keys
+    #    Notes.keys
 
     if locate_library "ruby-mode"
       el_require :ruby_mode
