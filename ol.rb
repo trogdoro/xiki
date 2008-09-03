@@ -1,12 +1,22 @@
 require 'text_util'
 
 class Ol
+
+  @@last = Time.now
+
   def self.log txt, line
+    path = Bookmarks["$o"]
+
+    # If n seconds passed since last call
+
+    difference = Time.now - @@last
+    @@last = Time.now
+    heading = difference > 3 ? "| \n" : nil
+
     h = Ol.parse_line(line)
 
-    path = Bookmarks["$o"]
-    File.open(path, "a") { |f| f << "#{txt}\n" }
-    File.open("#{path}.lines", "a") { |f| f << "#{h[:path]}:#{h[:line]}\n" }
+    File.open(path, "a") { |f| f << "#{heading}#{txt}\n" }
+    File.open("#{path}.lines", "a") { |f| f << "#{heading ? "\n" :""}#{h[:path]}:#{h[:line]}\n" }
 
     txt
   end

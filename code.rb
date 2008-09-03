@@ -303,7 +303,7 @@ class Code
     `touch #{lines}` unless File.exists?(lines)
 
     Shell.run "tail -f #{file}", :buffer => buffer, :dir => '/tmp', :dont_leave_bar => true
-    Notes.apply_styles
+    Notes.mode
 
   end
 
