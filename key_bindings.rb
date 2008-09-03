@@ -4,7 +4,7 @@
   tree_ls repository line_launcher effects twitter shell rails merb
   data_mapper code_tree docs svn remote redmine schedule irc mysql
   cursor core_ext help ruby ruby_console buffers links computer menu
-  safari ml book
+  safari ol book
   ].each { |l| require l }
 
 # TODO
@@ -159,7 +159,7 @@ class KeyBindings
     Keys.enter_log_console { Code.enter_log_console }
     Keys.enter_list_models { CodeTree.insert_menu("Merb.models") }
     Keys.enter_log_statement { Code.enter_log }
-    Keys.enter_log_line { View.insert("Ml.line") }
+    Keys.enter_log_line { View.insert("Ol.line") }
     Keys.enter_menu { CodeTree.insert_menus }
     Keys.enter_name { Clipboard.paste }   # paste thing saved as name
     Keys.enter_outline { TreeLs.enter_lines }   # in tree, enter methods or headings

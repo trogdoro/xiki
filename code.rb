@@ -117,7 +117,7 @@ class Code
 
   def self.enter_ruby_log
     txt = Clipboard.get("0")
-    insert "Ml << \"#{txt}: \#{#{txt}}\""
+    insert "Ol << \"#{txt}: \#{#{txt}}\""
   end
 
   def self.indent
@@ -225,7 +225,7 @@ class Code
         m
       else
         count += 1;
-        (count & 1 == 0) ? " ml #{count}\n#{m}" : m
+        (count & 1 == 0) ? " ol #{count}\n#{m}" : m
       end
     }
 
@@ -253,11 +253,11 @@ class Code
   def self.enter_log
     if Keys.prefix_u
       clip = Clipboard[0]
-      View.insert "Ml << \"#{clip}: \#{#{clip}}\""
+      View.insert "Ol << \"#{clip}: \#{#{clip}}\""
       return
     end
 
-    View.insert "Ml << \"\""
+    View.insert "Ol << \"\""
     Move.backward
   end
 
@@ -299,6 +299,8 @@ class Code
 
     # Create file if not there
     `touch #{file}` unless File.exists?(file)
+    lines = "#{file}.lines"
+    `touch #{lines}` unless File.exists?(lines)
 
     Shell.run "tail -f #{file}", :buffer => buffer, :dir => '/tmp', :dont_leave_bar => true
     Notes.apply_styles

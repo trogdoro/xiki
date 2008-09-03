@@ -22,9 +22,6 @@ class Keys
 
   def self.method_missing(meth, *args, &block)
 
-# $el.ml meth.to_s# =~ /_/
-# return
-
     # Accept it if block but no args
     meth = meth.to_s
     if args.empty? and block and meth =~ /_/
@@ -100,7 +97,6 @@ class Keys
   end
 
   def self.map_to_eval keys_raw, code
-    #ml [keys_raw, code]
     $el.el4r_lisp_eval"
       (global-set-key (kbd \"#{keys_raw}\")  (lambda () (interactive)
         (el4r-ruby-eval \"#{code}\" )
@@ -123,17 +119,11 @@ class Keys
     l.join " "
   end
   def self.set *args, &block
-#    ml args.size
     # Keys is always first arg
     keys = args.shift
-    #ml keys
-#    ml "1"
-    # If 2nd arg, use it
-    if args.size > 0
-#      ml "args"
+    if args.size > 0   # If 2nd arg, use it
       self.map_to_eval keys, args[0]
-    # Otherwise, use block
-    else
+    else   # Otherwise, use block
       $el.define_key :global_map, $el.kbd(keys), &block
     end
   end

@@ -179,8 +179,8 @@ class Line
     self.matches /^\s*- /, line
   end
 
-  def self.number
-    line_number_at_pos
+  def self.number pos=nil
+    line_number_at_pos pos
   end
 
   def self.to_blank

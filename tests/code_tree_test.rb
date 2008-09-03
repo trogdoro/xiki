@@ -3,7 +3,7 @@ require 'el_mixin'
 $:.unshift "../"
 require '../code_tree'
 
-def ml txt
+def ol txt
   File.open("/temp/log.notes", "a") { |f| f << "#{txt}\n" }
   txt
 end

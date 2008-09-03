@@ -231,6 +231,7 @@ class View
 
   # Accounts for bar
   def self.balance
+
     balance_windows
     return if elvar.current_prefix_arg
     if self.bar?

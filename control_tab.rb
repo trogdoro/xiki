@@ -10,19 +10,8 @@ class ControlTab
 
   # Primary method.  Is mapped to C-tab and does the switching.
   def self.go
-#     puts recent_keys.to_s
-#     ml recent_keys.class
-#     ml "ControlTab: 2"
-#     ml recent_keys.to_s
-#     ml "ControlTab: 3"
 
     last_char_typed = recent_keys.to_s[/\S+ (\S+) \S+\]$/, 1]
-#    puts "ary: #{recent_keys.to_a.inspect}"
-
-# puts "last: #{$el.pp_to_string(recent_keys.to_a.last)}"
-# puts "last was modeline click: #{$el.pp_to_string(recent_keys.to_a.last) =~ /^\(mouse-1\n.+mode-line$/}"
-# puts "last_char_typed: #{last_char_typed}"
-    #last_was_modeline_click = $el.pp_to_string(recent_keys.to_a.last) =~ /^\(mouse-1\n.+mode-line$/
 
     first_tab_in_sequence = ! last_char_typed[/tab$/]
 
@@ -32,13 +21,8 @@ class ControlTab
     if Keys.prefix_u   # If U prefix (must be first alt-tab in sequence)
       # Go to last edited file, and store list
       @@edited = elvar.editedhistory_history.to_a
-      #ml edited.size
       @@edited -= View.list_files
-      #ml edited.size
       find_file @@edited.shift
-      # Remove currently viewed
-      #View.list_files
-      #ml elvar.editedhistory_history.to_a[0]
 
       return
     elsif @@edited   # Subsequent alt-tab
@@ -46,7 +30,6 @@ class ControlTab
       return
     end
 
-#     ml "ControlTab: 2.0"
     # If this was the first tab in this sequence
     if first_tab_in_sequence# || last_was_modeline_click
 
@@ -155,10 +138,6 @@ class ControlTab
 
   def self.keys
 
-#     # Redundantly map tab to indent (so tab will be mapped separately to C-i)
-#     el4r_lisp_eval %q[
-#       (define-key global-map (kbd "<tab>") 'indent-for-tab-command)
-#       ]
     Keys.set("C-<tab>") do
       ControlTab.go
     end

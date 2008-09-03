@@ -1621,7 +1621,6 @@ private
   end
 
   def self.toggle_plus_and_minus
-    #ml "toggle_plus_and_minus: #{caller(0).join("\n")}"
     orig = Location.new
     l = Line.value 1, :delete => true
     case l[/^\s*([+-])/, 1]

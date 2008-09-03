@@ -300,16 +300,11 @@ class Xiki
 #  # All pages that open a specific page name go through this
   def self.open_page name, edit=false
     name.downcase!
-#    ml "open_page > #{name}"
 
-#    find_file "#{name}.xiki"
-#    insert get_page_from_server parse_page_name_from_file, edit
-#    @@hook_enabled = false
     name = "home" if name == ""
     self.add_to_history_maybe
     find_file "#{name}.xiki"
     self.add_to_history_maybe
-#    @@hook_enabled = true
   end
 
   def self.get_page_from_server name, edit=false
@@ -329,7 +324,6 @@ class Xiki
 
 #    txt.sub /\A.+\//, ""
     # Add path
-#    ml "h 1"
     txt.sub /^/, "#{server}/"
 #    txt.sub! /^/, "#{@@default_server_root}/"
 
@@ -386,8 +380,6 @@ class Xiki
 
       # Get rid of server path
       txt = buffer_string.sub /\A.+?\//, ""
-#      ml txt
-#      ml "-"
 
       # TODO Server currently pulls title from page
       res = Net::HTTP.post_form(URI.parse("http://#{server}/wiki/save"),
@@ -410,7 +402,6 @@ class Xiki
   # Called when user clicks in a link (on other executable line),
   # or presses enter in a link.
   def self.wiki_click typed_enter=false
-#ml "wiki_click"
     line = buffer_substring(point_at_bol, point_at_eol)
     before = buffer_substring(point_at_bol, point)
     after = buffer_substring(point, point_at_eol)

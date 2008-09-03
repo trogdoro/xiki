@@ -31,6 +31,10 @@ class LineLauncher
     label = Line.label(line)
     paren = label[/\((.+)\)/, 1] if label
 
+    # Special hooks for specific files
+    return if self.file_hooks
+
+
     View.bar if Keys.prefix == 9   # Effects.blink
 
     if line =~ /^( *)- .+?: (.+)/   # Split label off, if there
@@ -260,8 +264,8 @@ class LineLauncher
     end
 
     self.add(/^ *$/) do |line|  # Empty line: open dir
-#       Line.to_right
-#       CodeTree.insert_menus
+      #       Line.to_right
+      #       CodeTree.insert_menus
       View.insert("- CodeTree.menu/")
       LineLauncher.launch
     end
@@ -290,6 +294,16 @@ class LineLauncher
       TreeLs.insert_quoted_and_search out
     end
 
+  end
+
+  def self.file_hooks
+    if View.name =~ /#{Bookmarks['$o']}$/   # If in output log
+      Ol.launch
+      return true
+    end
+
+    return false
+    #TODO return true if handled
   end
 
 end

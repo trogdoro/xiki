@@ -60,7 +60,6 @@ class Hide
         # If we're at the end of non-match area, hide
         if in_non_match
           @@areas_to_hide << [left, bol]
-  #        ml "- hide #{left} to #{bol}"
           in_non_match = false
         end
         left = eol
@@ -70,7 +69,6 @@ class Hide
       end
       bol = eol
     end
-#    ml @@visible.inspect
 
     @@areas_to_hide << [left, bol] if in_non_match
 
@@ -80,7 +78,6 @@ class Hide
       elisp += " (overlay-put (make-overlay #{i[0]} #{i[1]}) 'invisible 'hide)\n"
     end
     el4r_lisp_eval elisp + ")"
-#(add-to-list 'hide-areas-to-hide "x")
 
   end
 
@@ -90,7 +87,6 @@ class Hide
     c -= 67108864 if(c >= 67108912 && c <= 67108921)
     "#{c.chr}"
   end
-#  p self.char_from_user
 
   def self.search search=nil, options={}
     if search
@@ -172,9 +168,7 @@ class Hide
   def self.show
 
     # Move down to visible line (this doesn't seem to happen on its own)
-#    ml @@already_hidden
     while( @@already_hidden[point] )
-#      ml "p #{point}"
       forward_line
     end
 
