@@ -344,6 +344,10 @@ class Keys
     return pre
   end
 
+  def self.prefix= to
+    $el.elvar.current_prefix_arg = to
+  end
+
   # Whether C-u was held down before this
   def self.prefix_u
     self.prefix == :u

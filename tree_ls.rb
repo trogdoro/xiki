@@ -963,10 +963,10 @@ class TreeLs
     insert t.res.gsub(/^#{result_indent}/, indent)
 
     right = point
-#    insert "-"
+    #    insert "-"
 
     goto_char left
-#    isearch_forward
+    #    isearch_forward
     self.select_next_file
     self.search(:recursive => true, :left => left, :right => right)
   end
@@ -989,7 +989,7 @@ class TreeLs
       end
     end
 
-#     insert dir
+    #     insert dir
     # Get dirs and files in it
     dirs, files = self.files_in_dir(dir)
 
@@ -1017,11 +1017,11 @@ class TreeLs
 
   end
 
-#   # Does search on the top-level dirs/files of one dir.
-#   # Called by dir_one_level, among others.
-#   def self.flat_search options={}
+  #   # Does search on the top-level dirs/files of one dir.
+  #   # Called by dir_one_level, among others.
+  #   def self.flat_search options={}
 
-#   end
+  #   end
 
   # Drill into a file, showing lines one indent level deeper
   def self.drill
@@ -1045,7 +1045,7 @@ class TreeLs
           next
         end
         next unless found
-#         next if line =~ /^\s*$/  # Skip blank lines
+        #         next if line =~ /^\s*$/  # Skip blank lines
 
         # Exit if indented at same level (unless blank or comment)
         if((Line.indent(line).length <= indent_after_bar.length) &&
@@ -1367,7 +1367,9 @@ class TreeLs
   end
 
   def self.to_parent
-    (Keys.prefix || 1).times do
+    times = (Keys.prefix || 1)
+    Keys.prefix = nil
+    times.times do
       indent = Line.value[/^  ( *)/, 1]
       #search_backward_regexp "^#{indent}[^\t \n#]"
       search_backward_regexp "^#{indent}[^\t \n]"
