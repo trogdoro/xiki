@@ -250,13 +250,13 @@ class Code
     orig.go
   end
 
-  def self.enter_log
-    if Keys.prefix_u
-      clip = Clipboard[0]
-      View.insert "Ol << \"#{clip}: \#{#{clip}}\""
-      return
-    end
+  def self.enter_log_clipboard
+    clip = Clipboard[0]
+    View.insert "Ol << \"#{clip}: \#{#{clip}}\""
+    return
+  end
 
+  def self.enter_log
     View.insert "Ol << \"\""
     Move.backward
   end

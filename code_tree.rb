@@ -23,8 +23,13 @@ class CodeTree
     end
     # Determine code to eval
     code = self.determine_code_from_path path
-    b = View.buffer
     orig.go
+    self.run code, options
+  end
+
+  def self.run code, options={}
+    b = View.buffer
+    orig = Location.new
     orig_left = point
     returned, stdout, e = Code.eval(code)  # Eval code
     if e

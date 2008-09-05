@@ -223,8 +223,12 @@ class LineLauncher
       Shell.run command, :dir => dir
     end
 
-    self.add(/(http|file).?:\/\/.+/) do |line|  # url
-      browse_url line[/(http|file).?:\/\/.+/]
+    self.add(/ *p /) do |line|  # url
+      CodeTree.run line
+    end
+
+    self.add(/ *puts /) do |line|  # url
+      CodeTree.run line
     end
 
     self.add(/^[^\|@]+[\/\w\-]+\.\w+:\d+/) do |line|  # Stack traces, etc

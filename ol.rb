@@ -11,7 +11,7 @@ class Ol
 
     difference = Time.now - @@last
     @@last = Time.now
-    heading = difference > 3 ? "| \n" : nil
+    heading = difference > 3 ? "\n| \n" : nil
 
     h = Ol.parse_line(line)
 

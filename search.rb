@@ -24,7 +24,7 @@ class Search
   def self.insert_at_search_start
     self.clear
     match = self.match
-    goto_char(elvar.isearch_opoint)  # Go back to start
+    self.to_start  # Go back to start
     insert match
   end
 
@@ -35,7 +35,7 @@ class Search
     delete_region match_beginning(0), match_end(0)
 
     Location.as_spot('deleted')
-    goto_char(elvar.isearch_opoint)  # Go back to start
+    self.to_start  # Go back to start
 
     # If reverse, move back width of thing deleted
     Move.backward match.length if was_reverse
@@ -48,7 +48,7 @@ class Search
   def self.insert_var_at_search_start
     self.clear
     match = self.match
-    goto_char(elvar.isearch_opoint)  # Go back to start
+    self.to_start  # Go back to start
     insert "\#{#{match}}"
   end
 
@@ -74,7 +74,7 @@ class Search
     self.clear
     line = thing_at_point(:line).sub("\n", "")
     Code.comment Line.left, Line.right
-    goto_char(elvar.isearch_opoint)  # Go back to start
+    self.to_start  # Go back to start
     insert "#{line}"
     Move.to_line_text_beginning
   end
@@ -116,9 +116,15 @@ class Search
   end
 
   # Clears the isearch, allowing for inserting, or whatever else
+
+
   def self.clear
     isearch_done
     isearch_clean_overlays
+  end
+
+  def self.to_start
+    View.to(elvar.isearch_opoint)
   end
 
   # Do query replace depending on what they type
@@ -294,7 +300,7 @@ class Search
   def self.line
     self.clear
     line = thing_at_point(:line).sub("\n", "")
-    goto_char(elvar.isearch_opoint)  # Go back to start
+    self.to_start  # Go back to start
     insert line
   end
 
@@ -410,7 +416,7 @@ class Search
 
   def self.stop
     Search.clear
-    goto_char(elvar.isearch_opoint)  # Go back to start
+    self.to_start  # Go back to start
   end
 
   def self.match
@@ -454,7 +460,7 @@ class Search
     isearch_clean_overlays
     line = buffer_substring point_at_bol, point_at_eol + 1
     delete_region point_at_bol, point_at_eol + 1
-    #goto_char(elvar.isearch_opoint)  # Go back to start
+    #self.to_start  # Go back to start
     exchange_point_and_mark
     insert line
   end
@@ -501,6 +507,13 @@ class Search
     TreeLs.expand_or_open
 
     #View.insert dir
+  end
+
+  def self.isearch_log
+    match = self.match
+    self.clear
+    self.to_start
+    View.insert "Ol << \"#{match}: \#{#{match}}\""
   end
 
 end
