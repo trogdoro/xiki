@@ -61,9 +61,11 @@ class DiffLog
       File.open(@@log, "a") { |f| f << diff } unless diff.count("\n") <= 2
     end
     save_buffer
-    # If U, reload safari
-    sleep(0.3)
-    Safari.reload if Keys.prefix_u
+
+    if Keys.prefix_u
+      sleep(0.3)
+      Firefox.reload
+    end
   end
 
   def self.format path, file, raw

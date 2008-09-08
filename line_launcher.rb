@@ -89,6 +89,11 @@ class LineLauncher
       command_execute "\C-m"
     end
 
+    self.add_paren("js") do   # - (js): js to run in firefox
+      txt = Line.without_label  # Grab line
+      Firefox.eval(txt)
+    end
+
     self.add_paren("html") do   # Run in browser
       file = Line.without_label  # Grab line
       if Keys.prefix_u
@@ -221,6 +226,10 @@ class LineLauncher
       line =~ / *(.*)!!(.+)/
       dir, command = $1, $2
       Shell.run command, :dir => dir
+    end
+
+    self.add(/(http|file).?:\/\/.+/) do |line| # url
+      browse_url line[/(http|file).?:\/\/.+/]
     end
 
     self.add(/ *p /) do |line|  # url

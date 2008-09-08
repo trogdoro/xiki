@@ -68,22 +68,16 @@ class ControlTab
       else
         puts "ControlTab: 4"
 
-        if View.in_bar?  # If in the bar, only notes or trees
-          @@consider_test = lambda{|b| buffer_file_name(b) =~ /\.notes$/ ||
-            buffer_name(b) =~ /^\*\*tree/ ||
-            buffer_name(b) =~ /^\*\*CodeTree/
-            }
-        else
-          # Any buffer but minibuffer
-          @@consider_test = lambda{|b| ! buffer_name(b)[/Minibuf/] }
-        end
+        #         if View.in_bar?  # If in the bar, only notes or trees
+        #           @@consider_test = lambda{|b| buffer_file_name(b) =~ /\.notes$/ ||
+        #             buffer_name(b) =~ /^\*\*tree/ ||
+        #             buffer_name(b) =~ /^\*\*CodeTree/
+        #             }
+        #         else
+        # Any buffer but minibuffer
+        @@consider_test = lambda{|b| ! buffer_name(b)[/Minibuf/] }
+        #         end
       end
-
-#       # If we're not on a file, just switch to a file
-#       if ! buffer_file_name
-#         ControlTab.switch_to_nth 1
-#       # Otherwise, go to next file
-#       else
 
       puts "ControlTab: 5"
 
@@ -137,7 +131,6 @@ class ControlTab
 
 
   def self.keys
-
     Keys.set("C-<tab>") do
       ControlTab.go
     end

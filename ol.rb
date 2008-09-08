@@ -16,7 +16,12 @@ class Ol
     h = Ol.parse_line(line)
 
     File.open(path, "a") { |f| f << "#{heading}#{txt}\n" }
-    File.open("#{path}.lines", "a") { |f| f << "#{heading ? "\n" :""}#{h[:path]}:#{h[:line]}\n" }
+
+    line = "#{h[:path]}:#{h[:line]}\n"
+    File.open("#{path}.lines", "a") { |f|
+      f << "\n\n" if heading
+      txt.split("\n").size.times { f << line }
+    }
 
     txt
   end

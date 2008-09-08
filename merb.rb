@@ -226,4 +226,13 @@ class Merb
     puts RubyConsole.at(:ml, "y #{model}.all(#{where}:order => [:updated_at.desc], :limit => #{number})")
   end
 
+  def self.open_next_error
+    Bookmarks.go("$s")
+    Move.to_end
+    Move.to_previous_paragraph
+    Search.forward('^\/')
+    Color.colorize :r
+    LineLauncher.launch
+    Color.colorize :r
+  end
 end

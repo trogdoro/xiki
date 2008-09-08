@@ -397,8 +397,6 @@ class Notes
       Notes.mouse_toggle
     end
 
-
-
     defun(:notes_mode, :interactive => "", :docstring => "Apply notes styles, etc") {# |point|
       el4r_lisp_eval "(setq font-lock-defaults '(nil t))"
 
@@ -412,8 +410,8 @@ class Notes
         (add-to-list 'auto-mode-alist '("\\\\.xik\\\\'" . notes-mode)))
       >
 
-#    el4r_lisp_eval %q[(add-to-list 'auto-mode-alist '("\\\\.notes\\\\'" . notes-mode))]
-#    el4r_lisp_eval %q[(add-to-list 'auto-mode-alist '("\\\\.\\\\'" . notes-mode))]
+  #    el4r_lisp_eval %q[(add-to-list 'auto-mode-alist '("\\\\.notes\\\\'" . notes-mode))]
+  #    el4r_lisp_eval %q[(add-to-list 'auto-mode-alist '("\\\\.\\\\'" . notes-mode))]
   end
 
   def self.mode
@@ -427,24 +425,41 @@ class Notes
   end
 
   def self.bullet bullet_text="- "
-    # Make extra line if none there yet
-    if Line.matches(/./)
-      Line.to_right
-      View.insert "\n"
-    end
 
     prefix = Keys.prefix
 
+    # If non-blank line
+    if ! Line.blank?   # Line
+      if Line.matches(/^ *[|+-]/)   # If bullet already, just make new line after
+        # Continue on below
+      else   # If not bullet, make it a bullet
+        # Get line minus indent, and indent one deeper than previous
+        line = Line.value(1, :delete=>true).sub(/^ +/, '')
+
+        if prefix.is_a? Fixnum   # If numeric prefix, indent by n
+          View.insert((" " * prefix) + "- #{line}")
+        else
+          prev_indent = Line.value(0)[/^ */]
+          View.insert "#{prev_indent}  - #{line}"
+        end
+        return
+      end
+
+    # Make extra line if none there yet
+
+      Line.to_right
+      View.insert "\n"
+    end
     if prefix.is_a? Fixnum   # If numeric prefix, indent by n
-      insert (" " * prefix) + bullet_text
+      View.insert (" " * prefix) + bullet_text
     else   # Get bullet indent of previous line
-      prev = Line.value(0)[/^( *)#{bullet_text}/, 1]
+      prev = Line.value(0)[/^( *)[+-]/, 1]
       prev = prev ? "  #{prev}#{bullet_text}" : bullet_text
       prev.sub!(/^  /, '') if Keys.prefix_u   # Don't indent if U
-      insert prev
+      View.insert prev
     end
 
-    ControlLock.disable
+    #ControlLock.disable
   end
 
   def self.help_wiki_format

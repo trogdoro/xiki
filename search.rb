@@ -187,9 +187,9 @@ class Search
       Keys.bookmark_as_path
 
     # Do search
-    regex = Regexp.new(Regexp.quote(match), Regexp::IGNORECASE)
+    #regex = Regexp.new(Regexp.quote(match), Regexp::IGNORECASE)
 
-    TreeLs.grep dir, regex
+    TreeLs.grep_with_hashes dir, match
   end
 
   def self.isearch_tree_grep_method

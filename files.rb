@@ -158,6 +158,7 @@ class Files
 
   def self.open_in_os path=nil
     path ||= View.file
+    path ||= View.dir
     shell_command("open #{path}")
   end
 

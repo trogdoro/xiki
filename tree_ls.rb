@@ -1528,6 +1528,10 @@ class TreeLs
   end
 
   def self.copy_path
+    # If no space at left, grab dir of file
+    return Clipboard["0"] = View.file unless Line.matches(/^ /)
+
+    # If space, assume it's a tree
     dir = TreeLs.construct_path
     dir = View.file unless dir =~ /^\//
     Clipboard["0"] = dir

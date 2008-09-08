@@ -110,14 +110,16 @@ class Bookmarks
       return
     end
 
-    case Keys.prefix
-    when :u  # If u, go to point
-      self.jump "#{prefix_to_bm}#{keys}"
-    when 9  # If 9, open in bar
+    prefix = Keys.prefix
+    if prefix==9  # If 9, open in bar
       View.bar
       self.jump "#{prefix_to_bm}#{keys}"
     else
       Location.go path, :stay_in_bar => true
+    end
+
+    if options[:point] or prefix == :u   # Go to actual point
+      return self.jump "#{prefix_to_bm}#{keys}"
     end
   end
 

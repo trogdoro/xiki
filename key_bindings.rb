@@ -4,7 +4,7 @@
   tree_ls repository line_launcher effects twitter shell rails merb
   data_mapper code_tree docs svn remote redmine schedule irc mysql
   cursor core_ext help ruby ruby_console buffers links computer menu
-  safari ol book
+  safari ol book firefox
   ].each { |l| require l }
 
 # TODO
@@ -111,9 +111,10 @@ class KeyBindings
     Keys.open_list_repository { Repository.status_tree }
     Keys.open_link_top { Links.open_first }   # open first hyperlink on page
     Keys.open_menu { CodeTree.open_menu }   # Open all menus and show them **
-    Keys.open_newly_edited { History.open_unsaved }
+    Keys.open_next_error { Merb.open_next_error }
+    Keys.open_not_saved { History.open_unsaved }
     Keys.OO { open_line elvar.current_prefix_arg || 1 }   # OO - open line (O's default)
-    Keys.open_previous { Files.open_last }
+    Keys.open_point { Bookmarks.go(nil, :point => true) }
     Keys.open_quick { Bookmarks.go :q }   # like OB but uses different temporary namespace
     Keys.open_region_path { find_file buffer_substring(region_beginning, region_end) }
     Keys.open_search { Search.outline_search }   # hide search via outline *
@@ -263,8 +264,10 @@ class KeyBindings
 
     Keys.set("C-d C-.") {   # Do .:  Go to point/bookmark starting with "." and run it (like pressing C-. on that line)
       input = Keys.input(:timed => true)
-      Bookmarks.go(".#{input}")
-      LineLauncher.launch
+      with(:save_window_excursion) do
+        Bookmarks.go(".#{input}")
+        LineLauncher.launch
+      end
     }
 
     Keys.D1 { delete_char 1 };  Keys.D2 { delete_char 2 };  Keys.D3 { delete_char 3 };  Keys.D4 { delete_char 4 }
