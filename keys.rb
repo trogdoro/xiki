@@ -69,7 +69,7 @@ class Keys
       #insert "fu1"
       $el.define_key map, keys, &block
     rescue Exception => e
-#       insert e.to_s
+      #       insert e.to_s
       # Try unsetting first key sequence and setting again, if failed
 
       if map == :global_map && meth =~ /([A-Z])([A-Z]?)./
@@ -80,8 +80,8 @@ class Keys
         #insert prefix
         #prefix = kbd("C-#{$1.downcase}")
 
-#        insert m
-#        insert "trying to unset: #{prefix}"
+  #        insert m
+  #        insert "trying to unset: #{prefix}"
         # If it appears to be a prefix key
         begin
           #insert lookup_key(current_global_map, prefix).to_s
@@ -236,9 +236,9 @@ class Keys
     loc
   end
 
-#   def self.prefix
-#     elvar.current_prefix_arg || 1
-#   end
+  #   def self.prefix
+  #     elvar.current_prefix_arg || 1
+  #   end
 
   def self.jump_to_code
     keys = $el.read_key_sequence "Enter key, to insert corresponding el4r command: "
@@ -379,4 +379,42 @@ class Keys
     @@key_queue = []
   end
 
+  def self.recent
+    $el.recent_keys.to_s.gsub(/[\021\c@]/, '').match(/(\S+) (\S+)\]$/)[1..2].reverse
+  end
+
+  def self.char
+
+    #     begin
+    $el.elvar.inhibit_quit = true
+    ch_initial = $el.read_event.to_s
+    $el.elvar.inhibit_quit = nil
+
+    # If a number, assign it to raw
+    if ch_initial =~ /^\d+$/
+      ch_raw = ch_initial.to_i
+      ch = $el.char_to_string(ch_raw)
+
+      # Special check for C-. and other sequences
+      ch = :control_period if ch_raw == 67108910
+      ch = :control_slash if ch_raw == 67108911
+      return [ch, ch_raw]
+
+    elsif ['left', 'right', 'up', 'down', ].member?(ch_initial)
+      return [ch_initial.to_sym, 0]   # Arbitrary indicator for arrow keys
+
+    elsif ch_initial == "return"
+      return [:return, 13]
+
+    elsif ch_initial == "backspace"
+      return [:backspace, 127]
+
+    elsif ch_initial == "tab"
+      return ["\t", 9]
+
+    else   # Probably a mouse event
+      return [nil, nil]
+    end
+
+  end
 end

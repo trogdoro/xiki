@@ -168,7 +168,7 @@ class KeyBindings
     # Find new key for thisKeys.EO { DiffLog.enter_old }   # Enter Old: enter newly-deleted from last save
     # P
     Keys.enter_quoted { TreeLs.enter_quoted }
-    Keys.enter_replacement { Clipboard.enter_replacement }
+    #Keys.enter_replacement { Clipboard.enter_replacement }
     Keys.enter_search { Search.enter_search }
     #Keys.enter_spot { Location.enter_at_spot }   # enter selected text at spot
     Keys.enter_tree { TreeLs.launch( :here => true ) }

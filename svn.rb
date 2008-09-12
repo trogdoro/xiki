@@ -12,7 +12,10 @@ class Svn
       return
     end
 
-    puts "+ list/"
+    puts "
+      + list/
+      + .diff/
+    "
   end
 
 
@@ -29,4 +32,20 @@ class Svn
     Line.to_left
     $el.recenter(0)
   end
+
+  def self.diff *args
+    if args.empty?
+      Ol << "empty"
+      res = Shell.run("svn diff -x -w", :dir=>"$tr", :sync=>true)
+      res.gsub!(/\r/, '')
+      res.gsub!(/^/, '  ||')
+      res.gsub!(/^  \|\|-/, '  -|')
+      res.gsub!(/^  \|\|\+/, '  +|')
+      res.gsub!(/^  \|\|Index: /, '- ')
+      puts res
+      return
+    end
+    Ol << "args: #{args}"
+  end
+
 end

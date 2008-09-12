@@ -271,6 +271,9 @@ class TreeLs
   def self.apply_styles
     el4r_lisp_eval "(setq font-lock-defaults '(nil t))"
 
+    #   |... lines
+    Styles.apply("^ +\\(|.*\n\\)", nil, :ls_quote)
+
     # - bullets
     Styles.apply("^[ \t]*\\([+-]\\)\\( \\)", nil, :ls_bullet, :variable)
 
@@ -280,6 +283,9 @@ class TreeLs
     Styles.apply("^ +\\(\+|.*\n\\)", nil, :diff_green)
     Styles.apply("^ +\\(-|.*\n\\)", nil, :diff_red)
     Styles.apply("^ +\\(:[0-9]+\\)$", nil, :diff_line_number)
+    Styles.apply("^ +\\(|\\+.*\n\\)", nil, :diff_green)
+    Styles.apply("^ +\\(|-.*\n\\)", nil, :diff_red)
+
 
     # Dir line
     #Styles.apply('^\\([A-Za-z]\\)$', nil, :ls_dir)  # Most dirs
@@ -291,8 +297,6 @@ class TreeLs
     Styles.apply('^ *[+-] \\(##.+/\\)$', nil, :ls_search)  # ##_/
     Styles.apply('^ *[+-] \\(\*\*.+/\\)$', nil, :ls_search)  # ##_/
 
-    #   |... lines
-    Styles.apply("^ +\\(|.*\n\\)", nil, :ls_quote)
 
   end
 
@@ -470,36 +474,39 @@ class TreeLs
     pattern = ""
     lines = buffer_substring(left, right).split "\n"
     message "Show files matching: "
-    ch_raw = nil
-    begin
-      elvar.inhibit_quit = true
-      ch_raw = read_char
-      elvar.inhibit_quit = nil
-    rescue Exception => e  # Assume it was a mouse event
-      Cursor.restore :before_tree_ls
-      return
-    end
-    ch = char_to_string(ch_raw)
+
+    ch, ch_raw = Keys.char
+    return Cursor.restore(:before_tree_ls) if ch.nil?
+
+    #ch = char_to_string(ch_raw)
 
     # While narrowing down list (and special check for C-.)
-    while (ch =~ /[\\() ~">a-zA-Z!_,~.-]/ && ch_raw != 67108910) ||
-        (recursive && ch_raw == 2 || ch_raw == 6)
-      # Slash means enter in a dir
-      break if recursive && ch == '/'
+    while (ch =~ /[\\() ~">a-zA-Z!_,~.-]/) ||
+        (recursive && ch_raw == 2 || ch_raw == 6) ||
+        ch == :up || ch == :down
+      break if recursive && ch == '/'   # Slash means enter in a dir
       if ch == ','
         pattern = ''
-      elsif ch_raw == 2  # C-b
+      elsif ch_raw == 2   # C-b
         while(Line.previous == 0)
           next if Line.matches(/\/$/)  # Keep going if line is a dir
           Line.to_words
           break  # Otherwise, stop
         end
-      elsif ch_raw == 6  # C-f
+
+      elsif ch_raw == 6   # C-f
         while(Line.next == 0)
           next if Line.matches(/\/$/)  # Keep going if line is a dir
           Line.to_words
           break  # Otherwise, stop
         end
+      elsif ch == :up
+        Line.previous
+        Line.to_words
+      elsif ch == :down
+        Line.next
+        Line.to_words
+
       else
         if ch == "\\"  # If escape, get real char
           ch = char_to_string(read_char)
@@ -548,36 +555,30 @@ class TreeLs
 
       end
       message "Show files matching: %s", pattern
-      begin
-        elvar.inhibit_quit = true
-        ch_raw = read_char
-        elvar.inhibit_quit = nil
-      rescue Exception => e  # Assume it was a mouse event
-        Cursor.restore :before_tree_ls
-        return
-      end
+      #       begin
+      #         elvar.inhibit_quit = true
+      #         ch_raw = read_char
+      #         elvar.inhibit_quit = nil
+      #       rescue Exception => e  # Assume it was a mouse event
+      #         Cursor.restore :before_tree_ls
+      #         return
+      #       end
 
-      ch = char_to_string(ch_raw)
+      #       ch = char_to_string(ch_raw)
+      ch, ch_raw = Keys.char
+      return Cursor.restore(:before_tree_ls) if ch.nil?
     end
 
     # Exiting, so restore cursor
     Cursor.restore :before_tree_ls
 
-    # Special check for C-. and other sequences
-    ch = "enter" if ch_raw == 7
-    ch = "period" if ch_raw == 67108910
-    ch = "delete" if ch_raw == 127
-    ch = "slash" if ch_raw == 67108911
-
     # Options during search
-    case ch  # Do option based on last char, or run as command
-    when "enter"  # Enter key
-      # Do nothing (end search)
+    case ch   # Do option based on last char, or run as command
     when "0"
-      file = self.construct_path  # Expand out ~
+      file = self.construct_path   # Expand out ~
       shell_command("open #{file}")
     when "\C-l"
-      file = self.construct_path  # Expand out ~
+      file = self.construct_path   # Expand out ~
       shell_command("open #{file}")
     when "\C-a"
       Line.to_left
@@ -595,24 +596,31 @@ class TreeLs
 #       # Erase |'s and put back
 #       insert text.gsub(/^ +\|/, '')
 
-    when "\C-m", "period"  # If C-., go in but don't collapse siblings
+    when :return, "\C-m", :control_period, :right   # If C-., go in but don't collapse siblings
       Keys.clear_prefix
       LineLauncher.launch
 
-    when "\t"  # If tab, hide siblings and go in
+    when "\t"   # If tab, hide siblings and go in
       delete_region(Line.left(2), right)
       Keys.clear_prefix
       LineLauncher.launch
       #self.expand_or_open
       #Line.to_words
-    when "delete"  # If backspace, cancel last action and exit
-      goto_char left
-      Line.next if options[:recursive]
-      delete_region(point, right)
-      Line.previous
-      self.minus_to_plus
-      Line.to_words
+    when :backspace, :left   # If backspace, cancel last action and exit
+      self.to_parent
+      #goto_char left
+      self.kill_under
       self.search(:left => Line.left, :right => Line.left(2))
+
+      #       goto_char left
+      #       Line.next if options[:recursive]
+      #       delete_region(point, right)
+      #       Line.previous
+      #       self.minus_to_plus
+      #       Line.to_words
+      #       self.search(:left => Line.left, :right => Line.left(2))
+
+
 #     when ch == "/"  # If /, put on same line
 #       Keys.prefix = 2
 #       delete_region(Line.left(2), right)
@@ -707,7 +715,7 @@ class TreeLs
     when "\C-s"
       isearch_forward
 
-    when "slash"
+    when :control_slash
       undo
 
     when "/"  # If slash, append selected dir to parent dir
