@@ -62,7 +62,7 @@ class DiffLog
     end
     save_buffer
 
-    if Keys.prefix_u
+    if Keys.prefix_u?
       sleep(0.3)
       Firefox.reload
     end

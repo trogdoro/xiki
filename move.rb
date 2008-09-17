@@ -6,46 +6,79 @@ class Move
 
   # Go to last line having indent
   def self.to_indent
-    indent = Keys.prefix
-    # If no prefix, go down to same indent as this one
-    if Line.matches(/^ *(end|\]|\}|\))$/)
-      return Keys.prefix_u ? self.to_same_indent : self.to_same_indent(:up)
-    elsif Keys.prefix_u
-      return self.to_same_indent(:up)
-    elsif indent == nil
-      return self.to_same_indent
+    direction = :down   # Assume down
+    if Keys.prefix_u   # If U, reverse
+      direction = :up
+    else
+      column = Keys.prefix   # If numeric, make that be the indent
     end
-    # If numeric prefix, go to last one of same
-    spaces = " " * indent.abs
-    orig = Line.number
-    # If negative, go backwards
-    indent >= 0 ? re_search_forward(/^#{spaces}[a-zA-Z<>{}|\/-]/) : re_search_backward(/^#{spaces}[a-zA-Z<>{}-]/)
-    # If still there, move forward and do again
-    if Line.number == orig
+
+    # Get indent from cursor (unless already set by prefix)
+    column ||= View.column
+
+    # If negative, reverse direction and amke positive
+    if column < 0
+      direction = :up
+      column = 0 - column
+    end
+
+    # Search for matching in right direction
+    if direction == :up
+      Line.to_left
+      Search.backward "^ \\{#{column}\\}[^ \n]"
+      Move.to_column column
+    else
       Line.next
-      indent >= 0 ? re_search_forward(/^#{spaces}[a-zA-Z<>{}|\/-]/) : re_search_backward(/^#{spaces}[a-zA-Z<>{}-]/)
+      Search.forward "^ \\{#{column}\\}[^ \n]"
+      Move.to_column column
     end
-    move_to_column(indent.abs)
   end
 
-  # Move down to the next line that is indented to the column in which 
-  # the cursor currontly is.
-  def self.to_same_indent up=false
-    c = current_column
-    # Store current column
-    orig_indent = Line.indent.length
-    while((up ? Line.previous : Line.next) == 0)
-      line = Line.value
-      indent = Line.indent(line).length
-      # Found if same indent, and at least one char after indent
-      break if indent == orig_indent && line.length > indent && line !~ /^\s*[#\/]/
-    end
-    move_to_column c
-  end
+  #   def self.to_indent
+  #     indent = Keys.prefix
+
+  #     # If ending, to matching (reversing if U)
+  #     if Line.matches(/^ *(end|\]|\}|\))$/)
+  #       return Keys.prefix_u? ? self.to_same_indent : self.to_same_indent(:up)
+  #     elsif Keys.prefix_u?   # If U, go up
+  #       return self.to_same_indent(:up)
+  #     elsif indent == nil   # If no numeric prefix, go down to arg
+  #       return self.to_same_indent
+  #     end
+
+  #     # If numeric prefix, go to last one of same
+  #     spaces = " " * indent.abs
+  #     orig = Line.number
+  #     # If negative, go backwards
+  #     indent >= 0 ? re_search_forward(/^#{spaces}[a-zA-Z<>{}|\/+-]/) : re_search_backward(/^#{spaces}[a-zA-Z<>{}-]/)
+  #     # If still there, move forward and do again
+  #     if Line.number == orig
+  #       Line.next
+  #       indent >= 0 ? re_search_forward(/^#{spaces}[a-zA-Z<>{}|\/+-]/) : re_search_backward(/^#{spaces}[a-zA-Z<>{}-]/)
+  #     end
+  #     move_to_column(indent.abs)
+  #   end
+
+  #   # Move down to the next line that is indented to the column in which 
+  #   # the cursor currontly is.
+  #   def self.to_same_indent up=false
+  #     indent = Line.indent.size
+
+  #     if up
+  #       Line.to_left
+  #       Search.backward "^ \\{#{indent}\\}[^ \n]"
+  #     else
+  #       Line.next
+  #       Search.forward "^ \\{#{indent}\\}[^ \n]"
+  #     end
+
+  #     Move.to_line_text_beginning
+
+  #   end
 
   def self.to_next_paragraph
     pref = Keys.prefix || 1
-    if Keys.prefix_u  # If C-u, just go to end
+    if Keys.prefix_u?  # If C-u, just go to end
       re_search_forward "^[ \t]*$", nil, 1
       beginning_of_line
       return
@@ -163,6 +196,7 @@ class Move
     backward_char
   end
 
+  # Move to file in tree (not dir) ?
   def self.to_junior
     Keys.prefix_times.times do
       # Move to line without / at end

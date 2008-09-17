@@ -53,7 +53,7 @@ class LineLauncher
       if (!regex || line =~ regex) && (!label_regex || (label && label =~ label_regex))
         # Run it
         if @@just_show
-          return insert(regex.to_s + label_regex.to_s)
+          return Ol << regex.to_s + label_regex.to_s
         else
           block.call line
         end
@@ -61,14 +61,22 @@ class LineLauncher
       end
     end
 
+    self.launch_code_or_ls options
+
+  end
+
+  def self.launch_code_or_ls options={}
     # It must be code_tree node or tree_ls node
     # Still don't know which, so check root
-    path = TreeLs.construct_path :list => true
-    code_tree_root = CodeTree.is_code_tree_path path
+    path = TreeLs.construct_path(:list => true)
+    code_tree_root = ! TreeLs.is_tree_ls_path(path)
+    if @@just_show   # Means we're temporarily disabled for debugging
+      return Ol << "code_tree_root: #{code_tree_root}"
+    end
+
 
     # If code tree, chop it off and run it
-    if code_tree_root# && line =~ /^ *- /  # Must have bullet to be code_tree
-      #path = path[code_tree_root..-1]
+    if code_tree_root  # && line =~ /^ *- /  # Must have bullet to be code_tree
       CodeTree.launch options
     else  # Otherwise, run treels
       TreeLs.expand_or_open
@@ -79,7 +87,7 @@ class LineLauncher
     @@launchers = []
 
     self.add /^  +[+-]?\|/ do |line|  # | TreeLs quoted text
-      TreeLs.open
+      self.launch_code_or_ls
     end
 
     self.add_paren("o") do  # - (t): Insert "Test"
@@ -96,7 +104,7 @@ class LineLauncher
 
     self.add_paren("html") do   # Run in browser
       file = Line.without_label  # Grab line
-      if Keys.prefix_u
+      if Keys.prefix_u?
         View.open file
 
       else
@@ -209,34 +217,16 @@ class LineLauncher
       other_window -1
     end
 
-    self.add(/ *(.*)!!!(.+)/) do |line|  # !!!shell command inline
-
-      line =~ / *(.*)!!!(.+)/
-      dir, command = $1, $2
-      output = Shell.run command, :dir => dir, :sync => true
-
-      output.gsub!(/^/, '|')
-      TreeLs.indent(output)
-      TreeLs.insert_quoted_and_search output#.gsub!(/^/, "#{indent}  |")
-
-    end
-
-    self.add(/ *(.*)!!(.+)/) do |line|  # !!shell command
-      View.handle_bar
-      line =~ / *(.*)!!(.+)/
-      dir, command = $1, $2
-      Shell.run command, :dir => dir
-    end
 
     self.add(/(http|file).?:\/\/.+/) do |line| # url
       browse_url line[/(http|file).?:\/\/.+/]
     end
 
-    self.add(/ *p /) do |line|  # url
+    self.add(/^ *p /) do |line|  # url
       CodeTree.run line
     end
 
-    self.add(/ *puts /) do |line|  # url
+    self.add(/^ *puts /) do |line|  # url
       CodeTree.run line
     end
 
@@ -305,6 +295,33 @@ class LineLauncher
       out = "(no output)\n" unless out
       TreeLs.indent(out)
       TreeLs.insert_quoted_and_search out
+    end
+
+    self.add(/ *(.*)!!!(.+)/) do |line|  # !!!shell command inline
+      line =~ / *(.*)!!!(.+)/
+      dir, command = $1, $2
+      output = Shell.run command, :dir => dir, :sync => true
+      output.gsub!(/^/, '|')
+      TreeLs.indent(output)
+      TreeLs.insert_quoted_and_search output#.gsub!(/^/, "#{indent}  |")
+    end
+
+    self.add(/ *(.*)!!(.+)/) do |line|  # !!shell command
+      View.handle_bar
+      line =~ / *(.*)!!(.+)/
+      dir, command = $1, $2
+      Shell.run command, :dir => dir
+    end
+
+    self.add(/ *(.*)!(.+)/) do |line|  # !shell command inline
+      line =~ / *(.*)!(.+)/
+      dir, command = $1, $2
+      output = Shell.run command, :dir => dir, :sync => true
+      # Add linebreak if blank
+      output.sub!(/\A\z/, "\n")
+      output.gsub!(/^/, '|')
+      TreeLs.indent(output)
+      TreeLs.insert_quoted_and_search output#.gsub!(/^/, "#{indent}  |")
     end
 
   end

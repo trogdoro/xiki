@@ -1,8 +1,8 @@
 require 'test/unit'
 require 'el_mixin'
 $:.unshift "../"
-require '../redmine'
-require '../core_ext'
+require 'redmine'
+require 'core_ext'
 
 class RedmineTest < Test::Unit::TestCase
 

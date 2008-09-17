@@ -168,15 +168,15 @@ class Line
 
   def self.without_label line=nil
     line ||= self.value
-    line[/^\s*- .+?: (.*)/, 1] ||
-    line[/^\s*- .+?:()$/, 1] ||  # Blank if colon at end
-    line[/^\s*- (.+)/, 1] ||
+    line[/^\s*[+-] [\w _()-]+?: (.*)/, 1] ||
+    line[/^\s*[+-] [\w _()-]+?:()$/, 1] ||  # Blank if colon at end
+    line[/^\s*[+-] (.+)/, 1] ||
     line.sub(/^ */, '')
   end
 
   def self.is_bullet? line=nil
     line ||= self.value
-    self.matches /^\s*- /, line
+    self.matches /^\s*[+-] /, line
   end
 
   def self.number pos=nil

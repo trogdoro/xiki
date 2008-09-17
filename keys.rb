@@ -1,4 +1,8 @@
 require 'pause_means_space'
+require 'rubygems'
+gem 'ruby2ruby'
+require 'ruby2ruby'
+
 
 # Convenient way to define keyboard shortcuts
 class Keys
@@ -240,20 +244,45 @@ class Keys
   #     elvar.current_prefix_arg || 1
   #   end
 
-  def self.jump_to_code
-    keys = $el.read_key_sequence "Enter key, to insert corresponding el4r command: "
-    code = $el.prin1_to_string($el.key_binding(keys)).gsub(/-/, "_")
-    # If it is a call to elisp
-    if code =~ /el4r_ruby_call_proc_by_id.+?([_0-9]+)/
-      id = $1
-      id.sub!("_","-")
-    #  insert id
-      file, line = Code.location_from_id id.to_i
-      Location.go(file)
-      View.to_line line.to_i
-    else
-      View.insert code
+  def self.insert_code
+    keys = $el.read_key_sequence("Enter key, to insert corresponding el4r command: ")
+    proc = self.proc_from_key keys
+
+    # If lisp, enter lisp?
+    if proc.nil?
+      code = $el.prin1_to_string($el.key_binding(keys))
+      return View.insert code
     end
+
+    code = proc.to_ruby
+    code.gsub! 'proc { ', ''
+    code.gsub! ' }', ''
+
+    View.insert code
+  end
+
+  def self.jump_to_code
+    keys = $el.read_key_sequence("Enter key, to jump to the corresponding el4r command: ")
+    proc = self.proc_from_key keys
+
+    if proc.nil?
+      Ol << "proc is nil"
+
+    end
+
+    file, line = Code.location_from_proc proc
+    Location.go(file)
+    View.to_line line.to_i
+
+  end
+
+  def self.proc_from_key keys
+    code = $el.prin1_to_string($el.key_binding(keys))
+    # If it is a call to elisp
+    id = code[/el4r-ruby-call-proc-by-id.+?([_0-9]+)/, 1]
+    return nil if id.nil?
+
+    ObjectSpace._id2ref(id.to_i)
   end
 
   def self.timed_insert options={}
@@ -339,6 +368,12 @@ class Keys
   end
 
   # Whether C-u was held down before this
+  def self.prefix_u?
+    self.prefix == :u
+  end
+
+  # Whether C-u was held down before this
+  # Deprecated
   def self.prefix_u
     self.prefix == :u
   end

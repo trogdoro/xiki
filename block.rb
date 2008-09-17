@@ -16,7 +16,7 @@ class Block
   end
 
   def self.do_as_wrap
-    if Keys.prefix_u
+    if Keys.prefix_u?
       Line.to_left
       View.insert "> "
       fill_paragraph nil

@@ -1,7 +1,7 @@
 require 'test/unit'
 require 'el_mixin'
 $:.unshift "../"
-require '../ol'
+require 'ol'
 
 class OlTest < Test::Unit::TestCase
 

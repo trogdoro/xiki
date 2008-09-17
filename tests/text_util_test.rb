@@ -1,7 +1,7 @@
 require 'test/unit'
 require 'el_mixin'
 $:.unshift "../"
-require '../text_util'
+require 'text_util'
 
 class TextUtilTest < Test::Unit::TestCase
 

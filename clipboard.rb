@@ -102,7 +102,7 @@ class Clipboard
   end
 
   def self.copy_paragraph options={}
-    if Keys.prefix_u or options[:rest]   # If U prefix, get rest of paragraph
+    if Keys.prefix_u? or options[:rest]   # If U prefix, get rest of paragraph
       left, right = self.paragraph(:bounds => true, :start_here => true)
     else
       if Keys.prefix   # If numeric prefix
@@ -142,7 +142,7 @@ class Clipboard
   def self.as_thing
     skip_chars_forward " "
     left, right = bounds_of_thing_at_point(:sexp).to_a
-    if Keys.prefix_u
+    if Keys.prefix_u?
       left += 1
       right -= 1
     end
@@ -195,7 +195,7 @@ class Clipboard
 
   def self.as_clipboard
     # If numeric prefix, get next n lines and put in clipboard
-    if Keys.prefix and ! Keys.prefix_u
+    if Keys.prefix and ! Keys.prefix_u?
       l, r = Line.left, Line.left(Keys.prefix + 1)
       Effects.blink :left => l, :right => r
       Clipboard["0"] = View.txt(l, r)

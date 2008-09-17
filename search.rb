@@ -154,13 +154,15 @@ class Search
   end
 
   def self.isearch_query_replace start_with_search_string=false
+
+    txt = $el.elvar.isearch_string
+
     self.clear
-    match = self.match
     to = start_with_search_string ?
-      Keys.input(:prompt => "Change instances of '#{match}' to: ", :initial_input => match) :
-      Keys.input(:prompt => "Change instances of '#{match}' to: ")
-    @@query_from, @@query_to = match, to
-    query_replace_regexp(match, to)
+      Keys.input(:prompt => "Change instances of '#{txt}' to: ", :initial_input => txt) :
+      Keys.input(:prompt => "Change instances of '#{txt}' to: ")
+    @@query_from, @@query_to = txt, to
+    query_replace_regexp(txt, to)
   end
 
   def self.grep
@@ -170,7 +172,7 @@ class Search
   def self.tree_grep
     dir = Keys.bookmark_as_path   # Get path (from bookmark)
 
-    input = Keys.prefix_u ?   # Do search
+    input = Keys.prefix_u? ?   # Do search
       Clipboard.get("0") :
       Keys.input(:prompt => "Text to search for: ")
 
@@ -466,7 +468,7 @@ class Search
   end
 
   def self.outline_search
-    if Keys.prefix_u
+    if Keys.prefix_u?
       History.open_current :bar => true, :all => true
     else
       History.open_current :all => true
@@ -486,7 +488,7 @@ class Search
   def self.enter_search
     bm = Keys.input(:timed => true, :prompt => "Enter bookmark in which to search: ")
     return unless bm
-    input = Keys.prefix_u ?   # Do search
+    input = Keys.prefix_u? ?   # Do search
       Clipboard.get("0") :
       Keys.input(:prompt => "Text to search for: ")
 

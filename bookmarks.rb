@@ -35,7 +35,7 @@ class Bookmarks
   # Like bookmark-set, but accepts buffers
   def self.set name
     # Just create normal bookmark if file
-    return bookmark_set name if View.file || $el.elvar.dired_directory
+    return bookmark_set(name) if View.file || $el.elvar.dired_directory
 
     # Must be buffer
 
@@ -119,7 +119,7 @@ class Bookmarks
     end
 
     if options[:point] or prefix == :u   # Go to actual point
-      return self.jump "#{prefix_to_bm}#{keys}"
+      return self.jump("#{prefix_to_bm}#{keys}")
     end
   end
 

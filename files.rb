@@ -40,7 +40,7 @@ class Files
     to = View.dir
     View.previous
 
-    if Keys.prefix_u
+    if Keys.prefix_u?
       rename_file(from, to)
     elsif Keys.prefix_uu
       command = "cp -R \"#{from}\" \"#{to}\""
@@ -57,7 +57,7 @@ class Files
     #from = Files.file_name(:path => true)
     from = Files.file_name
     other_window 1;  to = elvar.default_directory;  other_window -1
-    if Keys.prefix_u
+    if Keys.prefix_u?
       command = "unzip -d \"#{to}\" \"#{from}\""
     else
       command = "zip -r \"#{to}#{from}.zip\" \"#{from}\""
@@ -121,7 +121,7 @@ class Files
     key = Keys.input(:prompt => "Open just currently open files of type (enter a letter): ", :one_char => true)
     dir = @@dir_hash[key]
     return message("No dir matching '#{key}' found.  See Files\#@@dir_hash") unless dir
-    if Keys.prefix_u
+    if Keys.prefix_u?
       Keys.clear_prefix
       CodeTree.display_menu("Files.edited(100, :dir => '#{dir}')")
     else

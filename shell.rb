@@ -45,8 +45,8 @@ class Shell
     if sync
       stdin, stdout, stderr = Open3.popen3(". ~/.profile;cd #{dir};#{command}")
       result = ""
-      result << stderr.readlines.join('')
       result << stdout.readlines.join('')
+      result << stderr.readlines.join('')
       return result
 
     else

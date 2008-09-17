@@ -1,8 +1,9 @@
 require 'text_util'
+require 'bookmarks'
 
 class Ol
 
-  @@last = Time.now
+  @@last = Time.now - 1000
 
   def self.log txt, line
     path = Bookmarks["$o"]
@@ -70,6 +71,11 @@ class Ol
 
     View.open path
     View.to_line line.to_i
-
   end
+
+  def self.enter_log_line
+    $el.open_line(1) unless Line.blank?
+    View.insert("Ol.line")
+  end
+
 end

@@ -1,12 +1,9 @@
 require 'test/unit'
 require 'el_mixin'
-$:.unshift "../"
-require '../code_tree'
+$:.unshift File.expand_path("..")
+require 'code_tree'
+require 'mock_ol'
 
-def ol txt
-  File.open("/temp/log.notes", "a") { |f| f << "#{txt}\n" }
-  txt
-end
 
 class CodeTreeTest < Test::Unit::TestCase
 
@@ -22,9 +19,16 @@ class CodeTreeTest < Test::Unit::TestCase
     assert_equal("dir 'f.com:21'", CodeTree.extract_method("- Remote.dir 'f.com:21'"))
   end
 
-#   def test_extract_class
-#     assert_equal("Wiki1", CodeTree.extract_class("- Wiki1.menu('hey')"))
-#   end
+  def test_extract_method_with_junk_at_beginning
+    assert_equal(nil, CodeTree.extract_method("you there/"))
+    assert_equal("you 'Bla.there'", CodeTree.extract_method(".you 'Bla.there'/"))
+  end
+
+  def test_extract_class
+    assert_equal(nil, CodeTree.extract_class("wiki1.menu('hey')"))
+    assert_equal("Wiki1", CodeTree.extract_class("Wiki1.menu('hey')"))
+    assert_equal(nil, CodeTree.extract_class("blaa Wiki1.menu('hey')"))
+  end
 
 #   # Should return literal string for single path
 #   def test_determine_code_from_path
@@ -50,11 +54,10 @@ class CodeTreeTest < Test::Unit::TestCase
   # Should get class from parent
   def test_class_from_parent
     code = CodeTree.determine_code_from_path([
-      "- Wiki.menu('hey')",
+      "Wiki.menu('hey')",
       ".pages"])
     assert_equal("Wiki.pages()", code)
   end
-
 
 #   # Should get class from parent
 #   def test_class_from_parent_with_param
@@ -276,7 +279,7 @@ class CodeTreeTest < Test::Unit::TestCase
   # Should get class from parent
   def test_with_params
     code = CodeTree.determine_code_from_path(["Foo.menu/", ".php(10)/", "mt"])
-    assert_equal('Foo.php(10, "mt")', code)
+    assert_equal("Foo.php(10, 'mt')", code)
   end
 
 end

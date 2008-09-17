@@ -75,11 +75,11 @@ class Notes
   def self.insert_heading
     Line.start
 
-    times = Keys.prefix_u ? 1 : (Keys.prefix || 1)
+    times = Keys.prefix_u? ? 1 : (Keys.prefix || 1)
     times.times { insert "|" }
     insert " "
 
-    open_line(4) if Keys.prefix_u   # If U create blank lines.
+    open_line(4) if Keys.prefix_u?   # If U create blank lines.
 
     #PauseMeansSpace.go
 
@@ -338,19 +338,17 @@ class Notes
     # ||||... lines
     Styles.apply("^\\(|||| ?\\)\\(.+\n\\)", nil, :notes_h4_pipe, :notes_h4)
 
-    # ~emphasis~ strings
-    Styles.apply("\\(~\\)\\(.+?\\)\\(~\\)", :notes_label)
+    #     # ~emphasis~ strings
+    #     Styles.apply("\\(~\\)\\(.+?\\)\\(~\\)", :notes_label)
 
     # - bullets with labels
     #Styles.apply("^[ \t]*\\([+-]\\)\\( \\)", nil, :ls_bullet, :variable)
-    Styles.apply("^[ \t]*\\([+-]\\) \\(.+?:\\) ", nil, :ls_bullet, :notes_label)
+    Styles.apply("^[ \t]*\\([+-]\\) \\([a-zA-Z0-9_,? ().-]+?:\\) ", nil, :ls_bullet, :notes_label)
     Styles.apply("^[ \t]*\\([+-]\\) \\([^:\n]+?:\\)$", nil, :ls_bullet, :notes_label)
 
     #Styles.apply("^[ \t]*\\(\\+\\)\\( \\)", nil, :ls_bullet, :variable)
 
     Styles.apply("^[ \t]*\\(x\\)\\( \\)\\(.+\\)", nil, :ls_bullet, :variable, :strike)
-
-    Styles.apply("^\\([ \t]*\\)\\([+-]\\) \\(.+?:\\) +\\(|.*\n\\)", nil, :default, :ls_bullet, :ls_bullet, :ls_quote)
 
     # - item exclamation! / todo
     Styles.apply("^[ \t]*\\(-\\) \\(.+!\\)$", nil, :notes_exclamation, :notes_exclamation)
@@ -455,7 +453,7 @@ class Notes
     else   # Get bullet indent of previous line
       prev = Line.value(0)[/^( *)[+-]/, 1]
       prev = prev ? "  #{prev}#{bullet_text}" : bullet_text
-      prev.sub!(/^  /, '') if Keys.prefix_u   # Don't indent if U
+      prev.sub!(/^  /, '') if Keys.prefix_u?   # Don't indent if U
       View.insert prev
     end
 

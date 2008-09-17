@@ -1,7 +1,7 @@
 require 'test/unit'
 require 'el_mixin'
 $:.unshift "../"
-require '../tree_ls'
+require 'tree_ls'
 
 class TreeLsTest < Test::Unit::TestCase
 
@@ -139,4 +139,15 @@ class TreeLsTest < Test::Unit::TestCase
     assert_equal '/bla/', TreeLs.clean_path("- /bla/")
     assert_equal 'bla/', TreeLs.clean_path("+ bla/")
   end
+
+  def test_is_root?
+    assert_equal true, TreeLs.is_root?("at left")
+    assert_equal true, TreeLs.is_root?("  - /hey")
+    assert_equal true, TreeLs.is_root?("  /hey")
+    assert_equal true, TreeLs.is_root?("  ./hey")
+    assert_equal false, TreeLs.is_root?("  .you")
+    assert_equal true, TreeLs.is_root?("  $tr/")
+    assert_equal false, TreeLs.is_root?("  $tr")
+  end
+
 end

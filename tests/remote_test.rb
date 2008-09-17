@@ -1,7 +1,7 @@
 require 'test/unit'
 require 'el_mixin'
 $:.unshift "../"
-require '../remote'
+require 'remote'
 
 class RemoteTest < Test::Unit::TestCase
 

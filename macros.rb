@@ -19,7 +19,7 @@ class Macros
     end
 
     # If 0 prefix, apply until blank line
-    if Keys.prefix == 0 or Keys.prefix_u
+    if Keys.prefix == 0 or Keys.prefix_u?
       beginning_of_line
       next_line
       top = point

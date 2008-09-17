@@ -1,7 +1,7 @@
 require 'test/unit'
 require 'el_mixin'
 $:.unshift "../"
-require '../diff_log'
+require 'diff_log'
 
 class TreeLsTest < Test::Unit::TestCase
 

@@ -4,7 +4,7 @@
   tree_ls repository line_launcher effects twitter shell rails merb
   data_mapper code_tree docs svn remote redmine schedule irc mysql
   cursor core_ext help ruby ruby_console buffers links computer menu
-  safari ol book firefox
+  safari ol book firefox projects
   ].each { |l| require l }
 
 # TODO
@@ -108,7 +108,7 @@ class KeyBindings
     Keys.open_list_models { CodeTree.display_menu("Merb.models") }
 
     Keys.open_list_names { Clipboard.list }
-    Keys.open_list_repository { Repository.status_tree }
+    Keys.open_list_repository { Repository.open_list_repository }
     Keys.open_link_top { Links.open_first }   # open first hyperlink on page
     Keys.open_menu { CodeTree.open_menu }   # Open all menus and show them **
     Keys.open_next_error { Merb.open_next_error }
@@ -154,14 +154,14 @@ class KeyBindings
     Keys.enter_insert_command { insert("- (/): "); ControlLock.disable }    # insert date string (and time if C-u)
     Keys.enter_in_todo { TreeLs.enter_snippet }   # enter tree quote of region in $T
     Keys.enter_junior { Notes.bullet("") }
-    # K
+    Keys.enter_key { Keys.insert_code }
     #Keys.EK { Clipboard.paste }   # Enter Clipboard: paste
     Keys.enter_label_bullet { Notes.enter_label_bullet }
     Keys.enter_log_clipboard { Code.enter_log_clipboard }
     Keys.enter_log_javascript { Code.enter_log_console }
     Keys.enter_list_models { CodeTree.insert_menu("Merb.models") }
     Keys.enter_log_statement { Code.enter_log }
-    Keys.enter_log_line { View.insert("Ol.line") }
+    Keys.enter_log_line { Ol.enter_log_line }
     Keys.enter_menu { CodeTree.insert_menus }
     Keys.enter_name { Clipboard.paste }   # paste thing saved as name
     Keys.enter_outline { TreeLs.enter_lines }   # in tree, enter methods or headings
@@ -239,7 +239,7 @@ class KeyBindings
         delete_non_matching_lines( Keys.input(:prompt => "Delete lines not having: ") )
       end
     }
-    Keys.do_list_revisions { cm_subversion_command "echo \"\"; svn log --limit 10" }
+    Keys.do_lines_reverse { reverse_region(region_beginning, region_end) }
     Keys.do_lines_sort { sort_lines(nil, region_beginning, region_end) }
     Keys.do_load_test { Memorizable.load_test_url }
     Keys.do_linebreaks_unix { set_buffer_file_coding_system :unix }
@@ -271,7 +271,10 @@ class KeyBindings
     }
 
     Keys.D1 { delete_char 1 };  Keys.D2 { delete_char 2 };  Keys.D3 { delete_char 3 };  Keys.D4 { delete_char 4 }
-    Keys.D5 { delete_char 5 };  Keys.D6 { delete_char 6 };  Keys.D7 { delete_char 7 };  Keys.D8 { delete_char 8 }
+    Keys.D5 { delete_char 5 };  Keys.D6 { delete_char 6 };  Keys.D7 { delete_char 7 };
+
+    Keys.D8 { History.open_current :all => true, :prompt_for_bookmark => true }   # Like do_outline, but inserts all
+
     # Unmap C-d is shell-mode
     define_key :shell_mode_map, kbd("C-d"), nil
     #define_key :java_mode_map, kbd("C-d"), nil
@@ -286,7 +289,7 @@ class KeyBindings
     Keys.to_deleted { Location.to_spot('deleted') }   # **
     Keys.to_end { View.to_bottom }   # **
     Keys.to_forward { forward_word(Keys.prefix || 1) }   # move forward one word
-    # H
+    Keys.to_highest { View.to_top }   # to beginning of file **
     Keys.to_indent { Move.to_indent }
     Keys.to_junior { Move.to_junior }
     Keys.to_key { Keys.jump_to_code }   # jump to ruby code of key definition *
@@ -317,8 +320,8 @@ class KeyBindings
     Keys.layout_all { View.hide_others }   # *
     Keys.layout_balance { View.balance }   # balance windows *
     Keys.layout_create { View.create }   # open new view **
-    Keys.layout_dimensions_large { set_frame_size(View.frame, 145, 58);  set_frame_position(View.frame, 40, 40) }
-    Keys.layout_dimensions_medium { set_frame_size(View.frame, 145, 50) }
+    Keys.layout_dimensions_large { set_frame_size(View.frame, 145, 58);  set_frame_position(View.frame, 46, 22) }
+    Keys.layout_dimensions_medium { set_frame_size(View.frame, 145, 50);  set_frame_position(View.frame, 223, 22) }
     Keys.layout_dimensions_small { set_frame_size(View.frame, 90, 35) }
     Keys.layout_expand { View.enlarge }   # *
     # F
@@ -337,7 +340,7 @@ class KeyBindings
     Keys.layout_previous { View.previous }   # previous view **
     # Q
     Keys.layout_reveal { widen; Hide.show }   # reveal all hidden text
-    Keys.layout_search { Keys.prefix_u ? Search.find_in_buffers(Keys.input) : Hide.search }   # *
+    Keys.layout_search { Keys.prefix_u? ? Search.find_in_buffers(Keys.input) : Hide.search }   # *
     Keys.layout_todo { TreeLs.open_in_bar }   # show bar on left with the quick bookmark named "-t" *
     Keys.layout_upper { View.to_upper }   # go to uppermost view after bar
     # V
@@ -366,35 +369,32 @@ class KeyBindings
   def self.isearch
     # Control keys during isearch
     Keys.A(:isearch_mode_map) { Search.isearch_query_replace }   # Alter
-    Keys.B(:isearch_mode_map) { Search.insert_at_search_start }
+    # B: leave unmapped for back
     Keys.C(:isearch_mode_map) { Search.copy }   # Clipboard (copy)
     Keys.D(:isearch_mode_map) { Search.isearch_delete }   # Delete
     Keys.E(:isearch_mode_map) { Search.paste_here }   # Enter: insert clipboard, replacing match
     Keys.F(:isearch_mode_map) { Search.go_to_end }   # Forward
     Keys.G(:isearch_mode_map) { Search.stop }   # Stop searching
-    Keys.H(:isearch_mode_map) { Search.hide }   # Hide: hide non-matching
+    Keys.H(:isearch_mode_map) { Search.insert_at_search_start }   # Here
     # I: leave unmapped - had issues using it
     # J: leave unmapped for linebreak
-    Keys.K(:isearch_mode_map) { Search.move_to_search_start }   # Kick: move match back to start
-    # Keys.J(:isearch_mode_map) { Search.highlight_found }   # Jot: highlighting yellow
+    Keys.K(:isearch_mode_map) { Search.cut; Location.as_spot('deleted') }
     Keys.L(:isearch_mode_map) { Search.line }   # Line: copy line back to search start
     # M: leave unmapped for stop
     # N: leave unmapped for next
     Keys.O(:isearch_mode_map) { Search.isearch_find_in_buffers(:current_only => true) }   # Outline
-    Keys.P(:isearch_mode_map) { Search.insert_at_spot }   # Put: jump to point p and insert match
+    # P: leave unmapped for previous
     # Q: leave unmapped for quoting
     # R: leave unmapped for reverse
     # S: leave unmapped for search
     Keys.T(:isearch_mode_map) { Search.isearch_open_last_edited }   # To: open file / jump to method
-    Keys.U(:isearch_mode_map) { Search.isearch_pull_in_sexp }  # like C-w, but pulls in sexp
+    Keys.U(:isearch_mode_map) { Search.isearch_pull_in_sexp }   # like C-w, but pulls in sexp
     Keys.V(:isearch_mode_map) { Search.isearch_find_in_buffers }   # Visited: show matches in visited files
-    #    Keys.V(:isearch_mode_map) { Search.insert_at_search_start }
     # W: leave unmapped for pulling into search
-
     # Redundant (.K)
-    Keys.X(:isearch_mode_map) { Search.cut; Location.as_spot('deleted') }
+    Keys.X(:isearch_mode_map) { Search.insert_at_spot }   # eXtract to spot (as spot)
     # Y: leave unmapped for yank
-    # Z
+    Keys.Z(:isearch_mode_map) { Search.move_to_search_start }   # Zap: move search string back to start
 
     define_key :isearch_mode_map, kbd("C-1") do
       Search.isearch_copy_as("1")
@@ -418,6 +418,11 @@ class KeyBindings
     define_key :isearch_mode_map, kbd("C-/") do   # Remove last action from search results
       $el.isearch_delete_char
     end
+
+    define_key :isearch_mode_map, kbd("C-\\") do   # Hide: hide non-matching
+      Search.hide
+    end
+
   end
 
   def self.isearch_meta
@@ -434,9 +439,11 @@ class KeyBindings
     Keys._E(:isearch_mode_map) { Search.insert_tree_at_spot }   # Enter
     Keys._F(:isearch_mode_map) { Search.isearch_open }   # Find file
     Keys._G(:isearch_mode_map) { Search.isearch_google }   # Google search
-    Keys._H(:isearch_mode_map) { Hide.show;  Search.hide }
+    # H
+    #Keys._H(:isearch_mode_map) { Search.isearch_move_line }
+    #Keys._H(:isearch_mode_map) { Hide.show;  Search.hide }
     Keys._I(:isearch_mode_map) { Search.insert_var_at_search_start }   # Interpolate: paste as interpolated variable
-    Keys._K(:isearch_mode_map) { Search.isearch_move_line }   # Kick: whole line
+    #Keys._K(:isearch_mode_map) { Search.isearch_move_line }
     Keys._L(:isearch_mode_map) { Search.isearch_log }
     Keys._M(:isearch_mode_map) { Search.isearch_tree_grep_method }   # Method: do tree grep (prompt for dir)
     Keys._O(:isearch_mode_map) { Search.isearch_find_in_buffers(:current_only => true, :in_bar => true) }   # Outline: in side bar
@@ -445,6 +452,7 @@ class KeyBindings
     Keys._V(:isearch_mode_map) { Search.isearch_find_in_buffers(:in_bar => true) }   # Visited: show matches in visited files
     #Keys._V(:isearch_mode_map) { Search.insert_var_at_search_start }
     Keys._W(:isearch_mode_map) { Search.isearch_select_inner }   # Within: select 1 char within match
+    Keys._Z(:isearch_mode_map) { Search.isearch_move_line }
 
     define_key :isearch_mode_map, kbd("M-1") do   # pull in 1 word
       $el.isearch_yank_char
@@ -467,7 +475,6 @@ class KeyBindings
       Search.clear
       recenter 0
     end
-
   end
 
   def self.misc

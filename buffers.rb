@@ -36,24 +36,24 @@ class Buffers
   end
 
   def self.search string, options={}
-
     orig = View.buffer
 
     # Get buffer from name
     list = options[:buffer] ?
       [self.from_string(options[:buffer])] :
       $el.buffer_list
-
     found = ""
     list.to_a.each do |b|  # Each buffer open
 
       file = $el.buffer_file_name(b)
-      # Skip if not actual file
+
       next unless file
+
       # Skip if a verboten file
       unless options[:buffer]
         next if file =~ /(\/difflog\.notes|\.log|\/\.emacs)$/
       end
+
       $el.set_buffer b
       started = $el.point
       View.to_top
@@ -97,7 +97,7 @@ class Buffers
 
   def self.rename
     options = {:prompt => "Rename buffer to: "}
-    options[:initial_input] = $el.buffer_name if Keys.prefix_u
+    options[:initial_input] = $el.buffer_name if Keys.prefix_u?
     $el.rename_buffer Keys.input(options)
   end
 

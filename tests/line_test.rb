@@ -1,8 +1,8 @@
 require 'test/unit'
 require 'el_mixin'
 $:.unshift "../"
-require '../line'
-require '../core_ext'
+require 'line'
+require 'core_ext'
 
 class LineTest < Test::Unit::TestCase
 

@@ -9,8 +9,8 @@ class Code
     - get output and stdout: p Code.eval("puts 'printed'; 1 + 2")
   >
 
-  def self.location_from_id id
-    path = ObjectSpace._id2ref(id).to_s
+  def self.location_from_proc id
+    path = id.to_s
     path =~ /@(.+):([0-9]+)/
     file, line = $1, $2
     [file, line]
@@ -149,7 +149,7 @@ class Code
 
     test = ""
     # If not U, only run this test
-    unless Keys.prefix_u
+    unless Keys.prefix_u?
       orig = Location.new
       Line.next
       if Search.backward("^ *it ")
@@ -181,6 +181,8 @@ class Code
   end
 
   def self.indent_to
+    # If no prefix, just indent code according to mode
+    return Code.indent if ! Keys.prefix
     new_indent = Keys.prefix || 0
     orig = Location.new
     # Pull out block
@@ -191,6 +193,7 @@ class Code
     # Delete lines with just spaces
     txt.gsub!(/^ +$/, '')
     insert txt
+    View.set_mark
     orig.go
   end
 
@@ -205,7 +208,7 @@ class Code
   def self.enter_as_trunk
     bm = Keys.input(:timed => true, :input => 'Enter bookmark: ')
     bm = Bookmarks["$#{bm}"]
-    if Keys.prefix_u
+    if Keys.prefix_u?
       View.insert "#{bm}\n  ##/"
       $el.backward_char
       return ControlLock.disable
@@ -268,12 +271,17 @@ class Code
 
   def self.open_log_view
 
+    prefix_u = Keys.prefix_u?
+    Keys.prefix = nil
+
     file = Bookmarks["$o"]
     buffer = "*tail of #{file}"
 
     # If already open, just go to it
     if View.buffer_visible?(buffer)
-      return View.to_buffer(buffer)
+      View.to_buffer(buffer)
+      View.clear if prefix_u
+      return
     end
 
     # If 2 or more windows open
@@ -292,7 +300,9 @@ class Code
 
     # If buffer open, just switch to it
     if View.buffer_open? buffer
-      return View.to_buffer buffer
+      View.to_buffer buffer
+      View.clear if prefix_u
+      return
     end
 
     return if file.nil? or file.empty?
@@ -304,6 +314,9 @@ class Code
 
     Shell.run "tail -f #{file}", :buffer => buffer, :dir => '/tmp', :dont_leave_bar => true
     Notes.mode
+
+    View.clear if prefix_u
+
 
   end
 

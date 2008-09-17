@@ -118,7 +118,7 @@ class Location
   # Enter selected text at spot
   def self.enter_at_spot
     txt = View.selection
-    txt = TreeLs.snippet if Keys.prefix_u
+    txt = TreeLs.snippet if Keys.prefix_u?
     Location.jump("0")
     View.set_mark
     insert txt

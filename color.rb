@@ -39,7 +39,7 @@ class Color
       return remove_overlays
     end
 
-    if Keys.prefix_u
+    if Keys.prefix_u?
       over = make_overlay(*View.range)
       overlay_put over, :face, @@colors[char]
       return

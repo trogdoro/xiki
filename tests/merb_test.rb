@@ -1,8 +1,8 @@
 require 'test/unit'
 require 'el_mixin'
 $:.unshift "../"
-require '../merb'
-require '../core_ext'
+require 'merb'
+require 'core_ext'
 
 class MerbTest < Test::Unit::TestCase
 

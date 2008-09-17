@@ -290,44 +290,22 @@ class TreeLs
     # Dir line
     #Styles.apply('^\\([A-Za-z]\\)$', nil, :ls_dir)  # Most dirs
     #Styles.apply("\\([A-Za-z][^:\n]+/\\)$", nil, :ls_dir)  # Most dirs
-    Styles.apply('^[ +-]*\\(.+/\\)$', nil, :ls_dir)  # Most dirs
+
+    Styles.apply("^[ +-]*\\([^|\n]+/\\)$", nil, :ls_dir)  # Most dirs
+
+    # Bullets
+    Styles.apply("^[ \t]*[+-] [a-zA-Z0-9_,? ().-]+?: \\(.+/\\)$", nil, :ls_dir)
+    Styles.apply("^[ +-]*\\([^|\n]+/\\)$", nil, :ls_dir)  # Dirs with labels
+
     #Styles.apply('^[ -]*\\([ a-zA-Z0-9\/_\.$-]*\\w/\\)$', nil, :ls_dir)  # Most dirs
     Styles.apply('^ *\\(//?\\)$', nil, :ls_dir)  # /
     Styles.apply('^ *\\(\./\\)$', nil, :ls_dir)  # ./
     Styles.apply('^ *[+-] \\(##.+/\\)$', nil, :ls_search)  # ##_/
     Styles.apply('^ *[+-] \\(\*\*.+/\\)$', nil, :ls_search)  # ##_/
 
-
   end
 
-  # Define key
-  def self.define_keys
-
-  #     make_local_variable :tab_width
-  #     elvar.tab_width = 3
-
-  #     elvar.treels_mode_keymap = make_sparse_keymap
-  #     use_local_map elvar.treels_mode_keymap
-
-  #     # Previous file
-  #     Keys.P(:treels_mode_keymap) do
-  #       beginning_of_line
-  #       TreeLs.select_previous_file
-  #     end
-  #     # Next file
-  #     Keys.N(:treels_mode_keymap) do
-  #       end_of_line
-  #       TreeLs.select_next_file
-  #     end
-
-  #     # Enter should open the file
-  #     Keys.M(:treels_mode_keymap) do
-  #       TreeLs.open
-  #     end
-
-  end
-
-  # Mapped to Enter when on a treels buffer.  Opens file curor is on in the tree.
+  # Mapped to Enter when on a treels buffer.  Opens file cursor is on in the tree.
   # It assumes the path to a dir is on the current line.
   def self.construct_path options={}
     path = []
@@ -348,7 +326,6 @@ class TreeLs
     root = Line.value.sub(/^ +/, '')
     root = self.clean_path(root) unless options[:raw]
     path.unshift root
-    #path.unshift Line.value.sub(/^ +/, '')
 
     goto_char orig
     if options[:indented]
@@ -358,13 +335,15 @@ class TreeLs
     else
       path.join
     end
+  end
 
+  def self.is_tree_ls_path list
+    self.matches_root_pattern?(list.first)
   end
 
   def self.clean_path path
-    path.sub!(/^ *[+-] .+: /, '')  # Treat "- foo:" text as comments (ignore)
+    path.sub!(/^ *[+-] [\w -]+: /, '')  # Treat "- foo:" text as comments (ignore)
     path.sub!(/^ *[+-] /, '')  # Treat "- foo:" text as comments (ignore)
-    #path.sub!(/^ *[+-] .+: /, "- ")  # Treat "- foo:" text as comments (ignore)
     path.sub!(/^([^|\n-]*)##.+/, "\\1")  # Ignore "##"
     path.sub!(/^([^|\n-]*)\*\*.+/, "\\1")  # Ignore "\*\*"
     path
@@ -481,7 +460,7 @@ class TreeLs
     #ch = char_to_string(ch_raw)
 
     # While narrowing down list (and special check for C-.)
-    while (ch =~ /[\\() ~">a-zA-Z!_,~.-]/) ||
+    while (ch =~ /[\\() ~">a-zA-Z!_,~.?-]/) ||
         (recursive && ch_raw == 2 || ch_raw == 6) ||
         ch == :up || ch == :down
       break if recursive && ch == '/'   # Slash means enter in a dir
@@ -489,14 +468,14 @@ class TreeLs
         pattern = ''
       elsif ch_raw == 2   # C-b
         while(Line.previous == 0)
-          next if Line.matches(/\/$/)  # Keep going if line is a dir
+          next if self.dir?  # Keep going if line is a dir
           Line.to_words
           break  # Otherwise, stop
         end
 
       elsif ch_raw == 6   # C-f
         while(Line.next == 0)
-          next if Line.matches(/\/$/)  # Keep going if line is a dir
+          next if self.dir?  # Keep going if line is a dir
           Line.to_words
           break  # Otherwise, stop
         end
@@ -645,7 +624,7 @@ class TreeLs
       # If a quote, insert lines indented lower
       if Line.matches(/\|/)
         self.enter_under
-      elsif Line.matches(/\/$/)  # A Dir, so do recursive search
+      elsif self.dir?  # A Dir, so do recursive search
         delete_region(Line.left(2), right)
         self.dir_recursive
         return @@search_going_or_interrupted = false
@@ -701,7 +680,7 @@ class TreeLs
         previous_line
         if options[:number_means_enter]  # If explicitly supposed to enter
           LineLauncher.launch
-        elsif Line.matches(/\/$/)  # If a dir, go into it
+        elsif self.dir?  # If a dir, go into it
           self.dir
         else
           Move.to_line_text_beginning
@@ -732,7 +711,7 @@ class TreeLs
           $el.delete_char 2
         end
 
-        Line.matches(/\/$/) ?   # Open if a dir
+        self.dir? ?   # Open if a dir
           self.expand_or_open :
           Line.end
 
@@ -878,7 +857,7 @@ class TreeLs
   def self.open_in_bar ignore_prefix=nil
 
     # If numeric prefix, open nth thing in tree
-    if Keys.prefix and !(Keys.prefix_u) and !(ignore_prefix)
+    if Keys.prefix and !(Keys.prefix_u?) and !(ignore_prefix)
       # Remember original view
       start = selected_window
       # Open tree (ignoring prefix)
@@ -903,7 +882,7 @@ class TreeLs
     View.to_nth 0
     find_file Bookmarks.expand("$t")
 
-    only_one_view_in_bar = Keys.prefix_u
+    only_one_view_in_bar = Keys.prefix_u?
     only_one_view_in_bar = ! only_one_view_in_bar if @@one_view_in_bar_by_default
     unless only_one_view_in_bar  # Unless u prefix, open $tl as well (under bar)
 
@@ -1134,7 +1113,7 @@ class TreeLs
     Line.to_left
     clip = Clipboard.get(0, :add_linebreak => true)
 
-    if Line.matches(/\/$/)   # If current line is path
+    if self.dir?   # If current line is path
       self.plus_to_minus_maybe
       indent = Line.indent
       dir = self.construct_path
@@ -1151,7 +1130,7 @@ class TreeLs
     end
 
     # If C-u or whole thing is quoted already
-    if Keys.prefix_u || clip =~ /\A  +[-+]?\|/
+    if Keys.prefix_u? || clip =~ /\A  +[-+]?\|/
       # Unquote
       clip = clip.grep(/\|/).join()
       return insert(clip.gsub(/^ *[-+]?\|/, ""))
@@ -1186,26 +1165,30 @@ class TreeLs
 
   # Remove the following lines indented more than the current one
   def self.kill_under
-    self.minus_to_plus_maybe
-    kill_this_also = Keys.prefix_u
-    orig = Location.new
-    line = Line.value.sub('|', '')
 
-    # Get indent of current line
-    indent = line[/^ */]
+    indent = Line.indent.size
+    pattern = "^ \\{0,#{indent}\\}\\([^ \n]\\|$\\)"
 
-    # Go to next line
-    #Line.start
-    Line.next
-    left = Line.left
-    while((Line.value.sub('|', '') =~ /^#{indent} /) and Line.next == 0)
-      # Do nothing
-      # Keep going unless line not indented more
-      #break unless 
+    # If on a " | quote" line, ignore | (delete under within quotes)
+    if Line.matches /^ +\|/
+      indent = Line.value[/^[ |]+/].size
+      pattern = "^[ |]\\{0,#{indent}\\}\\([^ |\n]\\|$\\)"
+      #return
     end
-    delete_region left, Line.left
-    orig.go
-    Line.delete if kill_this_also
+
+    self.minus_to_plus_maybe
+
+    # Get indent
+    orig = Line.left
+    left = Line.left(Keys.prefix_u? ? 1 : 2)
+    Line.next
+    Search.forward pattern
+    Line.to_left
+    View.delete(left, View.cursor)
+    View.to orig
+
+    Move.to_line_text_beginning
+
   end
 
   def self.kill_siblings
@@ -1247,6 +1230,9 @@ class TreeLs
 
   # Grabs matching lines in file and starts hide search
   def self.enter_lines pattern=nil, options={}
+
+    # If dir, delegate to C-. (they meant to just open it)
+    return LineLauncher.launch if self.dir?
 
     TreeLs.plus_to_minus
 
@@ -1366,7 +1352,7 @@ class TreeLs
     options.merge!(:dir => dir)
 
     # If U prefix, open in bar
-    if Keys.prefix_u
+    if Keys.prefix_u?
       self.ls options.merge(:open_in_bar => true)
     # Otherwise, open in new buffer
     else
@@ -1503,8 +1489,12 @@ class TreeLs
 
   def self.is_root? path
     # It's the root if it matches a pattern, or is at left margin
-    result = path =~ /^ *[-+]? ?(\/|\.\/|\$)/ || path !~ /^ /
-    result
+    result = self.matches_root_pattern?(path) || path !~ /^ /
+    result ? true : false
+  end
+
+  def self.matches_root_pattern? path
+    Line.without_label(path) =~ /^ *[-+]? ?(\/|~\/|\.\/|\$.+\/$)/
   end
 
   def self.create_dir
@@ -1673,7 +1663,7 @@ private
       indent = Line.indent
       txt = Clipboard.paragraph(:start_here => true, :delete => true)
       first, rest = txt.match(/(.+?)\n(.+)/m)[1..2]
-      if Keys.prefix_u
+      if Keys.prefix_u?
         rest.sub! /^\s*[+-] /, ''
         rest.gsub! /^  /, ''
         View.insert "#{first}#{rest}"
@@ -1684,6 +1674,11 @@ private
       end
       orig.go
     end
+  end
+
+  # Returns whether line is a dir (ends with "/")
+  def self.dir?
+    Line.matches(/\/$/)
   end
 
 end

@@ -32,6 +32,20 @@ class CodeTree
     orig = Location.new
     orig_left = point
     returned, stdout, e = Code.eval(code)  # Eval code
+
+    # If no stdout (and something was returned), print return value
+    if ! stdout.nonempty? and returned.nonempty?
+      stdout =
+        if returned.is_a? Array
+          (returned.map{|l| l =~ /\/$/ ? "+ #{l}" : "- #{l}"}.join("\n")) + "\n"
+        elsif returned.is_a? Hash
+          (returned.map{|k, v| v =~ /\/$/ ? "+ #{k}: #{v}" : "- #{k}: #{v}"}.join("\n")) + "\n"
+        else
+          "#{returned}\n"
+        end
+      # If list, join and bulletize
+    end
+
     if e
       returned = ''
       stdout = e.is_a?(ScriptError) ?
@@ -42,7 +56,7 @@ class CodeTree
     buffer_changed = b != View.buffer  # Remember whether we left the buffer
     message(returned.to_s) if returned and (!returned.is_a?(String) or returned.size < 500)
     # Insert output if there was any
-    unless stdout.nil? || stdout.size == 0
+    if stdout.nonempty?
       # Pull out flags
       if stdout =~ /^:code_tree_option_tree_search\n/
         options[:tree_search] = true
@@ -103,7 +117,7 @@ class CodeTree
   end
 
   def self.display_menu menu
-    View.bar if Keys.prefix_u
+    View.bar if Keys.prefix_u?
     View.to_buffer("*CodeTree #{menu.gsub(/[.,]/, ' ')}")
     View.clear
     $el.notes_mode
@@ -118,7 +132,7 @@ class CodeTree
   end
 
   def self.layout_menu
-    View.bar if Keys.prefix_u
+    View.bar if Keys.prefix_u?
 
     buffer = "*CodeTree CodeTree menu"
     if View.buffer_open? buffer   # If open, switch to it
@@ -143,32 +157,31 @@ class CodeTree
 
 
   # Determine whether path is code_tree or tree_ls
-  def self.is_code_tree_path list
-    code_tree_root = nil
-    index = list.size - 1
-    list.reverse.each do |l|
+  #   def self.is_code_tree_path list
+  #     code_tree_root = nil
+  #     index = list.size - 1
+  #     list.reverse.each do |l|
 
-      # If it has a char that wouldn't be in a file, must be code tree
-      return index if l =~ /[\[\{=]/
+  #       # If it has a char that wouldn't be in a file, must be code tree
+  #       #return index if l =~ /[\[\{=]/
 
-      # If last one was suspected as root, confirm we're not a dir (must be a file if parent is a dir)
-      if code_tree_root
-        if l =~ /\/$/  # Dir means it was a file that looked like code
-          code_tree_root = nil
-        else
-          return index + 1  # Must be legit, so return our index
-        end
-      end
+  #       # If last one was suspected as root, confirm we're not a dir (must be a file if parent is a dir)
+  #       if code_tree_root
+  #         if l =~ /\/$/  # Dir means it was a file that looked like code
+  #           code_tree_root = nil
+  #         else
+  #           return index + 1  # Must be legit, so return our index
+  #         end
+  #       end
+  #       # If function call, it might be the root
+  #       if l =~ /^[+-]? ?[A-Z][A-Za-z0-9]*\.[a-z]/
+  #         code_tree_root = index
+  #       end
+  #       index -= 1
+  #     end
 
-      # If function call, it might be the root
-      if l =~ /\b[A-Z][A-Za-z0-9]*\.[a-z]/
-        code_tree_root = index
-      end
-      index -= 1
-    end
-
-    code_tree_root
-  end
+  #     code_tree_root
+  #   end
 
   # Rules for constructing code from path
   # - examine path consisting of where C-. occurred and all its ancestors
@@ -177,40 +190,48 @@ class CodeTree
   # - append all ancestor data nodes as params
   #   - include self if a data node
   def self.determine_code_from_path path
-    path
     data = []
-    clazz = nil
-    metho = nil
+    clazz = metho = nil
+    metho_maybe = clazz_maybe = nil
+
     i = -1
-    # Climb up path
-    path.reverse.each do |l|
+
+    path.reverse.each do |l|   # Climb up path
       i += 1
       metho_tmp = self.extract_method(l)
       clazz_tmp = self.extract_class(l)
       l.sub(/^(\s+)[+-] /, "\\1")   # Remove bullets
-      is_first = i + 1 == path.size
+      is_root = i + 1 == path.size
       code_node = false
-      if metho_tmp  # If line has method
-        if clazz_tmp  # If line has class
-          if is_first || self.definite_code_tree_root(l)
+      if metho_tmp   # If line has method
+        if clazz_tmp   # If line has class
+          if is_root || self.definite_code_tree_root(l)
             metho ||= metho_tmp
             code_node = true
             clazz ||= clazz_tmp
             break if clazz
+          else   # Use this if nothing else is found
+            metho_maybe ||= metho_tmp
+            clazz_maybe ||= clazz_tmp
           end
-        else  # Otherwise, it can be a method
+        else   # Otherwise, it can be a method
           metho ||= metho_tmp
           code_node = true
         end
       end
 
-      if ! code_node  # If not code node, must be data node
+      if ! code_node   # If not code node, must be data node
         # Prepend to data list
         data << self.paramify(l)
       end
     end
 
-    return nil unless clazz  # Error out if no root
+    unless clazz   # If no code found
+      return nil unless clazz_maybe
+      metho = metho_maybe
+      clazz = clazz_maybe
+      data = []
+    end
 
     # If one line, return it literally
     if i == 0
@@ -222,8 +243,9 @@ class CodeTree
 
     # If any data nodes, pass as params
     if ! data.empty?
+      data.each{|s| s.gsub!("'", "\\\\'") }
       data.reverse!
-      data.map! {|a| "\"#{a}\""}
+      data.map! {|a| "'#{a}'"}
       params << ", " + data.join(", ")
     end
     # TODO Get rid of comma if there is one
@@ -233,19 +255,21 @@ class CodeTree
   end
 
   def self.extract_class l
-    l[/\b([A-Z][A-Za-z0-9]*)\.[a-z]/, 1]
+    l[/^([A-Z][A-Za-z0-9]*)\.[a-z]/, 1]
   end
 
   def self.extract_method l
-    l = l.sub(/^[+-] .+?: /, '').sub(/^[+-] /, '')  # Remove bullets
+    l = l.sub(/^[+-] [\w -]+?: /, '').sub(/^[+-] /, '')  # Remove bullets
     # Either class or bol
-    result = l[/\b[A-Z][A-Za-z0-9]*\.([a-z].*)/, 1] ||  # Class and method
+    result = l[/^[A-Z][A-Za-z0-9]*\.([a-z].*)/, 1] ||  # Class and method
       l[/^\.([a-z].*)/, 1]  # Method at beginning of line
     result ? result.sub(/\/$/, '') : nil
   end
 
   def self.paramify l
-    Line.without_label(l).gsub(', ', '", "')
+    l = Line.without_label(l)
+    l.gsub!(', ', "', '") unless l =~ /^\|/
+    l
   end
 
   def self.siblings
@@ -286,7 +310,7 @@ class CodeTree
     while(Line.indent(Line.value(i)).size >= indent)
       child = Line.value(i)
       if options[:as_hash]
-        match = child.match(/ *(.+): (.+)/)
+        match = child.match(/ *([\w -]+): (.+)/)
         if match
           k, v = match[1..2]
           children[k] = v

@@ -66,7 +66,7 @@ class View
   def self.create
     prefix = elvar.current_prefix_arg
     # If prefix is 3, do Vertical split
-    if prefix == 3 || Keys.prefix_u
+    if prefix == 3 || Keys.prefix_u?
       split_window_horizontally
       other_window 1
     else
@@ -503,6 +503,7 @@ class View
   end
 
   def self.set_mark pos=nil
+    pos ||= self.cursor
     $el.set_mark pos
   end
 
@@ -556,12 +557,16 @@ class View
   def self.count_matches
     right = $el.buffer_size
     left = 1
-    left = point if Keys.prefix_u
+    left = point if Keys.prefix_u?
     $el.message how_many(Keys.input('pattern to count: a'), left, right).to_s
   end
 
   def self.line_number
     Line.number
+  end
+
+  def self.column
+    point - point_at_bol
   end
 
   def self.cursor

@@ -1,7 +1,7 @@
 require 'test/unit'
 require 'el_mixin'
 $:.unshift "../"
-require '../auto_menu'
+require 'auto_menu'
 
 class AutoMenuTest < Test::Unit::TestCase
 

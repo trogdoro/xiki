@@ -10,7 +10,7 @@ class Twitter
   >
 
   def self.post_or_list
-    if Keys.prefix_u  # If U prefix, just list
+    if Keys.prefix_u?  # If U prefix, just list
       shell_command("twitter timeline")
     else  # Otherwise, post
       self.post

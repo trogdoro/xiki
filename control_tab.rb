@@ -17,7 +17,7 @@ class ControlTab
     # If first tab, clear edited
     @@edited = nil if first_tab_in_sequence
 
-    if Keys.prefix_u   # If U prefix (must be first alt-tab in sequence)
+    if Keys.prefix_u?   # If U prefix (must be first alt-tab in sequence)
       # Go to last edited file, and store list
       @@edited = elvar.editedhistory_history.to_a
       @@edited -= View.list_files

@@ -36,7 +36,7 @@ class History
     else  # If entering in new buffer
 
       # By default happen in same view
-      View.bar if Keys.prefix_u or options[:bar]  # If to go to bar
+      View.bar if Keys.prefix_u? or options[:bar]  # If to go to bar
 
       #View.bar
       View.to_buffer("*tree of current")
@@ -57,11 +57,7 @@ class History
   end
 
   def self.open_edited
-#     if Keys.prefix_u
-#       cm_show_edited_files
-#     else
     times = self.prefix_times
-    #View.bar
     View.to_buffer("*tree of edited")
     View.clear;  notes_mode
     insert TreeLs.paths_to_tree(elvar.editedhistory_history.to_a[0..(times-1)])
@@ -69,7 +65,6 @@ class History
     Keys.clear_prefix
     TreeLs.select_next_file
     TreeLs.search :recursive => true
-#     end
   end
 
   def self.open_history
