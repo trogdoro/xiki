@@ -342,8 +342,7 @@ class TreeLs
   end
 
   def self.clean_path path
-    path.sub!(/^ *[+-] [\w -]+: /, '')  # Treat "- foo:" text as comments (ignore)
-    path.sub!(/^ *[+-] /, '')  # Treat "- foo:" text as comments (ignore)
+    path.replace Line.without_label(path)
     path.sub!(/^([^|\n-]*)##.+/, "\\1")  # Ignore "##"
     path.sub!(/^([^|\n-]*)\*\*.+/, "\\1")  # Ignore "\*\*"
     path

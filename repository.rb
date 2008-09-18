@@ -78,16 +78,34 @@ class Repository
       ].strip.gsub(/^      /, '')
   end
 
-  def self.log dir=nil
+  def self.log dir, rev=nil, file=nil
     dir ||= Keys.prefix_u? ? Bookmarks['$tr'] : self.determine_dir
-    log = Shell.run('git log', :sync => true, :dir => dir)
-    # Replace commit... into separators
-    a = log.split(/\n?^commit .+\n.+\n.+\n\n/)
-    a.each {|l| l.gsub!(/^    /, '| ')}
-    a.each {|l| l.gsub!(/^- - /, '- ')}
-    a.each {|l| l.gsub!(/\n\z/, "")}
-    a.each {|l| l.gsub!(/\n/, "  ")}
-    puts a.join("\n")
+
+    if rev.nil?   # If no rev, list all revs
+      txt = Shell.run "git log --pretty=oneline", :sync=>true, :dir=>dir
+      # Ol << "txt: #{txt}"
+      # return
+      txt.gsub! ':', '-'
+      txt.gsub! /(.+?) (.+)/, "\\2: \\1"
+      txt.gsub! /^- /, ''
+      return txt.split("\n")
+    end
+
+    if file.nil?   # If no file, show files for rev
+      # Rev passed, so show all diffs
+      txt = Shell.run "git show --pretty=oneline --name-status #{rev}", :sync=>true, :dir=>dir
+      txt.sub! /^.+\n/, ''
+      txt.gsub! /^([A-Z])\t/, "\\1: "
+      txt.gsub! /^M: /, ''
+      return txt.split("\n").sort
+    end
+
+    # File passed, show diff
+    txt = Shell.run "git show --pretty=oneline #{rev} #{file}", :sync=>true, :dir=>dir
+    txt.sub!(/.+?@@.+?\n/m, '')
+    txt.gsub! /^/, '|'
+    puts txt
+    return
   end
 
   def self.diff_one_file
@@ -107,8 +125,6 @@ class Repository
   end
 
   def self.local_keys
-#    elvar.repository_mode_map = make_sparse_keymap
-      # Inherit notes_mode_map!
     Keys.CN(:cm_diff_map) do
       Line.to_right
       re_search_forward "^index:? "
@@ -122,7 +138,6 @@ class Repository
     end
 
     Keys._M(:cm_diff_map) { Repository.jump_to_file }
-
   end
 
   def self.jump_to_file
@@ -324,9 +339,9 @@ class Repository
 
   def self.commit *args
 
+    # Parse args
     message = args.shift
-    # Pull out :diffs if 2nd arg
-    diffs = args.shift if args.first.is_a? Symbol
+    diffs = args.shift if args.first.is_a? Symbol   # Pull out :diffs if 2nd arg
     project, file, line = args
 
     dir = project[/.* - (.+)\//, 1]
@@ -348,7 +363,6 @@ class Repository
 
     # Else, delegate to diff
     self.diff project, file, line
-
     nil
   end
 

@@ -342,9 +342,8 @@ class Notes
     #     Styles.apply("\\(~\\)\\(.+?\\)\\(~\\)", :notes_label)
 
     # - bullets with labels
-    #Styles.apply("^[ \t]*\\([+-]\\)\\( \\)", nil, :ls_bullet, :variable)
-    Styles.apply("^[ \t]*\\([+-]\\) \\([a-zA-Z0-9_,? ().-]+?:\\) ", nil, :ls_bullet, :notes_label)
-    Styles.apply("^[ \t]*\\([+-]\\) \\([^:\n]+?:\\)$", nil, :ls_bullet, :notes_label)
+    Styles.apply("^[ \t]*\\([+-]\\) \\([!#-~ ]+?:\\) ", nil, :ls_bullet, :notes_label)
+    Styles.apply("^[ \t]*\\([+-]\\) \\([!#-~ ]+?:\\)$", nil, :ls_bullet, :notes_label)
 
     #Styles.apply("^[ \t]*\\(\\+\\)\\( \\)", nil, :ls_bullet, :variable)
 

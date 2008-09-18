@@ -44,6 +44,8 @@ class CodeTree
           "#{returned}\n"
         end
       # If list, join and bulletize
+    else
+      message(returned.to_s) if returned and (!returned.is_a?(String) or returned.size < 500)
     end
 
     if e
@@ -53,8 +55,7 @@ class CodeTree
         "#{stdout}- error evaluating '#{code}': #{e.message}\n#{e.backtrace.join("\n")}\n"
     end
 
-    buffer_changed = b != View.buffer  # Remember whether we left the buffer
-    message(returned.to_s) if returned and (!returned.is_a?(String) or returned.size < 500)
+    buffer_changed = b != View.buffer   # Remember whether we left the buffer
     # Insert output if there was any
     if stdout.nonempty?
       # Pull out flags
@@ -219,7 +220,6 @@ class CodeTree
           code_node = true
         end
       end
-
       if ! code_node   # If not code node, must be data node
         # Prepend to data list
         data << self.paramify(l)

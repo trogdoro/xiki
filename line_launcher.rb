@@ -323,7 +323,6 @@ class LineLauncher
       TreeLs.indent(output)
       TreeLs.insert_quoted_and_search output#.gsub!(/^/, "#{indent}  |")
     end
-
   end
 
   def self.file_hooks
