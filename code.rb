@@ -289,7 +289,7 @@ class Code
       View.to_nth(1)   # Go to 2rd
     elsif View.list.size >= 3
       View.to_nth(2)
-      unless View.left_edge == 0   # If 3nd notat left, go to 2nd
+      unless View.left_edge == 0   # If 3nd not at left, go to 2nd
         View.to_nth(1)
         unless View.left_edge == 0   # If not at left, go to first
           View.to_nth(0)

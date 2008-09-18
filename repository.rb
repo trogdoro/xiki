@@ -70,7 +70,7 @@ class Repository
     puts %Q[
       + .add/
       + .commit "message"/
-      + .commit "message", :with_diffs/
+      + .commit "message", :diffs/
       + .push/
       + .status/
       + .status_tree/
@@ -322,7 +322,13 @@ class Repository
 
   end
 
-  def self.commit message, project, file=nil, line=nil
+  def self.commit *args
+
+    message = args.shift
+    # Pull out :diffs if 2nd arg
+    diffs = args.shift if args.first.is_a? Symbol
+    project, file, line = args
+
     dir = project[/.* - (.+)\//, 1]
     children = CodeTree.children || []
 
@@ -333,13 +339,12 @@ class Repository
         Shell.run(command, :dir=>dir)
         return
       else   # If no files underneath, show modified files
-        #txt =
-        return Shell.run("git ls-files --modified", :dir=>dir, :sync=>true).split("\n")
-        #         puts
-        #         return
+        if !diffs
+          return Shell.run("git ls-files --modified", :dir=>dir, :sync=>true).split("\n")
+        end
+        # else, .diff will show the diffs
       end
     end
-
 
     # Else, delegate to diff
     self.diff project, file, line
