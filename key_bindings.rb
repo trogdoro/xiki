@@ -130,6 +130,8 @@ class KeyBindings
     Keys.O1 { View.open("$1") }   # Open 1
     Keys.O2 { View.open("$2") };   Keys.O3 { View.open("$3") };   Keys.O4 { View.open("$4") };
     Keys.O5 { View.open("$5") };   Keys.O6 { View.open("$6") };   Keys.O7 { View.open("$7") };
+    Keys.O8 { History.open_current :all => true, :prompt_for_bookmark => true }   # Like do_outline, but inserts all
+
   end
 
   def self.e_keys
@@ -271,9 +273,7 @@ class KeyBindings
     }
 
     Keys.D1 { delete_char 1 };  Keys.D2 { delete_char 2 };  Keys.D3 { delete_char 3 };  Keys.D4 { delete_char 4 }
-    Keys.D5 { delete_char 5 };  Keys.D6 { delete_char 6 };  Keys.D7 { delete_char 7 };
-
-    Keys.D8 { History.open_current :all => true, :prompt_for_bookmark => true }   # Like do_outline, but inserts all
+    Keys.D5 { delete_char 5 };  Keys.D6 { delete_char 6 };  Keys.D7 { delete_char 7 };  Keys.D8 { delete_char 7 };
 
     # Unmap C-d is shell-mode
     define_key :shell_mode_map, kbd("C-d"), nil

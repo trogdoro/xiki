@@ -274,11 +274,16 @@ class Repository
     dir = project[/.* - (.+)\//, 1]
 
     if file.nil?   # If no file passed, do whole diff
+
+      txt = Shell.run "git status", :dir=>dir, :sync=>true
+      files = txt.scan(/\t(.+)/).map{|i| i.first}
+      new_files = files.select{|f| f =~ /^new file: +/}.map{|f| "new: " + f[/: +(.+)/, 1]}
+
       txt = Shell.run('git diff', :sync => true, :dir => dir)
       self.clean! txt
       txt.gsub!(/^/, '  |')
       txt.gsub!(/^  \|diff --git .+ b\//, '- ')
-      return puts(txt)
+      return new_files.map{|f| "- #{f}\n"}.join('') + txt
     end
 
     if line.nil?   # If no line passed, re-do diff for 1 file
@@ -355,7 +360,14 @@ class Repository
         return
       else   # If no files underneath, show modified files
         if !diffs
-          return Shell.run("git ls-files --modified", :dir=>dir, :sync=>true).split("\n")
+
+          txt = Shell.run "git status", :dir=>dir, :sync=>true
+          files = txt.scan(/\t(.+)/).map{|i| i.first}
+          new_files = files.select{|f| f =~ /^new file: +/}.map{|f| "new: " + f[/: +(.+)/, 1]}
+          modified = files.select{|f| f =~ /^modified: +/}.map{|f| f[/: +(.+)/, 1]}
+
+          return new_files + modified
+          #return Shell.run("git ls-files --modified", :dir=>dir, :sync=>true).split("\n")
         end
         # else, .diff will show the diffs
       end
@@ -363,7 +375,6 @@ class Repository
 
     # Else, delegate to diff
     self.diff project, file, line
-    nil
   end
 
   def self.push project
