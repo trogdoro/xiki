@@ -62,7 +62,7 @@ class Repository
   def self.menu project=nil
     # If no project, show all projects
     if project.nil?
-      return Projects.listing.map{|k, v| "#{k} - #{v}/"}
+      return Projects.listing.map{|k, v| "#{k} - #{v}/"}.sort
     end
 
     # If project, show options
@@ -79,7 +79,6 @@ class Repository
   end
 
   def self.log dir, rev=nil, file=nil
-    dir ||= Keys.prefix_u? ? Bookmarks['$tr'] : self.determine_dir
 
     if rev.nil?   # If no rev, list all revs
       txt = Shell.run "git log --pretty=oneline", :sync=>true, :dir=>dir
@@ -103,6 +102,7 @@ class Repository
     # File passed, show diff
     txt = Shell.run "git show --pretty=oneline #{rev} #{file}", :sync=>true, :dir=>dir
     txt.sub!(/.+?@@.+?\n/m, '')
+    txt.gsub! /^-/, '~'
     txt.gsub! /^/, '|'
     puts txt
     return
@@ -201,26 +201,27 @@ class Repository
 
   end
 
-  # Called by key shortcut
-  # Runs in new buffer, under code tree method
-  def self.determine_dir
-    # Check whether git
+  def self.git? dir
+    git_status = Shell.run "git status", :sync => true, :dir => dir
+    git_status !~ /^fatal: Not a git repository/
+  end
 
-    git_status = Shell.run "git status", :sync => true, :dir => View.dir
-    if git_status =~ /^fatal: Not a git repository/
-      return Bookmarks['$tr']
-    end
-
+  def self.git_path dir
+    return nil unless self.git?(dir)
     dir = Shell.run("git rev-parse --git-dir", :sync=>true,
       :dir=>View.dir
       ).sub(".git\n", '')
 
-    dir.any? ? dir : View.dir
+    dir.any? ? dir : nil
+  end
+
+  def self.determine_dir dir
+    self.git_path(dir) || Bookmarks['$tr']
   end
 
   def self.open_list_repository
     # Figure out which dir
-    dir = Keys.prefix_u? ? Bookmarks['$tr'] : self.determine_dir
+    dir = Keys.prefix_u? ? Bookmarks['$tr'] : self.determine_dir(View.dir)
 
     View.to_buffer "*repository status"
     View.clear
@@ -273,9 +274,7 @@ class Repository
     project.sub(/.+? - /, '').sub(/\/$/, '')
   end
 
-  def self.diff project, file=nil, line=nil
-
-    dir = self.extract_dir project
+  def self.diff dir, file=nil, line=nil
 
     if file.nil?   # If no file passed, do whole diff
 
@@ -325,13 +324,22 @@ class Repository
   def self.add project, file=nil
 
     dir = self.extract_dir project
-    children = CodeTree.children || []
 
     # If file passed, just open it
     if file
       View.open("#{dir}/#{file}")   # If file, open it
       return
     end
+
+    if self.git?(dir)
+      self.git_add dir, file
+    else
+      self.svn_add dir, file
+    end
+  end
+
+  def self.git_add dir, file
+    children = CodeTree.children || []
 
     if children.nonempty?   # If children, add them
       #dir ||= self.determine_dir
@@ -349,16 +357,26 @@ class Repository
   end
 
   def self.commit *args
-
     # Parse args
     message = args.shift
     diffs = args.shift if args.first.is_a? Symbol   # Pull out :diffs if 2nd arg
     project, file, line = args
 
     dir = self.extract_dir project
+
+    if self.git?(dir)
+      self.git_commit message, diffs, dir, file, line
+    else
+      self.svn_commit message, diffs, dir, file, line
+    end
+
+  end
+
+  def self.git_commit message, diffs, dir, file, line
+
     children = CodeTree.children || []
 
-    if file.nil?   # If launchinng .commit directly (no file)
+    if file.nil?   # If launching .commit directly (no file)
       if children.nonempty?   # Files are underneath (children)
         children = children.map{|c| c.sub(/^ +[+-] /, '')}.join(" ")
         command = "git commit -m \"#{message}\" #{children}"
@@ -380,7 +398,7 @@ class Repository
     end
 
     # Else, delegate to diff
-    self.diff project, file, line
+    self.diff dir, file, line
   end
 
   def self.push project
@@ -392,6 +410,74 @@ class Repository
   def self.compare_with_repository
     bookmark = Keys.input(:timed => true, :prompt => "Git dif in which dir? (enter bookmark): ")
     CodeTree.display_menu("Repository.menu/\n  - project - $#{bookmark}/\n    - .commit \"message\", :diffs")
+  end
+
+  def self.svn_add dir, file
+    children = CodeTree.children || []
+
+    if children.nonempty?   # If children, add them
+      children = children.map{|c| c.sub(/^ +[+-] /, '')}.join(" ")
+      txt = Shell.run("svn add #{children}", :dir => dir)
+
+      return
+    end
+
+    # If no children, show ones to be added
+    txt = Shell.run("svn status", :dir => dir, :sync => true)
+    return txt.scan(/^\? +(.+)/)
+
+  end
+
+  def self.svn_commit message, diffs, dir, file, line
+
+    children = CodeTree.children || []
+
+    if file.nil?   # If launching .commit directly (no file)
+      if children.nonempty?   # Files are underneath (children)
+        children = children.map{|c| c.sub(/^ +[+-] /, '')}.join(" ")
+        command = "svn commit -m \"#{message}\" #{children}"
+        Shell.run(command, :dir=>dir)
+        return
+      else   # If no files underneath, show modified files
+        if diffs
+
+          txt = Shell.run("svn diff #{file}", :sync => true, :dir => dir)
+
+          txt.gsub!(/^===+\n/, '')
+          txt.gsub!(/^--- .+\n/, '')
+          txt.gsub!(/^\+\+\+ .+\n/, '')
+          txt.gsub!(/^-/, '~')
+          txt.gsub!(/^/, '  |')
+          txt.gsub!(/^  \|Index: /, '- ')
+          return txt
+
+        else
+          txt = Shell.run "svn status", :dir=>dir, :sync=>true
+
+          modified = txt.scan(/^M +(.+)/).map{|i| i.first}
+          new_files = txt.scan(/^A +(.+)/).map{|i| "new: " + i.first}
+
+          return new_files + modified
+        end
+      end
+    end
+
+    if line.nil?   # If no line passed, re-do diff for 1 file
+      txt = Shell.run("svn diff #{file}", :sync => true, :dir => dir)
+
+      txt.gsub!(/^Index: .+\n/, '')
+      txt.gsub!(/^===+\n/, '')
+      txt.gsub!(/^--- .+\n/, '')
+      txt.gsub!(/^\+\+\+ .+\n/, '')
+      txt.gsub!(/^-/, '~')
+      txt.gsub!(/^/, '|')
+      return txt
+    end
+
+    self.jump_to_file_in_tree dir   # If line passed, jump to it
+
+    nil   # Be sure to have no return value
+
   end
 
 end

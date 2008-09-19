@@ -14,7 +14,7 @@ class Projects
       - To edit the listing of projects, add a line like this:
         ~/.el4r/
           init.rb
-            | Projects.listProjects.listing = {:blog => '$tr', :foo => '/projects/foo'}
+            | Projects.listing = {:blog => '$tr', :foo => '/projects/foo'}
         - The strings correspond to paths or bookmarks
       "
   end
