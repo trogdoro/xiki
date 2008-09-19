@@ -297,31 +297,18 @@ class LineLauncher
       TreeLs.insert_quoted_and_search out
     end
 
-    self.add(/ *(.*)!!!(.+)/) do |line|  # !!!shell command inline
-      line =~ / *(.*)!!!(.+)/
-      dir, command = $1, $2
-      output = Shell.run command, :dir => dir, :sync => true
-      output.gsub!(/^/, '|')
-      TreeLs.indent(output)
-      TreeLs.insert_quoted_and_search output#.gsub!(/^/, "#{indent}  |")
+    self.add(/^ *[$\/].+!!/) do |l|   # !shell command
+      Shell.launch
+    end
+    self.add(/^ *!!/) do |l|   # !shell command
+      Shell.launch
     end
 
-    self.add(/ *(.*)!!(.+)/) do |line|  # !!shell command
-      View.handle_bar
-      line =~ / *(.*)!!(.+)/
-      dir, command = $1, $2
-      Shell.run command, :dir => dir
+    self.add(/^ *[$\/].+!/) do |l|   # !shell command inline
+      Shell.launch :sync=>true
     end
-
-    self.add(/ *(.*)!(.+)/) do |line|  # !shell command inline
-      line =~ / *(.*)!(.+)/
-      dir, command = $1, $2
-      output = Shell.run command, :dir => dir, :sync => true
-      # Add linebreak if blank
-      output.sub!(/\A\z/, "\n")
-      output.gsub!(/^/, '|')
-      TreeLs.indent(output)
-      TreeLs.insert_quoted_and_search output#.gsub!(/^/, "#{indent}  |")
+    self.add(/^ *!/) do |l|   # !shell command inline
+      Shell.launch :sync=>true
     end
   end
 

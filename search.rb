@@ -376,7 +376,7 @@ class Search
       View.open found
       if method  # If method, go to it
         Move.top
-        re_search_forward "^ +def self\\.#{method}"
+        re_search_forward "^ +def self\\.#{method}\\>"
         recenter 0
       end
     else

@@ -92,4 +92,35 @@ class Shell
     comint_send_input
   end
 
+  # Mapped to !! in LineLauncher
+  def self.launch options={}
+    line = Line.value
+
+    # If indented, check whether code tree, extracting if yes
+    if line =~ /^\s+!/
+      orig = View.cursor
+      # - of previous line
+      path = TreeLs.construct_path(:list => true)
+      if TreeLs.is_tree_ls_path(path)
+        path.pop
+        dir = path.join('')
+      end
+      View.to orig
+    end
+    line =~ / *(.*?)!+(.+)/
+    dir ||= $1
+    command = $2
+    if options[:sync]
+      output = Shell.run command, :dir => dir, :sync => true
+      # Add linebreak if blank
+      output.sub!(/\A\z/, "\n")
+      output.gsub!(/^/, '|')
+      TreeLs.indent(output)
+      TreeLs.insert_quoted_and_search output#.gsub!(/^/, "#{indent}  |")
+    else
+      View.handle_bar
+      Shell.run command, :dir => dir
+    end
+  end
+
 end
