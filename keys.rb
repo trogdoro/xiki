@@ -250,8 +250,13 @@ class Keys
 
     # If lisp, enter lisp?
     if proc.nil?
-      code = $el.prin1_to_string($el.key_binding(keys))
-      return View.insert code
+      keys = $el.key_binding(keys)
+      if keys
+        return View.insert($el.prin1_to_string(keys))
+      else
+        $el.beep
+        return View.message "Key is unmapped"
+      end
     end
 
     code = proc.to_ruby
@@ -264,10 +269,9 @@ class Keys
   def self.jump_to_code
     keys = $el.read_key_sequence("Enter key, to jump to the corresponding el4r command: ")
     proc = self.proc_from_key keys
-
     if proc.nil?
-      Ol << "proc is nil"
-
+      $el.beep
+      return View.message("Key wasn't mapped")
     end
 
     file, line = Code.location_from_proc proc

@@ -219,7 +219,7 @@ class TreeLs
       :fg => "dd7700", :bold => true
 
     Styles.define :diff_line_number,
-      :fg => "aaa",
+      :fg => "223",
       :bold => true,
       :size => "-2"
 
@@ -284,8 +284,8 @@ class TreeLs
     Styles.apply("^ +\\(-|.*\n\\)", nil, :diff_red)
     Styles.apply("^ +\\(:[0-9]+\\)$", nil, :diff_line_number)
     Styles.apply("^ +\\(|\\+.*\n\\)", nil, :diff_green)
-    Styles.apply("^ +\\(|-.*\n\\)", nil, :diff_red)
-
+    Styles.apply("^ +\\(|~.*\n\\)", nil, :diff_red)
+    Styles.apply("^ +\\(|@@ .*\n\\)", nil, :diff_line_number)
 
     # Dir line
     #Styles.apply('^\\([A-Za-z]\\)$', nil, :ls_dir)  # Most dirs

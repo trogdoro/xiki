@@ -599,4 +599,8 @@ class View
     $el.buffer_name
   end
 
+  def self.message txt
+    $el.message txt
+    nil
+  end
 end

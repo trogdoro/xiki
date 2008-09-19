@@ -515,7 +515,7 @@ class Search
     match = self.match
     self.clear
     self.to_start
-    View.insert "Ol << \"#{match}: \#{#{match}}\""
+    View.insert "Ol << \"#{match}: \#{#{match}.inspect}\""
   end
 
 end

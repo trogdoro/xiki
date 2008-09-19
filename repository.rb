@@ -161,7 +161,7 @@ class Repository
     orig = View.cursor
     Search.backward "^ +\|@@"
     inbetween = View.txt(orig, View.cursor)
-    inbetween.gsub!(/^ +\|-.*\n/, '')
+    inbetween.gsub!(/^ +\|~.*\n/, '')
     inbetween = inbetween.count("\n")
     line = Line.value[/\+(\d+)/, 1]
     Search.backward "^ +- "
@@ -269,9 +269,13 @@ class Repository
     txt.gsub!(/^\+\+\+ .+\n/, '')
   end
 
+  def self.extract_dir project
+    project.sub(/.+? - /, '').sub(/\/$/, '')
+  end
+
   def self.diff project, file=nil, line=nil
 
-    dir = project[/.* - (.+)\//, 1]
+    dir = self.extract_dir project
 
     if file.nil?   # If no file passed, do whole diff
 
@@ -279,17 +283,19 @@ class Repository
       files = txt.scan(/\t(.+)/).map{|i| i.first}
       new_files = files.select{|f| f =~ /^new file: +/}.map{|f| "new: " + f[/: +(.+)/, 1]}
 
-      txt = Shell.run('git diff', :sync => true, :dir => dir)
+      txt = Shell.run('git diff -U2', :sync => true, :dir => dir)
       self.clean! txt
+      txt.gsub!(/^-/, '~')
       txt.gsub!(/^/, '  |')
       txt.gsub!(/^  \|diff --git .+ b\//, '- ')
       return new_files.map{|f| "- #{f}\n"}.join('') + txt
     end
 
     if line.nil?   # If no line passed, re-do diff for 1 file
-      txt = Shell.run("git diff #{file}", :sync => true, :dir => dir)
+      txt = Shell.run("git diff -U2 #{file}", :sync => true, :dir => dir)
       self.clean! txt
       txt.gsub!(/^diff .+\n/, '')
+      txt.gsub!(/^-/, '~')
       txt.gsub!(/^/, '|')
       return puts(txt)
     end
@@ -300,7 +306,7 @@ class Repository
   end
 
   def self.status project, file=nil
-    dir = project[/.* - (.+)\//, 1]
+    dir = self.extract_dir project
     #dir ||= self.determine_dir
 
     # If no file, show status
@@ -318,7 +324,7 @@ class Repository
 
   def self.add project, file=nil
 
-    dir = project[/.* - (.+)\//, 1]
+    dir = self.extract_dir project
     children = CodeTree.children || []
 
     # If file passed, just open it
@@ -349,7 +355,7 @@ class Repository
     diffs = args.shift if args.first.is_a? Symbol   # Pull out :diffs if 2nd arg
     project, file, line = args
 
-    dir = project[/.* - (.+)\//, 1]
+    dir = self.extract_dir project
     children = CodeTree.children || []
 
     if file.nil?   # If launchinng .commit directly (no file)
@@ -378,9 +384,14 @@ class Repository
   end
 
   def self.push project
-    dir = project[/.* - (.+)\//, 1]
+    dir = self.extract_dir project
     Shell.run "git push origin master", :dir=>dir
     nil
+  end
+
+  def self.compare_with_repository
+    bookmark = Keys.input(:timed => true, :prompt => "Git dif in which dir? (enter bookmark): ")
+    CodeTree.display_menu("Repository.menu/\n  - project - $#{bookmark}/\n    - .commit \"message\", :diffs")
   end
 
 end

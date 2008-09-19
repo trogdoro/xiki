@@ -250,7 +250,7 @@ class KeyBindings
     Keys.do_name_files { wdired_change_to_wdired_mode }
     Keys.do_next_paragraph { Code.do_next_paragraph }   # Move line to start of next paragraph
     Keys.do_outline { History.open_current :outline => true, :prompt_for_bookmark => true }
-    #Keys.DP { Twitter.post_or_list }   # Do Post
+    Keys.do_push { Repository.compare_with_repository }   # Commit to repos, push, etc
     Keys.do_query { Search.query_replace }   # do query replace *
     Keys.do_ruby { Code.run }   # run code as ruby *
     Keys.do_search { Search.tree_grep }   # do grep search *

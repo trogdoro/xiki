@@ -84,10 +84,7 @@ class Notes
     #PauseMeansSpace.go
 
     # Exit control lock mode if on
-    ControlLock.disable
-#     # Read in one key, then upcase it
-#     a = Keys.input(:one_char => true)
-#     insert a.upcase
+    #ControlLock.disable
   end
 
   def self.cut_block no_clipboard=false
