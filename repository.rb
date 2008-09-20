@@ -314,7 +314,7 @@ class Repository
       txt.gsub!(/^#\t/, '- ')
       txt.gsub!(/^#\n/, '')
       txt.gsub!(/^#/, '|')
-      return puts txt
+      return puts(txt)
     end
 
     View.open("#{dir}/#{file}")   # If file, open it

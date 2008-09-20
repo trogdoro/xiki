@@ -31,20 +31,20 @@ class Rails
     parent = options[:ancestors][-1]
     name = parent[/:(\w+)/, 1]
     #insert name
-    puts Shell.run "rails -s #{name}", :sync => true
+    puts Shell.run("rails -s #{name}", :sync => true)
   end
 
   def self.create dir, port=nil
     puts "rails -s #{dir}"
-    puts Shell.run "rails -s #{dir}", :sync => true
+    puts Shell.run("rails -s #{dir}", :sync => true)
   end
 
   def self.controller controller, action, dir, port=nil
-    puts Shell.run "script/generate controller #{controller} #{action}", :dir => dir, :sync => true
+    puts Shell.run("script/generate controller #{controller} #{action}", :dir => dir, :sync => true)
   end
 
   def self.migration name, dir, port=nil
-    puts Shell.run "script/generate migration #{name}", :dir => dir, :sync => true
+    puts Shell.run("script/generate migration #{name}", :dir => dir, :sync => true)
   end
 
   def self.console dir, port=nil
@@ -110,7 +110,7 @@ class Rails
       puts RubyConsole[:rails].run("y #{model}.count")
     when /recent (\d+)\//
       limit = $1
-      puts RubyConsole[:rails].run %Q[
+      puts RubyConsole[:rails].run(%Q[
         columns = #{model}.columns.map {|c| c.name}
         date =  # Find best ..._at field
           if columns.member?("updated_at")
@@ -119,16 +119,16 @@ class Rails
             "id"
           end
         y #{model}.find(:all, :conditions => "\#{date} IS NOT NULL", :order => "\#{date} desc", :limit => #{limit.to_i})
-        ]
+        ])
     when '5'
       puts RubyConsole[:rails].run("y #{model}.find(:first)")
     when 'associations/'
       puts RubyConsole[:rails].run("#{model}.reflect_on_all_associations.each {|a| puts \"\#{a.macro} \#{a.name}\"}")
     when 'columns/'
-      puts RubyConsole[:rails].run %Q[
+      puts RubyConsole[:rails].run(%Q[
         puts #{model}.columns.map {|c| "- \#{c.type}: \#{c.name}"}.sort
         #puts #{model}.columns.map {|c| c.inspect}
-        ]
+        ])
     when /^(.+: .+)\/$/
       where = $1.gsub(': ', '=')
       puts RubyConsole[:rails].run("y #{model}.find(:all, :conditions => \"#{where}\")")

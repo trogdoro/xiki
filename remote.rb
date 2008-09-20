@@ -41,7 +41,7 @@ class Remote
           path << "#{path_append.join('')}"  # append to path
           return self.save_file(path, @@connections["#{user}@#{server}:#{port}"])
         else
-          return puts "- Action '#{action}' unimplemented!"
+          return puts("- Action '#{action}' unimplemented!")
         end
 
       else  # If just path, append it to the end
@@ -118,7 +118,7 @@ class Remote
   def self.save_file path, connection
     local_path = self.calculate_local_path path
     # If not open, print error
-    return puts "- File no longer open!" unless Files.open? local_path
+    return puts("- File no longer open!" unless Files.open? local_path)
 
     begin
       # Do save

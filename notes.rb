@@ -115,7 +115,7 @@ class Notes
     Keys.CT(:notes_mode_map) { Notes.move_block_to_top }
 
     Keys.CD(:notes_mode_map) { Notes.cut_block true }
-    Keys.CX(:notes_mode_map) { Notes.cut_block }
+    Keys.CK(:notes_mode_map) { Notes.cut_block }
 
     Keys.CH(:notes_mode_map) { Notes.insert_heading }  # Insert ||... etc. heading
     Keys.CN(:notes_mode_map) { Notes.to_block }  # Go to block after next block

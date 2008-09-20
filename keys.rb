@@ -255,7 +255,7 @@ class Keys
         return View.insert($el.prin1_to_string(keys))
       else
         $el.beep
-        return View.message "Key is unmapped"
+        return View.message("Key is unmapped")
       end
     end
 
