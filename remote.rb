@@ -118,7 +118,7 @@ class Remote
   def self.save_file path, connection
     local_path = self.calculate_local_path path
     # If not open, print error
-    return puts("- File no longer open!" unless Files.open? local_path)
+    return puts("- File no longer open!") unless Files.open? local_path
 
     begin
       # Do save

@@ -275,7 +275,8 @@ class KeyBindings
     Keys.D1 { delete_char 1 };  Keys.D2 { delete_char 2 };  Keys.D3 { delete_char 3 };  Keys.D4 { delete_char 4 }
     Keys.D5 { delete_char 5 };  Keys.D6 { delete_char 6 };  Keys.D7 { delete_char 7 };  Keys.D8 { delete_char 7 };
 
-    # Unmap C-d is shell-mode
+    # Unmap C-d in shell-mode
+    el4r_lisp_eval("(require 'shell)")
     define_key :shell_mode_map, kbd("C-d"), nil
     #define_key :java_mode_map, kbd("C-d"), nil
   end

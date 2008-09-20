@@ -323,7 +323,9 @@ class Search
     el4r_lisp_eval %q=
       (isearch-yank-internal
         (lambda ()
-          (if (string-match "[{<\\\\\"'(\\\\[]" (char-to-string (char-before (point))))
+          (if (and (> (point) 1)
+            (string-match "[{<\\\\\"'(\\\\[]" (char-to-string (char-before (point))))
+            )
             (backward-char))
           (forward-sexp) (point)))=
 
