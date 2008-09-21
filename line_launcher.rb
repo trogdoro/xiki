@@ -34,7 +34,6 @@ class LineLauncher
     # Special hooks for specific files
     return if self.file_hooks
 
-
     View.bar if Keys.prefix == 9   # Effects.blink
 
     if line =~ /^( *)- .+?: (.+)/   # Split label off, if there
@@ -60,25 +59,22 @@ class LineLauncher
         return true
       end
     end
-
     self.launch_code_or_ls options
-
   end
 
   def self.launch_code_or_ls options={}
     # It must be code_tree node or tree_ls node
     # Still don't know which, so check root
-    code_tree_root = ! TreeLs.is_tree_ls_path
+    is_tree_ls_path = TreeLs.is_tree_ls_path
     if @@just_show   # Means we're temporarily disabled for debugging
-      return Ol << "code_tree_root: #{code_tree_root}"
+      return Ol << "is_tree_ls_path: #{is_tree_ls_path}"
     end
 
-
     # If code tree, chop it off and run it
-    if code_tree_root  # && line =~ /^ *- /  # Must have bullet to be code_tree
+    if is_tree_ls_path   # Delegate to Tree
+      TreeLs.launch
+    else   # && line =~ /^ *- /  # Must have bullet to be code_tree
       CodeTree.launch options
-    else  # Otherwise, run treels
-      TreeLs.expand_or_open
     end
   end
 
@@ -243,11 +239,11 @@ class LineLauncher
     end
 
     self.add(/^[^|-]+\*\*/) do |line|  # **.../: Tree grep in dir
-      TreeLs.expand_or_open
+      TreeLs.launch
     end
 
     self.add(/^[^|]+##/) do |line|  # ##.../: Tree grep in dir
-      TreeLs.expand_or_open
+      TreeLs.launch
     end
 
     self.add(nil, /google/) do |line|  # - google:

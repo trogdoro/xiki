@@ -344,7 +344,6 @@ class Repository
     else
       self.svn_commit message, diffs, dir, file, line, children
     end
-
   end
 
   def self.git_commit message, diffs, dir, file, line, children
@@ -390,6 +389,7 @@ class Repository
     end
 
     self.jump_to_file_in_tree dir   # If line passed, jump to it
+    nil
 
   end
 

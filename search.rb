@@ -508,7 +508,7 @@ class Search
     indent = Line.indent
     Line.to_right
     View.insert("\n#{indent}  - ###{input}/")
-    TreeLs.expand_or_open
+    TreeLs.launch
 
     #View.insert dir
   end

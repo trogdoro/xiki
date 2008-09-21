@@ -140,7 +140,7 @@ class TreeLs
 
     View.insert "- #{dir}\n  - ###{regex}/\n"
     goto_line(2)
-    self.expand_or_open
+    self.launch
   end
 
   def self.grep_one_file(f, regex, indent)
@@ -564,18 +564,6 @@ class TreeLs
       Line.to_left
     when "\C-e"
       Line.to_right
-#       # Grab text
-#       text = buffer_substring(left, right)
-#       # Delete text
-#       # Delete tree above
-#       while(! self.is_root?(Line.value) )
-#         Line.previous
-#       end
-#       delete_region Line.left, right
-
-#       # Erase |'s and put back
-#       insert text.gsub(/^ +\|/, '')
-
     when :return, "\C-m", :control_period, :right   # If C-., go in but don't collapse siblings
       Keys.clear_prefix
       LineLauncher.launch
@@ -584,28 +572,10 @@ class TreeLs
       delete_region(Line.left(2), right)
       Keys.clear_prefix
       LineLauncher.launch
-      #self.expand_or_open
-      #Line.to_words
     when :backspace, :left   # If backspace, cancel last action and exit
       self.to_parent
-      #goto_char left
       self.kill_under
       self.search(:left => Line.left, :right => Line.left(2))
-
-      #       goto_char left
-      #       Line.next if options[:recursive]
-      #       delete_region(point, right)
-      #       Line.previous
-      #       self.minus_to_plus
-      #       Line.to_words
-      #       self.search(:left => Line.left, :right => Line.left(2))
-
-
-#     when ch == "/"  # If /, put on same line
-#       Keys.prefix = 2
-#       delete_region(Line.left(2), right)
-# View.insert "-----"
-# #      self.open
 
     when ";"  # Show methods, or outline
       delete_region(Line.left(2), right)  # Delete other files
@@ -638,7 +608,7 @@ class TreeLs
       View.bar
       Keys.clear_prefix
       # Expand or open
-      self.expand_or_open
+      self.launch
 
     when "1".."7"
       Keys.clear_prefix
@@ -713,7 +683,7 @@ class TreeLs
         end
 
         self.dir? ?   # Open if a dir
-          self.expand_or_open :
+          self.launch :
           Line.end
 
       elsif Line.value =~ /"/  # If it contains quotes, "tab" to field
@@ -1214,15 +1184,14 @@ class TreeLs
   end
 
   # Expand if dir, or open if file
-  def self.expand_or_open
+  def self.launch
     self.plus_to_minus_maybe
     line = Line.value
     indent = Line.indent
     list = nil
-    case line
-    when /\*\*|##/  # *foo or ## means do grep
+    if line =~ /\*\*|##/  # *foo or ## means do grep
       self.grep_syntax indent
-    when /\/$/  # foo/ is a dir
+    elsif self.dir?  # foo/ is a dir (if no | before)
       self.dir
     else
       self.open
@@ -1338,7 +1307,7 @@ class TreeLs
   end
 
   # Mapped to shortcuts that displays the trees
-  def self.launch options={}
+  def self.tree options={}
 
     # Get optional input (. means current dir)
     input = Keys.input(:timed => true, :prompt => "Tree_ls in which dir? (enter bookmark): ")
@@ -1477,12 +1446,6 @@ class TreeLs
   def self.tree_to_paths tree
     # TODO: implement
   end
-
-#   def self.list_to_path path
-#     path.size == 0 ?
-#       '/' :
-#       "/#{path.join('/')}/"
-#   end
 
   def self.filename_to_next_line path
     path.sub(/(.+)\//, "\\1/\n  - ")  # Add linebreak before filename
@@ -1678,8 +1641,9 @@ private
   end
 
   # Returns whether line is a dir (ends with "/")
-  def self.dir?
-    Line.matches(/\/$/)
+  def self.dir? txt=nil
+    txt ||= Line.value
+    txt =~ /^[^|\n]+\/$/
   end
 
 end

@@ -45,7 +45,7 @@ class KeyBindings
   def self.a_keys
     # A: as...
     # Use A prefix for: remembering, saving
-    Keys.AA { beginning_of_line }   # AA - beginning of line (A's default) **
+    Keys.AA { Line.to_left }   # AA - beginning of line (A's default) **
     Keys.as_bookmark { Bookmarks.save }   # remember bookmark
 
     Keys.as_clipboard { Clipboard.as_clipboard }   # **
@@ -118,7 +118,7 @@ class KeyBindings
     Keys.open_quick { Bookmarks.go :q }   # like OB but uses different temporary namespace
     Keys.open_region_path { find_file buffer_substring(region_beginning, region_end) }
     Keys.open_search { Search.outline_search }   # hide search via outline *
-    Keys.open_tree { TreeLs.launch }   # draw a tree, prompting for bookmark tag *
+    Keys.open_tree { TreeLs.tree }   # draw a tree, prompting for bookmark tag *
     Keys.open_up { View.show_dir }   # open enclosing dir **
     Keys.open_viewing { Buffers.open_viewing }   # show currently open files and buffers **
     Keys.open_windows { View.restore }   # open window configuration by tag
@@ -148,12 +148,13 @@ class KeyBindings
     Keys.enter_bullet { Notes.bullet }
     Keys.enter_clipboard { Clipboard.paste("0") }   # paste **
     Keys.enter_difflog { App.enter_from_difflog }   # Save point and go to difflog to search
-    Keys.EE { end_of_line }   # EE - end of line (E's default) **
+    Keys.EE { Line.to_right }   # EE - end of line (E's default) **
     #Keys.enter_from_quoted { Keys.insert_from_q }   # insert what was inserted with Q
     Keys.enter_history { History.enter_history }   # enter recently viewed files
     #Keys.EH { TreeLs.enter_lines(/^\| /) }
     Keys.enter_insert_date { App.enter_date }    # insert date string (and time if C-u)
     Keys.enter_insert_command { insert("- (/): "); ControlLock.disable }    # insert date string (and time if C-u)
+    Keys.enter_insert_search { View.insert("- google: ") }
     Keys.enter_in_todo { TreeLs.enter_snippet }   # enter tree quote of region in $T
     Keys.enter_junior { Notes.bullet("") }
     Keys.enter_key { Keys.insert_code }
@@ -173,7 +174,7 @@ class KeyBindings
     #Keys.enter_replacement { Clipboard.enter_replacement }
     Keys.enter_search { Search.enter_search }
     #Keys.enter_spot { Location.enter_at_spot }   # enter selected text at spot
-    Keys.enter_tree { TreeLs.launch( :here => true ) }
+    Keys.enter_tree { TreeLs.tree(:here=>true) }
     Keys.enter_under { TreeLs.enter_under }
     Keys.enter_viewing { History.enter_viewing }
     # W
@@ -255,7 +256,7 @@ class KeyBindings
     Keys.do_ruby { Code.run }   # run code as ruby *
     Keys.do_search { Search.tree_grep }   # do grep search *
     #    Keys.DS { elvar.current_prefix_arg ? johns_thing : Search.grep }   # Do Search: do grep search
-    Keys.do_tree { TreeLs.launch( :recursive => true ) }   # draw filesystem tree for current dir or bookmark
+    Keys.do_tree { TreeLs.tree(:recursive=>true) }   # draw filesystem tree for current dir or bookmark
     Keys.do_under { TreeLs.kill_under }   # kill tree children (lines indented more)
     #Keys.display_up { message TreeLs.construct_path( :indented => true ) }   # display path to root of file
     # V

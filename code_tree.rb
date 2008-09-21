@@ -32,9 +32,8 @@ class CodeTree
     orig = Location.new
     orig_left = point
     returned, stdout, e = Code.eval(code)  # Eval code
-
     # If no stdout (and something was returned), print return value
-    if ! stdout.nonempty? and returned.respond_to?(:nonempty) and returned.nonempty?
+    if ! stdout.nonempty? and returned.respond_to?(:any?) and returned.any?
       stdout =
         if returned.is_a? Array
           returned.map{|l| "#{l}\n"}.join('')
