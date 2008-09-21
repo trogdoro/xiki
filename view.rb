@@ -603,4 +603,9 @@ class View
     $el.message txt
     nil
   end
+
+  def self.beep
+    $el.beep
+  end
+
 end

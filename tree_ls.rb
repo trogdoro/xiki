@@ -1309,11 +1309,14 @@ class TreeLs
   # Mapped to shortcuts that displays the trees
   def self.tree options={}
 
-    # Get optional input (. means current dir)
+    # Get input (. means current dir)
     input = Keys.input(:timed => true, :prompt => "Tree_ls in which dir? (enter bookmark): ")
-
-    if input and !(input == ".")  # Do tree in dir from bookmark
+    if input and !(input == ".")   # Do tree in dir from bookmark
       dir = Bookmarks.expand("$#{input}")
+      if dir.empty?
+        View.beep
+        return View.message "No bookmark exists: #{input}"
+      end
       dir = Bookmarks.dir_only dir if options[:recursive]
     else  # If no input, do tree in current dir
       dir = elvar.default_directory

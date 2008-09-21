@@ -3,10 +3,8 @@ require 'rubygems'
 gem 'ruby2ruby'
 require 'ruby2ruby'
 
-
-# Convenient way to define keyboard shortcuts
+# Methods for defining keyboard shortcuts
 class Keys
-  #extend ElMixin
 
   @@key_queue =[]  # For defining menus (must be done in reverse)
 
@@ -38,7 +36,6 @@ class Keys
       meth_title = meth.gsub('_', ' ').gsub(/\b\w/) {|s| s.upcase}
       menu, item = meth_title.match(/(.+?) (.+)/)[1..2]
       @@key_queue << [menu, item]
-      #Menu.add_item menu, item
 
       meth = TextUtil.camel_case(meth).gsub(/[a-z]/, '')
 
@@ -70,31 +67,17 @@ class Keys
 
     # Define key
     begin
-      #insert "fu1"
       $el.define_key map, keys, &block
+      "- key was defined: #{keys_raw}"
     rescue Exception => e
-      #       insert e.to_s
-      # Try unsetting first key sequence and setting again, if failed
-
       if map == :global_map && meth =~ /([A-Z])([A-Z]?)./
-      #if map == :global_map && m =~ /([A-Z])./
-        # TODO: check whether it's already defined
-              #insert "fu4"
         prefix = $2.to_s.empty? ? $el.kbd("C-#{$1.downcase}") : $el.kbd("C-#{$1.downcase} C-#{$2.downcase}")
-        #insert prefix
-        #prefix = kbd("C-#{$1.downcase}")
 
-  #        insert m
-  #        insert "trying to unset: #{prefix}"
-        # If it appears to be a prefix key
-        begin
-          #insert lookup_key(current_global_map, prefix).to_s
-          #lookup_key(current_global_map, prefix).to_ary
+        begin   # If it appears to be a prefix key (already defined)
           $el.global_unset_key(prefix)
           $el.define_key map, keys, &block
+          "- key C-_ C-_ was defined"
         rescue Exception => e
-          #insert e.to_s
-          #lookup_key....to_ary probably failed, so we didn't unset the key
         end
       end
     end
@@ -424,13 +407,11 @@ class Keys
 
   def self.char
 
-    #     begin
     $el.elvar.inhibit_quit = true
     ch_initial = $el.read_event.to_s
     $el.elvar.inhibit_quit = nil
 
-    # If a number, assign it to raw
-    if ch_initial =~ /^\d+$/
+    if ch_initial =~ /^\d+$/   # If a number, assign it to raw
       ch_raw = ch_initial.to_i
       ch = $el.char_to_string(ch_raw)
 
