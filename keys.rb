@@ -228,7 +228,7 @@ class Keys
   #   end
 
   def self.insert_code
-    keys = $el.read_key_sequence("Enter key, to insert corresponding el4r command: ")
+    keys = $el.read_key_sequence("Type some keys, to insert the corresponding code: ")
     proc = self.proc_from_key keys
 
     # If lisp, enter lisp?
@@ -250,7 +250,7 @@ class Keys
   end
 
   def self.jump_to_code
-    keys = $el.read_key_sequence("Enter key, to jump to the corresponding el4r command: ")
+    keys = $el.read_key_sequence("Type some keys, to jump to the corresponding code: ")
     proc = self.proc_from_key keys
     if proc.nil?
       $el.beep
