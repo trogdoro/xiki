@@ -82,12 +82,10 @@ class Repository
 
     if rev.nil?   # If no rev, list all revs
       txt = Shell.run "git log --pretty=oneline", :sync=>true, :dir=>dir
-      # Ol << "txt: #{txt}"
-      # return
       txt.gsub! ':', '-'
       txt.gsub! /(.+?) (.+)/, "\\2: \\1"
       txt.gsub! /^- /, ''
-      return txt.split("\n")
+      return txt.gsub! /^/, '+ '
     end
 
     if file.nil?   # If no file, show files for rev
@@ -96,7 +94,7 @@ class Repository
       txt.sub! /^.+\n/, ''
       txt.gsub! /^([A-Z])\t/, "\\1: "
       txt.gsub! /^M: /, ''
-      return txt.split("\n").sort
+      return txt.split("\n").sort.map{|l| "+ #{l}"}
     end
 
     # File passed, show diff
@@ -274,36 +272,6 @@ class Repository
     project.sub(/.+? - /, '').sub(/\/$/, '')
   end
 
-  def self.diff dir, file=nil, line=nil
-
-    if file.nil?   # If no file passed, do whole diff
-
-      txt = Shell.run "git status", :dir=>dir, :sync=>true
-      files = txt.scan(/\t(.+)/).map{|i| i.first}
-      new_files = files.select{|f| f =~ /^new file: +/}.map{|f| "new: " + f[/: +(.+)/, 1]}
-
-      txt = Shell.run('git diff -U2', :sync => true, :dir => dir)
-      self.clean! txt
-      txt.gsub!(/^-/, '~')
-      txt.gsub!(/^/, '  |')
-      txt.gsub!(/^  \|diff --git .+ b\//, '- ')
-      return new_files.map{|f| "- #{f}\n"}.join('') + txt
-    end
-
-    if line.nil?   # If no line passed, re-do diff for 1 file
-      txt = Shell.run("git diff -U2 #{file}", :sync => true, :dir => dir)
-      self.clean! txt
-      txt.gsub!(/^diff .+\n/, '')
-      txt.gsub!(/^-/, '~')
-      txt.gsub!(/^/, '|')
-      return puts(txt)
-    end
-
-    self.jump_to_file_in_tree dir   # If line passed, jump to it
-
-    nil   # Be sure to have no return value
-  end
-
   def self.status project, file=nil
     dir = self.extract_dir project
     #dir ||= self.determine_dir
@@ -361,44 +329,68 @@ class Repository
     message = args.shift
     diffs = args.shift if args.first.is_a? Symbol   # Pull out :diffs if 2nd arg
     project, file, line = args
-
     dir = self.extract_dir project
 
+    children = CodeTree.children || []
+
+    if children.nonempty?  # If children to commit
+      # Error if commit message unchanged
+      return "- Error: You must change \"message\" to be your commit message." if message == "message"
+      children = children.select {|c| c !~ /^ *\|/}   # Remove any |... lines
+    end
+
     if self.git?(dir)
-      self.git_commit message, diffs, dir, file, line
+      self.git_commit message, diffs, dir, file, line, children
     else
-      self.svn_commit message, diffs, dir, file, line
+      self.svn_commit message, diffs, dir, file, line, children
     end
 
   end
 
-  def self.git_commit message, diffs, dir, file, line
+  def self.git_commit message, diffs, dir, file, line, children
 
-    children = CodeTree.children || []
+    if file.nil?   # If launching .commit directly (not a file)
 
-    if file.nil?   # If launching .commit directly (no file)
-      if children.nonempty?   # Files are underneath (children)
+      if children.nonempty?   # If files exist underneath (children), commit
         children = children.map{|c| c.sub(/^ +[+-] /, '')}.join(" ")
         command = "git commit -m \"#{message}\" #{children}"
         Shell.run(command, :dir=>dir)
         return
       else   # If no files underneath, show modified files
-        if !diffs
+        if diffs
+          txt = Shell.run "git status", :dir=>dir, :sync=>true
+          files = txt.scan(/\t(.+)/).map{|i| i.first}
+          new_files = files.select{|f| f =~ /^new file: +/}.map{|f| "new: " + f[/: +(.+)/, 1]}
 
+          txt = Shell.run('git diff -U2', :sync => true, :dir => dir)
+          self.clean! txt
+          txt.gsub!(/^-/, '~')
+          txt.gsub!(/^/, '  |')
+          txt.gsub!(/^  \|diff --git .+ b\//, '- ')
+          return new_files.map{|f| "- #{f}\n"}.join('') + txt
+
+        else
           txt = Shell.run "git status", :dir=>dir, :sync=>true
           files = txt.scan(/\t(.+)/).map{|i| i.first}
           new_files = files.select{|f| f =~ /^new file: +/}.map{|f| "new: " + f[/: +(.+)/, 1]}
           modified = files.select{|f| f =~ /^modified: +/}.map{|f| f[/: +(.+)/, 1]}
 
-          return new_files + modified
-          #return Shell.run("git ls-files --modified", :dir=>dir, :sync=>true).split("\n")
+          return (new_files + modified).map{|l| "+ #{l}"}
         end
-        # else, .diff will show the diffs
       end
     end
 
-    # Else, delegate to diff
-    self.diff dir, file, line
+    if line.nil?   # If no line passed, re-do diff for 1 file
+      txt = Shell.run("git diff -U2 #{file}", :sync => true, :dir => dir)
+      self.clean! txt
+      txt.gsub!(/^diff .+\n/, '')
+      txt.gsub!(/^-/, '~')
+      txt.gsub!(/^/, '|')
+      return puts(txt)
+    end
+
+    self.jump_to_file_in_tree dir   # If line passed, jump to it
+
   end
 
   def self.push project
@@ -408,7 +400,7 @@ class Repository
   end
 
   def self.compare_with_repository
-    bookmark = Keys.input(:timed => true, :prompt => "Git dif in which dir? (enter bookmark): ")
+    bookmark = Keys.input(:timed => true, :prompt => "Repository diff in which dir? (enter bookmark): ")
     CodeTree.display_menu("Repository.menu/\n  - project - $#{bookmark}/\n    - .commit \"message\", :diffs")
   end
 
@@ -428,9 +420,7 @@ class Repository
 
   end
 
-  def self.svn_commit message, diffs, dir, file, line
-
-    children = CodeTree.children || []
+  def self.svn_commit message, diffs, dir, file, line, children
 
     if file.nil?   # If launching .commit directly (no file)
       if children.nonempty?   # Files are underneath (children)

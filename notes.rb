@@ -496,11 +496,13 @@ class Notes
     if Line.matches(/^\s*[+-]/) and View.char =~ /[+-]/
       plus_or_minus = TreeLs.toggle_plus_and_minus
       if plus_or_minus == '+'   # If +, expand (launch
-        if Line.matches(/\/$/)   # If on a dir
+
+        if TreeLs.dir? or ! TreeLs.is_tree_ls_path   # If on a dir or code_tree
           LineLauncher.launch
-        else   # If on a file, enter outline
+        else   # If on a file in a FileTree
           TreeLs.enter_lines
         end
+
       else   # If -, kill under
         TreeLs.kill_under
         Move.to_line_text_beginning

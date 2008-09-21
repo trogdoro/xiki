@@ -338,7 +338,8 @@ class TreeLs
     end
   end
 
-  def self.is_tree_ls_path list
+  def self.is_tree_ls_path list=nil
+    list ||= TreeLs.construct_path(:list => true)
     self.matches_root_pattern?(list.first)
   end
 
@@ -460,7 +461,7 @@ class TreeLs
     #ch = char_to_string(ch_raw)
 
     # While narrowing down list (and special check for C-.)
-    while (ch =~ /[\\() ~">a-zA-Z!_,~.?-]/) ||
+    while (ch =~ /[ -\/:<-~]/) ||
         (recursive && ch_raw == 2 || ch_raw == 6) ||
         ch == :up || ch == :down
       break if recursive && ch == '/'   # Slash means enter in a dir

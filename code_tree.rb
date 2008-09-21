@@ -34,10 +34,10 @@ class CodeTree
     returned, stdout, e = Code.eval(code)  # Eval code
 
     # If no stdout (and something was returned), print return value
-    if ! stdout.nonempty? and returned.nonempty?
+    if ! stdout.nonempty? and returned.respond_to?(:nonempty) and returned.nonempty?
       stdout =
         if returned.is_a? Array
-          (returned.map{|l| l =~ /\/$/ ? "+ #{l}" : "- #{l}"}.join("\n")) + "\n"
+          returned.map{|l| "#{l}\n"}.join('')
         elsif returned.is_a? Hash
           (returned.map{|k, v| v =~ /\/$/ ? "+ #{k}: #{v}" : "- #{k}: #{v}"}.join("\n")) + "\n"
         else
@@ -123,7 +123,7 @@ class CodeTree
     View.clear
     $el.notes_mode
 
-    insert "+ #{menu}/"
+    insert "- #{menu}/"
     open_line 1
     CodeTree.launch
   end
@@ -352,6 +352,11 @@ class CodeTree
 
   def self.definite_dir_tree_root line
     line =~ /^[\s+-]*\//
+  end
+
+  # Turn list into bulleted string (adding + or - based on ending in slash)
+  def self.bulletize list
+    (list.map{|l| l =~ /\/$/ ? "+ #{l}" : "- #{l}"}.join("\n")) + "\n"
   end
 
 end

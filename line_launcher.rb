@@ -68,8 +68,7 @@ class LineLauncher
   def self.launch_code_or_ls options={}
     # It must be code_tree node or tree_ls node
     # Still don't know which, so check root
-    path = TreeLs.construct_path(:list => true)
-    code_tree_root = ! TreeLs.is_tree_ls_path(path)
+    code_tree_root = ! TreeLs.is_tree_ls_path
     if @@just_show   # Means we're temporarily disabled for debugging
       return Ol << "code_tree_root: #{code_tree_root}"
     end
