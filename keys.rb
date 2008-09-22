@@ -377,6 +377,7 @@ class Keys
     bm = Keys.input(:timed => true, :prompt => "Enter bookmark in which to search: ")
     if bm and !(bm == ".")  # Do tree in dir from bookmark
       dir = Bookmarks.expand("$#{bm}")
+      dir = Bookmarks.dir_only dir
       dir << "/" unless dir =~ /\/$/
     else  # If no input, do tree in current dir
       dir = $el.elvar.default_directory

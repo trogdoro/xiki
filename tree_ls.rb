@@ -461,7 +461,7 @@ class TreeLs
     #ch = char_to_string(ch_raw)
 
     # While narrowing down list (and special check for C-.)
-    while (ch =~ /[ -\/:<-~]/) ||
+    while (ch =~ /[ -\/:<>-~]/) ||
         (recursive && ch_raw == 2 || ch_raw == 6) ||
         ch == :up || ch == :down
       break if recursive && ch == '/'   # Slash means enter in a dir
@@ -1189,7 +1189,7 @@ class TreeLs
     line = Line.value
     indent = Line.indent
     list = nil
-    if line =~ /\*\*|##/  # *foo or ## means do grep
+    if line =~ /^[^|\n]*(\*\*|##)/  # *foo or ## means do grep
       self.grep_syntax indent
     elsif self.dir?  # foo/ is a dir (if no | before)
       self.dir

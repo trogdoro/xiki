@@ -229,6 +229,7 @@ class Merb
   def self.open_next_error
     Bookmarks.go("$s")
     Move.to_end
+    Search.backward('^\/')
     Move.to_previous_paragraph
     Search.forward('^\/')
     Color.colorize :r

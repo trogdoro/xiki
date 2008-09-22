@@ -171,7 +171,6 @@ class Search
 
   def self.tree_grep
     dir = Keys.bookmark_as_path   # Get path (from bookmark)
-
     input = Keys.prefix_u? ?   # Do search
       Clipboard.get("0") :
       Keys.input(:prompt => "Text to search for: ")

@@ -6,6 +6,7 @@ class LineLauncher
   extend ElMixin
 
   @@just_show = false
+  #@@just_show = true
 
   @@launchers = []
   @@launchers_regexes = {}

@@ -62,7 +62,7 @@ class Repository
   def self.menu project=nil
     # If no project, show all projects
     if project.nil?
-      return Projects.listing.map{|k, v| "#{k} - #{v}/"}.sort
+      return Projects.listing.map{|k, v| "+ #{k} - #{v}/"}.sort
     end
 
     # If project, show options
@@ -115,7 +115,7 @@ class Repository
     if self.svn?
       cm_subversion_command("echo; svn diff -x -w #{file_name_nondirectory(buffer_file_name)}")
     else
-      Shell.run("git diff '#{View.file}'")
+      Shell.run("git diff -w '#{View.file}'")
       #cm_subversion_command("echo; svn diff -x -w #{file_name_nondirectory(buffer_file_name)}")
       self.styles
       self.local_keys
@@ -361,7 +361,7 @@ class Repository
           files = txt.scan(/\t(.+)/).map{|i| i.first}
           new_files = files.select{|f| f =~ /^new file: +/}.map{|f| "new: " + f[/: +(.+)/, 1]}
 
-          txt = Shell.run('git diff -U2', :sync => true, :dir => dir)
+          txt = Shell.run('git diff -U2 -w ', :sync => true, :dir => dir)
           self.clean! txt
           txt.gsub!(/^-/, '~')
           txt.gsub!(/^/, '  |')
@@ -380,7 +380,7 @@ class Repository
     end
 
     if line.nil?   # If no line passed, re-do diff for 1 file
-      txt = Shell.run("git diff -U2 #{file}", :sync => true, :dir => dir)
+      txt = Shell.run("git diff -U2 -w #{file}", :sync => true, :dir => dir)
       self.clean! txt
       txt.gsub!(/^diff .+\n/, '')
       txt.gsub!(/^-/, '~')
