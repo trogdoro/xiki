@@ -338,7 +338,6 @@ class KeyBindings
     #Keys.layout_menu { CodeTree.layout_menu }   # show menu bare in current state
     Keys.layout_next { View.next }   # next view **
     Keys.layout_output { Code.open_log_view }
-    #Keys.layout_open { View.create }   # open new view **
     Keys.layout_previous { View.previous }   # previous view **
     # Q
     Keys.layout_reveal { widen; Hide.show }   # reveal all hidden text

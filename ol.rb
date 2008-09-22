@@ -3,10 +3,15 @@ require 'bookmarks'
 
 class Ol
 
+  LOG_PATH = "/tmp/log.notes"
+
   @@last = Time.now - 1000
 
   def self.log txt, line
-    path = Bookmarks["$o"]
+    path = Bookmarks["$o"] || LOG_PATH
+    path = Ol::LOG_PATH unless path.nonempty?
+
+    # If no bookmark, error gracefully
 
     # If n seconds passed since last call
 

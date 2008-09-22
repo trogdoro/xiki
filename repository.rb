@@ -71,7 +71,7 @@ class Repository
       + .add/
       + .commit "message"/
       + .commit "message", :diffs/
-      + .push/
+      + .push
       + .status/
       + .status_tree/
       + .log/

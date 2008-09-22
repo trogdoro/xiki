@@ -270,18 +270,19 @@ class Code
   end
 
   def self.open_log_view
+    orig = View.current if Keys.prefix_u?
 
     prefix_u = Keys.prefix_u?
     Keys.prefix = nil
 
     file = Bookmarks["$o"]
+    file = Ol::LOG_PATH unless file.nonempty?
     buffer = "*tail of #{file}"
 
     # If already open, just go to it
     if View.buffer_visible?(buffer)
       View.to_buffer(buffer)
-      View.clear if prefix_u
-      return
+      return if self.clear_and_go_back orig
     end
 
     # If 2 or more windows open
@@ -301,7 +302,7 @@ class Code
     # If buffer open, just switch to it
     if View.buffer_open? buffer
       View.to_buffer buffer
-      View.clear if prefix_u
+      return if self.clear_and_go_back orig
       return
     end
 
@@ -315,9 +316,16 @@ class Code
     Shell.run "tail -f #{file}", :buffer => buffer, :dir => '/tmp', :dont_leave_bar => true
     Notes.mode
 
-    View.clear if prefix_u
-
-
+    return if self.clear_and_go_back orig
   end
 
+private
+  def self.clear_and_go_back location
+    if location   # Go back to starting point
+      View.clear
+      View.to_window location
+      return true   # Indicate to exit method
+    end
+    return false   # Don't exit
+  end
 end
