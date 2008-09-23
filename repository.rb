@@ -75,14 +75,16 @@ class Repository
       + .push
       + .status/
       + .status_tree/
-      + .log/
+      + .log ""/
       ].strip.gsub(/^      /, '')
   end
 
-  def self.log dir, rev=nil, file=nil
+  def self.log search, dir, rev=nil, file=nil
 
     if rev.nil?   # If no rev, list all revs
-      txt = Shell.run "git log --pretty=oneline", :sync=>true, :dir=>dir
+      search = "-S'#{search}'" unless search.empty?
+
+      txt = Shell.run "git log --pretty=oneline #{search}", :sync=>true, :dir=>dir
       txt.gsub! ':', '-'
       txt.gsub! /(.+?) (.+)/, "\\2: \\1"
       txt.gsub! /^- /, ''
