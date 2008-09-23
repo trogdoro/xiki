@@ -69,6 +69,7 @@ class Repository
 
     puts %Q[
       + .add/
+      + .add, :diffs/
       + .commit "message"/
       + .commit "message", :diffs/
       + .push
@@ -181,8 +182,6 @@ class Repository
     Styles.define :diff_subhead,
       :bg => "333366", :fg => "88b", :size => "-3"
 
-    #:box => nil
-    #:height => "
   end
 
   def self.styles
@@ -289,35 +288,23 @@ class Repository
 
   end
 
-  def self.add project, file=nil
-
+  def self.add *args
+    diffs = args.shift if args.first.is_a? Symbol   # Pull out :diffs if 1st arg
+    project, file, line = args
     dir = self.extract_dir project
-
-    # If file passed, just open it
-    if file
-      View.open("#{dir}/#{file}")   # If file, open it
-      return
-    end
+    children = CodeTree.children || []
+    children = children.select {|c| c !~ /^ *\|/}   # Remove any |... lines
 
     if self.git?(dir)
-      self.git_add dir, file
+      self.git_add diffs, dir, file, line, children
     else
       self.svn_add dir, file
     end
   end
 
-  def self.git_add dir, file
-    children = CodeTree.children || []
+  def self.git_add diffs, dir, file, line, children
 
-    if children.nonempty?   # If children, add them
-      children = children.map{|c| c.sub(/^ +[+-] /, '')}.join(" ")
-      txt = Shell.run("git add #{children}", :dir => dir)
-      return
-    end
-
-    # If no children, show ones to be added
-    txt = Shell.run "git status", :dir=>dir, :sync=>true
-    txt.scan(/\t([^:\n]+$)/).map{|i| "- #{i}"}
+    self.git_commit_or_add nil, diffs, dir, file, line, children
 
   end
 
@@ -344,34 +331,53 @@ class Repository
 
   def self.git_commit message, diffs, dir, file, line, children
 
-    if file.nil?   # If launching .commit directly (not a file)
+    self.git_commit_or_add message, diffs, dir, file, line, children
 
-      if children.nonempty?   # If files exist underneath (children), commit
+  end
+
+  def self.git_commit_or_add message, diffs, dir, file, line, children
+
+    add = message.nil?   # No message signifys an add
+
+    if file.nil?   # If launching .commit/.add directly (not a file)
+
+      if children.nonempty?   # If files exist underneath (children), proceed
         children = children.map{|c| Line.without_label(c)}.join(" ")
-        command = "git commit -m \"#{message}\" #{children}"
+        command = add ?
+          "git add #{children}" :
+          "git commit -m \"#{message}\" #{children}"
         Shell.run(command, :dir=>dir)
         return
       else   # If no files underneath, show modified files
         txt = Shell.run "git status", :dir=>dir, :sync=>true
-        new_files = txt.scan(/\tnew file: +([^:\n]+$)/).map{|i| "- new: #{i}\n"}.join('')
+        new_files = txt.scan(/\tnew file: +(.+)$/).map{|i| "- new: #{i}"}
+        untracked = txt.scan(/\t([^:\n]+$)/).map{|i| "- untracked: #{i}"}
+        modified = add ?
+          Shell.run("git ls-files --modified", :dir=>dir, :sync=>true).split("\n") :
+          txt.scan(/\tmodified: +(.+$)/).map{|i| "+ #{i}"}.uniq
 
         if diffs
-          txt = Shell.run('git diff -U2 -w ', :sync => true, :dir => dir)
-          self.clean! txt
-          txt.gsub!(/^-/, '~')
-          txt.gsub!(/^/, '  |')
-          txt.gsub!(/^  \|diff --git .+ b\//, '- ')
-          return new_files + txt
+          txt = add ?
+            Shell.run('git diff -U2 -w', :sync => true, :dir => dir) :
+            Shell.run('git diff -U2 -w HEAD', :sync => true, :dir => dir)
+          unless txt.empty?
+            self.clean! txt
+            txt.gsub!(/^-/, '~')
+            txt.gsub!(/^/, '  |')
+            txt.gsub!(/^  \|diff --git .+ b\//, '- ')
+          end
+          return (add ? untracked : new_files).map{|i| "#{i}\n"}.join('') + txt
 
         else
-          modified = txt.scan(/\t([^:\n]+$)/).map{|i| "- #{i}"}
-          return (new_files + modified).map{|l| "+ #{l}"}
+          return (add ? untracked : new_files) + modified
         end
       end
     end
 
     if line.nil?   # If no line passed, re-do diff for 1 file
-      txt = Shell.run("git diff -U2 -w #{file}", :sync => true, :dir => dir)
+      txt = add ?
+        Shell.run("git diff -U2 -w #{file}", :sync => true, :dir => dir) :
+        Shell.run("git diff -U2 -w HEAD #{file}", :sync => true, :dir => dir)
       self.clean! txt
       txt.gsub!(/^diff .+\n/, '')
       txt.gsub!(/^-/, '~')
@@ -397,6 +403,11 @@ class Repository
 
   def self.svn_add dir, file
     children = CodeTree.children || []
+
+    if file   # If file passed, just open it
+      View.open("#{dir}/#{file}")
+      return
+    end
 
     if children.nonempty?   # If children, add them
       children = children.map{|c| c.sub(/^ +[+-] /, '')}.join(" ")
