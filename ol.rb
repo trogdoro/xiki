@@ -8,8 +8,7 @@ class Ol
   @@last = Time.now - 1000
 
   def self.log txt, line
-    path = Bookmarks["$o"] || LOG_PATH
-    path = Ol::LOG_PATH unless path.nonempty?
+    o = self.file_path
 
     # If no bookmark, error gracefully
 
@@ -21,10 +20,10 @@ class Ol
 
     h = Ol.parse_line(line)
 
-    File.open(path, "a") { |f| f << "#{heading}#{txt}\n" }
+    File.open(o, "a") { |f| f << "#{heading}#{txt}\n" }
 
     line = "#{h[:path]}:#{h[:line]}\n"
-    File.open("#{path}.lines", "a") { |f|
+    File.open("#{o}.lines", "a") { |f|
       f << "\n\n" if heading
       txt.split("\n").size.times { f << line }
     }
@@ -62,12 +61,17 @@ class Ol
     {:path=>path, :line=>line, :method=>method, :clazz=>clazz}
   end
 
+  def self.file_path
+    o = Bookmarks["$o"]
+    Ol::LOG_PATH unless o.nonempty?
+  end
+
   def self.launch
     # TODO: get total_lines - current_line
     distance_to_end = Line.number(View.bottom) - Line.number
 
     # Go to log.lines and get n from end
-    arr = IO.readlines("#{Bookmarks['$o']}.lines")
+    arr = IO.readlines("#{self.file_path}.lines")
     line = arr[- distance_to_end]
 
     path, line = line.split(':')

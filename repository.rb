@@ -398,9 +398,14 @@ class Repository
     nil
   end
 
-  def self.compare_with_repository
+  def self.code_tree_commit
     bookmark = Keys.input(:timed => true, :prompt => "Repository diff in which dir? (enter bookmark): ")
     CodeTree.display_menu("Repository.menu/\n  - project - $#{bookmark}/\n    - .commit \"message\", :diffs")
+  end
+
+  def self.code_tree_add
+    bookmark = Keys.input(:timed => true, :prompt => "Repository diff in which dir? (enter bookmark): ")
+    CodeTree.display_menu("Repository.menu/\n  - project - $#{bookmark}/\n    - .add :diffs")
   end
 
   def self.svn_add dir, file
