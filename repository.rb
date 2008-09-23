@@ -69,7 +69,7 @@ class Repository
 
     puts %Q[
       + .add/
-      + .add, :diffs/
+      + .add :diffs/
       + .commit "message"/
       + .commit "message", :diffs/
       + .push
@@ -164,7 +164,7 @@ class Repository
     inbetween = inbetween.count("\n")
     line = Line.value[/\+(\d+)/, 1]
     Search.backward "^ +- "
-    file = Line.value[/^ +- (.+)/, 1]
+    file = Line.without_label
     goto_char orig
 
     View.open("#{dir}/#{file}")
@@ -236,8 +236,10 @@ class Repository
   end
 
   # Called by code tree directly
-  def self.status_tree
-    puts CodeTree.tree_search + self.status_tree_internal(Bookmarks['$tr'])
+  def self.status_tree project
+    dir = self.extract_dir project
+    dir = Bookmarks.expand(dir)
+    puts CodeTree.tree_search + self.status_tree_internal(dir)
   end
 
   def self.status_tree_internal dir
@@ -336,7 +338,6 @@ class Repository
   end
 
   def self.git_commit_or_add message, diffs, dir, file, line, children
-
     add = message.nil?   # No message signifys an add
 
     if file.nil?   # If launching .commit/.add directly (not a file)
@@ -353,7 +354,7 @@ class Repository
         new_files = txt.scan(/\tnew file: +(.+)$/).map{|i| "- new: #{i}"}
         untracked = txt.scan(/\t([^:\n]+$)/).map{|i| "- untracked: #{i}"}
         modified = add ?
-          Shell.run("git ls-files --modified", :dir=>dir, :sync=>true).split("\n") :
+          Shell.run("git ls-files --modified", :dir=>dir, :sync=>true).split("\n").map{|i| "+ #{i}"} :
           txt.scan(/\tmodified: +(.+$)/).map{|i| "+ #{i}"}.uniq
 
         if diffs
@@ -384,7 +385,6 @@ class Repository
       txt.gsub!(/^/, '|')
       return puts(txt)
     end
-
     self.jump_to_file_in_tree dir   # If line passed, jump to it
     nil
 
@@ -474,3 +474,4 @@ class Repository
 
 end
 Repository.styles_define
+
