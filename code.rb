@@ -275,8 +275,7 @@ class Code
     prefix_u = Keys.prefix_u?
     Keys.prefix = nil
 
-    file = Bookmarks["$o"]
-    file = Ol::LOG_PATH unless file.nonempty?
+    file = Ol.file_path
     buffer = "*tail of #{file}"
 
     # If already open, just go to it

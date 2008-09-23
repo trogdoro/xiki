@@ -63,7 +63,7 @@ class Ol
 
   def self.file_path
     o = Bookmarks["$o"]
-    Ol::LOG_PATH unless o.nonempty?
+    o.nonempty? ? o : LOG_PATH
   end
 
   def self.launch

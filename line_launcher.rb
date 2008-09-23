@@ -309,7 +309,7 @@ class LineLauncher
   end
 
   def self.file_hooks
-    if View.name =~ /#{Bookmarks['$o']}$/   # If in output log
+    if View.name =~ /#{Ol.file_path}$/   # If in output log
       Ol.launch
       return true
     end
