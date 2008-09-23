@@ -445,6 +445,7 @@ class TreeLs
     Cursor.remember :before_tree_ls
     Cursor.blue
     @@search_going_or_interrupted = true
+    error = ""
 
     # Make cursor blue
     recursive = options[:recursive]
@@ -516,7 +517,11 @@ class TreeLs
           lines_new = lines.grep(regexp)
         end
         # If search not found, don't delete all
-        lines = lines_new unless lines_new.size == 0
+        if lines_new.size == 0
+          error = " (no matches)"
+        else
+          lines = lines_new
+        end
 
         # Remove dirs with nothing under them
         self.clear_empty_dirs! lines if recursive
@@ -534,17 +539,7 @@ class TreeLs
           Move.to_line_text_beginning
 
       end
-      message "Show files matching: %s", pattern
-      #       begin
-      #         elvar.inhibit_quit = true
-      #         ch_raw = read_char
-      #         elvar.inhibit_quit = nil
-      #       rescue Exception => e  # Assume it was a mouse event
-      #         Cursor.restore :before_tree_ls
-      #         return
-      #       end
-
-      #       ch = char_to_string(ch_raw)
+      message "Show files matching: #{pattern}#{error}"
       ch, ch_raw = Keys.char
       return Cursor.restore(:before_tree_ls) if ch.nil?
     end

@@ -1,10 +1,10 @@
 %w[
-  trouble_shooting notes text_util app bookmarks clipboard code color
+  ol trouble_shooting notes text_util app bookmarks clipboard code color
   control_tab deletes diff_log files history keys macros move search
   tree_ls repository line_launcher effects twitter shell rails merb
   data_mapper code_tree docs svn remote redmine schedule irc mysql
   cursor core_ext help ruby ruby_console buffers links computer menu
-  safari ol book firefox projects
+  safari book firefox projects
   ].each { |l| require l }
 
 # TODO
@@ -231,6 +231,7 @@ class KeyBindings
     Keys.do_kill_filter { Search.kill_filter }
     Keys.do_kill_siblings { TreeLs.kill_siblings }   # kill adjacent lines at same indent as this one
     Keys.do_kill_thing { delete_region(* bounds_of_thing_at_point( :sexp )) }   # kill adjacent lines at same indent as this one
+    Keys.do_load_browser { Firefox.reload }
     Keys.do_last_command { Shell.do_last_command }
     Keys.do_linebreaks_dos { set_buffer_file_coding_system :dos }
     #     Keys.do_load_emacs { App.load_emacs }   # *
