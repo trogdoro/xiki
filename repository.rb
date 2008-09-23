@@ -310,17 +310,14 @@ class Repository
     children = CodeTree.children || []
 
     if children.nonempty?   # If children, add them
-      #dir ||= self.determine_dir
       children = children.map{|c| c.sub(/^ +[+-] /, '')}.join(" ")
-      #puts "git add #{children}"
       txt = Shell.run("git add #{children}", :dir => dir)
-
       return
     end
 
     # If no children, show ones to be added
-    txt = Shell.run("git ls-files --others", :dir => dir, :sync => true)
-    txt.split("\n")
+    txt = Shell.run "git status", :dir=>dir, :sync=>true
+    txt.scan(/\t([^:\n]+$)/).map{|i| "- #{i}"}
 
   end
 
@@ -330,10 +327,9 @@ class Repository
     diffs = args.shift if args.first.is_a? Symbol   # Pull out :diffs if 2nd arg
     project, file, line = args
     dir = self.extract_dir project
-
     children = CodeTree.children || []
 
-    if children.nonempty?  # If children to commit
+    if !file and children.nonempty?  # If on .commit and children to commit
       # Error if commit message unchanged
       return "- Error: You must change \"message\" to be your commit message." if message == "message"
       children = children.select {|c| c !~ /^ *\|/}   # Remove any |... lines
@@ -351,29 +347,24 @@ class Repository
     if file.nil?   # If launching .commit directly (not a file)
 
       if children.nonempty?   # If files exist underneath (children), commit
-        children = children.map{|c| c.sub(/^ +[+-] /, '')}.join(" ")
+        children = children.map{|c| Line.without_label(c)}.join(" ")
         command = "git commit -m \"#{message}\" #{children}"
         Shell.run(command, :dir=>dir)
         return
       else   # If no files underneath, show modified files
-        if diffs
-          txt = Shell.run "git status", :dir=>dir, :sync=>true
-          files = txt.scan(/\t(.+)/).map{|i| i.first}
-          new_files = files.select{|f| f =~ /^new file: +/}.map{|f| "new: " + f[/: +(.+)/, 1]}
+        txt = Shell.run "git status", :dir=>dir, :sync=>true
+        new_files = txt.scan(/\tnew file: +([^:\n]+$)/).map{|i| "- new: #{i}\n"}.join('')
 
+        if diffs
           txt = Shell.run('git diff -U2 -w ', :sync => true, :dir => dir)
           self.clean! txt
           txt.gsub!(/^-/, '~')
           txt.gsub!(/^/, '  |')
           txt.gsub!(/^  \|diff --git .+ b\//, '- ')
-          return new_files.map{|f| "- #{f}\n"}.join('') + txt
+          return new_files + txt
 
         else
-          txt = Shell.run "git status", :dir=>dir, :sync=>true
-          files = txt.scan(/\t(.+)/).map{|i| i.first}
-          new_files = files.select{|f| f =~ /^new file: +/}.map{|f| "new: " + f[/: +(.+)/, 1]}
-          modified = files.select{|f| f =~ /^modified: +/}.map{|f| f[/: +(.+)/, 1]}
-
+          modified = txt.scan(/\t([^:\n]+$)/).map{|i| "- #{i}"}
           return (new_files + modified).map{|l| "+ #{l}"}
         end
       end
