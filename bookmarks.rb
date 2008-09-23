@@ -230,7 +230,7 @@ class Bookmarks
       bm.to_a[1].to_a[0][1]
     }.select{|path| path =~ /^\/.+\w$/}
 
-    puts CodeTree.tree_search + TreeLs.paths_to_tree(paths)
+    puts CodeTree.tree_search_option + TreeLs.paths_to_tree(paths)
   end
 end
 

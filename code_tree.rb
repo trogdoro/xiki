@@ -61,6 +61,9 @@ class CodeTree
       if stdout =~ /^:code_tree_option_tree_search\n/
         options[:tree_search] = true
         stdout.sub! /.+\n/, ''   # Remove option
+      elsif stdout =~ /^:code_tree_option_no_search\n/
+        options[:no_search] = true
+        stdout.sub! /.+\n/, ''   # Remove option
       end
 
       ended_up = Location.new
@@ -86,7 +89,6 @@ class CodeTree
       orig.go
       # End up where script took us
       ended_up.go
-
 
       if options[:tree_search]  # If they want to do a tree search
         goto_char left
@@ -340,8 +342,12 @@ class CodeTree
     CodeTree.children.join("\n")
   end
 
-  def self.tree_search
+  def self.tree_search_option
     ":code_tree_option_tree_search\n"
+  end
+
+  def self.no_search_option
+    ":code_tree_option_no_search\n"
   end
 
   def self.definite_code_tree_root line

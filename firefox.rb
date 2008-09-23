@@ -18,6 +18,7 @@ class Firefox
   end
   def self.reload
     self.run "browser.reload()"
+    nil
   end
   def self.eval txt
     self.run "window.#{txt}"

@@ -92,7 +92,7 @@ class Shell
     comint_send_input
   end
 
-  # Mapped to !! in LineLauncher
+  # Mapped to !! or ! in LineLauncher
   def self.launch options={}
     line = Line.without_label
     # If indented, check whether code tree, extracting if yes

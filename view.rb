@@ -588,7 +588,7 @@ class View
       el4r_lisp_eval "(set-frame-parameter nil 'alpha 100)"
     when :d
       el4r_lisp_eval "(set-frame-parameter nil 'alpha 96)"
-    when :h
+    when :m
       el4r_lisp_eval "(set-frame-parameter nil 'alpha 50)"
     when :t
       el4r_lisp_eval "(set-frame-parameter nil 'alpha 25)"

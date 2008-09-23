@@ -98,6 +98,11 @@ class LineLauncher
       Firefox.eval(txt)
     end
 
+    self.add_paren("jso") do   # - (js): js to run in firefox
+      txt = Line.without_label  # Grab line
+      TreeLs.insert_under Firefox.eval(txt)
+    end
+
     self.add_paren("html") do   # Run in browser
       file = Line.without_label  # Grab line
       if Keys.prefix_u?
@@ -313,7 +318,6 @@ class LineLauncher
       Ol.launch
       return true
     end
-
     return false
   end
 

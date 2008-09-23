@@ -241,7 +241,7 @@ class Repository
   def self.status_tree project
     dir = self.extract_dir project
     dir = Bookmarks.expand(dir)
-    puts CodeTree.tree_search + self.status_tree_internal(dir)
+    puts CodeTree.tree_search_option + self.status_tree_internal(dir)
   end
 
   def self.status_tree_internal dir
@@ -300,16 +300,14 @@ class Repository
     children = children.select {|c| c !~ /^ *\|/}   # Remove any |... lines
 
     if self.git?(dir)
-      self.git_add diffs, dir, file, line, children
+      self.git_add(diffs, dir, file, line, children)
     else
-      self.svn_add dir, file
+      self.svn_add(dir, file)
     end
   end
 
   def self.git_add diffs, dir, file, line, children
-
     self.git_commit_or_add nil, diffs, dir, file, line, children
-
   end
 
   def self.commit *args
@@ -327,9 +325,9 @@ class Repository
     end
 
     if self.git?(dir)
-      self.git_commit message, diffs, dir, file, line, children
+      self.git_commit(message, diffs, dir, file, line, children)
     else
-      self.svn_commit message, diffs, dir, file, line, children
+      self.svn_commit(message, diffs, dir, file, line, children)
     end
   end
 

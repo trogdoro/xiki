@@ -105,7 +105,7 @@ class Files
     if options[:dir]
       paths = paths.grep(Regexp.new(Regexp.escape(options[:dir])))
     end
-    puts CodeTree.tree_search + TreeLs.paths_to_tree(paths)
+    puts CodeTree.tree_search_option + TreeLs.paths_to_tree(paths)
   end
 
   def self.history_array
@@ -114,7 +114,7 @@ class Files
 
   def self.history times=nil
     times ||= History.prefix_times
-    puts CodeTree.tree_search + TreeLs.paths_to_tree(history_array[0..(times-1)])
+    puts CodeTree.tree_search_option + TreeLs.paths_to_tree(history_array[0..(times-1)])
   end
 
   def self.open_just

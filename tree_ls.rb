@@ -1234,6 +1234,12 @@ class TreeLs
     self.insert_quoted_and_search matches
   end
 
+  def self.insert_under txt
+    txt = txt.gsub!(/^/, '|')
+    TreeLs.indent(txt)
+    self.insert_quoted_and_search txt
+  end
+
   def self.insert_quoted_and_search matches
     # Insert matches
     Line.next
