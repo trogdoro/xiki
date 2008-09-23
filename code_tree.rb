@@ -118,7 +118,10 @@ class CodeTree
 
   def self.display_menu menu
     View.bar if Keys.prefix_u?
-    View.to_buffer("*CodeTree #{menu.gsub(/[.,]/, ' ')}")
+
+    # For buffer name, handle multi-line strings
+    buffer = "*CodeTree " + menu.sub(/.+\n[ -]*/m, '').gsub(/[.,]/, '')
+    View.to_buffer(buffer)
     View.clear
     $el.notes_mode
 
