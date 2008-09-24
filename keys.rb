@@ -413,8 +413,12 @@ class Keys
 
     if ch_initial =~ /^\d+$/   # If a number, assign it to raw
       ch_raw = ch_initial.to_i
-      ch = $el.char_to_string(ch_raw)
+      if 134217825 <= ch_raw and ch_raw <= 134217850  # If meta (out of elisp range)
+        return ["meta_#{(ch_raw - 134217728).chr}".to_sym, nil]
+      end
 
+      # If char is over the elisp max, try to interpret it as Meta
+      ch = $el.char_to_string(ch_raw)
       # Special check for C-. and other sequences
       ch = :control_period if ch_raw == 67108910
       ch = :control_slash if ch_raw == 67108911

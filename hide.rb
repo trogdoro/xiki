@@ -2,10 +2,10 @@ class Hide
   extend ElMixin
 
   @@visible = {}
-#  include ElMixin
-# (hide-find-overlays)
+  #  include ElMixin
+  # (hide-find-overlays)
 
-#  self.reset
+  #  self.reset
   def self.hide_unless search, options={}
     self.hide_unless_block(options) do |l, bol, eol|
       l =~ search
@@ -22,10 +22,9 @@ class Hide
 
   def self.hide_unless_block options={}, &block
 
-#    elvar.line_move_ignore_invisible = true
-
-#     @@already_hidden = {}
-#     @@visible = []
+    #    elvar.line_move_ignore_invisible = true
+    #     @@already_hidden = {}
+    #     @@visible = []
 
     @@visible = []
 
@@ -43,18 +42,16 @@ class Hide
     left = 1
     in_non_match = false
 
-    # Optionally skip top line
-    if options[:include_first]
+    if options[:include_first]   # Optionally skip top line
       l = lines.shift
       eol = bol + l.size + 1
       left = eol
       bol = eol
     end
 
-    # For each line
-    lines.each do |l|
+    lines.each do |l|   # For each line
       eol = bol + l.size + 1
-#      if (l =~ search) && (! @@already_hidden[bol])
+      #      if (l =~ search) && (! @@already_hidden[bol])
       if (yield(l, bol, eol)) && (! @@already_hidden[bol])
         @@visible << bol
         # If we're at the end of non-match area, hide
@@ -145,7 +142,7 @@ class Hide
       else
         goto_line ch.to_i
       end
-#      next_line -1
+      #      next_line -1
       self.show
       recenter 0
       # Run enter if option was passed
@@ -165,6 +162,7 @@ class Hide
   def self.keys
   end
 
+  # Shows things hidden by .hide
   def self.show
 
     # Move down to visible line (this doesn't seem to happen on its own)
@@ -172,13 +170,12 @@ class Hide
       forward_line
     end
 
-#    @@already_hidden = {}
+    #    @@already_hidden = {}
     # Delete hidden overlays
     el4r_lisp_eval %q[
       (dolist (over (overlays-in (point-min) (point-max) ))
         (when 
           (overlay-get over 'invisible)
-;          (eq (overlay-get over 'invisible) 'hide)
           (delete-overlay over)
         )
       )
@@ -200,8 +197,8 @@ class Hide
   reset
   add_to_invisibility_spec :hide
 
-  def self.hide_by_indent
-    indent = Keys.prefix
+  def self.hide_by_indent indent=nil
+    indent ||= Keys.prefix
     indent = -1 if indent == :u
 
     # If no prefix, use indent of current line
@@ -242,5 +239,13 @@ class Hide
       )
     ]
   end
+
+  # Reveals all hidden
+  def self.reveal
+    widen
+    self.show
+    self.hide_by_indent :u   # If hidden by indent
+  end
+
 end
 Hide.init

@@ -348,6 +348,8 @@ class Notes
 
     Styles.apply("^\\([ \t]*\\)\\([+-]\\) \\(.+?:\\) +\\(|.*\n\\)", nil, :default, :ls_bullet, :notes_label, :ls_quote)
 
+    Styles.apply("^ +\\(!.*\n\\)", nil, :ls_quote)   # ^!... for commands
+
     # - item exclamation! / todo
     Styles.apply("^[ \t]*\\(-\\) \\(.+!\\)$", nil, :notes_exclamation, :notes_exclamation)
 

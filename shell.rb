@@ -113,9 +113,9 @@ class Shell
       output = Shell.run command, :dir => dir, :sync => true
       # Add linebreak if blank
       output.sub!(/\A\z/, "\n")
-      output.gsub!(/^/, '|')
+      output.gsub!(/^/, '!')
       TreeLs.indent(output)
-      TreeLs.insert_quoted_and_search output#.gsub!(/^/, "#{indent}  |")
+      TreeLs.insert_quoted_and_search output
     else
       View.handle_bar
       Shell.run command, :dir => dir

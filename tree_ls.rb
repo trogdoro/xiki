@@ -461,7 +461,7 @@ class TreeLs
 
     #ch = char_to_string(ch_raw)
 
-    # While narrowing down list (and special check for C-.)
+    # While narrowing down list
     while (ch =~ /[ -\/:<>-~]/) ||
         (recursive && ch_raw == 2 || ch_raw == 6) ||
         ch == :up || ch == :down
@@ -552,36 +552,41 @@ class TreeLs
     when "0"
       file = self.construct_path   # Expand out ~
       shell_command("open #{file}")
-    when "\C-l"
-      file = self.construct_path   # Expand out ~
-      shell_command("open #{file}")
     when "\C-a"
       Line.to_left
     when "\C-e"
       Line.to_right
+    when :meta_s
+      self.to_parent
+      self.kill_under
+      self.dir :date_sort=>true
+
     when :return, "\C-m", :control_period, :right   # If C-., go in but don't collapse siblings
       Keys.clear_prefix
       LineLauncher.launch
-
     when "\t"   # If tab, hide siblings and go in
       delete_region(Line.left(2), right)
       Keys.clear_prefix
       LineLauncher.launch
-    when :backspace, :left   # If backspace, cancel last action and exit
+    when :backspace, :left   # Collapse tree
       self.to_parent
       self.kill_under
       self.search(:left => Line.left, :right => Line.left(2))
 
-    when ";"  # Show methods, or outline
-      delete_region(Line.left(2), right)  # Delete other files
+    when :control_slash   # Collapse tree and exit
+      self.to_parent
+      self.kill_under
+
+    when ";"   # Show methods, or outline
+      delete_region(Line.left(2), right)   # Delete other files
       self.enter_lines
 
-    when "#"  # Show ##.../ search
+    when "#"   # Show ##.../ search
       self.stop_and_insert left, right, pattern
       View.insert TreeLs.indent("- ##/", 0)
       View.to(Line.right - 1)
 
-    when "*"  # Show **.../ search
+    when "*"   # Show **.../ search
       self.stop_and_insert left, right, pattern
       View.insert TreeLs.indent("- **/", 0)
       View.to(Line.right - 1)
@@ -594,11 +599,11 @@ class TreeLs
         delete_region(Line.left(2), right)
         self.dir_recursive
         return @@search_going_or_interrupted = false
-      else  # A file, so enter lines
+      else   # A file, so enter lines
         delete_region(Line.left(2), right)
         self.enter_lines(//)  # Insert all lines
       end
-    when "9"  # Open in bar
+    when "9"   # Open in bar
       delete_region(Line.left(2), right)  # Delete other files
       View.bar
       Keys.clear_prefix
@@ -660,10 +665,7 @@ class TreeLs
     when "\C-s"
       isearch_forward
 
-    when :control_slash
-      undo
-
-    when "/"  # If slash, append selected dir to parent dir
+    when "/"   # If slash, append selected dir to parent dir
 
       # If line is a dir, do tree-like tab
       if Line.value =~ /\/$/
@@ -688,12 +690,12 @@ class TreeLs
         # TODO make codetree not move cursor back to starting point
       end
 
-    when "="  # Drill into the file
+    when "="   # Drill into the file
       dir = self.construct_path  # Expand out ~
       View.open(dir)
 
-    when "0"  # Drill into the file
-      delete_region(Line.left(2), right)  # Delete other files
+    when "0"   # Drill into the file
+      delete_region(Line.left(2), right)   # Delete other files
       self.drill
 
     else
@@ -720,19 +722,14 @@ class TreeLs
       l = lines[i]
       l =~ /^( +)/
       spaces = $1 ? $1.length : 0
-      # If dir
-      if l =~ /\/$/ && l !~ /\|/
-        # If lower than indent, decrement indent
-        if spaces < file_indent
+      if l =~ /\/$/ && l !~ /\|/   # If dir
+        if spaces < file_indent   # If lower than indent, decrement indent
           file_indent -= 2
-        # Else, delete
-        else
+        else   # Else, delete
           lines.delete_at i
         end
-      # If file
-      else
-        # Set indent
-        file_indent = spaces
+      else   # If file
+        file_indent = spaces   # Set indent
       end
     end
   end
@@ -758,8 +755,7 @@ class TreeLs
 
     # If to be in bar, go to the tree file in the bar
     if options[:open_in_bar]
-      # Open tree
-      self.open_in_bar :ignore_prefix
+      self.open_in_bar :ignore_prefix   # Open tree
       # If not on a blank line, go to the top
       View.to_top unless Line.matches(/^$/)
       # If on line, add another blank
@@ -882,7 +878,7 @@ class TreeLs
   end
 
   # Recursively display dir in tree   # Insert dir contents at point (usually in existing tree)
-  def self.dir
+  def self.dir options={}
     return Files.open_in_os(construct_path) if Keys.prefix == 0
 
     self.plus_to_minus_maybe
@@ -891,7 +887,7 @@ class TreeLs
     if Keys.prefix == 8
       self.dir_recursive
     else
-      self.dir_one_level
+      self.dir_one_level options
    end
   end
 
@@ -924,7 +920,7 @@ class TreeLs
     self.search(:recursive => true, :left => left, :right => right)
   end
 
-  def self.dir_one_level
+  def self.dir_one_level options={}
     Line.to_left
     line = Line.value
     indent = line[/^ */] + "  "  # Get indent
@@ -944,7 +940,7 @@ class TreeLs
 
     #     insert dir
     # Get dirs and files in it
-    dirs, files = self.files_in_dir(dir)
+    dirs, files = self.files_in_dir(dir, options)
 
     # Change path to proper indent
     dirs.collect!{|i| i.sub(/.*\/(.+)/, "#{indent}+ \\1/")}
@@ -1355,15 +1351,19 @@ class TreeLs
   end
 
   # Returns the files in the dir
-  def self.files_in_dir dir
+  def self.files_in_dir dir, options={}
     if self.is_remote?(dir)
       self.remote_files_in_dir(dir)
     else
       all = Dir.glob("#{dir}/*", File::FNM_DOTMATCH).
-        select {|i| i !~ /\/\.(\.*|svn|git)$/}
+        select {|i| i !~ /\/\.(\.*|svn|git)$/}.sort
 
-      dirs = all.select{|i| FileTest.directory?(i)}.sort
-      files = all.select{|i| FileTest.file?(i)}.sort
+      if options[:date_sort]
+        all = all.sort{|a,b| File.new(b).mtime <=> File.new(a).mtime}
+      end
+
+      dirs = all.select{|i| FileTest.directory?(i)}#.sort
+      files = all.select{|i| FileTest.file?(i)}#.sort
       [dirs, files]
     end
   end

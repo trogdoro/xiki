@@ -245,7 +245,6 @@ class KeyBindings
     }
     Keys.do_lines_reverse { reverse_region(region_beginning, region_end) }
     Keys.do_lines_sort { sort_lines(nil, region_beginning, region_end) }
-    Keys.do_load_test { Memorizable.load_test_url }
     Keys.do_linebreaks_unix { set_buffer_file_coding_system :unix }
     Keys.do_macro { Macros.run }   # do last macro *
     Keys.do_name_buffer { Buffers.rename }
@@ -342,7 +341,7 @@ class KeyBindings
     Keys.layout_output { Code.open_log_view }
     Keys.layout_previous { View.previous }   # previous view **
     # Q
-    Keys.layout_reveal { widen; Hide.show }   # reveal all hidden text
+    Keys.layout_reveal { Hide.reveal }   # reveal all hidden text
     Keys.layout_search { Keys.prefix_u? ? Search.find_in_buffers(Keys.input) : Hide.search }   # *
     Keys.layout_todo { TreeLs.open_in_bar }   # show bar on left with the quick bookmark named "-t" *
     Keys.layout_upper { View.to_upper }   # go to uppermost view after bar
