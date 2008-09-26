@@ -377,7 +377,9 @@ class KeyBindings
     Keys.E(:isearch_mode_map) { Search.paste_here }   # Enter: insert clipboard, replacing match
     Keys.F(:isearch_mode_map) { Search.go_to_end }   # Forward
     Keys.G(:isearch_mode_map) { Search.stop }   # Stop searching
-    Keys.H(:isearch_mode_map) { Search.insert_at_search_start }   # Here
+
+    Keys.H(:isearch_mode_map) { Search.move_to_search_start }   # Have
+
     # I: leave unmapped - had issues using it
     # J: leave unmapped for linebreak
     Keys.K(:isearch_mode_map) { Search.cut; Location.as_spot('deleted') }
@@ -390,13 +392,13 @@ class KeyBindings
     # R: leave unmapped for reverse
     # S: leave unmapped for search
     Keys.T(:isearch_mode_map) { Search.isearch_open_last_edited }   # To: open file / jump to method
-    Keys.U(:isearch_mode_map) { Search.isearch_pull_in_sexp }   # like C-w, but pulls in sexp
+    Keys.U(:isearch_mode_map) { Search.insert_at_search_start }   # Use
     Keys.V(:isearch_mode_map) { Search.isearch_find_in_buffers }   # Visited: show matches in visited files
     # W: leave unmapped for pulling into search
-    # Redundant (.K)
-    Keys.X(:isearch_mode_map) { Search.insert_at_spot }   # eXtract to spot (as spot)
+    Keys.X(:isearch_mode_map) { Search.isearch_pull_in_sexp }   # eXtract: like C-w, but pulls in sexp
     # Y: leave unmapped for yank
-    Keys.Z(:isearch_mode_map) { Search.move_to_search_start }   # Zap: move search string back to start
+    Keys.Z(:isearch_mode_map) { Search.insert_at_spot }   # Zap: move to spot (as spot)
+
 
     define_key :isearch_mode_map, kbd("C-1") do
       Search.isearch_copy_as("1")
