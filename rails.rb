@@ -183,7 +183,7 @@ class Rails
 
 end
 
-Keys.ORM { CodeTree.display_menu("Rails.models") }   # Open Rails Models
+Keys.ORM { CodeTree.display_menu("- Rails.models/") }   # Open Rails Models
 Keys.ERM {   # Enter Rails Models
   $el.insert "- Rails.models/"
   $el.open_line 1

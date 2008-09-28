@@ -4,7 +4,7 @@
   tree_ls repository line_launcher effects twitter shell rails merb
   data_mapper code_tree docs svn remote redmine schedule irc mysql
   cursor core_ext help ruby ruby_console buffers links computer menu
-  safari book firefox projects
+  safari book firefox projects postgres
   ].each { |l| require l }
 
 # TODO
@@ -88,7 +88,7 @@ class KeyBindings
     Keys.open_a_shell { Shell.open }   # Open A Shell *
     Keys.open_as_tail { Files.open_tail }
     Keys.open_bookmark { Bookmarks.go }
-    Keys.open_current { CodeTree.display_menu("Buffers.current") }   # open buffer list **
+    Keys.open_current { CodeTree.display_menu("- Buffers.current/") }   # open buffer list **
     Keys.open_difflog { DiffLog.open }   # shows diffs of what you've edited *
     Keys.open_edited { Files.open_edited }   # show recently edited files *
     Keys.open_file { Files.open }
@@ -99,13 +99,13 @@ class KeyBindings
     Keys.open_in_os { Files.open_in_os }
     Keys.open_just { Files.open_just }
 
-    Keys.open_list_bookmarks { CodeTree.display_menu("Bookmarks.tree") }
+    Keys.open_list_bookmarks { CodeTree.display_menu("- Bookmarks.tree/") }
     Keys.open_list_faces { list_faces_display }
     Keys.open_lisp_error { Code.show_el4r_error }
     Keys.open_lisp_info { info("elisp") }
     Keys.open_log_tree { Rails.tree_from_log }
 
-    Keys.open_list_models { CodeTree.display_menu("Merb.models") }
+    Keys.open_list_models { CodeTree.display_menu("- Merb.models/") }
 
     Keys.open_list_names { Clipboard.list }
     Keys.open_list_repository { Repository.open_list_repository }
@@ -123,7 +123,7 @@ class KeyBindings
     Keys.open_viewing { Buffers.open_viewing }   # show currently open files and buffers **
     Keys.open_windows { View.restore }   # open window configuration by tag
     Keys.open_xiki_docs { Help.display_docs }
-    Keys.open_xiki_help { CodeTree.display_menu("Help.menu") }   # **
+    Keys.open_xiki_help { CodeTree.display_menu("- Help.menu/") }   # **
     # Y
     # Z
     Keys.O0 { View.open("$0") }   # Open 0: open bookmarked file tagged with "0"
@@ -342,7 +342,7 @@ class KeyBindings
     Keys.layout_previous { View.previous }   # previous view **
     # Q
     Keys.layout_reveal { Hide.reveal }   # reveal all hidden text
-    Keys.layout_search { Keys.prefix_u? ? Search.find_in_buffers(Keys.input) : Hide.search }   # *
+    Keys.layout_search { Keys.prefix_u? ? Search.find_in_buffers(Keys.input :prompt=>"Search all open files for: ") : Hide.search }   # *
     Keys.layout_todo { TreeLs.open_in_bar }   # show bar on left with the quick bookmark named "-t" *
     Keys.layout_upper { View.to_upper }   # go to uppermost view after bar
     # V
@@ -456,7 +456,7 @@ class KeyBindings
     Keys._V(:isearch_mode_map) { Search.isearch_find_in_buffers(:in_bar => true) }   # Visited: show matches in visited files
     #Keys._V(:isearch_mode_map) { Search.insert_var_at_search_start }
     Keys._W(:isearch_mode_map) { Search.isearch_select_inner }   # Within: select 1 char within match
-    Keys._Z(:isearch_mode_map) { Search.isearch_move_line }
+    Keys._H(:isearch_mode_map) { Search.isearch_move_line }
 
     define_key :isearch_mode_map, kbd("M-1") do   # pull in 1 word
       $el.isearch_yank_char

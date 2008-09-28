@@ -89,9 +89,9 @@ class Buffers
 
   def self.open_viewing
     case Keys.prefix
-    when nil:  CodeTree.display_menu("Buffers.tree 20")
-    when 0:  CodeTree.display_menu("Buffers.tree")
-    else  CodeTree.display_menu("Buffers.tree #{Keys.prefix}")
+    when nil:  CodeTree.display_menu("- Buffers.tree 20/")
+    when 0:  CodeTree.display_menu("- Buffers.tree/")
+    else  CodeTree.display_menu("- Buffers.tree #{Keys.prefix}/")
     end
   end
 

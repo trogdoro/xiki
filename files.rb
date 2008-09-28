@@ -123,9 +123,9 @@ class Files
     return message("No dir matching '#{key}' found.  See Files\#@@dir_hash") unless dir
     if Keys.prefix_u?
       Keys.clear_prefix
-      CodeTree.display_menu("Files.edited(100, :dir => '#{dir}')")
+      CodeTree.display_menu("- Files.edited(100, :dir => '#{dir}')/")
     else
-      CodeTree.display_menu("Buffers.tree(0, :dir => '#{dir}')")
+      CodeTree.display_menu("- Buffers.tree(0, :dir => '#{dir}')/")
     end
   end
 
@@ -137,17 +137,17 @@ class Files
 
   def self.open_edited
     case Keys.prefix
-    when nil:  CodeTree.display_menu("Files.edited 20")
-    when 0:  CodeTree.display_menu("Files.edited")
-    else  CodeTree.display_menu("Files.edited #{Keys.prefix}")
+    when nil:  CodeTree.display_menu("- Files.edited 20/")
+    when 0:  CodeTree.display_menu("- Files.edited/")
+    else  CodeTree.display_menu("- Files.edited #{Keys.prefix}/")
     end
   end
 
   def self.open_history
     case Keys.prefix
-    when nil:  CodeTree.display_menu("Files.history 20")
-    when 0:  CodeTree.display_menu("Files.history")
-    else  CodeTree.display_menu("Files.history #{Keys.prefix}")
+    when nil:  CodeTree.display_menu("- Files.history 20/")
+    when 0:  CodeTree.display_menu("- Files.history/")
+    else  CodeTree.display_menu("- Files.history #{Keys.prefix}/")
     end
   end
 

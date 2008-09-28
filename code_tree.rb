@@ -127,13 +127,13 @@ class CodeTree
     View.clear
     $el.notes_mode
 
-    insert "- #{menu}/"
+    insert "#{menu}"
     open_line 1
     CodeTree.launch
   end
 
   def self.open_menu
-    CodeTree.display_menu("CodeTree.menu")
+    CodeTree.display_menu("- CodeTree.menu/")
   end
 
   def self.layout_menu
@@ -143,7 +143,7 @@ class CodeTree
     if View.buffer_open? buffer   # If open, switch to it
       View.to_buffer(buffer)
     else # Else open it
-      self.display_menu("CodeTree.menu")
+      self.display_menu("- CodeTree.menu/")
     end
   end
 
@@ -247,6 +247,7 @@ class CodeTree
 
     # If any data nodes, pass as params
     if ! data.empty?
+      data.each{|s| s.gsub!("\\", "\\\\\\\\") }
       data.each{|s| s.gsub!("'", "\\\\'") }
       data.reverse!
       data.map! {|a| "'#{a}'"}

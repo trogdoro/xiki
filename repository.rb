@@ -118,11 +118,21 @@ class Repository
     if self.svn?
       cm_subversion_command("echo; svn diff -x -w #{file_name_nondirectory(buffer_file_name)}")
     else
-      Shell.run("git diff -w '#{View.file}'")
-      #cm_subversion_command("echo; svn diff -x -w #{file_name_nondirectory(buffer_file_name)}")
-      self.styles
-      self.local_keys
+      self.git_diff_one_file
     end
+  end
+
+  def self.git_diff_one_file
+    # Get root of repos
+    repos = self.git_path
+    # Split off root from relative path
+    relative = View.file.sub(/^#{repos}/, '')
+    # Insert codetree
+
+    CodeTree.display_menu(
+      "Repository.menu/\n  - project - #{repos}\n    - .add/\n      - #{relative}"
+      )
+
   end
 
   def self.local_keys
@@ -205,10 +215,11 @@ class Repository
     git_status !~ /^fatal: Not a git repository/
   end
 
-  def self.git_path dir
+  def self.git_path dir=nil
+    dir ||= View.dir
     return nil unless self.git?(dir)
     dir = Shell.run("git rev-parse --git-dir", :sync=>true,
-      :dir=>View.dir
+      :dir=>dir
       ).sub(".git\n", '')
 
     dir.any? ? dir : nil
@@ -339,7 +350,6 @@ class Repository
 
   def self.git_commit_or_add message, diffs, dir, file, line, children
     add = message.nil?   # No message signifys an add
-
     if file.nil?   # If launching .commit/.add directly (not a file)
 
       if children.nonempty?   # If files exist underneath (children), proceed
@@ -367,10 +377,11 @@ class Repository
             txt.gsub!(/^/, '  |')
             txt.gsub!(/^  \|diff --git .+ b\//, '- ')
           end
-          return (add ? untracked : new_files).map{|i| "#{i}\n"}.join('') + txt
-
+          txt = (add ? untracked : new_files).map{|i| "#{i}\n"}.join('') + txt
+          return txt.empty? ? "- No changes!" : txt
         else
-          return (add ? untracked : new_files) + modified
+          txt = (add ? untracked : new_files) + modified
+          return txt.empty? ? "- No changes!" : txt
         end
       end
     end
@@ -398,12 +409,12 @@ class Repository
 
   def self.code_tree_commit
     bookmark = Keys.input(:timed => true, :prompt => "Repository diff in which dir? (enter bookmark): ")
-    CodeTree.display_menu("Repository.menu/\n  - project - $#{bookmark}/\n    - .commit \"message\", :diffs")
+    CodeTree.display_menu("- Repository.menu/\n  - project - $#{bookmark}/\n    - .commit \"message\", :diffs/")
   end
 
   def self.code_tree_add
     bookmark = Keys.input(:timed => true, :prompt => "Repository diff in which dir? (enter bookmark): ")
-    CodeTree.display_menu("Repository.menu/\n  - project - $#{bookmark}/\n    - .add :diffs")
+    CodeTree.display_menu("- Repository.menu/\n  - project - $#{bookmark}/\n    - .add :diffs/")
   end
 
   def self.svn_add dir, file
