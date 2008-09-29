@@ -12,6 +12,7 @@ class CodeTree
 
   # Mapped to C-.
   def self.launch options={}
+    TreeLs.extra_line_if_end_of_file
     TreeLs.plus_to_minus_maybe
     orig = Location.new
     Line.to_left
@@ -155,11 +156,14 @@ class CodeTree
 
   def self.insert_menus
     # Implement
-    insert "- CodeTree.menu/"
-    open_line 1
-    CodeTree.launch
+    self.insert_menu "- CodeTree.menu/"
   end
 
+  def self.insert_menu txt
+    View.insert txt
+    $el.open_line(1)
+    CodeTree.launch
+  end
 
   # Determine whether path is code_tree or tree_ls
   #   def self.is_code_tree_path list

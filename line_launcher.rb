@@ -32,10 +32,10 @@ class LineLauncher
     label = Line.label(line)
     paren = label[/\((.+)\)/, 1] if label
 
-    # Special hooks for specific files
-    return if self.file_hooks
+    # Special hooks for specific files and modes
+    return if self.file_and_mode_hooks
 
-    View.bar if Keys.prefix == 9   # Effects.blink
+    View.bar if Keys.prefix == 7
 
     if line =~ /^( *)- .+?: (.+)/   # Split label off, if there
       line = $1 + $2
@@ -268,10 +268,7 @@ class LineLauncher
     end
 
     self.add(/^ *$/) do |line|  # Empty line: open dir
-      #       Line.to_right
-      #       CodeTree.insert_menus
-      View.insert("- CodeTree.menu/")
-      LineLauncher.launch
+      CodeTree.insert_menu "- CodeTree.menu/"
     end
 
     self.add(/^ *\*/) do |line|  # *... buffer
@@ -313,7 +310,17 @@ class LineLauncher
     end
   end
 
-  def self.file_hooks
+  def self.file_and_mode_hooks
+    if View.mode == :dired_mode
+      filename = $el.dired_get_filename
+      # If dir, open tree
+      if File.directory?(filename)
+        TreeLs.ls :dir=>filename
+      else   # If file, do full file search?
+        History.open_current :all => true, :paths => [filename]
+      end
+      return true
+    end
     if View.name =~ /#{Ol.file_path}$/   # If in output log
       Ol.launch
       return true

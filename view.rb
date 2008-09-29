@@ -450,7 +450,7 @@ class View
   end
 
   def self.dir
-    elvar.default_directory
+    File.expand_path(elvar.default_directory)
   end
 
   def self.dir= to
@@ -458,7 +458,8 @@ class View
   end
 
   def self.file
-    buffer_file_name
+    file = buffer_file_name
+    file ? File.expand_path(file) : nil
   end
 
   def self.file_name
@@ -606,6 +607,10 @@ class View
 
   def self.beep
     $el.beep
+  end
+
+  def self.mode
+    $el.elvar.major_mode.to_s.gsub('-','_').to_sym
   end
 
 end

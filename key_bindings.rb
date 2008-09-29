@@ -7,19 +7,6 @@
   safari book firefox projects postgres
   ].each { |l| require l }
 
-# TODO
-# - Key to just pick file
-#   - Like tab, but doesn't open file
-# - Multiple windows in left bar
-#   - C-.: make tree open in 1st non-bar window
-#     - Based on size?
-# - Make search handle trees with multiple roots
-# - Make key to re-enable search for current tree
-# - Make shift search in dir paths
-# - Make difflog be a tree
-# - Make edited history be a tree
-# - Make search mode treate C-n and C-p as prev file and next file
-
 class KeyBindings
   extend ElMixin
 
@@ -368,8 +355,8 @@ class KeyBindings
     #  - narrow block to region:
   end
 
+  # Control keys during isearch
   def self.isearch
-    # Control keys during isearch
     Keys.A(:isearch_mode_map) { Search.isearch_query_replace }   # Alter
     # B: leave unmapped for back
     Keys.C(:isearch_mode_map) { Search.copy }   # Clipboard (copy)
@@ -429,34 +416,38 @@ class KeyBindings
 
   end
 
+  # Meta keys during isearch
   def self.isearch_meta
-    #Find shortcut for downcasing found
-    #Keys._?(:isearch_mode_map) { Search.downcase }   # Upcase
 
-    # Meta keys during isearch
     Keys._A(:isearch_mode_map) { Search.isearch_query_replace :start_with_search_string }   # Alter: query-replace, using search string as initial input
     #    Keys._A(:isearch_mode_map) { Search.isearch_tree_grep("$a") }   # All: find in $a bookmark
     #Keys._B(:isearch_mode_map) { Search.isearch_find_in_buffers }   # Outline (all buffers)
 
     Keys._C(:isearch_mode_map) { Search.copy_and_comment }   # Comment line and copy it to starting point
-    Keys._D(:isearch_mode_map) { Search.jump_to_difflog }   # Diff: find original string in difflog
+    Keys._D(:isearch_mode_map) { Search.downcase }   # Downcase
     Keys._E(:isearch_mode_map) { Search.insert_tree_at_spot }   # Enter
     Keys._F(:isearch_mode_map) { Search.isearch_open }   # Find file
     Keys._G(:isearch_mode_map) { Search.isearch_google }   # Google search
-    # H
-    #Keys._H(:isearch_mode_map) { Search.isearch_move_line }
-    #Keys._H(:isearch_mode_map) { Hide.show;  Search.hide }
+    Keys._H(:isearch_mode_map) { Search.isearch_move_line }
     Keys._I(:isearch_mode_map) { Search.insert_var_at_search_start }   # Interpolate: paste as interpolated variable
-    #Keys._K(:isearch_mode_map) { Search.isearch_move_line }
+    # J
+    # K
     Keys._L(:isearch_mode_map) { Search.isearch_log }
     Keys._M(:isearch_mode_map) { Search.isearch_tree_grep_method }   # Method: do tree grep (prompt for dir)
+    # N
     Keys._O(:isearch_mode_map) { Search.isearch_find_in_buffers(:current_only => true, :in_bar => true) }   # Outline: in side bar
+    # P
+    # Q
+    # R
     Keys._S(:isearch_mode_map) { Search.isearch_tree_grep }   # Search: do tree grep (prompt for dir)
+    Keys._T(:isearch_mode_map) { Search.jump_to_difflog }   # To: find original string in difflog
     Keys._U(:isearch_mode_map) { Search.upcase }   # Upcase
     Keys._V(:isearch_mode_map) { Search.isearch_find_in_buffers(:in_bar => true) }   # Visited: show matches in visited files
     #Keys._V(:isearch_mode_map) { Search.insert_var_at_search_start }
     Keys._W(:isearch_mode_map) { Search.isearch_select_inner }   # Within: select 1 char within match
-    Keys._H(:isearch_mode_map) { Search.isearch_move_line }
+    # X
+    # Y
+    # Z
 
     define_key :isearch_mode_map, kbd("M-1") do   # pull in 1 word
       $el.isearch_yank_char
@@ -491,30 +482,11 @@ class KeyBindings
     Keys.F { Move.forward }
     Keys.Q { Keys.timed_insert }
     Keys.set("C-.") { LineLauncher.launch }
-    #Keys.set("C-d C-.") { LineLauncher.launch }
-    #Keys.set("C-.") { LineLauncher.launch nil, :just_show }
-    #Keys.set("C-,") { control_lock_enable }
-
-    #- search and replace: ?1 with ?2
-    #  - execute: block as ruby
-    #  - execute: paragraph as ruby
-
-    # Misc Todo
-    # - Move multiple lines of code out of this file and into appropriate lib classes
-    # - Blinking, etc
-    # - Is this necessary to avoid dired C-o conflict?
-    #     (require 'dired)
-    #     (define-key dired-mode-map (kbd2 "O") nil)
-
-    # Misc Configuration
-    #Search.isearch_n
-    #    Notes.keys
 
     if locate_library "ruby-mode"
       el_require :ruby_mode
       define_key :ruby_mode_map, kbd("C-\\") do
         Hide.show
-        #Hide.hide_unless /^ *(def|module) /
         Hide.hide_unless /^ *(def|class|module|create_table|it|describe) /
         recenter -2
         Hide.search
@@ -525,10 +497,6 @@ class KeyBindings
     # Keys for specific modes
     define_key :java_mode_map, kbd("C-d"), nil
     ControlTab.keys
-
-    #LineLauncher.init_default_launchers
-
-    #Keys.TT {insert "xyz"}
 
     Keys.set("C-e C-\\") {
       txt, left, right = Clipboard.copy_paragraph(:just_return => true)

@@ -83,7 +83,7 @@ class Shell
   end
 
   def self.shell?
-    elvar.major_mode.to_s == "shell-mode"
+    View.mode == :shell_mode
   end
 
   def self.do_last_command
@@ -96,7 +96,7 @@ class Shell
   def self.launch options={}
     line = Line.without_label
     # If indented, check whether code tree, extracting if yes
-    if line =~ /^\s+!/
+    if Line.value =~ /^\s+!/
       orig = View.cursor
       # - of previous line
       path = TreeLs.construct_path(:list => true)

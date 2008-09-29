@@ -62,7 +62,14 @@ class Repository
   def self.menu project=nil
     # If no project, show all projects
     if project.nil?
-      return Projects.listing.map{|k, v| "+ #{k} - #{v}/"}.sort
+      result = []
+
+      # Add current dir, if repos
+      current_dir_repos = self.git_path
+      result << "+ current dir - #{current_dir_repos}/" if current_dir_repos
+      result += (Projects.listing.map{|k, v| "+ #{k} - #{v}/"}.sort)
+
+      return result
     end
 
     # If project, show options
@@ -73,13 +80,14 @@ class Repository
       + .commit "message"/
       + .commit "message", :diffs/
       + .push
+      + .log ""/
       + .status/
       + .status_tree/
-      + .log ""/
       ].strip.gsub(/^      /, '')
   end
 
-  def self.log search, dir, rev=nil, file=nil
+  def self.log search, project, rev=nil, file=nil
+    dir = self.extract_dir project
 
     if rev.nil?   # If no rev, list all revs
       search = "-S'#{search}'" unless search.empty?
@@ -221,8 +229,8 @@ class Repository
     dir = Shell.run("git rev-parse --git-dir", :sync=>true,
       :dir=>dir
       ).sub(".git\n", '')
-
-    dir.any? ? dir : nil
+    dir = View.dir if dir == ""
+    dir
   end
 
   def self.determine_dir dir

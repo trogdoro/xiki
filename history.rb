@@ -9,7 +9,9 @@ class History
   end
 
   def self.open_current options={}
-    if options[:prompt_for_bookmark]
+    if options[:paths]
+      paths = options[:paths]
+    elsif options[:prompt_for_bookmark]
       bm = Keys.input(:timed => true, :prompt => "Enter bookmark to show outline for: ")
       path = Bookmarks.expand(bm, :just_bookmark => true)
         #Files.directory? Bookmarks.expand("h", :just_bookmark => true)

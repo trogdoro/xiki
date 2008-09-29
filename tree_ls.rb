@@ -41,6 +41,9 @@ class TreeLs
 
   >
 
+  # TODO
+  # - Make search handle trees with multiple roots
+
   # Call this method from your init.rb to use the default key shortcuts.
   def self.keys
     Keys.XT { TreeLs.ls }
@@ -380,10 +383,14 @@ class TreeLs
       if search_string  # If quote, enter lines under
         self.enter_under
       else  # If file, enter all lines
-        self.enter_lines(//)
+        self.enter_lines //
       end
       return
-    when 1
+    when 9
+      Keys.clear_prefix
+      self.enter_lines
+      return
+
       # Implement: grab code after delete runs
       #     when 9
       #       return self.drill
@@ -577,7 +584,7 @@ class TreeLs
       self.to_parent
       self.kill_under
 
-    when ";"   # Show methods, or outline
+    when "9", ";"   # Show methods, or outline
       delete_region(Line.left(2), right)   # Delete other files
       self.enter_lines
 
@@ -603,14 +610,17 @@ class TreeLs
         delete_region(Line.left(2), right)
         self.enter_lines(//)  # Insert all lines
       end
-    when "9"   # Open in bar
-      delete_region(Line.left(2), right)  # Delete other files
-      View.bar
-      Keys.clear_prefix
-      # Expand or open
-      self.launch
-
     when "1".."7"
+
+      if ch == "7" and ! View.bar?   # Open in bar
+        delete_region(Line.left(2), right)  # Delete other files
+        View.bar
+        Keys.clear_prefix
+        # Expand or open
+        self.launch
+        return
+      end
+
       Keys.clear_prefix
       n = ch.to_i
 
@@ -883,7 +893,7 @@ class TreeLs
 
     self.plus_to_minus_maybe
     beginning_of_line
-    Dir.chdir elvar.default_directory
+    Dir.chdir File.expand_path(elvar.default_directory)
     if Keys.prefix == 8
       self.dir_recursive
     else
@@ -1501,6 +1511,15 @@ class TreeLs
     dir = TreeLs.construct_path
     dir = View.file unless dir =~ /^\//
     Clipboard["0"] = dir
+  end
+
+  # Adds extra line if we're at the end of the file.
+  # If there's no linebreak, it causes weird errors.
+  def self.extra_line_if_end_of_file
+    if Line.right == View.bottom
+      Line.to_right
+      $el.open_line(1)
+    end
   end
 
 private
