@@ -478,6 +478,8 @@ class KeyBindings
     Keys.set("C-S-e") { Clipboard.paste("0") }
 
     # Single character definitions
+    Keys.N { Line.next }
+    Keys.P { Move.previous }
     Keys.B { Move.backward }
     Keys.F { Move.forward }
     Keys.Q { Keys.timed_insert }

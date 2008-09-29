@@ -397,7 +397,7 @@ class TreeLs
     end
 
     # If numeric prefix, jump to nth window
-    if (! ignore_prefix) and Keys.prefix and Keys.prefix != 9
+    if (! ignore_prefix) and Keys.prefix and Keys.prefix != 7
 
       # If number larger than number of windows, open new one first
       if Keys.prefix > View.list.size
@@ -675,7 +675,31 @@ class TreeLs
     when "\C-s"
       isearch_forward
 
+    when "\C-r"
+      isearch_backward
+
     when "/"   # If slash, append selected dir to parent dir
+
+      # If CodeTree search
+      if ! TreeLs.is_tree_ls_path
+        # Kill others
+        View.delete(Line.left(2), right)
+
+        if Line.without_label =~ /^[ +-]*\./   # If just a method
+          # Back up to first . on last line
+          Search.forward "\\."
+          right = View.cursor
+          Move.previous
+          Search.forward "\\."
+        else   # Else, just delete previous line
+          right = View.cursor
+          Line.previous
+          Move.to_line_text_beginning
+        end
+        View.delete(View.cursor, right)
+        LineLauncher.launch
+        return
+      end
 
       # If line is a dir, do tree-like tab
       if Line.value =~ /\/$/
@@ -712,7 +736,6 @@ class TreeLs
       command_execute ch
     end
     @@search_going_or_interrupted = false
-
 
   end
 
