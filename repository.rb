@@ -131,11 +131,10 @@ class Repository
   end
 
   def self.git_diff_one_file
-    # Get root of repos
-    repos = self.git_path
-    # Split off root from relative path
-    relative = View.file.sub(/^#{repos}/, '')
-    # Insert codetree
+    repos = self.git_path   # Get root of repos
+    relative = View.file.sub(/^#{repos}/, '')   # Split off root from relative path
+
+    relative.sub! /^\//, ''   # Insert codetree
 
     CodeTree.display_menu(
       "Repository.menu/\n  - project - #{repos}\n    - .add/\n      - #{relative}"

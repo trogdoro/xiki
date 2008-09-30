@@ -129,7 +129,7 @@ class Move
     (Keys.prefix_times-1).times do
       Move.next
     end
-    beginning_of_line
+    Line.to_left
     skip_chars_forward "[^ \t]"
   end
 
@@ -167,6 +167,7 @@ class Move
   end
 
   def self.forward count=nil
+
     count ||= Keys.prefix :clear => true
     count ||= 1
     case count
@@ -206,12 +207,16 @@ class Move
     end
   end
 
+  # Moves down, probably keeping column the same
   def self.next times=nil
-    Line.next times
+    times ||= Keys.prefix
+    $el.next_line times
   end
 
+  # Moves up, probably keeping column the same
   def self.previous times=nil
-    Line.previous times
+    times ||= Keys.prefix
+    $el.previous_line times
   end
 
 end

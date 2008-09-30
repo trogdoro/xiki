@@ -105,18 +105,22 @@ class Line
     symbol
   end
 
+  # Moves down, going to first column
   def self.to_next times=nil
     self.next times
   end
 
+  # Moves up, going to first column
   def self.to_previous times=nil
     self.previous times
   end
 
+  # Moves down, going to first column
   def self.next times=nil
     forward_line times
   end
 
+  # Moves up, going to first column
   def self.previous times=nil
     times = times ?
       -times :
@@ -126,12 +130,10 @@ class Line
 
   def self.beginning
     forward_line 0
-    #beginning_of_line
   end
 
   class << self
     alias :start :beginning
-    #alias :to_left :beginning
   end
 
   def self.to_left

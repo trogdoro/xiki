@@ -689,7 +689,7 @@ class TreeLs
           # Back up to first . on last line
           Search.forward "\\."
           right = View.cursor
-          Move.previous
+          Line.previous
           Search.forward "\\."
         else   # Else, just delete previous line
           right = View.cursor
