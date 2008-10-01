@@ -267,6 +267,7 @@ class KeyBindings
     # Unmap C-d in shell-mode
     el4r_lisp_eval("(require 'shell)")
     define_key :shell_mode_map, kbd("C-d"), nil
+    define_key :dired_mode_map, kbd("C-o"), nil
     #define_key :java_mode_map, kbd("C-d"), nil
   end
 
