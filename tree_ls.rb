@@ -1495,7 +1495,9 @@ class TreeLs
   end
 
   def self.matches_root_pattern? path
-    Line.without_label(path) =~ /^ *[-+]? ?(\/|~\/|\.\/|\$.+\/$)/
+    without_label = Line.without_label(path)
+    without_label =~ /^ *[-+]? ?\/[^\n,]*$/ ||
+    without_label =~ /^ *[-+]? ?(~\/|\.\/|\$.+\/$)/
   end
 
   def self.create_dir
@@ -1689,7 +1691,7 @@ private
   # Returns whether line is a dir (ends with "/")
   def self.dir? txt=nil
     txt ||= Line.value
-    txt =~ /^[^|\n]+\/$/
+    txt =~ /^[^,|\n]*\/$/
   end
 
 end

@@ -27,9 +27,6 @@ class View
 
     # Misc
     - wrap lines: View.wrap
-
-    # Default settings - Call this at startup to set some sensible view-related default behavior
-    View.sensible_defaults
   >
 
   # Stores things user copies

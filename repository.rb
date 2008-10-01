@@ -68,21 +68,21 @@ class Repository
       current_dir_repos = self.git_path
       result << "+ current dir - #{current_dir_repos}/" if current_dir_repos
       result += (Projects.listing.map{|k, v| "+ #{k} - #{v}/"}.sort)
-
       return result
     end
 
     # If project, show options
-
     puts %Q[
-      + .add/
-      + .add :diffs/
-      + .commit "message"/
-      + .commit "message", :diffs/
+      + .diff_unadded/
+      + .diff_unadded :expand/
+      + .diff/
+      + .diff :expand/
       + .push
       + .log ""/
       + .status/
       + .status_tree/
+      - .initialize
+      - .files/
       ].strip.gsub(/^      /, '')
   end
 
@@ -310,91 +310,103 @@ class Repository
 
   end
 
-  def self.add *args
-    diffs = args.shift if args.first.is_a? Symbol   # Pull out :diffs if 1st arg
+  def self.diff_unadded *args
+    expand = args.shift if args.first.is_a? Symbol   # Pull out :expand if 1st arg
     project, file, line = args
     dir = self.extract_dir project
-    children = CodeTree.children || []
-    children = children.select {|c| c !~ /^ *\|/}   # Remove any |... lines
 
     if self.git?(dir)
-      self.git_add(diffs, dir, file, line, children)
+      self.git_diff_unadded(expand, dir, file, line)
     else
-      self.svn_add(dir, file)
+      self.svn_diff_unadded(dir, file)
     end
   end
 
-  def self.git_add diffs, dir, file, line, children
-    self.git_commit_or_add nil, diffs, dir, file, line, children
+
+  def self.git_diff_unadded expand, dir, file, line
+    self.git_diff_or_diff_unadded true, expand, dir, file, line
   end
 
-  def self.commit *args
+  def self.diff *args
     # Parse args
-    message = args.shift
-    diffs = args.shift if args.first.is_a? Symbol   # Pull out :diffs if 2nd arg
+    expand = args.shift if args.first.is_a? Symbol   # Pull out :expand if 2nd arg
     project, file, line = args
     dir = self.extract_dir project
     children = CodeTree.children || []
 
-    if !file and children.nonempty?  # If on .commit and children to commit
-      # Error if commit message unchanged
-      return "- Error: You must change \"message\" to be your commit message." if message == "message"
-      children = children.select {|c| c !~ /^ *\|/}   # Remove any |... lines
-    end
-
     if self.git?(dir)
-      self.git_commit(message, diffs, dir, file, line, children)
+      self.git_diff expand, dir, file, line
     else
-      self.svn_commit(message, diffs, dir, file, line, children)
+      self.svn_diff expand, dir, file, line
     end
   end
 
-  def self.git_commit message, diffs, dir, file, line, children
+  def self.git_diff expand, dir, file, line
 
-    self.git_commit_or_add message, diffs, dir, file, line, children
+    self.git_diff_or_diff_unadded false, expand, dir, file, line
 
   end
 
-  def self.git_commit_or_add message, diffs, dir, file, line, children
-    add = message.nil?   # No message signifys an add
-    if file.nil?   # If launching .commit/.add directly (not a file)
+  def self.git_diff_or_diff_unadded is_unadded, expand, dir, file, line
+    if file.nil?   # If launching .diff/.diff_unadded directly (not a file)
 
-      if children.nonempty?   # If files exist underneath (children), proceed
-        children = children.map{|c| Line.without_label(c)}.join(" ")
-        command = add ?
-          "git add #{children}" :
-          "git commit -m \"#{message}\" #{children}"
-        Shell.run(command, :dir=>dir)
-        return
-      else   # If no files underneath, show modified files
-        txt = Shell.run "git status", :dir=>dir, :sync=>true
-        new_files = txt.scan(/\tnew file: +(.+)$/).map{|i| "- new: #{i}"}
-        untracked = txt.scan(/\t([^:\n]+$)/).map{|i| "- untracked: #{i}"}
-        modified = add ?
-          Shell.run("git ls-files --modified", :dir=>dir, :sync=>true).split("\n").map{|i| "+ #{i}"} :
-          txt.scan(/\tmodified: +(.+$)/).map{|i| "+ #{i}"}.uniq
+      txt = Shell.run "git status", :dir=>dir, :sync=>true
+      new_files = txt.scan(/\tnew file: +(.+)$/).map{|a| a.first}
+      untracked = txt.scan(/\t([^:\n]+$)/).map{|a| a.first}
+      modified = txt.scan(/\tmodified: +(.+$)/).map{|a| a.first}.uniq
 
-        if diffs
-          txt = add ?
-            Shell.run('git diff -U2 -w', :sync => true, :dir => dir) :
-            Shell.run('git diff -U2 -w HEAD', :sync => true, :dir => dir)
+      if is_unadded   # If diffing with repos add 'new' label to new files
+        untracked.map!{|i| "- untracked: #{i}"}
+      else
+        untracked.map!{|i| "- untracked (ignore): #{i}"}
+      end
+
+      option = is_unadded ? "- action: .add\n" : "- action: .commit \"message\"\n"
+
+      if expand
+        txt = is_unadded ?
+          Shell.run('git diff -U2 -w', :sync => true, :dir => dir) :
+          Shell.run('git diff -U2 -w HEAD', :sync => true, :dir => dir)
+
+        if txt =~ /^fatal: ambiguous argument 'HEAD': unknown revision/
+          txt = "- Warning: Couldn't diff because no revisions exist yet in repository\n" +
+            "  - Try using: - .diff/ (without :expand)"
+        else
           unless txt.empty?
             self.clean! txt
             txt.gsub!(/^-/, '~')
             txt.gsub!(/^/, '  |')
             txt.gsub!(/^  \|diff --git .+ b\//, '- ')
           end
-          txt = (add ? untracked : new_files).map{|i| "#{i}\n"}.join('') + txt
-          return txt.empty? ? "- No changes!" : txt
+        end
+        untracked.map!{|i| "#{i}\n"}
+        txt = txt + untracked.join('')
+      else
+        modified -= new_files if ! is_unadded   # If diffing with repos remove dups
+        txt = nil
+        if is_unadded
+          txt = modified.map{|i| "+ #{i}"}
         else
-          txt = (add ? untracked : new_files) + modified
-          return txt.empty? ? "- No changes!" : txt
+          txt = (modified + new_files).sort.map{|i| "+ #{i}"}
+        end
+        txt = (txt + untracked).join("\n")
+      end
+
+      if ! is_unadded   # If diffing with repos add 'new' label to new files
+        new_files.each do |i|
+          txt.sub! /^([+-]) #{i}$/, "\\1 new: #{i}"
         end
       end
+      return option + txt
     end
 
     if line.nil?   # If no line passed, re-do diff for 1 file
-      txt = add ?
+      # If untracked, show whole file
+      if Line.label =~ /^untracked/
+        return "|@@ +1\n" + IO.read(Bookmarks.expand("#{dir}/#{file}")).gsub(/^/, '|+')
+      end
+
+      txt = is_unadded ?
         Shell.run("git diff -U2 -w #{file}", :sync => true, :dir => dir) :
         Shell.run("git diff -U2 -w HEAD #{file}", :sync => true, :dir => dir)
       self.clean! txt
@@ -403,9 +415,10 @@ class Repository
       txt.gsub!(/^/, '|')
       return puts(txt)
     end
-    self.jump_to_file_in_tree dir   # If line passed, jump to it
-    nil
 
+    # If line passed, jump to it
+    self.jump_to_file_in_tree dir
+    nil
   end
 
   def self.push project
@@ -414,17 +427,17 @@ class Repository
     nil
   end
 
-  def self.code_tree_commit
+  def self.code_tree_diff
     bookmark = Keys.input(:timed => true, :prompt => "Repository diff in which dir? (enter bookmark): ")
-    CodeTree.display_menu("- Repository.menu/\n  - project - $#{bookmark}/\n    - .commit \"message\", :diffs/")
+    CodeTree.display_menu("- Repository.menu/\n  - project - $#{bookmark}/\n    - .diff, :expand/")
   end
 
-  def self.code_tree_add
+  def self.code_tree_diff_unadded
     bookmark = Keys.input(:timed => true, :prompt => "Repository diff in which dir? (enter bookmark): ")
-    CodeTree.display_menu("- Repository.menu/\n  - project - $#{bookmark}/\n    - .add :diffs/")
+    CodeTree.display_menu("- Repository.menu/\n  - project - $#{bookmark}/\n    - .diff_unadded :expand/")
   end
 
-  def self.svn_add dir, file
+  def self.svn_diff_unadded dir, file
     children = CodeTree.children || []
 
     if file   # If file passed, just open it
@@ -445,35 +458,28 @@ class Repository
 
   end
 
-  def self.svn_commit message, diffs, dir, file, line, children
+  def self.svn_diff expand, dir, file, line, children
 
     if file.nil?   # If launching .commit directly (no file)
-      if children.nonempty?   # Files are underneath (children)
-        children = children.map{|c| c.sub(/^ +[+-] /, '')}.join(" ")
-        command = "svn commit -m \"#{message}\" #{children}"
-        Shell.run(command, :dir=>dir)
-        return
-      else   # If no files underneath, show modified files
-        if diffs
 
-          txt = Shell.run("svn diff #{file}", :sync => true, :dir => dir)
+      if expand
+        txt = Shell.run("svn diff #{file}", :sync => true, :dir => dir)
 
-          txt.gsub!(/^===+\n/, '')
-          txt.gsub!(/^--- .+\n/, '')
-          txt.gsub!(/^\+\+\+ .+\n/, '')
-          txt.gsub!(/^-/, '~')
-          txt.gsub!(/^/, '  |')
-          txt.gsub!(/^  \|Index: /, '- ')
-          return txt
+        txt.gsub!(/^===+\n/, '')
+        txt.gsub!(/^--- .+\n/, '')
+        txt.gsub!(/^\+\+\+ .+\n/, '')
+        txt.gsub!(/^-/, '~')
+        txt.gsub!(/^/, '  |')
+        txt.gsub!(/^  \|Index: /, '- ')
+        return txt
 
-        else
-          txt = Shell.run "svn status", :dir=>dir, :sync=>true
+      else
+        txt = Shell.run "svn status", :dir=>dir, :sync=>true
 
-          modified = txt.scan(/^M +(.+)/).map{|i| i.first}
-          new_files = txt.scan(/^A +(.+)/).map{|i| "new: " + i.first}
+        modified = txt.scan(/^M +(.+)/).map{|i| i.first}
+        new_files = txt.scan(/^A +(.+)/).map{|i| "new: " + i.first}
 
-          return new_files + modified
-        end
+        return new_files + modified
       end
     end
 
@@ -495,6 +501,54 @@ class Repository
 
   end
 
+  def self.add project
+    dir = self.extract_dir project
+
+    siblings = CodeTree.siblings
+    # Error if no siblings
+    unless siblings.any?
+      return "- No files to add (they should be siblings of .add)!"
+    end
+
+    if self.git?(dir)
+      Shell.run("git add #{siblings.join(' ')}", :dir=>dir)
+    else
+      Shell.run("svn add #{siblings.join(' ')}", :dir=>dir)
+    end
+  end
+
+  def self.commit message, project
+    dir = self.extract_dir project
+
+    siblings = CodeTree.siblings :include_label=>true
+    # Remove untracked
+    siblings = siblings.select{|i| i !~ /^. untracked/}.map{|i| Line.without_label i}
+
+    if message == 'message'   # Error if no siblings
+      return "- Error: You must change 'message' to be your commit message." if message == "message"
+    end
+    unless siblings.any?
+      return "- Error: No files to commit (they should be siblings of .commit)!"
+    end
+
+    if self.git?(dir)
+      Shell.run("git commit -m \"#{message}\" #{siblings.join(' ')}", :dir=>dir)
+    else
+      Shell.run("svn ci -m \"#{message}\" #{siblings.join(' ')}", :dir=>dir)
+    end
+  end
+
+  def self.initialize project
+    dir = self.extract_dir project
+    # Create dir if not there
+    Dir.mkdir(dir) if not File.directory?(dir)
+    Shell.run("git init", :dir => dir)
+    nil
+  end
+
+  def self.files project
+    "- #{self.extract_dir(project)}/"
+  end
+
 end
 Repository.styles_define
-

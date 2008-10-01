@@ -238,14 +238,14 @@ class KeyBindings
     Keys.do_name_files { wdired_change_to_wdired_mode }
     Keys.do_next_paragraph { Code.do_next_paragraph }   # Move line to start of next paragraph
     Keys.do_outline { History.open_current :outline => true, :prompt_for_bookmark => true }
-    Keys.do_push { Repository.code_tree_commit }   # Commit to repos, push, etc
+    Keys.do_push { Repository.code_tree_diff }   # Commit to repos, push, etc
     Keys.do_query { Search.query_replace }   # do query replace *
     Keys.do_ruby { Code.run }   # run code as ruby *
     Keys.do_search { Search.tree_grep }   # do grep search *
     #    Keys.DS { elvar.current_prefix_arg ? johns_thing : Search.grep }   # Do Search: do grep search
     Keys.do_tree { TreeLs.tree(:recursive=>true) }   # draw filesystem tree for current dir or bookmark
     Keys.do_under { TreeLs.kill_under }   # kill tree children (lines indented more)
-    Keys.do_version { Repository.code_tree_add }   # kill tree children (lines indented more)
+    Keys.do_version { Repository.code_tree_diff_unadded }   # kill tree children (lines indented more)
     #Keys.display_up { message TreeLs.construct_path( :indented => true ) }   # display path to root of file
     # V
     Keys.do_whitespace { Deletes.delete_whitespace }   # delete blank lines
@@ -474,8 +474,8 @@ class KeyBindings
     Keys.set("C-S-e") { Clipboard.paste("0") }
 
     # Single character definitions
-    Keys.N { Move.next }
-    Keys.P { Move.previous }
+    #     Keys.N { Move.next }
+    #     Keys.P { Move.previous }
     Keys.B { Move.backward }
     Keys.F { Move.forward }
     Keys.Q { Keys.timed_insert }

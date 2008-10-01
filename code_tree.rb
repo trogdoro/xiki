@@ -72,7 +72,7 @@ class CodeTree
       # Go back to where we were before running code
       orig.go
       indent = Line.indent
-      Line.start
+      Line.to_left
       Line.next
       left = point
 
@@ -281,7 +281,7 @@ class CodeTree
     l
   end
 
-  def self.siblings
+  def self.siblings options={}
     orig = point
     orig_line = Line.number
     indent = Line.indent.size  # Get indent
@@ -291,7 +291,9 @@ class CodeTree
     while(Line.next == 0)
       break if Line.indent.size < indent  # Finished if indented less
       next unless Line.indent.size == indent  # Ignore if indented more
-      siblings << Line.without_label unless Line.number == orig_line
+      unless Line.number == orig_line
+        siblings << (options[:include_label] ? Line.without_indent : Line.without_label)
+      end
     end
     goto_char orig
     # Go forward until blank line or indent is same or less
