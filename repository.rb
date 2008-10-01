@@ -6,41 +6,10 @@ class Repository
     - Show options: Repository.menu
   >
 
-  def self.svn_command command, dir=nil
-    dir ||= View.dir
-    #dir ||= "tr"
-    switch_to_buffer generate_new_buffer("*repository command")
-    elvar.default_directory = Bookmarks.expand(dir)
-    shell current_buffer
-    #cm_universal_diff_format
-    self.styles
-    self.local_keys
-    #difflog_highlight
-    insert command
-    Shell.enter
-  end
-
   def self.svn?
     File.exists?("#{View.dir}.svn")
   end
 
-  def self.diff_dir
-
-    # if .svn dir found
-    if self.svn?
-      self.svn_command("echo; svn status; svn diff -x -w")
-    else
-      options = Keys.prefix_u? ? "$tr" : View.dir
-      self.svn_command("git status; git diff -w . ", options)
-    end
-
-  end
-
-
-  # Requires that this line be set somewhere:
-  #   Repository.url = "http://svn.foo.com/svn/repos/foo"
-  #     - Note that the above path should be to the dir containing
-  #       trunk/, tags/, and branches/
   def self.tag to, from=nil
     unless Repository.url
       puts "Error: Repository.url isn't set!"
@@ -142,42 +111,10 @@ class Repository
 
   end
 
-  def self.local_keys
-    Keys.CN(:cm_diff_map) do
-      Line.to_right
-      re_search_forward "^index:? "
-      Line.to_left
-      recenter 0
-    end
-    Keys.CP(:cm_diff_map) do
-      Line.to_left
-      re_search_backward "^index:? "
-      recenter 0
-    end
-
-    Keys._M(:cm_diff_map) { Repository.jump_to_file }
-  end
-
-  def self.jump_to_file
-    orig = View.cursor
-    Search.backward "^@@"
-    inbetween = View.txt orig, View.cursor
-    inbetween.gsub!(/^-.+\n/, '')
-    inbetween = inbetween.split(/\n/).size
-    line = Line.value[/\+(\d+)/, 1]
-    Search.backward "^\\+\\+\\+"
-    file = Line.value[/^\+\+\+ (.+)/, 1]
-    file.sub!(/\t.+/, '')  # svn
-    file.sub!(/^[ab]\//, '')  # git
-    goto_char orig
-    View.open(file)
-    View.to_line(line.to_i + (inbetween - 1))
-    Color.colorize :o
-  end
-
   def self.jump_to_file_in_tree dir
     orig = View.cursor
-    Search.backward "^ +\|@@"
+    Search.backward "^ +\|@@" unless Line.matches(/^ +\|@@/)
+
     inbetween = View.txt(orig, View.cursor)
     inbetween.gsub!(/^ +\|~.*\n/, '')
     inbetween = inbetween.count("\n")
