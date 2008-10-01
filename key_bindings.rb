@@ -366,7 +366,7 @@ class KeyBindings
     Keys.F(:isearch_mode_map) { Search.go_to_end }   # Forward
     Keys.G(:isearch_mode_map) { Search.stop }   # Stop searching
 
-    Keys.H(:isearch_mode_map) { Search.move_to_search_start }   # Have
+    Keys.H(:isearch_mode_map) { Search.insert_at_search_start }   # Here
 
     # I: leave unmapped - had issues using it
     # J: leave unmapped for linebreak
@@ -380,7 +380,7 @@ class KeyBindings
     # R: leave unmapped for reverse
     # S: leave unmapped for search
     Keys.T(:isearch_mode_map) { Search.isearch_open_last_edited }   # To: open file / jump to method
-    Keys.U(:isearch_mode_map) { Search.insert_at_search_start }   # Use
+    Keys.U(:isearch_mode_map) { Search.move_to_search_start }   # Usurp: move back to search start
     Keys.V(:isearch_mode_map) { Search.isearch_find_in_buffers }   # Visited: show matches in visited files
     # W: leave unmapped for pulling into search
     Keys.X(:isearch_mode_map) { Search.isearch_pull_in_sexp }   # eXtract: like C-w, but pulls in sexp
