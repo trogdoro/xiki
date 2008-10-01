@@ -1120,6 +1120,7 @@ class TreeLs
       end
       self.add_pluses_and_minses t, '-', '-'
       Line.next
+      Line.to_left
       View.insert "#{t}\n".gsub(/^/, "#{indent}  ")
       return
     end

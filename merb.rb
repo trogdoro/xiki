@@ -6,7 +6,8 @@ class Merb
   def self.menu name=nil, port=nil
     unless name  # Print menu
       puts "
-        + name, port: ., 4000
+        + current dir: ., 4000
+        + dir: /tmp/foo, 4000
         + .links/
         - .snippets
         + .models/
@@ -20,7 +21,7 @@ class Merb
         + .generate/
         + .rake/
         + .db/
-        + .dirs/
+        + .files/
         "
     end
   end
@@ -32,8 +33,8 @@ class Merb
       "
   end
 
-  def self.dirs dir, port=nil
-    puts self.path_from_dir(dir) + "/"
+  def self.files dir, port=nil
+    puts "- #{self.path_from_dir(dir)}/"
   end
 
   def self.generate dir, port=nil

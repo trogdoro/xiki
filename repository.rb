@@ -87,16 +87,11 @@ class Repository
   end
 
   def self.diff_one_file
-    if Keys.prefix_u?  # If C-u
-      cm_compare_one_svn_file
-      return
-    end
-
-    if self.svn?
-      cm_subversion_command("echo; svn diff -x -w #{file_name_nondirectory(buffer_file_name)}")
-    else
-      self.git_diff_one_file
-    end
+    #     if self.svn?
+    #       cm_subversion_command("echo; svn diff -x -w #{file_name_nondirectory(buffer_file_name)}")
+    #     else
+    self.git_diff_one_file
+    #     end
   end
 
   def self.git_diff_one_file
@@ -106,7 +101,7 @@ class Repository
     relative.sub! /^\//, ''   # Insert codetree
 
     CodeTree.display_menu(
-      "Repository.menu/\n  - project - #{repos}\n    - .add/\n      - #{relative}"
+      "Repository.menu/\n  - project - #{repos}\n    - .diff/\n      - #{relative}"
       )
 
   end

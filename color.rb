@@ -35,7 +35,7 @@ class Color
       return
     when "d"
       return delete_overlay( overlays_at(next_overlay_change(point_at_bol - 1))[0] )
-    when "x"
+    when "k"
       return remove_overlays
     end
 

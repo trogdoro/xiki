@@ -252,9 +252,9 @@ class CodeTree
     # If any data nodes, pass as params
     if ! data.empty?
       data.each{|s| s.gsub!("\\", "\\\\\\\\") }
-      data.each{|s| s.gsub!("'", "\\\\'") }
+      #data.each{|s| s.gsub!("'", "\\\\'") }
       data.reverse!
-      data.map! {|a| "'#{a}'"}
+      data.map! {|a| "\"#{a}\""}
       params << ", " + data.join(", ")
     end
     # TODO Get rid of comma if there is one
@@ -277,7 +277,7 @@ class CodeTree
 
   def self.paramify l
     l = Line.without_label(l)
-    l.gsub!(', ', "', '") unless l =~ /^\|/
+    l.gsub!(', ', '", "') unless l =~ /^\|/
     l
   end
 
