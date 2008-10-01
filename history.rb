@@ -190,5 +190,20 @@ class History
     >
   end
 
+  def self.backup_file
+    bm = Bookmarks['$bak']
+    unless bm.any?   # If no bookmark, just show error
+      View.beep
+      return "Error: create a bookmark named 'bak' first, in a dir where you backups will go."
+    end
+
+    # Copy file
+    $el.copy_file View.file, "#{bm}#{View.file_name} #{Time.now.strftime('%Y-%m-%d %H-%M')}"
+  end
+
+  def self.diff_with_backup
+    $el.ediff_files Dir["#{Bookmarks['$bak']}#{View.file_name}*"].last, View.file
+  end
+
 end
 History.setup_editedhistory

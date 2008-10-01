@@ -54,7 +54,7 @@ class KeyBindings
     Keys.as_spot { Location.as_spot }   # remember point in file *
     Keys.as_thing { Clipboard.as_thing }  # copy sexp at point
     #Keys.as_update_remote { TreeLs.save_remote }
-    Keys.as_version { cm_backup_file }   # creates backup
+    Keys.as_version { History.backup_file }   # creates backup
     Keys.as_windows { View.save }   # remember window configuration as tag
     Keys.as_x { Clipboard.cut("0") }   # cut) **
     # Y
@@ -191,7 +191,7 @@ class KeyBindings
     Keys.do_create_directory { TreeLs.create_dir }
     Keys.do_compare_file { Repository.diff_one_file }   # compare current file with subversion
     Keys.do_code_indent { Code.indent }
-    Keys.do_compare_last { cm_diff_with_backup }   # compare with last AV version
+    Keys.do_compare_last { History.diff_with_backup }   # compare with last AV version
     Keys.do_count_matches {  View.count_matches }
     Keys.do_copy_next { Files.copy }   # copy file to next view
     Keys.do_compare_one { Repository.diff }   # compare one revision with previous revision
