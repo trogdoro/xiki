@@ -264,11 +264,6 @@ class KeyBindings
     Keys.D1 { delete_char 1 };  Keys.D2 { delete_char 2 };  Keys.D3 { delete_char 3 };  Keys.D4 { delete_char 4 }
     Keys.D5 { delete_char 5 };  Keys.D6 { delete_char 6 };  Keys.D7 { delete_char 7 };  Keys.D8 { delete_char 7 };
 
-    # Unmap C-d in shell-mode
-    el4r_lisp_eval("(require 'shell)")
-    define_key :shell_mode_map, kbd("C-d"), nil
-    define_key :dired_mode_map, kbd("C-o"), nil
-    #define_key :java_mode_map, kbd("C-d"), nil
   end
 
   def self.t_keys
@@ -366,7 +361,7 @@ class KeyBindings
     Keys.F(:isearch_mode_map) { Search.go_to_end }   # Forward
     Keys.G(:isearch_mode_map) { Search.stop }   # Stop searching
 
-    Keys.H(:isearch_mode_map) { Search.insert_at_search_start }   # Here
+    Keys.H(:isearch_mode_map) { Search.isearch_pull_in_sexp }   # Have: pull sexp into search string
 
     # I: leave unmapped - had issues using it
     # J: leave unmapped for linebreak
@@ -380,10 +375,10 @@ class KeyBindings
     # R: leave unmapped for reverse
     # S: leave unmapped for search
     Keys.T(:isearch_mode_map) { Search.isearch_open_last_edited }   # To: open file / jump to method
-    Keys.U(:isearch_mode_map) { Search.move_to_search_start }   # Usurp: move back to search start
-    Keys.V(:isearch_mode_map) { Search.isearch_find_in_buffers }   # Visited: show matches in visited files
+    Keys.U(:isearch_mode_map) { Search.isearch_find_in_buffers }   # Uncover: show results for search string in all open files
+    Keys.V(:isearch_mode_map) { Search.insert_at_search_start }   # Value: copy value back to search start
     # W: leave unmapped for pulling into search
-    Keys.X(:isearch_mode_map) { Search.isearch_pull_in_sexp }   # eXtract: like C-w, but pulls in sexp
+    Keys.X(:isearch_mode_map) { Search.move_to_search_start }   # eXtract: move back to search start
     # Y: leave unmapped for yank
     Keys.Z(:isearch_mode_map) { Search.insert_at_spot }   # Zap: move to spot (as spot)
 
@@ -497,8 +492,12 @@ class KeyBindings
     end
     el_require :cc_mode
 
-    # Keys for specific modes
+    # Unmap keys in modes that interfere
+    el4r_lisp_eval("(require 'shell)")
+    define_key :shell_mode_map, kbd("C-d"), nil
+    define_key :dired_mode_map, kbd("C-o"), nil
     define_key :java_mode_map, kbd("C-d"), nil
+
     ControlTab.keys
 
     Keys.set("C-e C-\\") {
@@ -509,8 +508,8 @@ class KeyBindings
       View.insert txt
     }
 
+    View.sensible_defaults
   end
-
 end
 
 KeyBindings.keys
