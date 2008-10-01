@@ -131,4 +131,64 @@ class History
     TreeLs.search :recursive => true
   end
 
+  def self.setup_editedhistory
+    el4r_lisp_eval %q<
+      (progn
+        ; Settings
+        (setq editedhistory-log "~/.editedhistory")
+
+        ; Runs upon startup.  Load log file into memory if it exists.  Run this manually if you edit the log file.
+        (defun editedhistory-load ()
+          (if (file-readable-p editedhistory-log)
+            ; Read from file into memory
+            (with-temp-buffer
+              (insert-file-contents editedhistory-log nil nil nil t)
+              (setq editedhistory-history
+                (car (read-from-string (buffer-substring (point-min) (point-max))) )))
+            ; Otherwise, initialize var
+            (set 'editedhistory-history nil)))
+
+        ; Saves on exit: 'editedhistory-history' to the file 'editedhistory-log'
+        (add-hook 'kill-emacs-hook 'editedhistory-save)
+        (defun editedhistory-save () (interactive)
+          (with-temp-buffer
+            (erase-buffer)
+            (insert (pp-to-string editedhistory-history) )
+            (if (file-writable-p editedhistory-log)
+              (write-region (point-min) (point-max) editedhistory-log)
+            )
+            (kill-buffer (current-buffer)))
+          nil)
+
+        ; Runs upon save: Track modified files
+        (defun editedhistory-remember-file ()
+          ; Remove from list in case it's already there (we want to add to beginning)
+          (when (boundp 'editedhistory-history)
+            (setq editedhistory-history (delete buffer-file-name editedhistory-history) )
+            ; Add to list
+            (add-to-list 'editedhistory-history buffer-file-name))
+          nil)   ; Return nil so we won't block writing
+        (add-hook 'write-file-hooks 'editedhistory-remember-file)
+
+        ; Load upon startup, to add hooks
+        (define-minor-mode editedhistory-mode
+          "Toggle editedhistory mode"
+          :global t
+          :group 'editedhistory
+
+          ; Load if not yet loaded
+          (pp (boundp 'editedhistory-loaded-p))
+          (unless (boundp 'editedhistory-loaded-p)
+            (setq editedhistory-loaded-p t)
+            (pp editedhistory-loaded-p)
+            ; Load log file into memory
+            (editedhistory-load)))
+
+        ; Load mode
+        (editedhistory-mode t)
+      )
+    >
+  end
+
 end
+History.setup_editedhistory
