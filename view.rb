@@ -583,13 +583,13 @@ class View
     c = Keys.input(:one_char => true, :prompt => 'Layout Visibility: [o]paque, [d]im, [m]edium, [t]ransparent')
     case c.to_sym
     when :o
-      el4r_lisp_eval "(set-frame-parameter nil 'alpha 100)"
+      el4r_lisp_eval "(set-frame-parameter nil 'alpha '(100 85))"
     when :d
-      el4r_lisp_eval "(set-frame-parameter nil 'alpha 96)"
+      el4r_lisp_eval "(set-frame-parameter nil 'alpha '(95 80))"
     when :m
-      el4r_lisp_eval "(set-frame-parameter nil 'alpha 50)"
+      el4r_lisp_eval "(set-frame-parameter nil 'alpha '(55 40))"
     when :t
-      el4r_lisp_eval "(set-frame-parameter nil 'alpha 25)"
+      el4r_lisp_eval "(set-frame-parameter nil 'alpha '(20 30))"
     end
   end
 
