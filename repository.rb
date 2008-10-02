@@ -264,7 +264,6 @@ class Repository
     expand = args.shift if args.first.is_a? Symbol   # Pull out :expand if 2nd arg
     project, file, line = args
     dir = self.extract_dir project
-    children = CodeTree.children || []
 
     if self.git?(dir)
       self.git_diff expand, dir, file, line
@@ -328,6 +327,9 @@ class Repository
         new_files.each do |i|
           txt.sub! /^([+-]) #{i}$/, "\\1 new: #{i}"
         end
+      end
+      if ! txt.any?
+        txt = "- Warning: nothing to commit"
       end
       return option + txt
     end
@@ -472,7 +474,8 @@ class Repository
       return "- Error: You must change 'message' to be your commit message." if message == "message"
     end
     unless siblings.any?
-      return "- Error: No files to commit (they should be siblings of .commit)!"
+      return "- Error: No files to commit\n" +
+             "  - They should be siblings of .commit, and already be added."
     end
 
     if self.git?(dir)
