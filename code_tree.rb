@@ -277,9 +277,10 @@ class CodeTree
 
     l = Line.without_label(l)
 
-    # Always escape backslashes and single-quotes
+    # Always escape backslashes, single-quotes, #'s
     l.gsub!("\\", "\\\\\\\\")
     l.gsub!("\"", "\\\\\"")
+    l.gsub!("#", "\\\\#")
     if l =~ /^\|/   # If |..., escape single-quotes
       #       l.gsub!("'", "\\'")
     else
@@ -288,23 +289,43 @@ class CodeTree
 
     l
   end
-
+  # Returns group of lines close to current line that are indented at the same level.
+  # The bounds are determined by any lines indented *less* than the current line (including
+  # blank lines).  In this context, lines having only spaces are not considered blank.
+  # Any lines indented *more* than the current line won't affect the bounds, but will be
+  # filtered out.
   def self.siblings options={}
-    orig = point
-    orig_line = Line.number
-    indent = Line.indent.size  # Get indent
-    TreeLs.to_parent  # Go up to parent
 
-    siblings = []
-    while(Line.next == 0)
-      break if Line.indent.size < indent  # Finished if indented less
-      next unless Line.indent.size == indent  # Ignore if indented more
-      unless Line.number == orig_line
-        siblings << (options[:include_label] ? Line.without_indent : Line.without_label)
-      end
+    orig = Location.new
+    right1 = Line.left   # Right side of lines before
+    left2 = Line.left 2   # Left side of lines after
+
+    indent = Line.indent   # Get indent
+    indent_size = indent.size   # Get indent
+
+    # Search for line indented less
+    Search.backward "^ \\{0,#{indent_size-1}\\}\\($\\|[^ \n]\\)"
+    Line.next
+    left1 = Line.left   # Left side of lines before
+
+    # Search for line indented less
+    Search.forward "^ \\{0,#{indent_size-1}\\}\\($\\|[^ \n]\\)"
+    right2 = Line.left   # Left side of lines before
+
+    # Combine and process siblings
+    siblings = View.txt(left1, right1) + View.txt(left2, right2)
+    siblings.gsub! /^#{indent} .*\n/, ''   # Remove more indented lines
+    siblings.gsub! /^ +\n/, ''   # Remove blank lines
+    siblings.gsub! /^ +/, ''   # Remove indents
+    siblings = siblings.split("\n")
+
+    unless options[:include_label]   # Optionally remove labels
+      siblings.map!{|i| Line.without_label(i)}
     end
-    goto_char orig
-    # Go forward until blank line or indent is same or less
+
+    orig.go
+    Effects.blink :left=>left1, :right=>right2
+
     siblings
   end
 

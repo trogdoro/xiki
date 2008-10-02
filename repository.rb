@@ -70,7 +70,7 @@ class Repository
 
     if file.nil?   # If no file, show files for rev
       # Rev passed, so show all diffs
-      txt = Shell.run "git show --pretty=oneline --name-status #{rev}", :sync=>true, :dir=>dir
+      txt = Shell.run "git show --pretty=oneline --name-status -U2 #{rev}", :sync=>true, :dir=>dir
       txt.sub! /^.+\n/, ''
       txt.gsub! /^([A-Z])\t/, "\\1: "
       txt.gsub! /^M: /, ''
@@ -78,7 +78,7 @@ class Repository
     end
 
     # File passed, show diff
-    txt = Shell.run "git show --pretty=oneline #{rev} #{file}", :sync=>true, :dir=>dir
+    txt = Shell.run "git show --pretty=oneline -U2 #{rev} #{file}", :sync=>true, :dir=>dir
     txt.sub!(/.+?@@.+?\n/m, '')
     txt.gsub! /^-/, '~'
     txt.gsub! /^/, '|'
@@ -359,14 +359,26 @@ class Repository
     nil
   end
 
-  def self.code_tree_diff
+  def self.code_tree_diff options={}
     bookmark = Keys.input(:timed => true, :prompt => "Repository diff in which dir? (enter bookmark): ")
-    CodeTree.display_menu("- Repository.menu/\n  - project - $#{bookmark}/\n    - .diff, :expand/")
+    menu = "- Repository.menu/\n  - project - $#{bookmark}/\n    - .diff, :expand/"
+    if options[:enter]
+      View.insert(menu)
+      LineLauncher.launch
+    else
+      CodeTree.display_menu(menu)
+    end
   end
 
-  def self.code_tree_diff_unadded
+  def self.code_tree_diff_unadded options={}
     bookmark = Keys.input(:timed => true, :prompt => "Repository diff in which dir? (enter bookmark): ")
-    CodeTree.display_menu("- Repository.menu/\n  - project - $#{bookmark}/\n    - .diff_unadded :expand/")
+    menu = "- Repository.menu/\n  - project - $#{bookmark}/\n    - .diff_unadded :expand/"
+    if options[:enter]
+      View.insert(menu)
+      LineLauncher.launch
+    else
+      CodeTree.display_menu(menu)
+    end
   end
 
   def self.svn_diff_unadded dir, file

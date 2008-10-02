@@ -322,7 +322,7 @@ class LineLauncher
       return true
     end
     if View.name =~ /#{Ol.file_path}$/   # If in output log
-      Ol.launch
+      Code.ol_launch
       return true
     end
     return false

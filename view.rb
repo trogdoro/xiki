@@ -238,7 +238,6 @@ class View
     end
   end
 
-
   def self.hide
     left = View.left_edge
 
@@ -345,8 +344,9 @@ class View
   end
 
   def self.to_upper
+    down = Keys.prefix(:clear=>true).to_i - 1
     View.to_after_bar
-    (Keys.prefix_times - 1).times do
+    down.times do
       View.next
     end
   end
@@ -580,15 +580,15 @@ class View
   end
 
   def self.visibility
-    c = Keys.input(:one_char => true, :prompt => 'Layout Visibility: [o]paque, [d]im, [m]edium, [t]ransparent')
+    c = Keys.input(:one_char => true, :prompt => 'Layout Visibility: [f]ull, [h]igh, [m]edium, [l]ow')
     case c.to_sym
-    when :o
+    when :f
       el4r_lisp_eval "(set-frame-parameter nil 'alpha '(100 85))"
-    when :d
+    when :h
       el4r_lisp_eval "(set-frame-parameter nil 'alpha '(95 80))"
     when :m
       el4r_lisp_eval "(set-frame-parameter nil 'alpha '(55 40))"
-    when :t
+    when :l
       el4r_lisp_eval "(set-frame-parameter nil 'alpha '(20 30))"
     end
   end
@@ -610,4 +610,10 @@ class View
     $el.elvar.major_mode.to_s.gsub('-','_').to_sym
   end
 
+  def self.init
+    $el.winner_mode 1
+  end
+
 end
+
+View.init

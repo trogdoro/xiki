@@ -11,7 +11,6 @@ class Shell
 
   # Run the command in a shell
   def self.run command, options={}
-    #dir=nil, sync=nil, buffer_name=nil
     dir = options[:dir]
     sync = options[:sync]
     buffer = options[:buffer]
