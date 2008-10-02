@@ -1,4 +1,4 @@
-$LOAD_PATH.unshift File.join(File.dirname(__FILE__), 'wrapper')
+$LOAD_PATH.unshift File.join(File.dirname(__FILE__), 'wrappers')
 %w[
   ol trouble_shooting notes text_util app bookmarks clipboard code color
   control_tab deletes diff_log files history keys macros move search
