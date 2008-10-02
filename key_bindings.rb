@@ -499,6 +499,12 @@ class KeyBindings
     define_key :dired_mode_map, kbd("C-o"), nil
     define_key :java_mode_map, kbd("C-d"), nil
 
+    # C-l in ediff mode
+    defun(:ediff_disable_C_l) do
+      define_key :ediff_mode_map, kbd("C-l"), nil
+    end
+    add_hook :ediff_keymap_setup_hook, :ediff_disable_C_l
+
     ControlTab.keys
 
     Keys.set("C-e C-\\") {

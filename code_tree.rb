@@ -251,8 +251,6 @@ class CodeTree
 
     # If any data nodes, pass as params
     if ! data.empty?
-      data.each{|s| s.gsub!("\\", "\\\\\\\\") }
-      #data.each{|s| s.gsub!("'", "\\\\'") }
       data.reverse!
       data.map! {|a| "\"#{a}\""}
       params << ", " + data.join(", ")
@@ -276,8 +274,18 @@ class CodeTree
   end
 
   def self.paramify l
+
     l = Line.without_label(l)
-    l.gsub!(', ', '", "') unless l =~ /^\|/
+
+    # Always escape backslashes and single-quotes
+    l.gsub!("\\", "\\\\\\\\")
+    l.gsub!("\"", "\\\\\"")
+    if l =~ /^\|/   # If |..., escape single-quotes
+      #       l.gsub!("'", "\\'")
+    else
+      l.gsub! ', ', '", "'
+    end
+
     l
   end
 
