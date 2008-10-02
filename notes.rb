@@ -121,6 +121,10 @@ class Notes
   def self.keys
     # Get reference to map if already there (don't mess with existing buffers)
     elvar.notes_mode_map = make_sparse_keymap unless boundp :notes_mode_map
+
+    Keys.CO(:notes_mode_map) { Notes.show_text }
+    Keys.CM(:notes_mode_map) { Notes.hide_text }
+
     Keys.CT(:notes_mode_map) { Notes.move_block_to_top }
 
     Keys.CD(:notes_mode_map) { Notes.cut_block true }
