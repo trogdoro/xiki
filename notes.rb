@@ -32,6 +32,15 @@ class Notes
     narrow_to_region left, right
   end
 
+  def self.show_text
+    block = get_block
+    block.show_text
+  end
+
+  def self.hide_text
+    block = get_block
+    block.hide_text
+  end
 
   def self.to_block up=false
     if up
@@ -51,7 +60,7 @@ class Notes
   def self.move_block up=false
     block = get_block
     block.blink
-    block.delete_text
+    block.delete_content
 
     if up
       (Keys.prefix || 1).times do
@@ -93,13 +102,13 @@ class Notes
     unless no_clipboard
       Clipboard.set("0", block.content)
     end
-    block.delete_text
+    block.delete_content
   end
 
   def self.move_block_to_top no_clipboard=false
     block = get_block
     block.blink
-    block.delete_text
+    block.delete_content
 
     beginning_of_buffer
     insert block.content
@@ -551,7 +560,30 @@ class Notes
         delete_region left, right
       end
 
+      # initialize an overlay for this notes block
+      # it has a special hook that updates name to be header always
+      # this way we can always find the overlay corresponding to header
+
+      def show_text
+        @header_overlay ||= Overlay.find_or_make(left, after_header - 1)
+        @header_overlay.before_string = ''
+        @header_overlay.after_string = ''
+
+        @body_overlay ||= Overlay.find_or_make(after_header, right)
+        @body_overlay.invisible = false
+      end
+
+      def hide_text
+        @header_overlay ||= Overlay.find_or_make(left, after_header - 1)
+
+        @header_overlay.before_string = ''
+        @header_overlay.after_string = ' (more...)'
+
+        @body_overlay ||= Overlay.find_or_make(after_header, right)
+        @body_overlay.invisible = true
+      end
     end
+
 end
 Notes.define_styles
 #Notes.keys  # Define local keys
