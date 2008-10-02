@@ -32,6 +32,11 @@ class Notes
     narrow_to_region left, right
   end
 
+  def self.archieve
+    block = get_block
+    block.archieve
+  end
+
   def self.show_text
     block = get_block
     block.show_text
@@ -121,6 +126,8 @@ class Notes
   def self.keys
     # Get reference to map if already there (don't mess with existing buffers)
     elvar.notes_mode_map = make_sparse_keymap unless boundp :notes_mode_map
+
+    Keys.CA(:notes_mode_map) { Notes.archieve }
 
     Keys.CO(:notes_mode_map) { Notes.show_text }
     Keys.CM(:notes_mode_map) { Notes.hide_text }
@@ -585,6 +592,16 @@ class Notes
 
         @body_overlay ||= Overlay.find_or_make(after_header, right)
         @body_overlay.invisible = true
+      end
+
+      # cuts the block, and stores it in archieve.file.notes
+      # example: ruby.notes -> archieve.ruby.notes
+      def archieve
+        delete_content
+        filename = 'archieve.' + $el.file_name_nondirectory(buffer_file_name)
+        timestamp = "--- archieved on #{Time.now.strftime('%Y-%m-%d at %H:%M')} --- \n"
+        append_to_file timestamp, nil, filename
+        append_to_file content, nil, filename 
       end
     end
 
