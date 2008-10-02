@@ -1,10 +1,11 @@
+$LOAD_PATH.unshift File.join(File.dirname(__FILE__), 'wrappers')
 %w[
   ol trouble_shooting notes text_util app bookmarks clipboard code color
   control_tab deletes diff_log files history keys macros move search
   tree_ls repository line_launcher effects twitter shell rails merb
   data_mapper code_tree docs svn remote redmine schedule irc mysql
   cursor core_ext help ruby ruby_console buffers links computer menu
-  safari book firefox projects postgres
+  safari book firefox projects postgres overlay
   ].each { |l| require l }
 
 class KeyBindings

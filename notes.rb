@@ -32,6 +32,20 @@ class Notes
     narrow_to_region left, right
   end
 
+  def self.archieve
+    block = get_block
+    block.archieve
+  end
+
+  def self.show_text
+    block = get_block
+    block.show_text
+  end
+
+  def self.hide_text
+    block = get_block
+    block.hide_text
+  end
 
   def self.to_block up=false
     if up
@@ -49,15 +63,15 @@ class Notes
   end
 
   def self.move_block up=false
-    left, after_header, right = View.block_positions "^| "
-    Effects.blink :left => after_header, :right => right
-    txt = buffer_substring left, right
-    delete_region left, right
+    block = get_block
+    block.blink
+    block.delete_content
+
     if up
       (Keys.prefix || 1).times do
         re_search_backward "^| ", nil, 1
       end
-      insert txt
+      insert block.content
       search_backward_regexp "^| "
     else
       re_search_forward "^| "
@@ -65,11 +79,11 @@ class Notes
         re_search_forward "^| ", nil, 1
       end
       beginning_of_line
-      insert txt
+      insert block.content
       search_backward_regexp "^| "
     end
-    left, after_header, right = View.block_positions "^| "
-    Effects.blink :left => after_header, :right => right
+    moved_block = get_block
+    moved_block.blink
   end
 
   def self.insert_heading
@@ -88,30 +102,36 @@ class Notes
   end
 
   def self.cut_block no_clipboard=false
-    left, after_header, right = View.block_positions "^| "
-    Effects.blink :left => after_header, :right => right
+    block = get_block
+    block.blink
     unless no_clipboard
-      Clipboard.set("0", buffer_substring(left, right))
+      Clipboard.set("0", block.content)
     end
-    delete_region left, right
+    block.delete_content
   end
 
   def self.move_block_to_top no_clipboard=false
-    left, after_header, right = View.block_positions "^| "
-    Effects.blink :left => after_header, :right => right
-    txt = buffer_substring(left, right)
-    delete_region left, right
-    beginning_of_buffer
-    insert txt
-    goto_line 2
-    left, after_header, right = View.block_positions "^| "
-    Effects.blink :left => left, :right => right
+    block = get_block
+    block.blink
+    block.delete_content
 
+    beginning_of_buffer
+    insert block.content
+
+    goto_line 2
+    moved_block = get_block
+    moved_block.blink
   end
 
   def self.keys
     # Get reference to map if already there (don't mess with existing buffers)
     elvar.notes_mode_map = make_sparse_keymap unless boundp :notes_mode_map
+
+    Keys.CA(:notes_mode_map) { Notes.archieve }
+
+    Keys.CO(:notes_mode_map) { Notes.show_text }
+    Keys.CM(:notes_mode_map) { Notes.hide_text }
+
     Keys.CT(:notes_mode_map) { Notes.move_block_to_top }
 
     Keys.CD(:notes_mode_map) { Notes.cut_block true }
@@ -160,19 +180,19 @@ class Notes
     #h1_size = "+2"
 
     Styles.define :notes_h1,
-      :face => 'arial', :size => "+2",
-      :fg => 'ffffff', :bg => "666699",
+      :face => 'arial', :size => "+20",
+      :fg => 'ffffff', :bg => "6666AA",
       :bold =>  true
 
     Styles.define :notes_h1_pipe,
-      :face => 'arial', :size => "+2",
-      :fg => '9999cc', :bg => "666699",
+      :face => 'arial', :size => "0",
+      :fg => '666699', :bg => "666699",
       :bold => true
 
 
 
     Styles.define :notes_h1i,
-      :face => 'arial', :size => "+2",
+      :face => 'arial', :size => "+20",
       :fg => 'ffffff', :bg => "66aa66",
       :bold =>  true
     Styles.define :notes_h1i_pipe,
@@ -353,6 +373,9 @@ class Notes
     # - item exclamation! / todo
     Styles.apply("^[ \t]*\\(-\\) \\(.+!\\)$", nil, :notes_exclamation, :notes_exclamation)
 
+    # - (r): code
+    Styles.apply("^ *- \\(.*\\)\\( ([a-z]+):\\) ", nil, :notes_label_link, :notes_label_parens)
+
     # - google:
     Styles.apply "^ *\\(-\\) \\(g\\)\\(o\\)\\(o\\)\\(g\\)\\(l\\)\\(e:\\) .*", nil, :ls_bullet,
       :notes_blue,
@@ -508,6 +531,79 @@ class Notes
       end
     end
   end
+
+  # returns an instance of BlockNotes representing the block the point is currently in
+  def self.get_block
+    left, after_header, right = View.block_positions "^| "
+    NotesBlock.new(left, after_header, right)
+  end
+
+  private
+    class NotesBlock
+      include ElMixin
+
+      attr_accessor :left, :after_header, :right
+      attr_accessor :header, :text
+
+      def initialize(left, after_header, right)
+        @left, @after_header, @right = left, after_header, right
+        @header = buffer_substring left, after_header
+        @text = buffer_substring after_header, right
+      end
+
+      def positions
+        [left, after_header, right]
+      end
+
+      def content
+        header + text
+      end
+
+      def to_s
+        content
+      end
+
+      def blink
+        Effects.blink :left => after_header, :right => right
+      end
+
+      def delete_content
+        delete_region left, right
+      end
+
+      # initialize an overlay for this notes block
+      # it has a special hook that updates name to be header always
+      # this way we can always find the overlay corresponding to header
+
+      def show_text
+        @header_overlay ||= Overlay.find_or_make(left, after_header - 1)
+        @header_overlay.before_string = ''
+        @header_overlay.after_string = ''
+
+        @body_overlay ||= Overlay.find_or_make(after_header, right)
+        @body_overlay.invisible = false
+      end
+
+      def hide_text
+        @header_overlay ||= Overlay.find_or_make(left, after_header - 1)
+
+        @header_overlay.before_string = ''
+        @header_overlay.after_string = ' (more...)'
+
+        @body_overlay ||= Overlay.find_or_make(after_header, right)
+        @body_overlay.invisible = true
+      end
+
+      # cuts the block, and stores it in archieve.file.notes
+      # example: ruby.notes -> archieve.ruby.notes
+      def archieve
+        delete_content
+        filename = 'archieve.' + $el.file_name_nondirectory(buffer_file_name)
+        timestamp = "--- archieved on #{Time.now.strftime('%Y-%m-%d at %H:%M')} --- \n"
+        append_to_file timestamp, nil, filename
+        append_to_file content, nil, filename 
+      end
+    end
 
 end
 Notes.define_styles
