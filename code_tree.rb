@@ -346,7 +346,10 @@ class CodeTree
 
   def self.kill_siblings
     left1, right1, left2, right2 = self.sibling_bounds
-    View.delete left1, right2
+    Effects.blink :left=>left2, :right=>right2
+    View.delete left2, right2
+    Effects.blink :left=>left1, :right=>right1
+    View.delete left1, right1
   end
 
   def self.children options={}

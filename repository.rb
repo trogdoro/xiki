@@ -329,7 +329,7 @@ class Repository
         end
       end
       if ! txt.any?
-        txt = "- Warning: nothing to commit"
+        txt = "- Warning: nothing to show"
       end
       return option + txt
     end

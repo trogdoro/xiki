@@ -375,7 +375,7 @@ class KeyBindings
     # R: leave unmapped for reverse
     # S: leave unmapped for search
     Keys.T(:isearch_mode_map) { Search.isearch_open_last_edited }   # To: open file / jump to method
-    Keys.U(:isearch_mode_map) { Search.isearch_find_in_buffers }   # Uncover: show results for search string in all open files
+    Keys.U(:isearch_mode_map) { Search.uncover }   # Uncover: show results for search string in all open files
     Keys.V(:isearch_mode_map) { Search.insert_at_search_start }   # Value: copy value back to search start
     # W: leave unmapped for pulling into search
     Keys.X(:isearch_mode_map) { Search.move_to_search_start }   # eXtract: move back to search start

@@ -245,6 +245,23 @@ class Search
     browse_url "http://google.com/search?q=#{View.selection}"
   end
 
+  def self.uncover
+
+    self.clear
+    match = self.match
+
+    bm = Keys.bookmark_as_path
+
+    if bm == :space   # If space, search in buffers
+      self.find_in_buffers match
+      return
+    end
+
+    # Search in bookmark
+    TreeLs.grep_with_hashes bm, match
+
+  end
+
   def self.isearch_find_in_buffers options={}
     self.clear
     match = self.match

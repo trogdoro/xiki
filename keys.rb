@@ -374,14 +374,24 @@ class Keys
 
   def self.bookmark_as_path
     bm = Keys.input(:timed => true, :prompt => "Enter bookmark in which to search: ")
-    if bm and !(bm == ".")  # Do tree in dir from bookmark
-      dir = Bookmarks.expand("$#{bm}")
-      dir = Bookmarks.dir_only dir
-      dir << "/" unless dir =~ /\/$/
-    else  # If no input, do tree in current dir
-      dir = $el.elvar.default_directory
+    if bm == " "   # If space, return special token
+      return :space
     end
+
+    if bm == "."   # If . do tree in current dir
+      return $el.elvar.default_directory
+    end
+
+    dir = Bookmarks.expand bm, :just_bookmark=>true
+    if dir.nil?   # If no dir, return nil
+      View.message "Bookmark '#{bm}' doesn't exist."
+      return nil
+    end
+
+    dir = Bookmarks.dir_only dir
+    dir << "/" unless dir =~ /\/$/
     dir
+
   end
 
   def self.prefix_times
