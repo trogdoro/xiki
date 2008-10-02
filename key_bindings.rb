@@ -217,7 +217,7 @@ class KeyBindings
     Keys.do_kill_all { erase_buffer }   # kill all text in buffer
     Keys.do_kill_duplicates { Code.do_kill_duplicates }
     Keys.do_kill_filter { Search.kill_filter }
-    Keys.do_kill_siblings { TreeLs.kill_siblings }   # kill adjacent lines at same indent as this one
+    Keys.do_kill_siblings { CodeTree.kill_siblings }   # kill adjacent lines at same indent as this one
     Keys.do_kill_thing { delete_region(* bounds_of_thing_at_point( :sexp )) }   # kill adjacent lines at same indent as this one
     Keys.do_load_browser { Firefox.reload }
     Keys.do_last_command { Shell.do_last_command }
