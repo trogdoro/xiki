@@ -1,7 +1,4 @@
-require 'view'
-
 class Merb
-#   extend AutoMenu
 
   def self.menu name=nil, port=nil
     unless name  # Print menu

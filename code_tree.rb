@@ -243,7 +243,7 @@ class CodeTree
 
     # If one line, return it literally
     if i == 0
-      return Line.without_label(path[-1]).sub(/\/$/, '')
+      return Line.without_label(:line=>path[-1]).sub(/\/$/, '')
     end
 
     method_with_params, params = metho.match(/(\w+\??)(.*)/)[1..2]
@@ -275,7 +275,7 @@ class CodeTree
 
   def self.paramify l
 
-    l = Line.without_label(l)
+    l = Line.without_label(:line=>l)
 
     # Always escape backslashes, single-quotes, #'s
     l.gsub!("\\", "\\\\\\\\")
@@ -327,7 +327,7 @@ class CodeTree
     siblings = siblings.split("\n")
 
     unless options[:include_label]   # Optionally remove labels
-      siblings.map!{|i| Line.without_label(i)}
+      siblings.map!{|i| Line.without_label(:line=>i)}
     end
 
     Effects.blink :left=>left1, :right=>right2
@@ -339,7 +339,7 @@ class CodeTree
     next_line = Line.value 2
     # If indent is one greater, it is a child
     if Line.indent.size + 2 == Line.indent(next_line).size
-      return Line.without_label(next_line)
+      return Line.without_label(:line=>next_line)
     end
     nil
   end

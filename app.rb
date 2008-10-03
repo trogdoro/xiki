@@ -1,6 +1,4 @@
 require "location"
-require "view"
-
 class App
 #  extend KeyMappableMixin
   ## TODO - delete this
@@ -20,7 +18,7 @@ class App
 
   def self.enter_date
     insert elvar.current_prefix_arg ?
-      Time.now.strftime("%Y-%m-%d %I:%M%p") :
+      Time.now.strftime("%Y-%m-%d %I:%M%p").sub(' 0', ' ') :
       Time.now.strftime("%Y-%m-%d")
   end
   def self.enter_from_difflog

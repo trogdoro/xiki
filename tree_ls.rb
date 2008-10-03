@@ -347,7 +347,7 @@ class TreeLs
   end
 
   def self.clean_path path
-    path.replace Line.without_label(path)
+    path.replace Line.without_label(:line=>path, :leave_indent=>true)
     path.sub!(/^([^|\n-]*)##.+/, "\\1")  # Ignore "##"
     path.sub!(/^([^|\n-]*)\*\*.+/, "\\1")  # Ignore "\*\*"
     path
@@ -685,7 +685,7 @@ class TreeLs
         # Kill others
         View.delete(Line.left(2), right)
 
-        if Line.without_label =~ /^[ +-]*\./   # If just a method
+        if Line.without_label =~ /^\./   # If just a method
           # Back up to first . on last line
           Search.forward "\\."
           right = View.cursor
@@ -1473,9 +1473,9 @@ class TreeLs
   end
 
   def self.matches_root_pattern? path
-    without_label = Line.without_label(path)
-    without_label =~ /^ *[-+]? ?\/[^\n,]*$/ ||
-    without_label =~ /^ *[-+]? ?(~\/|\.\/|\$.+\/$)/
+    without_label = Line.without_label :line=>path#, :leave_indent=>true
+    without_label =~ /^\/[^\n,]*$/ ||
+    without_label =~ /^(~\/|\.\/|\$.+\/$)/
   end
 
   def self.create_dir

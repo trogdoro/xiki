@@ -93,7 +93,8 @@ class Shell
 
   # Mapped to !! or ! in LineLauncher
   def self.launch options={}
-    line = Line.without_label
+    line = Line.without_label :leave_indent=>true
+    p Line.without_label
     # If indented, check whether code tree, extracting if yes
     if Line.value =~ /^\s+!/
       orig = View.cursor

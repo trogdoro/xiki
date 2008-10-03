@@ -295,14 +295,14 @@ class LineLauncher
       TreeLs.insert_quoted_and_search out
     end
 
-    self.add(/^ *[$\/].+!!/) do |l|   # !shell command
+    self.add(/^ *[$\/].+!!/) do |l|   # /dir!!shell command
       Shell.launch
     end
     self.add(/^ *!!/) do |l|   # !shell command
       Shell.launch
     end
 
-    self.add(/^ *[$\/].+!/) do |l|   # !shell command inline
+    self.add(/^ *[$\/].+!/) do |l|   # /dir!shell command inline
       Shell.launch :sync=>true
     end
     self.add(/^ *!/) do |l|   # !shell command inline

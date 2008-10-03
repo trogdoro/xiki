@@ -1,6 +1,8 @@
+require 'rubygems'
+
 $LOAD_PATH.unshift File.join(File.dirname(__FILE__), 'wrappers')
 %w[
-  ol trouble_shooting notes text_util app bookmarks clipboard code color
+  view ol trouble_shooting notes text_util app bookmarks clipboard code color
   control_tab deletes diff_log files history keys macros move search
   tree_ls repository line_launcher effects twitter shell rails merb
   data_mapper code_tree docs svn remote redmine schedule irc mysql
@@ -57,7 +59,7 @@ class KeyBindings
     #Keys.as_update_remote { TreeLs.save_remote }
     Keys.as_version { History.backup_file }   # creates backup
     Keys.as_windows { View.save }   # remember window configuration as tag
-    Keys.as_x { Clipboard.cut("0") }   # cut) **
+    Keys.as_xtract { Clipboard.cut("0") }   # cut **
     # Y
     # Z
     #Keys.A0 { Clipboard.copy("0") }   # As 0: copy as key "0"

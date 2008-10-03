@@ -1,4 +1,3 @@
-require 'rubygems'
 gem 'net-ssh'
 require 'net/ssh'
 require 'net/sftp'

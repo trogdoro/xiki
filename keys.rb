@@ -1,5 +1,4 @@
 require 'pause_means_space'
-require 'rubygems'
 gem 'ruby2ruby'
 require 'ruby2ruby'
 

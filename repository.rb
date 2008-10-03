@@ -468,7 +468,7 @@ class Repository
 
     siblings = CodeTree.siblings :include_label=>true
     # Remove untracked
-    siblings = siblings.select{|i| i !~ /^. untracked/}.map{|i| Line.without_label i}
+    siblings = siblings.select{|i| i !~ /^. untracked/}.map{|i| Line.without_label(:line=>i)}
 
     if message == 'message'   # Error if no siblings
       return "- Error: You must change 'message' to be your commit message." if message == "message"

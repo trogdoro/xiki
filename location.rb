@@ -1,5 +1,3 @@
-require 'view'
-
 # Saves and restores locations.  A location can include multiple of
 # these: a file, a line number, a column number
 class Location
