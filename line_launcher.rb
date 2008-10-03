@@ -201,17 +201,17 @@ class LineLauncher
 
 
 
-    self.add nil, /\(elisp\)/ do |line|  # Run lines like this: - foo (elisp): (bar)
+    self.add nil, /\(elisp\)/ do |line|   # Run lines like this: - foo (elisp): (bar)
       end_of_line
       eval_last_sexp nil
     end
 
-    self.add nil, /\(ruby\)/ do |line|  # - (ruby)
+    self.add nil, /\(ruby\)/ do |line|   # - (ruby)
       message el4r_ruby_eval(line)
       #insert el4r_ruby_eval(line).to_s
     end
 
-    self.add /\(other\)/ do |line|  # - (other)
+    self.add /\(other\)/ do |line|   # - (other)
       other_window 1
       insert line
       command_execute "\C-m"
@@ -219,20 +219,23 @@ class LineLauncher
     end
 
 
-    self.add(/(http|file).?:\/\/.+/) do |line| # url
+    self.add(/(http|file).?:\/\/.+/) do |line|   # url
       browse_url line[/(http|file).?:\/\/.+/]
     end
 
-    self.add(/^ *p /) do |line|  # url
+    self.add(/^ *\$\w+$/) do |line|   # Bookmark
+      View.open(line)
+    end
+
+    self.add(/^ *p /) do |line|
       CodeTree.run line
     end
 
-    self.add(/^ *puts /) do |line|  # url
+    self.add(/^ *puts /) do |line|
       CodeTree.run line
     end
 
     self.add(/^[^\|@]+[\/\w\-]+\.\w+:\d+/) do |line|  # Stack traces, etc
-
       # Match again (necessary)
       line =~ /([\/.\w\-]+):(\d+)/
       path, line = $1, $2

@@ -155,7 +155,7 @@ class Search
 
   def self.isearch_query_replace start_with_search_string=false
 
-    txt = $el.elvar.isearch_string
+    txt = $el.regexp_quote($el.elvar.isearch_string)
 
     self.clear
     to = start_with_search_string ?

@@ -49,7 +49,7 @@ class Ol
   end
 
   def self.parse_line path
-    method = path[/`(.+)'/]
+    method = path[/`(.+)'/, 1]
     path, line = path.match(/(.+):(\d+)/)[1..2]
     path = File.expand_path path
     clazz = path[/.+\/(.+)\.rb/, 1]
