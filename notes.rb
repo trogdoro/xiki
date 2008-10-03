@@ -177,62 +177,20 @@ class Notes
       :face => 'arial'
 
     # |...
-    #h1_size = "+2"
+    h1_size = "+2"
 
-    Styles.define :notes_h1,
-      :face => 'arial', :size => "+2",
-      :fg => 'ffffff', :bg => "666699",
-      :bold =>  true
+    styles = { :notes_h1  => "666699",
+               :notes_h1i => "66aa66",
+               :notes_h1e => "cccc66",
+               :notes_h1c => "996699",
+               :notes_h1s => "449688",
+               :notes_h1n => "eeaa33"}
 
-    Styles.define :notes_h1_pipe,
-      :face => 'arial', :size => "+2",
-      :fg => '9999cc', :bg => "666699",
-      :bold => true
-
-    Styles.define :notes_h1i,
-      :face => 'arial', :size => "+2",
-      :fg => 'ffffff', :bg => "66aa66",
-      :bold =>  true
-    Styles.define :notes_h1i_pipe,
-      :face => 'arial', :size => "+2",
-      :fg => 'aad2aa', :bg => "66aa66",
-      :bold =>  true
-
-    Styles.define :notes_h1e,
-      :face => 'arial', :size => "+2",
-      :fg => 'ffffff', :bg => "cccc66",
-      :bold =>  true
-    Styles.define :notes_h1e_pipe,
-      :face => 'arial', :size => "+2",
-      :fg => 'f3f399', :bg => "cccc66",
-      :bold =>  true
-
-    Styles.define :notes_h1c,
-      :face => 'arial', :size => "+2",
-      :fg => 'ffffff', :bg => "996699",
-      :bold =>  true
-    Styles.define :notes_h1c_pipe,
-      :face => 'arial', :size => "+2",
-      :fg => 'bb99bb', :bg => "996699",
-      :bold =>  true
-
-    Styles.define :notes_h1s,
-      :face => 'arial', :size => "+2",
-      :fg => 'ffffff', :bg => "449688",
-      :bold =>  true
-    Styles.define :notes_h1s_pipe,
-      :face => 'arial', :size => "+2",
-      :fg => '77c6aa', :bg => "449688",
-      :bold =>  true
-
-    Styles.define :notes_h1n,
-      :face => 'arial', :size => "+2",
-      :fg => 'ffffff', :bg => "eeaa33",
-      :bold =>  true
-    Styles.define :notes_h1n_pipe,
-      :face => 'arial', :size => "+2",
-      :fg => 'ffdd88', :bg => "eeaa33",
-      :bold =>  true
+    styles.each do |k, v|
+      header = v.gsub(/../) {|c| (c.to_i(16) + "33".to_i(16)).to_s(16)}
+      Styles.define k,                  :face => 'arial', :size => h1_size, :fg => 'ffffff', :bg => v, :bold =>  true
+      Styles.define "#{k}_pipe".to_sym, :face => 'arial', :size => h1_size, :fg => header,   :bg => v, :bold =>  true
+    end
 
     # ||...
     Styles.define :notes_h2,
