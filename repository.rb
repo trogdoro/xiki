@@ -1,6 +1,10 @@
 class Repository
   extend ElMixin
 
+  # -w caused a git segfault :/
+  #@@ignore_whitespace = ' -w '
+  @@ignore_whitespace = ''
+
   CODE_SAMPLES = %q<
     # Show options for the repository
     - Show options: Repository.menu
@@ -296,8 +300,8 @@ class Repository
 
       if expand
         txt = is_unadded ?
-          Shell.run('git diff -U2 -w', :sync => true, :dir => dir) :
-          Shell.run('git diff -U2 -w HEAD', :sync => true, :dir => dir)
+          Shell.run("git diff -U2 #{@@ignore_whitespace}", :sync => true, :dir => dir) :
+          Shell.run('git diff -U2 #{@@ignore_whitespace} HEAD', :sync => true, :dir => dir)
 
         if txt =~ /^fatal: ambiguous argument 'HEAD': unknown revision/
           txt = "- Warning: Couldn't diff because no revisions exist yet in repository\n" +
@@ -341,8 +345,8 @@ class Repository
       end
 
       txt = is_unadded ?
-        Shell.run("git diff -U2 -w #{file}", :sync => true, :dir => dir) :
-        Shell.run("git diff -U2 -w HEAD #{file}", :sync => true, :dir => dir)
+        Shell.run("git diff -U2 #{@@ignore_whitespace} #{file}", :sync => true, :dir => dir) :
+        Shell.run("git diff -U2 #{@@ignore_whitespace} HEAD #{file}", :sync => true, :dir => dir)
       self.clean! txt
       txt.gsub!(/^diff .+\n/, '')
       txt.gsub!(/^-/, '~')
