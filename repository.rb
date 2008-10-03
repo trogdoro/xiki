@@ -468,7 +468,7 @@ class Repository
 
     siblings = CodeTree.siblings :include_label=>true
 
-    #     left1, right1, left2, right2 = self.sibling_bounds
+    left1, right1, left2, right2 = CodeTree.sibling_bounds
     #     Effects.blink :left=>left1, :right=>right1
     #     Effects.blink :left=>left2, :right=>right2
 
