@@ -131,6 +131,7 @@ class Notes
     Keys.CC(:notes_mode_map) { Agenda.quick_add_line }
     Keys.CO(:notes_mode_map) { Notes.show_text }
     Keys.CM(:notes_mode_map) { Notes.hide_text }
+    Keys.CS(:notes_mode_map) { $el.insert Time.now.strftime("- %Y-%m-%d %I:%M%p: ").downcase.sub(' 0', ' ') }
 
     Keys.CT(:notes_mode_map) { Notes.move_block_to_top }
 
