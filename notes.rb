@@ -128,7 +128,7 @@ class Notes
     elvar.notes_mode_map = make_sparse_keymap unless boundp :notes_mode_map
 
     Keys.CA(:notes_mode_map) { Notes.archieve }
-
+    Keys.CC(:notes_mode_map) { Agenda.quick_add_line }
     Keys.CO(:notes_mode_map) { Notes.show_text }
     Keys.CM(:notes_mode_map) { Notes.hide_text }
 
