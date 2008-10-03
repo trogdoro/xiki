@@ -2,13 +2,29 @@ require 'rubygems'
 
 $LOAD_PATH.unshift File.join(File.dirname(__FILE__), 'wrappers')
 %w[
-  view ol trouble_shooting notes text_util app bookmarks clipboard code color
-  control_tab deletes diff_log files history keys macros move search
-  tree_ls repository line_launcher effects twitter shell rails merb
-  data_mapper code_tree docs svn remote redmine schedule irc mysql
-  cursor core_ext help ruby ruby_console buffers links computer menu
-  safari book firefox projects postgres overlay
-  ].each { |l| require l }
+  view rubygems ol trouble_shooting notes line_launcher text_util app
+  bookmarks clipboard code color control_tab deletes diff_log files
+  history keys macros move search tree_ls repository effects twitter
+  shell rails merb data_mapper code_tree docs svn remote redmine
+  schedule irc mysql cursor core_ext help ruby ruby_console buffers
+  links computer menu safari book firefox projects postgres overlay
+  agenda
+  ].each do |l|
+  begin
+    require l
+  rescue LoadError => e
+    View.to_buffer '* missing gems', :clear => true
+    Notes.mode
+    gem_name = e.to_s[/-- (.*)/, 1] || e.to_s[/RubyGem (.*)/, 1]
+    gem_name.sub!(/\(.+/, '')
+    View.insert "| Missing gem '#{gem_name}'\n" +
+      "- To install '#{gem_name}':\n" +
+      "  - double-click or press C-. on the below line (or paste into a terminal):\n" +
+      "\n" +
+      "- Install '#{gem_name}': !!sudo gem install #{gem_name}\n" +
+      "\n- Important: After the gem is installed, press M-l to reload emacs or manually restart."
+  end
+end
 
 class KeyBindings
   extend ElMixin
