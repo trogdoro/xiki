@@ -19,7 +19,11 @@ class Files
       find_file Keys.input(:prompt => "Open file: ")
     end
   end
-  #
+
+  def self.open_sudo
+    find_file "/sudo:root@localhost:#{View.file || View.dir}"
+  end
+
   def self.save
     # If prefix, save as
     if elvar.current_prefix_arg

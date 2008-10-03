@@ -80,6 +80,7 @@ class KeyBindings
     Keys.open_difflog { DiffLog.open }   # shows diffs of what you've edited *
     Keys.open_edited { Files.open_edited }   # show recently edited files *
     Keys.open_file { Files.open }
+    Keys.open_as_root { Files.open_sudo }
     # G: leave unmapped for escape
     Keys.open_history { Files.open_history }   # show recently viewed files
     Keys.open_in_bar { View.open_in_bar }
