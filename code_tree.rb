@@ -330,8 +330,6 @@ class CodeTree
       siblings.map!{|i| Line.without_label(:line=>i)}
     end
 
-    Effects.blink :left=>left1, :right=>right2
-
     siblings
   end
 
