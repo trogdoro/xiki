@@ -70,7 +70,7 @@ class Repository
 
     if file.nil?   # If no file, show files for rev
       # Rev passed, so show all diffs
-      txt = Shell.run "git show --pretty=oneline --name-status #{rev}", :sync=>true, :dir=>dir
+      txt = Shell.run "git show --pretty=oneline --name-status -U2 #{rev}", :sync=>true, :dir=>dir
       txt.sub! /^.+\n/, ''
       txt.gsub! /^([A-Z])\t/, "\\1: "
       txt.gsub! /^M: /, ''
@@ -78,7 +78,7 @@ class Repository
     end
 
     # File passed, show diff
-    txt = Shell.run "git show --pretty=oneline #{rev} #{file}", :sync=>true, :dir=>dir
+    txt = Shell.run "git show --pretty=oneline -U2 #{rev} #{file}", :sync=>true, :dir=>dir
     txt.sub!(/.+?@@.+?\n/m, '')
     txt.gsub! /^-/, '~'
     txt.gsub! /^/, '|'
@@ -264,7 +264,6 @@ class Repository
     expand = args.shift if args.first.is_a? Symbol   # Pull out :expand if 2nd arg
     project, file, line = args
     dir = self.extract_dir project
-    children = CodeTree.children || []
 
     if self.git?(dir)
       self.git_diff expand, dir, file, line
@@ -329,6 +328,9 @@ class Repository
           txt.sub! /^([+-]) #{i}$/, "\\1 new: #{i}"
         end
       end
+      if ! txt.any?
+        txt = "- Warning: nothing to show"
+      end
       return option + txt
     end
 
@@ -359,14 +361,26 @@ class Repository
     nil
   end
 
-  def self.code_tree_diff
+  def self.code_tree_diff options={}
     bookmark = Keys.input(:timed => true, :prompt => "Repository diff in which dir? (enter bookmark): ")
-    CodeTree.display_menu("- Repository.menu/\n  - project - $#{bookmark}/\n    - .diff, :expand/")
+    menu = "- Repository.menu/\n  - project - $#{bookmark}/\n    - .diff, :expand/"
+    if options[:enter]
+      View.insert(menu)
+      LineLauncher.launch
+    else
+      CodeTree.display_menu(menu)
+    end
   end
 
-  def self.code_tree_diff_unadded
+  def self.code_tree_diff_unadded options={}
     bookmark = Keys.input(:timed => true, :prompt => "Repository diff in which dir? (enter bookmark): ")
-    CodeTree.display_menu("- Repository.menu/\n  - project - $#{bookmark}/\n    - .diff_unadded :expand/")
+    menu = "- Repository.menu/\n  - project - $#{bookmark}/\n    - .diff_unadded :expand/"
+    if options[:enter]
+      View.insert(menu)
+      LineLauncher.launch
+    else
+      CodeTree.display_menu(menu)
+    end
   end
 
   def self.svn_diff_unadded dir, file
@@ -460,7 +474,8 @@ class Repository
       return "- Error: You must change 'message' to be your commit message." if message == "message"
     end
     unless siblings.any?
-      return "- Error: No files to commit (they should be siblings of .commit)!"
+      return "- Error: No files to commit\n" +
+             "  - They should be siblings of .commit, and already be added."
     end
 
     if self.git?(dir)

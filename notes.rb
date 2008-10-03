@@ -32,9 +32,9 @@ class Notes
     narrow_to_region left, right
   end
 
-  def self.archieve
+  def self.archive
     block = get_block
-    block.archieve
+    block.archive
   end
 
   def self.show_text
@@ -127,8 +127,8 @@ class Notes
     # Get reference to map if already there (don't mess with existing buffers)
     elvar.notes_mode_map = make_sparse_keymap unless boundp :notes_mode_map
 
-    Keys.CA(:notes_mode_map) { Notes.archieve }
     Keys.CC(:notes_mode_map) { Agenda.quick_add_line }
+    Keys.CA(:notes_mode_map) { Notes.archive }
     Keys.CO(:notes_mode_map) { Notes.show_text }
     Keys.CM(:notes_mode_map) { Notes.hide_text }
     Keys.CS(:notes_mode_map) { $el.insert Time.now.strftime("- %Y-%m-%d %I:%M%p: ").downcase.sub(' 0', ' ') }
@@ -162,7 +162,6 @@ class Notes
   end
 
   def self.define_styles
-
     # - foo (r): <here>
     Styles.define :notes_light_gray,
       :fg => "bbb"
@@ -181,19 +180,17 @@ class Notes
     #h1_size = "+2"
 
     Styles.define :notes_h1,
-      :face => 'arial', :size => "+20",
-      :fg => 'ffffff', :bg => "6666AA",
+      :face => 'arial', :size => "+2",
+      :fg => 'ffffff', :bg => "666699",
       :bold =>  true
 
     Styles.define :notes_h1_pipe,
-      :face => 'arial', :size => "0",
-      :fg => '666699', :bg => "666699",
+      :face => 'arial', :size => "+2",
+      :fg => '9999cc', :bg => "666699",
       :bold => true
 
-
-
     Styles.define :notes_h1i,
-      :face => 'arial', :size => "+20",
+      :face => 'arial', :size => "+2",
       :fg => 'ffffff', :bg => "66aa66",
       :bold =>  true
     Styles.define :notes_h1i_pipe,
@@ -373,9 +370,6 @@ class Notes
 
     # - item exclamation! / todo
     Styles.apply("^[ \t]*\\(-\\) \\(.+!\\)$", nil, :notes_exclamation, :notes_exclamation)
-
-    # - (r): code
-    Styles.apply("^ *- \\(.*\\)\\( ([a-z]+):\\) ", nil, :notes_label_link, :notes_label_parens)
 
     # - google:
     Styles.apply "^ *\\(-\\) \\(g\\)\\(o\\)\\(o\\)\\(g\\)\\(l\\)\\(e:\\) .*", nil, :ls_bullet,
@@ -595,12 +589,12 @@ class Notes
         @body_overlay.invisible = true
       end
 
-      # cuts the block, and stores it in archieve.file.notes
-      # example: ruby.notes -> archieve.ruby.notes
-      def archieve
+      # cuts the block, and stores it in archive.file.notes
+      # example: ruby.notes -> archive.ruby.notes
+      def archive
         delete_content
-        filename = 'archieve.' + $el.file_name_nondirectory(buffer_file_name)
-        timestamp = "--- archieved on #{Time.now.strftime('%Y-%m-%d at %H:%M')} --- \n"
+        filename = 'archive.' + $el.file_name_nondirectory(buffer_file_name)
+        timestamp = "--- archived on #{Time.now.strftime('%Y-%m-%d at %H:%M')} --- \n"
         append_to_file timestamp, nil, filename
         append_to_file content, nil, filename 
       end

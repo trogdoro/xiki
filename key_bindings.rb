@@ -95,6 +95,7 @@ class KeyBindings
     Keys.open_difflog { DiffLog.open }   # shows diffs of what you've edited *
     Keys.open_edited { Files.open_edited }   # show recently edited files *
     Keys.open_file { Files.open }
+    Keys.open_as_root { Files.open_sudo }
     # G: leave unmapped for escape
     Keys.open_history { Files.open_history }   # show recently viewed files
     Keys.open_in_bar { View.open_in_bar }
@@ -167,12 +168,12 @@ class KeyBindings
     Keys.enter_log_javascript { Code.enter_log_console }
     Keys.enter_list_models { CodeTree.insert_menu("Merb.models") }
     Keys.enter_log_statement { Code.enter_log }
-    Keys.enter_log_line { Ol.enter_log_line }
+    Keys.enter_log_line { Code.enter_log_line }
     Keys.enter_menu { CodeTree.insert_menus }
     Keys.enter_name { Clipboard.paste }   # paste thing saved as name
     Keys.enter_outline { TreeLs.enter_lines }   # in tree, enter methods or headings
     # Find new key for thisKeys.EO { DiffLog.enter_old }   # Enter Old: enter newly-deleted from last save
-    # P
+    Keys.enter_push { Repository.code_tree_diff(:enter=>true) }   # Commit to repos, push, etc
     Keys.enter_quoted { TreeLs.enter_quoted }
     #Keys.enter_replacement { Clipboard.enter_replacement }
     Keys.enter_search { Search.enter_search }
@@ -232,7 +233,7 @@ class KeyBindings
     Keys.do_kill_all { erase_buffer }   # kill all text in buffer
     Keys.do_kill_duplicates { Code.do_kill_duplicates }
     Keys.do_kill_filter { Search.kill_filter }
-    Keys.do_kill_siblings { TreeLs.kill_siblings }   # kill adjacent lines at same indent as this one
+    Keys.do_kill_siblings { CodeTree.kill_siblings }   # kill adjacent lines at same indent as this one
     Keys.do_kill_thing { delete_region(* bounds_of_thing_at_point( :sexp )) }   # kill adjacent lines at same indent as this one
     Keys.do_load_browser { Firefox.reload }
     Keys.do_last_command { Shell.do_last_command }
@@ -279,13 +280,12 @@ class KeyBindings
 
     Keys.D1 { delete_char 1 };  Keys.D2 { delete_char 2 };  Keys.D3 { delete_char 3 };  Keys.D4 { delete_char 4 }
     Keys.D5 { delete_char 5 };  Keys.D6 { delete_char 6 };  Keys.D7 { delete_char 7 };  Keys.D8 { delete_char 7 };
-
   end
 
   def self.t_keys
     # T: to...
     # Use T prefix for: moving cursor, jumping to specific points
-    Keys.to_apex { View.to_top }   # to beginning of file **
+    Keys.to_apex { View.to_top; View.message("#{'-'*20} Please use Keys.to_highest instead of Keys.to_apex #{'-'*20}") }   # to beginning of file **
     Keys.to_backward { backward_word(Keys.prefix || 1) }   # move backward one word
     Keys.to_clipboard { Search.to Clipboard[0] }   # move cursor to next instance of clipboard
     Keys.to_deleted { Location.to_spot('deleted') }   # **
@@ -391,7 +391,7 @@ class KeyBindings
     # R: leave unmapped for reverse
     # S: leave unmapped for search
     Keys.T(:isearch_mode_map) { Search.isearch_open_last_edited }   # To: open file / jump to method
-    Keys.U(:isearch_mode_map) { Search.isearch_find_in_buffers }   # Uncover: show results for search string in all open files
+    Keys.U(:isearch_mode_map) { Search.uncover }   # Uncover: show results for search string in all open files
     Keys.V(:isearch_mode_map) { Search.insert_at_search_start }   # Value: copy value back to search start
     # W: leave unmapped for pulling into search
     Keys.X(:isearch_mode_map) { Search.move_to_search_start }   # eXtract: move back to search start
@@ -440,7 +440,7 @@ class KeyBindings
     Keys._E(:isearch_mode_map) { Search.insert_tree_at_spot }   # Enter
     Keys._F(:isearch_mode_map) { Search.isearch_open }   # Find file
     Keys._G(:isearch_mode_map) { Search.isearch_google }   # Google search
-    Keys._H(:isearch_mode_map) { Search.isearch_move_line }
+    # H
     Keys._I(:isearch_mode_map) { Search.insert_var_at_search_start }   # Interpolate: paste as interpolated variable
     # J
     # K
@@ -457,7 +457,7 @@ class KeyBindings
     Keys._V(:isearch_mode_map) { Search.isearch_find_in_buffers(:in_bar => true) }   # Visited: show matches in visited files
     #Keys._V(:isearch_mode_map) { Search.insert_var_at_search_start }
     Keys._W(:isearch_mode_map) { Search.isearch_select_inner }   # Within: select 1 char within match
-    # X
+    Keys._X(:isearch_mode_map) { Search.isearch_move_line }
     # Y
     # Z
 

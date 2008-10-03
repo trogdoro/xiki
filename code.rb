@@ -318,6 +318,25 @@ class Code
     return if self.clear_and_go_back orig
   end
 
+  def self.ol_launch
+    # TODO: get total_lines - current_line
+    distance_to_end = Line.number(View.bottom) - Line.number
+
+    # Go to log.lines and get n from end
+    arr = IO.readlines("#{Ol.file_path}.lines")
+    line = arr[- distance_to_end]
+
+    path, line = line.split(':')
+
+    View.open path
+    View.to_line line.to_i
+  end
+
+  def self.enter_log_line
+    $el.open_line(1) unless Line.blank?
+    View.insert("Ol.line")
+  end
+
 private
   def self.clear_and_go_back location
     if location   # Go back to starting point

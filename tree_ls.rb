@@ -1169,7 +1169,6 @@ class TreeLs
     if Line.matches /^ +\|/
       indent = Line.value[/^[ |]+/].size
       pattern = "^[ |]\\{0,#{indent}\\}\\([^ |\n]\\|$\\)"
-      #return
     end
 
     self.minus_to_plus_maybe
@@ -1184,28 +1183,6 @@ class TreeLs
     View.to orig
 
     Move.to_line_text_beginning
-
-  end
-
-  def self.kill_siblings
-    # Get indent of current line
-    Line.to_left
-    indent = Line.indent
-    # Remove lines before
-    while(true)
-      Line.previous
-      break if (Line.indent != indent) || Line.blank?
-      kill_line
-    end
-
-    # Remove lines after
-    Line.next 2
-    while(true)
-      break if (Line.indent != indent) || Line.blank?
-      kill_line
-    end
-    previous_line
-
   end
 
   # Expand if dir, or open if file
