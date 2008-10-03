@@ -16,9 +16,10 @@ $LOAD_PATH.unshift File.join(File.dirname(__FILE__), 'wrappers')
     gem_name.sub!(/\(.+/, '')
     View.insert "| Missing gem '#{gem_name}'\n"
     View.insert "- To install '#{gem_name}':\n"
-    View.insert "  - double-click or C-. on the below line (or paste into a terminal):\n"
+    View.insert "  - double-click or press C-. on the below line (or paste into a terminal):\n"
     View.insert "\n"
-    View.insert "!!sudo gem install #{gem_name}"
+    View.insert "- Install '#{gem_name}': !!sudo gem install #{gem_name}\n"
+    View.insert "\n- Important: After the gem is installed, press M-l to reload emacs or manually restart."
   end
 end
 
