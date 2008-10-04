@@ -1323,7 +1323,7 @@ class TreeLs
       dir = Bookmarks.expand("$#{input}")
       if dir.empty?
         View.beep
-        return View.message "No bookmark exists: #{input}"
+        return View.message("No bookmark exists: #{input}")
       end
       dir = Bookmarks.dir_only dir if options[:recursive]
     else  # If no input, do tree in current dir

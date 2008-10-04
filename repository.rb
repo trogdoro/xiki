@@ -69,7 +69,7 @@ class Repository
       txt.gsub! ':', '-'
       txt.gsub! /(.+?) (.+)/, "\\2: \\1"
       txt.gsub! /^- /, ''
-      return txt.gsub! /^/, '+ '
+      return txt.gsub!(/^/, '+ ')
     end
 
     if file.nil?   # If no file, show files for rev

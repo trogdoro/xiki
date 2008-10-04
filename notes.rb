@@ -422,7 +422,7 @@ class Notes
       View.insert "\n"
     end
     if prefix.is_a? Fixnum   # If numeric prefix, indent by n
-      View.insert (" " * prefix) + bullet_text
+      View.insert((" " * prefix) + bullet_text)
     else   # Get bullet indent of previous line
       prev = Line.value(0)[/^( *)[+-]/, 1]
       prev = prev ? "  #{prev}#{bullet_text}" : bullet_text

@@ -364,19 +364,15 @@ class View
         break
       end
     end
-
   end
-
 
   def self.left_edge view=nil
     view ||= selected_window  # Default to current view
-
     window_edges(view)[0]
   end
 
   # Switches to a buffer
   def self.to_buffer name, options={}
-
     # If we're here already, do nothing
     return if buffer_name == name
 
@@ -386,7 +382,6 @@ class View
     else
       switch_to_buffer name
     end
-
     View.clear if options[:clear]
   end
 
@@ -587,7 +582,7 @@ class View
     when :h
       el4r_lisp_eval "(set-frame-parameter nil 'alpha '(95 80))"
     when :m
-      el4r_lisp_eval "(set-frame-parameter nil 'alpha '(55 40))"
+      el4r_lisp_eval "(set-frame-parameter nil 'alpha '(65 50))"
     when :l
       el4r_lisp_eval "(set-frame-parameter nil 'alpha '(20 30))"
     end

@@ -7,7 +7,7 @@ class Ol
     # If just txt, delegate to line
     if line.nil?
       self
-      return self.line txt, caller(0)[1]
+      return self.line(txt, caller(0)[1])
     end
 
     # If n seconds passed since last call

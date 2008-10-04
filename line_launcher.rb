@@ -223,7 +223,7 @@ class LineLauncher
       browse_url line[/(http|file).?:\/\/.+/]
     end
 
-    self.add(/^ *\$\w+$/) do |line|   # Bookmark
+    self.add(/^ *\$.+/) do |line|   # Bookmark
       View.open(line)
     end
 
