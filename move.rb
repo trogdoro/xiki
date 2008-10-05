@@ -100,7 +100,7 @@ class Move
     beginning_of_line
   end
 
-  def self.to_window n
+  def self.to_window n, options={}
 
     # Get views in this window
     views = window_list(window_frame(frame_first_window), true, frame_first_window).to_ary
@@ -111,6 +111,8 @@ class Move
     else
       select_window(views[n-1])
     end
+
+    Effects.blink(:what=>:line) if options[:blink]
   end
 
   def self.to_line n=nil

@@ -422,21 +422,24 @@ class TreeLs
       insert self.remote_file_contents(path)
     else
       Location.go path
+      Effects.blink(:what=>:line)
     end
 
-    if line_number  # If line number, go to it
+    if line_number   # If line number, go to it
       goto_line line_number.to_i
-    elsif search_string  # Else, search for |... string if it passed
+      Effects.blink(:what=>:line)
+    elsif search_string   # Else, search for |... string if it passed
       Move.top
+      # Search for exact line match
       found = search_forward_regexp("^#{regexp_quote(search_string)}$", nil, true)
 
-      # If not found, search for just the string itself
+      # If not found, search for substring of line
       unless found
         Move.top
         search_forward_regexp("#{regexp_quote(search_string)}", nil, true)
       end
 
-      # If not found, search for just the string itself
+      # If not found, search for it stripped
       unless found
         Move.top
         search_forward_regexp("#{regexp_quote(search_string.strip)}")
@@ -444,6 +447,7 @@ class TreeLs
 
       beginning_of_line
       recenter 0
+      Effects.blink(:what=>:line)
     end
   end
 
@@ -1527,6 +1531,10 @@ class TreeLs
     end
   end
 
+  def self.add_slash_maybe dir
+    dir =~ /\/$/ ? dir : "#{dir}/"
+  end
+
 private
   def self.search_dir_names(lines, regexp)
     result = []
@@ -1673,6 +1681,7 @@ private
     txt ||= Line.value
     txt =~ /^[^,|\n]*\/$/
   end
+
 
 end
 TreeLs.define_styles

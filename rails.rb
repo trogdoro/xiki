@@ -8,19 +8,22 @@ class Rails
 
   def self.menu name=nil, port=nil
     unless name  # Print menu
-      puts "+ name, port: /tmp/foo, 3001"
+      r = "+ current dir: #{View.dir}, 3000\n"
+      r << "+ upper: #{View.dir_of_after_bar}, 3000\n" if View.bar?
+      r
+
     else  # Print options
       puts "
         - .create
         - .start
-        - .url
+        - .url '/'
         - .controller(:bar, :index)
         - .migration(:bar)
         - .shell
         - .console
         - .dirs/
-        - .snippets
         "
+      #         - .snippets
     end
   end
 
@@ -71,14 +74,9 @@ class Rails
     Shell.run "script/server #{port}", :dir => dir, :buffer => "*rails #{dir}"
   end
 
-  def self.url dir=nil, port=3000
-    browse_url "http://localhost:#{port}"
-  end
-
-  def self.snippets dir=nil, port=nil
-    puts "
-      - (o): y Account.find(:first)
-      "
+  def self.url path, dir=nil, port=3000
+    browse_url "http://localhost:#{port}#{path}"
+    nil
   end
 
   def self.models model=nil, option=nil

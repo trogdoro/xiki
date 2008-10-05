@@ -2,24 +2,24 @@ class Merb
 
   def self.menu name=nil, port=nil
     unless name  # Print menu
-      puts "
-        + current dir: ., 4000
-        + dir: /tmp/foo, 4000
-        + .links/
-        - .snippets
-        + .models/
-        "
+      r = "+ current dir: #{View.dir}, 4000\n"
+      r << "+ upper: #{View.dir_of_after_bar}, 4000\n" if View.bar?
+      r + "
+      + .links/
+      - .snippets
+      + .models/
+      ".unindent
     else  # Print options
-      puts "
-        - .create
-        - .start
-        - .url '/'
-        + .shells/
-        + .generate/
-        + .rake/
-        + .db/
-        + .files/
-        "
+      "
+      - .create
+      - .start
+      - .url '/'
+      + .shells/
+      + .generate/
+      + .rake/
+      + .db/
+      + .files/
+      "
     end
   end
 
@@ -91,12 +91,11 @@ class Merb
     # Split into dir and name
     dir = self.path_from_dir(dir)
     path, name = dir.match(/(.+)\/(.+)/)[1..2]
-
-    Shell.run "merb-gen app #{name}", :dir => path, :buffer => "*merb-gen app #{name}"
+    Shell.run "merb-gen app #{name}", :dir=>path, :buffer=>"*merb-gen app #{name}"
   end
 
   def self.start dir, port
-    Shell.run "merb -p #{port}", :dir => self.path_from_dir(dir), :buffer => "*merb #{dir}"
+    Shell.run "merb -p #{port}", :dir=>self.path_from_dir(dir), :buffer=>"*merb #{dir}"
   end
 
   def self.shell dir, port
@@ -120,6 +119,7 @@ class Merb
 
   def self.url path, dir, port
     $el.browse_url "http://localhost:#{port}#{path}"
+    nil
   end
 
   def self.console dir=nil, port=nil
@@ -130,6 +130,7 @@ class Merb
     else
       Shell.run "merb -i", :dir => dir, :buffer => b
     end
+    nil
   end
 
   def self.migrate dir=nil, port=nil

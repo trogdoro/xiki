@@ -22,7 +22,7 @@ class App
       Time.now.strftime("%Y-%m-%d")
   end
   def self.enter_from_difflog
-    Bookmarks.save("$_0")
+    Location.as_spot
     DiffLog.open
     isearch_backward
   end

@@ -300,7 +300,7 @@ class KeyBindings
     Keys.layout_dimensions_small { set_frame_size(View.frame, 90, 35) }
     Keys.layout_expand { View.enlarge }   # *
     # F
-    Keys.layout_files { TreeLs.open_in_bar; View.to_nth 1 }
+    Keys.layout_files { TreeLs.open_in_bar; View.to_nth 1; Effects.blink(:what=>:line) }
 
     Keys.layout_hide { View.hide }   # **
     Keys.layout_indent { Hide.hide_by_indent }   # only show lines indented less than x
@@ -310,12 +310,12 @@ class KeyBindings
     Keys.layout_mark { Color.colorize }   # colorize line, etc
     #Keys.layout_menu { CodeTree.layout_menu }   # show menu bare in current state
     Keys.layout_next { View.next }   # next view **
-    Keys.layout_output { Code.open_log_view }
+    Keys.layout_output { Code.open_log_view; Effects.blink(:what=>:line) }
     Keys.layout_previous { View.previous }   # previous view **
     # Q
     Keys.layout_reveal { Hide.reveal }   # reveal all hidden text
     Keys.layout_search { Keys.prefix_u? ? Search.find_in_buffers(Keys.input(:prompt=>"Search all open files for: ")) : Hide.search }   # *
-    Keys.layout_todo { TreeLs.open_in_bar }   # show bar on left with the quick bookmark named "-t" *
+    Keys.layout_todo { TreeLs.open_in_bar; Effects.blink(:what=>:line) }   # show bar on left with the quick bookmark named "-t" *
     Keys.layout_upper { View.to_upper }   # go to uppermost view after bar
     # V
     Keys.layout_visibility { View.visibility }
@@ -324,11 +324,11 @@ class KeyBindings
     # Y
     Keys.layout_zoom { narrow_to_region(region_beginning, region_end) }   # show selection only
     Keys.L0 { recenter 0 }   # Layout 0: scroll so cursor is 0 lines from top af window *
-    Keys.L1 { Move.to_window 1 }   # Layout 1
-    Keys.L2 { Move.to_window 2 }   # Layout 2
-    Keys.L3 { Move.to_window 3 };  Keys.L4 { Move.to_window 4 }
-    Keys.L5 { Move.to_window 5 };  Keys.L6 { Move.to_window 6 };  Keys.L7 { Move.to_window 7 };  Keys.L8 { Move.to_window 8 }
-    Keys.L9 { Move.to_window 9 }
+    Keys.L1 { Move.to_window(1, :blink=>true) }   # Layout 1
+    Keys.L2 { Move.to_window(2, :blink=>true) }   # Layout 2
+    Keys.L3 { Move.to_window(3, :blink=>true) };  Keys.L4 { Move.to_window(4, :blink=>true) }
+    Keys.L5 { Move.to_window(5, :blink=>true) };  Keys.L6 { Move.to_window(6, :blink=>true) };  Keys.L7 { Move.to_window(7, :blink=>true) };  Keys.L8 { Move.to_window(8, :blink=>true) }
+    Keys.L9 { Move.to_window(9, :blink=>true) }
 
     # Todo: if prefix passed, expand window, but leave other windows open with that much space in each
     #    Keys.LCR { Colors.highlight  }   # Layout Tree: show bar on left with the quick bookmark named "-t"

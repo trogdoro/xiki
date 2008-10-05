@@ -278,12 +278,14 @@ class View
     (Keys.prefix_times || times).times do
       other_window 1
     end
+    Effects.blink(:what=>:line)
   end
 
   def self.previous times=1
     (Keys.prefix_times || times).times do
       other_window -1
     end
+    Effects.blink(:what=>:line)
   end
 
   def self.show_dir
@@ -344,11 +346,13 @@ class View
   end
 
   def self.to_upper
-    down = Keys.prefix(:clear=>true).to_i - 1
+    down = Keys.prefix_times - 1
+    Keys.clear_prefix
     View.to_after_bar
     down.times do
       View.next
     end
+    Effects.blink(:what=>:line)
   end
 
   def self.to_after_bar
