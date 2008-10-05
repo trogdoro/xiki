@@ -1277,6 +1277,7 @@ class TreeLs
       found_yet = false
       IO.foreach(path) do |l|
         l.sub!(/[\r\n]+$/, '')
+        l.gsub!("\c@", '.')   # Replace out characters that el4r can't handle
         # Swallow up until match
         if !found_yet
           found_yet = l == line
@@ -1297,6 +1298,7 @@ class TreeLs
       found_yet = false
       IO.foreach(path) do |l|
         l.sub!(/[\r\n]+$/, '')
+        l.gsub!("\c@", '.')   # Replace out characters that el4r can't handle
         # Swallow up until match
         if !found_yet
           found_yet = l == line
@@ -1475,7 +1477,7 @@ class TreeLs
   def self.matches_root_pattern? path
     without_label = Line.without_label :line=>path#, :leave_indent=>true
     without_label =~ /^\/[^\n,]*$/ ||
-    without_label =~ /^(~\/|\.\/|\$.+\/$)/
+    without_label =~ /^(~\/|\.+\/|\$.+\/$)/
   end
 
   def self.create_dir

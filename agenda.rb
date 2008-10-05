@@ -1,3 +1,8 @@
+require 'view'
+require 'line'
+require 'effects'
+
+
 gem 'googlecalendar'
 require 'googlecalendar'
 

@@ -1,0 +1,9 @@
+| Summary
+Meant to serve as misc notes for development of project.
+
+| Misc todo
+- git.rb: move git commands from repository.rb into it
+  ../
+    - from: repository.rb
+      ##Shell.+git /
+    - to: git.rb

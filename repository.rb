@@ -2,8 +2,8 @@ class Repository
   extend ElMixin
 
   # -w caused a git segfault :/
-  #@@ignore_whitespace = ' -w '
-  @@ignore_whitespace = ''
+  #@@git_diff_options = ' -U2 -w '
+  @@git_diff_options = ' -U2 '
 
   CODE_SAMPLES = %q<
     # Show options for the repository
@@ -74,7 +74,7 @@ class Repository
 
     if file.nil?   # If no file, show files for rev
       # Rev passed, so show all diffs
-      txt = Shell.run "git show --pretty=oneline --name-status -U2 #{rev}", :sync=>true, :dir=>dir
+      txt = Shell.run "git show --pretty=oneline --name-status #{rev}", :sync=>true, :dir=>dir
       txt.sub! /^.+\n/, ''
       txt.gsub! /^([A-Z])\t/, "\\1: "
       txt.gsub! /^M: /, ''
@@ -82,7 +82,7 @@ class Repository
     end
 
     # File passed, show diff
-    txt = Shell.run "git show --pretty=oneline -U2 #{rev} #{file}", :sync=>true, :dir=>dir
+    txt = Shell.run "git show --pretty=oneline #{rev} #{file}", :sync=>true, :dir=>dir
     txt.sub!(/.+?@@.+?\n/m, '')
     txt.gsub! /^-/, '~'
     txt.gsub! /^/, '|'
@@ -233,13 +233,8 @@ class Repository
     dir = self.extract_dir project
     #dir ||= self.determine_dir
 
-    # If no file, show status
     if file.nil?
-      txt = Shell.run("git status", :sync => true, :dir => dir)
-      txt.gsub!(/^#\t/, '- ')
-      txt.gsub!(/^#\n/, '')
-      txt.gsub!(/^#/, '|')
-      return puts(txt)
+      return Git.status dir
     end
 
     View.open("#{dir}/#{file}")   # If file, open it
@@ -286,26 +281,19 @@ class Repository
     if file.nil?   # If launching .diff/.diff_unadded directly (not a file)
 
       txt = Shell.run "git status", :dir=>dir, :sync=>true
-      new_files = txt.scan(/\tnew file: +(.+)$/).map{|a| a.first}
-      untracked = txt.scan(/\t([^:\n]+$)/).map{|a| a.first}
-      modified = txt.scan(/\tmodified: +(.+$)/).map{|a| a.first}.uniq
+      hash = Git.status_to_hash(Git.status_internal(txt))
 
-      if is_unadded   # If diffing with repos add 'new' label to new files
-        untracked.map!{|i| "- untracked: #{i}"}
-      else
-        untracked.map!{|i| "- untracked (ignore): #{i}"}
-      end
+      untracked = hash[:untracked].map{|i| i[1]}
+      untracked.map!{|i| "+ untracked#{is_unadded ? '' : ' (ignore)'}: #{i}\n"}
 
       option = is_unadded ? "- action: .add\n" : "- action: .commit \"message\"\n"
 
-      if expand
-        txt = is_unadded ?
-          Shell.run("git diff -U2 #{@@ignore_whitespace}", :sync => true, :dir => dir) :
-          Shell.run('git diff -U2 #{@@ignore_whitespace} HEAD', :sync => true, :dir => dir)
+      if expand   # If showing diffs right away
+        txt = Shell.run("git diff #{@@git_diff_options}#{is_unadded ? '' : ' HEAD'}", :sync => true, :dir => dir)
 
         if txt =~ /^fatal: ambiguous argument 'HEAD': unknown revision/
           txt = "- Warning: Couldn't diff because no revisions exist yet in repository\n" +
-            "  - Try using: - .diff/ (without :expand)"
+            "  - Try using: .diff/ (without :expand)\n"
         else
           unless txt.empty?
             self.clean! txt
@@ -314,39 +302,41 @@ class Repository
             txt.gsub!(/^  \|diff --git .+ b\//, '- ')
           end
         end
-        untracked.map!{|i| "#{i}\n"}
-        txt = txt + untracked.join('')
-      else
-        modified -= new_files if ! is_unadded   # If diffing with repos remove dups
-        txt = nil
-        if is_unadded
-          txt = modified.map{|i| "+ #{i}"}
-        else
-          txt = (modified + new_files).sort.map{|i| "+ #{i}"}
+      else   # If just showing list of files
+        if is_unadded   # If unadded, simply use unadded
+          txt = hash[:unadded].map{|i| "+ #{i[1]}\n"}.join('')
+        else   # If added, use added + unadded - dups
+          txt = (hash[:unadded].map{|i| "+ #{i[1]}\n"} +
+            hash[:added].map{|i| "+ #{i[1]}\n"}).sort.uniq.join('')
         end
-        txt = (txt + untracked).join("\n")
       end
 
-      if ! is_unadded   # If diffing with repos add 'new' label to new files
-        new_files.each do |i|
-          txt.sub! /^([+-]) #{i}$/, "\\1 new: #{i}"
+      # Add labels back
+      if is_unadded   # If unadded, add labels from added (if they exist there)
+        hash[:added].each {|i| txt.sub! /^([+-]) #{i[1]}$/, "\\1 #{i[0]}: #{i[1]}"}
+      else   # If added, add your label also unadded (or special)
+        unadded = hash[:unadded].map{|i| i[1]}
+        hash[:added].each do |i|
+          # Only add label if file is also unadded, or if label isn't 'modified'
+          next unless unadded.member?(i[1]) or i[0] != 'modified'
+          txt.sub! /^([+-]) #{i[1]}$/, "\\1 #{i[0]}: #{i[1]}"
         end
       end
-      if ! txt.any?
-        txt = "- Warning: nothing to show"
-      end
+
+      txt = txt + untracked.join("")
+      txt = "- Warning: nothing to show" if ! txt.any?
       return option + txt
     end
 
     if line.nil?   # If no line passed, re-do diff for 1 file
       # If untracked, show whole file
       if Line.label =~ /^untracked/
-        return "|@@ +1\n" + IO.read(Bookmarks.expand("#{dir}/#{file}")).gsub(/^/, '|+')
+        return "|@@ +1\n" + IO.read(Bookmarks.expand("#{dir}/#{file}")).gsub(/^/, '|+').gsub("\c@", '.')
       end
 
       txt = is_unadded ?
-        Shell.run("git diff -U2 #{@@ignore_whitespace} #{file}", :sync => true, :dir => dir) :
-        Shell.run("git diff -U2 #{@@ignore_whitespace} HEAD #{file}", :sync => true, :dir => dir)
+        Shell.run("git diff #{@@git_diff_options} #{file}", :sync => true, :dir => dir) :
+        Shell.run("git diff #{@@git_diff_options} HEAD #{file}", :sync => true, :dir => dir)
       self.clean! txt
       txt.gsub!(/^diff .+\n/, '')
       txt.gsub!(/^-/, '~')
@@ -473,8 +463,6 @@ class Repository
     siblings = CodeTree.siblings :include_label=>true
 
     left1, right1, left2, right2 = CodeTree.sibling_bounds
-    Effects.blink :left=>left1, :right=>right1
-    Effects.blink :left=>left2, :right=>right2
 
     # Remove untracked
     siblings = siblings.select{|i| i !~ /^. untracked/}.map{|i| Line.without_label(:line=>i)}

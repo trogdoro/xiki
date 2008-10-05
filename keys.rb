@@ -371,7 +371,7 @@ class Keys
     $el.elvar.current_prefix_arg = nil
   end
 
-  def self.bookmark_as_path
+  def self.bookmark_as_path options={}
     bm = Keys.input(:timed => true, :prompt => "Enter bookmark in which to search: ")
     if bm == " "   # If space, return special token
       return :space
@@ -387,8 +387,10 @@ class Keys
       return nil
     end
 
-    dir = Bookmarks.dir_only dir
-    dir << "/" unless dir =~ /\/$/
+    unless options[:include_file]
+      dir = Bookmarks.dir_only dir
+      dir << "/" unless dir =~ /\/$/
+    end
     dir
 
   end
@@ -411,7 +413,7 @@ class Keys
   end
 
   def self.recent
-    $el.recent_keys.to_s.gsub(/[\021\c@]/, '').match(/(\S+) (\S+)\]$/)[1..2].reverse
+    $el.recent_keys.to_s.gsub("\c@", '').match(/(\S+) (\S+)\]$/)[1..2].reverse
   end
 
   def self.char

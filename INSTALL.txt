@@ -1,0 +1,31 @@
+| Summary
+This file tells how to install Xiki.  See README.txt for a description of Xiki.
+
+| Steps
+- 1: Install EmacsRuby (el4r)
+  - See: http://www.rubyist.net/~rubikitch/computer/el4r/index.en.html
+    - Click on 'Download / Install / Setup' link
+    - These were the commands to run as of 2008-10-04, but be sure to check for updates:
+
+      ruby -ropen-uri -e 'URI("http://www.rubyist.net/~rubikitch/archive/el4r-1.0.4.tar.gz").read.display' > el4r-1.0.4.tar.gz
+      tar xzf el4r-1.0.4.tar.gz
+      cd el4r-1.0.4
+      ruby setup.rb
+      ruby -S el4r-rctool -p
+      ruby -S el4r-rctool -i
+
+- 2: Download Xiki from github
+  - Go to: http://github.com/trogdoro/xiki
+  - Option 1: Download as zip
+    - Click on the 'download' button
+  - Option 2: Clone from git
+    - If you want to do this you probably already know how:)
+
+- 3: Require Xiki in EmacsRuby's config
+  - Sample configuration
+    - /Users/hasselhoff/.el4r/
+      - init.rb
+        |$:.unshift "/projects/xiki"
+        |require 'xiki'
+        |KeyBindings.keys   # Use default key bindings
+        |Styles.use_xiki_color_scheme   # Use xiki's color scheme

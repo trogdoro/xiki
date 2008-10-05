@@ -137,6 +137,7 @@ class Notes
 
     Keys.CD(:notes_mode_map) { Notes.cut_block true }
     Keys.CK(:notes_mode_map) { Notes.cut_block }
+    Keys.CX(:notes_mode_map) { Notes.cut_block }
 
     Keys.CH(:notes_mode_map) { Notes.insert_heading }  # Insert ||... etc. heading
     Keys.CN(:notes_mode_map) { Notes.to_block }  # Go to block after next block
@@ -347,7 +348,7 @@ class Notes
       # If search in progress
       if TreeLs.search_going_or_interrupted and ! Line.blank?
         TreeLs.search_going_or_interrupted = false
-        TreeLs.kill_siblings
+        CodeTree.kill_siblings
       end
 
       LineLauncher.launch# :no_search => true
@@ -356,7 +357,7 @@ class Notes
 
     defun(:notes_mouse_double_click, :interactive => "e") do |e|
       if Line.matches(/\/$/)   # If dir, kill siblings first
-        TreeLs.kill_siblings
+        CodeTree.kill_siblings
       end
 
       LineLauncher.launch

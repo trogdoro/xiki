@@ -1,31 +1,3 @@
-require 'rubygems'
-
-$LOAD_PATH.unshift File.join(File.dirname(__FILE__), 'wrappers')
-%w[
-  view rubygems ol trouble_shooting notes line_launcher text_util app
-  bookmarks clipboard code color control_tab deletes diff_log files
-  history keys macros move search tree_ls repository effects twitter
-  shell rails merb data_mapper code_tree docs svn remote redmine
-  schedule irc mysql cursor core_ext help ruby ruby_console buffers
-  links computer menu safari book firefox projects postgres overlay
-  agenda
-  ].each do |l|
-  begin
-    require l
-  rescue LoadError => e
-    View.to_buffer '* missing gems', :clear => true
-    Notes.mode
-    gem_name = e.to_s[/-- (.*)/, 1] || e.to_s[/RubyGem (.*)/, 1]
-    gem_name.sub!(/\(.+/, '')
-    View.insert "| Missing gem '#{gem_name}'\n" +
-      "- To install '#{gem_name}':\n" +
-      "  - double-click or press C-. on the below line (or paste into a terminal):\n" +
-      "\n" +
-      "- Install '#{gem_name}': !!sudo gem install #{gem_name}\n" +
-      "\n- Important: After the gem is installed, press M-l to reload emacs or manually restart."
-  end
-end
-
 class KeyBindings
   extend ElMixin
 
@@ -138,7 +110,6 @@ class KeyBindings
     Keys.O2 { View.open("$2") };   Keys.O3 { View.open("$3") };   Keys.O4 { View.open("$4") };
     Keys.O5 { View.open("$5") };   Keys.O6 { View.open("$6") };   Keys.O7 { View.open("$7") };
     Keys.O8 { History.open_current :all => true, :prompt_for_bookmark => true }   # Like do_outline, but inserts all
-
   end
 
   def self.e_keys
@@ -148,7 +119,6 @@ class KeyBindings
     Keys.enter_as_camelcase { insert TextUtil.camel_case(Clipboard.get(0)) }
     Keys.enter_as_debug { Code.enter_as_debug }
     Keys.enter_as_filename { insert Clipboard.get(".") }
-    #Keys.enter_as_path { insert Clipboard.get("/") }
     Keys.enter_as_snakecase { insert TextUtil.snake_case(Clipboard.get(0)) }
     Keys.enter_as_trunk { Code.enter_as_trunk }
     Keys.enter_as_interpolated { insert "\#{#{Clipboard.get(0)}}" }
@@ -156,7 +126,7 @@ class KeyBindings
     Keys.enter_clipboard { Clipboard.paste("0") }   # paste **
     Keys.enter_difflog { App.enter_from_difflog }   # Save point and go to difflog to search
     Keys.EE { Line.to_right }   # EE - end of line (E's default) **
-    #Keys.enter_from_quoted { Keys.insert_from_q }   # insert what was inserted with Q
+    Keys.enter_file { View.insert(Keys.bookmark_as_path(:include_file=>true)); Line.to_left }   # Given a bookmark
     Keys.enter_history { History.enter_history }   # enter recently viewed files
     #Keys.EH { TreeLs.enter_lines(/^\| /) }
     Keys.enter_insert_date { App.enter_date }    # insert date string (and time if C-u)
@@ -344,7 +314,7 @@ class KeyBindings
     Keys.layout_previous { View.previous }   # previous view **
     # Q
     Keys.layout_reveal { Hide.reveal }   # reveal all hidden text
-    Keys.layout_search { Keys.prefix_u? ? Search.find_in_buffers(Keys.input :prompt=>"Search all open files for: ") : Hide.search }   # *
+    Keys.layout_search { Keys.prefix_u? ? Search.find_in_buffers(Keys.input(:prompt=>"Search all open files for: ")) : Hide.search }   # *
     Keys.layout_todo { TreeLs.open_in_bar }   # show bar on left with the quick bookmark named "-t" *
     Keys.layout_upper { View.to_upper }   # go to uppermost view after bar
     # V
@@ -498,7 +468,7 @@ class KeyBindings
     Keys.B { Move.backward }
     Keys.F { Move.forward }
     Keys.Q { Keys.timed_insert }
-    Keys.set("C-.") { LineLauncher.launch }
+    Keys.set("C-.") { Effects.blink(:what=>:line); LineLauncher.launch }
 
     if locate_library "ruby-mode"
       el_require :ruby_mode
@@ -538,4 +508,3 @@ class KeyBindings
   end
 end
 
-KeyBindings.keys

@@ -126,6 +126,7 @@ class Code
 
   # Evaluates a string, and returns the output and the stdout string generated
   def self.eval code
+    return ['- Warning: nil passed to Code.eval!', nil, nil] if code.nil?
     # Capture stdout output (saving old stream)
     orig_stdout = $stdout;  $stdout = StringIO.new
     stdout = nil

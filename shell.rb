@@ -42,10 +42,12 @@ class Shell
     end
 
     if sync
-      stdin, stdout, stderr = Open3.popen3(". ~/.profile;cd #{dir};#{command}")
+      profile = File.exists?(File.expand_path('~/.profile')) ? '. ~/.profile;' : ''
+      stdin, stdout, stderr = Open3.popen3("#{profile}cd #{dir};#{command}")
       result = ""
       result << stdout.readlines.join('')
       result << stderr.readlines.join('')
+      result.gsub!("\c@", '.')   # Replace out characters that el4r can't handle
       return result
 
     else

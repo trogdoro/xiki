@@ -2,7 +2,7 @@ class Deletes
   extend ElMixin
   def self.delete_whitespace
 
-    prefix = Keys.prefix   # Prefix means add that many spaces a end
+    prefix = Keys.prefix   # Prefix means add that many spaces after deleting
     Keys.prefix = nil   # So it doesn't mess up other commands
 
     # If at end of line, go forward, and remember to delete backward
@@ -16,7 +16,9 @@ class Deletes
     elsif was_at_beginning and not View.char =~ /\s/
       backward_char
     else   # If not at end of a line, simply delete horizontal
-      return delete_horizontal_space
+      delete_horizontal_space
+      View.insert(" " * prefix) if prefix
+      return
     end
 
     # Delete any blank lines
