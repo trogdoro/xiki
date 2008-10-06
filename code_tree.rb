@@ -37,7 +37,7 @@ class CodeTree
     if ! stdout.nonempty? and returned.respond_to?(:any?) and returned.any?
       stdout =
         if returned.is_a? Array
-          returned.map{|l| "#{l}\n"}.join('')
+          returned.map{|l| "#{l =~ /\/$/ ? '+' : '-'} #{l}\n"}.join('')
         elsif returned.is_a? Hash
           (returned.map{|k, v| v =~ /\/$/ ? "+ #{k}: #{v}" : "- #{k}: #{v}"}.join("\n")) + "\n"
         else
@@ -50,9 +50,13 @@ class CodeTree
 
     if e
       returned = ''
-      stdout = e.is_a?(ScriptError) ?
-        "- #{e.message.sub(/.+: /, '')}!\n" :
-        "#{stdout}- error evaluating '#{code}': #{e.message}\n#{e.backtrace.join("\n")}\n"
+      if e.is_a?(ScriptError)
+        stdout = "- #{e.message.sub(/.+: /, '')}!\n"
+      else
+        stdout = "#{stdout}- error evaluating: #{code}\n- message: #{e.message}\n" +
+          "- backtrace:\n" +
+          e.backtrace[0..10].map{|i| "  #{i}\n"}.join('') + "  ...\n"
+      end
     end
 
     buffer_changed = b != View.buffer   # Remember whether we left the buffer
