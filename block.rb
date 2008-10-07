@@ -20,7 +20,7 @@ class Block
       Line.to_left
       View.insert "> "
       fill_paragraph nil
-      txt = Clipboard.paragraph(:delete => true)
+      txt = View.paragraph(:delete => true)
       View.insert txt.gsub(/^  /, '> ')
       return
     end

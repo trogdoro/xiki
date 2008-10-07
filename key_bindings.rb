@@ -96,6 +96,7 @@ class KeyBindings
     Keys.open_point { Bookmarks.go(nil, :point => true) }
     Keys.open_quick { Bookmarks.go :q }   # like OB but uses different temporary namespace
     Keys.open_region_path { find_file buffer_substring(region_beginning, region_end) }
+    Keys.open_rake_outline { CodeTree.display_menu("- Rake.menu/") }
     Keys.open_search { Search.outline_search }   # hide search via outline *
     Keys.open_tree { TreeLs.tree }   # draw a tree, prompting for bookmark tag *
     Keys.open_up { View.show_dir }   # open enclosing dir **
@@ -163,6 +164,7 @@ class KeyBindings
     Keys.E2 { Clipboard.paste("2") };  # Enter 2
     Keys.E3 { Clipboard.paste("3") };   Keys.E4 { Clipboard.paste("4") }
     Keys.E5 { Clipboard.paste("5") };   Keys.E6 { Clipboard.paste("6") };   Keys.E7 { Clipboard.paste("7") }
+    Keys.E8 { TreeLs.enter_lines "." }   # Like enter_outline, but inserts all
   end
 
   def self.d_keys
@@ -323,7 +325,7 @@ class KeyBindings
     # X
     # Y
     Keys.layout_zoom { narrow_to_region(region_beginning, region_end) }   # show selection only
-    Keys.L0 { recenter 0 }   # Layout 0: scroll so cursor is 0 lines from top af window *
+    Keys.L0 { View.recenter_top }   # Layout 0: scroll so cursor is 0 lines from top af window *
     Keys.L1 { Move.to_window(1, :blink=>true) }   # Layout 1
     Keys.L2 { Move.to_window(2, :blink=>true) }   # Layout 2
     Keys.L3 { Move.to_window(3, :blink=>true) };  Keys.L4 { Move.to_window(4, :blink=>true) }
@@ -342,34 +344,46 @@ class KeyBindings
 
   # Control keys during isearch
   def self.isearch
-    Keys.A(:isearch_mode_map) { Search.isearch_query_replace }   # Alter
+
+    Keys.isearch_alter { Search.isearch_query_replace }   # Alter
     # B: leave unmapped for back
-    Keys.C(:isearch_mode_map) { Search.copy }   # Clipboard (copy)
-    Keys.D(:isearch_mode_map) { Search.isearch_delete }   # Delete
-    Keys.E(:isearch_mode_map) { Search.paste_here }   # Enter: insert clipboard, replacing match
-    Keys.F(:isearch_mode_map) { Search.go_to_end }   # Forward
-    Keys.G(:isearch_mode_map) { Search.stop }   # Stop searching
-
-    Keys.H(:isearch_mode_map) { Search.isearch_pull_in_sexp }   # Have: pull sexp into search string
-
-    # I: leave unmapped - had issues using it
+    Keys.isearch_clipboard { Search.copy }   # Clipboard (copy)
+    Keys.isearch_delete { Search.isearch_delete }   # Delete
+    Keys.isearch_enter { Search.paste_here }   # Enter: insert clipboard, replacing match
+    Keys.isearch_forward { Search.go_to_end }   # Forward
+    Keys.isearch_g { Search.stop }   # Stop searching
+    # have_...
+    define_key :isearch_mode_map, kbd("C-h"), nil
+    Keys.isearch_have_camel { Search.isearch_as_camel }
+    Keys.isearch_have_variable { Search.insert_var_at_search_start }
+    Keys.isearch_have_line { Search.have_line }   # copy line back to search start
+    Keys.isearch_have_output { Search.isearch_log }   # copy line back to search start
+    Keys.isearch_have_paragraph { Search.have_paragraph }   # copy line back to search start
+    Keys.isearch_have_snake { Search.isearch_as_snake }
+    # I: leave unmapped - had issues using it (messes up position)
     # J: leave unmapped for linebreak
-    Keys.K(:isearch_mode_map) { Search.cut; Location.as_spot('deleted') }
-    Keys.L(:isearch_mode_map) { Search.line }   # Line: copy line back to search start
+    define_key :isearch_mode_map, kbd("C-j"), nil
+    # have_...
+    Keys.isearch_just_orange { Search.just_orange }
+    Keys.isearch_just_select { Search.just_select }   # Select match
+    Keys.isearch_just_underline { Search.clear; Overlay.face(Search.left, Search.right, :underline) }
+
+    Keys.isearch_kill { Search.cut; Location.as_spot('deleted') }   # cut
+    Keys.isearch_look { Search.uncover }   # Look: show results for search string in all open files
     # M: leave unmapped for stop
     # N: leave unmapped for next
-    Keys.O(:isearch_mode_map) { Search.isearch_find_in_buffers(:current_only => true) }   # Outline
+    Keys.isearch_outline { Search.isearch_find_in_buffers(:current_only => true) }   # Outline
     # P: leave unmapped for previous
     # Q: leave unmapped for quoting
     # R: leave unmapped for reverse
     # S: leave unmapped for search
-    Keys.T(:isearch_mode_map) { Search.isearch_open_last_edited }   # To: open file / jump to method
-    Keys.U(:isearch_mode_map) { Search.uncover }   # Uncover: show results for search string in all open files
-    Keys.V(:isearch_mode_map) { Search.insert_at_search_start }   # Value: copy value back to search start
+    Keys.isearch_to { Search.isearch_open_last_edited }   # To: open file / jump to method
+    Keys.isearch_usurp { Search.isearch_pull_in_sexp }   # usurp: pull sexp into search string
+    Keys.isearch_value { Search.insert_at_search_start }   # Value: copy value back to search start
     # W: leave unmapped for pulling into search
-    Keys.X(:isearch_mode_map) { Search.move_to_search_start }   # eXtract: move back to search start
+    Keys.isearch_xtract { Search.move_to_search_start }   # eXtract: move back to search start
     # Y: leave unmapped for yank
-    Keys.Z(:isearch_mode_map) { Search.insert_at_spot }   # Zap: move to spot (as spot)
+    Keys.isearch_zap { Search.insert_at_spot }   # Zap: move to spot (as spot)
 
 
     define_key :isearch_mode_map, kbd("C-1") do
@@ -405,30 +419,27 @@ class KeyBindings
   def self.isearch_meta
 
     Keys._A(:isearch_mode_map) { Search.isearch_query_replace :start_with_search_string }   # Alter: query-replace, using search string as initial input
-    #    Keys._A(:isearch_mode_map) { Search.isearch_tree_grep("$a") }   # All: find in $a bookmark
-    #Keys._B(:isearch_mode_map) { Search.isearch_find_in_buffers }   # Outline (all buffers)
-
     Keys._C(:isearch_mode_map) { Search.copy_and_comment }   # Comment line and copy it to starting point
     Keys._D(:isearch_mode_map) { Search.downcase }   # Downcase
     Keys._E(:isearch_mode_map) { Search.insert_tree_at_spot }   # Enter
     Keys._F(:isearch_mode_map) { Search.isearch_open }   # Find file
     Keys._G(:isearch_mode_map) { Search.isearch_google }   # Google search
     # H
-    Keys._I(:isearch_mode_map) { Search.insert_var_at_search_start }   # Interpolate: paste as interpolated variable
+    #Keys._I(:isearch_mode_map) { Search.insert_var_at_search_start }   # Interpolate: paste as interpolated variable
     # J
     # K
-    Keys._L(:isearch_mode_map) { Search.isearch_log }
+    #Keys._L(:isearch_mode_map) { Search.isearch_log }
     Keys._M(:isearch_mode_map) { Search.isearch_tree_grep_method }   # Method: do tree grep (prompt for dir)
     # N
     Keys._O(:isearch_mode_map) { Search.isearch_find_in_buffers(:current_only => true, :in_bar => true) }   # Outline: in side bar
     # P
     # Q
     # R
-    Keys._S(:isearch_mode_map) { Search.isearch_tree_grep }   # Search: do tree grep (prompt for dir)
+    # S
     Keys._T(:isearch_mode_map) { Search.jump_to_difflog }   # To: find original string in difflog
     Keys._U(:isearch_mode_map) { Search.upcase }   # Upcase
     Keys._V(:isearch_mode_map) { Search.isearch_find_in_buffers(:in_bar => true) }   # Visited: show matches in visited files
-    #Keys._V(:isearch_mode_map) { Search.insert_var_at_search_start }
+    # V
     Keys._W(:isearch_mode_map) { Search.isearch_select_inner }   # Within: select 1 char within match
     Keys._X(:isearch_mode_map) { Search.isearch_move_line }
     # Y

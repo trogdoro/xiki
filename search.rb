@@ -178,30 +178,11 @@ class Search
     TreeLs.grep_with_hashes dir, input
   end
 
-  def self.isearch_tree_grep bookmark=nil
-    self.clear
-    match = self.match
-
-    # Get bookmark
-    dir = bookmark ?
-      Bookmarks.expand(bookmark) :
-      Keys.bookmark_as_path
-
-    # Do search
-    #regex = Regexp.new(Regexp.quote(match), Regexp::IGNORECASE)
-
-    TreeLs.grep_with_hashes dir, match
-  end
-
   def self.isearch_tree_grep_method
     self.clear
     match = self.match
 
-  #     # Get bookmark
-  #     dir = Keys.bookmark_as_path
     dir = Bookmarks.expand("$a")
-
-  #    insert "\\bdef .*#{match}"
 
     # Do search
     regex = Regexp.new("\\bdef .*#{match}\\b", Regexp::IGNORECASE)
@@ -250,6 +231,7 @@ class Search
     self.clear
     match = self.match
 
+
     bm = Keys.bookmark_as_path
 
     if bm == :space   # If space, search in buffers
@@ -257,9 +239,24 @@ class Search
       return
     end
 
+    if bm == :slash   # If space, go back to root and search
+      # Make match be orange
+      Overlay.face(self.left, self.right, :ls_search)
+      self.search_at_root match
+      return
+    end
+
     # Search in bookmark
     TreeLs.grep_with_hashes bm, match
 
+  end
+
+  def self.left
+    match_beginning(0)
+  end
+
+  def self.right
+    match_end(0)
   end
 
   def self.isearch_find_in_buffers options={}
@@ -315,12 +312,26 @@ class Search
   end
 
   # Insert line at beginning of search
-  def self.line
+  def self.have_line
     self.clear
     line = thing_at_point(:line).sub("\n", "")
     self.to_start  # Go back to start
     insert line
   end
+
+  # Insert line at beginning of search
+  def self.have_paragraph
+    self.clear
+    paragraph = View.paragraph
+    offset = View.cursor - View.paragraph(:bounds=>true)[0]
+Ol << "offset: #{offset.inspect}"
+    self.to_start  # Go back to start
+    orig = Location.new
+    insert paragraph
+    orig.go
+    Move.forward offset
+  end
+
 
   # During isearch, pull next n words
   def self.isearch_pull_in_words n
@@ -330,7 +341,6 @@ class Search
         (lambda ()
           (forward-word #{n}) (point)))"
   end
-
 
   # During isearch, pull next sexp into the search string
   def self.isearch_pull_in_sexp
@@ -443,12 +453,12 @@ class Search
     buffer_substring match_beginning(0), match_end(0)
   end
 
-  def self.forward search
-    re_search_forward search, nil, true
+  def self.forward search, options={}
+    re_search_forward search, nil, (options[:go_anyway] ? 1 : true)
   end
 
-  def self.backward search
-    re_search_backward search, nil, true
+  def self.backward search, options={}
+    re_search_backward search, nil, (options[:go_anyway] ? 1 : true)
   end
 
   def self.to find
@@ -503,10 +513,10 @@ class Search
     downcase_region(match_beginning(0), match_end(0))
   end
 
-  def self.enter_search
-    bm = Keys.input(:timed => true, :prompt => "Enter bookmark in which to search: ")
+  def self.enter_search bm=nil, input=nil
+    bm ||= Keys.input(:timed => true, :prompt => "Enter bookmark in which to search: ")
     return unless bm
-    input = Keys.prefix_u? ?   # Do search
+    input ||= Keys.prefix_u? ?   # Do search
       Clipboard.get("0") :
       Keys.input(:prompt => "Text to search for: ")
 
@@ -534,6 +544,44 @@ class Search
     self.clear
     self.to_start
     View.insert "Ol << \"#{match}: \#{#{match}.inspect}\""
+  end
+
+  def self.isearch_as_camel
+    Search.clear
+    term = self.match
+    self.to_start
+    View.insert TextUtil.camel_case(term)
+  end
+
+  def self.isearch_as_snake
+    Search.clear
+    term = self.match
+    self.to_start
+    View.insert TextUtil.snake_case(term)
+  end
+
+  # Go to root of tree and do search
+  def self.search_at_root txt
+    Search.backward("^ *[+-] /")
+    # If next line isn't ##... line (will be visually distinct) add linebreak
+    unless Line.value(2) =~ /^ *[+-] ##/
+      Line.next
+      View.insert "\n"
+      Line.previous 2
+    end
+    self.enter_search '.', txt
+  end
+
+  def self.just_select
+    Search.clear
+    View.set_mark(Search.right)
+    View.to(Search.left)
+    Effects.blink :what => :region
+  end
+
+  def self.just_orange
+    Search.clear
+    Overlay.face(Search.left, Search.right, :notes_label)
   end
 
 end

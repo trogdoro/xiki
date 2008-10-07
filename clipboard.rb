@@ -103,14 +103,14 @@ class Clipboard
 
   def self.copy_paragraph options={}
     if Keys.prefix_u? or options[:rest]   # If U prefix, get rest of paragraph
-      left, right = self.paragraph(:bounds => true, :start_here => true)
+      left, right = View.paragraph(:bounds => true, :start_here => true)
     else
       if Keys.prefix   # If numeric prefix
         self.as_line
         return
       end
       # If no prefix, get whole paragraph
-      left, right = self.paragraph(:bounds => true)
+      left, right = View.paragraph(:bounds => true)
     end
 
     if options[:just_return]
@@ -183,15 +183,6 @@ class Clipboard
     View.insert Clipboard['0']
   end
 
-  def self.paragraph(options)
-    left, right = bounds_of_thing_at_point(:paragraph).to_a
-    left += 1 if char_after(left) == 10    # Left might include blank line
-    left = Line.left if options[:start_here]
-    txt = View.txt(left, right)
-    View.delete(left, right) if options[:delete]
-    return [left, right] if options[:bounds]
-    txt
-  end
 
   def self.as_clipboard
     # If numeric prefix, get next n lines and put in clipboard

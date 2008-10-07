@@ -867,7 +867,7 @@ class TreeLs
         re_search_forward "^  +[a-zA-Z0-9_.-]+$"
       end
       # Go to next line if comment
-      next_line if Line.next_matches(/^ *\|/)
+      Line.next if Line.next_matches(/^ *\|/)
       Move.to_line_text_beginning
       self.open :ignore_prefix
       #self.open
@@ -985,8 +985,7 @@ class TreeLs
     # Change path to proper indent
     files.collect!{|i| i.sub(/.*\/(.+)/, "#{indent}+ \\1")}
 
-    next_line
-    beginning_of_line
+    Line.next
     left = point
 
     # Move .notes files to top
@@ -1111,7 +1110,6 @@ class TreeLs
   def self.enter_quoted
     Line.to_left
     clip = Clipboard.get(0, :add_linebreak => true)
-
     if self.dir?   # If current line is path
       self.plus_to_minus_maybe
       indent = Line.indent
@@ -1124,7 +1122,6 @@ class TreeLs
       end
       self.add_pluses_and_minses t, '-', '-'
       Line.next
-      Line.to_left
       View.insert "#{t}\n".gsub(/^/, "#{indent}  ")
       return
     end
@@ -1153,7 +1150,7 @@ class TreeLs
     # Get current indent
     indent = Line.indent
     on_comment_line = Line.matches /^ +\|/
-    next_line
+    Line.next
 
     # Indent one level further unless on comment already
     unless on_comment_line
@@ -1661,7 +1658,7 @@ private
     Keys.prefix_times.times do
       orig = Location.new
       indent = Line.indent
-      txt = Clipboard.paragraph(:start_here => true, :delete => true)
+      txt = View.paragraph(:start_here => true, :delete => true)
       first, rest = txt.match(/(.+?)\n(.+)/m)[1..2]
       if Keys.prefix_u?
         rest.sub! /^\s*[+-] /, ''

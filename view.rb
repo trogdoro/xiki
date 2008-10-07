@@ -387,6 +387,7 @@ class View
       switch_to_buffer name
     end
     View.clear if options[:clear]
+    View.dir = options[:dir] if options[:dir]
   end
 
   def self.txt left=nil, right=nil
@@ -450,7 +451,7 @@ class View
   end
 
   def self.dir= to
-    elvar.default_directory = to
+    elvar.default_directory = File.expand_path(to)
   end
 
   def self.file
@@ -613,6 +614,22 @@ class View
     $el.winner_mode 1
   end
 
+  def self.paragraph options={}
+    orig = Location.new
+    found = Search.backward "^$", :go_anyway=>true
+    Line.next if found
+    left = Line.left
+    Search.forward "^$", :go_anyway=>true
+    right = Line.right
+    orig.go
+    #     left, right = bounds_of_thing_at_point(:paragraph).to_a
+    #     left += 1 if char_after(left) == 10    # Left might include blank line
+    left = Line.left if options[:start_here]
+    return [left, right] if options[:bounds]
+    txt = View.txt(left, right)
+    View.delete(left, right) if options[:delete]
+    return [left, right] if options[:bounds]
+    txt
+  end
 end
-
 View.init

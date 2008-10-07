@@ -1,14 +1,13 @@
 class Repository
   extend ElMixin
 
-  # -w caused a git segfault :/
-  #@@git_diff_options = ' -U2 -w '
-  @@git_diff_options = ' -U2 '
-
   CODE_SAMPLES = %q<
     # Show options for the repository
     - Show options: Repository.menu
   >
+
+  @@git_diff_options = ' -U2 '
+  #@@git_diff_options = ' -U2 -w '   # -w caused a git segfault :/
 
   def self.svn?
     File.exists?("#{View.dir}.svn")
@@ -100,11 +99,7 @@ class Repository
   end
 
   def self.diff_one_file
-    #     if self.svn?
-    #       cm_subversion_command("echo; svn diff -x -w #{file_name_nondirectory(buffer_file_name)}")
-    #     else
     self.git_diff_one_file
-    #     end
   end
 
   def self.git_diff_one_file
@@ -173,7 +168,7 @@ class Repository
     dir = Shell.run("git rev-parse --git-dir", :sync=>true,
       :dir=>dir
       ).sub(".git\n", '')
-    dir = nil if dir == ""
+    dir = View.dir if dir == ""   # Empty actually means it found it
     dir
   end
 

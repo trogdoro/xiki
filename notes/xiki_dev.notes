@@ -7,3 +7,11 @@ Meant to serve as misc notes for development of project.
     - from: repository.rb
       ##Shell.+git /
     - to: git.rb
+
+- rake.rb: show list of dirs
+  - /projects/xiki/xiki_git/
+    - rake.rb
+      |  def self.menu task=nil
+      |
+      |    # If no dir passed, show list (current and after bar)
+      |    # Check whether they are rake dirs?

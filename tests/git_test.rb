@@ -3,9 +3,8 @@ require 'el_mixin'
 $:.unshift "../"
 require 'ol'
 require 'core_ext'
-require 'git'
-require 'core_ext'
 require 'yaml'
+require 'git'
 
 class GitTest < Test::Unit::TestCase
 

@@ -1,6 +1,6 @@
 require 'pause_means_space'
-gem 'ruby2ruby'
-require 'ruby2ruby'
+require 'line'
+require 'text_util'
 
 # Methods for defining keyboard shortcuts
 class Keys
@@ -21,41 +21,50 @@ class Keys
       - puts Keys.input(:one_char => true)
   ]
 
+  # Handles Keys.to_foo etc.
   def self.method_missing(meth, *args, &block)
     # Accept it if block but no args
     meth = meth.to_s
-    if args.empty? and block and meth =~ /_/
-      # Treat as capital
 
-      # Make lisp function
-      $el.defun(meth.to_sym, :interactive=>true) do
-        block.call
-      end
+    # Delegate to super unless arg is single symbol
+    unless args.size == 0 or (args.size == 1 and args[0].is_a? Symbol)
+      return super(meth, *args, &block)
+    end
+
+    # If 1st word is 'isearch', use it as map
+    if meth =~ /^isearch_/
+      meth.sub! /^isearch_/, ''
+      meth = self.words_to_letters meth
+      args = [:isearch_mode_map]
+    elsif meth =~ /[A-Z]/   # If capital letters
+      # Don't convert
+    elsif meth =~ /_/   # Add menu item, if more than one word
       meth_title = meth.gsub('_', ' ').gsub(/\b\w/) {|s| s.upcase}
       menu, item = meth_title.match(/(.+?) (.+)/)[1..2]
-      @@key_queue << [menu, item]
 
-      meth = TextUtil.camel_case(meth).gsub(/[a-z]/, '')
-
-    else  # Otherwise, reject if not capital letters
-      # Delegate to super unless like EMO or Em or _EM, etc.
-      #m = meth.id2name
-      unless meth =~ /^_?[A-Z]_?\w?_?\w?$/
-        return super(meth, *args, &block)
+      if args.size == 0   # If global keymap
+        # Make lisp function
+        $el.defun(meth.to_sym, :interactive=>true) do
+          block.call
+        end
+        @@key_queue << [menu, item]
       end
+
+      # Change 'to_foo' to 'TF' etc
+      meth = self.words_to_letters meth
     end
 
 
+    # Translate to 'C-t C-f' etc
     keys_raw = self.translate_keys meth
-    keys = $el.kbd keys_raw
 
+    # Translate to actual control keys
+    keys = $el.kbd keys_raw
     # Default to global keymap
     map = :global_map
 
     # Use keymap if symbol passed as 1st arg
-    if args[0] and args[0].class == Symbol
-      map = args.shift
-    end
+    map = args.shift if args[0] and args[0].class == Symbol
 
     # If they just passed a string, use it as code
     if args and (args.size == 1) and !block
@@ -240,7 +249,7 @@ class Keys
       end
     end
 
-    code = proc.to_ruby
+    code = Code.to_ruby(proc)
     code.gsub! 'proc { ', ''
     code.gsub! ' }', ''
 
@@ -375,9 +384,9 @@ class Keys
     bm = Keys.input(:timed => true, :prompt => "Enter bookmark in which to search: ")
     if bm == " "   # If space, return special token
       return :space
-    end
-
-    if bm == "."   # If . do tree in current dir
+    elsif bm == "/"   # If slash, return special token
+      return :slash
+    elsif bm == "."   # If . do tree in current dir
       return $el.elvar.default_directory
     end
 
@@ -452,4 +461,9 @@ class Keys
     end
 
   end
+
+  def self.words_to_letters txt
+    TextUtil.camel_case(txt).gsub(/[a-z]/, '')
+  end
+
 end

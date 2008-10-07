@@ -127,25 +127,25 @@ class Notes
     # Get reference to map if already there (don't mess with existing buffers)
     elvar.notes_mode_map = make_sparse_keymap unless boundp :notes_mode_map
 
-    Keys.CC(:notes_mode_map) { Agenda.quick_add_line }
-    Keys.CA(:notes_mode_map) { Notes.archive }
-    Keys.CO(:notes_mode_map) { Notes.show_text }
-    Keys.CM(:notes_mode_map) { Notes.hide_text }
-    Keys.CS(:notes_mode_map) { $el.insert Time.now.strftime("- %Y-%m-%d %I:%M%p: ").downcase.sub(' 0', ' ') }
+    Keys.custom_calendar(:notes_mode_map) { Agenda.quick_add_line }
+    Keys.custom_archive(:notes_mode_map) { Notes.archive }
+    Keys.custom_open(:notes_mode_map) { Notes.show_text }   # block -> reveal
+    Keys.custom_mask(:notes_mode_map) { Notes.hide_text }   # block -> hide
+    Keys.custom_stamp(:notes_mode_map) { $el.insert Time.now.strftime("- %Y-%m-%d %I:%M%p: ").downcase.sub(' 0', ' ') }
 
-    Keys.CT(:notes_mode_map) { Notes.move_block_to_top }
+    Keys.custom_top(:notes_mode_map) { Notes.move_block_to_top }   # block -> top
 
-    Keys.CD(:notes_mode_map) { Notes.cut_block true }
-    Keys.CK(:notes_mode_map) { Notes.cut_block }
-    Keys.CX(:notes_mode_map) { Notes.cut_block }
+    Keys.custom_delete(:notes_mode_map) { Notes.cut_block true }   # block -> clear
+    Keys.custom_kill(:notes_mode_map) { Notes.cut_block }   # block -> cut
+    Keys.custom_x(:notes_mode_map) { Notes.cut_block }   # block -> cut
 
-    Keys.CH(:notes_mode_map) { Notes.insert_heading }  # Insert ||... etc. heading
-    Keys.CN(:notes_mode_map) { Notes.to_block }  # Go to block after next block
-    Keys.CP(:notes_mode_map) { Notes.to_block true }  # Go to block before next block
-    Keys.CE(:notes_mode_map) { Notes.expand_block }  # Show just block
+    Keys.custom_heading(:notes_mode_map) { Notes.insert_heading }   # Insert ||... etc. heading
+    Keys.custom_next(:notes_mode_map) { Notes.to_block }   # Go to block after next block
+    Keys.custom_previous(:notes_mode_map) { Notes.to_block true }   # Go to block before next block
+    Keys.custom_expose(:notes_mode_map) { Notes.expand_block }   # Show just block
 
-    Keys.CF(:notes_mode_map) { Notes.move_block }  # Move block down to after next block
-    Keys.CB(:notes_mode_map) { Notes.move_block true }  # Move block up to before next block
+    Keys.CF(:notes_mode_map) { Notes.move_block }   # Move block down to after next block
+    Keys.CB(:notes_mode_map) { Notes.move_block true }   # Move block up to before next block
 
     define_key :notes_mode_map, kbd("C-\\") do
 

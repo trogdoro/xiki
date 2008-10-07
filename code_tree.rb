@@ -34,16 +34,15 @@ class CodeTree
     orig_left = point
     returned, stdout, e = Code.eval(code)  # Eval code
     # If no stdout (and something was returned), print return value
-    if ! stdout.nonempty? and returned.respond_to?(:any?) and returned.any?
+    if ! stdout.nonempty? and ! returned.nil?
       stdout =
-        if returned.is_a? Array
+        if returned.is_a? Array   # Join and bulletize
           returned.map{|l| "#{l =~ /\/$/ ? '+' : '-'} #{l}\n"}.join('')
         elsif returned.is_a? Hash
           (returned.map{|k, v| v =~ /\/$/ ? "+ #{k}: #{v}" : "- #{k}: #{v}"}.join("\n")) + "\n"
         else
           "#{returned}\n"
         end
-      # If list, join and bulletize
     else
       message(returned.to_s) if returned and (!returned.is_a?(String) or returned.size < 500)
     end
@@ -126,9 +125,12 @@ class CodeTree
   def self.display_menu menu
     View.bar if Keys.prefix_u?
 
+    dir = View.dir
+
     # For buffer name, handle multi-line strings
     buffer = "*CodeTree " + menu.sub(/.+\n[ -]*/m, '').gsub(/[.,]/, '')
-    View.to_buffer(buffer)
+    View.to_buffer(buffer, :dir=>dir)
+
     View.clear
     $el.notes_mode
 
@@ -296,19 +298,27 @@ class CodeTree
 
   def self.sibling_bounds
     indent_size = Line.indent.size   # Get indent
+    indent_less = indent_size - 1
+    indent_less = 0 if indent_less < 0
 
     orig = Location.new
 
     right1 = Line.left   # Right side of lines before
-    left2 = Line.left 2   # Left side of lines after
 
-    # Search for line indented less
-    Search.backward "^ \\{0,#{indent_size-1}\\}\\($\\|[^ \n]\\)"
+    # Search for line indented less (backward)
+    Search.backward "^ \\{0,#{indent_less}\\}\\($\\|[^ \n]\\)"
     Line.next
     left1 = Line.left   # Left side of lines before
 
+    orig.go
+
+    # Search for line indented same or less (to get past siblings)
+    Line.next
+    Search.forward "^ \\{0,#{indent_size}\\}\\($\\|[^ \n]\\)"
+    Line.to_left
+    left2 = View.cursor
     # Search for line indented less
-    Search.forward "^ \\{0,#{indent_size-1}\\}\\($\\|[^ \n]\\)"
+    Search.forward "^ \\{0,#{indent_less}\\}\\($\\|[^ \n]\\)"
     right2 = Line.left   # Left side of lines before
     orig.go
 
@@ -350,6 +360,7 @@ class CodeTree
     left1, right1, left2, right2 = self.sibling_bounds
     View.delete left2, right2
     View.delete left1, right1
+
   end
 
   def self.children options={}

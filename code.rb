@@ -1,5 +1,7 @@
 require 'block'
 require 'stringio'
+gem 'ruby2ruby'
+require 'ruby2ruby'
 
 class Code
   extend ElMixin
@@ -24,7 +26,6 @@ class Code
   end
 
   def self.run   # Evaluates file, paragraph, or next x lines using el4r
-
     prefix = Keys.prefix
 
     case prefix
@@ -71,7 +72,7 @@ class Code
     # Insert output
     after_code.go
     insert out
-    insert "#{exception.message}\n" if exception
+    insert "- error: #{exception.message}\n- backtrace:\n#{exception.backtrace[0..10].join("\n").gsub(/^/, '  ')}" if exception
 
     # Move cursor back to where we started
     orig.go
@@ -86,22 +87,20 @@ class Code
 
     View.to_after_bar if View.in_bar?
 
-  #  other_window 1
     View.to_buffer "*rails console"
     erase_buffer
     end_of_buffer
 
-#     if elvar.current_prefix_arg
-#       insert "reload!"
-#       command_execute "\C-m"
-#     end
+    #     if elvar.current_prefix_arg
+    #       insert "reload!"
+    #       command_execute "\C-m"
+    #     end
 
     insert block
     command_execute "\C-m"
 
     beginning_of_buffer
 
-  #  other_window -1
   end
 
   def self.show_el4r_error
@@ -337,6 +336,12 @@ class Code
     $el.open_line(1) unless Line.blank?
     View.insert("Ol.line")
   end
+
+  def self.to_ruby o
+    o.to_ruby
+  end
+
+
 
 private
   def self.clear_and_go_back location
