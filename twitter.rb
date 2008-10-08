@@ -11,7 +11,7 @@ class Twitter
 
   def self.post_or_list
     if Keys.prefix_u?  # If U prefix, just list
-      shell_command("twitter timeline")
+      $el.shell_command("twitter timeline")
     else  # Otherwise, post
       self.post
     end
@@ -19,7 +19,7 @@ class Twitter
 
   def self.list options={}
     View.handle_bar
-    Shell.run "twitter timeline", :buffer => "*twitter timeline"
+    Console.run "twitter timeline", :buffer => "*twitter timeline"
     Styles.define :twitter_name, :fg => '99f'
     Styles.define :twitter_date, :fg => 'ddd'
     Styles.apply '^\\(-- .+\\)\\( at .+\\)', nil, :twitter_name, :twitter_date
@@ -46,7 +46,7 @@ class Twitter
   end
 
   def self.post message
-    puts shell_command_to_string("twitter post \"#{message}\"")
+    puts $el.shell_command_to_string("twitter post \"#{message}\"")
   end
 
   def self.menu options={}

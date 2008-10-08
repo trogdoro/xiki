@@ -1,15 +1,15 @@
 require 'open3'
 
-class Shell
+class Console
   extend ElMixin
 
   CODE_SAMPLES = %q[
     # Run OS commands
-    - in shell (asynchronously): Shell.run("ls", :dir => "/tmp")
-    - Synchronously: Shell.run("ls", :dir => "/etc", :sync => true)
+    - in console (asynchronously): Console.run("ls", :dir => "/tmp")
+    - Synchronously: Console.run("ls", :dir => "/etc", :sync => true)
   ]
 
-  # Run the command in a shell
+  # Run the command in a console
   def self.run command, options={}
     dir = options[:dir]
     sync = options[:sync]
@@ -54,17 +54,17 @@ class Shell
       if View.in_bar? and ! options[:dont_leave_bar]
         View.to_after_bar
       end
-      buffer ||= "*shell*"
+      buffer ||= "*console*"
 
       buffer = generate_new_buffer(buffer) unless reuse_buffer
       View.to_buffer buffer
       erase_buffer if reuse_buffer
       elvar.default_directory = dir if dir
-      shell current_buffer
+      $el.shell current_buffer
       Move.bottom
-      if command  # If nil, just open shell
+      if command  # If nil, just open console
         insert command
-        Shell.enter
+        Console.enter
         #comint_send_input
       end
     end
@@ -73,9 +73,9 @@ class Shell
   def self.open
     ControlLock.disable
     dir = elvar.default_directory
-    switch_to_buffer generate_new_buffer("*shell*")
+    switch_to_buffer generate_new_buffer("*console*")
     elvar.default_directory = dir
-    shell current_buffer
+    $el.shell current_buffer
   end
 
   def self.enter
@@ -83,7 +83,7 @@ class Shell
     comint_send_input
   end
 
-  def self.shell?
+  def self.console?
     View.mode == :shell_mode
   end
 
@@ -112,7 +112,7 @@ class Shell
     dir ||= $1
     command = $2
     if options[:sync]
-      output = Shell.run command, :dir => dir, :sync => true
+      output = Console.run command, :dir => dir, :sync => true
       # Add linebreak if blank
       output.sub!(/\A\z/, "\n")
       output.gsub!(/^/, '!')
@@ -120,7 +120,7 @@ class Shell
       TreeLs.insert_quoted_and_search output
     else
       View.handle_bar
-      Shell.run command, :dir => dir
+      Console.run command, :dir => dir
     end
   end
 

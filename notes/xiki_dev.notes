@@ -5,7 +5,7 @@ Meant to serve as misc notes for development of project.
 - git.rb: move git commands from repository.rb into it
   ../
     - from: repository.rb
-      ##Shell.+git /
+      ##Console.+git /
     - to: git.rb
 
 - rake.rb: show list of dirs

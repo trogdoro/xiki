@@ -305,6 +305,14 @@ class View
     [region_beginning, region_end]
   end
 
+  def self.range_left
+    region_beginning
+  end
+
+  def self.range_right
+    region_end
+  end
+
   def self.buffer
     window_buffer
   end

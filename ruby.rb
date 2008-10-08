@@ -17,23 +17,19 @@ class Ruby
     end
 
     unless method   # Show list of methods
-      #String.instance_methods(false).sort
       puts Kernel.const_get(clazz).instance_methods(false).sort.
         collect {|i| "##{i}" }
       puts Kernel.const_get(clazz).methods(false).sort.
         collect {|i| "::#{i}" }
-#      puts Kernel.const_get(clazz).methods - Object.methods
       return
     end
 
     # Lookup method doc
     puts `qri #{clazz}#{method}`.gsub(/\C-[.+?m/, '')
-    #Shell.run "qri #{clazz}#{method}"
-
   end
 
   def self.re_index_fast_ri
-    Shell.run "fastri-server -b"
+    Console.run "fastri-server -b"
   end
 
 end

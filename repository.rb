@@ -20,7 +20,7 @@ class Repository
     end
     from ||= "trunk"
     command = "svn -m \"Tag: Create #{from} tag\" cp #{Repository.url}/#{from} #{Repository.url}/#{to}"
-    Shell.run(command)
+    Console.run(command)
   end
 
   def self.url= url
@@ -73,7 +73,7 @@ class Repository
     if rev.nil?   # If no rev, list all revs
       search = "-S'#{search}'" unless search.empty?
 
-      txt = Shell.run "git log --pretty=oneline #{search}", :sync=>true, :dir=>dir
+      txt = Console.run "git log --pretty=oneline #{search}", :sync=>true, :dir=>dir
       txt.gsub! ':', '-'
       txt.gsub! /(.+?) (.+)/, "\\2: \\1"
       txt.gsub! /^- /, ''
@@ -82,7 +82,7 @@ class Repository
 
     if file.nil?   # If no file, show files for rev
       # Rev passed, so show all diffs
-      txt = Shell.run "git show --pretty=oneline --name-status #{rev}", :sync=>true, :dir=>dir
+      txt = Console.run "git show --pretty=oneline --name-status #{rev}", :sync=>true, :dir=>dir
       txt.sub! /^.+\n/, ''
       txt.gsub! /^([A-Z])\t/, "\\1: "
       txt.gsub! /^M: /, ''
@@ -90,7 +90,7 @@ class Repository
     end
 
     # File passed, show diff
-    txt = Shell.run "git show --pretty=oneline #{rev} #{file}", :sync=>true, :dir=>dir
+    txt = Console.run "git show --pretty=oneline #{rev} #{file}", :sync=>true, :dir=>dir
     txt.sub!(/.+?@@.+?\n/m, '')
     txt.gsub! /^-/, '~'
     txt.gsub! /^/, '|'
@@ -158,14 +158,14 @@ class Repository
   end
 
   def self.git? dir
-    git_status = Shell.run "git status", :sync => true, :dir => dir
+    git_status = Console.run "git status", :sync => true, :dir => dir
     git_status !~ /^fatal: Not a git repository/
   end
 
   def self.git_path dir=nil
     dir ||= View.dir
     return nil unless self.git?(dir)
-    dir = Shell.run("git rev-parse --git-dir", :sync=>true,
+    dir = Console.run("git rev-parse --git-dir", :sync=>true,
       :dir=>dir
       ).sub(".git\n", '')
     dir = View.dir if dir == ""   # Empty actually means it found it
@@ -205,13 +205,13 @@ class Repository
   def self.status_tree_internal dir
 
     if self.svn?
-      status = Shell.run "svn st", :dir => dir, :sync => true
+      status = Console.run "svn st", :dir => dir, :sync => true
       # Remove question files
       status = status.split("\n")#.select{|l| l !~ /^\?/}
       status = status.each{|l| l.sub!(/^. +/, dir)}
       TreeLs.paths_to_tree(status)
     else   # git
-      status = Shell.run "git status", :dir => dir, :sync => true
+      status = Console.run "git status", :dir => dir, :sync => true
 
       # Grab out modified:...
       found = status.scan(/^#\s+modified: +(.+)/)
@@ -284,7 +284,7 @@ class Repository
   def self.git_diff_or_diff_unadded is_unadded, expand, dir, file, line
     if file.nil?   # If launching .diff/.diff_unadded directly (not a file)
 
-      txt = Shell.run "git status", :dir=>dir, :sync=>true
+      txt = Console.run "git status", :dir=>dir, :sync=>true
       hash = Git.status_to_hash(Git.status_internal(txt))
 
       untracked = hash[:untracked].map{|i| i[1]}
@@ -293,7 +293,7 @@ class Repository
       option = is_unadded ? "- action: .add\n" : "- action: .commit \"message\"\n"
 
       if expand   # If showing diffs right away
-        txt = Shell.run("git diff #{@@git_diff_options}#{is_unadded ? '' : ' HEAD'}", :sync => true, :dir => dir)
+        txt = Console.run("git diff #{@@git_diff_options}#{is_unadded ? '' : ' HEAD'}", :sync => true, :dir => dir)
 
         if txt =~ /^fatal: ambiguous argument 'HEAD': unknown revision/
           txt = "- Warning: Couldn't diff because no revisions exist yet in repository\n" +
@@ -339,8 +339,8 @@ class Repository
       end
 
       txt = is_unadded ?
-        Shell.run("git diff #{@@git_diff_options} #{file}", :sync => true, :dir => dir) :
-        Shell.run("git diff #{@@git_diff_options} HEAD #{file}", :sync => true, :dir => dir)
+        Console.run("git diff #{@@git_diff_options} #{file}", :sync => true, :dir => dir) :
+        Console.run("git diff #{@@git_diff_options} HEAD #{file}", :sync => true, :dir => dir)
       self.clean! txt
       txt.gsub!(/^diff .+\n/, '')
       txt.gsub!(/^-/, '~')
@@ -355,7 +355,7 @@ class Repository
 
   def self.push project
     dir = self.extract_dir project
-    Shell.run "git push origin master", :dir=>dir
+    Console.run "git push origin master", :dir=>dir
     nil
   end
 
@@ -391,13 +391,13 @@ class Repository
 
     if children.nonempty?   # If children, add them
       children = children.map{|c| c.sub(/^ +[+-] /, '')}.join(" ")
-      txt = Shell.run("svn add #{children}", :dir => dir)
+      txt = Console.run("svn add #{children}", :dir => dir)
 
       return
     end
 
     # If no children, show ones to be added
-    txt = Shell.run("svn status", :dir => dir, :sync => true)
+    txt = Console.run("svn status", :dir => dir, :sync => true)
     return txt.scan(/^\? +(.+)/)
 
   end
@@ -407,7 +407,7 @@ class Repository
     if file.nil?   # If launching .commit directly (no file)
 
       if expand
-        txt = Shell.run("svn diff #{file}", :sync => true, :dir => dir)
+        txt = Console.run("svn diff #{file}", :sync => true, :dir => dir)
 
         txt.gsub!(/^===+\n/, '')
         txt.gsub!(/^--- .+\n/, '')
@@ -418,7 +418,7 @@ class Repository
         return txt
 
       else
-        txt = Shell.run "svn status", :dir=>dir, :sync=>true
+        txt = Console.run "svn status", :dir=>dir, :sync=>true
 
         modified = txt.scan(/^M +(.+)/).map{|i| i.first}
         new_files = txt.scan(/^A +(.+)/).map{|i| "new: " + i.first}
@@ -428,7 +428,7 @@ class Repository
     end
 
     if line.nil?   # If no line passed, re-do diff for 1 file
-      txt = Shell.run("svn diff #{file}", :sync => true, :dir => dir)
+      txt = Console.run("svn diff #{file}", :sync => true, :dir => dir)
 
       txt.gsub!(/^Index: .+\n/, '')
       txt.gsub!(/^===+\n/, '')
@@ -455,9 +455,9 @@ class Repository
     end
 
     if self.git?(dir)
-      Shell.run("git add #{siblings.join(' ')}", :dir=>dir)
+      Console.run("git add #{siblings.join(' ')}", :dir=>dir)
     else
-      Shell.run("svn add #{siblings.join(' ')}", :dir=>dir)
+      Console.run("svn add #{siblings.join(' ')}", :dir=>dir)
     end
   end
 
@@ -480,9 +480,9 @@ class Repository
     end
 
     if self.git?(dir)
-      Shell.run("git commit -m \"#{message}\" #{siblings.join(' ')}", :dir=>dir)
+      Console.run("git commit -m \"#{message}\" #{siblings.join(' ')}", :dir=>dir)
     else
-      Shell.run("svn ci -m \"#{message}\" #{siblings.join(' ')}", :dir=>dir)
+      Console.run("svn ci -m \"#{message}\" #{siblings.join(' ')}", :dir=>dir)
     end
   end
 
@@ -490,7 +490,7 @@ class Repository
     dir = self.extract_dir project
     # Create dir if not there
     Dir.mkdir(dir) if not File.directory?(dir)
-    Shell.run("git init", :dir => dir)
+    Console.run("git init", :dir => dir)
     nil
   end
 

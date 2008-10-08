@@ -6,7 +6,7 @@ class Svn
     if action == "list"
       orig = View.window
       View.to_after_bar
-      out = shell_command_to_string("svn list")
+      out = $el.shell_command_to_string("svn list")
       View.to_window orig
       puts out.gsub(/^/, '- ')
       return
@@ -26,7 +26,7 @@ class Svn
   def self.jump_to_diff
     find = Line.without_indent
     View.handle_bar
-    View.to_buffer "*shell: svn diff*"
+    View.to_buffer "*console: svn diff*"
     View.to_top
     $el.re_search_forward "^Index: #{find}"
     Line.to_left
@@ -36,7 +36,7 @@ class Svn
   def self.diff *args
     if args.empty?
       Ol << "empty"
-      res = Shell.run("svn diff -x -w", :dir=>"$tr", :sync=>true)
+      res = Console.run("svn diff -x -w", :dir=>"$tr", :sync=>true)
       res.gsub!(/\r/, '')
       res.gsub!(/^/, '  ||')
       res.gsub!(/^  \|\|-/, '  -|')

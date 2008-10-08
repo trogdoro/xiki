@@ -8,7 +8,7 @@ class Postgres
 
     # If no name, list all names
     if name.nil?
-      return Shell.run("psql -c '\\l'", :sync=>true).scan(/^ (\w+)/).map{|i| "- #{i}/"}
+      return Console.run("psql -c '\\l'", :sync=>true).scan(/^ (\w+)/).map{|i| "- #{i}/"}
     end
 
     puts "
@@ -19,16 +19,16 @@ class Postgres
   end
 
   def self.create_db name
-    Shell.run "createdb #{name}"
+    Console.run "createdb #{name}"
   end
 
   def self.drop_db name
-    Shell.run "dropdb #{name}"
+    Console.run "dropdb #{name}"
   end
 
   def self.tables db
     db.sub! /\/$/, ''
-    txt = Shell.run "psql #{db} -c '\\d'", :sync=>true
+    txt = Console.run "psql #{db} -c '\\d'", :sync=>true
   end
 
 end

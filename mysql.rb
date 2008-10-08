@@ -8,11 +8,11 @@ class Mysql
   end
 
   def self.create_db name
-    Shell.run "mysqladmin -u root create #{name}", :buffer => "create #{name}"
+    Console.run "mysqladmin -u root create #{name}", :buffer => "create #{name}"
   end
 
   def self.drop_db name
-    Shell.run "mysqladmin -u root drop #{name}", :buffer => "drop #{name}"
+    Console.run "mysqladmin -u root drop #{name}", :buffer => "drop #{name}"
   end
 
 # Todo

@@ -28,6 +28,7 @@ class LineLauncher
 
   # Call the appropriate launcher if we find one, passing it line
   def self.launch options={}
+    Effects.blink(:what=>:line) if options[:blink]
     line = options[:line] || Line.value   # Get paren from line
     label = Line.label(line)
     paren = label[/\((.+)\)/, 1] if label
@@ -128,9 +129,9 @@ class LineLauncher
       erase_buffer
       end_of_buffer
       insert "reload!"
-      Shell.enter
+      Console.enter
       insert line
-      Shell.enter
+      Console.enter
 
       Move.top
     end
@@ -284,7 +285,7 @@ class LineLauncher
     LineLauncher.add(nil, /^\(\$.+\)$/) do  # - ($bm): command
       bm = Line.label[/^\(\$(.+)\)$/, 1]  # Get bookmark
       dir = Bookmarks["$#{bm}"]
-      out = Shell.run CodeTree.line_or_children, :dir => dir, :sync => true
+      out = Console.run CodeTree.line_or_children, :dir => dir, :sync => true
       TreeLs.indent(out)
       TreeLs.insert_quoted_and_search out
     end
@@ -292,24 +293,24 @@ class LineLauncher
     LineLauncher.add(nil, /^\(\/.*\)$/) do  # - (/dir): command
       # Get bookmark
       dir = Line.label[/^\((.+)\)$/, 1]
-      out = Shell.run CodeTree.line_or_children, :dir => dir, :sync => true
+      out = Console.run CodeTree.line_or_children, :dir => dir, :sync => true
       out = "(no output)\n" unless out
       TreeLs.indent(out)
       TreeLs.insert_quoted_and_search out
     end
 
     self.add(/^ *[$\/].+!!/) do |l|   # /dir!!shell command
-      Shell.launch
+      Console.launch
     end
     self.add(/^ *!!/) do |l|   # !shell command
-      Shell.launch
+      Console.launch
     end
 
     self.add(/^ *[$\/].+!/) do |l|   # /dir!shell command inline
-      Shell.launch :sync=>true
+      Console.launch :sync=>true
     end
     self.add(/^ *!/) do |l|   # !shell command inline
-      Shell.launch :sync=>true
+      Console.launch :sync=>true
     end
   end
 

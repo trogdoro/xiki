@@ -241,7 +241,7 @@ class Search
 
     if bm == :slash   # If space, go back to root and search
       # Make match be orange
-      Overlay.face(self.left, self.right, :ls_search)
+      Overlay.face(:ls_search, :left=>self.left, :right=>self.right)
       self.search_at_root match
       return
     end
@@ -581,7 +581,7 @@ Ol << "offset: #{offset.inspect}"
 
   def self.just_orange
     Search.clear
-    Overlay.face(Search.left, Search.right, :notes_label)
+    Overlay.face(:notes_label, :left=>Search.left, :right=>Search.right)
   end
 
 end

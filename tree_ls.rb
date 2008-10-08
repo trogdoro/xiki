@@ -422,7 +422,7 @@ class TreeLs
       insert self.remote_file_contents(path)
     else
       Location.go path
-      Effects.blink(:what=>:line)
+      Effects.blink(:what=>:line) unless line_number or search_string
     end
 
     if line_number   # If line number, go to it
@@ -562,7 +562,7 @@ class TreeLs
     case ch   # Do option based on last char, or run as command
     when "0"
       file = self.construct_path   # Expand out ~
-      shell_command("open #{file}")
+      $el.shell_command("open #{file}")
     when "\C-a"
       Line.to_left
     when "\C-e"

@@ -48,7 +48,7 @@ class Files
       rename_file(from, to)
     elsif Keys.prefix_uu
       command = "cp -R \"#{from}\" \"#{to}\""
-      Shell.run command, :sync => true
+      Console.run command, :sync => true
     else
       copy_file(from, to)
     end
@@ -67,7 +67,7 @@ class Files
       command = "zip -r \"#{to}#{from}.zip\" \"#{from}\""
     end
     message command
-    shell_command command
+    $el.shell_command command
   end
 
   def self.file_name options={}
@@ -88,7 +88,7 @@ class Files
   end
 
   def self.open_tail
-    Shell.run "tail -f #{View.file}", :buffer => "*tail of #{View.file}"
+    Console.run "tail -f #{View.file}", :buffer => "*tail of #{View.file}"
   end
 
   def self.menu
@@ -163,7 +163,7 @@ class Files
   def self.open_in_os path=nil
     path ||= View.file
     path ||= View.dir
-    shell_command("open #{path}")
+    $el.shell_command("open #{path}")
   end
 
 end

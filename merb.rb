@@ -45,7 +45,7 @@ class Merb
   def self.rake dir, port, task=nil
     unless task
       #puts self.path_from_dir(dir)
-      out = Shell.run "rake -T", :dir => self.path_from_dir(dir), :sync => true
+      out = Console.run "rake -T", :dir => self.path_from_dir(dir), :sync => true
       # Pull out tasks
       out.scan(/^rake ([\w:]+)/) do |m|
         puts m[0]
@@ -53,12 +53,12 @@ class Merb
       return
     end
 
-    Shell.run "rake #{task}", :dir => self.path_from_dir(dir), :buffer => "*rake #{dir}"
+    Console.run "rake #{task}", :dir => self.path_from_dir(dir), :buffer => "*rake #{dir}"
 
   end
 
   def self.merb_gen command, dir, port=nil
-    Shell.run "merb-gen #{command}", :dir => self.path_from_dir(dir), :buffer => "*merb-gen #{dir}"
+    Console.run "merb-gen #{command}", :dir => self.path_from_dir(dir), :buffer => "*merb-gen #{dir}"
   end
 
   def self.links
@@ -91,11 +91,11 @@ class Merb
     # Split into dir and name
     dir = self.path_from_dir(dir)
     path, name = dir.match(/(.+)\/(.+)/)[1..2]
-    Shell.run "merb-gen app #{name}", :dir=>path, :buffer=>"*merb-gen app #{name}"
+    Console.run "merb-gen app #{name}", :dir=>path, :buffer=>"*merb-gen app #{name}"
   end
 
   def self.start dir, port
-    Shell.run "merb -p #{port}", :dir=>self.path_from_dir(dir), :buffer=>"*merb #{dir}"
+    Console.run "merb -p #{port}", :dir=>self.path_from_dir(dir), :buffer=>"*merb #{dir}"
   end
 
   def self.shell dir, port
@@ -110,7 +110,7 @@ class Merb
       return
     end
 
-    Shell.run nil, :path => path, :buffer => buffer
+    Console.run nil, :path => path, :buffer => buffer
   end
 
 #   def self.url path='/', dir=nil, port
@@ -128,7 +128,7 @@ class Merb
       View.handle_bar
       View.to_buffer b
     else
-      Shell.run "merb -i", :dir => dir, :buffer => b
+      Console.run "merb -i", :dir => dir, :buffer => b
     end
     nil
   end
@@ -146,7 +146,7 @@ class Merb
     View.to_buffer(b)
     $el.insert("repository.auto_migrate!")
     #$el.insert("DataMapper::Base.auto_migrate!")
-    Shell.enter
+    Console.enter
 
     # TODO: item for migrating test
     #   - always take env as param?

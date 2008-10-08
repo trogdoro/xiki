@@ -41,7 +41,7 @@ class Code
     when 8  # Block on command line
       return cm_pass_block_to_command("ruby -I.", " myTestCommandLineArg", "ruby")
     when 9  # Pass whole file as ruby
-      return Shell.run("ruby #{View.file_name}", :buffer => "**ruby")
+      return Console.run("ruby #{View.file_name}", :buffer => "**ruby")
 
     # If prefix of 1-6
     when 1..6
@@ -166,7 +166,7 @@ class Code
     path = buffer_file_name
     # Chop off up until before /spec/
     dir, spec = path.match(/(.+)\/(spec\/.+)/)[1,2]
-    Shell.run "spec #{spec}#{test}", :dir => dir, :buffer => '*spec', :reuse_buffer => true
+    Console.run "spec #{spec}#{test}", :dir => dir, :buffer => '*spec', :reuse_buffer => true
 
   end
 
@@ -312,7 +312,7 @@ class Code
     lines = "#{file}.lines"
     `touch #{lines}` unless File.exists?(lines)
 
-    Shell.run "tail -f #{file}", :buffer => buffer, :dir => '/tmp', :dont_leave_bar => true
+    Console.run "tail -f #{file}", :buffer => buffer, :dir => '/tmp', :dont_leave_bar => true
     Notes.mode
 
     return if self.clear_and_go_back orig

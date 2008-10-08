@@ -34,28 +34,28 @@ class Rails
     parent = options[:ancestors][-1]
     name = parent[/:(\w+)/, 1]
     #insert name
-    puts Shell.run("rails -s #{name}", :sync => true)
+    puts Console.run("rails -s #{name}", :sync => true)
   end
 
   def self.create dir, port=nil
     puts "rails -s #{dir}"
-    puts Shell.run("rails -s #{dir}", :sync => true)
+    puts Console.run("rails -s #{dir}", :sync => true)
   end
 
   def self.controller controller, action, dir, port=nil
-    puts Shell.run("script/generate controller #{controller} #{action}", :dir => dir, :sync => true)
+    puts Console.run("script/generate controller #{controller} #{action}", :dir => dir, :sync => true)
   end
 
   def self.migration name, dir, port=nil
-    puts Shell.run("script/generate migration #{name}", :dir => dir, :sync => true)
+    puts Console.run("script/generate migration #{name}", :dir => dir, :sync => true)
   end
 
   def self.console dir, port=nil
-    Shell.run "script/console", :dir => dir, :buffer => "*#{dir} console"
+    Console.run "script/console", :dir => dir, :buffer => "*#{dir} console"
   end
 
   def self.shell dir, port=nil
-    Shell.run "", :dir => dir, :buffer => "*#{dir} shell"
+    Console.run "", :dir => dir, :buffer => "*#{dir} shell"
   end
 
   def self.dirs dir, port=3000
@@ -71,7 +71,7 @@ class Rails
       View.to_buffer buffer
     end
     port = port ? "-p #{port}" : ""
-    Shell.run "script/server #{port}", :dir => dir, :buffer => "*rails #{dir}"
+    Console.run "script/server #{port}", :dir => dir, :buffer => "*rails #{dir}"
   end
 
   def self.url path, dir=nil, port=3000

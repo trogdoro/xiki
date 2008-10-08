@@ -360,7 +360,7 @@ class Notes
         CodeTree.kill_siblings
       end
 
-      LineLauncher.launch
+      LineLauncher.launch(:blink=>true)
 
     end
 

@@ -1,7 +1,7 @@
 class Git
   def self.status dir
     # If no file, show status
-    txt = Shell.run("git status", :sync => true, :dir => dir)
+    txt = Console.run("git status", :sync => true, :dir => dir)
     self.status_internal(txt)
   end
 

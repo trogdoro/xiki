@@ -63,7 +63,7 @@ class KeyBindings
     #Keys.OAD { Svn.jump_to_diff }
     Keys.open_as_lisp { find_function_at_point }   # jump to definition of lisp function
     #Keys.OAS { Search.google }   # Open As Search
-    Keys.open_a_shell { Shell.open }   # Open A Shell *
+    Keys.open_a_shell { Console.open }
     Keys.open_as_tail { Files.open_tail }
     Keys.open_bookmark { Bookmarks.go }
     Keys.open_current { CodeTree.display_menu("- Buffers.current/") }   # open buffer list **
@@ -116,6 +116,9 @@ class KeyBindings
   def self.e_keys
     # E: enter...
     # Use E prefix for: inserting
+    # TODO find different word?
+    #   - Because "enter" can be confused with the enter key?
+    #   - ideas: embed, emit, entry
     #     Keys.EAB { Code.enter_as_backslash }   # Enter As Bash: enter with \ at eol's
     Keys.enter_as_camelcase { insert TextUtil.camel_case(Clipboard.get(0)) }
     Keys.enter_as_debug { Code.enter_as_debug }
@@ -211,7 +214,7 @@ class KeyBindings
     Keys.do_kill_siblings { CodeTree.kill_siblings }   # kill adjacent lines at same indent as this one
     Keys.do_kill_thing { delete_region(* bounds_of_thing_at_point( :sexp )) }   # kill adjacent lines at same indent as this one
     Keys.do_load_browser { Firefox.reload }
-    Keys.do_last_command { Shell.do_last_command }
+    Keys.do_last_command { Console.do_last_command }
     Keys.do_linebreaks_dos { set_buffer_file_coding_system :dos }
     #     Keys.do_load_emacs { App.load_emacs }   # *
     Keys.do_load_file { revert_buffer(true, true, true) }
@@ -366,7 +369,7 @@ class KeyBindings
     # have_...
     Keys.isearch_just_orange { Search.just_orange }
     Keys.isearch_just_select { Search.just_select }   # Select match
-    Keys.isearch_just_underline { Search.clear; Overlay.face(Search.left, Search.right, :underline) }
+    Keys.isearch_just_underline { Search.clear; Overlay.face(:underline, :left=>Search.left, :right=>Search.right) }
 
     Keys.isearch_kill { Search.cut; Location.as_spot('deleted') }   # cut
     Keys.isearch_look { Search.uncover }   # Look: show results for search string in all open files
@@ -479,7 +482,7 @@ class KeyBindings
     Keys.B { Move.backward }
     Keys.F { Move.forward }
     Keys.Q { Keys.timed_insert }
-    Keys.set("C-.") { Effects.blink(:what=>:line); LineLauncher.launch }
+    Keys.set("C-.") { LineLauncher.launch(:blink=>true) }
 
     if locate_library "ruby-mode"
       el_require :ruby_mode
@@ -517,5 +520,5 @@ class KeyBindings
 
     View.sensible_defaults
   end
-end
 
+end

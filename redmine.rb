@@ -153,7 +153,7 @@ class Redmine
     temp_path_b = "/tmp/diff_tmp_b.txt"
     File.open(temp_path_a, "w") { |f| f << a }
     File.open(temp_path_b, "w") { |f| f << b }
-    diff = shell_command_to_string "diff -w -U 0 \"#{temp_path_a}\" \"#{temp_path_b}\""
+    diff = $el.shell_command_to_string "diff -w -U 0 \"#{temp_path_a}\" \"#{temp_path_b}\""
     DiffLog.format("server/", "diff/", diff)
   end
 
