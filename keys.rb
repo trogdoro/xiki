@@ -22,6 +22,7 @@ class Keys
   ]
 
   # Handles Keys.to_foo etc.
+
   def self.method_missing(meth, *args, &block)
     # Accept it if block but no args
     meth = meth.to_s
@@ -54,7 +55,6 @@ class Keys
       meth = self.words_to_letters meth
     end
 
-
     # Translate to 'C-t C-f' etc
     keys_raw = self.translate_keys meth
 
@@ -82,6 +82,7 @@ class Keys
 
         begin   # If it appears to be a prefix key (already defined)
           $el.global_unset_key(prefix)
+          #$el.define map, prefix, nil
           $el.define_key map, keys, &block
           "- key #{keys_raw} was defined"
         rescue Exception => e

@@ -16,16 +16,15 @@ class KeyBindings
     self.misc
 
     Keys.add_menu_items
-    #       @@key_queue << [menu, item]
-    #       #Menu.add_item menu, item
+
   end
 
   def self.a_keys
     # A: as...
     # Use A prefix for: remembering, saving
+
     Keys.AA { Line.to_left }   # AA - beginning of line (A's default) **
     Keys.as_bookmark { Bookmarks.save }   # remember bookmark
-
     Keys.as_clipboard { Clipboard.as_clipboard }   # **
     Keys.as_directory { TreeLs.copy_path }   # copy dir to clipboard from tree
     # D
@@ -59,6 +58,8 @@ class KeyBindings
   def self.o_keys
     # O: open...
     # Use O prefix for: opening, jumping to files
+
+    Keys.OO { open_line elvar.current_prefix_arg || 1 }   # OO - open line (O's default)
     Keys.open_a_calendar { calendar }
     #Keys.OAD { Svn.jump_to_diff }
     Keys.open_as_lisp { find_function_at_point }   # jump to definition of lisp function
@@ -77,22 +78,19 @@ class KeyBindings
     Keys.open_in_right { View.open_in_right }
     Keys.open_in_os { Files.open_in_os }
     Keys.open_just { Files.open_just }
-
     Keys.open_list_bookmarks { CodeTree.display_menu("- Bookmarks.tree/") }
     Keys.open_list_faces { list_faces_display }
     Keys.open_lisp_error { Code.show_el4r_error }
     Keys.open_lisp_info { info("elisp") }
     Keys.open_log_tree { Rails.tree_from_log }
-
     Keys.open_list_models { CodeTree.display_menu("- Merb.models/") }
-
     Keys.open_list_names { Clipboard.list }
     Keys.open_list_repository { Repository.open_list_repository }
     Keys.open_link_top { Links.open_first }   # open first hyperlink on page
     Keys.open_menu { CodeTree.open_menu }   # Open all menus and show them **
     Keys.open_next_error { Merb.open_next_error }
     Keys.open_not_saved { History.open_unsaved }
-    Keys.OO { open_line elvar.current_prefix_arg || 1 }   # OO - open line (O's default)
+    # O: defined above - mapped to what C-o does by default
     Keys.open_point { Bookmarks.go(nil, :point => true) }
     Keys.open_quick { Bookmarks.go :q }   # like OB but uses different temporary namespace
     Keys.open_region_path { find_file buffer_substring(region_beginning, region_end) }
@@ -116,10 +114,12 @@ class KeyBindings
   def self.e_keys
     # E: enter...
     # Use E prefix for: inserting
+
     # TODO find different word?
     #   - Because "enter" can be confused with the enter key?
     #   - ideas: embed, emit, entry
     #     Keys.EAB { Code.enter_as_backslash }   # Enter As Bash: enter with \ at eol's
+    Keys.EE { Line.to_right }   # EE - end of line (E's default) **
     Keys.enter_as_camelcase { insert TextUtil.camel_case(Clipboard.get(0)) }
     Keys.enter_as_debug { Code.enter_as_debug }
     Keys.enter_as_filename { insert Clipboard.get(".") }
@@ -129,7 +129,7 @@ class KeyBindings
     Keys.enter_bullet { Notes.bullet }
     Keys.enter_clipboard { Clipboard.paste("0") }   # paste **
     Keys.enter_difflog { App.enter_from_difflog }   # Save point and go to difflog to search
-    Keys.EE { Line.to_right }   # EE - end of line (E's default) **
+    # E: defined above - mapped to what C-e does by default
     Keys.enter_file { View.insert(Keys.bookmark_as_path(:include_file=>true)); Line.to_left }   # Given a bookmark
     Keys.enter_history { History.enter_history }   # enter recently viewed files
     #Keys.EH { TreeLs.enter_lines(/^\| /) }
@@ -173,8 +173,9 @@ class KeyBindings
   def self.d_keys
     # D: do...
     # Use D prefix for: things that modify text or execute code
+
     Keys.D { insert "Apparently this is necessary to remap C-d" }
-    Keys.DA { insert "Apparently this is necessary for the following to work" }
+    Keys.DD { delete_char elvar.current_prefix_arg || 1 }   # DD - delete character (D's default) **
     Keys.do_as_camelcase { Clipboard.do_as_camel_case }   # change word to camel case (LikeThat)
     #Keys.DAL { Code.load_this_file }   # Do As Load: do a ruby load on the file
     Keys.do_as_rspec { Code.do_as_rspec }
@@ -200,7 +201,7 @@ class KeyBindings
     }
     Keys.do_compare_views { ediff_buffers( window_buffer(nth(0, window_list)), window_buffer(nth(1, window_list))) }   # compare buffers in first two views
     Keys.DC1 { Clipboard.diff_1_and_2 }
-    Keys.DD { delete_char elvar.current_prefix_arg || 1 }   # DD - delete character (D's default) **
+    # D: defined above - mapped to what C-d does by default
     Keys.do_expand { dabbrev_expand nil }   # expand abbreviation
     Keys.do_forword { kill_word(Keys.prefix || 1) }   # delete word forward
     # H
@@ -247,7 +248,6 @@ class KeyBindings
     # X
     # Z
     Keys.do_zip_next { Files.zip }
-
     Keys.set("C-d C-.") {   # Do .:  Go to point/bookmark starting with "." and run it (like pressing C-. on that line)
       input = Keys.input(:timed => true)
       with(:save_window_excursion) do
@@ -255,7 +255,6 @@ class KeyBindings
         LineLauncher.launch
       end
     }
-
     Keys.D1 { delete_char 1 };  Keys.D2 { delete_char 2 };  Keys.D3 { delete_char 3 };  Keys.D4 { delete_char 4 }
     Keys.D5 { delete_char 5 };  Keys.D6 { delete_char 6 };  Keys.D7 { delete_char 7 };  Keys.D8 { delete_char 7 };
   end
@@ -263,6 +262,8 @@ class KeyBindings
   def self.t_keys
     # T: to...
     # Use T prefix for: moving cursor, jumping to specific points
+
+    Keys.TT { transpose_chars elvar.current_prefix_arg }   # TT - toggle character (T's default)
     Keys.to_apex { View.to_top; View.message("#{'-'*20} Please use Keys.to_highest instead of Keys.to_apex #{'-'*20}") }   # to beginning of file **
     Keys.to_backward { backward_word(Keys.prefix || 1) }   # move backward one word
     Keys.to_clipboard { Search.to Clipboard[0] }   # move cursor to next instance of clipboard
@@ -281,7 +282,7 @@ class KeyBindings
     Keys.to_quote { Move.to_quote }   # move to next ...|... quote
     Keys.to_relative { Search.to_relative }   # go to nth line, relative to top of window
     Keys.to_spot { Location.to_spot }   # *
-    Keys.TT { transpose_chars elvar.current_prefix_arg }   # TT - toggle character (T's default)
+    # T: defined above - mapped to what C-t does by default
     Keys.to_up { TreeLs.to_parent }   # to parent (last line indented less)
     Keys.to_words { Move.to_line_text_beginning }   # move to start of words on line *
     Keys.to_x { Move.to_column }   # to x coordinate - ie column
@@ -297,6 +298,8 @@ class KeyBindings
   def self.l_keys
     # L: layout...
     # Use L prefix for: adjusting the layout, changing what is visible
+
+    Keys.LL { recenter(elvar.current_prefix_arg) }   # LL - recenter (L's default) *
     Keys.layout_all { View.hide_others }   # *
     Keys.layout_balance { View.balance }   # balance windows *
     Keys.layout_create { View.create }   # open new view **
@@ -306,12 +309,11 @@ class KeyBindings
     Keys.layout_expand { View.enlarge }   # *
     # F
     Keys.layout_files { TreeLs.open_in_bar; View.to_nth 1; Effects.blink(:what=>:line) }
-
     Keys.layout_hide { View.hide }   # **
     Keys.layout_indent { Hide.hide_by_indent }   # only show lines indented less than x
     # J
     Keys.layout_kill { kill_this_buffer }   # **
-    Keys.LL { recenter(elvar.current_prefix_arg) }   # LL - recenter (L's default) *
+    # L: defined above - mapped to what C-d does by default
     Keys.layout_mark { Color.colorize }   # colorize line, etc
     #Keys.layout_menu { CodeTree.layout_menu }   # show menu bare in current state
     Keys.layout_next { View.next }   # next view **
@@ -370,7 +372,6 @@ class KeyBindings
     Keys.isearch_just_orange { Search.just_orange }
     Keys.isearch_just_select { Search.just_select }   # Select match
     Keys.isearch_just_underline { Search.clear; Overlay.face(:underline, :left=>Search.left, :right=>Search.right) }
-
     Keys.isearch_kill { Search.cut; Location.as_spot('deleted') }   # cut
     Keys.isearch_look { Search.uncover }   # Look: show results for search string in all open files
     # M: leave unmapped for stop
@@ -387,7 +388,6 @@ class KeyBindings
     Keys.isearch_xtract { Search.move_to_search_start }   # eXtract: move back to search start
     # Y: leave unmapped for yank
     Keys.isearch_zap { Search.insert_at_spot }   # Zap: move to spot (as spot)
-
 
     define_key :isearch_mode_map, kbd("C-1") do
       Search.isearch_copy_as("1")
