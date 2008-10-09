@@ -93,14 +93,18 @@ class Files
 
   def self.menu
     puts "
-      + .current 20/
       + .edited 20/
       + .history 20/
+      + .visiting 20/
       "
   end
 
   def self.edited_array
     elvar.editedhistory_history.to_a
+  end
+
+  def self.current times=nil
+    Buffers.tree times
   end
 
   def self.edited times=nil, options={}
@@ -141,7 +145,7 @@ class Files
 
   def self.open_edited
     case Keys.prefix
-    when nil:  CodeTree.display_menu("- Files.edited 20/")
+    when nil:  CodeTree.display_menu("- Files.edited 50/")
     when 0:  CodeTree.display_menu("- Files.edited/")
     else  CodeTree.display_menu("- Files.edited #{Keys.prefix}/")
     end
@@ -149,7 +153,7 @@ class Files
 
   def self.open_history
     case Keys.prefix
-    when nil:  CodeTree.display_menu("- Files.history 20/")
+    when nil:  CodeTree.display_menu("- Files.history 50/")
     when 0:  CodeTree.display_menu("- Files.history/")
     else  CodeTree.display_menu("- Files.history #{Keys.prefix}/")
     end

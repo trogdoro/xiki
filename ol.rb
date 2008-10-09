@@ -60,7 +60,7 @@ class Ol
   end
 
   def self.file_path
-    "/tmp/log.notes"
+    "/tmp/output.notes"
   end
 
   def self.camel_case s
