@@ -42,6 +42,7 @@ class Console
     end
 
     if sync
+      return command if options[:no_enter]
       profile = File.exists?(File.expand_path('~/.profile')) ? '. ~/.profile;' : ''
       stdin, stdout, stderr = Open3.popen3("#{profile}cd #{dir};#{command}")
       result = ""
@@ -64,7 +65,7 @@ class Console
       Move.bottom
       if command  # If nil, just open console
         insert command
-        Console.enter
+        Console.enter unless options[:no_enter]
         #comint_send_input
       end
     end

@@ -468,8 +468,8 @@ class Repository
 
     left1, right1, left2, right2 = CodeTree.sibling_bounds
 
-    # Remove untracked
-    siblings = siblings.select{|i| i !~ /^. untracked/}.map{|i| Line.without_label(:line=>i)}
+    # Remove "untracked (ignore)"
+    siblings = siblings.select{|i| i !~ /^. untracked \(ignore\)/}.map{|i| Line.without_label(:line=>i)}
 
     if message == 'message'   # Error if no siblings
       return "- Error: You must change 'message' to be your commit message." if message == "message"
@@ -480,9 +480,9 @@ class Repository
     end
 
     if self.git?(dir)
-      Console.run("git commit -m \"#{message}\" #{siblings.join(' ')}", :dir=>dir)
+      Console.run "git commit -m \"#{message}\" #{siblings.join(' ')}", :dir=>dir#, :no_enter=>true
     else
-      Console.run("svn ci -m \"#{message}\" #{siblings.join(' ')}", :dir=>dir)
+      Console.run "svn ci -m \"#{message}\" #{siblings.join(' ')}", :dir=>dir
     end
   end
 

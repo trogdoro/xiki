@@ -29,18 +29,19 @@ class Code
     prefix = Keys.prefix
 
     case prefix
-    when 0  # Do paragraph (aka "block" for some reason)
+    when 0   # Do paragraph (aka "block" for some reason)
       left, right = Block.value
-    when 7  # Do region
+    when 7   # Do region
       left, right = region_beginning, region_end
     # If prefix of 8, run in rails console
-    when :u  # In rails console
+    when :u   # In rails console
       return self.load_this_file
-    when :uu  # In rails console
+    when :uu   # In rails console
       return self.run_in_rails_console
-    when 8  # Block on command line
-      return cm_pass_block_to_command("ruby -I.", " myTestCommandLineArg", "ruby")
-    when 9  # Pass whole file as ruby
+    when 8   # Put into file and run in console
+      File.open("/tmp/tmp.rb", "w") { |f| f << Notes.get_block.text }
+      return Console.run "ruby -I. /tmp/tmp.rb", :dir=>View.dir
+    when 9   # Pass whole file as ruby
       return Console.run("ruby #{View.file_name}", :buffer => "**ruby")
 
     # If prefix of 1-6
@@ -177,7 +178,7 @@ class Code
 
   def self.do_code_align
     left, right = bounds_of_thing_at_point(:paragraph).to_a
-    align_regexp(left, right, Keys.input(:prompt => "align to regex: "))
+    align_regexp(left, right, "\\( *\\)"+Keys.input(:prompt => "align to regex: "), 1, 1, false)
   end
 
   def self.indent_to

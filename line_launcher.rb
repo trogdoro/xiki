@@ -220,7 +220,7 @@ class LineLauncher
     end
 
 
-    self.add(/(http|file).?:\/\/.+/) do |line|   # url
+    self.add(/^ *(http|file).?:\/\/.+/) do |line|   # url
       browse_url line[/(http|file).?:\/\/.+/]
     end
 

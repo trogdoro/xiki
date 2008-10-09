@@ -9,10 +9,10 @@ require 'text_util'
 require 'notes'
 
 # Get rest of files to require
-classes = Dir['**/*.rb']
-classes = classes.select{|i| i != 'xiki.rb'}   # Remove self
-classes = classes.select{|i| i != 'key_bindings.rb'}   # Remove key_bindings
-classes = classes.select{|i| i !~ /^tests\//}   # Remove tests
+classes = Dir["#{XIKI_ROOT}/**/*.rb"]
+classes = classes.select{|i| i !~ /xiki.rb$/}   # Remove self
+classes = classes.select{|i| i !~ /key_bindings.rb$/}   # Remove key_bindings
+classes = classes.select{|i| i !~ /\/tests\//}   # Remove tests
 
 # Require classes them
 Requirer.safe_require classes
