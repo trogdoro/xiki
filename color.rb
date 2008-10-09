@@ -82,4 +82,3 @@ class Color
 end
 Color.define_styles
 
-# comment

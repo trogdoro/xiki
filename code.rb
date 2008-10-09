@@ -277,7 +277,7 @@ class Code
     Keys.prefix = nil
 
     file = Ol.file_path
-    buffer = "*tail of #{file}"
+    buffer = "*output - tail of #{file}"
 
     # If already open, just go to it
     if View.buffer_visible?(buffer)

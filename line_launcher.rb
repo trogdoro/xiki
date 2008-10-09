@@ -61,10 +61,10 @@ class LineLauncher
         return true
       end
     end
-    self.launch_code_or_ls options
+    self.launch_proper_tree options
   end
 
-  def self.launch_code_or_ls options={}
+  def self.launch_proper_tree options={}
     # It must be code_tree node or tree_ls node
     # Still don't know which, so check root
     is_tree_ls_path = TreeLs.is_tree_ls_path
@@ -84,7 +84,7 @@ class LineLauncher
     @@launchers = []
 
     self.add /^  +[+-]?\|/ do |line|  # | TreeLs quoted text
-      self.launch_code_or_ls
+      self.launch_proper_tree
     end
 
     self.add_paren("o") do  # - (t): Insert "Test"
@@ -297,6 +297,17 @@ class LineLauncher
       out = "(no output)\n" unless out
       TreeLs.indent(out)
       TreeLs.insert_quoted_and_search out
+    end
+
+    self.add(/^ *!!http:\/\/.+/) do |l|   # !http: show response from url
+      txt = Net::HTTP.get(URI.parse(Line.value[/!!(.+)/, 1]))
+      txt = JSON[txt].to_yaml
+      TreeLs.insert_under(txt, :escape=>'!')
+    end
+
+    self.add(/^ *!http:\/\/.+/) do |l|   # !http: show response from url
+      txt = Net::HTTP.get(URI.parse(Line.value[/!(.+)/, 1]))
+      TreeLs.insert_under txt#, :escape=>'!'
     end
 
     self.add(/^ *[$\/].+!!/) do |l|   # /dir!!shell command

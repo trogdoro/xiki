@@ -72,10 +72,19 @@ you
 
   end
 
-
   def test_snake_case
+    assert_equal("core_platform", TextUtil.snake_case("core_platform"))
     assert_equal("core_platform", TextUtil.snake_case("CorePlatform"))
     assert_equal("/core_platform", TextUtil.snake_case("/CorePlatform"))
+    assert_equal("core_platform", TextUtil.snake_case("core platform"))
+    assert_equal("core_platform", TextUtil.snake_case("core-platform"))
   end
 
+  def test_camel_case
+    assert_equal("CorePlatform", TextUtil.camel_case("core_platform"))
+    assert_equal("CorePlatform", TextUtil.camel_case("CorePlatform"))
+    assert_equal("/CorePlatform", TextUtil.camel_case("/CorePlatform"))
+    assert_equal("CorePlatform", TextUtil.camel_case("core platform"))
+    assert_equal("CorePlatform", TextUtil.camel_case("core-platform"))
+  end
 end

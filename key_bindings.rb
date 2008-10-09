@@ -123,9 +123,9 @@ class KeyBindings
     Keys.enter_as_camelcase { insert TextUtil.camel_case(Clipboard.get(0)) }
     Keys.enter_as_debug { Code.enter_as_debug }
     Keys.enter_as_filename { insert Clipboard.get(".") }
-    Keys.enter_as_snakecase { insert TextUtil.snake_case(Clipboard.get(0)) }
-    Keys.enter_as_trunk { Code.enter_as_trunk }
     Keys.enter_as_interpolated { insert "\#{#{Clipboard.get(0)}}" }
+    Keys.enter_as_trunk { Code.enter_as_trunk }
+    Keys.enter_as_underscores { View.insert TextUtil.snake_case(Clipboard.get(0)) }
     Keys.enter_bullet { Notes.bullet }
     Keys.enter_clipboard { Clipboard.paste("0") }   # paste **
     Keys.enter_difflog { App.enter_from_difflog }   # Save point and go to difflog to search
@@ -179,7 +179,7 @@ class KeyBindings
     Keys.do_as_camelcase { Clipboard.do_as_camel_case }   # change word to camel case (LikeThat)
     #Keys.DAL { Code.load_this_file }   # Do As Load: do a ruby load on the file
     Keys.do_as_rspec { Code.do_as_rspec }
-    Keys.do_as_snakecase { Clipboard.do_as_snake_case }   # Change word to snake case (like_that)
+    Keys.do_as_underscores { Clipboard.do_as_snake_case }   # Change word to snake case (like_that)
     Keys.do_as_wrap { Block.do_as_wrap }
     Keys.do_backward { backward_kill_word(Keys.prefix || 1) }   # delete word backward
     Keys.do_code_align { Code.do_code_align }

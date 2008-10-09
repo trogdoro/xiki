@@ -64,13 +64,13 @@ class Overlay
 
   # Code Sample:  Overlay.face :trailing_whitespace, :what=>:line
   # Apply face to region
-  def self.face(face, options)
-    if options[:what] == :line
+  def self.face(face, options={})
+    left ||= options[:left]
+    right ||= options[:right]
+    if options[:what] == :line or left.nil?
       left, right = Line.left, Line.right+1
     end
 
-    left ||= options[:left] || View.range_left
-    right ||= options[:right] || View.range_right
     o = Overlay.find_or_make(left, right)
     o[:face] = face
     o

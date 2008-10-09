@@ -1242,8 +1242,14 @@ class TreeLs
     self.insert_quoted_and_search matches
   end
 
-  def self.insert_under txt
-    txt = txt.gsub!(/^/, '|')
+  def self.insert_under txt, options={}
+
+    escape = options[:escape] || '|'
+    txt = txt.gsub!(/^/, escape)
+
+    # Add linebreak at end if none
+    txt = "#{txt}\n" unless txt =~ /\n/
+
     TreeLs.indent(txt)
     self.insert_quoted_and_search txt
   end
