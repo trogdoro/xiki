@@ -329,6 +329,8 @@ class Notes
 
     # - item exclamation! / todo
     Styles.apply("^[ \t]*\\(-\\) \\(.+!\\)$", nil, :notes_exclamation, :notes_exclamation)
+    Styles.apply("^ +\\(!\\+.*\n\\)", nil, :diff_green)
+    Styles.apply("^ +\\(!-.*\n\\)", nil, :diff_red)
 
     # - google:
     Styles.apply "^ *\\(-\\) \\(g\\)\\(o\\)\\(o\\)\\(g\\)\\(l\\)\\(e:\\) .*", nil, :ls_bullet,

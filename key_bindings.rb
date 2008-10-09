@@ -363,7 +363,8 @@ class KeyBindings
     Keys.isearch_have_line { Search.have_line }   # copy line back to search start
     Keys.isearch_have_output { Search.isearch_log }   # copy line back to search start
     Keys.isearch_have_paragraph { Search.have_paragraph }   # copy line back to search start
-    Keys.isearch_have_snake { Search.isearch_as_snake }
+    Keys.isearch_have_spot { Search.insert_at_spot }   # Zap: move to spot (as spot)
+    Keys.isearch_have_underscores { Search.isearch_as_snake }
     # I: leave unmapped - had issues using it (messes up position)
     # J: leave unmapped for linebreak
     # just_...
@@ -386,7 +387,6 @@ class KeyBindings
     # W: leave unmapped for pulling into search
     Keys.isearch_xtract { Search.move_to_search_start }   # eXtract: move back to search start
     # Y: leave unmapped for yank
-    Keys.isearch_zap { Search.insert_at_spot }   # Zap: move to spot (as spot)
 
     define_key :isearch_mode_map, kbd("C-1") do
       Search.isearch_copy_as("1")

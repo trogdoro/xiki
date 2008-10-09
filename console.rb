@@ -104,7 +104,11 @@ class Console
       # - of previous line
       path = TreeLs.construct_path(:list => true)
       if TreeLs.is_tree_ls_path(path)
-        path.pop
+        # Remove all !foo lines
+        while(path.last =~ /^!/)
+          path.pop
+        end
+
         dir = path.join('')
       end
       View.to orig

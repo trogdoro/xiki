@@ -23,7 +23,7 @@ class TextUtil
   end
 
   def self.snake_case s
-    s.gsub(' ', '').gsub(/([a-z])([A-Z0-9])/) {"#{$1}_#{$2}"}.downcase.gsub(/__+/, "_")
+    s.gsub(' ', '_').gsub(/([a-z])([A-Z0-9])/) {"#{$1}_#{$2}"}.downcase.gsub(/__+/, "_")
   end
 
   def self.camel_case s

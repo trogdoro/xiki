@@ -41,13 +41,13 @@ class Repository
       # If current dir is in a repos, add it
       current_dir_repos = self.git_path
       result << TreeLs.add_slash_maybe(
-        "current dir #{current_dir_repos ? current_dir_repos : View.dir}")
+        "current dir - #{current_dir_repos ? current_dir_repos : View.dir}")
       # If current dir isn't one, try after bar
       if ! current_dir_repos and View.bar?
         after_bar = View.dir_of_after_bar
         current_dir_repos = self.git_path(after_bar)
         result << TreeLs.add_slash_maybe(
-          "+ upper #{current_dir_repos ? current_dir_repos : after_bar}")
+          "upper - #{current_dir_repos ? current_dir_repos : after_bar}")
       end
       return result
     end
@@ -63,6 +63,7 @@ class Repository
       + .status/
       + .status_tree/
       - .initialize
+      + .branches/
       - .files/
       ].strip.gsub(/^      /, '')
   end
@@ -496,6 +497,23 @@ class Repository
 
   def self.files project
     "- #{self.extract_dir(project)}/"
+  end
+
+  def self.branches project
+    "
+    - #{self.extract_dir(project)}/
+      - list branches:
+      !git branch
+      !git branch -r
+      - create branch:
+      !git branch cd_spike
+        - switch to:
+        !git checkout cd_spike
+        - delete:
+        !git branch -d cd_spike
+      - switch to main branch:
+      !git checkout master
+    "
   end
 
 end

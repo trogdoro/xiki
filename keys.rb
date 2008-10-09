@@ -268,7 +268,7 @@ class Keys
     file, line = Code.location_from_proc proc
     Location.go(file)
     View.to_line line.to_i
-
+    Effects.blink(:what=>:line)
   end
 
   def self.proc_from_key keys

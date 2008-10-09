@@ -40,6 +40,9 @@ class View
 
   # Make current window larger.  Take into account that there might be other vertical windows
   def self.enlarge
+    # If universal prefix and in bar, widen bar
+    self.balance if Keys.prefix_u and View.bar?
+
     ws = self.windows_in_my_column
 
     # TODO: update this to use .in_bar?
@@ -229,7 +232,7 @@ class View
   # Accounts for bar
   def self.balance
     balance_windows
-    return if elvar.current_prefix_arg
+    return if Keys.prefix_u
     if self.bar?
       buffer = selected_window
       select_window frame_first_window

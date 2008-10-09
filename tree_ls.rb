@@ -287,8 +287,8 @@ class TreeLs
     Styles.apply("^ +\\(-|.*\n\\)", nil, :diff_red)
     Styles.apply("^ +\\(:[0-9]+\\)$", nil, :diff_line_number)
     Styles.apply("^ +\\(|\\+.*\n\\)", nil, :diff_green)
-    Styles.apply("^ +\\(|~.*\n\\)", nil, :diff_red)
     Styles.apply("^ +\\(|-.*\n\\)", nil, :diff_red)
+    Styles.apply("^ +\\(|~.*\n\\)", nil, :diff_red)
     Styles.apply("^ +\\(|@@ .*\n\\)", nil, :diff_line_number)
 
     # Dir line
