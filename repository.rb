@@ -36,18 +36,18 @@ class Repository
     if project.nil?
       result = []
 
-      result += (Projects.listing.map{|k, v| "+ #{k} - #{v}/"}.sort)
+      result += (Projects.listing.map{|k, v| "#{k} - #{v}/"}.sort)
 
       # If current dir is in a repos, add it
       current_dir_repos = self.git_path
       result << TreeLs.add_slash_maybe(
-        "+ current dir - #{current_dir_repos ? current_dir_repos : View.dir}")
+        "current dir #{current_dir_repos ? current_dir_repos : View.dir}")
       # If current dir isn't one, try after bar
       if ! current_dir_repos and View.bar?
         after_bar = View.dir_of_after_bar
         current_dir_repos = self.git_path(after_bar)
         result << TreeLs.add_slash_maybe(
-          "+ upper - #{current_dir_repos ? current_dir_repos : after_bar}")
+          "+ upper #{current_dir_repos ? current_dir_repos : after_bar}")
       end
       return result
     end

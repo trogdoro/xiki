@@ -5,7 +5,7 @@ class Projects
   @@projects ||= {'default'=>'$tr'}
 
   def self.menu
-    [@@projects.map {|k,v| "#{k}: #{v}/"}, '.edit/'].flatten.sort.map{|l| "+ #{l}"}
+    [@@projects.map {|k,v| "#{k}: #{v}/"}, '.edit/'].flatten.sort.map{|l| "#{l}"}
   end
 
   def self.edit

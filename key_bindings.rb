@@ -349,7 +349,6 @@ class KeyBindings
 
   # Control keys during isearch
   def self.isearch
-
     Keys.isearch_alter { Search.isearch_query_replace }   # Alter
     # B: leave unmapped for back
     Keys.isearch_clipboard { Search.copy }   # Clipboard (copy)
@@ -367,8 +366,8 @@ class KeyBindings
     Keys.isearch_have_snake { Search.isearch_as_snake }
     # I: leave unmapped - had issues using it (messes up position)
     # J: leave unmapped for linebreak
+    # just_...
     define_key :isearch_mode_map, kbd("C-j"), nil
-    # have_...
     Keys.isearch_just_orange { Search.just_orange }
     Keys.isearch_just_select { Search.just_select }   # Select match
     Keys.isearch_just_underline { Search.clear; Overlay.face(:underline, :left=>Search.left, :right=>Search.right) }
