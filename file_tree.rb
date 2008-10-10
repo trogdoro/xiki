@@ -233,6 +233,10 @@ class FileTree
       :bg => "ddffcc", :fg => "337744",
       :size => "-1"
 
+    Styles.define :diff_small,
+      :fg => "111111",
+      :size => "-18"
+
     if Styles.inverse
       Styles.define :diff_red,
         :bg => "440000", :fg => "ff6666"

@@ -332,8 +332,11 @@ class Notes
     Styles.apply("^ +\\(!\\+.*\n\\)", nil, :diff_green)
     Styles.apply("^ +\\(!-.*\n\\)", nil, :diff_red)
 
+    Styles.apply("\\(\~-\\)\\(.+?\\)\\(-\~\\)", nil, :diff_small, :diff_red, :diff_small)
+    Styles.apply("\\(\~\\+\\)\\(.+?\\)\\(\\+\~\\)", nil, :diff_small, :diff_green, :diff_small)
+
     # - google:
-    Styles.apply "^ *\\(-\\) \\(g\\)\\(o\\)\\(o\\)\\(g\\)\\(l\\)\\(e:\\) .*", nil, :ls_bullet,
+    Styles.apply "^ *\\(-\\) \\((g\\)\\(o\\)\\(o\\)\\(g\\)\\(l\\)\\(e):\\) .*", nil, :ls_bullet,
       :notes_blue,
       :notes_red,
       :notes_yellow,

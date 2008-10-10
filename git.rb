@@ -2,7 +2,13 @@ class Git
   def self.diff command, dir
     txt = Console.run(command, :sync => true, :dir => dir)
     txt.gsub!(/\c[\[31m(.+?)\c[\[m/, "\~\-\\1\-\~")
+    txt.gsub!(/\c[\[32m(.+?)\c[\[m/, "\~\+\\1\+\~")
     txt.gsub!(/\c[\[\d*m/, '')
+    txt.gsub!("\-\~\~\-", '')   # Merge adjacent areas
+    txt.gsub!("\+\~\~\+", '')
+    txt.gsub!(/^\~\+([^~\n]*)\+\~/, "+\\1")   # Find whole lines
+    txt.gsub!(/^\~-([^~\n]*)-\~/, "+\\1")   # Find whole lines
+
     txt
   end
 

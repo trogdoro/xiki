@@ -6,8 +6,8 @@ class Repository
     - Show options: Repository.menu
   >
 
-  #@@git_diff_options = ' --color-words -U2 '
-  @@git_diff_options = ' -U2 '
+  @@git_diff_options = ' --color-words -U2 '
+  #@@git_diff_options = ' -U2 '
   #@@git_diff_options = ' -U2 -w '   # -w caused a git segfault :/
 
   def self.svn?
@@ -84,7 +84,7 @@ class Repository
 
     if file.nil?   # If no file, show files for rev
       # Rev passed, so show all diffs
-      txt = Console.run "git show --pretty=oneline --name-status #{rev}", :sync=>true, :dir=>dir
+      txt = Git.diff "git show --pretty=oneline --name-status #{rev}", dir
       txt.sub! /^.+\n/, ''
       txt.gsub! /^([A-Z])\t/, "\\1: "
       txt.gsub! /^M: /, ''
@@ -92,7 +92,7 @@ class Repository
     end
 
     # File passed, show diff
-    txt = Console.run "git show --pretty=oneline #{rev} #{file}", :sync=>true, :dir=>dir
+    txt = Git.diff "git show --pretty=oneline #{rev} #{file}", dir
     txt.sub!(/.+?@@.+?\n/m, '')
     txt.gsub! /^-/, '~'
     txt.gsub! /^/, '|'
@@ -160,7 +160,7 @@ class Repository
   end
 
   def self.git? dir
-    git_status = Console.run "git status", :sync => true, :dir => dir
+    git_status = Git.diff "git status", dir
     git_status !~ /^fatal: Not a git repository/
   end
 
@@ -341,8 +341,8 @@ class Repository
       end
 
       txt = is_unadded ?
-        Console.run("git diff #{@@git_diff_options} #{file}", :sync => true, :dir => dir) :
-        Console.run("git diff #{@@git_diff_options} HEAD #{file}", :sync => true, :dir => dir)
+        Git.diff("git diff #{@@git_diff_options} #{file}", dir) :
+        Git.diff("git diff #{@@git_diff_options} HEAD #{file}", dir)
       self.clean! txt
       txt.gsub!(/^diff .+\n/, '')
       txt.gsub!(/^-/, '~')

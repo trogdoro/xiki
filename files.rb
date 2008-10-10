@@ -145,7 +145,7 @@ class Files
 
   def self.open_edited
     case Keys.prefix
-    when nil:  CodeTree.display_menu("- Files.edited 50/")
+    when nil:  CodeTree.display_menu("- Files.edited 40/")
     when 0:  CodeTree.display_menu("- Files.edited/")
     else  CodeTree.display_menu("- Files.edited #{Keys.prefix}/")
     end
@@ -153,7 +153,7 @@ class Files
 
   def self.open_history
     case Keys.prefix
-    when nil:  CodeTree.display_menu("- Files.history 50/")
+    when nil:  CodeTree.display_menu("- Files.history 40/")
     when 0:  CodeTree.display_menu("- Files.history/")
     else  CodeTree.display_menu("- Files.history #{Keys.prefix}/")
     end
