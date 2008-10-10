@@ -1,4 +1,11 @@
 class Git
+  def self.diff command, dir
+    txt = Console.run(command, :sync => true, :dir => dir)
+    txt.gsub!(/\c[\[31m(.+?)\c[\[m/, "\~\-\\1\-\~")
+    txt.gsub!(/\c[\[\d*m/, '')
+    txt
+  end
+
   def self.status dir
     # If no file, show status
     txt = Console.run("git status", :sync => true, :dir => dir)

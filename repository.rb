@@ -6,6 +6,7 @@ class Repository
     - Show options: Repository.menu
   >
 
+  #@@git_diff_options = ' --color-words -U2 '
   @@git_diff_options = ' -U2 '
   #@@git_diff_options = ' -U2 -w '   # -w caused a git segfault :/
 
@@ -294,7 +295,7 @@ class Repository
       option = is_unadded ? "- action: .add\n" : "- action: .commit \"message\"\n"
 
       if expand   # If showing diffs right away
-        txt = Console.run("git diff #{@@git_diff_options}#{is_unadded ? '' : ' HEAD'}", :sync => true, :dir => dir)
+        txt = Git.diff "git diff #{@@git_diff_options}#{is_unadded ? '' : ' HEAD'}", dir
 
         if txt =~ /^fatal: ambiguous argument 'HEAD': unknown revision/
           txt = "- Warning: Couldn't diff because no revisions exist yet in repository\n" +
