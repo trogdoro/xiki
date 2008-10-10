@@ -127,10 +127,8 @@ class Move
     move_to_column n# - 1
   end
 
-  def self.to_line_text_beginning
-    (Keys.prefix_times-1).times do
-      Move.next
-    end
+  def self.to_line_text_beginning down=0
+    Line.next down
     Line.to_left
     skip_chars_forward "[^ \t]"
   end

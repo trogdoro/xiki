@@ -9,19 +9,37 @@ class LineLauncher
   #@@just_show = true
 
   @@launchers = []
-  @@launchers_regexes = {}
+  @@launchers_regexes = {}   # Only tracks whether we've added it yet
+  @@launchers_procs = []
+
   def self.launchers; @@launchers; end
   @@paren_launches = {}
 
-  def self.add_paren match, &block
+  def self.add_paren match, block
     @@paren_launches[match] = block
   end
 
-  def self.add regex, label_regex=nil, &block
-    if @@launchers_regexes[regex]  # If already there, add at end
-      @@launchers.unshift [regex, label_regex, block]
+  def self.add arg, &block
+    # If regex, add
+    if arg.class == Regexp
+      self.add_regex arg, block
+
+    # If hash, must be paren
+    elsif arg.class == Hash
+      self.add_paren(arg[:paren], block)
+
+    # If proc, add to procs
+    elsif arg.class == Proc
+      @@launchers_procs << [arg, block]
+    end
+
+  end
+
+  def self.add_regex regex, block
+    if @@launchers_regexes[regex]  # If already there, add at at begining
+      @@launchers.unshift [regex, block]
     else  # If not there yet, add
-      @@launchers << [regex, label_regex, block]
+      @@launchers << [regex, block]
       @@launchers_regexes[regex] = true
     end
   end
@@ -42,69 +60,86 @@ class LineLauncher
       line = $1 + $2
     end
 
-    # If this line has parens, run launcher if one exists
+    # If try each potential paren match
     if paren && @@paren_launches[paren]
-      @@paren_launches[paren].call
+      if @@just_show
+        Ol << paren
+      else
+        @@paren_launches[paren].call
+      end
       return
     end
 
-    @@launchers.each do |launcher|   # For each potential match
-      regex, label_regex, block = launcher
+    # Try each potential regex match
+    @@launchers.each do |launcher|
+      regex, block = launcher
       # If we found a match, launch it
-      if (!regex || line =~ regex) && (!label_regex || (label && label =~ label_regex))
+      if line =~ regex
         # Run it
         if @@just_show
-          return Ol << regex.to_s + label_regex.to_s
+          Ol << regex.to_s
         else
           block.call line
         end
         return true
       end
     end
-    self.launch_proper_tree options
+
+    # Try procs (currently all trees)
+    self.launch_by_proc
+
+    View.insert "No launchers accepted the line"
   end
 
-  def self.launch_proper_tree options={}
-    # It must be code_tree node or tree_ls node
-    # Still don't know which, so check root
-    is_tree_ls_path = TreeLs.is_tree_ls_path
-    if @@just_show   # Means we're temporarily disabled for debugging
-      return Ol << "is_tree_ls_path: #{is_tree_ls_path}"
-    end
+  def self.launch_by_proc
 
-    # If code tree, chop it off and run it
-    if is_tree_ls_path   # Delegate to Tree
-      TreeLs.launch
-    else   # && line =~ /^ *- /  # Must have bullet to be code_tree
-      CodeTree.launch options
+    # Get path to pass to procs, to help them decide
+    list = TreeLs.construct_path(:list => true)
+
+    # Try each proc
+    @@launchers_procs.each do |launcher|   # For each potential match
+      condition_proc, block = launcher
+      # If we found a match, launch it
+      if condition_proc.call list
+        # Run it
+        if @@just_show
+          Ol << condition_proc.to_ruby
+        else
+          block.call list
+        end
+        return true
+      end
     end
+    return false
+
   end
 
   def self.init_default_launchers
     @@launchers = []
+    @@launchers_procs = []
 
     self.add /^  +[+-]?\|/ do |line|  # | TreeLs quoted text
-      self.launch_proper_tree
+      self.launch_by_proc
     end
 
-    self.add_paren("o") do  # - (t): Insert "Test"
+    self.add :paren=>"o" do  # - (t): Insert "Test"
       txt = Line.without_label  # Grab line
       View.to_after_bar  # Insert after bar
       insert txt
       command_execute "\C-m"
     end
 
-    self.add_paren("js") do   # - (js): js to run in firefox
+    self.add :paren=>"js" do   # - (js): js to run in firefox
       txt = Line.without_label  # Grab line
       Firefox.eval(txt)
     end
 
-    self.add_paren("jso") do   # - (js): js to run in firefox
+    self.add :paren=>"jso" do   # - (js): js to run in firefox
       txt = Line.without_label  # Grab line
       TreeLs.insert_under Firefox.eval(txt)
     end
 
-    self.add_paren("html") do   # Run in browser
+    self.add :paren=>"html" do   # Run in browser
       file = Line.without_label  # Grab line
       if Keys.prefix_u?
         View.open file
@@ -116,7 +151,7 @@ class LineLauncher
     end
 
 
-    self.add_paren("rc") do  # - (rc): Run in rails console
+    self.add :paren=>"rc" do  # - (rc): Run in rails console
 
       line = Line.without_label
 
@@ -137,20 +172,20 @@ class LineLauncher
     end
 
     # - (r): Ruby code
-    self.add_paren("r") do
+    self.add :paren=>"r" do
       returned, stdout = Code.eval(Line.without_label)
       message returned.to_s
       #insert stdout if stdout
     end
 
     # - (irb): Merb console
-    self.add_paren("irb") do
+    self.add :paren=>"irb" do
       out = RubyConsole.run(Line.without_label)
       TreeLs.indent(out)
       TreeLs.insert_quoted_and_search out  # Insert under
     end
 
-    self.add_paren("ro") do  # - (ro): Ruby code in other window
+    self.add :paren=>"ro" do  # - (ro): Ruby code in other window
       # Make it go to rext if in bar
       if View.in_bar?
         View.to_after_bar
@@ -161,7 +196,7 @@ class LineLauncher
       insert stdout
     end
 
-    LineLauncher.add_paren("rails") do  # - (gl): Run in rails console
+    LineLauncher.add :paren=>"rails" do  # - (gl): Run in rails console
       out = RubyConsole[:rails].run(Line.without_label)
       TreeLs.indent(out)
       TreeLs.insert_quoted_and_search out  # Insert under
@@ -169,7 +204,7 @@ class LineLauncher
 
 
     # - (u): Ruby code under
-    self.add_paren("u") do
+    self.add :paren=>"u" do
       returned, stdout = Code.eval(Line.without_label)
       message returned.to_s
 
@@ -193,7 +228,7 @@ class LineLauncher
       goto_char started
     end
 
-    self.add_paren("line") do
+    self.add :paren=>"line" do
       line, path = Line.without_label.split(', ')
 
       View.open path
@@ -202,12 +237,12 @@ class LineLauncher
 
 
 
-    self.add nil, /\(elisp\)/ do |line|   # Run lines like this: - foo (elisp): (bar)
-      end_of_line
+    self.add :paren=>'elisp' do |line|   # Run lines like this: - foo (elisp): (bar)
+      Line.to_right
       eval_last_sexp nil
     end
 
-    self.add nil, /\(ruby\)/ do |line|   # - (ruby)
+    self.add :paren=>'ruby' do |line|   # - (ruby)
       message el4r_ruby_eval(line)
       #insert el4r_ruby_eval(line).to_s
     end
@@ -256,7 +291,7 @@ class LineLauncher
       TreeLs.launch
     end
 
-    self.add(nil, /google/) do |line|  # - google:
+    self.add :paren=>'google' do |line|  # - google:
       url = Line.without_label.sub(/^\s+/, '')
       url.gsub!('"', '%22')
       url.gsub!(':', '%3A')
@@ -282,34 +317,6 @@ class LineLauncher
       View.to_buffer name
     end
 
-    LineLauncher.add(nil, /^\(\$.+\)$/) do  # - ($bm): command
-      bm = Line.label[/^\(\$(.+)\)$/, 1]  # Get bookmark
-      dir = Bookmarks["$#{bm}"]
-      out = Console.run CodeTree.line_or_children, :dir => dir, :sync => true
-      TreeLs.indent(out)
-      TreeLs.insert_quoted_and_search out
-    end
-
-    LineLauncher.add(nil, /^\(\/.*\)$/) do  # - (/dir): command
-      # Get bookmark
-      dir = Line.label[/^\((.+)\)$/, 1]
-      out = Console.run CodeTree.line_or_children, :dir => dir, :sync => true
-      out = "(no output)\n" unless out
-      TreeLs.indent(out)
-      TreeLs.insert_quoted_and_search out
-    end
-
-    self.add(/^ *!!http:\/\/.+/) do |l|   # !http: show response from url
-      txt = Net::HTTP.get(URI.parse(Line.value[/!!(.+)/, 1]))
-      txt = JSON[txt].to_yaml
-      TreeLs.insert_under(txt, :escape=>'!')
-    end
-
-    self.add(/^ *!http:\/\/.+/) do |l|   # !http: show response from url
-      txt = Net::HTTP.get(URI.parse(Line.value[/!(.+)/, 1]))
-      TreeLs.insert_under txt#, :escape=>'!'
-    end
-
     self.add(/^ *[$\/].+!!/) do |l|   # /dir!!shell command
       Console.launch
     end
@@ -323,6 +330,27 @@ class LineLauncher
     self.add(/^ *!/) do |l|   # !shell command inline
       Console.launch :sync=>true
     end
+
+    # Let trees try to handle it
+
+    # Rest tree
+    condition_proc = proc {|list| RestTree.handles? list}
+    LineLauncher.add condition_proc do |list|
+      RestTree.launch :path=>list
+    end
+
+    # Treels tree
+    condition_proc = proc {|list| TreeLs.handles? list}
+    LineLauncher.add condition_proc do |list|
+      TreeLs.launch :path=>list
+    end
+
+    # Code tree
+    condition_proc = proc {|list| true}
+    LineLauncher.add condition_proc do |list|
+      CodeTree.launch :path=>list
+    end
+
   end
 
   def self.file_and_mode_hooks

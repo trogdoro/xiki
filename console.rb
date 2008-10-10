@@ -103,7 +103,7 @@ class Console
       orig = View.cursor
       # - of previous line
       path = TreeLs.construct_path(:list => true)
-      if TreeLs.is_tree_ls_path(path)
+      if TreeLs.handles?(path)
         # Remove all !foo lines
         while(path.last =~ /^!/)
           path.pop

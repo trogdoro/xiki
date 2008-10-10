@@ -330,7 +330,7 @@ class Repository
 
       txt = txt + untracked.join("")
       txt = "- Warning: nothing to show" if ! txt.any?
-      return option + txt
+      return CodeTree.no_search_option + option + txt
     end
 
     if line.nil?   # If no line passed, re-do diff for 1 file

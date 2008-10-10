@@ -341,7 +341,7 @@ class TreeLs
     end
   end
 
-  def self.is_tree_ls_path list=nil
+  def self.handles? list=nil
     list ||= TreeLs.construct_path(:list => true)
     self.matches_root_pattern?(list.first)
   end
@@ -530,6 +530,7 @@ class TreeLs
         # If search not found, don't delete all
         if lines_new.size == 0
           error = " (no matches)"
+          View.beep
         else
           lines = lines_new
         end
@@ -685,7 +686,7 @@ class TreeLs
     when "/"   # If slash, append selected dir to parent dir
 
       # If CodeTree search
-      if ! TreeLs.is_tree_ls_path
+      if ! TreeLs.handles?
         # Kill others
         View.delete(Line.left(2), right)
 
@@ -1187,7 +1188,7 @@ class TreeLs
   end
 
   # Expand if dir, or open if file
-  def self.launch
+  def self.launch options={}
     self.plus_to_minus_maybe
     line = Line.value
     indent = Line.indent

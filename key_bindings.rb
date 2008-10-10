@@ -369,6 +369,7 @@ class KeyBindings
     # J: leave unmapped for linebreak
     # just_...
     define_key :isearch_mode_map, kbd("C-j"), nil
+    Keys.isearch_just_difflog { Search.jump_to_difflog }   # To: find last string in difflog
     Keys.isearch_just_orange { Search.just_orange }
     Keys.isearch_just_select { Search.just_select }   # Select match
     Keys.isearch_just_underline { Search.clear; Overlay.face(:underline, :left=>Search.left, :right=>Search.right) }
@@ -438,7 +439,6 @@ class KeyBindings
     # Q
     # R
     # S
-    Keys._T(:isearch_mode_map) { Search.jump_to_difflog }   # To: find original string in difflog
     Keys._U(:isearch_mode_map) { Search.upcase }   # Upcase
     Keys._V(:isearch_mode_map) { Search.isearch_find_in_buffers(:in_bar => true) }   # Visited: show matches in visited files
     # V

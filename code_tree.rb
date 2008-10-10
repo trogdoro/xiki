@@ -17,7 +17,7 @@ class CodeTree
     orig = Location.new
     Line.to_left
     line = Line.without_indent
-    path = TreeLs.construct_path :list => true
+    path = options[:path] || TreeLs.construct_path(:list => true)
     path.each do |l|
       # if '- .xx:/", get rid of trailing slash
       l.sub!(/^([+-] .*\..+)\/$/, "\\1")
@@ -105,6 +105,7 @@ class CodeTree
         Line.to_words
         TreeLs.search(:left => left, :right => right, :number_means_enter => true)
       end
+      Move.to_line_text_beginning(1) if options[:no_search]
     end
   end
 

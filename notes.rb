@@ -475,7 +475,7 @@ class Notes
       plus_or_minus = TreeLs.toggle_plus_and_minus
       if plus_or_minus == '+'   # If +, expand (launch
 
-        if TreeLs.dir? or ! TreeLs.is_tree_ls_path   # If on a dir or code_tree
+        if TreeLs.dir? or ! TreeLs.handles?   # If on a dir or code_tree
           LineLauncher.launch
         else   # If on a file in a FileTree
           TreeLs.enter_lines
