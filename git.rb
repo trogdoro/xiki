@@ -6,8 +6,8 @@ class Git
     txt.gsub!(/\c[\[\d*m/, '')
     txt.gsub!("\-\~\~\-", '')   # Merge adjacent areas
     txt.gsub!("\+\~\~\+", '')
-    txt.gsub!(/^\~\+([^~\n]*)\+\~/, "+\\1")   # Find whole lines
-    txt.gsub!(/^\~-([^~\n]*)-\~/, "+\\1")   # Find whole lines
+    txt.gsub!(/^\~\+([^~\n]*)\+\~$/, "+\\1")   # Find whole lines
+    txt.gsub!(/^\~-([^~\n]*)-\~$/, "-\\1")   # Find whole lines
 
     txt
   end

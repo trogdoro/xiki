@@ -327,7 +327,7 @@ class Notes
 
     Styles.apply("^ +\\(!.*\n\\)", nil, :ls_quote)   # ^!... for commands
 
-    # - item exclamation! / todo
+    # exclamation! / todo
     Styles.apply("^[ \t]*\\(-\\) \\(.+!\\)$", nil, :notes_exclamation, :notes_exclamation)
     Styles.apply("^ +\\(!\\+.*\n\\)", nil, :diff_green)
     Styles.apply("^ +\\(!-.*\n\\)", nil, :diff_red)
