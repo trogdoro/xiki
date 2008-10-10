@@ -3,8 +3,7 @@ require 'el_mixin'
 $:.unshift "../"
 require 'diff_log'
 
-class TreeLsTest < Test::Unit::TestCase
-
+class FileTreeTest < Test::Unit::TestCase
   # Should correctly format simple diff
   def test_format
     formatted = DiffLog.format("/projects/xiki/trunk/", "diff_log.rb",

@@ -26,7 +26,7 @@ class KeyBindings
     Keys.AA { Line.to_left }   # AA - beginning of line (A's default) **
     Keys.as_bookmark { Bookmarks.save }   # remember bookmark
     Keys.as_clipboard { Clipboard.as_clipboard }   # **
-    Keys.as_directory { TreeLs.copy_path }   # copy dir to clipboard from tree
+    Keys.as_directory { FileTree.copy_path }   # copy dir to clipboard from tree
     # D
     Keys.as_everything { Clipboard.copy_everything }
     Keys.as_file { DiffLog.save }   # save (or, with prefix, save as) **
@@ -43,7 +43,7 @@ class KeyBindings
     Keys.as_rest { Clipboard.copy_paragraph(:rest => true) }
     Keys.as_spot { Location.as_spot }   # remember point in file *
     Keys.as_thing { Clipboard.as_thing }  # copy sexp at point
-    #Keys.as_update_remote { TreeLs.save_remote }
+    #Keys.as_update_remote { FileTree.save_remote }
     Keys.as_version { History.backup_file }   # creates backup
     Keys.as_windows { View.save }   # remember window configuration as tag
     Keys.as_xtract { Clipboard.cut("0") }   # cut **
@@ -96,7 +96,7 @@ class KeyBindings
     Keys.open_region_path { find_file buffer_substring(region_beginning, region_end) }
     Keys.open_rake_outline { CodeTree.display_menu("- Rake.menu/") }
     Keys.open_search { Search.outline_search }   # hide search via outline *
-    Keys.open_tree { TreeLs.tree }   # draw a tree, prompting for bookmark tag *
+    Keys.open_tree { FileTree.tree }   # draw a tree, prompting for bookmark tag *
     Keys.open_up { View.show_dir }   # open enclosing dir **
     Keys.open_viewing { Buffers.open_viewing }   # show currently open files and buffers **
     Keys.open_windows { View.restore }   # open window configuration by tag
@@ -132,11 +132,11 @@ class KeyBindings
     # E: defined above - mapped to what C-e does by default
     Keys.enter_file { View.insert(Keys.bookmark_as_path(:include_file=>true)); Line.to_left }   # Given a bookmark
     Keys.enter_history { History.enter_history }   # enter recently viewed files
-    #Keys.EH { TreeLs.enter_lines(/^\| /) }
+    #Keys.EH { FileTree.enter_lines(/^\| /) }
     Keys.enter_insert_date { App.enter_date }    # insert date string (and time if C-u)
     Keys.enter_insert_command { insert("- (/): "); ControlLock.disable }    # insert date string (and time if C-u)
     Keys.enter_insert_search { View.insert("- google: ") }
-    Keys.enter_in_todo { TreeLs.enter_snippet }   # enter tree quote of region in $T
+    Keys.enter_in_todo { FileTree.enter_snippet }   # enter tree quote of region in $T
     Keys.enter_junior { Notes.bullet("") }
     Keys.enter_key { Keys.insert_code }
     #Keys.EK { Clipboard.paste }   # Enter Clipboard: paste
@@ -148,15 +148,15 @@ class KeyBindings
     Keys.enter_log_line { Code.enter_log_line }
     Keys.enter_menu { CodeTree.insert_menus }
     Keys.enter_name { Clipboard.paste }   # paste thing saved as name
-    Keys.enter_outline { TreeLs.enter_lines }   # in tree, enter methods or headings
+    Keys.enter_outline { FileTree.enter_lines }   # in tree, enter methods or headings
     # Find new key for thisKeys.EO { DiffLog.enter_old }   # Enter Old: enter newly-deleted from last save
     Keys.enter_push { Repository.code_tree_diff(:enter=>true) }   # Commit to repos, push, etc
-    Keys.enter_quoted { TreeLs.enter_quoted }
+    Keys.enter_quoted { FileTree.enter_quoted }
     #Keys.enter_replacement { Clipboard.enter_replacement }
     Keys.enter_search { Search.enter_search }
     #Keys.enter_spot { Location.enter_at_spot }   # enter selected text at spot
-    Keys.enter_tree { TreeLs.tree(:here=>true) }
-    Keys.enter_under { TreeLs.enter_under }
+    Keys.enter_tree { FileTree.tree(:here=>true) }
+    Keys.enter_under { FileTree.enter_under }
     Keys.enter_viewing { History.enter_viewing }
     # W
     # X
@@ -167,7 +167,7 @@ class KeyBindings
     Keys.E2 { Clipboard.paste("2") };  # Enter 2
     Keys.E3 { Clipboard.paste("3") };   Keys.E4 { Clipboard.paste("4") }
     Keys.E5 { Clipboard.paste("5") };   Keys.E6 { Clipboard.paste("6") };   Keys.E7 { Clipboard.paste("7") }
-    Keys.E8 { TreeLs.enter_lines "." }   # Like enter_outline, but inserts all
+    Keys.E8 { FileTree.enter_lines "." }   # Like enter_outline, but inserts all
   end
 
   def self.d_keys
@@ -184,7 +184,7 @@ class KeyBindings
     Keys.do_backward { backward_kill_word(Keys.prefix || 1) }   # delete word backward
     Keys.do_code_align { Code.do_code_align }
     Keys.do_code_comment { Code.comment }
-    Keys.do_create_directory { TreeLs.create_dir }
+    Keys.do_create_directory { FileTree.create_dir }
     Keys.do_compare_file { Repository.diff_one_file }   # compare current file with subversion
     Keys.do_code_indent { Code.indent }
     Keys.do_compare_last { History.diff_with_backup }   # compare with last AV version
@@ -207,7 +207,7 @@ class KeyBindings
     # H
     # G: leave unmapped for escape
     Keys.do_indent { Code.indent_to }
-    Keys.do_junior { TreeLs.move_dir_to_junior }   # Move a dir to next line, and indent
+    Keys.do_junior { FileTree.move_dir_to_junior }   # Move a dir to next line, and indent
     #Keys.DK1 { KeyBindings.keys }   # Do Keys 1: load key bindings "1" (currently this file)
     Keys.do_kill_all { erase_buffer }   # kill all text in buffer
     Keys.do_kill_duplicates { Code.do_kill_duplicates }
@@ -239,10 +239,10 @@ class KeyBindings
     Keys.do_ruby { Code.run }   # run code as ruby *
     Keys.do_search { Search.tree_grep }   # do grep search *
     #    Keys.DS { elvar.current_prefix_arg ? johns_thing : Search.grep }   # Do Search: do grep search
-    Keys.do_tree { TreeLs.tree(:recursive=>true) }   # draw filesystem tree for current dir or bookmark
-    Keys.do_under { TreeLs.kill_under }   # kill tree children (lines indented more)
+    Keys.do_tree { FileTree.tree(:recursive=>true) }   # draw filesystem tree for current dir or bookmark
+    Keys.do_under { FileTree.kill_under }   # kill tree children (lines indented more)
     Keys.do_version { Repository.code_tree_diff_unadded }   # kill tree children (lines indented more)
-    #Keys.display_up { message TreeLs.construct_path( :indented => true ) }   # display path to root of file
+    #Keys.display_up { message FileTree.construct_path( :indented => true ) }   # display path to root of file
     # V
     Keys.do_whitespace { Deletes.delete_whitespace }   # delete blank lines
     # X
@@ -283,7 +283,7 @@ class KeyBindings
     Keys.to_relative { Search.to_relative }   # go to nth line, relative to top of window
     Keys.to_spot { Location.to_spot }   # *
     # T: defined above - mapped to what C-t does by default
-    Keys.to_up { TreeLs.to_parent }   # to parent (last line indented less)
+    Keys.to_up { FileTree.to_parent }   # to parent (last line indented less)
     Keys.to_words { Move.to_line_text_beginning }   # move to start of words on line *
     Keys.to_x { Move.to_column }   # to x coordinate - ie column
     # Y
@@ -308,7 +308,7 @@ class KeyBindings
     Keys.layout_dimensions_small { set_frame_size(View.frame, 90, 35) }
     Keys.layout_expand { View.enlarge }   # *
     # F
-    Keys.layout_files { TreeLs.open_in_bar; View.to_nth 1; Effects.blink(:what=>:line) }
+    Keys.layout_files { FileTree.open_in_bar; View.to_nth 1; Effects.blink(:what=>:line) }
     Keys.layout_hide { View.hide }   # **
     Keys.layout_indent { Hide.hide_by_indent }   # only show lines indented less than x
     # J
@@ -322,7 +322,7 @@ class KeyBindings
     # Q
     Keys.layout_reveal { Hide.reveal }   # reveal all hidden text
     Keys.layout_search { Keys.prefix_u? ? Search.find_in_buffers(Keys.input(:prompt=>"Search all open files for: ")) : Hide.search }   # *
-    Keys.layout_todo { TreeLs.open_in_bar; Effects.blink(:what=>:line) }   # show bar on left with the quick bookmark named "-t" *
+    Keys.layout_todo { FileTree.open_in_bar; Effects.blink(:what=>:line) }   # show bar on left with the quick bookmark named "-t" *
     Keys.layout_upper { View.to_upper }   # go to uppermost view after bar
     # V
     Keys.layout_visibility { View.visibility }

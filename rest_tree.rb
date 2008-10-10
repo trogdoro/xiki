@@ -4,7 +4,7 @@ class RestTree
     line = options[:path].join('')
 
     txt = Net::HTTP.get(URI.parse(line[/!(.+)/, 1]))
-    TreeLs.insert_under txt#, :escape=>'!'
+    FileTree.insert_under txt#, :escape=>'!'
   end
 
   def self.handles? list

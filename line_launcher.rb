@@ -86,7 +86,7 @@ class LineLauncher
     end
 
     # Try procs (currently all trees)
-    self.launch_by_proc
+    return if self.launch_by_proc
 
     View.insert "No launchers accepted the line"
   end
@@ -94,7 +94,7 @@ class LineLauncher
   def self.launch_by_proc
 
     # Get path to pass to procs, to help them decide
-    list = TreeLs.construct_path(:list => true)
+    list = FileTree.construct_path(:list => true)
 
     # Try each proc
     @@launchers_procs.each do |launcher|   # For each potential match
@@ -118,7 +118,7 @@ class LineLauncher
     @@launchers = []
     @@launchers_procs = []
 
-    self.add /^  +[+-]?\|/ do |line|  # | TreeLs quoted text
+    self.add /^  +[+-]?\|/ do |line|  # | FileTree quoted text
       self.launch_by_proc
     end
 
@@ -136,7 +136,7 @@ class LineLauncher
 
     self.add :paren=>"jso" do   # - (js): js to run in firefox
       txt = Line.without_label  # Grab line
-      TreeLs.insert_under Firefox.eval(txt)
+      FileTree.insert_under Firefox.eval(txt)
     end
 
     self.add :paren=>"html" do   # Run in browser
@@ -181,8 +181,8 @@ class LineLauncher
     # - (irb): Merb console
     self.add :paren=>"irb" do
       out = RubyConsole.run(Line.without_label)
-      TreeLs.indent(out)
-      TreeLs.insert_quoted_and_search out  # Insert under
+      FileTree.indent(out)
+      FileTree.insert_quoted_and_search out  # Insert under
     end
 
     self.add :paren=>"ro" do  # - (ro): Ruby code in other window
@@ -198,8 +198,8 @@ class LineLauncher
 
     LineLauncher.add :paren=>"rails" do  # - (gl): Run in rails console
       out = RubyConsole[:rails].run(Line.without_label)
-      TreeLs.indent(out)
-      TreeLs.insert_quoted_and_search out  # Insert under
+      FileTree.indent(out)
+      FileTree.insert_quoted_and_search out  # Insert under
     end
 
 
@@ -284,11 +284,11 @@ class LineLauncher
     end
 
     self.add(/^[^|-]+\*\*/) do |line|  # **.../: Tree grep in dir
-      TreeLs.launch
+      FileTree.launch
     end
 
     self.add(/^[^|]+##/) do |line|  # ##.../: Tree grep in dir
-      TreeLs.launch
+      FileTree.launch
     end
 
     self.add :paren=>'google' do |line|  # - google:
@@ -333,19 +333,19 @@ class LineLauncher
 
     # Let trees try to handle it
 
-    # Rest tree
+    # RestTree
     condition_proc = proc {|list| RestTree.handles? list}
     LineLauncher.add condition_proc do |list|
       RestTree.launch :path=>list
     end
 
-    # Treels tree
-    condition_proc = proc {|list| TreeLs.handles? list}
+    # FileTree
+    condition_proc = proc {|list| FileTree.handles? list}
     LineLauncher.add condition_proc do |list|
-      TreeLs.launch :path=>list
+      FileTree.launch :path=>list
     end
 
-    # Code tree
+    # CodeTree
     condition_proc = proc {|list| true}
     LineLauncher.add condition_proc do |list|
       CodeTree.launch :path=>list
@@ -358,7 +358,7 @@ class LineLauncher
       filename = $el.dired_get_filename
       # If dir, open tree
       if File.directory?(filename)
-        TreeLs.ls :dir=>filename
+        FileTree.ls :dir=>filename
       else   # If file, do full file search?
         History.open_current :all => true, :paths => [filename]
       end

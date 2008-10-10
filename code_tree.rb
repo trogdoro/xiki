@@ -12,12 +12,12 @@ class CodeTree
 
   # Mapped to C-.
   def self.launch options={}
-    TreeLs.extra_line_if_end_of_file
-    TreeLs.plus_to_minus_maybe
+    FileTree.extra_line_if_end_of_file
+    FileTree.plus_to_minus_maybe
     orig = Location.new
     Line.to_left
     line = Line.without_indent
-    path = options[:path] || TreeLs.construct_path(:list => true)
+    path = options[:path] || FileTree.construct_path(:list => true)
     path.each do |l|
       # if '- .xx:/", get rid of trailing slash
       l.sub!(/^([+-] .*\..+)\/$/, "\\1")
@@ -96,14 +96,14 @@ class CodeTree
 
       if options[:tree_search]  # If they want to do a tree search
         goto_char left
-        TreeLs.select_next_file
+        FileTree.select_next_file
         #Line.to_words
-        TreeLs.search(:left => left, :right => right, :recursive => true)
+        FileTree.search(:left => left, :right => right, :recursive => true)
       # If script didn't move us (line or buffer), do incremental search
       elsif !options[:no_search] && !buffer_changed && point == orig_left
         goto_char left
         Line.to_words
-        TreeLs.search(:left => left, :right => right, :number_means_enter => true)
+        FileTree.search(:left => left, :right => right, :number_means_enter => true)
       end
       Move.to_line_text_beginning(1) if options[:no_search]
     end
@@ -172,7 +172,7 @@ class CodeTree
     CodeTree.launch
   end
 
-  # Determine whether path is code_tree or tree_ls
+  # Determine whether path is code_tree or file_tree
   #   def self.is_code_tree_path list
   #     code_tree_root = nil
   #     index = list.size - 1

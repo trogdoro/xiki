@@ -10,7 +10,7 @@ class Requirer
 
         View.to_buffer '* missing gems'
         Notes.mode
-        gem_name = e.to_s[/-- (.*)/, 1] || e.to_s[/RubyGem (.*)/, 1]
+        gem_name = e.to_s[/-- (.*)/, 1] || e.to_s[/RubyGem (.*)/, 1] || gem_name
         gem_name.sub!(/\(.+/, '').strip!
         View.insert TextUtil.unindent("
           | Warning: gem '#{gem_name}' missing

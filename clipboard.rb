@@ -1,5 +1,5 @@
 require 'keys'
-require 'tree_ls'
+require 'file_tree'
 
 # Provides copy and paste functionality
 class Clipboard
@@ -82,7 +82,7 @@ class Clipboard
       @@hash["/"] = expand_file_name( buffer_file_name ? buffer_file_name : elvar.default_directory )
       if buffer_file_name
         # Store as tree snippet
-        @@hash["="] = TreeLs.snippet(str)
+        @@hash["="] = FileTree.snippet(str)
         @@hash["."] = "#{file_name_nondirectory(buffer_file_name)}"
         @@hash["\\"] = "#{elvar.default_directory}\n  #{file_name_nondirectory(buffer_file_name)}"
       end

@@ -348,8 +348,8 @@ class Notes
       mouse_set_point(e)
 
       # If search in progress
-      if TreeLs.search_going_or_interrupted and ! Line.blank?
-        TreeLs.search_going_or_interrupted = false
+      if FileTree.search_going_or_interrupted and ! Line.blank?
+        FileTree.search_going_or_interrupted = false
         CodeTree.kill_siblings
       end
 
@@ -374,7 +374,7 @@ class Notes
     defun(:notes_mode, :interactive => "", :docstring => "Apply notes styles, etc") {# |point|
       el4r_lisp_eval "(setq font-lock-defaults '(nil t))"
 
-      TreeLs.apply_styles
+      FileTree.apply_styles
       Notes.apply_styles
       use_local_map elvar.notes_mode_map
     }
@@ -472,17 +472,17 @@ class Notes
     # If next line is indented more, kill children
     # If starts with plus or minus, and on plus or minus, launch
     if Line.matches(/^\s*[+-]/) and View.char =~ /[+-]/
-      plus_or_minus = TreeLs.toggle_plus_and_minus
+      plus_or_minus = FileTree.toggle_plus_and_minus
       if plus_or_minus == '+'   # If +, expand (launch
 
-        if TreeLs.dir? or ! TreeLs.handles?   # If on a dir or code_tree
+        if FileTree.dir? or ! FileTree.handles?   # If on a dir or code_tree
           LineLauncher.launch
         else   # If on a file in a FileTree
-          TreeLs.enter_lines
+          FileTree.enter_lines
         end
 
       else   # If -, kill under
-        TreeLs.kill_under
+        FileTree.kill_under
         Move.to_line_text_beginning
       end
     end

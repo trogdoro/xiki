@@ -29,12 +29,12 @@ class History
       path = paths.to_s
       # If it's a dir, delegate to Open Tree
       if path =~ /\/$/
-        TreeLs.ls :here => true, :dir => path
+        FileTree.ls :here => true, :dir => path
         return
       end
-      insert "- " + TreeLs.filename_to_next_line(paths.to_s)
-      open_line 1
-      TreeLs.enter_lines
+      View.insert "- " + FileTree.filename_to_next_line(paths.to_s)
+      $el.open_line 1
+      FileTree.enter_lines
 
     else  # If entering in new buffer
 
@@ -44,16 +44,16 @@ class History
       #View.bar
       View.to_buffer("*tree of current")
       View.clear;  notes_mode
-      insert TreeLs.paths_to_tree(paths)
+      View.insert FileTree.paths_to_tree(paths)
       View.to_top
       Keys.clear_prefix
-      TreeLs.select_next_file
+      FileTree.select_next_file
       if options[:all]
-        TreeLs.enter_lines(//)
+        FileTree.enter_lines(//)
       elsif options[:outline] || options[:prompt_for_bookmark]
-        TreeLs.enter_lines
+        FileTree.enter_lines
       else
-        TreeLs.search :recursive => true
+        FileTree.search :recursive => true
       end
     end
 
@@ -63,11 +63,11 @@ class History
     times = self.prefix_times
     View.to_buffer("*tree of edited")
     View.clear;  notes_mode
-    insert TreeLs.paths_to_tree(elvar.editedhistory_history.to_a[0..(times-1)])
+    View.insert FileTree.paths_to_tree(elvar.editedhistory_history.to_a[0..(times-1)])
     View.to_top
     Keys.clear_prefix
-    TreeLs.select_next_file
-    TreeLs.search :recursive => true
+    FileTree.select_next_file
+    FileTree.search :recursive => true
   end
 
   def self.open_history
@@ -78,12 +78,12 @@ class History
     self.insert_history times
     View.to_top
     Keys.clear_prefix
-    TreeLs.select_next_file
-    TreeLs.search :recursive => true
+    FileTree.select_next_file
+    FileTree.search :recursive => true
   end
 
   def self.insert_history times
-    insert TreeLs.paths_to_tree(elvar.recentf_list.to_a[0..(times-1)])
+    insert FileTree.paths_to_tree(elvar.recentf_list.to_a[0..(times-1)])
   end
 
   def self.enter_history
@@ -91,13 +91,13 @@ class History
     self.insert_history self.prefix_times
     right = point
     orig.go
-    TreeLs.search :recursive => true, :left => point, :right => right
+    FileTree.search :recursive => true, :left => point, :right => right
   end
 
   def self.insert_viewing times
     paths = ( buffer_list.map { |b| buffer_file_name(b) }.select{|path| path})
     paths = paths[0..(times-1)] if times  # Limit to number if prefix passed
-    insert TreeLs.paths_to_tree(paths)
+    insert FileTree.paths_to_tree(paths)
   end
 
   def self.enter_viewing
@@ -105,7 +105,7 @@ class History
     self.insert_viewing self.prefix_times
     right = point
     orig.go
-    TreeLs.search :recursive => true, :left => point, :right => right
+    FileTree.search :recursive => true, :left => point, :right => right
   end
 
   def self.open_unsaved
@@ -124,11 +124,11 @@ class History
     if (modified.size == 0)
       return insert("| Note\n- ~No Buffers Unsaved~\n")
     end
-    insert TreeLs.paths_to_tree(modified)
+    View.insert FileTree.paths_to_tree(modified)
     View.to_top
     Keys.clear_prefix
-    TreeLs.select_next_file
-    TreeLs.search :recursive => true
+    FileTree.select_next_file
+    FileTree.search :recursive => true
   end
 
   def self.setup_editedhistory

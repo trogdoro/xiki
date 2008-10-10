@@ -266,7 +266,7 @@ class Keys
     end
 
     file, line = Code.location_from_proc proc
-    Location.go(file)
+    Location.go("#{XIKI_ROOT}/#{file}")
     View.to_line line.to_i
     Effects.blink(:what=>:line)
   end

@@ -33,7 +33,7 @@ class Buffers
     if options[:dir]
       paths = paths.grep(Regexp.new(Regexp.escape(options[:dir])))
     end
-    puts CodeTree.tree_search_option + TreeLs.paths_to_tree(paths)
+    puts CodeTree.tree_search_option + FileTree.paths_to_tree(paths)
   end
 
   def self.search string, options={}

@@ -102,8 +102,8 @@ class Console
     if Line.value =~ /^\s+!/
       orig = View.cursor
       # - of previous line
-      path = TreeLs.construct_path(:list => true)
-      if TreeLs.handles?(path)
+      path = FileTree.construct_path(:list => true)
+      if FileTree.handles?(path)
         # Remove all !foo lines
         while(path.last =~ /^!/)
           path.pop
@@ -121,8 +121,8 @@ class Console
       # Add linebreak if blank
       output.sub!(/\A\z/, "\n")
       output.gsub!(/^/, '!')
-      TreeLs.indent(output)
-      TreeLs.insert_quoted_and_search output
+      FileTree.indent(output)
+      FileTree.insert_quoted_and_search output
     else
       View.handle_bar
       Console.run command, :dir => dir

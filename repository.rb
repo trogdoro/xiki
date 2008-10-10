@@ -40,13 +40,13 @@ class Repository
 
       # If current dir is in a repos, add it
       current_dir_repos = self.git_path
-      result << TreeLs.add_slash_maybe(
+      result << FileTree.add_slash_maybe(
         "current dir - #{current_dir_repos ? current_dir_repos : View.dir}")
       # If current dir isn't one, try after bar
       if ! current_dir_repos and View.bar?
         after_bar = View.dir_of_after_bar
         current_dir_repos = self.git_path(after_bar)
-        result << TreeLs.add_slash_maybe(
+        result << FileTree.add_slash_maybe(
           "upper - #{current_dir_repos ? current_dir_repos : after_bar}")
       end
       return result
@@ -153,7 +153,7 @@ class Repository
     Styles.apply "^--- .+\n", :diff_subhead
     Styles.apply "^\\+\\+\\+ .+\n", :notes_h1
     Styles.apply "^\\\\.+", :cm_lighter_bold
-    Styles.apply "^\\*.+\n", :treels_f_blank
+    #Styles.apply "^\\*.+\n", :treels_f_blank
     Styles.apply "^@@.+\n", :diff_subhead
 
   end
@@ -184,7 +184,7 @@ class Repository
     View.to_buffer "*repository status"
     View.clear
     View.dir = dir
-    TreeLs.apply_styles
+    FileTree.apply_styles
     use_local_map elvar.notes_mode_map
 
     tree = self.status_tree_internal dir
@@ -192,7 +192,7 @@ class Repository
 
     View.to_top
     Move.to_junior
-    TreeLs.search :recursive => true
+    FileTree.search :recursive => true
 
   end
 
@@ -210,7 +210,7 @@ class Repository
       # Remove question files
       status = status.split("\n")#.select{|l| l !~ /^\?/}
       status = status.each{|l| l.sub!(/^. +/, dir)}
-      TreeLs.paths_to_tree(status)
+      FileTree.paths_to_tree(status)
     else   # git
       status = Console.run "git status", :dir => dir, :sync => true
 
@@ -220,7 +220,7 @@ class Repository
       found.each do |m|
         result << "#{dir}#{m[0]}"
       end
-      TreeLs.paths_to_tree(result)
+      FileTree.paths_to_tree(result)
     end
   end
 

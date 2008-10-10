@@ -15,7 +15,7 @@ class Search
 
   def self.insert_tree_at_spot
     self.clear
-    txt = TreeLs.snippet()   # Grab symbol
+    txt = FileTree.snippet()   # Grab symbol
     Hide.show
     Location.go :_0
     insert txt + "\n"
@@ -175,7 +175,7 @@ class Search
       Clipboard.get("0") :
       Keys.input(:prompt => "Text to search for: ")
 
-    TreeLs.grep_with_hashes dir, input
+    FileTree.grep_with_hashes dir, input
   end
 
   def self.isearch_tree_grep_method
@@ -186,7 +186,7 @@ class Search
 
     # Do search
     regex = Regexp.new("\\bdef .*#{match}\\b", Regexp::IGNORECASE)
-    TreeLs.grep dir, regex, :bar => true
+    FileTree.grep dir, regex, :bar => true
   end
 
 
@@ -247,7 +247,7 @@ class Search
     end
 
     # Search in bookmark
-    TreeLs.grep_with_hashes bm, match
+    FileTree.grep_with_hashes bm, match
 
   end
 
@@ -281,7 +281,7 @@ class Search
     if new_options[:buffer]   # Goto first match
       $el.goto_line 4
       Line.to_words
-      TreeLs.search(:recursive => false, :left => Line.left, :right => View.bottom)
+      FileTree.search(:recursive => false, :left => Line.left, :right => View.bottom)
     else  # Goto first match in 2nd file
       $el.goto_line 2
       $el.re_search_forward "^  -", nil, true
@@ -290,7 +290,7 @@ class Search
     end
     # Do search if only one file
   #     if list.size == 1
-  #       TreeLs.search(:recursive => false, :left => Line.left, :right => View.bottom)
+  #       FileTree.search(:recursive => false, :left => Line.left, :right => View.bottom)
   #     end
 
   end
@@ -324,7 +324,6 @@ class Search
     self.clear
     paragraph = View.paragraph
     offset = View.cursor - View.paragraph(:bounds=>true)[0]
-Ol << "offset: #{offset.inspect}"
     self.to_start  # Go back to start
     orig = Location.new
     insert paragraph
@@ -429,7 +428,7 @@ Ol << "offset: #{offset.inspect}"
     re_search_forward "^$", nil, 1
     right = point
     goto_char left
-    TreeLs.search(:left => left, :right => right, :recursive => true)
+    FileTree.search(:left => left, :right => right, :recursive => true)
   end
 
   def self.to_relative
@@ -534,7 +533,7 @@ Ol << "offset: #{offset.inspect}"
     indent = Line.indent
     Line.to_right
     View.insert("\n#{indent}  - ###{input}/")
-    TreeLs.launch
+    FileTree.launch
 
     #View.insert dir
   end

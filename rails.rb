@@ -172,7 +172,7 @@ class Rails
     View.clear
     Notes.mode
 
-    View.insert TreeLs.paths_to_tree(
+    View.insert FileTree.paths_to_tree(
       (c + v).sort.uniq )
 
     View.to_top
