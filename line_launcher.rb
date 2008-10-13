@@ -283,11 +283,11 @@ class LineLauncher
 
     end
 
-    self.add(/^[^|-]+\*\*/) do |line|  # **.../: Tree grep in dir
+    self.add(/^[^|-]+\*\*.+\//) do |line|  # **.../: Tree grep in dir
       FileTree.launch
     end
 
-    self.add(/^[^|]+##/) do |line|  # ##.../: Tree grep in dir
+    self.add(/^[^|]+##.+\//) do |line|  # ##.../: Tree grep in dir
       FileTree.launch
     end
 
@@ -311,6 +311,7 @@ class LineLauncher
     end
 
     self.add(/^ *\*/) do |line|  # *... buffer
+Ol.line
       #return $el.insert "hey"
       name = Line.without_label.sub(/\*/, '')
       View.to_after_bar

@@ -642,5 +642,10 @@ class View
     return [left, right] if options[:bounds]
     txt
   end
+
+  def self.url txt
+    $el.browse_url txt
+  end
+
 end
 View.init

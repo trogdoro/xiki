@@ -507,11 +507,11 @@ class Repository
       !git branch
       !git branch -r
       - create branch:
-      !git branch cd_spike
+      !git branch foo
         - switch to:
-        !git checkout cd_spike
+        !git checkout foo
         - delete:
-        !git branch -d cd_spike
+        !git branch -d foo
       - switch to main branch:
       !git checkout master
     "

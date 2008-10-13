@@ -366,13 +366,14 @@ class KeyBindings
     Keys.isearch_have_spot { Search.insert_at_spot }   # Zap: move to spot (as spot)
     Keys.isearch_have_underscores { Search.isearch_as_snake }
     # I: leave unmapped - had issues using it (messes up position)
-    # J: leave unmapped for linebreak
     # just_...
     define_key :isearch_mode_map, kbd("C-j"), nil
     Keys.isearch_just_difflog { Search.jump_to_difflog }   # To: find last string in difflog
+    Keys.isearch_just_lowercase { Search.downcase }
     Keys.isearch_just_orange { Search.just_orange }
     Keys.isearch_just_select { Search.just_select }   # Select match
-    Keys.isearch_just_underline { Search.clear; Overlay.face(:underline, :left=>Search.left, :right=>Search.right) }
+    Keys.isearch_just_uppercase { Search.upcase }
+    #Keys.isearch_just_underline { Search.clear; Overlay.face(:underline, :left=>Search.left, :right=>Search.right) }
     Keys.isearch_kill { Search.cut; Location.as_spot('deleted') }   # cut
     Keys.isearch_look { Search.uncover }   # Look: show results for search string in all open files
     # M: leave unmapped for stop
