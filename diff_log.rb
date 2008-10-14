@@ -80,8 +80,8 @@ class DiffLog
     }
 
     # Make - and + lines into -| and +| lines
-    raw.gsub!(/^\+(.*)/, "      +|\\1")
-    raw.gsub!(/^-(.*)/, "      -|\\1")
+    raw.gsub!(/^\+(.*)/, "      |+\\1")
+    raw.gsub!(/^-(.*)/, "      |-\\1")
 
     # Return with path
     "#{path}\n" +
@@ -104,9 +104,7 @@ private
   # Util function used by public functions
   def self.saved_diff
     $el.write_region View.top, View.bottom, @@temp_path
-    diff = shell_command_to_string "diff -w -U 0 \"#{buffer_file_name}\" \"#{@@temp_path}\""
+    diff = Console.run "diff -w -U 0 \"#{buffer_file_name}\" \"#{@@temp_path}\"", :sync=>true
     self.format(View.path, View.file_name, diff)
   end
-
-
 end

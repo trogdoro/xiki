@@ -234,14 +234,17 @@ class FileTree
       :size => "-1"
 
     Styles.define :diff_small,
-      :fg => "111111",
-      :size => "-18"
+      :fg => "dddddd",
+      :size => "-11"
 
     if Styles.inverse
       Styles.define :diff_red,
         :bg => "440000", :fg => "ff6666"
       Styles.define :diff_green,
         :bg => "113300", :fg => "44dd33"
+      Styles.define :diff_small,
+        :fg => "222222",
+        :size => "-11"
     end
 
     # dir/
@@ -278,21 +281,23 @@ class FileTree
   def self.apply_styles
     el4r_lisp_eval "(setq font-lock-defaults '(nil t))"
 
-    #   |... lines
+    #   |... lines (quotes)
+    Styles.apply("^ +\\(| *\\)", nil, :ls_quote)
     Styles.apply("^ +\\(|.*\n\\)", nil, :ls_quote)
+    Styles.apply("^ +\\(|.+?\\)([+-].*[-+])", nil, :ls_quote)   # quoted lines: beginnings of lines
+    Styles.apply("^ +|.*([-+].*[+-])\\(.+\\)$", nil, :ls_quote)  # quoted lines: ends of lines
+    Styles.apply("[+-])\\(.*?\\)([+-]", nil, :ls_quote)   # quoted lines: between diffs
+
 
     # - bullets
     Styles.apply("^[ \t]*\\([+-]\\)\\( \\)", nil, :ls_bullet, :variable)
 
     # With numbers
     Styles.apply("^ +\\(:[0-9]+\\)\\(|.*\n\\)", nil, :ls_quote_line_number, :ls_quote)
-    #   +|... diffs
-    Styles.apply("^ +\\(\+|.*\n\\)", nil, :diff_green)
-    Styles.apply("^ +\\(-|.*\n\\)", nil, :diff_red)
+    # |+... diffs
     Styles.apply("^ +\\(:[0-9]+\\)$", nil, :diff_line_number)
-    Styles.apply("^ +\\(|\\+.*\n\\)", nil, :diff_green)
-    Styles.apply("^ +\\(|-.*\n\\)", nil, :diff_red)
-    Styles.apply("^ +\\(|~.*\n\\)", nil, :diff_red)
+    Styles.apply("^ +\\(|\\+.*\\)", nil, :diff_green)   # whole lines
+    Styles.apply("^ +\\(|\-.*\\)", nil, :diff_red)
     Styles.apply("^ +\\(|@@ .*\n\\)", nil, :diff_line_number)
 
     # Dir line

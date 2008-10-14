@@ -88,13 +88,12 @@ class Repository
       txt.sub! /^.+\n/, ''
       txt.gsub! /^([A-Z])\t/, "\\1: "
       txt.gsub! /^M: /, ''
-      return txt.split("\n").sort.map{|l| "+ #{l}"}
+      return txt.split("\n").sort.map{|l| "+ #{l}\n"}.join('')
     end
 
     # File passed, show diff
     txt = Git.diff "git show --pretty=oneline #{rev} #{file}", dir
     txt.sub!(/.+?@@.+?\n/m, '')
-    txt.gsub! /^-/, '~'
     txt.gsub! /^/, '|'
     puts txt
     return
@@ -121,7 +120,7 @@ class Repository
     Search.backward "^ +\|@@" unless Line.matches(/^ +\|@@/)
 
     inbetween = View.txt(orig, View.cursor)
-    inbetween.gsub!(/^ +\|~.*\n/, '')
+    inbetween.gsub!(/^ +\|-.*\n/, '')
     inbetween = inbetween.count("\n")
     line = Line.value[/\+(\d+)/, 1]
     Search.backward "^ +- "
@@ -226,9 +225,9 @@ class Repository
   end
 
   def self.clean! txt
-    txt.gsub!(/^index .+\n/, '')
-    txt.gsub!(/^--- .+\n/, '')
-    txt.gsub!(/^\+\+\+ .+\n/, '')
+    txt.gsub!(/^ ?index .+\n/, '')
+    txt.gsub!(/^ ?--- .+\n/, '')
+    txt.gsub!(/^ ?\+\+\+ .+\n/, '')
   end
 
   def self.extract_dir project
@@ -303,9 +302,8 @@ class Repository
         else
           unless txt.empty?
             self.clean! txt
-            txt.gsub!(/^-/, '~')
             txt.gsub!(/^/, '  |')
-            txt.gsub!(/^  \|diff --git .+ b\//, '- ')
+            txt.gsub!(/^  \| diff --git .+ b\//, '- ')
           end
         end
       else   # If just showing list of files
@@ -344,8 +342,7 @@ class Repository
         Git.diff("git diff #{@@git_diff_options} #{file}", dir) :
         Git.diff("git diff #{@@git_diff_options} HEAD #{file}", dir)
       self.clean! txt
-      txt.gsub!(/^diff .+\n/, '')
-      txt.gsub!(/^-/, '~')
+      txt.gsub!(/^ diff .+\n/, '')
       txt.gsub!(/^/, '|')
       return puts(txt)
     end
@@ -414,7 +411,6 @@ class Repository
         txt.gsub!(/^===+\n/, '')
         txt.gsub!(/^--- .+\n/, '')
         txt.gsub!(/^\+\+\+ .+\n/, '')
-        txt.gsub!(/^-/, '~')
         txt.gsub!(/^/, '  |')
         txt.gsub!(/^  \|Index: /, '- ')
         return txt
@@ -436,7 +432,6 @@ class Repository
       txt.gsub!(/^===+\n/, '')
       txt.gsub!(/^--- .+\n/, '')
       txt.gsub!(/^\+\+\+ .+\n/, '')
-      txt.gsub!(/^-/, '~')
       txt.gsub!(/^/, '|')
       return txt
     end

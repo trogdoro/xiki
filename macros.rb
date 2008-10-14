@@ -20,12 +20,13 @@ class Macros
 
     # If 0 prefix, apply until blank line
     if Keys.prefix == 0 or Keys.prefix_u?
-      beginning_of_line
-      next_line
-      top = point
+      orig = Location.new
+      Line.next
+      left = point
       re_search_forward "^[ \t]*$", nil, 1
       beginning_of_line
-      apply_macro_to_region_lines top, point
+      apply_macro_to_region_lines left, point
+      orig.go
       return
     end
 

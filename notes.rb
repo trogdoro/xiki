@@ -278,7 +278,7 @@ class Notes
     # Don't format quotes (it overrides the following formatting)
     Styles.clear
 
-    # |... lines
+    # |... lines (headings)
     Styles.apply("^\\(| \\)\\(.*\n\\)", nil, :notes_h1_pipe, :notes_h1)
     Styles.apply("^\\(| .+?: \\)\\(.+\n\\)", nil, :notes_h1_pipe, :notes_h1)
 
@@ -329,14 +329,14 @@ class Notes
 
     # exclamation! / todo
     Styles.apply("^[ \t]*\\(-\\) \\(.+!\\)$", nil, :notes_exclamation, :notes_exclamation)
-    Styles.apply("^ +\\(!\\+.*\n\\)", nil, :diff_green)
+    Styles.apply("^ +\\(!\\+.*\n\\)", nil, :diff_green)   # Whole lines
     Styles.apply("^ +\\(!-.*\n\\)", nil, :diff_red)
 
-    Styles.apply("\\(\~-\\)\\(.+?\\)\\(-\~\\)", nil, :diff_small, :diff_red, :diff_small)
-    Styles.apply("\\(\~\\+\\)\\(.+?\\)\\(\\+\~\\)", nil, :diff_small, :diff_green, :diff_small)
+    Styles.apply("\\(\(-\\)\\(.+?\\)\\(-\)\\)", nil, :diff_small, :diff_red, :diff_small)
+    Styles.apply("\\(\(\\+\\)\\(.+?\\)\\(\\+\)\\)", nil, :diff_small, :diff_green, :diff_small)
 
     # - google:
-    Styles.apply "^ *\\(-\\) \\((g\\)\\(o\\)\\(o\\)\\(g\\)\\(l\\)\\(e):\\) .*", nil, :ls_bullet,
+    Styles.apply "^ *\\(-\\) \\(g\\)\\(o\\)\\(o\\)\\(g\\)\\(l\\)\\(e:\\) .*", nil, :ls_bullet,
       :notes_blue,
       :notes_red,
       :notes_yellow,

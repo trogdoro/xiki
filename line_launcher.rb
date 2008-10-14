@@ -11,12 +11,16 @@ class LineLauncher
   @@launchers = []
   @@launchers_regexes = {}   # Only tracks whether we've added it yet
   @@launchers_procs = []
+  @@paren_launchers = {}
+  @@label_launchers = {}
 
   def self.launchers; @@launchers; end
-  @@paren_launches = {}
 
   def self.add_paren match, block
-    @@paren_launches[match] = block
+    @@paren_launchers[match] = block
+  end
+  def self.add_label match, block
+    @@label_launchers[match] = block
   end
 
   def self.add arg, &block
@@ -26,8 +30,11 @@ class LineLauncher
 
     # If hash, must be paren
     elsif arg.class == Hash
-      self.add_paren(arg[:paren], block)
-
+      if arg[:paren]
+        self.add_paren(arg[:paren], block)
+      elsif arg[:label]
+        self.add_label(arg[:label], block)
+      end
     # If proc, add to procs
     elsif arg.class == Proc
       @@launchers_procs << [arg, block]
@@ -61,11 +68,11 @@ class LineLauncher
     end
 
     # If try each potential paren match
-    if paren && @@paren_launches[paren]
+    if paren && @@paren_launchers[paren]
       if @@just_show
         Ol << paren
       else
-        @@paren_launches[paren].call
+        @@paren_launchers[paren].call
       end
       return
     end
@@ -80,6 +87,21 @@ class LineLauncher
           Ol << regex.to_s
         else
           block.call line
+        end
+        return true
+      end
+    end
+
+    # Try each potential label match
+    @@label_launchers.each do |launcher|
+      regex, block = launcher
+      # If we found a match, launch it
+      if label =~ regex
+        # Run it
+        if @@just_show
+          Ol << regex.to_s
+        else
+          block.call label
         end
         return true
       end
@@ -291,12 +313,13 @@ class LineLauncher
       FileTree.launch
     end
 
-    self.add :paren=>'google' do |line|  # - google:
+    self.add :label=>/^google$/ do |line|  # - google:
       url = Line.without_label.sub(/^\s+/, '')
       url.gsub!('"', '%22')
       url.gsub!(':', '%3A')
       url.gsub!(' ', '%20')
       browse_url "http://www.google.com/search?q=#{url}"
+
     end
 
     self.add(/\[\[.+\]\]/) do |line|  # Redmine wiki links
@@ -333,7 +356,6 @@ Ol.line
     end
 
     # Let trees try to handle it
-
     # RestTree
     condition_proc = proc {|list| RestTree.handles? list}
     LineLauncher.add condition_proc do |list|

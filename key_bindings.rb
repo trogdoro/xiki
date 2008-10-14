@@ -135,7 +135,7 @@ class KeyBindings
     #Keys.EH { FileTree.enter_lines(/^\| /) }
     Keys.enter_insert_date { App.enter_date }    # insert date string (and time if C-u)
     Keys.enter_insert_command { insert("- (/): "); ControlLock.disable }    # insert date string (and time if C-u)
-    Keys.enter_insert_search { View.insert("- (google): ") }
+    Keys.enter_insert_search { View.insert("- google: ") }
     Keys.enter_in_todo { FileTree.enter_snippet }   # enter tree quote of region in $T
     Keys.enter_junior { Notes.bullet("") }
     Keys.enter_key { Keys.insert_code }
