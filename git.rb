@@ -13,6 +13,9 @@ class Git
     # Find whole lines
     txt.gsub!(/^ \(\+(.*)\+\)$/) {|m| $1.index("\(\+") ? m : "+#{$1}" }
     txt.gsub!(/^ \(\-(.*)\-\)$/) {|m| $1.index("\(\-") ? m : "-#{$1}" }
+    # Remove empty (--)'s
+    txt.gsub! /\([+-][+-]\)/, ''
+
     txt
   end
 

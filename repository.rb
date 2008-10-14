@@ -326,8 +326,7 @@ class Repository
           txt.sub! /^([+-]) #{i[1]}$/, "\\1 #{i[0]}: #{i[1]}"
         end
       end
-
-      txt = txt + untracked.join("")
+      txt << untracked.join("")
       txt = "- Warning: nothing to show" if ! txt.any?
       return CodeTree.no_search_option + option + txt
     end

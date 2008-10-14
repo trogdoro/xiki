@@ -54,7 +54,7 @@ class CodeTree
       else
         stdout = "#{stdout}- error evaluating: #{code}\n- message: #{e.message}\n" +
           "- backtrace:\n" +
-          e.backtrace[0..10].map{|i| "  #{i}\n"}.join('') + "  ...\n"
+          e.backtrace[0..8].map{|i| "  #{i}\n"}.join('') + "  ...\n"
       end
     end
 

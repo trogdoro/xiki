@@ -10,7 +10,8 @@ class RestTree
     # Add linebreak at end if none
     txt.gsub! "\cm", ''
     txt = "#{txt}\n" unless txt =~ /\n\z/
-    FileTree.insert_under txt#, :escape=>'!'
+    #txt = JSON[txt].to_yaml
+    FileTree.insert_under txt #, :escape=>''
   end
 
   def self.handles? list

@@ -322,19 +322,11 @@ class LineLauncher
 
     end
 
-    self.add(/\[\[.+\]\]/) do |line|  # Redmine wiki links
-      name = line[/\[\[(.+?)\]\]/, 1]
-      name.gsub!(/ /, "_")
-      Redmine.open(name)
-      #View.open Line.without_indent
-    end
-
     self.add(/^ *$/) do |line|  # Empty line: open dir
       CodeTree.insert_menu "- CodeTree.menu/"
     end
 
     self.add(/^ *\*/) do |line|  # *... buffer
-Ol.line
       #return $el.insert "hey"
       name = Line.without_label.sub(/\*/, '')
       View.to_after_bar

@@ -74,7 +74,7 @@ class Code
     after_code.go
     insert out
     if exception
-      backtrace = exception.backtrace[0..10].join("\n").gsub(/^/, '  ') + "\n"
+      backtrace = exception.backtrace[0..8].join("\n").gsub(/^/, '  ') + "\n"
       insert "- error: #{exception.message}\n- backtrace:\n#{backtrace}"
     end
 
