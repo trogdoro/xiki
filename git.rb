@@ -1,20 +1,23 @@
 class Git
   def self.diff command, dir
     txt = Console.run(command, :sync => true, :dir => dir)
-    txt.gsub!(/\c[\[31m(.*?)\c[\[m/, "\(\-\\1\-\)")
-    txt.gsub!(/\c[\[32m(.*?)\c[\[m/, "\(\+\\1\+\)")
-    txt.gsub!(/\c[\[\d*m/, '')
-    txt.gsub!("\-\)\(\-", '')   # Merge adjacent areas
-    txt.gsub!("\+\)\(\+", '')
 
-    txt.gsub!(/^./, " \\0")   # Add space at beginning of all non-blank lines
-    txt.gsub!(/^ @/, '@')
-
-    # Find whole lines
-    txt.gsub!(/^ \(\+(.*)\+\)$/) {|m| $1.index("\(\+") ? m : "+#{$1}" }
-    txt.gsub!(/^ \(\-(.*)\-\)$/) {|m| $1.index("\(\-") ? m : "-#{$1}" }
-    # Remove empty (--)'s
-    txt.gsub! /\([+-][+-]\)/, ''
+    if Keys.prefix_u
+      txt.gsub!(/\c[\[31m(.*?)\c[\[m/, "\(\-\\1\-\)")
+      txt.gsub!(/\c[\[32m(.*?)\c[\[m/, "\(\+\\1\+\)")
+      txt.gsub!(/\c[\[\d*m/, '')
+      txt.gsub!("\-\)\(\-", '')   # Merge adjacent areas
+      txt.gsub!("\+\)\(\+", '')
+      txt.gsub!(/^./, " \\0")   # Add space at beginning of all non-blank lines
+      txt.gsub!(/^ @/, '@')
+      # Find whole lines
+      txt.gsub!(/^ \(\+(.*)\+\)$/) {|m| $1.index("\(\+") ? m : "+#{$1}" }
+      txt.gsub!(/^ \(\-(.*)\-\)$/) {|m| $1.index("\(\-") ? m : "-#{$1}" }
+      # Remove empty (--)'s
+      txt.gsub! /\([+-][+-]\)/, ''
+    else
+      txt.gsub! /^ $/, ''
+    end
 
     txt
   end

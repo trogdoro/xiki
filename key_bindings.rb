@@ -123,9 +123,9 @@ class KeyBindings
     Keys.enter_as_camelcase { insert TextUtil.camel_case(Clipboard.get(0)) }
     Keys.enter_as_debug { Code.enter_as_debug }
     Keys.enter_as_filename { insert Clipboard.get(".") }
-    Keys.enter_as_interpolated { insert "\#{#{Clipboard.get(0)}}" }
     Keys.enter_as_trunk { Code.enter_as_trunk }
     Keys.enter_as_underscores { View.insert TextUtil.snake_case(Clipboard.get(0)) }
+    Keys.enter_as_variable { insert "\#{#{Clipboard.get(0)}}" }
     Keys.enter_bullet { Notes.bullet }
     Keys.enter_clipboard { Clipboard.paste("0") }   # paste **
     Keys.enter_difflog { App.enter_from_difflog }   # Save point and go to difflog to search
@@ -178,6 +178,7 @@ class KeyBindings
     Keys.DD { delete_char elvar.current_prefix_arg || 1 }   # DD - delete character (D's default) **
     Keys.do_as_camelcase { Clipboard.do_as_camel_case }   # change word to camel case (LikeThat)
     #Keys.DAL { Code.load_this_file }   # Do As Load: do a ruby load on the file
+    Keys.do_as_javascript { Javascript.run }
     Keys.do_as_rspec { Code.do_as_rspec }
     Keys.do_as_underscores { Clipboard.do_as_snake_case }   # Change word to snake case (like_that)
     Keys.do_as_wrap { Block.do_as_wrap }
@@ -368,10 +369,11 @@ class KeyBindings
     # I: leave unmapped - had issues using it (messes up position)
     # just_...
     define_key :isearch_mode_map, kbd("C-j"), nil
-    Keys.isearch_just_difflog { Search.jump_to_difflog }   # To: find last string in difflog
+    Keys.isearch_just_difflog { Search.jump_to_difflog }   # find last string in difflog
+    Keys.isearch_just_edges { Search.just_edges }   # delete everything but chars at edges of match
     Keys.isearch_just_lowercase { Search.downcase }
     Keys.isearch_just_orange { Search.just_orange }
-    Keys.isearch_just_select { Search.just_select }   # Select match
+    Keys.isearch_just_select { Search.just_select }   # select match
     Keys.isearch_just_uppercase { Search.upcase }
     #Keys.isearch_just_underline { Search.clear; Overlay.face(:underline, :left=>Search.left, :right=>Search.right) }
     Keys.isearch_kill { Search.cut; Location.as_spot('deleted') }   # cut

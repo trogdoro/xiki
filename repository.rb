@@ -6,8 +6,7 @@ class Repository
     - Show options: Repository.menu
   >
 
-  @@git_diff_options = ' --color-words -U2 '
-  #@@git_diff_options = ' -U2 '
+  @@git_diff_options = ' -U2 '
   #@@git_diff_options = ' -U2 -w '   # -w caused a git segfault :/
 
   def self.svn?
@@ -294,7 +293,7 @@ class Repository
       option = is_unadded ? "- action: .add\n" : "- action: .commit \"message\"\n"
 
       if expand   # If showing diffs right away
-        txt = Git.diff "git diff #{@@git_diff_options}#{is_unadded ? '' : ' HEAD'}", dir
+        txt = Git.diff "git diff #{self.git_diff_options}#{is_unadded ? '' : ' HEAD'}", dir
 
         if txt =~ /^fatal: ambiguous argument 'HEAD': unknown revision/
           txt = "- Warning: Couldn't diff because no revisions exist yet in repository\n" +
@@ -303,7 +302,7 @@ class Repository
           unless txt.empty?
             self.clean! txt
             txt.gsub!(/^/, '  |')
-            txt.gsub!(/^  \| diff --git .+ b\//, '- ')
+            txt.gsub!(/^  \| ?diff --git .+ b\//, '- ')
           end
         end
       else   # If just showing list of files
@@ -338,10 +337,10 @@ class Repository
       end
 
       txt = is_unadded ?
-        Git.diff("git diff #{@@git_diff_options} #{file}", dir) :
-        Git.diff("git diff #{@@git_diff_options} HEAD #{file}", dir)
+        Git.diff("git diff #{self.git_diff_options} #{file}", dir) :
+        Git.diff("git diff #{self.git_diff_options} HEAD #{file}", dir)
       self.clean! txt
-      txt.gsub!(/^ diff .+\n/, '')
+      txt.gsub!(/^ ?diff .+\n/, '')
       txt.gsub!(/^/, '|')
       return puts(txt)
     end
@@ -509,6 +508,10 @@ class Repository
       - switch to main branch:
       !git checkout master
     "
+  end
+
+  def self.git_diff_options
+    @@git_diff_options + (Keys.prefix_u ? ' --color-words ' : '')
   end
 
 end

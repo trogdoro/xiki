@@ -293,6 +293,10 @@ class LineLauncher
       CodeTree.run line
     end
 
+    self.add(/^ *print\(/) do |line|
+      Javascript.launch
+    end
+
     self.add(/^[^\|@]+[\/\w\-]+\.\w+:\d+/) do |line|  # Stack traces, etc
       # Match again (necessary)
       line =~ /([\/.\w\-]+):(\d+)/
@@ -381,6 +385,7 @@ class LineLauncher
     end
     if View.name =~ /#{Ol.file_path}$/   # If in output log
       Code.ol_launch
+      Effects.blink(:what=>:line)
       return true
     end
     return false

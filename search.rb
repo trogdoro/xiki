@@ -583,4 +583,12 @@ class Search
     Overlay.face(:notes_label, :left=>Search.left, :right=>Search.right)
   end
 
+  def self.just_edges
+    Search.clear
+    left, right = Search.left+1, Search.right-1
+    Effects.blink :left=>left, :right=>right
+    View.delete(left, right)
+    View.to(Search.left+1)
+  end
+
 end

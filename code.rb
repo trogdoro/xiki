@@ -339,6 +339,7 @@ class Code
   def self.enter_log_line
     $el.open_line(1) unless Line.blank?
     View.insert("Ol.line")
+    Line.to_left
   end
 
   def self.to_ruby o

@@ -35,6 +35,11 @@ class Ol
     self.line txt, caller(0)[1]
   end
 
+  def self.time
+    now = Time.now
+    self.line "#{now.strftime('%I:%M:%S')}:#{now.usec.to_s.rjust(6, '0')}", caller(0)[1]
+  end
+
   def self.line txt=nil, l=nil, indent=""
     l ||= caller(0)[1]
     h = Ol.parse_line(l)
