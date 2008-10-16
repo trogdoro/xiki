@@ -11,10 +11,8 @@ class ControlTab
   # Primary method.  Is mapped to C-tab and does the switching.
   def self.go
 
-    last, before = Keys.recent
-    first_tab_in_sequence = ! before[/tab$/]
-
     # If first tab, clear edited
+    first_tab_in_sequence = Keys.before_last !~ /\btab$/
     @@edited = nil if first_tab_in_sequence
 
     if Keys.prefix_u?   # If U prefix (must be first alt-tab in sequence)

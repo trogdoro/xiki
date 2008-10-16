@@ -69,7 +69,7 @@ class Color
     if Styles.inverse
 
       Styles.define :color_rb_red, :bg => "550000"
-      Styles.define :color_rb_orange, :bg => "552200"
+      Styles.define :color_rb_orange, :bg => "661a00"
       Styles.define :color_rb_yellow, :bg => "4a4a00"
       Styles.define :color_rb_green, :bg => "004400"
       Styles.define :color_rb_blue, :bg => "000077"

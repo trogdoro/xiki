@@ -239,7 +239,7 @@ class FileTree
 
     if Styles.inverse
       Styles.define :diff_red,
-        :bg => "440000", :fg => "991111"
+        :bg => "440000", :fg => "ee3333"
       Styles.define :diff_green,
         :bg => "113300", :fg => "44dd33"
       Styles.define :diff_small,

@@ -242,7 +242,7 @@ class Notes
     Styles.define :notes_label,
       :face => 'arial black', :size => "0",  # Mac
       #:face => 'courier', :size => "0",  # Mac
-      :fg => "dd7700", :bold => true
+      :fg => "ee7700", :bold => true
 
     Styles.define :notes_bullet_parens,
       :face => 'arial', :size => "-2",

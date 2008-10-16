@@ -22,15 +22,21 @@ class Move
       column = 0 - column
     end
 
+    orig = Location.new
+
     # Search for matching in right direction
     if direction == :up
       Line.to_left
-      Search.backward "^ \\{#{column}\\}[^ \n]"
+      success = Search.backward "^ \\{#{column}\\}[^ \n]"
       Move.to_column column
     else
       Line.next
-      Search.forward "^ \\{#{column}\\}[^ \n]"
+      success = Search.forward "^ \\{#{column}\\}[^ \n]"
       Move.to_column column
+    end
+    unless success
+      View.beep
+      orig.go
     end
   end
 
@@ -205,18 +211,6 @@ class Move
       re_search_forward "^ +[+-]? ?[a-zA-Z_-].+[^\/\n]$"
       Line.to_words
     end
-  end
-
-  # Moves down, probably keeping column the same
-  def self.next times=nil
-    times ||= Keys.prefix
-    $el.next_line times
-  end
-
-  # Moves up, probably keeping column the same
-  def self.previous times=nil
-    times ||= Keys.prefix
-    $el.previous_line times
   end
 
 end

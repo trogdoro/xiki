@@ -237,6 +237,15 @@ class Keys
 
   def self.insert_code
     keys = $el.read_key_sequence("Type some keys, to insert the corresponding code: ")
+
+    # If C-n or C-p, pretend like they were mapped to xiki functions
+
+    if keys == "\cn"
+      return View.insert 'Line.next'
+    elsif keys == "\cp"
+      return View.insert 'Line.previous'
+    end
+
     proc = self.proc_from_key keys
 
     # If lisp, enter lisp?
@@ -422,10 +431,6 @@ class Keys
     @@key_queue = []
   end
 
-  def self.recent
-    $el.recent_keys.to_s.gsub("\c@", '').match(/(\S+) (\S+)\]$/)[1..2].reverse
-  end
-
   def self.char
 
     $el.elvar.inhibit_quit = true
@@ -465,6 +470,10 @@ class Keys
 
   def self.words_to_letters txt
     TextUtil.camel_case(txt).gsub(/[a-z]/, '')
+  end
+
+  def self.before_last
+    $el.el4r_lisp_eval("(elt (recent-keys) (- (length (recent-keys)) 2))").to_s
   end
 
 end
