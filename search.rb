@@ -116,11 +116,13 @@ class Search
   end
 
   # Clears the isearch, allowing for inserting, or whatever else
-
-
   def self.clear
-    isearch_done
-    isearch_clean_overlays
+    # Try to not error out when C-s but nothing typed
+    #     if self.left == self.right
+    #       return self.isearch_done(true)
+    #     end
+    $el.isearch_done
+    $el.isearch_clean_overlays
   end
 
   def self.to_start
@@ -589,6 +591,19 @@ class Search
     Effects.blink :left=>left, :right=>right
     View.delete(left, right)
     View.to(Search.left+1)
+  end
+
+  # Copy match as name (like Keys.as_name)
+  def self.just_name
+    Search.clear
+    term = self.match
+    Clipboard.copy nil, term
+    Effects.blink :left=>left, :right=>right
+  end
+
+  def self.to_left
+    Search.clear
+    Line.to_left
   end
 
 end

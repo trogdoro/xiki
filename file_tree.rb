@@ -1213,7 +1213,6 @@ class FileTree
 
   # Grabs matching lines in file and starts hide search
   def self.enter_lines pattern=nil, options={}
-
     # If dir, delegate to C-. (they meant to just open it)
     return LineLauncher.launch if self.dir?
 
@@ -1226,7 +1225,7 @@ class FileTree
         return
       end
       if Line.matches(/\.rb$/)
-        self.enter_lines(/^ *(def|class|module|it|describe) /)
+        self.enter_lines(/^\s*(def|class|module|it|describe) /)
       elsif Line.matches(/\.js$/)
         self.enter_lines(/^ *(function) /)
       elsif Line.matches(/\.notes$/)

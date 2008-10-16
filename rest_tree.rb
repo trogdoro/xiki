@@ -1,48 +1,94 @@
 class RestTree
 
+  def self.launch_inner path, children
+
+    self.remove_before_root path
+
+    # Extract verbs from root and current line
+    root_verb = self.extract_root_verb path
+    verb = self.extract_verb path.last
+
+    body = nil
+    # If line had verb
+    if verb
+      if ! path.last.empty?   # If line isn't blank, use as body
+        body = path.last
+        path.pop
+      else
+        # Remove quoted children
+        children = children ? children.select{|e| e !~ /^\|/} : nil
+        if children and children.any?   # If line blank and has children, use them as body
+          body = children.map{|i| "#{i.sub(/^\s+/, '')}\n"}.join('')
+        end
+      end
+    end
+
+    verb ||= root_verb
+
+    [verb || root_verb, path.join(''), body]
+  end
+
   def self.launch options={}
 
     FileTree.plus_to_minus_maybe
+    verb, url, body = self.launch_inner options[:path], CodeTree.children
 
-    path = options[:path]
+    result = self.request verb, url, body
+    FileTree.insert_under result
 
-    # If current line starts with PUT
-    if path.last =~ /^(POST|PUT|DELETE)/
-      verb = $1
+    #     # Add linebreak at end if none
+    #     txt.gsub! "\cm", ''
+    #     txt = "#{txt}\n" unless txt =~ /\n\z/
+    #     txt = JSON[txt].to_yaml if Keys.prefix_u
 
-      url = path[0..-2].join('')
-      url.sub! /.*GET (http:\/\/)/, "\\1"
-      json = path[-1].sub /^#{verb} ?/, ''
-      json = nil if json.blank?
-      url = URI.parse(url)
-      Net::HTTP.start(url.host, url.port) do |http|
-        if verb == 'POST'
-          http.post(url.path, json) { |txt| FileTree.insert_under txt }
-        elsif verb == 'PUT'
-          http.put(url.path, json) { |txt| FileTree.insert_under "xx#{txt}" }
-        elsif verb == 'DELETE'
-          http.delete(url.path) { |txt| FileTree.insert_under txt }
-        end
-      end
+  end
 
-      return
+  # Tell LineLauncher whether we're in a rest tree
+  def self.handles? list
+    list.any? {|i| i =~ /^ *(GET|PUT|POST|DELETE) http:\/\//}
+  end
+
+  # Pull out root
+  def self.extract_root_verb path
+    path.first.sub! /^ *(GET|PUT|POST|DELETE) (http:\/\/)/, "\\2"
+    $1
+  end
+
+  # Pull out verb
+  def self.extract_verb line
+    line.sub! /^ *(GET|PUT|POST|DELETE) ?(.*)/, "\\2"
+    $1
+  end
+
+  def self.remove_before_root list
+    # Delete from beginning until root is found
+    while list.first !~ /^ *(GET|PUT|POST|DELETE) (http:\/\/)/
+      break unless list.any?
+      list.shift
+    end
+    list
+  end
+
+  def self.request verb, url, body
+
+    begin
+      net_http_class = Net::HTTP.const_get(verb.capitalize)
+      uri = URI.parse(url)
+      req = net_http_class.new(uri.request_uri)
+      req.body = body
+      res = Net::HTTP.start(uri.host, uri.port) {|http|
+        http.request(req)
+      }
+      res.body
+    rescue Exception=>e
+      e.message
     end
 
-    url = path.join('')
-
-    # Remove any crap before url
-    url.sub! /.*GET (http:\/\/)/, "\\1"
-    txt = Net::HTTP.get(URI.parse(url))
-
-    # Add linebreak at end if none
-    txt.gsub! "\cm", ''
-    txt = "#{txt}\n" unless txt =~ /\n\z/
-    #txt = JSON[txt].to_yaml
-    FileTree.insert_under txt #, :escape=>''
   end
 
-  def self.handles? list
-    list.any? {|i| i =~ /^ *GET http:\/\//}
-  end
-
+  #   def handle_error(req, res)
+  #     e = RuntimeError.new("#{res.code}:#{res.message}\nMETHOD:#{req.method}\nURI:#{req.path}\n#{res.body}")
+  #     raise e
+  #   end
 end
+

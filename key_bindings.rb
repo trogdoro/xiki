@@ -350,7 +350,7 @@ class KeyBindings
 
   # Control keys during isearch
   def self.isearch
-    Keys.isearch_alter { Search.isearch_query_replace }   # Alter
+    Keys.isearch_ahead { Search.to_left }
     # B: leave unmapped for back
     Keys.isearch_clipboard { Search.copy }   # Clipboard (copy)
     Keys.isearch_delete { Search.isearch_delete }   # Delete
@@ -360,6 +360,7 @@ class KeyBindings
     # have_...
     define_key :isearch_mode_map, kbd("C-h"), nil
     Keys.isearch_have_camel { Search.isearch_as_camel }
+    Keys.isearch_have_delete { Search.move_to_search_start }
     Keys.isearch_have_variable { Search.insert_var_at_search_start }
     Keys.isearch_have_line { Search.have_line }   # copy line back to search start
     Keys.isearch_have_output { Search.isearch_log }   # copy line back to search start
@@ -372,7 +373,9 @@ class KeyBindings
     Keys.isearch_just_difflog { Search.jump_to_difflog }   # find last string in difflog
     Keys.isearch_just_edges { Search.just_edges }   # delete everything but chars at edges of match
     Keys.isearch_just_lowercase { Search.downcase }
+    Keys.isearch_just_name { Search.just_name }
     Keys.isearch_just_orange { Search.just_orange }
+    Keys.isearch_just_replace { Search.isearch_query_replace }   # replace
     Keys.isearch_just_select { Search.just_select }   # select match
     Keys.isearch_just_uppercase { Search.upcase }
     #Keys.isearch_just_underline { Search.clear; Overlay.face(:underline, :left=>Search.left, :right=>Search.right) }
@@ -391,6 +394,7 @@ class KeyBindings
     # W: leave unmapped for pulling into search
     Keys.isearch_xtract { Search.move_to_search_start }   # eXtract: move back to search start
     # Y: leave unmapped for yank
+    # Z: zap?
 
     define_key :isearch_mode_map, kbd("C-1") do
       Search.isearch_copy_as("1")
@@ -483,6 +487,7 @@ class KeyBindings
     Keys.F { Move.forward }
     Keys.Q { Keys.timed_insert }
     Keys.set("C-.") { LineLauncher.launch(:blink=>true) }
+    Keys.set("<C-return>") { LineLauncher.launch(:blink=>true) }
 
     if locate_library "ruby-mode"
       el_require :ruby_mode

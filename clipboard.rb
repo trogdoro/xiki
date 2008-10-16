@@ -8,14 +8,16 @@ class Clipboard
   # Stores things user copies
   @@hash = {}
 
-  def self.copy loc=nil
-    left, right = View.range
-
+  def self.copy loc=nil, txt=nil
     # Use string if user types it quickly
     loc ||= Keys.input(:one_char => true, :prompt => "Enter one char (to store this as): ") || "0"
-    Effects.blink :left => left, :right => right
-    str = buffer_substring(region_beginning, region_end)
-    self.set(loc, str, Keys.prefix)
+
+    unless txt
+      left, right = View.range
+      Effects.blink :left => left, :right => right
+      txt = buffer_substring(region_beginning, region_end)
+    end
+    self.set(loc, txt, Keys.prefix)
   end
 
   def self.cut loc=nil

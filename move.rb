@@ -23,15 +23,14 @@ class Move
     end
 
     orig = Location.new
-
     # Search for matching in right direction
     if direction == :up
       Line.to_left
-      success = Search.backward "^ \\{#{column}\\}[^ \n]"
+      success = Search.backward "^ \\{#{column}\\}[^ \t\n]"
       Move.to_column column
     else
       Line.next
-      success = Search.forward "^ \\{#{column}\\}[^ \n]"
+      success = Search.forward "^ \\{#{column}\\}[^ \t\n]"
       Move.to_column column
     end
     unless success

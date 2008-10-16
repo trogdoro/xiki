@@ -3,7 +3,7 @@ class Merb
   def self.menu name=nil, port=nil
     unless name  # Print menu
       r = "+ current dir: #{View.dir}, 4000\n"
-      r << "upper: #{View.dir_of_after_bar}, 4000\n" if View.bar?
+      r << "+ upper: #{View.dir_of_after_bar}, 4000\n" if View.bar?
       r + "
       + .links/
       - .snippets

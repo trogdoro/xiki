@@ -3,12 +3,9 @@ class CouchDb
 
   def self.menu name=nil
     if name.nil?   # If no name passed
-      return "
-      - .start
-      #{View.buffer_open?("*couchdb") ? "  - running: **couchdb\n" : ''}\
-      - .admin_url
-      - .rest/
-      "
+      return (["- .start\n"] +
+        (View.buffer_open?("*couchdb") ? ["  - running: **couchdb\n"] : []) +
+        ["- .admin_url\n", "+ .rest/\n"]).join('')
     end
 
   end
@@ -36,6 +33,8 @@ class CouchDb
       + _all_docs/
       - bar/
         + PUT {\"txt\":\"hi\"}
+        - ?rev=9123589
+          + DELETE
       - _view/d1/v1/
       - _design%2Fd1/
         + PUT {"views": {"v1": {"map": "function(doc){ emit(\\\"a\\\", null); }" }}}

@@ -2,9 +2,6 @@ require 'test/unit'
 require 'el_mixin'
 $:.unshift File.expand_path("..")
 require 'code_tree'
-require 'mock_ol'
-
-
 class CodeTreeTest < Test::Unit::TestCase
 
   def test_extract_method
