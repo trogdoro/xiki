@@ -34,11 +34,11 @@ class RestTree
     verb, url, body = self.launch_inner options[:path], CodeTree.children
 
     result = self.request verb, url, body
+    result = "#{result}\n" unless result =~ /\n\z/
+    result.gsub! "\cm", ''
     FileTree.insert_under result
 
     #     # Add linebreak at end if none
-    #     txt.gsub! "\cm", ''
-    #     txt = "#{txt}\n" unless txt =~ /\n\z/
     #     txt = JSON[txt].to_yaml if Keys.prefix_u
 
   end
@@ -79,7 +79,7 @@ class RestTree
       res = Net::HTTP.start(uri.host, uri.port) {|http|
         http.request(req)
       }
-      res.body
+      (res.code == '200' ? '' : "#{res.code} ") + res.body
     rescue Exception=>e
       e.message
     end
