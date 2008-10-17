@@ -70,10 +70,11 @@ class RestTree
   end
 
   def self.request verb, url, body
-
     begin
       net_http_class = Net::HTTP.const_get(verb.capitalize)
+      url.gsub!('"', '%22')
       uri = URI.parse(url)
+
       req = net_http_class.new(uri.request_uri)
       req.body = body
       res = Net::HTTP.start(uri.host, uri.port) {|http|

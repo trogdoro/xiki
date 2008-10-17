@@ -83,6 +83,7 @@ class KeyBindings
     Keys.open_lisp_error { Code.show_el4r_error }
     Keys.open_lisp_info { info("elisp") }
     Keys.open_log_tree { Rails.tree_from_log }
+    Keys.open_list_databases { CodeTree.display_menu('- CouchDb.databases/') }
     Keys.open_list_models { CodeTree.display_menu("- Merb.models/") }
     Keys.open_list_names { Clipboard.list }
     Keys.open_list_repository { Repository.open_list_repository }
@@ -142,8 +143,9 @@ class KeyBindings
     #Keys.EK { Clipboard.paste }   # Enter Clipboard: paste
     Keys.enter_label_bullet { Notes.enter_label_bullet }
     Keys.enter_log_clipboard { Code.enter_log_clipboard }
+    Keys.enter_list_databases { CodeTree.insert_menu('- CouchDb.databases/') }
     Keys.enter_log_javascript { Code.enter_log_console }
-    Keys.enter_list_models { CodeTree.insert_menu("Merb.models") }
+    Keys.enter_list_models { CodeTree.insert_menu("- Merb.models") }
     Keys.enter_log_statement { Code.enter_log }
     Keys.enter_log_line { Code.enter_log_line }
     Keys.enter_menu { CodeTree.insert_menus }

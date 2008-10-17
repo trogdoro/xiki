@@ -29,10 +29,22 @@ class CouchDb
     %Q[
     - .docs/
     - .delete/
+    - .rest_tree/
+    ]
+  end
+
+  def self.rest_tree db
+    %Q[
     - GET #{@@server}/#{db}
       + create db: PUT
       + delete db: DELETE
-      + _all_docs/
+      + all: _all_docs/
+      - bulk add: _bulk_docs/
+        POST
+          {"docs":[
+            {"_id":"a", "txt":"Aye"},
+            {"_id":"b", "txt":"Bee"}
+          ]}
       - bar/
         + PUT {\"txt\":\"hi\"}
         - ?rev=9123589
@@ -70,8 +82,7 @@ class CouchDb
     end
   end
 
-  def self.docs db, id=nil
-
+  def self.docs db, id=nil, body=nil
     # If no id, show all id's
     if id.nil?
       all = RestTree.request 'GET', "#{@@server}/#{db}_all_docs", nil
@@ -83,14 +94,14 @@ class CouchDb
     children = CodeTree.children
 
     # If id and no children, output doc
-    if ! children
+    if !(children or body)
       record = RestTree.request 'GET', "#{@@server}/#{db}#{id}", nil
 
       return record.gsub("\\n", "\n")
     end
 
     # If id and children, save children
-    newer = children.join("\n").unindent
+    body ||= children.join("\n").unindent
 
     # Get rev
     record = RestTree.request 'GET', "#{@@server}/#{db}#{id}", nil
@@ -100,15 +111,15 @@ class CouchDb
       rev = JSON[record]['_rev']
 
       # Insert rev after first {, or replace if there already
-      if newer =~ /"_rev":"\d+"/
-        newer.sub! /("_rev":")\d+(")/, "\\1#{rev}\\2"
+      if body =~ /"_rev":"\d+"/
+        body.sub! /("_rev":")\d+(")/, "\\1#{rev}\\2"
       else
-        newer.sub! /\{/, "{\"_rev\":\"#{rev}\", "
+        body.sub! /\{/, "{\"_rev\":\"#{rev}\", "
       end
     end
 
     # Update it
-    res = RestTree.request 'PUT', "#{@@server}/#{db}#{id}", newer
+    res = RestTree.request 'PUT', "#{@@server}/#{db}#{id}", body
     "|#{res}"
   end
 
