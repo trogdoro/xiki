@@ -346,13 +346,12 @@ class Notes
       View.insert "hey"
     end
 
-
     defun(:notes_mouse_double_click, :interactive => "e") do |e|
-      if Line.matches(/\/$/)   # If dir, toggle
-        return LineLauncher.launch_or_hide(:blink=>true)
-      end
+      #       if Line.matches(/\/$/)   # If dir, toggle
+      LineLauncher.launch_or_hide(:blink=>true)
+      #       end
       # Otherwise, just launch
-      LineLauncher.launch(:blink=>true)
+#      LineLauncher.launch(:blink=>true)
     end
 
     defun(:notes_mouse_toggle, :interactive => "e") do |e|
