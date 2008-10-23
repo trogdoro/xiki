@@ -127,7 +127,7 @@ class FileTree
     if list.size == 0
       View.insert "| Note\n- No Results Found!\n"
     else
-      View.insert list.join("\n") + "\n"
+      View.insert(list.join("\n") + "\n")
     end
 
     View.to_top
@@ -547,7 +547,7 @@ class FileTree
         self.clear_empty_dirs! lines if recursive
 
         # Put back into buffer
-        View.insert lines.join("\n") + "\n"
+        View.insert(lines.join("\n") + "\n")
         right = point
 
         # Go to first file
@@ -660,7 +660,7 @@ class FileTree
         self.clear_empty_dirs! filtered
 
         # Put back into buffer
-        View.insert filtered.join("\n") + "\n"
+        View.insert(filtered.join("\n") + "\n")
         right = point
 
         # Go to first file and go back into search
@@ -997,7 +997,7 @@ class FileTree
     # Move .notes files to top
     files = files.select{|i| i =~ /\.notes$/} + files.select{|i| i !~ /\.notes$/}
 
-    View.insert (dirs + files).join("\n") + "\n"
+    View.insert((dirs + files).join("\n") + "\n")
     right = point
     goto_char left
 

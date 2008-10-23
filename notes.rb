@@ -196,6 +196,7 @@ class Notes
       :notes_h1r => "771111",
       :notes_h1o => "994411",
       :notes_h1y => "aa9933",
+      :notes_h1e => "336633",
       :notes_h1g => "336633",
       :notes_h1p => "663366",
       :notes_h1m => "330000",
@@ -277,10 +278,6 @@ class Notes
       Styles.define :notes_h2_pipe,
         :fg => '333366', :bg => "111122"
 
-      Styles.define :notes_h1e,
-        :bg => "666633"
-      Styles.define :notes_h1e_pipe,
-        :fg => 'aaaa77', :bg => "666633"
     end
   end
 
