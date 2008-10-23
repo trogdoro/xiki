@@ -7,24 +7,26 @@ class Rails
   >
 
   def self.menu name=nil, port=nil
-    unless name  # Print menu
-      r = "+ current dir: #{View.dir}, 3000\n"
-      r << "+ upper: #{View.dir_of_after_bar}, 3000\n" if View.bar?
-      r
-
-    else  # Print options
-      puts "
-        - .create
-        - .start
-        - .url '/'
-        - .controller(:bar, :index)
-        - .migration(:bar)
-        - .shell
-        - .console
-        - .dirs/
-        "
-      #         - .snippets
+    if name.nil?  # If no project, list them
+      r = ["current dir: #{View.dir}, 3000/"]
+      r << (Projects.listing.map{|k, v| "#{k}: #{v}/"}.sort)
+      r << "upper: #{View.dir_of_after_bar}, 3000/" if View.bar?
+      return r.flatten#.join('')
     end
+
+    # If project, list options
+    puts "
+      + .create
+      - .start
+      - .url '/'
+      + .controller(:bar, :index)
+      + .migration(:bar)
+      - .shell
+      - .console
+      + .dirs/
+      "
+    #         - .snippets
+
   end
 
   def self.cr2 options={}
@@ -65,6 +67,7 @@ class Rails
   end
 
   def self.start dir, port=3000
+    port.sub! /\/$/, ''
     if View.in_bar?
       buffer = View.buffer
       View.to_after_bar
@@ -75,6 +78,7 @@ class Rails
   end
 
   def self.url path, dir=nil, port=3000
+    port.sub! /\/$/, ''
     browse_url "http://localhost:#{port}#{path}"
     nil
   end

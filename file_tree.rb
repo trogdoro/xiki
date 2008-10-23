@@ -20,7 +20,6 @@ class FileTree
   extend ElMixin
   include ElMixin
 
-  @@search_going_or_interrupted = false
   @@one_view_in_bar_by_default = false
 
   CODE_SAMPLES = %q<
@@ -70,8 +69,7 @@ class FileTree
 
   # Recursively draws out tree
   def traverse path
-
-    entries = Dir.glob("#{path}/*", File::FNM_DOTMATCH).
+    entries = Dir.glob("#{View.expand_path(path)}/*", File::FNM_DOTMATCH).
       select {|i| i !~ /\/\.(\.*|svn|git)$/}.
       sort
 
@@ -127,9 +125,9 @@ class FileTree
       return list
     end
     if list.size == 0
-      insert "| Note\n- ~No Results Found~\n"
+      View.insert "| Note\n- No Results Found!\n"
     else
-      insert list.join("\n") + "\n"
+      View.insert list.join("\n") + "\n"
     end
 
     View.to_top
@@ -201,12 +199,12 @@ class FileTree
 
   # Does ls in current buffer, without making any modifications to the environment
   def self.ls_here dir
-    Dir.chdir dir
     t = self.new
-    t.traverse "."
-    insert "- #{dir}\n"
-    insert t.res
-    #select_next_file
+    t.traverse View.dir
+    View.insert "- #{dir}\n"
+
+    result_indent = t.res[/^ */]   # Get indent of first line
+    View.insert t.res.gsub(/^#{result_indent}/, "  ")
   end
 
 
@@ -384,9 +382,10 @@ class FileTree
     unless remote
       path = File.expand_path(path)
     end
-
-    # If 0, enter by level
+    # Prefix keys with specific behavior
     case Keys.prefix
+    when :u   # Just open file
+      Keys.clear_prefix
     when 8
       Keys.clear_prefix
       if search_string  # If quote, enter lines under
@@ -413,7 +412,6 @@ class FileTree
         View.to_nth(View.list.size - 1)
         View.create
       end
-
       View.to_nth(Keys.prefix - 1)
 
     else   # Otherwise, move to after bar if the bar is open
@@ -428,7 +426,7 @@ class FileTree
       set_visited_file_name path
       elvar.buffer_auto_save_file_name = nil
       # Get text from server and insert
-      insert self.remote_file_contents(path)
+      View.insert self.remote_file_contents(path)
     else
       Location.go path
       Effects.blink(:what=>:line) unless line_number or search_string
@@ -464,7 +462,6 @@ class FileTree
   def self.search options={}
     Cursor.remember :before_file_tree
     Cursor.blue
-    @@search_going_or_interrupted = true
     error = ""
 
     # Make cursor blue
@@ -477,7 +474,9 @@ class FileTree
     message "Show files matching: "
 
     ch, ch_raw = Keys.char
-    return Cursor.restore(:before_file_tree) if ch.nil?
+    if ch.nil?
+      return Cursor.restore(:before_file_tree)
+    end
 
     #ch = char_to_string(ch_raw)
 
@@ -548,7 +547,7 @@ class FileTree
         self.clear_empty_dirs! lines if recursive
 
         # Put back into buffer
-        insert lines.join("\n") + "\n"
+        View.insert lines.join("\n") + "\n"
         right = point
 
         # Go to first file
@@ -562,7 +561,10 @@ class FileTree
       end
       message "Show files matching: #{pattern}#{error}"
       ch, ch_raw = Keys.char
-      return Cursor.restore(:before_file_tree) if ch.nil?
+      if ch.nil?
+        return Cursor.restore(:before_file_tree)
+      end
+
     end
 
     # Exiting, so restore cursor
@@ -619,7 +621,6 @@ class FileTree
       elsif self.dir?  # A Dir, so do recursive search
         delete_region(Line.left(2), right)
         self.dir_recursive
-        return @@search_going_or_interrupted = false
       else   # A file, so enter lines
         delete_region(Line.left(2), right)
         self.enter_lines(//)  # Insert all lines
@@ -659,7 +660,7 @@ class FileTree
         self.clear_empty_dirs! filtered
 
         # Put back into buffer
-        insert filtered.join("\n") + "\n"
+        View.insert filtered.join("\n") + "\n"
         right = point
 
         # Go to first file and go back into search
@@ -671,7 +672,7 @@ class FileTree
       else
 
         nth = lines[ch.to_i - 1]
-        insert "#{nth}\n"
+        View.insert "#{nth}\n"
         previous_line
         if options[:number_means_enter]  # If explicitly supposed to enter
           LineLauncher.launch
@@ -711,8 +712,7 @@ class FileTree
           Move.to_line_text_beginning
         end
         View.delete(View.cursor, right)
-        LineLauncher.launch
-        return
+        return LineLauncher.launch
       end
 
       # If line is a dir, do tree-like tab
@@ -733,7 +733,7 @@ class FileTree
 
       elsif Line.value =~ /"/  # If it contains quotes, "tab" to field
         line = Line.delete true
-        insert line.sub(/".+"/, '""')
+        View.insert line.sub(/".+"/, '""')
         Search.forward('"')
         # TODO make codetree not move cursor back to starting point
       end
@@ -749,7 +749,6 @@ class FileTree
     else
       command_execute ch
     end
-    @@search_going_or_interrupted = false
 
   end
 
@@ -807,11 +806,11 @@ class FileTree
       View.to_top unless Line.matches(/^$/)
       # If on line, add another blank
       unless Line.matches(/^$/)
-        insert "\n\n";  backward_char 2
+        View.insert "\n\n";  backward_char 2
       end
     end
 
-    dir = File.expand_path(dir)  # Expand out ~
+    dir = View.expand_path(dir)  # Expand out ~
     # If file, back up to dir
     dir = Bookmarks.dir_only dir unless File.directory?(dir)
 
@@ -836,7 +835,7 @@ class FileTree
     # If recursive
     if options[:recursive]
       left = point
-      self.ls_here dir  # Draw actual tree
+      self.ls_here dir   # Draw actual tree
       right = point
       goto_char left
       self.select_next_file
@@ -847,7 +846,7 @@ class FileTree
       # Insert with linebreak if file
       if File.file?(dir)
         #insert dir
-        insert self.filename_to_next_line(dir)  # Add linebreak before filename
+        View.insert self.filename_to_next_line(dir)  # Add linebreak before filename
         #insert dir.sub(/(.+)\//, "\\1/\n  ")  # Add linebreak before filename
         open_line 1
         #self.search
@@ -856,7 +855,7 @@ class FileTree
         return
       end
 
-      insert "+ #{dir}\n"
+      View.insert "+ #{dir}\n"
       previous_line
       self.dir  # Draw actual tree
     end
@@ -929,8 +928,7 @@ class FileTree
     return Files.open_in_os(construct_path) if Keys.prefix == 0
 
     self.plus_to_minus_maybe
-    beginning_of_line
-    Dir.chdir File.expand_path(elvar.default_directory)
+    Line.to_left
     if Keys.prefix == 8
       self.dir_recursive
     else
@@ -955,11 +953,10 @@ class FileTree
     t.traverse Bookmarks.expand(dir)
 
     # Adjust indent
-    result_indent = t.res[/^ */]
-    insert t.res.gsub(/^#{result_indent}/, indent)
+    result_indent = t.res[/^ */]   # Get indent of first line
+    View.insert t.res.gsub(/^#{result_indent}/, indent)
 
     right = point
-    #    insert "-"
 
     goto_char left
     #    isearch_forward
@@ -971,11 +968,11 @@ class FileTree
     Line.to_left
     line = Line.value
     indent = line[/^ */] + "  "  # Get indent
+
     dir = Bookmarks.expand(self.construct_path)
 
     remote = self.is_remote?(dir)
     unless remote
-      dir = File.expand_path(dir)
       # If C-2, just open in dired
       if Keys.prefix == 2
         # TODO: Open in 1st window
@@ -985,7 +982,6 @@ class FileTree
       end
     end
 
-    #     insert dir
     # Get dirs and files in it
     dirs, files = self.files_in_dir(dir, options)
 
@@ -1001,7 +997,7 @@ class FileTree
     # Move .notes files to top
     files = files.select{|i| i =~ /\.notes$/} + files.select{|i| i !~ /\.notes$/}
 
-    insert (dirs + files).join("\n") + "\n"
+    View.insert (dirs + files).join("\n") + "\n"
     right = point
     goto_char left
 
@@ -1093,13 +1089,13 @@ class FileTree
     # Check to see if it's the same file
     if snippet[/.+\n.+\n/] == buffer_substring(point, Line.left(3))
       Line.next 2
-      insert "#{snippet.sub(/.+\n.+\n/, '')}\n"
+      View.insert "#{snippet.sub(/.+\n.+\n/, '')}\n"
     # Check to see if it's just in same dir
     elsif snippet[/.+\n/] == buffer_substring(point, Line.left(2))
       Line.next
-      insert "#{snippet.sub(/.+\n/, '')}\n"
+      View.insert "#{snippet.sub(/.+\n/, '')}\n"
     else
-      insert "#{snippet}\n"
+      View.insert "#{snippet}\n"
     end
 
     loc.go
@@ -1112,7 +1108,7 @@ class FileTree
   def self.enter_at_spot
     snippet = self.snippet
     Location.jump("0")
-    insert "#{snippet}\n"
+    View.insert "#{snippet}\n"
     Location.save("0")  # So any more will be entered after
   end
 
@@ -1126,11 +1122,10 @@ class FileTree
       dir = self.construct_path
       t = Clipboard.get("=")
       t = t.gsub(/^#{dir}/, '')
-
       if t.sub!(/\A\n/, '')   # If no dir left, indent one over
         t.gsub!(/^  /, '')
       end
-      self.add_pluses_and_minses t, '-', '-'
+      self.add_pluses_and_minuses t, '-', '-'
       Line.next
       View.insert "#{t}\n".gsub(/^/, "#{indent}  ")
       return
@@ -1150,7 +1145,7 @@ class FileTree
       # Indent prefix spaces, or 2
       indent = Keys.prefix || 0
       t = t.gsub(/^/, " " * indent)
-      self.add_pluses_and_minses t, '-', '-'
+      self.add_pluses_and_minuses t, '-', '-'
       View.insert t
       set_mark(Line.left(2))
       goto_char start
@@ -1167,12 +1162,11 @@ class FileTree
       indent = "#{indent}  "
     end
 
-    insert clip.gsub(/^/, "#{indent}\|")
+    View.insert clip.gsub(/^/, "#{indent}\|")
   end
 
   # Remove the following lines indented more than the current one
   def self.kill_under
-
     indent = Line.indent.size
     pattern = "^ \\{0,#{indent}\\}\\([^ \n]\\|$\\)"
 
@@ -1193,12 +1187,12 @@ class FileTree
     View.delete(left, View.cursor)
     View.to orig
 
-    Move.to_line_text_beginning
+    #Move.to_line_text_beginning
   end
 
   # Expand if dir, or open if file
   def self.launch options={}
-    self.plus_to_minus_maybe
+    #self.plus_to_minus_maybe
     line = Line.value
     indent = Line.indent
     list = nil
@@ -1259,6 +1253,8 @@ class FileTree
     # Add linebreak at end if none
     txt = "#{txt}\n" unless txt =~ /\n/
 
+    # Insert linebreak if at end of file
+
     self.indent(txt)
     self.insert_quoted_and_search txt
   end
@@ -1267,7 +1263,7 @@ class FileTree
     # Insert matches
     Line.next
     left = point
-    insert matches
+    View.insert matches
     right = point
     goto_char left
     Line.to_words
@@ -1467,12 +1463,13 @@ class FileTree
       end
       stack = split
     end
-    self.add_pluses_and_minses result
+    self.add_pluses_and_minuses result
     result
   end
 
-  def self.add_pluses_and_minses tree, dirs='-', files='+'
-    tree.gsub! /^( *)(.+\/)$/, "\\1#{dirs} \\2"
+  # Prepend bullets (pluses and minuses) to lines
+  def self.add_pluses_and_minuses tree, dirs='-', files='+'
+    tree.gsub! /^( *)([^ \n|].*\/)$/, "\\1#{dirs} \\2"
     tree.gsub! /^( *)([^ \n|].*[^\/\n])$/, "\\1#{files} \\2"
   end
 
@@ -1504,14 +1501,6 @@ class FileTree
     # Prompt for name
     #Keys.input
     # Create dir (using path and name)
-  end
-
-  def self.search_going_or_interrupted
-    @@search_going_or_interrupted
-  end
-
-  def self.search_going_or_interrupted= to
-    @@search_going_or_interrupted = to
   end
 
   # Indent txt to be one level lower than current line
@@ -1590,6 +1579,7 @@ private
   end
 
   def self.grep_syntax indent
+    self.plus_to_minus_maybe
     dir = self.construct_path
     raw = self.construct_path(:raw => true, :list => true)
     files = contents = nil
@@ -1621,7 +1611,7 @@ private
     Line.to_next
     left = point
     tree = list.join("\n") + "\n"
-    insert tree.gsub(/^/, indent)
+    View.insert tree.gsub(/^/, indent)
     right = point
     goto_char left
     #Move.to_line_text_beginning

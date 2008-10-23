@@ -21,6 +21,6 @@ class Javascript
   def self.launch
     line = Line.without_label
     result = self.run_internal line
-    FileTree.insert_under result
+    FileTree.insert_under result, :escape=>''
   end
 end

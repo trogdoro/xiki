@@ -134,7 +134,7 @@ class Bookmarks
   end
 
   def self.expand path, options={}
-    if options[:just_bookmark]  # If only a bookmark, just expand it
+    if options[:just_bookmark]   # If only a bookmark, just expand it
       return bookmark_get_filename(path)
     end
 
@@ -153,16 +153,16 @@ class Bookmarks
       path = "#{bm}#{rest}"
 
       # Expand ~/ if it has it
-      path = File.expand_path(path) if path =~ /^~/
+      path = View.expand_path(path) if path =~ /^~/
 
       path
 
     elsif path =~ /^~/  # If home dir, expand
       # Expand ~/ if it has it
-      File.expand_path(path)
+      View.expand_path(path)
 
     elsif options[:absolute] || path =~ /^\.\//  # If relative path, expand
-      File.expand_path(path)
+      View.expand_path(path)
     else
       path
     end

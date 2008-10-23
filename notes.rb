@@ -167,8 +167,7 @@ class Notes
       Hide.search
     end
 
-    # Make right-click launch a line
-    define_key(:notes_mode_map, kbd("<mouse-3>"), :notes_mouse_launch)
+    define_key(:notes_mode_map, kbd("M-<mouse-1>"), :notes_mouse_meta_click)
     define_key(:notes_mode_map, kbd("<double-mouse-1>"), :notes_mouse_double_click)
     define_key(:notes_mode_map, kbd("<mouse-1>"), :notes_mouse_toggle)
 
@@ -192,14 +191,18 @@ class Notes
     # |...
     h1_size = "+2"
 
-    styles = { :notes_h1  => "666699",
-               :notes_h1i => "66aa66",
-               :notes_h1e => "cccc66",
-               :notes_h1c => "996699",
-               :notes_h1s => "449688",
-               :notes_h1n => "eeaa33"}
+    @@h1_styles = {
+      :notes_h1  => "666699",
+      :notes_h1r => "771111",
+      :notes_h1o => "994411",
+      :notes_h1y => "aa9933",
+      :notes_h1g => "336633",
+      :notes_h1p => "663366",
+      :notes_h1m => "330000",
+      :notes_h1x => "333333"
+      }
 
-    styles.each do |k, v|
+    @@h1_styles.each do |k, v|
       header = v.gsub(/../) {|c| (c.to_i(16) + "33".to_i(16)).to_s(16)}
       Styles.define k,                  :face => 'arial', :size => h1_size, :fg => 'ffffff', :bg => v, :bold =>  true
       Styles.define "#{k}_pipe".to_sym, :face => 'arial', :size => h1_size, :fg => header,   :bg => v, :bold =>  true
@@ -209,16 +212,11 @@ class Notes
     Styles.define :notes_h2,
       :face => 'arial', :size => "0",
       :fg => '8888bb', :bg => "e0e0f2",
-#      :fg => 'ffffff', :bg => "ddddee",
-#      :fg => 'ffffff', :bg => "aaaacc",
       :bold =>  true
     Styles.define :notes_h2_pipe,
       :face => 'arial', :size => "0",
       :fg => 'bbbbdd', :bg => "e0e0f2",
-#      :fg => 'ddddf0', :bg => "ddddee",
-#      :fg => 'ddddf0', :bg => "aaaacc",
       :bold =>  true
-
 
     # |||...
     Styles.define :notes_h3,
@@ -275,9 +273,9 @@ class Notes
         :fg => '7777aa', :bg => "333366"
 
       Styles.define :notes_h2,
-        :bg => "181833"
+        :bg => "111122"
       Styles.define :notes_h2_pipe,
-        :fg => '333366', :bg => "181833"
+        :fg => '333366', :bg => "111122"
 
       Styles.define :notes_h1e,
         :bg => "666633"
@@ -294,25 +292,11 @@ class Notes
     Styles.apply("^\\(| \\)\\(.*\n\\)", nil, :notes_h1_pipe, :notes_h1)
     Styles.apply("^\\(| .+?: \\)\\(.+\n\\)", nil, :notes_h1_pipe, :notes_h1)
 
-    # | i ... lines
-    Styles.apply("^\\(| i \\)\\(.+\n\\)", nil, :notes_h1i_pipe, :notes_h1i)
-    Styles.apply("^\\(| i .+?: \\)\\(.+\n\\)", nil, :notes_h1i_pipe, :notes_h1i)
-
-    # | e ... lines
-    Styles.apply("^\\(| e \\)\\(.+\n\\)", nil, :notes_h1e_pipe, :notes_h1e)
-    Styles.apply("^\\(| e .+?: \\)\\(.+\n\\)", nil, :notes_h1e_pipe, :notes_h1e)
-
-    # | c ... lines
-    Styles.apply("^\\(| c \\)\\(.+\n\\)", nil, :notes_h1c_pipe, :notes_h1c)
-    Styles.apply("^\\(| c .+?: \\)\\(.+\n\\)", nil, :notes_h1c_pipe, :notes_h1c)
-
-    # | s ... lines
-    Styles.apply("^\\(| s \\)\\(.+\n\\)", nil, :notes_h1s_pipe, :notes_h1s)
-    Styles.apply("^\\(| s .+?: \\)\\(.+\n\\)", nil, :notes_h1s_pipe, :notes_h1s)
-
-    # | n ... lines
-    Styles.apply("^\\(| n \\)\\(.+\n\\)", nil, :notes_h1n_pipe, :notes_h1n)
-    Styles.apply("^\\(| n .+?: \\)\\(.+\n\\)", nil, :notes_h1n_pipe, :notes_h1n)
+    @@h1_styles.each do |k, v|
+      l = k.to_s[/_..(.)$/, 1]
+      next unless l
+      Styles.apply("^\\(| #{l} \\)\\(.*\n\\)", nil, "#{k}_pipe".to_sym, k)
+    end
 
     # ||... lines
     Styles.apply("^\\(|| \\)\\(.*\n\\)", nil, :notes_h2_pipe, :notes_h2)
@@ -359,29 +343,23 @@ class Notes
 
   # Startup
   def self.init
-    defun(:notes_mouse_launch, :interactive => "e") do |e|
+    defun(:notes_mouse_meta_click, :interactive => "e") do |e|
       mouse_set_point(e)
 
-      # If search in progress
-      if FileTree.search_going_or_interrupted and ! Line.blank?
-        FileTree.search_going_or_interrupted = false
-        CodeTree.kill_siblings
-      end
-
-      LineLauncher.launch# :no_search => true
+      View.insert "hey"
     end
 
 
     defun(:notes_mouse_double_click, :interactive => "e") do |e|
-      if Line.matches(/\/$/)   # If dir, kill siblings first
-        CodeTree.kill_siblings
+      if Line.matches(/\/$/)   # If dir, toggle
+        return LineLauncher.launch_or_hide(:blink=>true)
       end
-
+      # Otherwise, just launch
       LineLauncher.launch(:blink=>true)
-
     end
 
     defun(:notes_mouse_toggle, :interactive => "e") do |e|
+      #LineLauncher.launch_or_hide(:blink=>true)
       mouse_set_point(e)
       Notes.mouse_toggle
     end
@@ -480,15 +458,17 @@ class Notes
     >
 
     View.to_top
-
   end
 
   def self.mouse_toggle
+    #LineLauncher.launch_or_hide(:blink=>true)
+
     # If next line is indented more, kill children
     # If starts with plus or minus, and on plus or minus, launch
     if Line.matches(/^\s*[+-]/) and View.char =~ /[+-]/
       plus_or_minus = FileTree.toggle_plus_and_minus
-      if plus_or_minus == '+'   # If +, expand (launch
+      if ! CodeTree.children?
+        #plus_or_minus == '+'   # If +, expand (launch
 
         if FileTree.dir? or ! FileTree.handles?   # If on a dir or code_tree
           LineLauncher.launch

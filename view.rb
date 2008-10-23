@@ -591,16 +591,20 @@ class View
   end
 
   def self.visibility
-    c = Keys.input(:one_char => true, :prompt => 'Layout Visibility: [f]ull, [h]igh, [m]edium, [l]ow')
+    c = Keys.input(:one_char => true, :prompt => 'Layout Visibility: [f]ull, [h]igh, [m]edium, [l]ow   [s]tylized, [p]lain')
     case c.to_sym
     when :f
       el4r_lisp_eval "(set-frame-parameter nil 'alpha '(100 85))"
     when :h
-      el4r_lisp_eval "(set-frame-parameter nil 'alpha '(95 80))"
+      el4r_lisp_eval "(set-frame-parameter nil 'alpha '(90 75))"
     when :m
       el4r_lisp_eval "(set-frame-parameter nil 'alpha '(65 50))"
     when :l
       el4r_lisp_eval "(set-frame-parameter nil 'alpha '(20 30))"
+    when :s
+      $el.font_lock_mode true
+    when :p
+      $el.font_lock_mode nil
     end
   end
 
@@ -645,6 +649,20 @@ class View
 
   def self.url txt
     $el.browse_url txt
+  end
+
+  def self.kill_all
+    Effects.blink :what=>:all
+    $el.erase_buffer
+  end
+
+  def self.expand_path path
+    # Expand .
+    path = path.gsub /^\./, View.dir.sub(/\/$/, '')
+
+    # Expand ~
+    File.expand_path path
+
   end
 
 end

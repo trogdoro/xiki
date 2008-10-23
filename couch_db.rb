@@ -27,9 +27,9 @@ class CouchDb
     end
 
     %Q[
-    - .docs/
-    - .delete/
-    - .rest_tree/
+    + .docs/
+    + .delete/
+    + .rest_tree/
     ]
   end
 
@@ -82,44 +82,46 @@ class CouchDb
     end
   end
 
-  def self.docs db, id=nil, body=nil
+  def self.docs db, id=nil, doc=nil
+    db.sub! /\/$/, ''
+
     # If no id, show all id's
     if id.nil?
-      all = RestTree.request 'GET', "#{@@server}/#{db}_all_docs", nil
+      all = RestTree.request 'GET', "#{@@server}/#{db}/_all_docs", nil
       rows = JSON[all]['rows']
       return rows.map{|i| "#{i['id']}/"}
     end
 
     self.escape_slashes id
-    children = CodeTree.children
 
-    # If id and no children, output doc
-    if !(children or body)
-      record = RestTree.request 'GET', "#{@@server}/#{db}#{id}", nil
-
-      return record.gsub("\\n", "\n")
+    # If no doc, output doc
+    if doc.nil?
+      record = RestTree.request 'GET', "#{@@server}/#{db}/#{id}", nil
+      return record.gsub("\\n", "\n").gsub(/^/, '|')
     end
 
+
+    # One line of doc passed, so get rest and save
     # If id and children, save children
-    body ||= children.join("\n").unindent
+    doc = CodeTree.siblings(:include_self=>true).join("\n").unindent.gsub(/^\|/, '')
 
     # Get rev
-    record = RestTree.request 'GET', "#{@@server}/#{db}#{id}", nil
+    record = RestTree.request 'GET', "#{@@server}/#{db}/#{id}", nil
 
     # If a record was found, add rev
     if record !~ /404 /
       rev = JSON[record]['_rev']
 
       # Insert rev after first {, or replace if there already
-      if body =~ /"_rev":"\d+"/
-        body.sub! /("_rev":")\d+(")/, "\\1#{rev}\\2"
+      if doc =~ /"_rev":"\d+"/
+        doc.sub! /("_rev":")\d+(")/, "\\1#{rev}\\2"
       else
-        body.sub! /\{/, "{\"_rev\":\"#{rev}\", "
+        doc.sub! /\{/, "{\"_rev\":\"#{rev}\", "
       end
     end
 
     # Update it
-    res = RestTree.request 'PUT', "#{@@server}/#{db}#{id}", body
+    res = RestTree.request 'PUT', "#{@@server}/#{db}/#{id}", doc
     "|#{res}"
   end
 

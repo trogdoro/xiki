@@ -357,8 +357,8 @@ class Repository
   end
 
   def self.code_tree_diff options={}
-    bookmark = Keys.input(:timed => true, :prompt => "Repository diff in which dir? (enter bookmark): ")
-    menu = "- Repository.menu/\n  - project - $#{bookmark}/\n    - .diff, :expand/"
+    dir = Keys.bookmark_as_path
+    menu = "- Repository.menu/\n  - project - #{dir}\n    - .diff, :expand/"
     if options[:enter]
       View.insert(menu)
       LineLauncher.launch
@@ -368,8 +368,8 @@ class Repository
   end
 
   def self.code_tree_diff_unadded options={}
-    bookmark = Keys.input(:timed => true, :prompt => "Repository diff in which dir? (enter bookmark): ")
-    menu = "- Repository.menu/\n  - project - $#{bookmark}/\n    - .diff_unadded :expand/"
+    dir = Keys.bookmark_as_path
+    menu = "- Repository.menu/\n  - project - #{dir}\n    - .diff_unadded :expand/"
     if options[:enter]
       View.insert(menu)
       LineLauncher.launch

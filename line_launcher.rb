@@ -5,6 +5,8 @@ require 'ruby_console'
 class LineLauncher
   extend ElMixin
 
+  # Set this to true to just see which launcher applied.
+  # Look in /tmp/output.notes
   @@just_show = false
   #@@just_show = true
 
@@ -39,7 +41,6 @@ class LineLauncher
     elsif arg.class == Proc
       @@launchers_procs << [arg, block]
     end
-
   end
 
   def self.add_regex regex, block
@@ -49,6 +50,18 @@ class LineLauncher
       @@launchers << [regex, block]
       @@launchers_regexes[regex] = true
     end
+  end
+
+  def self.launch_or_hide options={}
+    # If no prefixes and children exist, delete under
+    if ! Keys.prefix and CodeTree.children?
+      FileTree.kill_under
+      return
+    end
+
+    # Else, launch
+    self.launch options
+
   end
 
   # Call the appropriate launcher if we find one, passing it line
@@ -145,10 +158,12 @@ class LineLauncher
     end
 
     self.add :paren=>"o" do  # - (t): Insert "Test"
+      orig = Location.new
       txt = Line.without_label  # Grab line
       View.to_after_bar  # Insert after bar
       insert txt
       command_execute "\C-m"
+      orig.go
     end
 
     self.add :paren=>"js" do   # - (js): js to run in firefox
@@ -281,7 +296,7 @@ class LineLauncher
       browse_url line[/(http|file).?:\/\/.+/]
     end
 
-    self.add(/^ *\$[^#*]+$/) do |line|   # Bookmark
+    self.add(/^ *\$[^#*!]+[^\/]$/) do |line|   # Bookmark
       View.open(line)
     end
 

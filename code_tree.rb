@@ -335,7 +335,12 @@ class CodeTree
     left1, right1, left2, right2 = self.sibling_bounds
 
     # Combine and process siblings
-    siblings = View.txt(left1, right1) + View.txt(left2, right2)
+    if options[:include_self]
+      siblings = View.txt(left1, right2)
+    else
+      siblings = View.txt(left1, right1) + View.txt(left2, right2)
+    end
+
     siblings.gsub! /^#{Line.indent} .*\n/, ''   # Remove more indented lines
     siblings.gsub! /^ +\n/, ''   # Remove blank lines
     siblings.gsub! /^ +/, ''   # Remove indents
@@ -362,6 +367,12 @@ class CodeTree
     View.delete left2, right2
     View.delete left1, right1
 
+  end
+
+  def self.children?
+    # Whether next line is more indented
+    Line.indent(Line.value(2)).size >
+      Line.indent.size
   end
 
   def self.children options={}

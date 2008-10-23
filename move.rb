@@ -6,25 +6,30 @@ class Move
 
   # Go to last line having indent
   def self.to_indent
-    direction = :down   # Assume down
+    direction_down = true   # Assume down
     if Keys.prefix_u   # If U, reverse
-      direction = :up
+      direction_down = false
     else
       column = Keys.prefix   # If numeric, make that be the indent
     end
 
-    # Get indent from cursor (unless already set by prefix)
-    column ||= View.column
+    line = Line.value
+    # If end of block, reverse direction
+    if line =~ /^ *(end|\]|\}|\))$/
+      direction_down = ! direction_down
+    end
+
+    column ||= Line.indent(line).size
 
     # If negative, reverse direction and amke positive
     if column < 0
-      direction = :up
+      direction_down = false
       column = 0 - column
     end
 
     orig = Location.new
     # Search for matching in right direction
-    if direction == :up
+    if direction_down == false
       Line.to_left
       success = Search.backward "^ \\{#{column}\\}[^ \t\n]"
       Move.to_column column

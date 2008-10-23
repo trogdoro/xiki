@@ -16,7 +16,7 @@ class Deletes
     elsif was_at_beginning and not View.char =~ /\s/
       backward_char
     else   # If not at end of a line, simply delete horizontal
-      delete_horizontal_space
+      $el.delete_horizontal_space
       View.insert(" " * prefix) if prefix
       return
     end

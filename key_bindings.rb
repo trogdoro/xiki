@@ -148,6 +148,7 @@ class KeyBindings
     Keys.enter_list_models { CodeTree.insert_menu("- Merb.models") }
     Keys.enter_log_statement { Code.enter_log }
     Keys.enter_log_line { Code.enter_log_line }
+    Keys.enter_log_time { Code.enter_log_time }
     Keys.enter_menu { CodeTree.insert_menus }
     Keys.enter_name { Clipboard.paste }   # paste thing saved as name
     Keys.enter_outline { FileTree.enter_lines }   # in tree, enter methods or headings
@@ -158,7 +159,7 @@ class KeyBindings
     Keys.enter_search { Search.enter_search }
     #Keys.enter_spot { Location.enter_at_spot }   # enter selected text at spot
     Keys.enter_tree { FileTree.tree(:here=>true) }
-    Keys.enter_under { FileTree.enter_under }
+    Keys.enter_under { LineLauncher.launch(:blink=>true) }
     Keys.enter_viewing { History.enter_viewing }
     # W
     # X
@@ -212,7 +213,7 @@ class KeyBindings
     Keys.do_indent { Code.indent_to }
     Keys.do_junior { FileTree.move_dir_to_junior }   # Move a dir to next line, and indent
     #Keys.DK1 { KeyBindings.keys }   # Do Keys 1: load key bindings "1" (currently this file)
-    Keys.do_kill_all { erase_buffer }   # kill all text in buffer
+    Keys.do_kill_all { View.kill_all }   # kill all text in buffer
     Keys.do_kill_duplicates { Code.do_kill_duplicates }
     Keys.do_kill_filter { Search.kill_filter }
     Keys.do_kill_siblings { CodeTree.kill_siblings }   # kill adjacent lines at same indent as this one
@@ -267,7 +268,7 @@ class KeyBindings
     # Use T prefix for: moving cursor, jumping to specific points
 
     Keys.TT { transpose_chars elvar.current_prefix_arg }   # TT - toggle character (T's default)
-    Keys.to_apex { View.to_top; View.message("#{'-'*20} Please use Keys.to_highest instead of Keys.to_apex #{'-'*20}") }   # to beginning of file **
+    Keys.to_apex { View.beep; View.to_top; View.message("#{'-'*10} Please use Keys.to_highest #{'-'*10}") }   # to beginning of file **
     Keys.to_backward { backward_word(Keys.prefix || 1) }   # move backward one word
     Keys.to_clipboard { Search.to Clipboard[0] }   # move cursor to next instance of clipboard
     Keys.to_deleted { Location.to_spot('deleted') }   # **
@@ -308,7 +309,7 @@ class KeyBindings
     Keys.layout_create { View.create }   # open new view **
     Keys.layout_dimensions_large { set_frame_size(View.frame, 145, 58);  set_frame_position(View.frame, 46, 22) }
     Keys.layout_dimensions_medium { set_frame_size(View.frame, 145, 50);  set_frame_position(View.frame, 223, 22) }
-    Keys.layout_dimensions_small { set_frame_size(View.frame, 90, 35) }
+    Keys.layout_dimensions_small { set_frame_size(View.frame, 80, 28) }
     Keys.layout_expand { View.enlarge }   # *
     # F
     Keys.layout_files { FileTree.open_in_bar; View.to_nth 1; Effects.blink(:what=>:line) }
@@ -488,8 +489,10 @@ class KeyBindings
     Keys.B { Move.backward }
     Keys.F { Move.forward }
     Keys.Q { Keys.timed_insert }
-    Keys.set("C-.") { LineLauncher.launch(:blink=>true) }
-    Keys.set("<C-return>") { LineLauncher.launch(:blink=>true) }
+    Keys.set("C-.") { LineLauncher.launch_or_hide(:blink=>true) }
+
+    # Alternate key for C-. (probably easier to remember)
+    Keys.set("<C-return>") { LineLauncher.launch_or_hide(:blink=>true) }
 
     if locate_library "ruby-mode"
       el_require :ruby_mode

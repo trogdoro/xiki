@@ -342,6 +342,12 @@ class Code
     Line.to_left
   end
 
+  def self.enter_log_time
+    $el.open_line(1) unless Line.blank?
+    View.insert("Ol.time")
+    Line.to_left
+  end
+
   def self.to_ruby o
     o.to_ruby
   end
