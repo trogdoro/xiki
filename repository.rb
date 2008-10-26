@@ -60,12 +60,36 @@ class Repository
       + .diff :expand/
       + .push
       + .log ""/
+      + .log_by_file/
       + .status/
       + .status_tree/
       - .initialize
       + .branches/
       - .files/
       ].strip.gsub(/^      /, '')
+  end
+
+  # Shows revs for one file
+  def self.log_by_file search, project, file=nil, rev=nil
+    dir = self.extract_dir project
+    if file.nil?   # If no file, tell them they have to paste it
+      return "- Replace this line with a path - I'm normally called via Keys.open_list_log"
+    end
+    if rev.nil?   # If no rev, list all revs
+      search = "-S'#{search}'" unless search.empty?
+      txt = Console.run "git log --pretty=oneline #{search} #{file}", :sync=>true, :dir=>dir
+      txt.gsub! ':', '-'
+      txt.gsub! /(.+?) (.+)/, "\\2: \\1"
+      txt.gsub! /^- /, ''
+      return txt.gsub!(/^/, '+ ')
+      #return "- TODO: show all revs"
+    end
+
+    # File passed, show diff
+    txt = Git.diff "git show #{@@git_diff_options} --pretty=oneline #{rev} #{file}", dir
+    txt.sub!(/.+?@@.+?\n/m, '')
+    txt.gsub /^/, '|'
+
   end
 
   def self.log search, project, rev=nil, file=nil
@@ -91,7 +115,7 @@ class Repository
     end
 
     # File passed, show diff
-    txt = Git.diff "git show --pretty=oneline #{rev} #{file}", dir
+    txt = Git.diff "git show #{@@git_diff_options} --pretty=oneline #{rev} #{file}", dir
     txt.sub!(/.+?@@.+?\n/m, '')
     txt.gsub! /^/, '|'
     puts txt
@@ -102,16 +126,25 @@ class Repository
     self.git_diff_one_file
   end
 
+
   def self.git_diff_one_file
     repos = self.git_path   # Get root of repos
     relative = View.file.sub(/^#{repos}/, '')   # Split off root from relative path
-
     relative.sub! /^\//, ''   # Insert codetree
 
     CodeTree.display_menu(
-      "Repository.menu/\n  - project - #{repos}\n    - .diff/\n      - #{relative}"
+      "- Repository.menu/\n  - project - #{repos}\n    - .diff/\n      - #{relative}"
       )
+  end
 
+  def self.open_list_log
+    repos = self.git_path   # Get root of repos
+    relative = View.file.sub(/^#{repos}/, '')   # Split off root from relative path
+    relative.sub! /^\//, ''   # Insert codetree
+
+    CodeTree.display_menu(
+      "- Repository.menu/\n  - project - #{repos}\n    - .log_by_file \"\"/\n      - #{relative}"
+      )
   end
 
   def self.jump_to_file_in_tree dir

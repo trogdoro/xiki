@@ -263,9 +263,8 @@ class Code
     return
   end
 
-  def self.enter_log
-    View.insert "Ol << \"\""
-    Move.backward
+  def self.enter_log_stack
+    View.insert "Ol.stack"
   end
 
   def self.enter_log_console

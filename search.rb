@@ -601,6 +601,11 @@ class Search
     Effects.blink :left=>left, :right=>right
   end
 
+  def self.just_macro
+    Search.clear
+    Macros.run
+  end
+
   def self.to_left
     Search.clear
     Line.to_left

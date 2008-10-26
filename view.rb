@@ -429,6 +429,12 @@ class View
 
   end
 
+  def self.to_highest
+    prefix = Keys.prefix
+    return self.to_line prefix if prefix   # If prefix, go to that line
+    self.to_top
+  end
+
   def self.to_top
     beginning_of_buffer
   end
@@ -596,7 +602,7 @@ class View
     when :f
       el4r_lisp_eval "(set-frame-parameter nil 'alpha '(100 85))"
     when :h
-      el4r_lisp_eval "(set-frame-parameter nil 'alpha '(90 75))"
+      el4r_lisp_eval "(set-frame-parameter nil 'alpha '(95 80))"
     when :m
       el4r_lisp_eval "(set-frame-parameter nil 'alpha '(65 50))"
     when :l

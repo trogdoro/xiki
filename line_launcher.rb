@@ -167,13 +167,11 @@ class LineLauncher
     end
 
     self.add :paren=>"js" do   # - (js): js to run in firefox
-      txt = Line.without_label  # Grab line
-      Firefox.eval(txt)
+      Firefox.eval(CodeTree.line_or_children)
     end
 
     self.add :paren=>"jso" do   # - (js): js to run in firefox
-      txt = Line.without_label  # Grab line
-      FileTree.insert_under Firefox.eval(txt)
+      FileTree.insert_under Firefox.eval(CodeTree.line_or_children)
     end
 
     self.add :paren=>"html" do   # Run in browser
@@ -304,24 +302,27 @@ class LineLauncher
       CodeTree.run line
     end
 
+    # Jump to controller from line in merb log
+    self.add(/^ ~ Routed to: \{/) do |line|
+      # Pull out action and controller
+      action = line[/"action"=>"(.+?)"/, 1]
+      controller = line[/"controller"=>"(.+?)"/, 1]
+
+      # Open controller
+      View.open "$co/#{controller}.rb"
+      # Jump to method
+      View.to_highest
+      Search.forward "^\\s-+def #{action}\\>"
+      Move.to_line_text_beginning
+
+    end
+
     self.add(/^ *puts /) do |line|
       CodeTree.run line
     end
 
     self.add(/^ *print\(/) do |line|
       Javascript.launch
-    end
-
-    self.add(/^[^\|@]+[\/\w\-]+\.\w+:\d+/) do |line|  # Stack traces, etc
-      # Match again (necessary)
-      line =~ /([\/.\w\-]+):(\d+)/
-      path, line = $1, $2
-
-      # If it doesn't have path, add it
-      path = "#{View.dir}#{path}" if path !~ /^\//
-      View.open path
-      goto_line line.to_i
-
     end
 
     self.add(/^[^|-]+\*\*.+\//) do |line|  # **.../: Tree grep in dir
@@ -364,6 +365,16 @@ class LineLauncher
     end
     self.add(/^ *!/) do |l|   # !shell command inline
       Console.launch :sync=>true
+    end
+
+    self.add(/^[^\|@]+[\/\w\-]+\.\w+:\d+/) do |line|  # Stack traces, etc
+      # Match again (necessary)
+      line =~ /([\/.\w\-]+):(\d+)/
+      path, line = $1, $2
+      # If it doesn't have path, add it
+      path = "#{View.dir}#{path}" if path !~ /^\//
+      View.open path
+      goto_line line.to_i
     end
 
     # Let trees try to handle it

@@ -2,7 +2,7 @@
 # while coding.  Log statements hyperlink back to the line that logged it.
 class Ol
   @@last = Time.now - 1000
-
+  @@timed_last = Time.now
   def self.log txt, l=nil
     path = self.file_path
 
@@ -14,9 +14,7 @@ class Ol
 
     # If n seconds passed since last call
 
-    difference = Time.now - @@last
-    @@last = Time.now
-    heading = difference > 3 ? "\n| \n" : nil
+    heading = self.pause_since_last? ? "\n| \n" : nil
 
     h = Ol.parse_line(l)
 
@@ -31,13 +29,22 @@ class Ol
     txt
   end
 
+  def self.pause_since_last?
+    difference = Time.now - @@last
+    @@last = Time.now
+    difference > 3
+  end
+
   def self.<< txt
     self.line txt, caller(0)[1]
   end
 
   def self.time
     now = Time.now
-    self.line "#{now.strftime('%I:%M:%S')}:#{now.usec.to_s.rjust(6, '0')}", caller(0)[1]
+    elapsed = self.pause_since_last? ? nil : (now - @@timed_last)
+
+    self.line "#{elapsed ? "(#{elapsed}) " : ''}#{now.strftime('%I:%M:%S').sub(/^0/, '')}:#{now.usec.to_s.rjust(6, '0')}", caller(0)[1]
+    @@timed_last = now
   end
 
   def self.line txt=nil, l=nil, indent=""

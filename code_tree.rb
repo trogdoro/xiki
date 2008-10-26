@@ -97,7 +97,6 @@ class CodeTree
       if options[:tree_search]  # If they want to do a tree search
         goto_char left
         FileTree.select_next_file
-        #Line.to_words
         FileTree.search(:left => left, :right => right, :recursive => true)
       # If script didn't move us (line or buffer), do incremental search
       elsif !options[:no_search] && !buffer_changed && point == orig_left

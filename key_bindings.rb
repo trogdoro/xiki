@@ -82,6 +82,7 @@ class KeyBindings
     Keys.open_list_faces { list_faces_display }
     Keys.open_lisp_error { Code.show_el4r_error }
     Keys.open_lisp_info { info("elisp") }
+    Keys.open_list_log { Repository.open_list_log }   # compare current file with subversion
     Keys.open_log_tree { Rails.tree_from_log }
     Keys.open_list_databases { CodeTree.display_menu('- CouchDb.databases/') }
     Keys.open_list_models { CodeTree.display_menu("- Merb.models/") }
@@ -146,7 +147,7 @@ class KeyBindings
     Keys.enter_list_databases { CodeTree.insert_menu('- CouchDb.databases/') }
     Keys.enter_log_javascript { Code.enter_log_console }
     Keys.enter_list_models { CodeTree.insert_menu("- Merb.models") }
-    Keys.enter_log_statement { Code.enter_log }
+    Keys.enter_log_stack { Code.enter_log_stack }
     Keys.enter_log_line { Code.enter_log_line }
     Keys.enter_log_time { Code.enter_log_time }
     Keys.enter_menu { CodeTree.insert_menus }
@@ -274,7 +275,7 @@ class KeyBindings
     Keys.to_deleted { Location.to_spot('deleted') }   # **
     Keys.to_end { View.to_bottom }   # **
     Keys.to_forward { forward_word(Keys.prefix || 1) }   # move forward one word
-    Keys.to_highest { View.to_top }   # to beginning of file **
+    Keys.to_highest { View.to_highest }   # to beginning of file **
     Keys.to_indent { Move.to_indent }
     Keys.to_junior { Move.to_junior }
     Keys.to_key { Keys.jump_to_code }   # jump to ruby code of key definition *
@@ -376,6 +377,7 @@ class KeyBindings
     Keys.isearch_just_difflog { Search.jump_to_difflog }   # find last string in difflog
     Keys.isearch_just_edges { Search.just_edges }   # delete everything but chars at edges of match
     Keys.isearch_just_lowercase { Search.downcase }
+    Keys.isearch_just_macro { Search.just_macro }
     Keys.isearch_just_name { Search.just_name }
     Keys.isearch_just_orange { Search.just_orange }
     Keys.isearch_just_replace { Search.isearch_query_replace }   # replace
@@ -420,6 +422,9 @@ class KeyBindings
     end
     define_key :isearch_mode_map, kbd("C-/") do   # Remove last action from search results
       $el.isearch_delete_char
+    end
+    define_key :isearch_mode_map, kbd("C-,") do   # Remove last action from search results
+      Search.isearch_query_replace
     end
 
     define_key :isearch_mode_map, kbd("C-\\") do   # Hide: hide non-matching

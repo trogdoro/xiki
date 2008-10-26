@@ -18,12 +18,12 @@ class Macros
       end_kbd_macro nil
     end
 
-    # If 0 prefix, apply until blank line
-    if Keys.prefix == 0 or Keys.prefix_u?
+    # If U prefix prefix, apply until blank line
+    if Keys.prefix_u?
       orig = Location.new
       Line.next
       left = point
-      re_search_forward "^[ \t]*$", nil, 1
+      Search.forward "^$"
       beginning_of_line
       apply_macro_to_region_lines left, point
       orig.go

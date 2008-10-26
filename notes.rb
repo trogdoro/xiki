@@ -91,9 +91,19 @@ class Notes
 
     times = Keys.prefix_u? ? 1 : (Keys.prefix || 1)
     times.times { insert "|" }
-    insert " "
+    View.insert " "
 
     open_line(4) if Keys.prefix_u?   # If U create blank lines.
+
+
+    # If U, get letter from next bullet
+    if Keys.prefix_u?
+      orig = Location.new
+      Search.forward "^| "   # Find next heading
+      char = Line.value[/^\| (\w) /, 1]   # Pull char off and insert, if there is one
+      orig.go
+      View.insert "#{char} " if char
+    end
 
     #PauseMeansSpace.go
 
@@ -204,9 +214,9 @@ class Notes
       }
 
     @@h1_styles.each do |k, v|
-      header = v.gsub(/../) {|c| (c.to_i(16) + "33".to_i(16)).to_s(16)}
+      lighter = v.gsub(/../) {|c| (c.to_i(16) + "44".to_i(16)).to_s(16)}
       Styles.define k,                  :face => 'arial', :size => h1_size, :fg => 'ffffff', :bg => v, :bold =>  true
-      Styles.define "#{k}_pipe".to_sym, :face => 'arial', :size => h1_size, :fg => header,   :bg => v, :bold =>  true
+      Styles.define "#{k}_pipe".to_sym, :face => 'arial', :size => h1_size, :fg => lighter,   :bg => v, :bold =>  true
     end
 
     # ||...
@@ -293,6 +303,7 @@ class Notes
       l = k.to_s[/_..(.)$/, 1]
       next unless l
       Styles.apply("^\\(| #{l} \\)\\(.*\n\\)", nil, "#{k}_pipe".to_sym, k)
+      Styles.apply("^\\(| #{l} .+: \\)\\(.*\n\\)", nil, "#{k}_pipe".to_sym, k)
     end
 
     # ||... lines
@@ -314,7 +325,7 @@ class Notes
 
     #Styles.apply("^[ \t]*\\(\\+\\)\\( \\)", nil, :ls_bullet, :variable)
 
-    Styles.apply("^[ \t]*\\(x\\)\\( \\)\\(.+\\)", nil, :ls_bullet, :variable, :strike)
+    Styles.apply("^[ \t]*\\(x\\)\\( \\)\\(.+\\)", nil, :notes_label, :variable, :strike)
 
     Styles.apply("^\\([ \t]*\\)\\([+-]\\) \\(.+?:\\) +\\(|.*\n\\)", nil, :default, :ls_bullet, :notes_label, :ls_quote)
 
