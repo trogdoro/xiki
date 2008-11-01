@@ -671,5 +671,37 @@ class View
 
   end
 
+  def self.dimensions_large
+    self.fullscreen_off
+    set_frame_size(View.frame, 145, 58)
+    set_frame_position(View.frame, 46, 22)
+  end
+  def self.dimensions_medium
+    self.fullscreen_off
+    set_frame_size(View.frame, 145, 50)
+    #set_frame_position(View.frame, 223, 22)
+  end
+  def self.dimensions_small
+    self.fullscreen_off
+    set_frame_size(View.frame, 80, 28)
+  end
+
+  # Toggle full-screen mode
+  def self.dimensions_full
+    if frame_parameter(nil, :fullscreen)   # If fullscreen on turn it off
+      set_frame_parameter(nil, :fullscreen, nil)
+    else   # Else, turn it on
+      self.fullscreen_on
+    end
+  end
+
+  def self.fullscreen_off
+    set_frame_parameter(nil, :fullscreen, nil) if frame_parameter(nil, :fullscreen)
+  end
+
+  def self.fullscreen_on
+    set_frame_parameter nil, :fullscreen, :fullboth
+  end
+
 end
 View.init

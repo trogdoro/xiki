@@ -308,9 +308,12 @@ class KeyBindings
     Keys.layout_all { View.hide_others }   # *
     Keys.layout_balance { View.balance }   # balance windows *
     Keys.layout_create { View.create }   # open new view **
-    Keys.layout_dimensions_large { set_frame_size(View.frame, 145, 58);  set_frame_position(View.frame, 46, 22) }
-    Keys.layout_dimensions_medium { set_frame_size(View.frame, 145, 50);  set_frame_position(View.frame, 223, 22) }
-    Keys.layout_dimensions_small { set_frame_size(View.frame, 80, 28) }
+
+    Keys.layout_dimensions_full { View.dimensions_full }
+    Keys.layout_dimensions_large { View.dimensions_large }
+    Keys.layout_dimensions_medium { View.dimensions_medium }
+    Keys.layout_dimensions_small { View.dimensions_small }
+
     Keys.layout_expand { View.enlarge }   # *
     # F
     Keys.layout_files { FileTree.open_in_bar; View.to_nth 1; Effects.blink(:what=>:line) }
