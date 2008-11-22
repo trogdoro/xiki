@@ -171,32 +171,32 @@ class CodeTree
     CodeTree.launch
   end
 
-  # Determine whether path is code_tree or file_tree
-  #   def self.is_code_tree_path list
-  #     code_tree_root = nil
-  #     index = list.size - 1
-  #     list.reverse.each do |l|
+  # Determine whether we should handle it
+  def self.handles? list
+    code_tree_root = nil
+    index = list.size - 1
+    list.reverse.each do |l|
 
-  #       # If it has a char that wouldn't be in a file, must be code tree
-  #       #return index if l =~ /[\[\{=]/
+      # If it has a char that wouldn't be in a file, must be code tree
+      #return index if l =~ /[\[\{=]/
 
-  #       # If last one was suspected as root, confirm we're not a dir (must be a file if parent is a dir)
-  #       if code_tree_root
-  #         if l =~ /\/$/  # Dir means it was a file that looked like code
-  #           code_tree_root = nil
-  #         else
-  #           return index + 1  # Must be legit, so return our index
-  #         end
-  #       end
-  #       # If function call, it might be the root
-  #       if l =~ /^[+-]? ?[A-Z][A-Za-z0-9]*\.[a-z]/
-  #         code_tree_root = index
-  #       end
-  #       index -= 1
-  #     end
+      # If last one was suspected as root, confirm we're not a dir (must be a file if parent is a dir)
+      if code_tree_root
+        if l =~ /\/$/  # Dir means it was a file that looked like code
+          code_tree_root = nil
+        else
+          return index + 1  # Must be legit, so return our index
+        end
+      end
+      # If function call, it might be the root
+      if l =~ /^[+-]? ?[A-Z][A-Za-z0-9]*\.[a-z]/
+        code_tree_root = index
+      end
+      index -= 1
+    end
 
-  #     code_tree_root
-  #   end
+    code_tree_root
+  end
 
   # Rules for constructing code from path
   # - examine path consisting of where C-. occurred and all its ancestors
@@ -252,8 +252,17 @@ class CodeTree
       return Line.without_label(:line=>path[-1]).sub(/\/$/, '')
     end
 
+
+    # Extract any params from after method
     method_with_params, params = metho.match(/(\w+\??)(.*)/)[1..2]
     params.sub!(/^\((.*)\)$/, "\\1")  # Remove parens if they're there
+
+    # If last parameter was |..., make it be all the lines
+    if data.first =~ /^ *\|/
+      data.first.replace( self.escape(
+        self.siblings(:include_self=>true).map{|i| i[/^ *\|(.*)/, 1] + "\n"}.join('')
+        ))
+    end
 
     # If any data nodes, pass as params
     if ! data.empty?
@@ -280,19 +289,23 @@ class CodeTree
   end
 
   def self.paramify l
-
     l = Line.without_label(:line=>l)
 
-    # Always escape backslashes, single-quotes, #'s
-    l.gsub!("\\", "\\\\\\\\")
-    l.gsub!("\"", "\\\\\"")
-    l.gsub!("#", "\\\\#")
+    l = self.escape(l)
     if l =~ /^\|/   # If |..., escape single-quotes
       #       l.gsub!("'", "\\'")
     else
       l.gsub! ', ', '", "'
     end
 
+    l
+  end
+
+  # Always escape backslashes, single-quotes, #'s
+  def self.escape l
+    l = l.gsub("\\", "\\\\\\\\")
+    l.gsub!("\"", "\\\\\"")
+    l.gsub!("#", "\\\\#")
     l
   end
 

@@ -150,15 +150,17 @@ class Code
   end
 
   def self.do_as_rspec
+    orig = Location.new
+    orig_index = View.index
 
     test = ""
     # If not U, only run this test
     unless Keys.prefix_u?
-      orig = Location.new
+      before_search = Location.new
       Line.next
       if Search.backward("^ *it ")
         test = " -e " + Line.value[/".+"/]
-        orig.go
+        before_search.go
       else
         beep
         message("Not currently in a spec!")
@@ -166,11 +168,11 @@ class Code
         return
       end
     end
-
     path = buffer_file_name
     # Chop off up until before /spec/
     dir, spec = path.match(/(.+)\/(spec\/.+)/)[1,2]
     Console.run "spec #{spec}#{test}", :dir => dir, :buffer => '*spec', :reuse_buffer => true
+    orig.go unless View.index == orig_index   # Go back unless in same view
 
   end
 

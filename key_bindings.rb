@@ -64,14 +64,15 @@ class KeyBindings
     #Keys.OAD { Svn.jump_to_diff }
     Keys.open_as_lisp { find_function_at_point }   # jump to definition of lisp function
     #Keys.OAS { Search.google }   # Open As Search
+    Keys.open_as_root { Files.open_sudo }
     Keys.open_a_shell { Console.open }
     Keys.open_as_tail { Files.open_tail }
+    Keys.open_at_upper { FileTree.open_as_upper }
     Keys.open_bookmark { Bookmarks.go }
     Keys.open_current { CodeTree.display_menu("- Buffers.current/") }   # open buffer list **
     Keys.open_difflog { DiffLog.open }   # shows diffs of what you've edited *
     Keys.open_edited { Files.open_edited }   # show recently edited files *
     Keys.open_file { Files.open }
-    Keys.open_as_root { Files.open_sudo }
     # G: leave unmapped for escape
     Keys.open_history { Files.open_history }   # show recently viewed files
     Keys.open_in_bar { View.open_in_bar }
@@ -236,8 +237,11 @@ class KeyBindings
     Keys.do_linebreaks_unix { set_buffer_file_coding_system :unix }
     Keys.do_macro { Macros.run }   # do last macro *
     Keys.do_name_buffer { Buffers.rename }
+    Keys.do_number_enter { Incrementer.enter }
     Keys.do_name_files { wdired_change_to_wdired_mode }
+    Keys.do_number_increment { Incrementer.increment }
     Keys.do_next_paragraph { Code.do_next_paragraph }   # Move line to start of next paragraph
+    Keys.do_number_start { Incrementer.start }
     Keys.do_outline { History.open_current :outline => true, :prompt_for_bookmark => true }
     Keys.do_push { Repository.code_tree_diff }   # Commit to repos, push, etc
     Keys.do_query { Search.query_replace }   # do query replace *
@@ -324,14 +328,14 @@ class KeyBindings
     # L: defined above - mapped to what C-d does by default
     Keys.layout_mark { Color.colorize }   # colorize line, etc
     #Keys.layout_menu { CodeTree.layout_menu }   # show menu bare in current state
-    Keys.layout_next { View.next }   # next view **
+    Keys.layout_next { View.next(:blink=>true) }   # next view **
     Keys.layout_output { Code.open_log_view; Effects.blink(:what=>:line) }
-    Keys.layout_previous { View.previous }   # previous view **
+    Keys.layout_previous { View.previous(:blink=>true) }   # previous view **
     # Q
     Keys.layout_reveal { Hide.reveal }   # reveal all hidden text
     Keys.layout_search { Keys.prefix_u? ? Search.find_in_buffers(Keys.input(:prompt=>"Search all open files for: ")) : Hide.search }   # *
     Keys.layout_todo { FileTree.open_in_bar; Effects.blink(:what=>:line) }   # show bar on left with the quick bookmark named "-t" *
-    Keys.layout_upper { View.to_upper }   # go to uppermost view after bar
+    Keys.layout_upper { View.to_upper(:blink=>true) }   # go to uppermost view after bar
     # V
     Keys.layout_visibility { View.visibility }
     Keys.layout_wrap { toggle_truncate_lines }   # wrap lines **
@@ -367,17 +371,19 @@ class KeyBindings
     # have_...
     define_key :isearch_mode_map, kbd("C-h"), nil
     Keys.isearch_have_camel { Search.isearch_as_camel }
-    Keys.isearch_have_delete { Search.move_to_search_start }
-    Keys.isearch_have_variable { Search.insert_var_at_search_start }
+    # Keys.isearch_have_deleted {  }  # Move match to where you last deleted something
+    Keys.isearch_have_javascript { Search.isearch_log_javascript }
     Keys.isearch_have_line { Search.have_line }   # copy line back to search start
-    Keys.isearch_have_output { Search.isearch_log }   # copy line back to search start
-    Keys.isearch_have_paragraph { Search.have_paragraph }   # copy line back to search start
+    Keys.isearch_have_output { Search.isearch_log }
+    Keys.isearch_have_paragraph { Search.have_paragraph }
     Keys.isearch_have_spot { Search.insert_at_spot }   # Zap: move to spot (as spot)
     Keys.isearch_have_underscores { Search.isearch_as_snake }
+    Keys.isearch_have_variable { Search.insert_var_at_search_start }
     # I: leave unmapped - had issues using it (messes up position)
     # just_...
     define_key :isearch_mode_map, kbd("C-j"), nil
     Keys.isearch_just_difflog { Search.jump_to_difflog }   # find last string in difflog
+    Keys.isearch_just_camel { Search.isearch_just_camel }   # delete everything but chars at edges of match
     Keys.isearch_just_edges { Search.just_edges }   # delete everything but chars at edges of match
     Keys.isearch_just_lowercase { Search.downcase }
     Keys.isearch_just_macro { Search.just_macro }
@@ -385,8 +391,7 @@ class KeyBindings
     Keys.isearch_just_orange { Search.just_orange }
     Keys.isearch_just_replace { Search.isearch_query_replace }   # replace
     Keys.isearch_just_select { Search.just_select }   # select match
-    Keys.isearch_just_uppercase { Search.upcase }
-    #Keys.isearch_just_underline { Search.clear; Overlay.face(:underline, :left=>Search.left, :right=>Search.right) }
+    Keys.isearch_just_underscores { Search.isearch_just_underscores }
     Keys.isearch_kill { Search.cut; Location.as_spot('deleted') }   # cut
     Keys.isearch_look { Search.uncover }   # Look: show results for search string in all open files
     # M: leave unmapped for stop
@@ -443,7 +448,7 @@ class KeyBindings
     Keys._C(:isearch_mode_map) { Search.copy_and_comment }   # Comment line and copy it to starting point
     Keys._D(:isearch_mode_map) { Search.downcase }   # Downcase
     Keys._E(:isearch_mode_map) { Search.insert_tree_at_spot }   # Enter
-    Keys._F(:isearch_mode_map) { Search.isearch_open }   # Find file
+    #Keys._F(:isearch_mode_map) { Search.isearch_open }   # Find file
     Keys._G(:isearch_mode_map) { Search.isearch_google }   # Google search
     # H
     #Keys._I(:isearch_mode_map) { Search.insert_var_at_search_start }   # Interpolate: paste as interpolated variable

@@ -32,16 +32,18 @@ class Keys
       return super(meth, *args, &block)
     end
 
+    meth_title = meth.gsub('_', ' ').gsub(/\b\w/) {|s| s.upcase}
+    menu, item = meth_title.match(/(.+?) (.+)/)[1..2] if meth_title =~ /. ./
+
     # If 1st word is 'isearch', use it as map
     if meth =~ /^isearch_/
+      @@key_queue << ["ISearch", item]
       meth.sub! /^isearch_/, ''
       meth = self.words_to_letters meth
       args = [:isearch_mode_map]
     elsif meth =~ /[A-Z]/   # If capital letters
       # Don't convert
     elsif meth =~ /_/   # Add menu item, if more than one word
-      meth_title = meth.gsub('_', ' ').gsub(/\b\w/) {|s| s.upcase}
-      menu, item = meth_title.match(/(.+?) (.+)/)[1..2]
 
       if args.size == 0   # If global keymap
         # Make lisp function
@@ -347,6 +349,11 @@ class Keys
     ($el.elvar.current_prefix_arg || 1).times do
       View.insert($el.elvar.qinserted)
     end
+  end
+
+  def self.prefix_or_0 options={}
+    pre = Keys.prefix
+    pre.is_a?(Fixnum) ? pre : 0
   end
 
   # Returns nil, numeric prefix if C-1 etc, or :u if C-u

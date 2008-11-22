@@ -57,7 +57,9 @@ class Console
       end
       buffer ||= "*console*"
 
-      buffer = generate_new_buffer(buffer) unless reuse_buffer
+      if ! reuse_buffer# || ! View.buffer_open?(buffer)
+        buffer = generate_new_buffer(buffer)
+      end
       View.to_buffer buffer
       erase_buffer if reuse_buffer
       elvar.default_directory = dir if dir
@@ -102,7 +104,7 @@ class Console
     if Line.value =~ /^\s+!/
       orig = View.cursor
       # - of previous line
-      path = FileTree.construct_path(:list => true)
+      path = FileTree.construct_path(:list=>true)
       if FileTree.handles?(path)
         # Remove all !foo lines
         while(path.last =~ /^!/)
@@ -117,7 +119,7 @@ class Console
     dir ||= $1
     command = $2
     if options[:sync]
-      output = Console.run command, :dir => dir, :sync => true
+      output = Console.run command, :dir=>dir, :sync=>true
       # Add linebreak if blank
       output.sub!(/\A\z/, "\n")
       output.gsub!(/^/, '!')
@@ -125,8 +127,7 @@ class Console
       FileTree.insert_quoted_and_search output
     else
       View.handle_bar
-      Console.run command, :dir => dir
+      Console.run command, :dir=>dir, :buffer=>"*shell command: #{command.gsub(/[^\w]+/, ' ')[0..9]}"
     end
   end
-
 end

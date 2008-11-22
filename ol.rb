@@ -12,8 +12,11 @@ class Ol
       return self.line(txt, caller(0)[1])
     end
 
-    # If n seconds passed since last call
+    # Indent lines if multi-line (except for first)
+    txt.gsub!("\n", "\n  ")
+    txt.sub!(/ +\z/, '')   # Remove trailing
 
+    # If n seconds passed since last call
     heading = self.pause_since_last? ? "\n| \n" : nil
 
     h = Ol.parse_line(l)
@@ -23,7 +26,7 @@ class Ol
     l = "#{h[:path]}:#{h[:line]}\n"
     File.open("#{path}.lines", "a") { |f|
       f << "\n\n" if heading
-      txt.split("\n").size.times { f << l }
+      txt.split("\n", -1).size.times { f << l }
     }
 
     txt

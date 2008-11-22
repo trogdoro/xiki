@@ -54,7 +54,7 @@ class LineLauncher
 
   def self.launch_or_hide options={}
     # If no prefixes and children exist, delete under
-    if ! Keys.prefix and CodeTree.children?
+    if ! Keys.prefix and ! Line.blank? and CodeTree.children? and ! Line.matches(/^ *\|/)
       FileTree.kill_under
       return
     end
@@ -79,7 +79,6 @@ class LineLauncher
     if line =~ /^( *)- .+?: (.+)/   # Split label off, if there
       line = $1 + $2
     end
-
     # If try each potential paren match
     if paren && @@paren_launchers[paren]
       if @@just_show
@@ -120,10 +119,14 @@ class LineLauncher
       end
     end
 
-    # Try procs (currently all trees)
-    return if self.launch_by_proc
+    return if self.launch_by_proc   # Try procs (currently all trees)
 
-    View.insert "No launchers accepted the line"
+    if @@just_show
+      Ol << "Nothing matched.  Just passing to FileTree."
+      return
+    end
+
+    FileTree.launch   # Default to FileTree
   end
 
   def self.launch_by_proc
@@ -302,21 +305,6 @@ class LineLauncher
       CodeTree.run line
     end
 
-    # Jump to controller from line in merb log
-    self.add(/^ ~ Routed to: \{/) do |line|
-      # Pull out action and controller
-      action = line[/"action"=>"(.+?)"/, 1]
-      controller = line[/"controller"=>"(.+?)"/, 1]
-
-      # Open controller
-      View.open "$co/#{controller}.rb"
-      # Jump to method
-      View.to_highest
-      Search.forward "^\\s-+def #{action}\\>"
-      Move.to_line_text_beginning
-
-    end
-
     self.add(/^ *puts /) do |line|
       CodeTree.run line
     end
@@ -391,7 +379,7 @@ class LineLauncher
     end
 
     # CodeTree
-    condition_proc = proc {|list| true}
+    condition_proc = proc {|list| CodeTree.handles? list}
     LineLauncher.add condition_proc do |list|
       CodeTree.launch :path=>list
     end

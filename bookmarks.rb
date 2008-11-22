@@ -163,6 +163,8 @@ class Bookmarks
 
     elsif options[:absolute] || path =~ /^\.\//  # If relative path, expand
       View.expand_path(path)
+    elsif path !~ /\//   # If path doesn't contain a slash, make relative to current dir
+      "#{View.dir}/#{path}"
     else
       path
     end

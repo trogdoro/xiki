@@ -30,6 +30,7 @@ class Menu
 
   def self.init
     add_menu 'Xiki'
+    add_menu 'Xiki', 'ISearch'
     add_menu 'Xiki', 'Layout'
     add_menu 'Xiki', 'To'
     add_menu 'Xiki', 'Do'

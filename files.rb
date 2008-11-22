@@ -43,14 +43,13 @@ class Files
     View.next
     to = View.dir
     View.previous
-
     if Keys.prefix_u?
       rename_file(from, to)
     elsif Keys.prefix_uu
       command = "cp -R \"#{from}\" \"#{to}\""
       Console.run command, :sync => true
     else
-      copy_file(from, to)
+      $el.copy_file(from, to)
     end
 
     # Refresh
@@ -145,16 +144,16 @@ class Files
 
   def self.open_edited
     case Keys.prefix
-    when nil:  CodeTree.display_menu("- Files.edited 30/")
-    when 0:  CodeTree.display_menu("- Files.edited/")
+    when nil:  CodeTree.display_menu("- Files.edited 25/")
+    when 0, :u:  CodeTree.display_menu("- Files.edited/")
     else  CodeTree.display_menu("- Files.edited #{Keys.prefix}/")
     end
   end
 
   def self.open_history
     case Keys.prefix
-    when nil:  CodeTree.display_menu("- Files.history 30/")
-    when 0:  CodeTree.display_menu("- Files.history/")
+    when nil:  CodeTree.display_menu("- Files.history 25/")
+    when 0, :u:  CodeTree.display_menu("- Files.history/")
     else  CodeTree.display_menu("- Files.history #{Keys.prefix}/")
     end
   end
@@ -167,7 +166,7 @@ class Files
   def self.open_in_os path=nil
     path ||= View.file
     path ||= View.dir
-    $el.shell_command("open #{path}")
+    $el.shell_command("open \"#{path}\"")
   end
 
 end

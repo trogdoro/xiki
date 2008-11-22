@@ -88,14 +88,16 @@ class View
     expanded = Bookmarks.expand(path)
     # Handle opening in other window
     if expanded
+      if options[:same_view]
+        $el.find_file expanded
       # If already there, do nothing
-      if expanded == buffer_file_name
+      elsif expanded == buffer_file_name
       # If already displayed, move to its window
       elsif ( ( window_list.collect {|b| window_buffer b} ).collect {|u| buffer_file_name u} ).member?(expanded)
         find_file_other_window expanded
       # If not visible, just open it
       else
-        find_file expanded
+        $el.find_file expanded
       end
     end
     # Jump to point if :goto_point (we assume path is just a bookmark)
@@ -193,7 +195,7 @@ class View
       orig << [window_buffer(w), window_height(w)]
     end
     delete_other_windows
-    split_window_horizontally 40
+    split_window_horizontally 45
     other_window 1
     o = nil
     # For each window but last
@@ -236,7 +238,7 @@ class View
     if self.bar?
       buffer = selected_window
       select_window frame_first_window
-      enlarge_window (34 - window_width), true
+      enlarge_window (39 - window_width), true
       select_window buffer
     end
   end
@@ -277,18 +279,18 @@ class View
     end
   end
 
-  def self.next times=1
-    (Keys.prefix_times || times).times do
+  def self.next options={}
+    (Keys.prefix_times || options[:times] || 1).times do
       other_window 1
     end
-    Effects.blink(:what=>:line)
+    Effects.blink(:what=>:line) if options[:blink]
   end
 
-  def self.previous times=1
-    (Keys.prefix_times || times).times do
+  def self.previous options={}
+    (Keys.prefix_times || options[:times] || 1).times do
       other_window -1
     end
-    Effects.blink(:what=>:line)
+    Effects.blink(:what=>:line) if options[:blink]
   end
 
   def self.show_dir
@@ -356,14 +358,14 @@ class View
     self.to_after_bar if self.in_bar?
   end
 
-  def self.to_upper
+  def self.to_upper options={}
     down = Keys.prefix_times - 1
     Keys.clear_prefix
     View.to_after_bar
     down.times do
       View.next
     end
-    Effects.blink(:what=>:line)
+    Effects.blink(:what=>:line) if options[:blink]
   end
 
   def self.to_after_bar
@@ -392,7 +394,8 @@ class View
     return if buffer_name == name
 
     # If already displayed, move to it's window
-    if ( ( window_list.collect {|b| window_buffer b} ).collect {|u| buffer_name u} ).member?(name)
+    if ( ( window_list.collect {|b| window_buffer b} ).collect {|u| buffer_name u} ).member?(name) &&
+        ! options[:in_current]
       switch_to_buffer_other_window name
     else
       switch_to_buffer name
@@ -494,7 +497,7 @@ class View
     selected_window
   end
 
-  # Returns whether a buffer is open
+  # Returns whether a buffer is open / exists
   def self.buffer_open? name
     buffer_list.find{|b| buffer_name(b) == name}
   end
@@ -703,5 +706,9 @@ class View
     set_frame_parameter nil, :fullscreen, :fullboth
   end
 
+  # Line at top of visible part of view
+  def self.start
+    $el.window_start
+  end
 end
 View.init

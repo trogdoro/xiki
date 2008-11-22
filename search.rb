@@ -32,7 +32,7 @@ class Search
     self.clear
     was_reverse = elvar.isearch_opoint > point
     match = self.match
-    delete_region match_beginning(0), match_end(0)
+    View.delete(Search.left, Search.right)
 
     Location.as_spot('deleted')
     self.to_start  # Go back to start
@@ -61,12 +61,12 @@ class Search
 
   def self.isearch_delete
     self.clear
-    delete_region match_beginning(0), match_end(0)
+    View.delete(Search.left, Search.right)
   end
 
   def self.paste_here
     self.clear
-    delete_region match_beginning(0), match_end(0)
+    View.delete(Search.left, Search.right)
     insert Clipboard.get("0")
   end
 
@@ -547,6 +547,13 @@ class Search
     View.insert "Ol << \"#{match}: \#{#{match}.inspect}\""
   end
 
+  def self.isearch_log_javascript
+    match = self.match
+    self.clear
+    self.to_start
+    View.insert "console.log(\"#{match}: \" + #{match})"
+  end
+
   def self.isearch_as_camel
     Search.clear
     term = self.match
@@ -611,4 +618,17 @@ class Search
     Line.to_left
   end
 
+  def self.isearch_just_camel
+    Search.clear
+    term = self.match
+    View.delete(Search.left, Search.right)
+    View.insert TextUtil.camel_case(term)
+  end
+
+  def self.isearch_just_underscores
+    Search.clear
+    term = self.match
+    View.delete(Search.left, Search.right)
+    View.insert TextUtil.snake_case(term)
+  end
 end

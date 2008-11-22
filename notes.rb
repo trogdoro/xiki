@@ -201,16 +201,18 @@ class Notes
     # |...
     h1_size = "+2"
 
+    # Colors of headings
     @@h1_styles = {
       :notes_h1  => "666699",
-      :notes_h1r => "771111",
-      :notes_h1o => "994411",
+      :notes_h1r => "661111",   # | r This will be red
+      :notes_h1o => "884411",   # | o This will be orange
       :notes_h1y => "aa9933",
       :notes_h1e => "336633",
       :notes_h1g => "336633",
       :notes_h1p => "663366",
-      :notes_h1m => "330000",
-      :notes_h1x => "333333"
+      :notes_h1m => "270000",
+      :notes_h1x => "333333",
+      :notes_h1t => "005555",
       }
 
     @@h1_styles.each do |k, v|
@@ -359,10 +361,7 @@ class Notes
 
     defun(:notes_mouse_double_click, :interactive => "e") do |e|
       #       if Line.matches(/\/$/)   # If dir, toggle
-      LineLauncher.launch_or_hide(:blink=>true)
-      #       end
-      # Otherwise, just launch
-#      LineLauncher.launch(:blink=>true)
+      LineLauncher.launch(:blink=>true)
     end
 
     defun(:notes_mouse_toggle, :interactive => "e") do |e|

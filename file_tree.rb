@@ -363,20 +363,30 @@ class FileTree
   # Open the line in the tree that the cursor is on.  This is probably
   # be mapped to C-. .
   # TODO: remove ignore_prefix, and just use Keys.clear_prefix
-  def self.open ignore_prefix=nil
-    path = construct_path
+  def self.open options={}
+    path = options[:path] || self.construct_path(:list=>true)
 
-    return Files.open_in_os(path) if Keys.prefix == 0
+    if path.is_a?(Array)
+      # Pull of search string if exists
+      search_string = path.pop[/\|(.+)/, 1] if path.last =~ /^\|/
+      # Discard rest of |... lines
+      path = path.grep(/^[^|]/).join('')
+    else
+      # Split off |... if it's there (search string)
+      path =~ /(.*?)-?\+?\|(.*)/
+      path, search_string = $1, $2 if $2
+    end
 
-    # Split off |... if it's there (search string)
-    path =~ /(.*?)-?\+?\|(.*)/
-    path, search_string = $1, $2 if $2
     # Pull number off end of path if there
-
     path =~ /(.+):(\d+)$/
     path, line_number = $1, $2 if $2
 
+    return Files.open_in_os(path) if Keys.prefix == 0
+
     path = Bookmarks.expand(path)
+
+    # Have os launch if 0 prefix
+    return Files.open_in_os(path) if Keys.prefix == 0
 
     remote = self.is_remote?(path)
     unless remote
@@ -405,7 +415,7 @@ class FileTree
     end
 
     # If numeric prefix, jump to nth window
-    if (! ignore_prefix) and Keys.prefix and Keys.prefix != 7
+    if (! options[:ignore_prefix]) and Keys.prefix and Keys.prefix != 7
 
       # If number larger than number of windows, open new one first
       if Keys.prefix > View.list.size
@@ -427,8 +437,9 @@ class FileTree
       elvar.buffer_auto_save_file_name = nil
       # Get text from server and insert
       View.insert self.remote_file_contents(path)
-    else
-      Location.go path
+    else   # Normal file opening
+      options[:same_view] ? View.open(path, :same_view=>true) : Location.go(path)
+
       Effects.blink(:what=>:line) unless line_number or search_string
     end
 
@@ -481,7 +492,7 @@ class FileTree
     #ch = char_to_string(ch_raw)
 
     # While narrowing down list
-    while (ch =~ /[ !"$-)+,-.:<>-~]/) ||
+    while (ch =~ /[ !"$-),-.:<>-~]/) ||
         (recursive && ch_raw == 2 || ch_raw == 6) ||
         ch == :up || ch == :down
       break if recursive && ch == '/'   # Slash means enter in a dir
@@ -613,6 +624,18 @@ class FileTree
       self.stop_and_insert left, right, pattern
       View.insert self.indent("- **/", 0)
       View.to(Line.right - 1)
+
+    when "+"   # Create dir
+      self.stop_and_insert left, right, pattern, :dont_disable_control_lock=>true
+      Line.previous
+      parent = self.construct_path
+      Line.next
+      View.insert self.indent("", 0)
+      name = Keys.input(:prompt=>'Name of dir to create: ')
+      Dir.mkdir("#{parent}#{name}")
+      View.insert "- #{name}/\n"
+      View.insert self.indent("", 0)
+      #Line.to_right
 
     when "8"
       # If a quote, insert lines indented lower
@@ -862,14 +885,14 @@ class FileTree
   end
 
 
-  def self.open_in_bar ignore_prefix=nil
+  def self.open_in_bar options={}
 
     # If numeric prefix, open nth thing in tree
-    if Keys.prefix and !(Keys.prefix_u?) and !(ignore_prefix)
+    if Keys.prefix and !(Keys.prefix_u?) and !(options[:ignore_prefix])
       # Remember original view
       start = selected_window
       # Open tree (ignoring prefix)
-      self.open_in_bar :ignore_prefix
+      self.open_in_bar :ignore_prefix=>true
       # Find nth file in tree
       beginning_of_buffer
       Keys.prefix.times do
@@ -878,7 +901,7 @@ class FileTree
       # Go to next line if comment
       Line.next if Line.next_matches(/^ *\|/)
       Move.to_line_text_beginning
-      self.open :ignore_prefix
+      self.open :ignore_prefix=>true
       #self.open
   #    View.bar
       return
@@ -1151,7 +1174,6 @@ class FileTree
       goto_char start
       return
     end
-
     # Get current indent
     indent = Line.indent
     on_comment_line = Line.matches /^ +\|/
@@ -1162,6 +1184,7 @@ class FileTree
       indent = "#{indent}  "
     end
 
+    indent += " " * Keys.prefix_or_0   # If numeric prefix, add to indent
     View.insert clip.gsub(/^/, "#{indent}\|")
   end
 
@@ -1221,7 +1244,7 @@ class FileTree
       if Line.matches(/\.rb$/)
         self.enter_lines(/^\s*(def|class|module|it|describe) /)
       elsif Line.matches(/\.js$/)
-        self.enter_lines(/^ *(function) /)
+        self.enter_lines(/(^ *(function)| = function\()/)
       elsif Line.matches(/\.notes$/)
         self.enter_lines(/^\| /)
       else
@@ -1567,7 +1590,7 @@ private
     spaces.size / 2
   end
 
-  def self.stop_and_insert left, right, pattern
+  def self.stop_and_insert left, right, pattern, options={}
     goto_char left
     #Line.next if options[:recursive]
     # TODO: delete left if recursive - emulate what "delete" does to delete, first
@@ -1575,7 +1598,7 @@ private
       delete_region(point, right) :
       Line.next
     $el.open_line 1
-    ControlLock.disable
+    ControlLock.disable unless options[:dont_disable_control_lock]
   end
 
   def self.grep_syntax indent
@@ -1684,6 +1707,21 @@ private
     txt =~ /^[^,|\n]*\/$/
   end
 
+  def self.open_as_upper
+    orig_u = Keys.prefix_u
+    view = View.current
+    path = FileTree.construct_path
+    View.to_upper
+    was_at_top = View.start == View.point
+    $el.split_window_vertically
+    if was_at_top
+      View.next
+      $el.recenter 0
+      View.previous
+    end
+    FileTree.open :path=>path, :same_view=>true
+    View.to_window(view) if orig_u
+  end
 
 end
 FileTree.define_styles

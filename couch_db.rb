@@ -1,3 +1,6 @@
+gem 'jchris-couchrest'
+require 'couchrest'
+
 class CouchDb
   @@server = 'http://localhost:5984'
 
@@ -100,12 +103,6 @@ class CouchDb
       return record.gsub("\\n", "\n").gsub(/^/, '|')
     end
 
-
-    # One line of doc passed, so get rest and save
-    # If id and children, save children
-    doc = CodeTree.siblings(:include_self=>true).join("\n").unindent.gsub(/^\|/, '')
-
-    # Get rev
     record = RestTree.request 'GET', "#{@@server}/#{db}/#{id}", nil
 
     # If a record was found, add rev
