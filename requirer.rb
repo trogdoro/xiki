@@ -1,4 +1,5 @@
 require 'notes'
+require 'core_ext'
 
 class Requirer
   def self.safe_require files

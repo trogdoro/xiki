@@ -28,6 +28,13 @@ class Search
     insert match
   end
 
+  def self.isearch_have_within
+    self.clear
+    match = self.match
+    self.to_start  # Go back to start
+    insert match[/^.(.*).$/, 1]
+  end
+
   def self.move_to_search_start
     self.clear
     was_reverse = elvar.isearch_opoint > point

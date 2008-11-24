@@ -372,6 +372,8 @@ class KeyBindings
     define_key :isearch_mode_map, kbd("C-h"), nil
     Keys.isearch_have_camel { Search.isearch_as_camel }
     # Keys.isearch_have_deleted {  }  # Move match to where you last deleted something
+    Keys.isearch_have_within { Search.isearch_have_within }   # Grab everything except chars on edges
+
     Keys.isearch_have_javascript { Search.isearch_log_javascript }
     Keys.isearch_have_line { Search.have_line }   # copy line back to search start
     Keys.isearch_have_output { Search.isearch_log }
@@ -383,7 +385,7 @@ class KeyBindings
     # just_...
     define_key :isearch_mode_map, kbd("C-j"), nil
     Keys.isearch_just_difflog { Search.jump_to_difflog }   # find last string in difflog
-    Keys.isearch_just_camel { Search.isearch_just_camel }   # delete everything but chars at edges of match
+    Keys.isearch_just_camel { Search.isearch_just_camel }   # make match be camel case
     Keys.isearch_just_edges { Search.just_edges }   # delete everything but chars at edges of match
     Keys.isearch_just_lowercase { Search.downcase }
     Keys.isearch_just_macro { Search.just_macro }
@@ -391,7 +393,7 @@ class KeyBindings
     Keys.isearch_just_orange { Search.just_orange }
     Keys.isearch_just_replace { Search.isearch_query_replace }   # replace
     Keys.isearch_just_select { Search.just_select }   # select match
-    Keys.isearch_just_underscores { Search.isearch_just_underscores }
+    Keys.isearch_just_underscores { Search.isearch_just_underscores }   # make match be snake case
     Keys.isearch_kill { Search.cut; Location.as_spot('deleted') }   # cut
     Keys.isearch_look { Search.uncover }   # Look: show results for search string in all open files
     # M: leave unmapped for stop
