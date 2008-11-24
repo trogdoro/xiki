@@ -14,7 +14,7 @@ classes = classes.select{|i| i !~ /xiki.rb$/}   # Remove self
 classes = classes.select{|i| i !~ /key_bindings.rb$/}   # Remove key_bindings
 classes = classes.select{|i| i !~ /tests\//}   # Remove tests
 
-classes.map!{|i| i.sub(/\.rb$/, '')}
+classes.map!{|i| i.sub(/\.rb$/, '')}.sort
 
 # Require classes them
 Requirer.safe_require classes
