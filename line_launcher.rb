@@ -169,12 +169,20 @@ class LineLauncher
       orig.go
     end
 
+    self.add :paren=>"click" do   # - (js): js to run in firefox
+      Firefox.run("$('a:contains(#{CodeTree.line_or_children}):first').click()")
+    end
+
+    self.add :paren=>"click last" do   # - (js): js to run in firefox
+      Firefox.run("$('a:contains(#{CodeTree.line_or_children}):last').click()")
+    end
+
     self.add :paren=>"js" do   # - (js): js to run in firefox
-      Firefox.eval(CodeTree.line_or_children)
+      Firefox.run(CodeTree.line_or_children)
     end
 
     self.add :paren=>"jso" do   # - (js): js to run in firefox
-      FileTree.insert_under Firefox.eval(CodeTree.line_or_children)
+      FileTree.insert_under Firefox.run(CodeTree.line_or_children)
     end
 
     self.add :paren=>"html" do   # Run in browser
@@ -293,7 +301,7 @@ class LineLauncher
     end
 
 
-    self.add(/^ *(http|file).?:\/\/.+/) do |line|   # url
+    self.add(/^ *-? *(http|file).?:\/\/.+/) do |line|   # url
       browse_url line[/(http|file).?:\/\/.+/]
     end
 

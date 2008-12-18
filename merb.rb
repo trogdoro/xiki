@@ -8,6 +8,7 @@ class Merb
       + .links/
       - .snippets
       + .models/
+      + .version/
       ".unindent
     else  # Print options
       "
@@ -166,7 +167,6 @@ class Merb
   end
 
   def self.models model=nil
-
     # If no model specified, show all
     unless model
       Dir.foreach(Bookmarks['$mo']) { |m|
@@ -234,5 +234,9 @@ class Merb
     Color.colorize :r
     LineLauncher.launch
     Color.colorize :r
+  end
+
+  def self.version
+    Console.run('merb --version', :sync=>true)
   end
 end

@@ -7,7 +7,7 @@ class CouchDb
   def self.menu name=nil
     if name.nil?   # If no name passed
       return (["- .start\n"] +
-        (View.buffer_open?("*couchdb") ? ["  - running: **couchdb\n"] : []) +
+        (View.buffer_open?("*couchdb") ? ["  - buffer: **couchdb\n"] : []) +
         ["- .admin_url\n", "+ .databases/\n"]).join('')
     end
 

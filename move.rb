@@ -137,8 +137,11 @@ class Move
     move_to_column n# - 1
   end
 
-  def self.to_line_text_beginning down=0
-    Line.next down
+  def self.to_line_text_beginning down=nil
+    down ||= Keys.prefix_n
+    # If prefix go down n lines first
+    Line.next down if down
+
     Line.to_left
     skip_chars_forward "[^ \t]"
   end
@@ -217,4 +220,12 @@ class Move
     end
   end
 
+  def self.to_axis
+    n = Keys.prefix_n   # Check for numeric prefix
+    # If there, move down
+    if n > 0
+      Line.next
+    end
+
+  end
 end

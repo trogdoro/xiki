@@ -638,4 +638,11 @@ class Search
     View.delete(Search.left, Search.right)
     View.insert TextUtil.snake_case(term)
   end
+
+  def self.zap
+    self.clear
+    right = View.point
+    self.to_start   # Go back to search start
+    View.delete(View.point, right)
+  end
 end

@@ -389,6 +389,10 @@ class Keys
     self.prefix == :u
   end
 
+  def self.prefix_n
+    self.prefix.is_a?(Fixnum) ? self.prefix : nil
+  end
+
   def self.prefix_uu
     self.prefix == :uu
   end

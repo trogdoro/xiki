@@ -91,6 +91,19 @@ class Console
   end
 
   def self.do_last_command
+    # If not in shell buffer, go to it
+    if View.mode != :shell_mode
+      buffer = nil
+      with(:save_window_excursion) do
+        buffer = buffer_list.to_a.find{|b|
+          set_buffer b
+          (View.mode == :shell_mode && View.name !~ /^\*output /)
+        }
+      end
+      View.to_after_bar
+      View.to_buffer buffer_name(buffer)
+    end
+
     erase_buffer
     comint_previous_input(1)
     comint_send_input
@@ -127,7 +140,7 @@ class Console
       FileTree.insert_quoted_and_search output
     else
       View.handle_bar
-      Console.run command, :dir=>dir, :buffer=>"*shell command: #{command.gsub(/[^\w]+/, ' ')[0..9]}"
+      Console.run command, :dir=>dir, :buffer=>"*shell #{command.gsub(/[^\w]+/, ' ')[0..9]}"
     end
   end
 end

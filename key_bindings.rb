@@ -23,6 +23,7 @@ class KeyBindings
     # A: as...
     # Use A prefix for: remembering, saving
 
+    #Keys.AA { View.beep; View.message('Use to_axis instead') }   # AA - beginning of line (A's default) **
     Keys.AA { Line.to_left }   # AA - beginning of line (A's default) **
     Keys.as_bookmark { Bookmarks.save }   # remember bookmark
     Keys.as_clipboard { Clipboard.as_clipboard }   # **
@@ -123,6 +124,7 @@ class KeyBindings
     #   - ideas: embed, emit, entry
     #     Keys.EAB { Code.enter_as_backslash }   # Enter As Bash: enter with \ at eol's
     Keys.EE { Line.to_right }   # EE - end of line (E's default) **
+    #Keys.EE { View.beep; View.message('Use to_end instead') }   # AA - beginning of line (A's default) **
     Keys.enter_as_camelcase { insert TextUtil.camel_case(Clipboard.get(0)) }
     Keys.enter_as_debug { Code.enter_as_debug }
     Keys.enter_as_filename { insert Clipboard.get(".") }
@@ -189,9 +191,11 @@ class KeyBindings
     Keys.do_as_wrap { Block.do_as_wrap }
     Keys.do_backward { backward_kill_word(Keys.prefix || 1) }   # delete word backward
     Keys.do_code_align { Code.do_code_align }
+    Keys.do_click_back { Firefox.back }   # compare with last AV version
     Keys.do_code_comment { Code.comment }
     Keys.do_create_directory { FileTree.create_dir }
     Keys.do_compare_file { Repository.diff_one_file }   # compare current file with subversion
+    Keys.do_click_hyperlink { Firefox.click }   # compare with last AV version
     Keys.do_code_indent { Code.indent }
     Keys.do_compare_last { History.diff_with_backup }   # compare with last AV version
     Keys.do_count_matches {  View.count_matches }
@@ -234,6 +238,7 @@ class KeyBindings
     }
     Keys.do_lines_reverse { reverse_region(region_beginning, region_end) }
     Keys.do_lines_sort { sort_lines(nil, region_beginning, region_end) }
+    Keys.do_load_tab { Firefox.tab }
     Keys.do_linebreaks_unix { set_buffer_file_coding_system :unix }
     Keys.do_macro { Macros.run }   # do last macro *
     Keys.do_name_buffer { Buffers.rename }
@@ -273,29 +278,30 @@ class KeyBindings
     # Use T prefix for: moving cursor, jumping to specific points
 
     Keys.TT { transpose_chars elvar.current_prefix_arg }   # TT - toggle character (T's default)
-    Keys.to_apex { View.beep; View.to_top; View.message("#{'-'*10} Please use Keys.to_highest #{'-'*10}") }   # to beginning of file **
+    Keys.to_axis { Line.to_left }   # to beginning of file *
     Keys.to_backward { backward_word(Keys.prefix || 1) }   # move backward one word
     Keys.to_clipboard { Search.to Clipboard[0] }   # move cursor to next instance of clipboard
     Keys.to_deleted { Location.to_spot('deleted') }   # **
-    Keys.to_end { View.to_bottom }   # **
+    Keys.to_end { Line.to_right }   # To end of line **
     Keys.to_forward { forward_word(Keys.prefix || 1) }   # move forward one word
     Keys.to_highest { View.to_highest }   # to beginning of file **
     Keys.to_indent { Move.to_indent }
     Keys.to_junior { Move.to_junior }
     Keys.to_key { Keys.jump_to_code }   # jump to ruby code of key definition *
-    Keys.to_line { Move.to_line }   # move to line number *
+    Keys.to_lowest { View.to_bottom }   # move to end *
+    #Keys.to_line { Move.to_line }   # move to line number *
     Keys.to_matching { Move.to_other_bracket }   # to matching bracket, etc
     Keys.to_next { Move.to_next_paragraph }   # to next paragraph *
     Keys.to_outline { History.open_current :outline => true }   # *
     Keys.to_previous { Move.to_previous_paragraph }   # to beginning of previous paragraph *
     Keys.to_quote { Move.to_quote }   # move to next ...|... quote
-    Keys.to_relative { Search.to_relative }   # go to nth line, relative to top of window
+    Keys.to_row { Move.to_line }   # go to nth line, relative to top of window
     Keys.to_spot { Location.to_spot }   # *
     # T: defined above - mapped to what C-t does by default
     Keys.to_up { FileTree.to_parent }   # to parent (last line indented less)
     Keys.to_words { Move.to_line_text_beginning }   # move to start of words on line *
     Keys.to_x { Move.to_column }   # to x coordinate - ie column
-    # Y
+    Keys.to_visible { Search.to_relative }   # go to nth line, relative to top of window
     # Z
     #Keys.T0 { Location.go("$_0") }   # To 0
     Keys.T1 { Search.to Clipboard["1"] }
@@ -373,7 +379,6 @@ class KeyBindings
     Keys.isearch_have_camel { Search.isearch_as_camel }
     # Keys.isearch_have_deleted {  }  # Move match to where you last deleted something
     Keys.isearch_have_within { Search.isearch_have_within }   # Grab everything except chars on edges
-
     Keys.isearch_have_javascript { Search.isearch_log_javascript }
     Keys.isearch_have_line { Search.have_line }   # copy line back to search start
     Keys.isearch_have_output { Search.isearch_log }
@@ -407,9 +412,9 @@ class KeyBindings
     Keys.isearch_usurp { Search.isearch_pull_in_sexp }   # usurp: pull sexp into search string
     Keys.isearch_value { Search.insert_at_search_start }   # Value: copy value back to search start
     # W: leave unmapped for pulling into search
-    Keys.isearch_xtract { Search.move_to_search_start }   # eXtract: move back to search start
+    Keys.isearch_xtract { Search.move_to_search_start }   # Xtract: move back to search start
     # Y: leave unmapped for yank
-    # Z: zap?
+    Keys.isearch_zap { Search.zap }   # zap - delete up until search start
 
     define_key :isearch_mode_map, kbd("C-1") do
       Search.isearch_copy_as("1")

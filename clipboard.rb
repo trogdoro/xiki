@@ -142,8 +142,18 @@ class Clipboard
   end
 
   def self.as_thing
-    skip_chars_forward " "
-    left, right = bounds_of_thing_at_point(:sexp).to_a
+
+    # If on blank spaces, use them
+    if buffer_substring(point-1, point+1) =~ /[ \n] /
+      skip_chars_forward " "
+      right = point
+      skip_chars_backward " "
+      left = point
+    else
+      skip_chars_forward " "
+      left, right = bounds_of_thing_at_point(:sexp).to_a
+    end
+
     if Keys.prefix_u?
       left += 1
       right -= 1

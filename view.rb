@@ -599,6 +599,10 @@ class View
     buffer_substring(point, point+1)
   end
 
+  def self.char_before
+    buffer_substring(point-1, point)
+  end
+
   def self.visibility
     c = Keys.input(:one_char => true, :prompt => 'Layout Visibility: [f]ull, [h]igh, [m]edium, [l]ow   [s]tylized, [p]lain')
     case c.to_sym

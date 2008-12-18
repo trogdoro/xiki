@@ -2,7 +2,8 @@ require 'block'
 require 'stringio'
 gem 'ruby2ruby'
 require 'ruby2ruby'
-
+require 'parse_tree'
+require 'parse_tree_extensions'
 class Code
   extend ElMixin
 
@@ -93,7 +94,7 @@ class Code
 
     View.to_buffer "*rails console"
     erase_buffer
-    end_of_buffer
+    View.to_bottom
 
     #     if elvar.current_prefix_arg
     #       insert "reload!"
@@ -150,12 +151,18 @@ class Code
   end
 
   def self.do_as_rspec
+    # If U, just open spec
+    if Keys.prefix_u
+      View.open View.file.sub('/app/', '/spec/').sub(/\.rb/, '_spec.rb')
+      return
+    end
+
     orig = Location.new
     orig_index = View.index
 
     test = ""
-    # If not U, only run this test
-    unless Keys.prefix_u?
+    # If not 8, only run this test
+    unless Keys.prefix == 8
       before_search = Location.new
       Line.next
       if Search.backward("^ *it ")
@@ -270,8 +277,8 @@ class Code
   end
 
   def self.enter_log_console
-    View.insert "console.log(\"\");"
-    Move.backward 3
+    View.insert "console.log();"
+    Move.backward 2
   end
 
   def self.open_log_view

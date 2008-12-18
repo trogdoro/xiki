@@ -281,7 +281,7 @@ class Notes
     if Styles.inverse
 
       Styles.define :notes_h1,
-        :fg => 'ffffff', :bg => "333366"
+        :fg => 'ffffff', :bg => "333355"
       Styles.define :notes_h1_pipe,
         :fg => '7777aa', :bg => "333366"
 
