@@ -1,3 +1,5 @@
+require "mode"
+
 # Makes text in .deck files huge, and makes left and right arrow keys treat
 # headings as slides.
 class Deck
@@ -19,7 +21,6 @@ class Deck
 
   def self.keys
     $el.elvar.deck_mode_map = $el.make_sparse_keymap unless $el.boundp :deck_mode_map
-    Keys.custom_archive(:deck_mode_map) { Deck.archive }
 
     $el.define_key :deck_mode_map, $el.kbd("<right>") do
       $el.widen; Hide.show
@@ -35,18 +36,12 @@ class Deck
   end
 
   def self.init
-    self.keys
     self.define_styles
-
-    # Mode method
-    $el.defun(:deck_mode, :interactive => "", :docstring => "Apply deck styles, etc") {
-      $el.el4r_lisp_eval "(setq font-lock-defaults '(nil t))"
+    self.keys
+    # Make deck mode happen for .deck files
+    Mode.define(:deck, ".deck") do
       Deck.apply_styles
-      $el.use_local_map $el.elvar.deck_mode_map
-    }
-
-    # Associate with .deck file extension
-    $el.el4r_lisp_eval %q<(add-to-list 'auto-mode-alist '("\\\\.deck\\\\'" . deck-mode))>
+    end
   end
 end
 Deck.init   # Define mode
