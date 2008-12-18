@@ -1,3 +1,5 @@
+# Makes text in .deck files huge, and makes left and right arrow keys treat
+# headings as slides.
 class Deck
   @@size = 40
   def self.define_styles
@@ -10,9 +12,8 @@ class Deck
   def self.apply_styles
     # Normal text
     Styles.apply ".+", :deck_plain
-    # | Headings
+    # | Headings and - Bullets
     Styles.apply "^\\(| \\)\\(.*\n\\)", nil, :deck_h1_label, :deck_h1
-    # - Bullets
     Styles.apply "^\\( *\\)\\(-\\) \\(.+\\)", nil, :deck_plain, :deck_bullet, :deck_plain
   end
 
@@ -45,10 +46,7 @@ class Deck
     }
 
     # Associate with .deck file extension
-    $el.el4r_lisp_eval %q<
-      (add-to-list 'auto-mode-alist '("\\\\.deck\\\\'" . deck-mode))
-      >
+    $el.el4r_lisp_eval %q<(add-to-list 'auto-mode-alist '("\\\\.deck\\\\'" . deck-mode))>
   end
 end
 Deck.init   # Define mode
-Deck.keys   # Define local keys
