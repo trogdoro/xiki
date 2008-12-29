@@ -60,11 +60,11 @@ class KeyBindings
     # O: open...
     # Use O prefix for: opening, jumping to files
 
+    #Keys.OO { View.beep; View.message('Use enter_whitespace instead') }   # OO - open line (O's default)
     Keys.OO { open_line elvar.current_prefix_arg || 1 }   # OO - open line (O's default)
     Keys.open_a_calendar { calendar }
     #Keys.OAD { Svn.jump_to_diff }
     Keys.open_as_lisp { find_function_at_point }   # jump to definition of lisp function
-    #Keys.OAS { Search.google }   # Open As Search
     Keys.open_as_root { Files.open_sudo }
     Keys.open_a_shell { Console.open }
     Keys.open_as_tail { Files.open_tail }
@@ -159,13 +159,14 @@ class KeyBindings
     # Find new key for thisKeys.EO { DiffLog.enter_old }   # Enter Old: enter newly-deleted from last save
     Keys.enter_push { Repository.code_tree_diff(:enter=>true) }   # Commit to repos, push, etc
     Keys.enter_quoted { FileTree.enter_quoted }
-    #Keys.enter_replacement { Clipboard.enter_replacement }
+    Keys.enter_row { View.insert_line }
     Keys.enter_search { Search.enter_search }
     #Keys.enter_spot { Location.enter_at_spot }   # enter selected text at spot
     Keys.enter_tree { FileTree.tree(:here=>true) }
     Keys.enter_under { LineLauncher.launch(:blink=>true) }
     Keys.enter_viewing { History.enter_viewing }
     # W
+    Keys.enter_whitespace { open_line(elvar.current_prefix_arg || 1) }
     # X
     # Y
     # Z
@@ -182,9 +183,9 @@ class KeyBindings
     # Use D prefix for: things that modify text or execute code
 
     Keys.D { insert "Apparently this is necessary to remap C-d" }
+    #Keys.DD { View.beep; View.message('Use delete_you instead') }   # DD - delete character (D's default) **
     Keys.DD { delete_char elvar.current_prefix_arg || 1 }   # DD - delete character (D's default) **
     Keys.do_as_camelcase { Clipboard.do_as_camel_case }   # change word to camel case (LikeThat)
-    #Keys.DAL { Code.load_this_file }   # Do As Load: do a ruby load on the file
     Keys.do_as_javascript { Javascript.run }
     Keys.do_as_rspec { Code.do_as_rspec }
     Keys.do_as_underscores { Clipboard.do_as_snake_case }   # Change word to snake case (like_that)
@@ -238,7 +239,6 @@ class KeyBindings
     }
     Keys.do_lines_reverse { reverse_region(region_beginning, region_end) }
     Keys.do_lines_sort { sort_lines(nil, region_beginning, region_end) }
-    Keys.do_load_tab { Firefox.tab }
     Keys.do_linebreaks_unix { set_buffer_file_coding_system :unix }
     Keys.do_macro { Macros.run }   # do last macro *
     Keys.do_name_buffer { Buffers.rename }
@@ -255,12 +255,11 @@ class KeyBindings
     #    Keys.DS { elvar.current_prefix_arg ? johns_thing : Search.grep }   # Do Search: do grep search
     Keys.do_tree { FileTree.tree(:recursive=>true) }   # draw filesystem tree for current dir or bookmark
     Keys.do_under { FileTree.kill_under }   # kill tree children (lines indented more)
-    Keys.do_version { Repository.code_tree_diff_unadded }   # kill tree children (lines indented more)
-    #Keys.display_up { message FileTree.construct_path( :indented => true ) }   # display path to root of file
-    # V
+    #Keys.display_up { message FileTree.construct_path( :indented => true ) }   # Display ancestors (by indent level)
+    Keys.do_version { Repository.code_tree_diff_unadded }   # Compare with repos (with what hasn't been added yet)
     Keys.do_whitespace { Deletes.delete_whitespace }   # delete blank lines
     # X
-    # Z
+    Keys.do_you { delete_char elvar.current_prefix_arg || 1 }   # Delete character
     Keys.do_zip_next { Files.zip }
     Keys.set("C-d C-.") {   # Do .:  Go to point/bookmark starting with "." and run it (like pressing C-. on that line)
       input = Keys.input(:timed => true)
@@ -278,11 +277,11 @@ class KeyBindings
     # Use T prefix for: moving cursor, jumping to specific points
 
     Keys.TT { transpose_chars elvar.current_prefix_arg }   # TT - toggle character (T's default)
-    Keys.to_axis { Line.to_left }   # to beginning of file *
+    Keys.to_axis { Move.to_axis }   # to beginning of file *
     Keys.to_backward { backward_word(Keys.prefix || 1) }   # move backward one word
     Keys.to_clipboard { Search.to Clipboard[0] }   # move cursor to next instance of clipboard
     Keys.to_deleted { Location.to_spot('deleted') }   # **
-    Keys.to_end { Line.to_right }   # To end of line **
+    Keys.to_end { Move.to_end }   # To end of line **
     Keys.to_forward { forward_word(Keys.prefix || 1) }   # move forward one word
     Keys.to_highest { View.to_highest }   # to beginning of file **
     Keys.to_indent { Move.to_indent }
@@ -338,10 +337,10 @@ class KeyBindings
     Keys.layout_output { Code.open_log_view; Effects.blink(:what=>:line) }
     Keys.layout_previous { View.previous(:blink=>true) }   # previous view **
     # Q
-    Keys.layout_reveal { Hide.reveal }   # reveal all hidden text
+    Keys.layout_right { View.to_upper(:blink=>true) }   # Go to view to the right
     Keys.layout_search { Keys.prefix_u? ? Search.find_in_buffers(Keys.input(:prompt=>"Search all open files for: ")) : Hide.search }   # *
     Keys.layout_todo { FileTree.open_in_bar; Effects.blink(:what=>:line) }   # show bar on left with the quick bookmark named "-t" *
-    Keys.layout_upper { View.to_upper(:blink=>true) }   # go to uppermost view after bar
+    Keys.layout_uncover { Hide.reveal }   # Reveal all hidden text
     # V
     Keys.layout_visibility { View.visibility }
     Keys.layout_wrap { toggle_truncate_lines }   # wrap lines **
@@ -376,6 +375,7 @@ class KeyBindings
     Keys.isearch_g { Search.stop }   # Stop searching
     # have_...
     define_key :isearch_mode_map, kbd("C-h"), nil
+    Keys.isearch_have_bullet { Search.have_label }
     Keys.isearch_have_camel { Search.isearch_as_camel }
     # Keys.isearch_have_deleted {  }  # Move match to where you last deleted something
     Keys.isearch_have_within { Search.isearch_have_within }   # Grab everything except chars on edges
@@ -415,6 +415,23 @@ class KeyBindings
     Keys.isearch_xtract { Search.move_to_search_start }   # Xtract: move back to search start
     # Y: leave unmapped for yank
     Keys.isearch_zap { Search.zap }   # zap - delete up until search start
+
+    # Surround with characters (quotes and brackets)
+    define_key :isearch_mode_map, kbd('C-j C-"') do
+      Search.isearch_just_surround_with_char '"'
+    end
+    define_key :isearch_mode_map, kbd("C-j C-'") do
+      Search.isearch_just_surround_with_char "'"
+    end
+    define_key :isearch_mode_map, kbd("C-j C-9") do
+      Search.isearch_just_surround_with_char '(', ')'
+    end
+    define_key :isearch_mode_map, kbd("C-j C-[") do
+      Search.isearch_just_surround_with_char '[', ']'
+    end
+    define_key :isearch_mode_map, kbd("C-j C-{") do
+      Search.isearch_just_surround_with_char '{', '}'
+    end
 
     define_key :isearch_mode_map, kbd("C-1") do
       Search.isearch_copy_as("1")

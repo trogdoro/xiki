@@ -1,3 +1,4 @@
+require 'rubygems'
 require 'test/unit'
 require 'el_mixin'
 $:.unshift "../"
@@ -13,16 +14,19 @@ class RemoteTest < Test::Unit::TestCase
 
   def test_sort
     txt = "ajax/
-      apcx.orig
-      css/
-      f.wav
-      ".gsub(/^ +/, '')
+        apcx.orig
+        css/
+        f.wav
+        ".gsub(/^ +/, '')
 
-    expected = "ajax/
-      css/
-      apcx.orig
-      f.wav
-      ".gsub(/^ +/, '')
+    expected = ["ajax/", "css/", "apcx.orig", "f.wav"]
     assert_equal(expected, Remote.sort(txt))
   end
+
+  def test_split_root
+    assert_equal(["xiki", "xiki.org", "222", "/tmp"], Remote.split_root("xiki@xiki.org:222/tmp/"))
+    assert_equal(["xiki", "xiki.org", "22", "/tmp"], Remote.split_root("xiki@xiki.org/tmp/"))
+    assert_equal(["xiki", "xiki.org", "22", "/tmp"], Remote.split_root("/xiki@xiki.org/tmp/"))
+  end
+
 end

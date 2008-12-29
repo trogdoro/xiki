@@ -55,7 +55,7 @@ class Console
       if View.in_bar? and ! options[:dont_leave_bar]
         View.to_after_bar
       end
-      buffer ||= "*console*"
+      buffer ||= "*console #{dir}"
 
       if ! reuse_buffer# || ! View.buffer_open?(buffer)
         buffer = generate_new_buffer(buffer)
@@ -73,15 +73,16 @@ class Console
     end
   end
 
-  def self.open
-    dir = elvar.default_directory
-    switch_to_buffer generate_new_buffer("*console*")
+  def self.open dir=nil
+    View.handle_bar
+    dir ||= elvar.default_directory
+    View.to_buffer generate_new_buffer("*console #{dir}")
     elvar.default_directory = dir
     $el.shell current_buffer
   end
 
-  def self.enter
-    #command_execute
+  def self.enter command=nil
+    View.insert command if command
     comint_send_input
   end
 
@@ -89,18 +90,39 @@ class Console
     View.mode == :shell_mode
   end
 
-  def self.to_shell_buffer
-    if View.mode != :shell_mode
-      buffer = nil
-      with(:save_window_excursion) do
-        buffer = buffer_list.to_a.find{|b|
-          set_buffer b
-          (View.mode == :shell_mode && View.name !~ /^\*output /)
-        }
-      end
-      View.to_after_bar
-      View.to_buffer buffer_name(buffer)
+  def self.to_shell_buffer dir=nil
+    if dir
+      dir = "#{dir}/" unless dir =~ /\/$/
+      pattern = /^\*console #{Regexp.quote(dir)}(<|$)/
+    else
+      pattern = /^\*console/
     end
+
+    if View.name !~ pattern   # If not currently there
+      w = View.list.find{|w| buffer_name(window_buffer(w)) =~ pattern}
+      if w
+        View.to_window(w)
+      else
+        if dir =~ /@/   # If there's a @, it's remote
+          View.handle_bar
+          View.to_buffer generate_new_buffer("*console #{dir}")
+          dir.sub! /^\//, ''
+          dir.sub! /\/$/, ''
+          elvar.default_directory = "/tmp"
+          $el.shell current_buffer
+          if dir =~ /(.+?)(\/.+)/   # Split off dir if there
+            Console.enter "ssh #{$1}"
+            Console.enter "cd #{$2}"
+          else
+            Console.enter "ssh #{dir}"
+          end
+        else
+          Console.open dir
+        end
+      end
+
+    end
+    return
   end
 
   def self.do_last_command
@@ -110,11 +132,29 @@ class Console
     self.enter
   end
 
+  def self.launch_dollar options={}
+    orig = Location.new
+    path = FileTree.construct_path(:list=>true)
+    if path.first =~ /^\//   # If has dir (possibly remote)
+      line = path.join('')
+      dir, command = line.match(/(.+?)\$ (.+)/)[1..2]
+      Console.to_shell_buffer dir
+    else   # Otherwise, if by itself
+      command = Line.without_label.match(/.*?\$ (.+)/)[1]
+      Console.to_shell_buffer   # Go to shell if one is visible, and starts with "*console"
+    end
+
+    View.insert command
+    Console.enter
+
+    orig.go
+  end
+
   # Mapped to !! or ! in LineLauncher
   def self.launch options={}
     line = Line.without_label :leave_indent=>true
     #p Line.without_label
-    # If indented, check whether code tree, extracting if yes
+    # If indented, check whether file tree, extracting if yes
     if Line.value =~ /^\s+!/
       orig = View.cursor
       # - of previous line
@@ -130,18 +170,18 @@ class Console
       View.to orig
     end
     line =~ / *(.*?)!+(.+)/
-    dir ||= $1
+    dir ||= $1 unless $1.blank?
+
     command = $2
     if options[:sync]
       output = Console.run command, :dir=>dir, :sync=>true
-      # Add linebreak if blank
-      output.sub!(/\A\z/, "\n")
+      output.sub!(/\A\z/, "\n")   # Add linebreak if blank
       output.gsub!(/^/, '!')
       FileTree.indent(output)
       FileTree.insert_quoted_and_search output
     else
       View.handle_bar
-      Console.run command, :dir=>dir, :buffer=>"*console #{command.gsub(/[^\w]+/, ' ')[0..9]}"
+      Console.run command, :dir=>dir#, :buffer=>"*console #{dir}"
     end
   end
 end

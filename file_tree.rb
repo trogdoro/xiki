@@ -365,9 +365,10 @@ class FileTree
   # TODO: remove ignore_prefix, and just use Keys.clear_prefix
   def self.open options={}
     path = options[:path] || self.construct_path(:list=>true)
+    path_orig = path
 
     if path.is_a?(Array)
-      # Pull of search string if exists
+      # Pull off search string if exists
       search_string = path.pop[/\|(.+)/, 1] if path.last =~ /^\|/
       # Discard rest of |... lines
       path = path.grep(/^[^|]/).join('')
@@ -436,7 +437,7 @@ class FileTree
       set_visited_file_name path
       elvar.buffer_auto_save_file_name = nil
       # Get text from server and insert
-      View.insert self.remote_file_contents(path)
+      self.remote_file_contents(path)
     else   # Normal file opening
       options[:same_view] ? View.open(path, :same_view=>true) : Location.go(path)
 
@@ -1005,8 +1006,7 @@ class FileTree
       end
     end
 
-    # Get dirs and files in it
-    dirs, files = self.files_in_dir(dir, options)
+    dirs, files = self.files_in_dir(dir, options)   # Get dirs and files in it
 
     # Change path to proper indent
     dirs.collect!{|i| i.sub(/.*\/(.+)/, "#{indent}+ \\1/")}
@@ -1026,8 +1026,7 @@ class FileTree
 
     Move.to_line_text_beginning
 
-    # Kick off hidesearch (deleting)
-    self.search(:left => left, :right => right)
+    self.search(:left => left, :right => right)   # Kick off hidesearch (deleting)
 
   end
 
@@ -1395,7 +1394,7 @@ class FileTree
   end
 
   def self.is_remote? path
-    return path =~ /^\/\//
+    return path =~ /@/
   end
 
   # Returns the files in the dir
@@ -1403,7 +1402,7 @@ class FileTree
     if self.is_remote?(dir)
       self.remote_files_in_dir(dir)
     else
-      all = Dir.glob("#{dir}/*", File::FNM_DOTMATCH).
+      all = Dir.glob("#{dir}*", File::FNM_DOTMATCH).
         select {|i| i !~ /\/\.(\.*|svn|git)$/}.sort
 
       if options[:date_sort]
@@ -1416,38 +1415,21 @@ class FileTree
     end
   end
 
-  def self.remote_file_contents dir
-    url = self.url_from_path "ls", dir
+  def self.remote_file_contents file
+    path, file = file.match(/(.+\/)(.+)/)[1..2]
 
-    Net::HTTP.get URI.parse(url)
+    Remote.dir path, file   # Delegate to Remote.dir
   end
 
   def self.remote_files_in_dir dir
-    url = self.url_from_path "ls", dir
-    all = Net::HTTP.get URI.parse(url)
-    dirs, files = all.split(/-----\n/)
-    [(dirs || "").split("\n"), (files || "").split("\n")]
+    res = Remote.dir(dir)
+    res.map!{|i| "#{dir}#{i}"}
+    [res.select{|i| i =~ /\/$/}.map{|i| i.sub(/\/$/, '')}, res.select{|i| i !~ /\/$/}]
   end
 
   def self.url_from_path verb, path
     server, path = path.match(/([\w.-]+)(\/.*)/)[1..2]
     "http://#{server}:7433/#{verb}#{path}"
-  end
-
-  def self.save_remote
-    contents = View.txt
-    path = buffer_file_name
-    url = self.url_from_path "ls", path
-
-    # Post contents to url
-    save_url = URI.parse(url)
-    req = Net::HTTP::Post.new(save_url.path)
-
-    Net::HTTP.start(save_url.host, save_url.port) do |http|
-      http.post(save_url.path, contents) do |str|
-        message str
-      end
-    end
   end
 
   def self.indentify_path path
@@ -1464,18 +1446,15 @@ class FileTree
   def self.paths_to_tree paths
     result = ""
     stack = []
-    # For each path
-    paths.sort.each do |path|
-      # Create list from path
-      path = path.sub(/^\//, '')
+    paths.sort.each do |path|   # For each path
+      path = path.sub(/^\//, '')   # Create list from path
       split = path.split('/')
 
       # Pop from stack until path begins with stack
       while(stack.size > 0 && stack != split[0..(stack.size - 1)])
         stack.pop
       end
-      # Get remainder of path after stack
-      indent = stack.length
+      indent = stack.length   # Get remainder of path after stack
       remainder = split[indent..-1]
       remainder.each do |dir|
         result << "/" if indent == 0

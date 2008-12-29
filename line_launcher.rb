@@ -282,7 +282,6 @@ class LineLauncher
     end
 
 
-
     self.add :paren=>'elisp' do |line|   # Run lines like this: - foo (elisp): (bar)
       Line.to_right
       eval_last_sexp nil
@@ -291,6 +290,13 @@ class LineLauncher
     self.add :paren=>'ruby' do |line|   # - (ruby)
       message el4r_ruby_eval(line)
       #insert el4r_ruby_eval(line).to_s
+    end
+
+    self.add /^ *[$\/].+\$ / do   # $ run command in shell
+      Console.launch_dollar
+    end
+    self.add /^ *\$ / do   # $ run command in shell
+      Console.launch_dollar
     end
 
     self.add /\(other\)/ do |line|   # - (other)
@@ -347,13 +353,6 @@ class LineLauncher
       name = Line.without_label.sub(/\*/, '')
       View.to_after_bar
       View.to_buffer name
-    end
-
-    self.add(/^ *[$\/].+!!/) do |l|   # /dir!!shell command
-      Console.launch
-    end
-    self.add(/^ *!!/) do |l|   # !shell command
-      Console.launch
     end
 
     self.add(/^ *[$\/].+!/) do |l|   # /dir!shell command inline
