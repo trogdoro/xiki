@@ -13,9 +13,9 @@ class Remote
 
   def self.menu
     @@default_dirs.each do |d|
-      puts ".dir '#{d}'"
+      puts ".dir '#{d}'/"
     end
-    puts ".dir 'user@foo.com:22/tmp'"
+    puts ".dir 'user@foo.com:22/tmp'/"
   end
 
   # default_dirs attr

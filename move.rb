@@ -222,10 +222,14 @@ class Move
 
   def self.to_axis
     n = Keys.prefix_n   # Check for numeric prefix
-    # If there, move down
-    if n > 0
-      Line.next
-    end
-
+    Line.next(n) if n.is_a? Fixnum   # If there, move down
+    Line.to_left
   end
+
+  def self.to_end
+    n = Keys.prefix_n   # Check for numeric prefix
+    Line.next(n) if n.is_a? Fixnum   # If there, move down
+    Line.to_right
+  end
+
 end

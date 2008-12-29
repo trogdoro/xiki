@@ -74,7 +74,6 @@ class Console
   end
 
   def self.open
-    ControlLock.disable
     dir = elvar.default_directory
     switch_to_buffer generate_new_buffer("*console*")
     elvar.default_directory = dir
@@ -90,8 +89,7 @@ class Console
     View.mode == :shell_mode
   end
 
-  def self.do_last_command
-    # If not in shell buffer, go to it
+  def self.to_shell_buffer
     if View.mode != :shell_mode
       buffer = nil
       with(:save_window_excursion) do
@@ -103,16 +101,19 @@ class Console
       View.to_after_bar
       View.to_buffer buffer_name(buffer)
     end
+  end
 
-    erase_buffer
+  def self.do_last_command
+    self.to_shell_buffer   # If not in shell buffer, go to it
+    $el.erase_buffer
     comint_previous_input(1)
-    comint_send_input
+    self.enter
   end
 
   # Mapped to !! or ! in LineLauncher
   def self.launch options={}
     line = Line.without_label :leave_indent=>true
-    p Line.without_label
+    #p Line.without_label
     # If indented, check whether code tree, extracting if yes
     if Line.value =~ /^\s+!/
       orig = View.cursor
@@ -140,7 +141,7 @@ class Console
       FileTree.insert_quoted_and_search output
     else
       View.handle_bar
-      Console.run command, :dir=>dir, :buffer=>"*shell #{command.gsub(/[^\w]+/, ' ')[0..9]}"
+      Console.run command, :dir=>dir, :buffer=>"*console #{command.gsub(/[^\w]+/, ' ')[0..9]}"
     end
   end
 end

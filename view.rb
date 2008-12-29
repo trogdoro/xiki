@@ -714,5 +714,17 @@ class View
   def self.start
     $el.window_start
   end
+
+  def self.insert_line
+    orig_indent = Line.indent
+    n = Keys.prefix   # Check for numeric prefix
+    Line.previous if n == :u   # Make U insert before
+    Line.next(n) if n.is_a? Fixnum   # If there, move down
+    Line.to_right
+    View.insert "\n"
+    # Optionally indent
+    $el.indent_for_tab_command unless(View.mode == :fundamental_mode && orig_indent == '')
+  end
+
 end
 View.init

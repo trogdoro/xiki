@@ -15,17 +15,17 @@ class Firefox
   end
 
   def self.reload
-    self.exec "getWindows()[0].getBrowser().reload()"
-  end
-
-  def self.tab
-    tab = Keys.input(:prompt=>'Number of tab to go to: ', :timed => true).to_i - 1
-    # If 0, close tab
-    if tab == -1
-      Firefox.exec "getWindows()[0].getBrowser().removeCurrentTab();"
-    else
-      self.exec "getWindows()[0].getBrowser().tabContainer.selectedIndex = #{tab};"
+    prefix = Keys.prefix_n
+    if prefix   # If numeric prefix, go to that tab
+      tab = prefix - 1
+      if tab == -1   # If 0, close tab
+        Firefox.exec "getWindows()[0].getBrowser().removeCurrentTab();"
+      else
+        self.exec "getWindows()[0].getBrowser().tabContainer.selectedIndex = #{tab};"
+      end
     end
+
+    self.exec "getWindows()[0].getBrowser().reload()"
   end
 
   # Called internally by others

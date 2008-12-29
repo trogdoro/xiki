@@ -115,6 +115,12 @@ class Files
     puts CodeTree.tree_search_option + FileTree.paths_to_tree(paths)
   end
 
+  def self.edited_flat
+    paths = edited_array
+    paths.map!{|i| i.sub(/(.+\/)(.+)/, "- \\1\n  - \\2")}
+    CodeTree.tree_search_option + paths.join("\n")
+  end
+
   def self.history_array
     elvar.recentf_list.to_a
   end
@@ -145,7 +151,8 @@ class Files
   def self.open_edited
     case Keys.prefix
     when nil:  CodeTree.display_menu("- Files.edited 25/")
-    when 0, :u:  CodeTree.display_menu("- Files.edited/")
+    when 0:  CodeTree.display_menu("- Files.edited/")
+    when :u:  Keys.prefix = nil; CodeTree.display_menu("- Files.edited_flat/")
     else  CodeTree.display_menu("- Files.edited #{Keys.prefix}/")
     end
   end

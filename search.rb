@@ -63,7 +63,7 @@ class Search
     self.clear
     set_mark match_beginning(0) + 1
     goto_char match_end(0) - 1
-    Effects.blink :what => :region
+    Effects.blink :what=>:region
   end
 
   def self.isearch_delete
@@ -79,7 +79,7 @@ class Search
 
   def self.copy_and_comment
     self.clear
-    line = thing_at_point(:line).sub("\n", "")
+    line = Line.value(1, :include_linebreak=>true).sub("\n", "")
     Code.comment Line.left, Line.right
     self.to_start  # Go back to start
     insert "#{line}"
@@ -138,7 +138,7 @@ class Search
 
   # Do query replace depending on what they type
   def self.query_replace
-    first = Keys.input(:timed => true)
+    first = Keys.input(:timed=>true)
     # If they typed 'o', use clipboard 1 and clipboard 2
     if first == "o" || first == "1"
       query_replace_regexp($el.regexp_quote(Clipboard.get("1")), Clipboard.get("2"))
@@ -148,17 +148,17 @@ class Search
     # If 'q', prompt for both args
     elsif first == "q"
       query_replace_regexp(
-        Keys.input(:prompt => "Replace: "),
-        Keys.input(:prompt => "With: "))
+        Keys.input(:prompt=>"Replace: "),
+        Keys.input(:prompt=>"With: "))
     # If they typed 'c', use clipboard and prompt for 2nd arg
     elsif first == "c"
-      query_replace_regexp(Clipboard.get("0"), Keys.input(:prompt => "Replace with (pause when done): ", :timed => true))
+      query_replace_regexp(Clipboard.get("0"), Keys.input(:prompt=>"Replace with (pause when done): ", :timed=>true))
     # If they typed 'c', use clipboard and prompt for 2nd arg
     elsif first == "l"
       query_replace_regexp(@@query_from, @@query_to)
     # Otherwise, just get more input and use it
     else
-      query_replace_regexp(first, Keys.input(:timed => true))
+      query_replace_regexp(first, Keys.input(:timed=>true))
     end
   end
 
@@ -168,8 +168,8 @@ class Search
 
     self.clear
     to = start_with_search_string ?
-      Keys.input(:prompt => "Change instances of '#{txt}' to: ", :initial_input => txt) :
-      Keys.input(:prompt => "Change instances of '#{txt}' to: ")
+      Keys.input(:prompt=>"Change instances of '#{txt}' to: ", :initial_input=>txt) :
+      Keys.input(:prompt=>"Change instances of '#{txt}' to: ")
     @@query_from, @@query_to = txt, to
     query_replace_regexp(txt, to)
   end
@@ -182,7 +182,7 @@ class Search
     dir = Keys.bookmark_as_path   # Get path (from bookmark)
     input = Keys.prefix_u? ?   # Do search
       Clipboard.get("0") :
-      Keys.input(:prompt => "Text to search for: ")
+      Keys.input(:prompt=>"Text to search for: ")
 
     FileTree.grep_with_hashes dir, input
   end
@@ -195,7 +195,7 @@ class Search
 
     # Do search
     regex = Regexp.new("\\bdef .*#{match}\\b", Regexp::IGNORECASE)
-    FileTree.grep dir, regex, :bar => true
+    FileTree.grep dir, regex, :bar=>true
   end
 
 
@@ -271,7 +271,7 @@ class Search
   def self.isearch_find_in_buffers options={}
     self.clear
     match = self.match
-    self.find_in_buffers match, options#.merge({:in_bar => true})
+    self.find_in_buffers match, options
   end
 
   def self.find_in_buffers string, options={}
@@ -286,11 +286,11 @@ class Search
     erase_buffer
     View.insert "+ Buffers.search #{new_args}/"
     open_line 1
-    CodeTree.launch :no_search => true
+    CodeTree.launch :no_search=>true
     if new_options[:buffer]   # Goto first match
       $el.goto_line 4
       Line.to_words
-      FileTree.search(:recursive => false, :left => Line.left, :right => View.bottom)
+      FileTree.search(:recursive=>false, :left=>Line.left, :right=>View.bottom)
     else  # Goto first match in 2nd file
       $el.goto_line 2
       $el.re_search_forward "^  -", nil, true
@@ -299,7 +299,7 @@ class Search
     end
     # Do search if only one file
   #     if list.size == 1
-  #       FileTree.search(:recursive => false, :left => Line.left, :right => View.bottom)
+  #       FileTree.search(:recursive=>false, :left=>Line.left, :right=>View.bottom)
   #     end
 
   end
@@ -323,9 +323,17 @@ class Search
   # Insert line at beginning of search
   def self.have_line
     self.clear
-    line = thing_at_point(:line).sub("\n", "")
+    line = Line.value(1, :include_linebreak=>true).sub("\n", "")
     self.to_start  # Go back to start
     insert line
+  end
+
+  # Insert line at beginning of search
+  def self.have_label
+    self.clear
+    label = Line.label
+    self.to_start  # Go back to start
+    insert "- #{label}: "
   end
 
   # Insert line at beginning of search
@@ -437,7 +445,7 @@ class Search
     re_search_forward "^$", nil, 1
     right = point
     goto_char left
-    FileTree.search(:left => left, :right => right, :recursive => true)
+    FileTree.search(:left=>left, :right=>right, :recursive=>true)
   end
 
   def self.to_relative
@@ -505,9 +513,9 @@ class Search
 
   def self.outline_search
     if Keys.prefix_u?
-      History.open_current :bar => true, :all => true
+      History.open_current :bar=>true, :all=>true
     else
-      History.open_current :all => true
+      History.open_current :all=>true
     end
   end
 
@@ -522,11 +530,11 @@ class Search
   end
 
   def self.enter_search bm=nil, input=nil
-    bm ||= Keys.input(:timed => true, :prompt => "Enter bookmark in which to search: ")
+    bm ||= Keys.input(:timed=>true, :prompt=>"Enter bookmark in which to search: ")
     return unless bm
     input ||= Keys.prefix_u? ?   # Do search
       Clipboard.get("0") :
-      Keys.input(:prompt => "Text to search for: ")
+      Keys.input(:prompt=>"Text to search for: ")
 
     if bm == "."   # Do tree in dir from bookmark
       if Line.blank?
@@ -591,7 +599,7 @@ class Search
     Search.clear
     View.set_mark(Search.right)
     View.to(Search.left)
-    Effects.blink :what => :region
+    Effects.blink :what=>:region
   end
 
   def self.just_orange
@@ -605,6 +613,16 @@ class Search
     Effects.blink :left=>left, :right=>right
     View.delete(left, right)
     View.to(Search.left+1)
+  end
+
+  def self.isearch_just_surround_with_char left, right=nil
+    right ||= left
+    Search.clear
+    View.to(Search.right)
+    View.insert right
+    View.to(Search.left)
+    View.insert left
+    Move.backward
   end
 
   # Copy match as name (like Keys.as_name)

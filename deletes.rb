@@ -30,9 +30,17 @@ class Deletes
       Deletes.backward if Line.at_left
       delete_char(1) if Line.at_right
     end
-    delete_horizontal_space unless was_blank
-    View.insert(" " * prefix) if prefix
+    if was_blank
+      if prefix
+        View.insert("\n" * prefix)
+        Move.backward prefix
+      end
+    else
+      delete_horizontal_space
+      View.insert(" " * prefix) if prefix
+    end
   end
+
 
   def self.backward
     prefix = Keys.prefix

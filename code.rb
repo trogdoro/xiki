@@ -20,8 +20,14 @@ class Code
   end
 
   def self.comment left=nil, right=nil
-    left ||= region_beginning
-    right ||= region_end
+    n = Keys.prefix_n   # Check for numeric prefix
+    if n.is_a? Fixnum   # If there, move down
+      orig = Location.new
+      Line.next n
+      View.set_mark
+      orig.go
+    end
+    left, right = View.range
     comment_or_uncomment_region(left, right)
     Code.indent
   end

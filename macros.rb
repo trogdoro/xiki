@@ -28,6 +28,9 @@ class Macros
       apply_macro_to_region_lines left, point
       orig.go
       return
+    elsif Keys.prefix == 0   # If 0, do to region
+      $el.apply_macro_to_region_lines View.range_left, View.range_right
+      return
     end
 
     # Run it prefix times

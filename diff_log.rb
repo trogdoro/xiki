@@ -84,8 +84,8 @@ class DiffLog
     raw.gsub!(/^-(.*)/, "      |-\\1")
 
     # Return with path
-    "#{path}\n" +
-    "  #{file}\n" +
+    "- #{path}\n" +
+    "  - #{file}\n" +
     raw
   end
 
