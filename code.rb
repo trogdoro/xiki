@@ -49,7 +49,7 @@ class Code
       File.open("/tmp/tmp.rb", "w") { |f| f << Notes.get_block.text }
       return Console.run "ruby -I. /tmp/tmp.rb", :dir=>View.dir
     when 9   # Pass whole file as ruby
-      return Console.run("ruby #{View.file_name}", :buffer => "**ruby")
+      return Console.run("ruby #{View.file_name}", :buffer => "*console ruby")
 
     # If prefix of 1-6
     when 1..6

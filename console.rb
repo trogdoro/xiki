@@ -134,6 +134,7 @@ class Console
 
   def self.launch_dollar options={}
     orig = Location.new
+    orig_view = View.index
     path = FileTree.construct_path(:list=>true)
     if path.first =~ /^\//   # If has dir (possibly remote)
       line = path.join('')
@@ -147,7 +148,8 @@ class Console
     View.insert command
     Console.enter
 
-    orig.go
+    orig.go unless orig_view == View.index
+
   end
 
   # Mapped to !! or ! in LineLauncher
