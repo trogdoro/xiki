@@ -412,5 +412,12 @@ class LineLauncher
     return false
   end
 
+  def self.do_last_launch
+    orig = View.index
+    Move.to_window(1)
+    LineLauncher.launch_or_hide(:blink => (true))
+    View.to_nth orig
+  end
+
 end
 LineLauncher.init_default_launchers

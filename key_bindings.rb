@@ -237,6 +237,7 @@ class KeyBindings
         delete_non_matching_lines( Keys.input(:prompt => "Delete lines not having: ") )
       end
     }
+    Keys.do_last_launch { LineLauncher.do_last_launch }
     Keys.do_lines_reverse { reverse_region(region_beginning, region_end) }
     Keys.do_lines_sort { sort_lines(nil, region_beginning, region_end) }
     Keys.do_linebreaks_unix { set_buffer_file_coding_system :unix }
@@ -389,6 +390,7 @@ class KeyBindings
     # I: leave unmapped - had issues using it (messes up position)
     # just_...
     define_key :isearch_mode_map, kbd("C-j"), nil
+    Keys.isearch_just_bold { Search.isearch_just_surround_with_char('<b>', '</b>') }
     Keys.isearch_just_difflog { Search.jump_to_difflog }   # find last string in difflog
     Keys.isearch_just_camel { Search.isearch_just_camel }   # make match be camel case
     Keys.isearch_just_edges { Search.just_edges }   # delete everything but chars at edges of match

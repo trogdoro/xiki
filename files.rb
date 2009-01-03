@@ -87,7 +87,11 @@ class Files
   end
 
   def self.open_tail
-    Console.run "tail -f #{View.file}", :buffer => "*tail of #{View.file}"
+    bm = Keys.input(:timed=>true, :prompt=>"Enter bookmark of file to tail (or period for current file): ")
+    file = (bm == ".") ?
+      View.file :
+      Bookmarks["$#{bm}"]
+    Console.run "tail -f #{file}", :buffer => "*tail of #{file}"
   end
 
   def self.menu

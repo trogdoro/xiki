@@ -95,33 +95,35 @@ class Console
       dir = "#{dir}/" unless dir =~ /\/$/
       pattern = /^\*console #{Regexp.quote(dir)}(<|$)/
     else
+      # If already in a shell (regardless of buffer name)
+      return if View.mode == :shell_mode
       pattern = /^\*console/
     end
 
-    if View.name !~ pattern   # If not currently there
-      w = View.list.find{|w| buffer_name(window_buffer(w)) =~ pattern}
-      if w
-        View.to_window(w)
-      else
-        if dir =~ /@/   # If there's a @, it's remote
-          View.handle_bar
-          View.to_buffer generate_new_buffer("*console #{dir}")
-          dir.sub! /^\//, ''
-          dir.sub! /\/$/, ''
-          elvar.default_directory = "/tmp"
-          $el.shell current_buffer
-          if dir =~ /(.+?)(\/.+)/   # Split off dir if there
-            Console.enter "ssh #{$1}"
-            Console.enter "cd #{$2}"
-          else
-            Console.enter "ssh #{dir}"
-          end
-        else
-          Console.open dir
-        end
-      end
+    return if View.name =~ pattern   # If already there, do nothing
 
+    w = View.list.find{|w| buffer_name(window_buffer(w)) =~ pattern}
+    if w
+      View.to_window(w)
+    else
+      if dir =~ /@/   # If there's a @, it's remote
+        View.handle_bar
+        View.to_buffer generate_new_buffer("*console #{dir}")
+        elvar.default_directory = "/tmp"
+        $el.shell current_buffer
+        if dir =~ /(.+?)(\/.+)/   # Split off dir if there
+          line = self.ssh_line($1)
+          Console.enter line
+          Console.enter "cd #{$2}"
+        else
+          line = self.ssh_line(dir)
+          Console.enter line
+        end
+      else
+        Console.open dir
+      end
     end
+
     return
   end
 
@@ -186,4 +188,17 @@ class Console
       Console.run command, :dir=>dir#, :buffer=>"*console #{dir}"
     end
   end
+
+  def self.ssh_line path
+    path.sub! /^\//, ''
+    path.sub! /\/$/, ''
+
+    if path =~ /(.+):(.+)/   # If port exists (colon)
+      "ssh -p #{$2} #{$1}"
+      # Pull out and pass with -p
+    else
+      "ssh #{path}"
+    end
+  end
+
 end

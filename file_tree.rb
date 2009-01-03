@@ -431,13 +431,9 @@ class FileTree
       View.to_after_bar if View.in_bar?
     end
 
-    # Open or go to file
-    if remote
-      View.to_buffer path
-      set_visited_file_name path
-      elvar.buffer_auto_save_file_name = nil
-      # Get text from server and insert
-      self.remote_file_contents(path)
+    if remote   # Open or go to file
+      self.remote_file_contents(path)   # Get text from server and insert
+
     else   # Normal file opening
       options[:same_view] ? View.open(path, :same_view=>true) : Location.go(path)
 
@@ -1417,7 +1413,6 @@ class FileTree
 
   def self.remote_file_contents file
     path, file = file.match(/(.+\/)(.+)/)[1..2]
-
     Remote.dir path, file   # Delegate to Remote.dir
   end
 
