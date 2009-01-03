@@ -401,10 +401,14 @@ class Notes
 
     prefix = Keys.prefix
 
-    # If non-blank line
-    if ! Line.blank?   # Line
-      if Line.matches(/^ *[|+-]/)   # If bullet already, just make new line after
-        # Continue on below
+    if ! Line.blank?   # If non-blank line
+      if Line.matches(/^ *[|+-]/)   # If bullet already
+        if Line.point == Line.right   # If cursor at end of line
+          # Will move down one line
+        else   # Else, leave rest of line to be text of bullet
+          Deletes.delete_whitespace
+        end
+        View.insert "\n"
       else   # If not bullet, make it a bullet
         # Get line minus indent, and indent one deeper than previous
         line = Line.value(1, :delete=>true).sub(/^ +/, '')
@@ -418,11 +422,8 @@ class Notes
         return
       end
 
-    # Make extra line if none there yet
-
-      Line.to_right
-      View.insert "\n"
     end
+
     if prefix.is_a? Fixnum   # If numeric prefix, indent by n
       View.insert((" " * prefix) + bullet_text)
     else   # Get bullet indent of previous line
