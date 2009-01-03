@@ -169,6 +169,16 @@ class LineLauncher
       orig.go
     end
 
+    self.add :paren=>"th" do   # - (th): thesaurus.com
+      url = Line.without_label.sub(/^\s+/, '').gsub('"', '%22').gsub(':', '%3A').gsub(' ', '%20')
+      browse_url "http://thesaurus.reference.com/browse/#{url}"
+    end
+
+    self.add :paren=>"dic" do   # - (th): thesaurus.com
+      url = Line.without_label.sub(/^\s+/, '').gsub('"', '%22').gsub(':', '%3A').gsub(' ', '%20')
+      browse_url "http://dictionary.reference.com/browse/#{url}"
+    end
+
     self.add :paren=>"click" do   # - (js): js to run in firefox
       Firefox.run("$('a:contains(#{CodeTree.line_or_children}):first').click()")
     end
@@ -336,12 +346,8 @@ class LineLauncher
     end
 
     self.add :label=>/^google$/ do |line|  # - google:
-      url = Line.without_label.sub(/^\s+/, '')
-      url.gsub!('"', '%22')
-      url.gsub!(':', '%3A')
-      url.gsub!(' ', '%20')
+      url = Line.without_label.sub(/^\s+/, '').gsub('"', '%22').gsub(':', '%3A').gsub(' ', '%20')
       browse_url "http://www.google.com/search?q=#{url}"
-
     end
 
     self.add(/^ *$/) do |line|  # Empty line: open dir
