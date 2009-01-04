@@ -511,6 +511,14 @@ class Search
     insert line
   end
 
+  def self.outline
+    if Keys.prefix_u?
+      History.open_current :outline => true, :prompt_for_bookmark => true
+    else
+      History.open_current :outline => true
+    end
+  end
+
   def self.outline_search
     if Keys.prefix_u?
       History.open_current :bar=>true, :all=>true

@@ -398,12 +398,13 @@ class Notes
   end
 
   def self.bullet bullet_text="- "
-
-    prefix = Keys.prefix
+    prefix = Keys.prefix :clear=>true
 
     if ! Line.blank?   # If non-blank line
       if Line.matches(/^ *[|+-]/)   # If bullet already
-        if Line.point == Line.right   # If cursor at end of line
+        # If cursor at end or beginning of line
+        if Line.point == Line.right || Line.point == Line.left
+          Line.to_right
           # Will move down one line
         else   # Else, leave rest of line to be text of bullet
           Deletes.delete_whitespace
@@ -429,7 +430,7 @@ class Notes
     else   # Get bullet indent of previous line
       prev = Line.value(0)[/^( *)[+-]/, 1]
       prev = prev ? "  #{prev}#{bullet_text}" : bullet_text
-      prev.sub!(/^  /, '') if Keys.prefix_u?   # Don't indent if U
+      prev.sub!(/^  /, '') if prefix == :u   # Don't indent if U
       View.insert prev
     end
 

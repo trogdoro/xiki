@@ -639,6 +639,12 @@ class View
   end
 
   def self.init
+    @@dimension_options ||= []   # Set to empty if not set yet
+    self.add_dimension_option 'full', proc {View.dimensions_full}
+    self.add_dimension_option 'large', proc {View.dimensions_set(145, 58, 46, 22)}
+    self.add_dimension_option 'medium', proc {View.dimensions_set(145, 50)}
+    self.add_dimension_option 'small', proc {View.dimensions_set(80, 28)}
+
     $el.winner_mode 1
   end
 
@@ -678,19 +684,21 @@ class View
 
   end
 
-  def self.dimensions_large
-    self.fullscreen_off
-    set_frame_size(View.frame, 145, 58)
-    set_frame_position(View.frame, 46, 22)
+  # Show dimension options, and invoke corresponding proc
+  def self.dimensions
+    message = @@dimension_options.map{|i|
+      "[#{i.first[/./]}]#{i.first[/.(.+)/,1]}"}.
+      join(', ')
+    c = Keys.input(:one_char => true, :prompt => message)
+    option = @@dimension_options.find{|i| i.first =~ /^#{c}/}
+    return View.message("Option not #{c} found") if option.nil?
+    option[1].call
   end
-  def self.dimensions_medium
+
+  def self.dimensions_set size_x, size_y, position_x=nil, position_y=nil
     self.fullscreen_off
-    set_frame_size(View.frame, 145, 50)
-    #set_frame_position(View.frame, 223, 22)
-  end
-  def self.dimensions_small
-    self.fullscreen_off
-    set_frame_size(View.frame, 80, 28)
+    set_frame_size(View.frame, size_x, size_y)
+    set_frame_position(View.frame, position_x, position_y) unless position_x.nil?
   end
 
   # Toggle full-screen mode
@@ -724,6 +732,13 @@ class View
     View.insert "\n"
     # Optionally indent
     $el.indent_for_tab_command unless(View.mode == :fundamental_mode && orig_indent == '')
+  end
+
+  # Make another option show up for View.dimensions
+  def self.add_dimension_option name, the_proc
+    # Delete if there already
+    @@dimension_options.delete_if{|i| i.first == name}
+    @@dimension_options << [name, the_proc]
   end
 
 end

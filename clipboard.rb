@@ -177,7 +177,8 @@ class Clipboard
   end
 
   def self.as_line many=nil
-    many ||= Keys.prefix || 1
+    many ||= Keys.prefix(:clear=>true) || 1
+    Move.to_axis
     left = Line.left
     right = Line.left(many+1)
     Clipboard.set("0", View.txt(left, right))

@@ -20,8 +20,9 @@ class Code
   end
 
   def self.comment left=nil, right=nil
-    n = Keys.prefix_n   # Check for numeric prefix
-    if n.is_a? Fixnum   # If there, move down
+    n = Keys.prefix_n(:clear=>true)   # Check for numeric prefix
+    if n   # If there, move down
+      Move.to_axis
       orig = Location.new
       Line.next n
       View.set_mark

@@ -90,45 +90,53 @@ class Console
     View.mode == :shell_mode
   end
 
-  def self.to_shell_buffer dir=nil
+  def self.to_shell_buffer dir=nil, options={}
     if dir
       dir = "#{dir}/" unless dir =~ /\/$/
       pattern = /^\*console #{Regexp.quote(dir)}(<|$)/
     else
       # If already in a shell (regardless of buffer name)
-      return if View.mode == :shell_mode
+      return true if View.mode == :shell_mode
       pattern = /^\*console/
     end
 
-    return if View.name =~ pattern   # If already there, do nothing
+    return true if View.name =~ pattern   # If already there, do nothing
 
     w = View.list.find{|w| buffer_name(window_buffer(w)) =~ pattern}
-    if w
+    if w   # If found, just go to it
       View.to_window(w)
-    else
-      if dir =~ /@/   # If there's a @, it's remote
-        View.handle_bar
-        View.to_buffer generate_new_buffer("*console #{dir}")
-        elvar.default_directory = "/tmp"
-        $el.shell current_buffer
-        if dir =~ /(.+?)(\/.+)/   # Split off dir if there
-          line = self.ssh_line($1)
-          Console.enter line
-          Console.enter "cd #{$2}"
-        else
-          line = self.ssh_line(dir)
-          Console.enter line
-        end
-      else
-        Console.open dir
-      end
+      return true
     end
 
-    return
+    # Wasn't found in visible, so don't create it if so instructed
+    return false   if options[:no_create]
+
+    if dir =~ /@/   # If there's a @, it's remote
+      View.handle_bar
+      View.to_buffer generate_new_buffer("*console #{dir}")
+      elvar.default_directory = "/tmp"
+      $el.shell current_buffer
+      if dir =~ /(.+?)(\/.+)/   # Split off dir if there
+        line = self.ssh_line($1)
+        Console.enter line
+        Console.enter "cd #{$2}"
+      else
+        line = self.ssh_line(dir)
+        Console.enter line
+      end
+    else
+      Console.open dir
+    end
+
+    return true
   end
 
   def self.do_last_command
-    self.to_shell_buffer   # If not in shell buffer, go to it
+    # TODO if none visible, don't do anything
+    found = self.to_shell_buffer(nil, :no_create=>true)   # If not in shell buffer, go to it
+
+    return View.message("No *console buffer was visible") unless found
+
     $el.erase_buffer
     comint_previous_input(1)
     self.enter
