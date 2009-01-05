@@ -62,7 +62,7 @@ class KeyBindings
 
     #Keys.OO { View.beep; View.message('Use enter_whitespace instead') }   # OO - open line (O's default)
     Keys.OO { open_line elvar.current_prefix_arg || 1 }   # OO - open line (O's default)
-    Keys.open_a_calendar { calendar }
+    #     Keys.open_a_calendar { calendar }
     #Keys.OAD { Svn.jump_to_diff }
     Keys.open_as_lisp { find_function_at_point }   # jump to definition of lisp function
     Keys.open_as_root { Files.open_sudo }
@@ -80,6 +80,7 @@ class KeyBindings
     Keys.open_in_right { View.open_in_right }
     Keys.open_in_os { Files.open_in_os }
     Keys.open_just { Files.open_just }
+    Keys.open_key { Keys.jump_to_code }   # jump to ruby code of key definition *
     Keys.open_list_bookmarks { CodeTree.display_menu("- Bookmarks.tree/") }
     Keys.open_list_faces { list_faces_display }
     Keys.open_lisp_error { Code.show_el4r_error }
@@ -211,7 +212,7 @@ class KeyBindings
       end
     }
     Keys.do_compare_views { ediff_buffers( window_buffer(nth(0, window_list)), window_buffer(nth(1, window_list))) }   # compare buffers in first two views
-    Keys.DC1 { Clipboard.diff_1_and_2 }
+    Keys.DC1 { Clipboard.diff_1_and_2 }   # Compare contents of clipboards "1" and "2"
     # D: defined above - mapped to what C-d does by default
     Keys.do_expand { dabbrev_expand nil }   # expand abbreviation
     Keys.do_forword { kill_word(Keys.prefix || 1) }   # delete word forward
@@ -219,7 +220,6 @@ class KeyBindings
     # G: leave unmapped for escape
     Keys.do_indent { Code.indent_to }
     Keys.do_junior { FileTree.move_dir_to_junior }   # Move a dir to next line, and indent
-    #Keys.DK1 { KeyBindings.keys }   # Do Keys 1: load key bindings "1" (currently this file)
     Keys.do_kill_all { View.kill_all }   # kill all text in buffer
     Keys.do_kill_duplicates { Code.do_kill_duplicates }
     Keys.do_kill_filter { Search.kill_filter }
@@ -251,7 +251,7 @@ class KeyBindings
     Keys.do_outline { History.open_current :outline => true, :prompt_for_bookmark => true }
     Keys.do_push { Repository.code_tree_diff }   # Commit to repos, push, etc
     Keys.do_query { Search.query_replace }   # do query replace *
-    Keys.do_ruby { Code.run }   # run code as ruby *
+    Keys.do_run { Code.run }   # run code as ruby *
     Keys.do_search { Search.tree_grep }   # do grep search *
     #    Keys.DS { elvar.current_prefix_arg ? johns_thing : Search.grep }   # Do Search: do grep search
     Keys.do_tree { FileTree.tree(:recursive=>true) }   # draw filesystem tree for current dir or bookmark
@@ -287,7 +287,7 @@ class KeyBindings
     Keys.to_highest { View.to_highest }   # to beginning of file **
     Keys.to_indent { Move.to_indent }
     Keys.to_junior { Move.to_junior }
-    Keys.to_key { Keys.jump_to_code }   # jump to ruby code of key definition *
+    # K
     Keys.to_lowest { View.to_bottom }   # move to end *
     #Keys.to_line { Move.to_line }   # move to line number *
     Keys.to_matching { Move.to_other_bracket }   # to matching bracket, etc
@@ -319,10 +319,7 @@ class KeyBindings
     Keys.layout_balance { View.balance }   # balance windows *
     Keys.layout_create { View.create }   # open new view **
 
-    Keys.layout_dimensions_full { View.dimensions_full }
-    Keys.layout_dimensions_large { View.dimensions_large }
-    Keys.layout_dimensions_medium { View.dimensions_medium }
-    Keys.layout_dimensions_small { View.dimensions_small }
+    Keys.layout_dimensions { View.dimensions }
 
     Keys.layout_expand { View.enlarge }   # *
     # F
@@ -367,7 +364,7 @@ class KeyBindings
 
   # Control keys during isearch
   def self.isearch
-    Keys.isearch_ahead { Search.to_left }
+    Keys.isearch_axis { Search.to_left }
     # B: leave unmapped for back
     Keys.isearch_clipboard { Search.copy }   # Clipboard (copy)
     Keys.isearch_delete { Search.isearch_delete }   # Delete

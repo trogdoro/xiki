@@ -146,6 +146,8 @@ class Console
     orig = Location.new
     orig_view = View.index
     path = FileTree.construct_path(:list=>true)
+    path[0] = Bookmarks[path[0]]   # Expand out bookmark at root, if there
+
     if path.first =~ /^\//   # If has dir (possibly remote)
       line = path.join('')
       dir, command = line.match(/(.+?)\$ (.+)/)[1..2]
@@ -159,7 +161,6 @@ class Console
     Console.enter
 
     orig.go unless orig_view == View.index
-
   end
 
   # Mapped to !! or ! in LineLauncher

@@ -1487,7 +1487,7 @@ class FileTree
   def self.matches_root_pattern? path
     without_label = Line.without_label :line=>path#, :leave_indent=>true
     without_label =~ /^\/[^\n,]*$/ ||
-    without_label =~ /^(~\/|\.+\/|\$.+\/$)/
+    without_label =~ /^(~\/|\.+\/|\$[\w-].*$)/
   end
 
   def self.create_dir
@@ -1684,7 +1684,7 @@ private
   def self.open_as_upper
     orig_u = Keys.prefix_u
     view = View.current
-    path = FileTree.construct_path
+    path = FileTree.construct_path(:list=>true)
     View.to_upper
     was_at_top = View.start == View.point
     $el.split_window_vertically

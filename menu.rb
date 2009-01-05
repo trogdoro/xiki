@@ -19,25 +19,32 @@ class Menu
 
   def self.add_item menu, name, function
     menu_spaces = menu.join(' ').downcase
-    lisp = %Q<
+    lisp = "
       (define-key global-map
         [menu-bar #{menu_spaces} #{function}]
-        '("#{name}" . #{function}))
-    >
+        '(\"#{name}\" . #{function}))
+    "
     #puts lisp
     $el.el4r_lisp_eval lisp
   end
 
   def self.init
+
     add_menu 'Xiki'
-    add_menu 'Xiki', 'ISearch'
-    add_menu 'Xiki', 'Layout'
-    add_menu 'Xiki', 'To'
-    add_menu 'Xiki', 'Do'
-    add_menu 'Xiki', 'Enter'
-    add_menu 'Xiki', 'Open'
-    add_menu 'Xiki', 'As'
+
+    menus = [
+      ['Xiki', 'To'],
+      ['Xiki', 'Open'],
+      ['Xiki', 'Layout'],
+      ['Xiki', 'As'],
+      ['Xiki', 'Enter'],
+      ['Xiki', 'Do'],
+      ['Xiki', 'ISearch']
+    ]
+    menus.reverse.each do |tuple|
+      #       puts "#{tuple[0]}, #{tuple[1]}"
+      add_menu tuple[0], tuple[1]
+    end
   end
 
 end
-
