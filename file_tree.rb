@@ -1670,17 +1670,33 @@ private
       orig = Location.new
       indent = Line.indent
       txt = View.paragraph(:start_here => true, :delete => true)
-      first, rest = txt.match(/(.+?)\n(.+)/m)[1..2]
-      if Keys.prefix_u?
-        rest.sub! /^\s*[+-] /, ''
-        rest.gsub! /^  /, ''
-        View.insert "#{first}#{rest}"
-      else
-        first.sub! /(.+\/)(.+\/)$/, "\\1\n  - \\2"
-        rest.gsub! /^/, "#{indent}  "
-        View.insert "#{first}\n#{rest}"
-      end
+      View.insert self.move_dir_to_junior_internal(txt, Keys.prefix_u?)
+
       orig.go
+
+    end
+  end
+
+  def self.move_dir_to_junior_internal txt, prefix_u=nil
+
+    first, rest = txt.match(/(.+?\n)(.+)/m)[1..2]
+    indent = first[/ */]
+
+    # Split off any text not under branch (of first line)
+    # Text indented the same as the first line (and after)
+    rest_and_siblings = rest.match(/(.*?)^(#{indent}[^ \n].*)/m)
+    rest, siblings = rest_and_siblings ? rest_and_siblings[1..2] : [rest, ""]
+
+    # What does this do??
+    if prefix_u
+      rest.sub! /^\s*[+-] /, ''
+      rest.gsub! /^  /, ''
+      "#{first}#{rest}#{siblings}"
+    else
+
+      first.sub! /(.+\/)(.+\/)$/, "\\1\n#{indent}  - \\2"
+      rest.gsub! /^/, "  "
+      "#{first}#{rest}#{siblings}"
     end
   end
 

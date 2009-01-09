@@ -434,7 +434,7 @@ class View
 
   def self.to_highest
     prefix = Keys.prefix
-    return self.to_line prefix if prefix   # If prefix, go to that line
+    return self.to_line(prefix) if(prefix)   # If prefix, go to that line
     self.to_top
   end
 
@@ -645,7 +645,7 @@ class View
     self.add_dimension_option 'medium', proc {View.dimensions_set(145, 50)}
     self.add_dimension_option 'small', proc {View.dimensions_set(80, 28)}
 
-    $el.winner_mode 1
+    $el.winner_mode 1 rescue nil
   end
 
   def self.paragraph options={}

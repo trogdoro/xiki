@@ -2,6 +2,8 @@ require 'test/unit'
 require 'el_mixin'
 $:.unshift "../"
 require 'file_tree'
+require 'ol'
+require 'keys'
 
 class FileTreeTest < Test::Unit::TestCase
 
@@ -75,7 +77,7 @@ class FileTreeTest < Test::Unit::TestCase
        |    + b.txt
        |".gsub(/^ *\|/, '')
 
-# TODO: uncomment
+    # TODO: uncomment
     #assert_equal tree, FileTree.paths_to_tree(paths)
   end
 
@@ -116,7 +118,7 @@ class FileTreeTest < Test::Unit::TestCase
             helpers/
       ".gsub(/^      /, '').split("\n")
 
-# TODO
+    # TODO
     #assert_equal after, FileTree.search_dir_names(tree, /todo/)
   end
 
@@ -147,7 +149,65 @@ class FileTreeTest < Test::Unit::TestCase
     assert_equal true, FileTree.is_root?("  ./hey")
     assert_equal false, FileTree.is_root?("  .you")
     assert_equal true, FileTree.is_root?("  $tr/")
-    assert_equal false, FileTree.is_root?("  $tr")
+    #     assert_equal false, FileTree.is_root?("  $tr")
+  end
+
+  def test_move_dir_to_junior_internal
+    before =
+      "|- /projects/foo/
+       |  - pages.rb
+       |".gsub(/^ *\|/, '')
+    after =
+      "|- /projects/
+       |  - foo/
+       |    - pages.rb
+       |".gsub(/^ *\|/, '')
+    assert_equal after, FileTree.move_dir_to_junior_internal(before)
+  end
+  def test_move_dir_to_junior_internal_indented
+    before =
+      "|  - app/controllers/
+       |    - pages.rb
+       |      |def
+       |".gsub(/^ *\|/, '')
+    after =
+      "|  - app/
+       |    - controllers/
+       |      - pages.rb
+       |        |def
+       |".gsub(/^ *\|/, '')
+    assert_equal after, FileTree.move_dir_to_junior_internal(before)
+  end
+  def test_move_dir_to_junior_internal_indented
+    before =
+      "|- app/controllers/
+       |  - pages.rb
+       |- stay
+       |".gsub(/^ *\|/, '')
+    after =
+      "|- app/
+       |  - controllers/
+       |    - pages.rb
+       |- stay
+       |".gsub(/^ *\|/, '')
+    assert_equal after, FileTree.move_dir_to_junior_internal(before)
+  end
+
+  def test_move_dir_to_junior_internal_indented_complex
+    before =
+      "|  - app/controllers/
+       |    - pages.rb
+       |  - stay
+       |    - stay2
+       |".gsub(/^ *\|/, '')
+    after =
+      "|  - app/
+       |    - controllers/
+       |      - pages.rb
+       |  - stay
+       |    - stay2
+       |".gsub(/^ *\|/, '')
+    assert_equal after, FileTree.move_dir_to_junior_internal(before)
   end
 
 end
