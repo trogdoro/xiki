@@ -185,7 +185,7 @@ class Code
     path = buffer_file_name
     # Chop off up until before /spec/
     dir, spec = path.match(/(.+)\/(spec\/.+)/)[1,2]
-    Console.run "spec #{spec}#{test}", :dir => dir, :buffer => '*spec', :reuse_buffer => true
+    Console.run "spec #{spec}#{test}", :dir => dir, :buffer => '*console for rspec', :reuse_buffer => true
     orig.go unless View.index == orig_index   # Go back unless in same view
 
   end
@@ -259,9 +259,19 @@ class Code
   def self.do_kill_duplicates
     txt = View.selection :delete => true
     l = txt.split("\n")
-    View.insert l.uniq.join("\n")
+    orig = Location.new
+    View.insert l.uniq.join("\n") + "\n"
+    orig.go
   end
 
+  def self.randomize_lines
+    txt = View.selection :delete => true
+    l = txt.split("\n")
+    orig = Location.new
+    View.insert l.sort_by{ rand }.sort_by{ rand }.join("\n") + "\n"
+    View.set_mark
+    orig.go
+  end
 
   def self.do_next_paragraph
     orig = Location.new

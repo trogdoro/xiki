@@ -78,7 +78,7 @@ class Bookmarks
       View.message "Buffer '#{found[1]}' not currently open."
       return true
     end
-# Do nothing if already open
+    # Do nothing if already open
 
 
     View.to_buffer found[1]
@@ -144,20 +144,18 @@ class Bookmarks
 
       # Expand bookmark
       bm = bookmark_get_filename(bm)
-
       # If a slash, cut off filename if there is one (only dir is wanted)
       if slash != ""
         bm.sub!(/[^\\\/]+$/, "")
       end
 
       path = "#{bm}#{rest}"
-
       # Expand ~/ if it has it
-      path = View.expand_path(path) if path =~ /^~/
+      path = View.expand_path(path)  if path =~ /^~/
 
       path
 
-    elsif path =~ /^~/  # If home dir, expand
+    elsif path =~ /^~\//  # If home dir, expand
       # Expand ~/ if it has it
       View.expand_path(path)
 
@@ -174,7 +172,6 @@ class Bookmarks
   def self.collapse path
 
     %w[a tr p n].each do |bm|
-#    %w[mo vi co ap tr p].each do |bm|
       find = bookmark_get_filename(bm)
       next unless find
       find.sub!(/[^\/]+$/, "")

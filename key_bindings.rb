@@ -129,6 +129,7 @@ class KeyBindings
     Keys.enter_as_camelcase { insert TextUtil.camel_case(Clipboard.get(0)) }
     Keys.enter_as_debug { Code.enter_as_debug }
     Keys.enter_as_filename { insert Clipboard.get(".") }
+    Keys.enter_as_search { FileTree.enter_as_search }
     Keys.enter_as_trunk { Code.enter_as_trunk }
     Keys.enter_as_underscores { View.insert TextUtil.snake_case(Clipboard.get(0)) }
     Keys.enter_as_variable { insert "\#{#{Clipboard.get(0)}}" }
@@ -221,10 +222,10 @@ class KeyBindings
     Keys.do_indent { Code.indent_to }
     Keys.do_junior { FileTree.move_dir_to_junior }   # Move a dir to next line, and indent
     Keys.do_kill_all { View.kill_all }   # kill all text in buffer
-    Keys.do_kill_duplicates { Code.do_kill_duplicates }
     Keys.do_kill_filter { Search.kill_filter }
     Keys.do_kill_siblings { CodeTree.kill_siblings }   # kill adjacent lines at same indent as this one
     Keys.do_kill_thing { delete_region(* bounds_of_thing_at_point( :sexp )) }   # kill adjacent lines at same indent as this one
+    Keys.do_lines_arbitrary { Code.randomize_lines }
     Keys.do_load_browser { Firefox.reload }
     Keys.do_last_command { Console.do_last_command }
     Keys.do_linebreaks_dos { set_buffer_file_coding_system :dos }
@@ -237,6 +238,7 @@ class KeyBindings
         delete_non_matching_lines( Keys.input(:prompt => "Delete lines not having: ") )
       end
     }
+    Keys.do_lines_individual { Code.do_kill_duplicates }   # Uniqify, delete duplicates
     Keys.do_last_launch { LineLauncher.do_last_launch }
     Keys.do_lines_reverse { reverse_region(region_beginning, region_end) }
     Keys.do_lines_sort { sort_lines(nil, region_beginning, region_end) }

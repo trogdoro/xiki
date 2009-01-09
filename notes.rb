@@ -334,7 +334,7 @@ class Notes
     Styles.apply("^ +\\(!.*\n\\)", nil, :ls_quote)   # ^!... for commands
 
     # exclamation! / todo
-    Styles.apply("^[ \t]*\\(-\\) \\(.+!\\)$", nil, :notes_exclamation, :notes_exclamation)
+    Styles.apply("^[ \t]*\\(-\\) \\(.+!\\)$", nil, :ls_bullet, :notes_exclamation)
     Styles.apply("^ +\\(!\\+.*\n\\)", nil, :diff_green)   # Whole lines
     Styles.apply("^ +\\(!-.*\n\\)", nil, :diff_red)
 
@@ -400,6 +400,9 @@ class Notes
   def self.bullet bullet_text="- "
     prefix = Keys.prefix :clear=>true
 
+    # If U prefix, go to the end
+    Move.to_end if prefix == :u
+
     if ! Line.blank?   # If non-blank line
       if Line.matches(/^ *[|+-]/)   # If bullet already
         # If cursor at end or beginning of line
@@ -430,7 +433,6 @@ class Notes
     else   # Get bullet indent of previous line
       prev = Line.value(0)[/^( *)[+-]/, 1]
       prev = prev ? "  #{prev}#{bullet_text}" : bullet_text
-      prev.sub!(/^  /, '') if prefix == :u   # Don't indent if U
       View.insert prev
     end
 

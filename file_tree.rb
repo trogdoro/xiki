@@ -1180,7 +1180,16 @@ class FileTree
     end
 
     indent += " " * Keys.prefix_or_0   # If numeric prefix, add to indent
-    View.insert clip.gsub(/^/, "#{indent}\|")
+
+    clip.strip!
+    View.insert "#{indent}\|#{clip}\n"
+  end
+
+  def self.enter_as_search
+    indent = Line.indent
+    Move.to_end
+    View.insert "\n#{indent}  - ###{Clipboard["0"]}/"
+    LineLauncher.launch
   end
 
   # Remove the following lines indented more than the current one
@@ -1214,9 +1223,9 @@ class FileTree
     line = Line.value
     indent = Line.indent
     list = nil
-    if line =~ /^[^|\n]*(\*\*|##)/  # *foo or ## means do grep
+    if line =~ /^[^|\n]*(\*\*|##)/   # *foo or ## means do grep
       self.grep_syntax indent
-    elsif self.dir?  # foo/ is a dir (if no | before)
+    elsif self.dir?   # foo/ is a dir (if no | before)
       self.dir
     else
       self.open
