@@ -1131,7 +1131,7 @@ class FileTree
   end
 
   # Enter what's in clipboard with | to on the left margin, with appropriate indent
-  def self.enter_quoted
+  def self.enter_quote
     Line.to_left
     clip = Clipboard.get(0, :add_linebreak => true)
     if self.dir?   # If current line is path
@@ -1169,6 +1169,7 @@ class FileTree
       goto_char start
       return
     end
+
     # Get current indent
     indent = Line.indent
     on_comment_line = Line.matches /^ +\|/
@@ -1181,7 +1182,7 @@ class FileTree
 
     indent += " " * Keys.prefix_or_0   # If numeric prefix, add to indent
 
-    clip.strip!
+    clip.sub! /\n+$/, ''
     View.insert "#{indent}\|#{clip}\n"
   end
 

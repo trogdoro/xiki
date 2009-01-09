@@ -157,13 +157,15 @@ class Code
     align_regexp
   end
 
-  def self.do_as_rspec
-    # If U, just open spec
-    if Keys.prefix_u
+  def self.open_related_rspec
+    if View.file =~ /\/app\//   # If in spec, open corresponding file
       View.open View.file.sub('/app/', '/spec/').sub(/\.rb/, '_spec.rb')
-      return
+    else   # Otherwise, open file corresponding spec
+      View.open View.file.sub('/spec/', '/app/').sub(/\_spec.rb/, '.rb')
     end
+  end
 
+  def self.do_as_rspec
     orig = Location.new
     orig_index = View.index
 

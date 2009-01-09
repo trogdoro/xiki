@@ -98,8 +98,9 @@ class KeyBindings
     # O: defined above - mapped to what C-o does by default
     Keys.open_point { Bookmarks.go(nil, :point => true) }
     Keys.open_quick { Bookmarks.go :q }   # like OB but uses different temporary namespace
-    Keys.open_region_path { find_file buffer_substring(region_beginning, region_end) }
     Keys.open_rake_outline { CodeTree.display_menu("- Rake.menu/") }
+    Keys.open_region_path { find_file buffer_substring(region_beginning, region_end) }
+    Keys.open_related_test { Code.open_related_rspec }
     Keys.open_search { Search.outline_search }   # hide search via outline *
     Keys.open_tree { FileTree.tree }   # draw a tree, prompting for bookmark tag *
     Keys.open_up { View.show_dir }   # open enclosing dir **
@@ -160,7 +161,7 @@ class KeyBindings
     Keys.enter_outline { FileTree.enter_lines }   # in tree, enter methods or headings
     # Find new key for thisKeys.EO { DiffLog.enter_old }   # Enter Old: enter newly-deleted from last save
     Keys.enter_push { Repository.code_tree_diff(:enter=>true) }   # Commit to repos, push, etc
-    Keys.enter_quoted { FileTree.enter_quoted }
+    Keys.enter_quote { FileTree.enter_quote }
     Keys.enter_row { View.insert_line }
     Keys.enter_search { Search.enter_search }
     #Keys.enter_spot { Location.enter_at_spot }   # enter selected text at spot
@@ -189,7 +190,7 @@ class KeyBindings
     Keys.DD { delete_char elvar.current_prefix_arg || 1 }   # DD - delete character (D's default) **
     Keys.do_as_camelcase { Clipboard.do_as_camel_case }   # change word to camel case (LikeThat)
     Keys.do_as_javascript { Javascript.run }
-    Keys.do_as_rspec { Code.do_as_rspec }
+    Keys.do_as_test { Code.do_as_rspec }
     Keys.do_as_underscores { Clipboard.do_as_snake_case }   # Change word to snake case (like_that)
     Keys.do_as_wrap { Block.do_as_wrap }
     Keys.do_backward { backward_kill_word(Keys.prefix || 1) }   # delete word backward
