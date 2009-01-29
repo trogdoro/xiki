@@ -23,9 +23,10 @@ class Firefox
       else
         self.exec "getWindows()[0].getBrowser().tabContainer.selectedIndex = #{tab};"
       end
+    else
+      self.exec "getWindows()[0].getBrowser().reload()"
     end
 
-    self.exec "getWindows()[0].getBrowser().reload()"
   end
 
   # Called internally by others

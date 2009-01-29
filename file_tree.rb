@@ -135,11 +135,11 @@ class FileTree
     re_search_forward "|"
   end
 
-  def self.grep_with_hashes(dir, regex)
+  def self.grep_with_hashes(dir, regex, prepend='##')
     View.to_buffer "*tree grep";  View.dir = dir
     View.clear;  notes_mode
 
-    View.insert "- #{dir}\n  - ###{regex}/\n"
+    View.insert "- #{dir}\n  - #{prepend}#{regex}/\n"
     goto_line(2)
     self.launch
   end
@@ -489,7 +489,9 @@ class FileTree
     #ch = char_to_string(ch_raw)
 
     # While narrowing down list
-    while (ch =~ /[ !"$-),-.:<>-~]/) ||
+    # Be careful editing, duo to ranges (_-_)
+    while (ch =~ /[ !"$-),-.:<?-~]/) ||
+    # while (ch =~ /[ !"$-),-.:<-~]/) ||
         (recursive && ch_raw == 2 || ch_raw == 6) ||
         ch == :up || ch == :down
       break if recursive && ch == '/'   # Slash means enter in a dir
@@ -633,6 +635,12 @@ class FileTree
       View.insert "- #{name}/\n"
       View.insert self.indent("", 0)
       #Line.to_right
+
+    when ">"   # Split view, then launch
+      delete_region(Line.left(2), right)
+      Keys.clear_prefix
+      View.create
+      LineLauncher.launch
 
     when "8"
       # If a quote, insert lines indented lower
@@ -1240,12 +1248,23 @@ class FileTree
 
     self.plus_to_minus
 
-    unless pattern
-      if Line.blank?  # If blank line, get bookmark and enter into current file
-        #dir = Bookmarks.input(:prompt => "Enter bookmark from which to enter outline: ")
-        History.open_current :enter_here => true, :prompt_for_bookmark => true
+    if Line.blank?   # If blank line, get bookmark and enter into current file
+
+      bm = Keys.input(:timed => true, :prompt => "Enter bookmark to show outline for: ")
+      path = Bookmarks.expand(bm, :just_bookmark => true)
+      path = File.expand_path(path)
+        #Files.directory? Bookmarks.expand("h", :just_bookmark=>true)
+
+      # If it's a dir, delegate to Open Tree
+      if path =~ /\/$/
+        FileTree.ls :here => true, :dir => path
         return
       end
+      View.insert "- " + FileTree.filename_to_next_line(path)
+      $el.open_line 1
+    end
+
+    if pattern.nil?
       if Line.matches(/\.rb$/)
         self.enter_lines(/^\s*(def|class|module|it|describe) /)
       elsif Line.matches(/\.js$/)
@@ -1259,7 +1278,7 @@ class FileTree
     end
 
     Line.to_left
-    path = construct_path  # Get path
+    path ||= construct_path  # Get path
     path = Bookmarks.expand(path)
     indent = Line.indent  # get indent
 
@@ -1359,18 +1378,9 @@ class FileTree
   # Mapped to shortcuts that displays the trees
   def self.tree options={}
 
-    # Get input (. means current dir)
-    input = Keys.input(:timed => true, :prompt => "file_tree in which dir? (enter bookmark): ")
-    if input and !(input == ".")   # Do tree in dir from bookmark
-      dir = Bookmarks.expand("$#{input}")
-      if dir.empty?
-        View.beep
-        return View.message("No bookmark exists: #{input}")
-      end
-      dir = Bookmarks.dir_only dir if options[:recursive]
-    else  # If no input, do tree in current dir
-      dir = elvar.default_directory
-    end
+    dir = Keys.bookmark_as_path(:prompt=>"file_tree in which dir? (enter bookmark): ")
+
+    dir = Bookmarks.dir_only(dir) if options[:recursive]
 
     options.merge!(:dir => dir)
 
@@ -1707,17 +1717,25 @@ private
     txt =~ /^[^,|\n]*\/$/
   end
 
-  def self.open_as_upper
+  def self.open_as_upper where=false
     orig_u = Keys.prefix_u
     view = View.current
     path = FileTree.construct_path(:list=>true)
-    View.to_upper
+
+    if where == :lowest
+      Move.to_window 9
+    else
+      View.to_upper
+    end
     was_at_top = View.start == View.point
     $el.split_window_vertically
+
+    View.next if where   # :lowest or :second
+
     if was_at_top
-      View.next
+      where ? View.previous : View.next
       $el.recenter 0
-      View.previous
+      where ? View.next : View.previous
     end
     FileTree.open :path=>path, :same_view=>true
     View.to_window(view) if orig_u

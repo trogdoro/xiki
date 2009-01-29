@@ -132,7 +132,8 @@ class Console
   end
 
   def self.do_last_command
-    # TODO if none visible, don't do anything
+    orig = View.index
+
     found = self.to_shell_buffer(nil, :no_create=>true)   # If not in shell buffer, go to it
 
     return View.message("No *console buffer was visible") unless found
@@ -140,6 +141,7 @@ class Console
     $el.erase_buffer
     comint_previous_input(1)
     self.enter
+    View.to_nth orig
   end
 
   def self.launch_dollar options={}
@@ -181,9 +183,9 @@ class Console
       end
       View.to orig
     end
-    line =~ / *(.*?)!+(.+)/
-    dir ||= $1 unless $1.blank?
 
+    line =~ / *(.*?)!+(.+)/
+    dir ||= $1 unless $1.empty?
     command = $2
     if options[:sync]
       output = Console.run command, :dir=>dir, :sync=>true

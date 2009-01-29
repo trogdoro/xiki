@@ -59,6 +59,13 @@ class Search
     insert "\#{#{match}}"
   end
 
+  def self.insert_quote_at_search_start
+    self.clear
+    match = self.match
+    self.to_start
+    insert "'#{match}'"
+  end
+
   def self.isearch_select_inner
     self.clear
     set_mark match_beginning(0) + 1
@@ -180,9 +187,12 @@ class Search
 
   def self.tree_grep
     dir = Keys.bookmark_as_path   # Get path (from bookmark)
-    input = Keys.prefix_u? ?   # Do search
-      Clipboard.get("0") :
-      Keys.input(:prompt=>"Text to search for: ")
+    input = case Keys.prefix
+      when :u;  Clipboard.get("0")
+      when 1;  Clipboard.get("1")
+      when 2;  Clipboard.get("2")
+      else;  Keys.input(:prompt=>"Text to search for: ")
+      end
 
     FileTree.grep_with_hashes dir, input
   end
@@ -239,7 +249,6 @@ class Search
 
     self.clear
     match = self.match
-
 
     bm = Keys.bookmark_as_path
 
@@ -383,9 +392,21 @@ class Search
 
   # During isearch, open most recently edited file with the search string in its name
 
-  def self.isearch_open_last_edited
+  def self.isearch_to
     self.clear
-    match = buffer_substring(match_beginning(0), match_end(0))
+    match = self.match
+
+    # Get key
+    dir = Keys.bookmark_as_path(:prompt=>"Enter bookmark to look in (or comma for recently edited): ")
+
+    # If key is comma, treat as last edited
+    return self.isearch_open_last_edited(match) if dir == :comma
+
+    # Open buffer and search
+    FileTree.grep_with_hashes dir, match, '**'
+  end
+
+  def self.isearch_open_last_edited match
 
     if match =~ /(.+)\.(.+)/
       # split off, and open
@@ -554,7 +575,7 @@ class Search
       dir = Bookmarks.expand("$#{bm}")
     end
 
-    View.insert(dir || "")
+    View.insert("- #{dir}" || "")
     indent = Line.indent
     Line.to_right
     View.insert("\n#{indent}  - ###{input}/")

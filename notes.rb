@@ -283,12 +283,12 @@ class Notes
       Styles.define :notes_h1,
         :fg => 'ffffff', :bg => "333355"
       Styles.define :notes_h1_pipe,
-        :fg => '7777aa', :bg => "333366"
+        :fg => '7777aa', :bg => "333355"
 
       Styles.define :notes_h2,
         :bg => "111122"
       Styles.define :notes_h2_pipe,
-        :fg => '333366', :bg => "111122"
+        :fg => '333355', :bg => "111122"
 
     end
   end
@@ -434,6 +434,11 @@ class Notes
       prev = Line.value(0)[/^( *)[+-]/, 1]
       prev = prev ? "  #{prev}#{bullet_text}" : bullet_text
       View.insert prev
+
+      if prefix == :uu
+        View.insert "(): "
+        Move.backward 3
+      end
     end
 
     #ControlLock.disable

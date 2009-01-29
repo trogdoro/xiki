@@ -158,11 +158,26 @@ class Code
   end
 
   def self.open_related_rspec
-    if View.file =~ /\/app\//   # If in spec, open corresponding file
-      View.open View.file.sub('/app/', '/spec/').sub(/\.rb/, '_spec.rb')
-    else   # Otherwise, open file corresponding spec
-      View.open View.file.sub('/spec/', '/app/').sub(/\_spec.rb/, '.rb')
+    if View.file =~ /\/(app|spec)\//   # If normal specs
+      if View.file =~ /\/app\//   # If in spec, open corresponding file
+        View.open View.file.sub('/app/', '/spec/').sub(/\.rb/, '_spec.rb')
+      else   # Otherwise, open file corresponding spec
+        View.open View.file.sub('/spec/', '/app/').sub(/\_spec.rb/, '.rb')
+      end
+      return
     end
+
+    if View.file =~ /\/xiki\//   # If in xiki project
+      if View.file =~ /\/tests\//   # If in spec, open corresponding file
+        View.open View.file.sub('/tests/', '/').sub(/_test\.rb/, '.rb')
+      else   # Otherwise, open file corresponding test
+        View.open View.file.sub(/(.+)\/(.+)/, "\\1/tests/\\2").sub(/\.rb/, '_test.rb')
+      end
+      return
+    end
+
+    View.beep
+    View.message "Don't recognize this file."
   end
 
   def self.do_as_rspec

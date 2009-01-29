@@ -408,8 +408,16 @@ class Keys
       return :space
     elsif bm == "/"   # If slash, return special token
       return :slash
-    elsif bm == "."   # If . do tree in current dir
-      return $el.elvar.default_directory
+    elsif bm == ","   # If slash, return special token
+      return :comma
+    elsif bm =~ /^\.+$/   # If .+ do tree in current dir
+      dir = $el.elvar.default_directory
+      (bm.size - 1).times do
+        dir.sub! /\/$/, ''   # Remove / on end if there
+        dir.sub! /[^\/]+$/, ''   # Remove dir
+      end
+      dir.sub! /^$/, '/'   # If nothing left, use root (/)
+      return dir
     end
 
     dir = Bookmarks.expand bm, :just_bookmark=>true

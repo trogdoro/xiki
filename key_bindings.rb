@@ -64,11 +64,13 @@ class KeyBindings
     Keys.OO { open_line elvar.current_prefix_arg || 1 }   # OO - open line (O's default)
     #     Keys.open_a_calendar { calendar }
     #Keys.OAD { Svn.jump_to_diff }
-    Keys.open_as_lisp { find_function_at_point }   # jump to definition of lisp function
+    Keys.open_as_elisp { find_function_at_point }   # jump to definition of lisp function
+    Keys.open_as_highest { FileTree.open_as_upper }
+    Keys.open_as_lowest { FileTree.open_as_upper(:lowest) }
+    Keys.open_as_2 { FileTree.open_as_upper(:second) }
     Keys.open_as_root { Files.open_sudo }
     Keys.open_a_shell { Console.open }
     Keys.open_as_tail { Files.open_tail }
-    Keys.open_at_upper { FileTree.open_as_upper }
     Keys.open_bookmark { Bookmarks.go }
     Keys.open_current { CodeTree.display_menu("- Buffers.current/") }   # open buffer list **
     Keys.open_difflog { DiffLog.open }   # shows diffs of what you've edited *
@@ -156,6 +158,7 @@ class KeyBindings
     Keys.enter_log_stack { Code.enter_log_stack }
     Keys.enter_log_line { Code.enter_log_line }
     Keys.enter_log_time { Code.enter_log_time }
+
     Keys.enter_menu { CodeTree.insert_menus }
     Keys.enter_name { Clipboard.paste }   # paste thing saved as name
     Keys.enter_outline { FileTree.enter_lines }   # in tree, enter methods or headings
@@ -175,10 +178,10 @@ class KeyBindings
     # Z
     #Keys.E0 { Clipboard.paste("0") }   # Enter 0: paste from "0" tag
     Keys.E1 { Clipboard.paste("1") }   # Enter 1
-    Keys.E2 { Clipboard.paste("2") };  # Enter 2
+    Keys.E2 { Clipboard.paste("2") }   # Enter 2
     Keys.E3 { Clipboard.paste("3") };   Keys.E4 { Clipboard.paste("4") }
     Keys.E5 { Clipboard.paste("5") };   Keys.E6 { Clipboard.paste("6") };   Keys.E7 { Clipboard.paste("7") }
-    Keys.E8 { FileTree.enter_lines "." }   # Like enter_outline, but inserts all
+    Keys.E8 { FileTree.enter_lines /./ }   # Like enter_outline, but inserts all
   end
 
   def self.d_keys
@@ -410,7 +413,7 @@ class KeyBindings
     # Q: leave unmapped for quoting
     # R: leave unmapped for reverse
     # S: leave unmapped for search
-    Keys.isearch_to { Search.isearch_open_last_edited }   # To: open file / jump to method
+    Keys.isearch_to { Search.isearch_to }   # To: open file / jump to method
     Keys.isearch_usurp { Search.isearch_pull_in_sexp }   # usurp: pull sexp into search string
     Keys.isearch_value { Search.insert_at_search_start }   # Value: copy value back to search start
     # W: leave unmapped for pulling into search
@@ -433,6 +436,10 @@ class KeyBindings
     end
     define_key :isearch_mode_map, kbd("C-j C-{") do
       Search.isearch_just_surround_with_char '{', '}'
+    end
+
+    define_key :isearch_mode_map, kbd("C-h C-'") do
+      Search.insert_quote_at_search_start
     end
 
     define_key :isearch_mode_map, kbd("C-1") do

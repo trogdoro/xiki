@@ -2,7 +2,7 @@
 class Incrementer
   @@i = 1
   def self.start
-    @@i = 1
+    @@i = Keys.prefix_n || 0
   end
   def self.increment
     @@i += 1
