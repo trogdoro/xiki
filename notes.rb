@@ -286,7 +286,7 @@ class Notes
         :fg => '7777aa', :bg => "333355"
 
       Styles.define :notes_h2,
-        :bg => "111122"
+        :fg => '555588', :bg => "111122"
       Styles.define :notes_h2_pipe,
         :fg => '333355', :bg => "111122"
 

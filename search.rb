@@ -284,6 +284,7 @@ class Search
   end
 
   def self.find_in_buffers string, options={}
+    string.gsub!('"', '\\"')
     new_args = "\"#{string}\""
     new_options = {}
     new_options[:buffer] = View.buffer_name if options[:current_only]
@@ -559,6 +560,16 @@ class Search
   end
 
   def self.enter_search bm=nil, input=nil
+    # If line already has something, assume we'll add - ##foo/ to it
+    if ! Line.matches(/^ *$/)
+      input = Keys.input(:prompt=>"Text to search for: ")
+      indent = Line.indent
+      Line.to_right
+      View.insert "\n#{indent}  - ###{input}/"
+      LineLauncher.launch
+      return
+    end
+
     bm ||= Keys.input(:timed=>true, :prompt=>"Enter bookmark in which to search: ")
     return unless bm
     input ||= Keys.prefix_u? ?   # Do search

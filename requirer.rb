@@ -24,7 +24,7 @@ class Requirer
 
           - To install '#{gem_name}':
             - 1: Double-click or C-. on this line
-              !!sudo gem install #{gem_name}
+              $ sudo gem install #{gem_name}
             - 2: Press M-l to reload xiki, or manually restart.
           \n
           ".unindent)

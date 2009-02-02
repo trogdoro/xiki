@@ -822,7 +822,6 @@ class FileTree
 
   # Draw tree, use dir of bookmark from user input
   def self.ls options={}
-
     dir = options[:dir]
     # If no dir, do tree in current dir
     dir ||= elvar.default_directory
@@ -837,8 +836,7 @@ class FileTree
         View.insert "\n\n";  backward_char 2
       end
     end
-
-    dir = View.expand_path(dir)  # Expand out ~
+    dir = View.expand_path(dir)   # Expand out ~
     # If file, back up to dir
     dir = Bookmarks.dir_only dir unless File.directory?(dir)
 
@@ -1377,9 +1375,7 @@ class FileTree
 
   # Mapped to shortcuts that displays the trees
   def self.tree options={}
-
     dir = Keys.bookmark_as_path(:prompt=>"file_tree in which dir? (enter bookmark): ")
-
     dir = Bookmarks.dir_only(dir) if options[:recursive]
 
     options.merge!(:dir => dir)

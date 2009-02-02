@@ -53,7 +53,7 @@ class CouchDb
         - ?rev=9123589
           + DELETE
       - _view/d1/v1/
-      - _design%2Fd1/
+      - _design/d1/
         + PUT {"views": {"v1": {"map": "function(doc){ emit(\\\"a\\\", null); }" }}}
     ]
   end
@@ -80,7 +80,7 @@ class CouchDb
     # If id has multiple slashes, escape all but the last
     if id =~ /\/.+\/$/
       id.sub! /\/$/, ''   # Remove last slash
-      id.gsub!('/', '%2F')   # Escape slashes
+      id.gsub!('/', '%2F') unless id =~ /^_design/   # Escape slashes
       id.sub! /$/, '/'   # Put last back
     end
   end
