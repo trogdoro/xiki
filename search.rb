@@ -642,6 +642,28 @@ class Search
     Effects.blink :what=>:region
   end
 
+  def self.isearch_just_tag
+    Search.clear
+
+    left, right = Search.left, Search.right
+    tag = Keys.input :timed=>true, :prompt=>"Enter tag name: "
+    left_tag = "<#{tag}>"
+    right_tag = "</#{tag}>"
+    if tag == 'di'
+      left_tag = "<div id='#{Keys.input :prompt=>"Enter id: "}'>"
+      right_tag = "</div>"
+    elsif tag == 'dc'
+      left_tag = "<div class='#{Keys.input :prompt=>"Enter id: "}'>"
+      right_tag = "</div>"
+    end
+
+    View.to(right)
+    View.insert right_tag
+    View.to(left)
+    View.insert left_tag
+    View.to right + left_tag.length
+  end
+
   def self.just_orange
     Search.clear
     Overlay.face(:notes_label, :left=>Search.left, :right=>Search.right)
@@ -662,7 +684,7 @@ class Search
     View.insert right
     View.to(Search.left)
     View.insert left
-    Move.backward
+    View.to Search.right + left.length
   end
 
   # Copy match as name (like Keys.as_name)

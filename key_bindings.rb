@@ -388,6 +388,7 @@ class KeyBindings
     Keys.isearch_have_output { Search.isearch_log }
     Keys.isearch_have_paragraph { Search.have_paragraph }
     Keys.isearch_have_spot { Search.insert_at_spot }   # Zap: move to spot (as spot)
+    Keys.isearch_have_move { Search.isearch_move_line }   # Zap: move to spot (as spot)
     Keys.isearch_have_underscores { Search.isearch_as_snake }
     Keys.isearch_have_variable { Search.insert_var_at_search_start }
     # I: leave unmapped - had issues using it (messes up position)
@@ -403,6 +404,7 @@ class KeyBindings
     Keys.isearch_just_orange { Search.just_orange }
     Keys.isearch_just_replace { Search.isearch_query_replace }   # replace
     Keys.isearch_just_select { Search.just_select }   # select match
+    Keys.isearch_just_tag { Search.isearch_just_tag }   # select match
     Keys.isearch_just_underscores { Search.isearch_just_underscores }   # make match be snake case
     Keys.isearch_kill { Search.cut; Location.as_spot('deleted') }   # cut
     Keys.isearch_look { Search.uncover }   # Look: show results for search string in all open files
