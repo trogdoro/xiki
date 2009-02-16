@@ -81,7 +81,7 @@ class Search
   def self.paste_here
     self.clear
     View.delete(Search.left, Search.right)
-    insert Clipboard.get("0")
+    insert Clipboard.get
   end
 
   def self.copy_and_comment
@@ -159,7 +159,7 @@ class Search
         Keys.input(:prompt=>"With: "))
     # If they typed 'c', use clipboard and prompt for 2nd arg
     elsif first == "c"
-      query_replace_regexp(Clipboard.get("0"), Keys.input(:prompt=>"Replace with (pause when done): ", :timed=>true))
+      query_replace_regexp(Clipboard.get, Keys.input(:prompt=>"Replace with (pause when done): ", :timed=>true))
     # If they typed 'c', use clipboard and prompt for 2nd arg
     elsif first == "l"
       query_replace_regexp(@@query_from, @@query_to)
@@ -188,7 +188,7 @@ class Search
   def self.tree_grep
     dir = Keys.bookmark_as_path   # Get path (from bookmark)
     input = case Keys.prefix
-      when :u;  Clipboard.get("0")
+      when :u;  Clipboard.get
       when 1;  Clipboard.get("1")
       when 2;  Clipboard.get("2")
       else;  Keys.input(:prompt=>"Text to search for: ")
@@ -562,7 +562,7 @@ class Search
   def self.enter_search bm=nil, input=nil
     # If line already has something, assume we'll add - ##foo/ to it
     if ! Line.matches(/^ *$/)
-      input = Keys.input(:prompt=>"Text to search for: ")
+      input = Keys.prefix_u ? Clipboard.get : Keys.input(:prompt=>"Text to search for: ")
       indent = Line.indent
       Line.to_right
       View.insert "\n#{indent}  - ###{input}/"
@@ -573,7 +573,7 @@ class Search
     bm ||= Keys.input(:timed=>true, :prompt=>"Enter bookmark in which to search: ")
     return unless bm
     input ||= Keys.prefix_u? ?   # Do search
-      Clipboard.get("0") :
+      Clipboard.get :
       Keys.input(:prompt=>"Text to search for: ")
 
     if bm == "."   # Do tree in dir from bookmark
@@ -663,6 +663,22 @@ class Search
     View.insert left_tag
     View.to right + left_tag.length
   end
+
+
+  def self.isearch_just_wrap
+    Search.clear
+    left, right = Search.left, Search.right
+
+    wrap_with = Keys.input :timed=>true, :prompt=>"Enter string to wrap match with: "
+
+    View.to(right)
+    View.insert wrap_with
+    View.to(left)
+    View.insert wrap_with
+    View.to right + wrap_with.length
+  end
+
+
 
   def self.just_orange
     Search.clear

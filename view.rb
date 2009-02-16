@@ -677,7 +677,8 @@ class View
 
   def self.expand_path path
     # Expand .
-    path = path.gsub /^\.\//, View.dir.sub(/[^\/]$/, '')+'/'
+    path = path.gsub /^\.\//, View.dir.sub(/\/$/, '')+'/'
+
     # Expand ~
     slash = path =~ /\/$/   # Check whether / at end
     path = File.expand_path path

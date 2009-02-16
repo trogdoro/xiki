@@ -38,7 +38,7 @@ class Clipboard
   end
 
 
-  def self.get key, options={}
+  def self.get key='0', options={}
     val = @@hash[key.to_s]
     if options[:add_linebreak]
       val = "#{val}\n" unless val[/\n$/]

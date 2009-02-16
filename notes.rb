@@ -210,7 +210,7 @@ class Notes
       :notes_h1e => "336633",
       :notes_h1g => "336633",
       :notes_h1p => "663366",
-      :notes_h1m => "270000",
+      :notes_h1m => "662222",
       :notes_h1x => "333333",
       :notes_h1t => "005555",
       }
@@ -281,14 +281,14 @@ class Notes
     if Styles.inverse
 
       Styles.define :notes_h1,
-        :fg => 'ffffff', :bg => "333355"
+        :fg => 'ffffff', :bg => "444466"
       Styles.define :notes_h1_pipe,
-        :fg => '7777aa', :bg => "333355"
+        :fg => '7777aa', :bg => "444466"
 
       Styles.define :notes_h2,
         :fg => '555588', :bg => "111122"
       Styles.define :notes_h2_pipe,
-        :fg => '333355', :bg => "111122"
+        :fg => '444466', :bg => "111122"
 
     end
   end

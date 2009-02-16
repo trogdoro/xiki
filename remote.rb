@@ -3,6 +3,7 @@ require 'net/ssh'
 require 'net/sftp'
 require 'timeout'
 require 'ol'
+require 'keys'
 
 class Remote
   extend ElMixin
@@ -23,9 +24,11 @@ class Remote
   def self.default_dirs= to;  @@default_dirs = to;  end
   def self.default_dirs;  @@default_dirs;  end
 
+  # Called when dir or file is launched
   def self.dir root, *path_append
-   user, server, port, path = self.split_root(root)
-    @@connections["#{user}@#{server}:#{port}"] ||= self.create_connection(user, server, port.to_i)
+    connection = self.connection root
+
+    user, server, port, path = self.split_root(root)
 
     # Add slash to path if none there
     path << "/" unless path =~ /\/$/
@@ -39,7 +42,7 @@ class Remote
 
     timeout(6) do
       if path =~ /\/$/   # If a dir
-        out = @@connections["#{user}@#{server}:#{port}"].exec!("ls -p #{path}")
+        out = connection.exec!("ls -p #{path}")
         out ||= ""
         out = out.grep(/^[^#]+$/).join("")   # Weed out #...#
         out.gsub!(/@/, '/')   # Change @ to /
@@ -56,13 +59,19 @@ class Remote
 
         # Download if not open already
         unless was_open
-          ftp = @@connections["#{user}@#{server}:#{port}"].sftp.connect
-          ftp.download!(path, local_path)
+          begin
+            connection.sftp.download!(path, local_path)
+          rescue Exception=>e
+          end
         end
 
         View.to_after_bar
         View.open local_path
-        return "- save - todo: make key shortcut instead!" unless was_open
+
+        # TODO: save root path as var in buffer
+        $el.make_local_variable :remote_rb_server_root
+        server_root = "/#{user}@#{server}#{port ? ":#{port}" : ""}/"
+        $el.elvar.remote_rb_server_root = server_root
 
         # TODO save timestamp in buffer var
         # - Use it to determine whether file changed when saving
@@ -71,7 +80,14 @@ class Remote
     end
   end
 
-  def self.create_connection(user, server, port)
+  def self.connection root
+    user, server, port, path = self.split_root root
+    address = "#{user}@#{server}:#{port}"
+    @@connections[address] ||= self.new_connection user, server, port.to_i
+    @@connections[address]
+  end
+
+  def self.new_connection user, server, port
     begin
       timeout(6) do
         Net::SSH.start(server, user, :port => port.to_i, :paranoid => false)
@@ -80,6 +96,7 @@ class Remote
       puts "Timed out: #{e.message}"
     end
   end
+
 
   def self.split_root root   # Splits name@server:port/path
     root = root.dup   # Append / at end if no / exists
@@ -107,18 +124,28 @@ class Remote
     "*remote #{file} (#{server}:#{dir})"
   end
 
-  def self.save_file path, connection
-    local_path = self.calculate_local_path path
-    # If not open, print error
-    return puts("- File no longer open!") unless Files.open? local_path
+  def self.save_file
+    local_path = View.file
+    # Error out if not in right place
+    if local_path !~ /^#{@@temp_dir}/
+      View.beep
+      return View.message("This isn't a file the Remote code_tree retrieved")
+    end
 
+    # Save if modified
+    $el.save_buffer if $el.buffer_modified_p
+
+    remote_path = $el.elvar.remote_rb_server_root
+
+
+    # Convert to path
+    remote_path = self.calculate_remote_path local_path
     begin   # Do save
-      sftp = connection.sftp.connect
-
-      sftp.upload!(local_path, path)
-      puts "- success!"
+      connection = self.connection $el.elvar.remote_rb_server_root
+      connection.sftp.upload!(local_path, remote_path)
+      View.message "- success!"
     rescue Exception => e
-      puts "- error: #{e.message}"
+      View.message "- error: #{e.message}"
     end
 
   end
@@ -127,4 +154,16 @@ class Remote
     "#{@@temp_dir}/#{path.gsub('/', '-')[1..-1]}"
   end
 
+  def self.calculate_remote_path path
+    path.gsub(/^#{@@temp_dir}/, '').gsub('-', '/')
+  end
+
+  def self.init
+    Keys.do_as_remote do
+      Remote.save_file
+    end
+  end
+
 end
+
+# Remote.init

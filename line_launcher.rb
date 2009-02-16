@@ -368,7 +368,7 @@ class LineLauncher
       Console.launch :sync=>true
     end
 
-    self.add(/^[^\|@]+[\/\w\-]+\.\w+:\d+/) do |line|  # Stack traces, etc
+    self.add(/^[^\|@:]+[\/\w\-]+\.\w+:\d+/) do |line|  # Stack traces, etc
       # Match again (necessary)
       line =~ /([\/.\w\-]+):(\d+)/
       path, line = $1, $2

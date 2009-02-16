@@ -406,6 +406,7 @@ class KeyBindings
     Keys.isearch_just_select { Search.just_select }   # select match
     Keys.isearch_just_tag { Search.isearch_just_tag }   # select match
     Keys.isearch_just_underscores { Search.isearch_just_underscores }   # make match be snake case
+    Keys.isearch_just_wrap { Search.isearch_just_wrap }   # make match be snake case
     Keys.isearch_kill { Search.cut; Location.as_spot('deleted') }   # cut
     Keys.isearch_look { Search.uncover }   # Look: show results for search string in all open files
     # M: leave unmapped for stop

@@ -68,12 +68,12 @@ class Color
 
     if Styles.inverse
 
-      Styles.define :color_rb_red, :bg => "550000"
-      Styles.define :color_rb_orange, :bg => "661a00"
-      Styles.define :color_rb_yellow, :bg => "4a4a00"
-      Styles.define :color_rb_green, :bg => "003300"
-      Styles.define :color_rb_blue, :bg => "000077"
-      Styles.define :color_rb_purple, :bg => "330044"
+      Styles.define :color_rb_red, :bg => "390000"
+      Styles.define :color_rb_orange, :bg => "441500"
+      Styles.define :color_rb_yellow, :bg => "333300"
+      Styles.define :color_rb_green, :bg => "002200"
+      Styles.define :color_rb_blue, :bg => "000055"
+      Styles.define :color_rb_purple, :bg => "220033"
 
     end
 
