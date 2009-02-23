@@ -1,8 +1,29 @@
 require "hide"
 require 'control_lock'
+require 'line'
+require 'text_util'
 
 class Search
   extend ElMixin
+  @@case_options = nil
+
+  def self.case_options
+    return @@case_options if @@case_options
+    @@case_options = []   # Set to empty if not set yet
+    self.add_case_option 'upper', proc {|txt| txt.upcase}
+    self.add_case_option 'lower', proc {|txt| txt.downcase}
+    self.add_case_option 'camel', proc {|txt| TextUtil.camel_case(txt)}
+    self.add_case_option 'snake', proc {|txt| TextUtil.snake_case(txt)}
+    @@case_options
+  end
+
+  # Make another option show up for View.cases
+  def self.add_case_option name, the_proc
+    # Delete if there already
+    @@case_options.delete_if{|i| i.first == name}
+    @@case_options << [name, the_proc]
+  end
+
   def self.insert_at_spot
     self.clear
     match = self.match
@@ -523,6 +544,13 @@ class Search
     browse_url "http://google.com/search?q=#{term}"
   end
 
+  def self.isearch_url
+    Search.clear
+    term = self.match
+    term.gsub!(' ', '%20')
+    browse_url term
+  end
+
   def self.isearch_move_line
     isearch_done
     isearch_clean_overlays
@@ -740,5 +768,10 @@ class Search
     right = View.point
     self.to_start   # Go back to search start
     View.delete(View.point, right)
+  end
+
+  def self.change_case
+    # Prompt user to get char
+    char = View.prompt(", lower, camel, snake")
   end
 end

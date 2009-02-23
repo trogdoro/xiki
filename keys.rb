@@ -134,6 +134,8 @@ class Keys
   #   - Terminated by pause:  Keys.input(:optional => true)
   #     - A pause at the beginning will result in no input (nil)
   def self.input options={}
+    return self.input_with_choices(options) if options[:choices]
+
     Cursor.remember :before_input
     Cursor.green
     Cursor.hollow
@@ -204,6 +206,16 @@ class Keys
 
     # If nothing, return nil
     keys == "" ? nil : keys
+  end
+
+  # TODO: finish - look at spec
+  def self.input_with_choices options
+    prompt = options[:prompt] ? "#{options[:prompt]} " : ""
+    prompt << options[:choices].map{|i|
+      "[#{i.first[/./]}]#{i.first[/.(.+)/,1]}"}.
+      join(', ')
+    c = Keys.input :one_char=>true, :prompt=>prompt
+    option = options[:choices].find{|i| i.first =~ /^#{c}/}
   end
 
   def self.to_letter ch
@@ -277,7 +289,8 @@ class Keys
     end
 
     file, line = Code.location_from_proc proc
-    Location.go("#{XIKI_ROOT}/#{file}")
+    file = "#{XIKI_ROOT}/#{file}" unless file =~ /^\//
+    Location.go(file)
     View.to_line line.to_i
     Effects.blink(:what=>:line)
   end

@@ -16,7 +16,17 @@ class Block
   end
 
   def self.do_as_wrap
+
     if Keys.prefix_u?
+      # Grab paragraph and remove linebreaks
+
+      orig = Location.new
+      txt = View.paragraph :delete => true, :start_here => true
+      txt.gsub! "\n", " "
+      txt.sub!(/ $/, "\n")
+      View.insert txt
+      orig.go
+
       Line.to_left
       View.insert "> "
       fill_paragraph nil
@@ -24,6 +34,7 @@ class Block
       View.insert txt.gsub(/^  /, '> ')
       return
     end
+
     fill_paragraph nil
   end
 end

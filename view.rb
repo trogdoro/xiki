@@ -590,6 +590,10 @@ class View
   def self.cursor
     point
   end
+  def self.cursor= n
+    goto_char n
+  end
+
 
   def self.delete left, right
     $el.delete_region left, right
@@ -690,10 +694,11 @@ class View
 
   # Show dimension options, and invoke corresponding proc
   def self.dimensions
+    # TODO: use View.input :options=>@@dimension_options
     message = @@dimension_options.map{|i|
       "[#{i.first[/./]}]#{i.first[/.(.+)/,1]}"}.
       join(', ')
-    c = Keys.input(:one_char => true, :prompt => message)
+    c = Keys.input(:one_char=>true, :prompt=>"dimensions: #{message}")
     option = @@dimension_options.find{|i| i.first =~ /^#{c}/}
     return View.message("Option not #{c} found") if option.nil?
     option[1].call

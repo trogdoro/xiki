@@ -143,7 +143,7 @@ class Remote
     begin   # Do save
       connection = self.connection $el.elvar.remote_rb_server_root
       connection.sftp.upload!(local_path, remote_path)
-      View.message "- success!"
+      View.message "successfully saved remotely!"
     rescue Exception => e
       View.message "- error: #{e.message}"
     end

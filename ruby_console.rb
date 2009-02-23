@@ -84,7 +84,7 @@ $stdout.print out
       user, server, port = Remote.split_root @server
 #         $el.ml [user, server, port]
 #         $el.ml @console_command
-      Remote.create_connection(user, server, port)
+      Remote.new_connection(user, server, port)
     else
       Net::SSH.start('localhost', ENV['USER'] || ENV['USERNAME'])
     end

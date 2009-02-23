@@ -1265,6 +1265,8 @@ class FileTree
     if pattern.nil?
       if Line.matches(/\.rb$/)
         self.enter_lines(/^\s*(def|class|module|it|describe) /)
+      elsif Line.matches(/\.rake$/)
+        self.enter_lines(/^\s*(task|def|class) /)
       elsif Line.matches(/\.js$/)
         self.enter_lines(/(^ *(function)| = function\()/)
       elsif Line.matches(/\.notes$/)

@@ -380,7 +380,8 @@ class Notes
     el4r_lisp_eval %q<
       (progn
         (add-to-list 'auto-mode-alist '("\\\\.notes\\\\'" . notes-mode))
-        (add-to-list 'auto-mode-alist '("\\\\.xik\\\\'" . notes-mode)))
+        (add-to-list 'auto-mode-alist '("\\\\.xik\\\\'" . notes-mode))
+        (add-to-list 'auto-mode-alist '("\\\\.wik\\\\'" . notes-mode)))
       >
 
   #    el4r_lisp_eval %q[(add-to-list 'auto-mode-alist '("\\\\.notes\\\\'" . notes-mode))]

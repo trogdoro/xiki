@@ -193,8 +193,9 @@ class KeyBindings
     Keys.DD { delete_char elvar.current_prefix_arg || 1 }   # DD - delete character (D's default) **
     Keys.do_as_camelcase { Clipboard.do_as_camel_case }   # change word to camel case (LikeThat)
     Keys.do_as_javascript { Javascript.run }
+    Keys.do_as_snake { Clipboard.do_as_snake_case }   # Change word to snake case (like_that)
     Keys.do_as_test { Code.do_as_rspec }
-    Keys.do_as_underscores { Clipboard.do_as_snake_case }   # Change word to snake case (like_that)
+    #     Keys.do_as_underscores { Clipboard.do_as_snake_case }   # Change word to snake case (like_that)
     Keys.do_as_wrap { Block.do_as_wrap }
     Keys.do_backward { backward_kill_word(Keys.prefix || 1) }   # delete word backward
     Keys.do_code_align { Code.do_code_align }
@@ -380,14 +381,14 @@ class KeyBindings
     # have_...
     define_key :isearch_mode_map, kbd("C-h"), nil
     Keys.isearch_have_bullet { Search.have_label }
-    Keys.isearch_have_camel { Search.isearch_as_camel }
+    Keys.isearch_have_case { Search.isearch_as_case }
     # Keys.isearch_have_deleted {  }  # Move match to where you last deleted something
     Keys.isearch_have_within { Search.isearch_have_within }   # Grab everything except chars on edges
     Keys.isearch_have_javascript { Search.isearch_log_javascript }
     Keys.isearch_have_line { Search.have_line }   # copy line back to search start
     Keys.isearch_have_output { Search.isearch_log }
     Keys.isearch_have_paragraph { Search.have_paragraph }
-    Keys.isearch_have_spot { Search.insert_at_spot }   # Zap: move to spot (as spot)
+    Keys.isearch_have_spot { Search.insert_at_spot }
     Keys.isearch_have_move { Search.isearch_move_line }   # Zap: move to spot (as spot)
     Keys.isearch_have_underscores { Search.isearch_as_snake }
     Keys.isearch_have_variable { Search.insert_var_at_search_start }
@@ -395,17 +396,22 @@ class KeyBindings
     # just_...
     define_key :isearch_mode_map, kbd("C-j"), nil
     Keys.isearch_just_bold { Search.isearch_just_surround_with_char('<b>', '</b>') }
-    Keys.isearch_just_difflog { Search.jump_to_difflog }   # find last string in difflog
     Keys.isearch_just_camel { Search.isearch_just_camel }   # make match be camel case
+    Keys.isearch_just_difflog { Search.jump_to_difflog }   # find last string in difflog
     Keys.isearch_just_edges { Search.just_edges }   # delete everything but chars at edges of match
+    Keys.isearch_just_firefox { Search.isearch_url }   # delete everything but chars at edges of match
+    Keys.isearch_just_have { Search.just_select }   # select match
     Keys.isearch_just_lowercase { Search.downcase }
     Keys.isearch_just_macro { Search.just_macro }
     Keys.isearch_just_name { Search.just_name }
     Keys.isearch_just_orange { Search.just_orange }
     Keys.isearch_just_replace { Search.isearch_query_replace }   # replace
-    Keys.isearch_just_select { Search.just_select }   # select match
+
+    Keys.isearch_just_snake { Search.isearch_just_underscores }   # make match be snake case
     Keys.isearch_just_tag { Search.isearch_just_tag }   # select match
-    Keys.isearch_just_underscores { Search.isearch_just_underscores }   # make match be snake case
+
+    Keys.isearch_just_uppercase { Search.upcase }   # make match be snake case
+
     Keys.isearch_just_wrap { Search.isearch_just_wrap }   # make match be snake case
     Keys.isearch_kill { Search.cut; Location.as_spot('deleted') }   # cut
     Keys.isearch_look { Search.uncover }   # Look: show results for search string in all open files
