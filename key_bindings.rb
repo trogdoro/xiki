@@ -321,7 +321,7 @@ class KeyBindings
     # L: layout...
     # Use L prefix for: adjusting the layout, changing what is visible
 
-    Keys.LL { recenter(elvar.current_prefix_arg) }   # LL - recenter (L's default) *
+    Keys.LL { View.recenter }   # LL - recenter (L's default) *
     Keys.layout_all { View.hide_others }   # *
     Keys.layout_balance { View.balance }   # balance windows *
     Keys.layout_create { View.create }   # open new view **
@@ -404,7 +404,8 @@ class KeyBindings
     Keys.isearch_just_lowercase { Search.downcase }
     Keys.isearch_just_macro { Search.just_macro }
     Keys.isearch_just_name { Search.just_name }
-    Keys.isearch_just_orange { Search.just_orange }
+    Keys.isearch_just_open { Search.isearch_open }
+    Keys.isearch_just_plus { Search.just_increment }   # select match
     Keys.isearch_just_replace { Search.isearch_query_replace }   # replace
 
     Keys.isearch_just_snake { Search.isearch_just_underscores }   # make match be snake case
@@ -413,6 +414,7 @@ class KeyBindings
     Keys.isearch_just_uppercase { Search.upcase }   # make match be snake case
 
     Keys.isearch_just_wrap { Search.isearch_just_wrap }   # make match be snake case
+    Keys.isearch_just_yellow { Search.just_orange }
     Keys.isearch_kill { Search.cut; Location.as_spot('deleted') }   # cut
     Keys.isearch_look { Search.uncover }   # Look: show results for search string in all open files
     # M: leave unmapped for stop
@@ -490,7 +492,6 @@ class KeyBindings
     Keys._C(:isearch_mode_map) { Search.copy_and_comment }   # Comment line and copy it to starting point
     Keys._D(:isearch_mode_map) { Search.downcase }   # Downcase
     Keys._E(:isearch_mode_map) { Search.insert_tree_at_spot }   # Enter
-    #Keys._F(:isearch_mode_map) { Search.isearch_open }   # Find file
     Keys._G(:isearch_mode_map) { Search.isearch_google }   # Google search
     # H
     #Keys._I(:isearch_mode_map) { Search.insert_var_at_search_start }   # Interpolate: paste as interpolated variable

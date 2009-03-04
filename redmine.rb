@@ -173,4 +173,4 @@ class Redmine
   end
 
 end
-Redmine.init
+# Redmine.init

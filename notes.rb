@@ -279,17 +279,14 @@ class Notes
     Styles.define :notes_green, :fg => "0C0"
 
     if Styles.inverse
-
       Styles.define :notes_h1,
-        :fg => 'ffffff', :bg => "444466"
+        :fg => 'ffffff', :bg => "3b3b5e"
       Styles.define :notes_h1_pipe,
-        :fg => '7777aa', :bg => "444466"
-
+        :fg => '9191b3', :bg => "3b3b5e"
       Styles.define :notes_h2,
         :fg => '555588', :bg => "111122"
       Styles.define :notes_h2_pipe,
-        :fg => '444466', :bg => "111122"
-
+        :fg => '3b3b5e', :bg => "111122"
     end
   end
 

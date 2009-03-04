@@ -404,10 +404,35 @@ class View
     View.dir = options[:dir] if options[:dir]
   end
 
-  def self.txt left=nil, right=nil
-    left ||= point_min
-    right ||= point_max
-    buffer_substring left, right
+  def self.txt options={}, right=nil
+    # If 2nd arg is there, we were passed right,left
+    if right
+      left = options
+    else
+      left = options[:left] || point_min
+      right = options[:right] || point_max
+    end
+    $el.buffer_substring left, right
+  end
+
+  # Returns text from view according to prefix...
+  # - 3 means 3 lines, etc.
+  # - no prefix means the notes block
+  # - etc
+  def self.txt_per_prefix
+    prefix = Keys.prefix
+    #     prefix = options[:prefix]
+    case prefix
+    when 0   # Do paragraph (aka "block" for some reason)
+      left, right = Block.value
+    when 1..6
+      left = Line.left
+      right = $el.point_at_bol(prefix+1)
+    else   # Move this into ruby - block.rb?
+      ignore, left, right = View.block_positions "^|"
+    end
+    Effects.blink :left=>left, :right=>right
+    return [View.txt(left, right), left, right]
   end
 
   # Returns bounds of block in the form [left, after_header, right].
@@ -463,7 +488,7 @@ class View
   end
 
   def self.clear
-    erase_buffer
+    $el.erase_buffer
   end
 
   def self.dir
@@ -545,6 +570,10 @@ class View
 
   def self.empty?
     $el.point_min == $el.point_max
+  end
+
+  def self.recenter
+    $el.recenter Keys.prefix
   end
 
   def self.recenter_top

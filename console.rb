@@ -57,7 +57,7 @@ class Console
       end
       buffer ||= "*console #{dir}"
 
-      if ! reuse_buffer# || ! View.buffer_open?(buffer)
+      if ! reuse_buffer
         buffer = generate_new_buffer(buffer)
       end
       View.to_buffer buffer

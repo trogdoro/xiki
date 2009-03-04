@@ -116,12 +116,22 @@ class Search
 
   def self.isearch_open
     self.clear
-    Location.go( buffer_substring(match_beginning(0), match_end(0)) )
+    Location.go( self.match )
+  end
+
+  def self.just_increment
+    self.clear
+    match = self.match
+    View.delete(Search.left, Search.right)
+
+    orig = View.cursor
+    View.insert((match.to_i + 1).to_s)
+    View.cursor = orig
   end
 
   def self.jump_to_difflog
     self.clear
-    match = buffer_substring(match_beginning(0), match_end(0))
+    match = self.match
     #  exchange_point_and_mark
     #  insert match
     DiffLog.open
@@ -337,7 +347,7 @@ class Search
 
   def self.highlight_found
     self.clear
-    match = buffer_substring(match_beginning(0), match_end(0))
+    match = self.match
 
     #Hide.show
     highlight_regexp(match, :hi_yellow)
@@ -345,7 +355,7 @@ class Search
 
   def self.hide
     self.clear
-    match = buffer_substring(match_beginning(0), match_end(0))
+    match = self.match
     Hide.hide_unless /#{Regexp.quote(match)}/i
     recenter -3
     Hide.search
@@ -509,15 +519,21 @@ class Search
   end
 
   def self.match
-    buffer_substring match_beginning(0), match_end(0)
+    buffer_substring(match_beginning(0), match_end(0))
   end
 
   def self.forward search, options={}
-    re_search_forward search, nil, (options[:go_anyway] ? 1 : true)
+    orig = View.cursor
+    found = re_search_forward search, nil, (options[:go_anyway] ? 1 : true)
+    View.cursor = orig if options[:dont_move]
+    found
   end
 
   def self.backward search, options={}
-    re_search_backward search, nil, (options[:go_anyway] ? 1 : true)
+    orig = View.cursor
+    found = re_search_backward search, nil, (options[:go_anyway] ? 1 : true)
+    View.cursor = orig if options[:dont_move]
+    found
   end
 
   def self.to find
