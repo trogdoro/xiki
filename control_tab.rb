@@ -6,13 +6,25 @@ class ControlTab
 
   @@edited = nil
 
-#  @@switch_index = 0
+  @@switch_index = 0
 
   # Primary method.  Is mapped to C-tab and does the switching.
   def self.go
 
+    # If C-0 prefix, just burry buffer
+    if Keys.prefix == 0
+      $el.bury_buffer
+
+      # Store original order, and windows originally opened
+      @@original = buffer_list.to_a   # Hide evidence that we were on top (lest it restore us)
+      @@open_windows = window_list.collect {|b| window_buffer b}
+      @@consider_test = lambda{|b| ! buffer_name(b)[/Minibuf/] }
+      return
+    end
+
     # If first tab, clear edited
     first_tab_in_sequence = Keys.before_last !~ /\btab$/
+
     @@edited = nil if first_tab_in_sequence
 
     if Keys.prefix_u?   # If U prefix (must be first alt-tab in sequence)
@@ -34,36 +46,28 @@ class ControlTab
       @@original = buffer_list.to_a
       @@open_windows = window_list.collect {|b| window_buffer b}
 
-      puts "ControlTab: prefix was #{Keys.prefix}"
-
       # Check for prefix, and store correct test for files to go through accordingly
       case Keys.prefix
       when 0
         # Not dirs or files
         @@consider_test = lambda{|b| ! buffer_file_name(b) && ! buffer_name(b)[/Minibuf/] && ! elvar.mode_name[/^Dired/] }
-      when 1
-        # Files only
+      when 1   # Files only
         @@consider_test = lambda{|b| buffer_file_name(b)}
-      when 2
-        # Dirs only
+      when 2   # Dirs only
         @@consider_test = lambda{|b| elvar.mode_name[/^Dired/] }
-      when 3
-        # ...trees only
-        @@consider_test = lambda{|b| buffer_name(b) =~ /^\*\*tree /}
-      when 4
-        # .notes files
-        @@consider_test = lambda{|b| buffer_file_name(b) =~ /\.notes$/}
-      when 5
-        # .rhtml files
-        @@consider_test = lambda{|b| buffer_file_name(b) =~ /\.(html\.haml|html\.erb|rhtml)$/}
-      when 6
-        # Ruby files only
+      when 3   # ...trees only
+        @@consider_test = lambda{|b| buffer_name(b) =~ /^\*tree /}
+      when 4   # Consoles
+        @@consider_test = lambda{|b| buffer_name(b) =~ /\*console/i}
+      when 5   # .rhtml files
+        @@consider_test = lambda{|b| buffer_file_name(b) =~ /\.(html\.haml|html\.erb|html|rhtml)$/}
+      when 6   # Ruby files only
         @@consider_test = lambda{|b| buffer_file_name(b) =~ /\.rb$/}
-      when 8
-        # Consoles ("console" or "**" in buffer name)
+      when 7   # .notes files
+        @@consider_test = lambda{|b| buffer_file_name(b) =~ /\.notes$/}
+      when 8   # Consoles ("console" or "*" in buffer name)
         @@consider_test = lambda{|b| name = buffer_name(b);  (name[/\*console/i] || name[/\*/]) && ! buffer_name(b)[/Minibuf/] }
       else
-        puts "ControlTab: 4"
 
         #         if View.in_bar?  # If in the bar, only notes or trees
         #           @@consider_test = lambda{|b| buffer_file_name(b) =~ /\.notes$/ ||
@@ -109,9 +113,11 @@ class ControlTab
 
   # Advances @@switch_index to next eligible buffer
   def self.move_to_next
+    buffer_started_at = @@switch_index
 
     @@switch_index += 1   # Move to next
-    set_buffer(@@original[@@switch_index])  # Go there so test can look at buffer mode, etc
+    self.to_next_unless_nil   # Go there so test can look at buffer mode, etc
+
     # Keep moving until we find an eligible buffer (that isn't already viewed)
     while(
         @@open_windows.member?(@@original[@@switch_index]) ||   # Already viewed
@@ -120,12 +126,25 @@ class ControlTab
       @@switch_index += 1
 
       # Stop moving forward if we're at end
-      break if @@switch_index >= @@original.size
+      if @@switch_index >= @@original.size
+        @@switch_index = buffer_started_at
+        #         View.to_buffer buffer_started_at
+        View.beep;  View.message('None left')
+        break
+      end
 
-      set_buffer(@@original[@@switch_index])  # Go there so test can look at buffer mode, etc
+      self.to_next_unless_nil
     end
   end
 
+  def self.to_next_unless_nil
+    to_buffer = @@original[@@switch_index]
+    if to_buffer.nil?
+      View.beep
+      return View.message('None left')
+    end
+    $el.set_buffer(to_buffer)   # Go there so test can look at buffer mode, etc
+  end
 
   def self.keys
     Keys.set("C-<tab>") do

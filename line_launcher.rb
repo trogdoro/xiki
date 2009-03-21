@@ -361,7 +361,7 @@ class LineLauncher
       View.to_buffer name
     end
 
-    self.add(/^ *[$\/].+!/) do |l|   # /dir!shell command inline
+    self.add(/^ *[$\/][^:\n]+!/) do |l|   # /dir!shell command inline
       Console.launch :sync=>true
     end
     self.add(/^ *!/) do |l|   # !shell command inline
@@ -373,7 +373,7 @@ class LineLauncher
       line =~ /([\/.\w\-]+):(\d+)/
       path, line = $1, $2
       # If it doesn't have path, add it
-      path = "#{View.dir}#{path}" if path !~ /^\//
+      #       path = "#{View.dir}#{path}" if path !~ /^\//
       View.open path
       goto_line line.to_i
     end

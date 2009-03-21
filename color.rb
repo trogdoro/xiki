@@ -14,7 +14,8 @@ class Color
 
   @@colors = {
     "r" => :color_rb_red, "o" => :color_rb_orange, "y" => :color_rb_yellow,
-    "e" => :color_rb_green, "b" => :color_rb_blue, "p" => :color_rb_purple,
+    "e" => :color_rb_green, "b" => :color_rb_blue, "u" => :color_rb_purple,
+    "l" => :color_rb_light,
   }
 
   def self.colorize char=nil
@@ -33,20 +34,46 @@ class Color
       recenter(-3)
       Hide.search
       return
+    when "n"   # to next marker
+      pos = next_overlay_change(point_at_bol)
+      # If no overlay, must be at end, so continue on
+      pos = next_overlay_change(pos) unless overlays_at(pos)
+      return View.to(pos)
+    when "p"   # to next marker
+      pos = previous_overlay_change(point_at_bol)
+      pos = previous_overlay_change(pos-2) if overlays_at(pos-2)
+      return View.to pos
     when "d"
       return delete_overlay( overlays_at(next_overlay_change(point_at_bol - 1))[0] )
     when "k"
       return remove_overlays
+    when "a"
+      return self.alternating
     end
 
-    if Keys.prefix_u?
-      over = make_overlay(*View.range)
-      overlay_put over, :face, @@colors[char]
-      return
+    case Keys.prefix
+    when :u   # If C-u, use region
+      left, right = View.range
+    when nil   # If nothing, do line
+      left, right = Line.left, Line.right+1
+    else   # Else, get N lines
+      txt, left, right = View.txt_per_prefix
     end
 
-    # Otherwise, just colorize line
-    self.colorize_line @@colors[char]
+    over = make_overlay(left, right)
+    overlay_put over, :face, @@colors[char]
+  end
+
+  def self.alternating
+    orig = View.cursor
+    # Get region to cover
+    txt, left, right = View.txt_per_prefix
+    View.cursor = left
+    while(View.cursor < right)
+      Color.colorize_line :color_rb_light
+      Line.next 2
+    end
+    View.cursor = orig
   end
 
   def self.colorize_line face
@@ -60,6 +87,7 @@ class Color
     Styles.define :color_rb_orange, :bg => "ffe5bb"
     Styles.define :color_rb_yellow, :bg => "f9f9aa"
     Styles.define :color_rb_green, :bg => "e0ffcc"
+    Styles.define :color_rb_light, :bg => "222222"
     Styles.define :color_rb_blue, :bg => "dde5ff"
     Styles.define :color_rb_purple, :bg => "f2ddff"
 

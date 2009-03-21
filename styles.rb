@@ -119,18 +119,17 @@ class Styles
     Styles.define :fringe, :bg => 'ffffff', :fg => '999999'
     Styles.define :mode_line, :fg => '000000', :bg => '666666', :border => ['666666', 2]
     Styles.define :mode_line_inactive, :fg => '999999', :bg => 'cccccc', :border => ['cccccc', 2]
-
   end
 
   def self.use_xiki_color_scheme_black
-
     set_face_background :trailing_whitespace, "#333333"
     Styles.define :default, :bg => '000000', :fg => 'ffffff'
     Styles.define :cursor, :bg => 'ffffff', :fg => '000000'
     Styles.define :fringe, :bg => '000000', :fg => '666666'
-    Styles.define :mode_line, :fg => 'ffffff', :bg => '888888', :border => ['888888', 2]
-    Styles.define :mode_line_inactive, :fg => '666666', :bg => '333333', :border => ['333333', 2]
 
+    Styles.define :mode_line, :fg => 'ffffff', :bg => '338833', :border => ['227722', 2]
+
+    Styles.define :mode_line_inactive, :fg => 'ffffff', :bg => '999999', :border => ['888888', 2]
   end
 end
 Styles.init

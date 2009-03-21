@@ -233,7 +233,7 @@ class KeyBindings
     Keys.do_lines_arbitrary { Code.randomize_lines }
     Keys.do_load_browser { Firefox.reload }
     Keys.do_last_command { Console.do_last_command }
-    Keys.do_linebreaks_dos { set_buffer_file_coding_system :dos }
+    Keys.do_line_duplicate { Line.duplicate_line }
     #     Keys.do_load_emacs { App.load_emacs }   # *
     Keys.do_load_file { revert_buffer(true, true, true) }
     Keys.do_lines_having {   # delete lines matching a regex
@@ -245,9 +245,12 @@ class KeyBindings
     }
     Keys.do_lines_individual { Code.do_kill_duplicates }   # Uniqify, delete duplicates
     Keys.do_last_launch { LineLauncher.do_last_launch }
+    Keys.do_line_next { Line.move(:next) }
+    Keys.do_line_previous { Line.move(:previous) }
     Keys.do_lines_reverse { reverse_region(region_beginning, region_end) }
     Keys.do_lines_sort { sort_lines(nil, region_beginning, region_end) }
     Keys.do_linebreaks_unix { set_buffer_file_coding_system :unix }
+    Keys.do_linebreaks_windows { set_buffer_file_coding_system :dos }
     Keys.do_macro { Macros.run }   # do last macro *
     Keys.do_name_buffer { Buffers.rename }
     Keys.do_number_enter { Incrementer.enter }
@@ -333,10 +336,10 @@ class KeyBindings
     Keys.layout_files { FileTree.open_in_bar; View.to_nth 1; Effects.blink(:what=>:line) }
     Keys.layout_hide { View.hide }   # **
     Keys.layout_indent { Hide.hide_by_indent }   # only show lines indented less than x
-    # J
-    Keys.layout_kill { kill_this_buffer }   # **
+    Keys.layout_jump { View.shift }
+    Keys.layout_kill { $el.kill_this_buffer }   # **
     # L: defined above - mapped to what C-d does by default
-    Keys.layout_mark { Color.colorize }   # colorize line, etc
+    Keys.layout_marker { Color.colorize }   # colorize line, etc
     #Keys.layout_menu { CodeTree.layout_menu }   # show menu bare in current state
     Keys.layout_next { View.next(:blink=>true) }   # next view **
     Keys.layout_output { Code.open_log_view; Effects.blink(:what=>:line) }
@@ -407,11 +410,11 @@ class KeyBindings
     Keys.isearch_just_open { Search.isearch_open }
     Keys.isearch_just_plus { Search.just_increment }   # select match
     Keys.isearch_just_replace { Search.isearch_query_replace }   # replace
-
     Keys.isearch_just_snake { Search.isearch_just_underscores }   # make match be snake case
     Keys.isearch_just_tag { Search.isearch_just_tag }   # select match
 
     Keys.isearch_just_uppercase { Search.upcase }   # make match be snake case
+    Keys.isearch_just_variable { Search.isearch_just_surround_with_char '#{', '}' }
 
     Keys.isearch_just_wrap { Search.isearch_just_wrap }   # make match be snake case
     Keys.isearch_just_yellow { Search.just_orange }

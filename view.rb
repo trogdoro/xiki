@@ -66,12 +66,14 @@ class View
   def self.create
     prefix = elvar.current_prefix_arg
     # If prefix is 3, do Vertical split
-    if prefix == 3 || Keys.prefix_u?
-      split_window_horizontally
-      other_window 1
+    if prefix == 3
+      $el.split_window_horizontally
+      $el.other_window 1
+    elsif Keys.prefix_u?
+      $el.split_window_vertically
     else
-      split_window_vertically
-      other_window 1 unless prefix
+      $el.split_window_vertically
+      $el.other_window 1 # unless prefix
     end
   end
 
@@ -779,5 +781,28 @@ class View
     @@dimension_options << [name, the_proc]
   end
 
+  def self.shift
+    times = Keys.prefix_times;  Keys.clear_prefix
+
+    choice = Keys.input :one_char => true, :prompt => "Move this view to: (n)ext, (p)revious"
+    Effects.blink
+    times.times do
+
+      buffer_a =  View.buffer
+
+      # Go to other and switch to A
+      choice == "n" ? View.next : View.previous
+      buffer_b = View.buffer
+      $el.switch_to_buffer buffer_a
+
+      # Go to first and switch to B
+      choice == "n" ? View.previous : View.next
+      $el.switch_to_buffer buffer_b
+
+      choice == "n" ? View.next : View.previous
+
+    end
+    Effects.blink
+  end
 end
 View.init

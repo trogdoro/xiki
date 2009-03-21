@@ -162,10 +162,6 @@ class Search
 
   # Clears the isearch, allowing for inserting, or whatever else
   def self.clear
-    # Try to not error out when C-s but nothing typed
-    #     if self.left == self.right
-    #       return self.isearch_done(true)
-    #     end
     $el.isearch_done
     $el.isearch_clean_overlays
   end
@@ -744,7 +740,7 @@ class Search
     View.insert right
     View.to(Search.left)
     View.insert left
-    View.to Search.right + left.length
+    View.to Search.right + left.length + right.length
   end
 
   # Copy match as name (like Keys.as_name)

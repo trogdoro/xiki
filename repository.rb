@@ -161,7 +161,7 @@ class Repository
 
     View.open("#{dir}/#{file}")
     View.to_line(line.to_i + (inbetween - 1))
-    Color.colorize :o
+    Color.colorize :l
   end
 
   def self.styles_define

@@ -20,17 +20,19 @@ class Code
   end
 
   def self.comment left=nil, right=nil
-    n = Keys.prefix_n(:clear=>true)   # Check for numeric prefix
-    if n   # If there, move down
-      Move.to_axis
-      orig = Location.new
-      Line.next n
-      View.set_mark
-      orig.go
+    if left.nil?
+      n = Keys.prefix_n(:clear=>true)   # Check for numeric prefix
+      if n   # If there, move down
+        Move.to_axis
+        View.set_mark Line.left(n+1)
+      end
+      left, right = View.range
     end
+    comment_or_uncomment_region left, right
+
+    View.set_mark Line.left(n+1) if n   # Re-calculate left and right (might have changed)
     left, right = View.range
-    comment_or_uncomment_region(left, right)
-    Code.indent
+    Code.indent left, right
   end
 
   def self.run   # Evaluates file, paragraph, or next x lines using el4r
@@ -41,8 +43,6 @@ class Code
       case prefix
       when :u   # Load file in emacsruby
         return self.load_this_file
-      when :uu   # In rails console
-        return self.run_in_rails_console
       when 8   # Put into file and run in console
         File.open("/tmp/tmp.rb", "w") { |f| f << Notes.get_block.text }
         return Console.run "ruby -I. /tmp/tmp.rb", :dir=>View.dir
@@ -129,8 +129,9 @@ class Code
     insert "Ol << \"#{txt}: \#{#{txt}}\""
   end
 
-  def self.indent
-    indent_region(* View.range)
+  def self.indent left=nil, right=nil
+    left, right = View.range if left.nil?
+    indent_region(left, right)
   end
 
   # Evaluates a string, and returns the output and the stdout string generated
@@ -179,53 +180,71 @@ class Code
   end
 
   def self.do_as_rspec options={}
-    # If not in an rspec file, delegate to: do_related_rspec
-    if View.name !~ /_spec\.rb$/
-      return self.do_related_rspec
-    end
-
     args = []
 
-    if options[:line]   # If specific line, just use it
-      args << '-l'
-      args << options[:line]
-    else   # Otherwise, figure out what to run
-      orig = Location.new
-      orig_index = View.index
+    if Keys.prefix_u
+      args << 'spec'
+      args << '-p'
+      args << '**/*.rb'
 
-      unless Keys.prefix == 8   # If not C-8, only run this test
-        before_search = Location.new
-        Line.next
-
-        # Find first preceding "it " or "describe "
-        it = Search.backward "^ *it ", :dont_move=>true
-        describe = Search.backward "^ *describe\\>", :dont_move=>true
-
-        if it.nil? && describe.nil?
-          View.beep
-          before_search.go
-          return View.message "Couldn't find it... or describe... block"
+      # If already in shell, don't change dir
+      if View.mode == :shell_mode
+        dir = nil
+      else
+        begin
+          dir, spec = View.file.match(/(.+)\/(spec\/.+)/)[1,2]
+        rescue
+          dir, spec = View.file.match(/(.+)\/(app\/.+)/)[1,2]
         end
-
-        it ||= 0;  describe ||= 0
-
-        if it > describe   # If it, pass rspec -e "should...
-          View.cursor = it
-          test = Line.value[/"(.+)"/, 1]
-          args << '-e'
-          args << test
-        else   # If describe, pass rspec line number
-          View.cursor = describe
-          args << '-l'
-          args << View.line_number
-        end
-        before_search.go
       end
-    end
+      # /projects/memorizable/memorizable.merb/app/models/main.rb
+    elsif View.name !~ /_spec\.rb$/   # If not in an rspec file, delegate to: do_related_rspec
+      orig = Location.new
+      self.do_related_rspec
+      orig.go
+      return
+    else
+      if options[:line]   # If specific line, just use it
+        args << '-l'
+        args << options[:line]
+      else   # Otherwise, figure out what to run
+        orig = Location.new
+        orig_index = View.index
 
-    # Chop off up until before /spec/
-    dir, spec = View.file.match(/(.+)\/(spec\/.+)/)[1,2]
-    args.unshift spec
+        unless Keys.prefix == 8   # If not C-8, only run this test
+          before_search = Location.new
+          Line.next
+
+          # Find first preceding "it " or "describe "
+          it = Search.backward "^ *it ", :dont_move=>true
+          describe = Search.backward "^ *describe\\>", :dont_move=>true
+
+          if it.nil? && describe.nil?
+            View.beep
+            before_search.go
+            return View.message "Couldn't find it... or describe... block"
+          end
+
+          it ||= 0;  describe ||= 0
+
+          if it > describe   # If it, pass rspec -e "should...
+            View.cursor = it
+            test = Line.value[/"(.+)"/, 1]
+            args << '-e'
+            args << test
+          else   # If describe, pass rspec line number
+            View.cursor = describe
+            args << '-l'
+            args << View.line_number
+          end
+          before_search.go
+        end
+      end
+
+      # Chop off up until before /spec/
+      dir, spec = View.file.match(/(.+)\/(spec\/.+)/)[1,2]
+      args.unshift spec
+    end
 
     buffer = '*console for rspec'
     # If spec buffer open, just switch to it
@@ -236,7 +255,9 @@ class Code
     end
     View.clear
 
-    command = "Spec::Runner::CommandLine.run(Spec::Runner::OptionParser.parse([#{args.map{|o| "'#{o}'"}.join(",\n")}], $stderr, $stdout))"
+    #     args << '-D'   # Show diffs
+
+    command = "Spec::Runner::CommandLine.run(Spec::Runner::OptionParser.parse([#{args.map{|o| "\"#{o}\""}.join(",\n")}], $stderr, $stdout))"
     command = "p :reload; #{command}"
     View.insert command
     Console.enter
@@ -250,8 +271,9 @@ class Code
   def self.do_related_rspec
     # Find method name
     orig = View.cursor
+    Line.next
     Search.backward "^ +def "
-    meth = Line.value[/def ([\w.]+)/, 1].sub /^self\./, ''
+    meth = Line.value[/def ([\w.!]+)/, 1].sub /^self\./, ''
     p meth
     View.cursor = orig
 
@@ -261,6 +283,7 @@ class Code
     # Find test for method:
     View.to_highest
     Search.forward "^ *describe .+, \"##{meth}\" do"
+    Move.to_axis
     View.recenter_top
     Code.do_as_rspec :line=>View.line_number
 
@@ -453,8 +476,6 @@ class Code
   def self.to_ruby o
     o.to_ruby
   end
-
-
 
 private
   def self.clear_and_go_back location

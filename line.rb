@@ -197,4 +197,22 @@ class Line
     re_search_forward "^[ \t]*$"
   end
 
+  def self.duplicate_line
+    Line.to_left
+    View.insert "#{Line.value}\n"
+    self.comment(Line.left, Line.right) if Keys.prefix_u
+    Line.previous
+  end
+
+  def self.move direction
+    many = Keys.prefix_times
+
+    many = (0 - many) if direction == :previous
+    line = Line.value 1, :include_linebreak => true, :delete => true   # Get line
+    Line.to_next many
+    View.insert line
+
+    Line.previous
+  end
+
 end
