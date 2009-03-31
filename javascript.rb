@@ -2,6 +2,12 @@ class Javascript
   def self.run
     # Get block contents
     txt = Notes.block("^|")
+
+    txt << "
+      function p(txt) {
+        print(txt);
+      }";
+
     result = self.run_internal txt
     # Insert result at end of block
     orig = Location.new

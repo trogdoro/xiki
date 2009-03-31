@@ -164,8 +164,8 @@ class Line
   def self.label line=nil
     line ||= self.value
     # Space or blank can follow colon
-    label = line[/^\s*- (.+?): /, 1]
-    label ||= line[/^\s*- (.+?):$/, 1]
+    label = line[/^\s*[+-] (.+?): /, 1]
+    label ||= line[/^\s*[+-] (.+?):$/, 1]
   end
 
   def self.without_label options={}
@@ -200,7 +200,7 @@ class Line
   def self.duplicate_line
     Line.to_left
     View.insert "#{Line.value}\n"
-    self.comment(Line.left, Line.right) if Keys.prefix_u
+    Code.comment(Line.left, Line.right) if Keys.prefix_u
     Line.previous
   end
 

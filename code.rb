@@ -198,7 +198,7 @@ class Code
         end
       end
       # /projects/memorizable/memorizable.merb/app/models/main.rb
-    elsif View.name !~ /_spec\.rb$/   # If not in an rspec file, delegate to: do_related_rspec
+    elsif View.file !~ /_spec\.rb$/   # If not in an rspec file, delegate to: do_related_rspec
       orig = Location.new
       self.do_related_rspec
       orig.go

@@ -24,6 +24,17 @@ class Color
 
     # If h, just show all colors
     case char
+    when "c"   # Copy marked lines
+
+      overlays = overlays_in(View.top, View.bottom)   # Get all overlays
+      res = ""
+      overlays.to_a.reverse.each do |o|   # Loop through and copy all
+        line = View.txt(overlay_start(o), overlay_end(o))
+        line << "\n" unless line =~ /\n$/
+        res << line
+      end
+      Clipboard['0'] = res
+
     when "h"
       Hide.hide_unless_block { |l, bol, eol|
         # Whether current line contains an overlay of this color
@@ -35,12 +46,12 @@ class Color
       Hide.search
       return
     when "n"   # to next marker
-      pos = next_overlay_change(point_at_bol)
-      # If no overlay, must be at end, so continue on
+      pos = next_overlay_change(View.cursor)
+      # If no overlay, may be at end, so continue on
       pos = next_overlay_change(pos) unless overlays_at(pos)
       return View.to(pos)
     when "p"   # to next marker
-      pos = previous_overlay_change(point_at_bol)
+      pos = previous_overlay_change(View.cursor)
       pos = previous_overlay_change(pos-2) if overlays_at(pos-2)
       return View.to pos
     when "d"

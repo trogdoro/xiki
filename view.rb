@@ -40,24 +40,43 @@ class View
 
   # Make current window larger.  Take into account that there might be other vertical windows
   def self.enlarge
+    default_height = 3
+    small = Keys.prefix || default_height
+    small = default_height if small == :u
+
+    small += 1
+
     # If universal prefix and in bar, widen bar
     self.balance if Keys.prefix_u and View.bar?
 
     ws = self.windows_in_my_column
 
-    # TODO: update this to use .in_bar?
+    wnum = ws.length   # Get number of windows
 
-    # Get number of windows
-    wnum = ws.length
-    small = 2
+    usable_height = frame_height - 1 - wnum
+
+    biggest = usable_height - ((wnum-1) * (small-1))
     selected = selected_window
-    # New height should be window minus 2 for each window
+
+    # Do multiple times (emacs daesn't get it right he first time)
+    5.times do
+      self.enlarge_internal :up, ws, selected, biggest, small
+    end
+    #     self.enlarge_internal :down, ws, selected, biggest, small
+
+  end
+
+  def self.enlarge_internal direction, ws, selected, biggest, small
+    ws = ws.reverse if direction != :up
+
     ws.each do |w|
       # If current window, set to remaining
       if w == selected
-        set_window_text_height w, frame_height - (wnum*small)
+        height = biggest # - 1
+        set_window_text_height w, height
       else
-        set_window_text_height w, small
+        height = small - 1
+        set_window_text_height w, height
       end
     end
   end
@@ -222,7 +241,7 @@ class View
   # Returns whether we're in the bar
   def self.in_bar?
     self.bar? &&  # Bar is open
-      window_edges(View.window)[0] == 0  # Window is at left of frame
+      View.edges[0] == 0  # Window is at left of frame
   end
 
   def self.first
@@ -246,23 +265,25 @@ class View
   end
 
   def self.hide
-    left = View.left_edge
+    Keys.prefix_times.times do
+      left = View.left_edge
 
-    # If there's one above me and before me
-    index = View.index
-    middle = false
-    size = View.list.size
-    if index > 0 && index < (size - 1)   # Check existance
-      if( left == View.left_edge(View.list[index - 1]) &&
-        left == View.left_edge(View.list[index + 1]) )  # Check alignment
-        middle = true
+      # If there's one above me and before me
+      index = View.index
+      middle = false
+      size = View.list.size
+      if index > 0 && index < (size - 1)   # Check existance
+        if( left == View.left_edge(View.list[index - 1]) &&
+          left == View.left_edge(View.list[index + 1]) )  # Check alignment
+          middle = true
+        end
       end
-    end
-    # If I'm the last
-    last = index == (size - 1)
+      # If I'm the last
+      last = index == (size - 1)
 
-    delete_window
-    previous_multiframe_window if View.left_edge != left || middle || last
+      delete_window
+      previous_multiframe_window if View.left_edge != left || middle || last
+    end
   end
 
   def self.hide_others
@@ -364,6 +385,15 @@ class View
     down = Keys.prefix_times - 1
     Keys.clear_prefix
     View.to_after_bar
+
+    # how to know if only 1
+    # width == width of all
+
+    # If there's only one column (last view is at left), go to top
+    if self.edges[0] == 0
+      Move.to_window(1)
+    end
+
     down.times do
       View.next
     end
@@ -378,7 +408,7 @@ class View
 
     # Go to first window not on left margin
     self.list.each do |w|
-      if window_edges(w)[0] != 0  # Window is at left of frame
+      if self.edges(w)[0] != 0  # Window is at left of frame
         select_window(w)
         break
       end
@@ -387,7 +417,7 @@ class View
 
   def self.left_edge view=nil
     view ||= selected_window  # Default to current view
-    window_edges(view)[0]
+    self.edges(view)[0]
   end
 
   # Switches to a buffer
@@ -804,5 +834,11 @@ class View
     end
     Effects.blink
   end
+
+  def self.edges view=nil
+    view ||= self.current
+    $el.window_edges(view).to_a
+  end
+
 end
 View.init

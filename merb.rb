@@ -227,10 +227,10 @@ class Merb
 
   def self.open_next_error
     Bookmarks.go("$s")
-    Move.to_end
-    Search.backward('^\/')
-    Move.to_previous_paragraph
+    View.to_bottom
+    Search.backward 'Started request handling'
     Search.forward('^\/')
+
     Color.colorize :r
     LineLauncher.launch
     Color.colorize :r

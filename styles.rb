@@ -57,8 +57,6 @@ class Styles
           ":box '(:line-width #{border[1]} :color \"##{border[0]}\")\n"
         end
     end
-#    code << ":box '(:line-width -1 :style released-button)\n" if options[:raised]
-#    code << ":box '(:line-width -1 :style released-button)\n" if options[:raised]
     code << "  )"
 
     el4r_lisp_eval code
@@ -95,6 +93,7 @@ class Styles
         '(font-lock-keywords-case-fold-search t)
         )
       >
+      # '
   end
 
   # Don't format quotes (it can override other styles)
@@ -110,26 +109,25 @@ class Styles
   end
 
   def self.use_xiki_color_scheme
-    # Use black if
+    # Use black
     return self.use_xiki_color_scheme_black if Styles.inverse
 
     set_face_background :trailing_whitespace, "#eeeeee"
-    Styles.define :default, :bg => 'ffffff', :fg => '000000'
-    Styles.define :cursor, :bg => '000000', :fg => 'ffffff'
-    Styles.define :fringe, :bg => 'ffffff', :fg => '999999'
-    Styles.define :mode_line, :fg => '000000', :bg => '666666', :border => ['666666', 2]
-    Styles.define :mode_line_inactive, :fg => '999999', :bg => 'cccccc', :border => ['cccccc', 2]
+    Styles.define :default, :bg=>'ffffff', :fg=>'000000'
+    Styles.define :cursor, :bg=>'000000', :fg=>'ffffff'
+    Styles.define :fringe, :bg=>'ffffff', :fg=>'999999'
+    Styles.define :mode_line, :fg=>'000000', :bg=>'666666', :border=>['666666', -1]
+    Styles.define :mode_line_inactive, :fg=>'999999', :bg=>'cccccc', :border=>['cccccc', -1]
   end
 
   def self.use_xiki_color_scheme_black
     set_face_background :trailing_whitespace, "#333333"
-    Styles.define :default, :bg => '000000', :fg => 'ffffff'
-    Styles.define :cursor, :bg => 'ffffff', :fg => '000000'
-    Styles.define :fringe, :bg => '000000', :fg => '666666'
+    Styles.define :default, :bg=>'000000', :fg=>'ffffff'
+    Styles.define :cursor, :bg=>'ffffff', :fg=>'000000'
+    Styles.define :fringe, :bg=>'000000', :fg=>'666666'
 
-    Styles.define :mode_line, :fg => 'ffffff', :bg => '338833', :border => ['227722', 2]
-
-    Styles.define :mode_line_inactive, :fg => 'ffffff', :bg => '999999', :border => ['888888', 2]
+    Styles.define :mode_line, :fg=>'ffffff', :bg=>'338833', :border=>['44bb44', -2]
+    Styles.define :mode_line_inactive, :fg=>'dddddd', :bg=>'999999', :border=>['cccccc', -2]
   end
 end
 Styles.init

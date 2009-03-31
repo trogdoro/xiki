@@ -39,6 +39,8 @@ class Bookmarks
 
     # Must be buffer
 
+    $el.bookmark_delete name   # Delete real bookmark
+
     # Load bookmarks.yml
     bookmarks_yml = File.expand_path("~/bookmarks.yml")
     if File.exists?(bookmarks_yml)

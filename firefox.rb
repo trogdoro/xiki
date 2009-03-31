@@ -15,6 +15,7 @@ class Firefox
   end
 
   def self.reload
+    Code.open_log_view if Keys.prefix_u
     prefix = Keys.prefix_n
     if prefix   # If numeric prefix, go to that tab
       tab = prefix - 1

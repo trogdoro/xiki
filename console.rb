@@ -132,6 +132,8 @@ class Console
   end
 
   def self.do_last_command
+    Code.open_log_view if Keys.prefix_u
+
     orig = View.index
 
     found = self.to_shell_buffer(nil, :no_create=>true)   # If not in shell buffer, go to it

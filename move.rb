@@ -205,9 +205,11 @@ class Move
 
   def self.to_quote
     # If on a quote, move off
-    Line.next if Line.matches(/^ *\|/)
-    re_search_forward "^ +|"
-    backward_char
+    Keys.prefix_times.times do
+      Line.next if Line.matches(/^ *\|/)
+      re_search_forward "^ +|"
+      backward_char
+    end
   end
 
   # Move to file in tree (not dir) ?

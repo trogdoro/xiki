@@ -76,7 +76,7 @@ class LineLauncher
 
     View.bar if Keys.prefix == 7
 
-    if line =~ /^( *)- .+?: (.+)/   # Split label off, if there
+    if line =~ /^( *)[+-] .+?: (.+)/   # Split label off, if there
       line = $1 + $2
     end
     # If try each potential paren match

@@ -52,8 +52,8 @@ class KeyBindings
     # Z
     #Keys.A0 { Clipboard.copy("0") }   # As 0: copy as key "0"
     Keys.A1 { Clipboard.copy("1") }   # As 1
-    Keys.A2 { Clipboard.copy("2") };  # As 2
-    Keys.A3 { Clipboard.copy("3") };  Keys.A4 { Clipboard.copy("4") }
+    Keys.A2 { Clipboard.copy("2") };  Keys.A3 { Clipboard.copy("3") };  Keys.A4 { Clipboard.copy("4") }
+    Keys.A5 { Clipboard.copy("5") };  Keys.A6 { Clipboard.copy("6") };  Keys.A7 { Clipboard.copy("7") }
   end
 
   def self.o_keys
@@ -326,7 +326,7 @@ class KeyBindings
 
     Keys.LL { View.recenter }   # LL - recenter (L's default) *
     Keys.layout_all { View.hide_others }   # *
-    Keys.layout_balance { View.balance }   # balance windows *
+    Keys.layout_balance { 3.times { View.balance } }   # balance windows *
     Keys.layout_create { View.create }   # open new view **
 
     Keys.layout_dimensions { View.dimensions }
@@ -419,7 +419,7 @@ class KeyBindings
     Keys.isearch_just_wrap { Search.isearch_just_wrap }   # make match be snake case
     Keys.isearch_just_yellow { Search.just_orange }
     Keys.isearch_kill { Search.cut; Location.as_spot('deleted') }   # cut
-    Keys.isearch_look { Search.uncover }   # Look: show results for search string in all open files
+    Keys.isearch_look { Search.uncover }   # Look: show results for search string in a bookmark
     # M: leave unmapped for stop
     # N: leave unmapped for next
     Keys.isearch_outline { Search.isearch_find_in_buffers(:current_only => true) }   # Outline
@@ -467,6 +467,16 @@ class KeyBindings
     end
     define_key :isearch_mode_map, kbd("C-4") do
       Search.isearch_copy_as("4")
+    end
+
+    define_key :isearch_mode_map, kbd("C-5") do
+      Search.isearch_copy_as("5")
+    end
+    define_key :isearch_mode_map, kbd("C-6") do
+      Search.isearch_copy_as("6")
+    end
+    define_key :isearch_mode_map, kbd("C-7") do
+      Search.isearch_copy_as("7")
     end
 
     define_key :isearch_mode_map, kbd("C-=") do   # Add one char from isearch
