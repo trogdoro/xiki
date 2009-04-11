@@ -15,7 +15,7 @@ class Firefox
   end
 
   def self.reload
-    Code.open_log_view if Keys.prefix_u
+    Code.open_log_view if Keys.prefix_u && View.buffer_visible?('*output - tail of /tmp/output.notes')
     prefix = Keys.prefix_n
     if prefix   # If numeric prefix, go to that tab
       tab = prefix - 1

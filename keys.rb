@@ -4,6 +4,7 @@ require 'text_util'
 
 # Methods for defining keyboard shortcuts
 class Keys
+  @@entered_as_quote = {}
 
   @@key_queue =[]  # For defining menus (must be done in reverse)
 
@@ -308,15 +309,14 @@ class Keys
     prefix = Keys.prefix
     # If prefix of 0, insert in a way that works with macros
     case prefix
-    # Do pause for space
-    when :u
+    when nil   # Do nothing
+    when :u   # Do pause for space
       PauseMeansSpace.go
       return
     when 0
       View.insert Keys.input(:prompt => "Insert text to insert: ")
       return
-    # If other prefix, insert single char n times
-    when 1..8
+    else   # If other prefix, insert single char n times
       c = View.read_char("Insert single char to insert #{prefix} times: ").chr
       prefix.times do
         View.insert c
@@ -330,24 +330,28 @@ class Keys
     # Get first char and insert
     c = $el.read_char("insert text (pause to exit): ").chr
     inserted = "#{c}"
-    c = c.upcase if prefix == :u
+    #     c = c.upcase if prefix == :u
 
     View.insert c
-    o = $el.make_overlay $el.point, $el.point - 1
-    $el.overlay_put o, :face, :control_lock_found
+    #     o = $el.make_overlay $el.point, $el.point - 1
+    #     $el.overlay_put o, :face, :control_lock_found
     # While no pause, insert more chars
     while(c = $el.read_char("insert text (pause to exit): ", nil, 0.36))
-      $el.delete_overlay o
+      #       $el.delete_overlay o
       inserted += c.chr
       View.insert c.chr
-      o = $el.make_overlay $el.point, $el.point - inserted.size
-      $el.overlay_put o, :face, :control_lock_found
+      #       o = $el.make_overlay $el.point, $el.point - inserted.size
+      #       $el.overlay_put o, :face, :control_lock_found
     end
-    $el.delete_overlay o
+    #     $el.delete_overlay o
     $el.elvar.qinserted = inserted
     $el.message "input ended"
 
     Cursor.restore :before_q
+
+    # Store in hash by first letter for use by enter_yank
+
+    Keys.save_for_yank inserted   # Store for retrieval with enter_yank
 
   end
 
@@ -507,6 +511,19 @@ class Keys
 
   def self.before_last
     $el.el4r_lisp_eval("(elt (recent-keys) (- (length (recent-keys)) 2))").to_s
+  end
+
+  def self.save_for_yank txt
+
+    key = txt[/[a-z]/i]
+    @@entered_as_quote[key.downcase] = txt
+  end
+
+  def self.yank
+    ch = Keys.input :one_char => true
+    value = @@entered_as_quote[ch]
+    return unless value
+    View.insert value
   end
 
 end

@@ -159,9 +159,9 @@ class Code
   def self.open_related_rspec
     if View.file =~ /\/(app|spec)\//   # If normal specs
       if View.file =~ /\/app\//   # If in spec, open corresponding file
-        View.open View.file.sub('/app/', '/spec/').sub(/\.rb/, '_spec.rb')
+        View.open View.file.sub('/app/', '/spec/unit/').sub(/\.rb/, '_spec.rb')
       else   # Otherwise, open file corresponding spec
-        View.open View.file.sub('/spec/', '/app/').sub(/\_spec.rb/, '.rb')
+        View.open View.file.sub('/spec/unit/', '/app/').sub(/\_spec.rb/, '.rb')
       end
       return
     end
@@ -183,7 +183,7 @@ class Code
     args = []
 
     if Keys.prefix_u
-      args << 'spec'
+      args << 'spec/unit'
       args << '-p'
       args << '**/*.rb'
 
@@ -252,6 +252,7 @@ class Code
       View.to_buffer buffer
     else   # Otherwise open it and run console
       Console.run "merb -i", :dir=>dir, :buffer=>buffer
+      #       Console.run "merb -i -e test", :dir=>dir, :buffer=>buffer
     end
     View.clear
 

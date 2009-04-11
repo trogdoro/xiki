@@ -146,6 +146,7 @@ class Search
     Clipboard.set("0", match)
     set_register ?X, match
     x_select_text match
+    Keys.save_for_yank match   # Store for retrieval with enter_yank
   end
 
   def self.cut

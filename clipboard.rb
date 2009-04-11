@@ -181,9 +181,11 @@ class Clipboard
     Move.to_axis
     left = Line.left
     right = Line.left(many+1)
-    Clipboard.set("0", View.txt(left, right))
+    line = View.txt(left, right)
+    Clipboard.set("0", line)
     Effects.blink :left => left, :right => right
     $el.set_mark(right)
+    Keys.save_for_yank line   # Store for retrieval with enter_yank
   end
 
   def self.enter_replacement
@@ -209,5 +211,7 @@ class Clipboard
       return
     end
     Clipboard.copy("0")
+
+    Keys.save_for_yank View.selection   # Store for retrieval with enter_yank
   end
 end

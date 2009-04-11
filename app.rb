@@ -23,6 +23,7 @@ class App
   end
   def self.enter_from_difflog
     Location.as_spot
+    View.to_after_bar if View.in_bar?
     DiffLog.open
     isearch_backward
   end

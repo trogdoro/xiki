@@ -31,8 +31,11 @@ class CouchDb
 
     %Q[
     + .docs/
+    + .views/
+    + .all_docs/
     + .delete/
     + .rest_tree/
+    + .crud/
     ]
   end
 
@@ -120,6 +123,27 @@ class CouchDb
     # Update it
     res = RestTree.request 'PUT', "#{@@server}/#{db}/#{id}", doc
     "|#{res}"
+  end
+
+  def self.views db
+    db.sub! /\/$/, ''
+    views = JSON[RestTree.request('GET', "#{@@server}/#{db}/_design/d1", nil)]['views']
+
+    views.keys.each do |k|
+      puts "y Cdb.#{db[/(.+)_/, 1]} :#{k}#, :key=>''"
+    end
+  end
+
+  def self.all_docs db
+    puts "y Cdb.#{db[/(.+)_/, 1]}"
+    puts "y Cdb.all :#{db[/(.+)_/, 1]}#, :key=>''"
+  end
+
+  def self.crud db
+    puts "y Cdb.#{db[/(.+)_/, 1]} ''"
+    puts "y Cdb.#{db[/(.+)_/, 1]}! '', 'txt'=>''"
+    puts "y Cdb.delete :#{db[/(.+)_/, 1]}, ''"
+    puts "y Cdb.#{db[/(.+)_/, 1]} :startkey=>'b', :endkey=>'n', :skip=>2, :limit=>3"
   end
 
 end

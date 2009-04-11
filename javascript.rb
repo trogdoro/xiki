@@ -1,7 +1,7 @@
 class Javascript
   def self.run
     # Get block contents
-    txt = Notes.block("^|")
+    txt, left, right = View.txt_per_prefix #:prefix=>Keys.prefix
 
     txt << "
       function p(txt) {

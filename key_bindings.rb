@@ -173,6 +173,7 @@ class KeyBindings
     Keys.enter_viewing { History.enter_viewing }
     # W
     Keys.enter_whitespace { open_line(elvar.current_prefix_arg || 1) }
+    Keys.enter_yank { Keys.yank }
     # X
     # Y
     # Z
