@@ -1378,6 +1378,10 @@ class FileTree
   # Mapped to shortcuts that displays the trees
   def self.tree options={}
     dir = Keys.bookmark_as_path(:prompt=>"file_tree in which dir? (enter bookmark): ")
+    if dir.nil?
+      beep
+      return View.message("Bookmark doesn't exist.")
+    end
     dir = Bookmarks.dir_only(dir) if options[:recursive]
 
     options.merge!(:dir => dir)

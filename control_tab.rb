@@ -11,8 +11,10 @@ class ControlTab
   # Primary method.  Is mapped to C-tab and does the switching.
   def self.go
 
+    prefix = Keys.prefix
+
     # If C-0 prefix, just burry buffer
-    if Keys.prefix == 0
+    if prefix == :uu
       $el.bury_buffer
 
       # Store original order, and windows originally opened
@@ -27,7 +29,7 @@ class ControlTab
 
     @@edited = nil if first_tab_in_sequence
 
-    if Keys.prefix_u?   # If U prefix (must be first alt-tab in sequence)
+    if prefix == :u   # If U prefix (must be first alt-tab in sequence)
       # Go to last edited file, and store list
       @@edited = elvar.editedhistory_history.to_a
       @@edited -= View.list_files
@@ -47,27 +49,31 @@ class ControlTab
       @@open_windows = window_list.collect {|b| window_buffer b}
 
       # Check for prefix, and store correct test for files to go through accordingly
-      case Keys.prefix
-      when 0
-        # Not dirs or files
-        @@consider_test = lambda{|b| ! buffer_file_name(b) && ! buffer_name(b)[/Minibuf/] && ! elvar.mode_name[/^Dired/] }
+      case prefix
+      when 0   # Not dirs or files
+        @@consider_test = lambda{|b| ! buffer_file_name(b) && ! buffer_name(b)[/Minibuf/] && ! elvar.mode_name[/^Dired/] && buffer_name(b) !~ /^\*(tree|console) / }
       when 1   # Files only
         @@consider_test = lambda{|b| buffer_file_name(b)}
-      when 2   # Dirs only
-        @@consider_test = lambda{|b| elvar.mode_name[/^Dired/] }
+        #       when 2   # Dirs only
+        #         @@consider_test = lambda{|b| elvar.mode_name[/^Dired/] }
+      when 2   # Models
+        @@consider_test = lambda{|b| buffer_file_name(b) =~ /\/app\/models\//}
       when 3   # ...trees only
         @@consider_test = lambda{|b| buffer_name(b) =~ /^\*tree /}
       when 4   # Consoles
-        @@consider_test = lambda{|b| buffer_name(b) =~ /\*console/i}
+        @@consider_test = lambda{|b| buffer_name(b) =~ /^\*console/i}
       when 5   # .rhtml files
         @@consider_test = lambda{|b| buffer_file_name(b) =~ /\.(html\.haml|html\.erb|html|rhtml)$/}
       when 6   # Ruby files only
         @@consider_test = lambda{|b| buffer_file_name(b) =~ /\.rb$/}
       when 7   # .notes files
         @@consider_test = lambda{|b| buffer_file_name(b) =~ /\.notes$/}
-      when 8   # Consoles ("console" or "*" in buffer name)
-        @@consider_test = lambda{|b| name = buffer_name(b);  (name[/\*console/i] || name[/\*/]) && ! buffer_name(b)[/Minibuf/] }
+      when 8   # controller
+        @@consider_test = lambda{|b| buffer_file_name(b) =~ /\/app\/controllers\//}
+      when 9   # test
+        @@consider_test = lambda{|b| buffer_file_name(b) =~ /_spec\.rb$/}
       else
+
 
         #         if View.in_bar?  # If in the bar, only notes or trees
         #           @@consider_test = lambda{|b| buffer_file_name(b) =~ /\.notes$/ ||

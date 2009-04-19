@@ -198,9 +198,22 @@ class Line
   end
 
   def self.duplicate_line
+    line = "#{Line.value}\n"
     Line.to_left
-    View.insert "#{Line.value}\n"
-    Code.comment(Line.left, Line.right) if Keys.prefix_u
+    prefix = Keys.prefix
+    Code.comment(:line) if prefix == :u
+    times = if prefix.nil? || prefix == :u
+        0
+      elsif prefix == 0
+        1
+      elsif prefix > 0
+        prefix + 1
+      elsif prefix < 0
+        prefix
+      end
+
+    Line.next times
+    View.insert line
     Line.previous
   end
 

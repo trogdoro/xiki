@@ -19,20 +19,30 @@ class Code
     [file, line]
   end
 
-  def self.comment left=nil, right=nil
-    if left.nil?
+  def self.bounds_of_thing left=nil, right=nil
+    if left == :line
+      left, right = Line.left, Line.right+1
+    elsif left.nil?
       n = Keys.prefix_n(:clear=>true)   # Check for numeric prefix
-      if n   # If there, move down
-        Move.to_axis
-        View.set_mark Line.left(n+1)
+      if n   # If prefix, move down
+        return [Line.left, Line.left(n+1)]
+      else
+        left, right = View.range
       end
-      left, right = View.range
     end
-    comment_or_uncomment_region left, right
+    [left, right]
+  end
 
-    View.set_mark Line.left(n+1) if n   # Re-calculate left and right (might have changed)
-    left, right = View.range
-    Code.indent left, right
+  def self.comment left=nil, right=nil
+    Line.to_left
+    left, right = Code.bounds_of_thing(left, right)
+    left, right = right, left if View.cursor == right   # In case cursor is at right side
+    View.to left
+    View.set_mark right
+
+    comment_or_uncomment_region View.range_left, View.range_right
+    Code.indent View.range_left, View.range_right
+
   end
 
   def self.run   # Evaluates file, paragraph, or next x lines using el4r

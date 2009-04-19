@@ -514,8 +514,8 @@ class Keys
   end
 
   def self.save_for_yank txt
-
     key = txt[/[a-z]/i]
+    return unless key
     @@entered_as_quote[key.downcase] = txt
   end
 
