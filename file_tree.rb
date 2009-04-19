@@ -151,7 +151,7 @@ class FileTree
       if regex
         next unless line =~ regex
       end
-      result << "#{indent}|#{line}"
+      result << "#{indent}| #{line}"
     end
     result
   end
@@ -943,7 +943,7 @@ class FileTree
     # Remove linebreak from end
     str = str.sub(/\n\z/, "")
     if buffer_file_name
-      "#{elvar.default_directory}\n  #{file_name_nondirectory(buffer_file_name)}\n" + str.gsub(/^/, "    |")
+      "#{elvar.default_directory}\n  #{file_name_nondirectory(buffer_file_name)}\n" + str.gsub(/^/, "    | ")
     else
       "- From #{buffer_name}:\n" + str.gsub(/^/, "    #")
     end
@@ -1073,7 +1073,7 @@ class FileTree
         # Skip unless indented 2 later
         next unless Line.indent(line).length == 2 + indent_after_bar.length
 
-        matches << "#{indent}|#{line}\n"
+        matches << "#{indent}| #{line}\n"
       end
       self.insert_quoted_and_search matches
     else  # It's a file
@@ -1085,7 +1085,7 @@ class FileTree
         line.sub!(/[\r\n]+$/, '')
         next if line =~ /^ +/  # Skip non top-level lines
         next if line =~ /^$/ and ! last_was_used  # Skip blank lines, unless following top-level
-        matches << "#{indent}  |#{line}\n"
+        matches << "#{indent}  | #{line}\n"
         this_was_used = true
       end
       self.insert_quoted_and_search matches
@@ -1159,7 +1159,7 @@ class FileTree
     if Keys.prefix_u? || clip =~ /\A  +[-+]?\|/
       # Unquote
       clip = clip.grep(/\|/).join()
-      return insert(clip.gsub(/^ *[-+]?\|/, ""))
+      return insert(clip.gsub(/^ *[-+]?\|./, ""))
     end
 
     # If empty line, just enter tree
@@ -1188,7 +1188,7 @@ class FileTree
 
     indent += " " * Keys.prefix_or_0   # If numeric prefix, add to indent
     clip = clip.sub /\n+$/, ''
-    clip.gsub! /^/, "#{indent}\|"
+    clip.gsub! /^/, "#{indent}\| "
     View.insert "#{clip}\n"
   end
 
@@ -1287,7 +1287,7 @@ class FileTree
     IO.foreach(path) do |line|
       line.sub!(/[\r\n]+$/, '')
       next unless line =~ pattern
-      matches << "#{indent}  |#{line}\n"
+      matches << "#{indent}  | #{line}\n"
     end
     self.insert_quoted_and_search matches
   end
@@ -1344,7 +1344,7 @@ class FileTree
         end
         # Grab rest until another pipe
         break if l =~ /^\| /
-        matches << "#{quote_indent}|#{l}\n"
+        matches << "#{quote_indent}| #{l}\n"
       end
 
       # Insert and start search
@@ -1367,7 +1367,7 @@ class FileTree
         # Grab rest until not indented less
         #Try this: Line.indent(l)
         break if l[/^\s*/].gsub("\t", '        ').length == indent
-        matches << "#{quote_indent}|#{l}\n"
+        matches << "#{quote_indent}| #{l}\n"
       end
 
       # Insert and start search
