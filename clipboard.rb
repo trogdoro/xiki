@@ -103,6 +103,16 @@ class Clipboard
     insert TextUtil.camel_case(word)
   end
 
+  def self.do_as_upper_case
+    word = Line.symbol(:delete => true)
+    insert word.upcase
+  end
+
+  def self.do_as_lower_case
+    word = Line.symbol(:delete => true)
+    insert word.downcase
+  end
+
   def self.copy_paragraph options={}
     if Keys.prefix_u? or options[:rest]   # If U prefix, get rest of paragraph
       left, right = View.paragraph(:bounds => true, :start_here => true)

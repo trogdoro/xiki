@@ -4,14 +4,17 @@ require 'keys'
 require 'ol'
 
 describe Keys, "#input" do
-  # TODO: move this into Keys.input :choices=>case_options
-  it "should handle :choices param" do
+  before(:each) do
     View = mock 'View'
     Cursor = mock 'Cursor', :null_object=>true
-    #     View.should_receive(:).with(:one_char=>true, :prompt=>"xx").and_return('b')
-    #     Keys.should_receive(:input).with(:one_char=>true, :prompt=>"xx").and_return('b')
-Ol.line
-    choice = Keys.input(:prompt=>'letters: ', :choices=>[['aaa', 'Aye'], ['bbb', 'Bye']])
-    choice.should == 'Bye'
+    $el = mock "el", :read_char=>98   # doesn't matter what it returns
+    @choices = [['aaa', 'Aye'], ['bbb', 'Bye']]
+  end
+
+  it "with :choices param, gives choice according to char typed" do
+    $el.stub!(:char_to_string).and_return "a"
+    Keys.input(:prompt=>'letters: ', :choices=>@choices).should == 'Aye'
+    $el.stub!(:char_to_string).and_return "b"
+    Keys.input(:prompt=>'letters: ', :choices=>@choices).should == 'Bye'
   end
 end

@@ -190,12 +190,19 @@ class Code
   end
 
   def self.do_as_rspec options={}
+
+    xiki = View.dir =~ /\/xiki/   # Identify if xiki
+
     args = []
 
     if Keys.prefix_u
-      args << 'spec/unit'
-      args << '-p'
-      args << '**/*.rb'
+      if xiki
+        args << "spec"
+      else
+        args << 'spec/unit'
+        args << '-p'
+        args << '**/*.rb'
+      end
 
       # If already in shell, don't change dir
       if View.mode == :shell_mode
@@ -241,7 +248,7 @@ class Code
             View.cursor = it
             test = Line.value[/"(.+)"/, 1]
             args << '-e'
-            args << test
+            args << "\"#{test}\""
           else   # If describe, pass rspec line number
             View.cursor = describe
             args << '-l'
@@ -256,20 +263,27 @@ class Code
       args.unshift spec
     end
 
-    buffer = '*console for rspec'
+    buffer = "*console for rspec - #{dir}"
     # If spec buffer open, just switch to it
     if View.buffer_open? buffer
       View.to_buffer buffer
     else   # Otherwise open it and run console
-      Console.run "merb -i", :dir=>dir, :buffer=>buffer
+      xiki ?
+        Console.run("", :dir=>dir, :buffer=>buffer) :
+        Console.run("merb -i", :dir=>dir, :buffer=>buffer)
       #       Console.run "merb -i -e test", :dir=>dir, :buffer=>buffer
     end
     View.clear
 
     #     args << '-D'   # Show diffs
 
-    command = "Spec::Runner::CommandLine.run(Spec::Runner::OptionParser.parse([#{args.map{|o| "\"#{o}\""}.join(",\n")}], $stderr, $stdout))"
-    command = "p :reload; #{command}"
+    if xiki
+      command = "spec #{args.join(' ')}"
+    else
+      args = args.map{|o| o =~ /^"/ ? o : "\"#{o}\"" }.join(",\n")   # Only add quotes if not already there
+      command = "Spec::Runner::CommandLine.run(Spec::Runner::OptionParser.parse([#{args}], $stderr, $stdout))"
+      command = "p :reload; #{command}"
+    end
     View.insert command
     Console.enter
     #     View.to_highest

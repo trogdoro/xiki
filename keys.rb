@@ -216,7 +216,7 @@ class Keys
       "[#{i.first[/./]}]#{i.first[/.(.+)/,1]}"}.
       join(', ')
     c = Keys.input :one_char=>true, :prompt=>prompt
-    option = options[:choices].find{|i| i.first =~ /^#{c}/}
+    options[:choices].find{|i| i.first =~ /^#{c}/}[1]
   end
 
   def self.to_letter ch

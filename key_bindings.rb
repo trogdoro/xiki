@@ -194,8 +194,10 @@ class KeyBindings
     Keys.DD { delete_char elvar.current_prefix_arg || 1 }   # DD - delete character (D's default) **
     Keys.do_as_camelcase { Clipboard.do_as_camel_case }   # change word to camel case (LikeThat)
     Keys.do_as_javascript { Javascript.run }
-    Keys.do_as_snake { Clipboard.do_as_snake_case }   # Change word to snake case (like_that)
+    Keys.do_as_lowercase { Clipboard.do_as_lower_case }   # change word to camel case (LikeThat)
+    Keys.do_as_snakecase { Clipboard.do_as_snake_case }   # Change word to snake case (like_that)
     Keys.do_as_test { Code.do_as_rspec }
+    Keys.do_as_uppercase { Clipboard.do_as_upper_case }   # change word to camel case (LikeThat)
     #     Keys.do_as_underscores { Clipboard.do_as_snake_case }   # Change word to snake case (like_that)
     Keys.do_as_wrap { Block.do_as_wrap }
     Keys.do_backward { backward_kill_word(Keys.prefix || 1) }   # delete word backward
@@ -222,7 +224,7 @@ class KeyBindings
     Keys.DC1 { Clipboard.diff_1_and_2 }   # Compare contents of clipboards "1" and "2"
     # D: defined above - mapped to what C-d does by default
     Keys.do_expand { dabbrev_expand nil }   # expand abbreviation
-    Keys.do_forword { kill_word(Keys.prefix || 1) }   # delete word forward
+    Keys.do_forward { kill_word(Keys.prefix || 1) }   # delete word forward
     # H
     # G: leave unmapped for escape
     Keys.do_indent { Code.indent_to }
@@ -385,7 +387,7 @@ class KeyBindings
     # have_...
     define_key :isearch_mode_map, kbd("C-h"), nil
     Keys.isearch_have_bullet { Search.have_label }
-    Keys.isearch_have_case { Search.isearch_as_case }
+    Keys.isearch_have_case { Search.isearch_have_case }
     # Keys.isearch_have_deleted {  }  # Move match to where you last deleted something
     Keys.isearch_have_within { Search.isearch_have_within }   # Grab everything except chars on edges
     Keys.isearch_have_javascript { Search.isearch_log_javascript }
@@ -400,7 +402,7 @@ class KeyBindings
     # just_...
     define_key :isearch_mode_map, kbd("C-j"), nil
     Keys.isearch_just_bold { Search.isearch_just_surround_with_char('<b>', '</b>') }
-    Keys.isearch_just_camel { Search.isearch_just_camel }   # make match be camel case
+    Keys.isearch_just_camel { Search.isearch_just_case }   # make match be camel case
     Keys.isearch_just_difflog { Search.jump_to_difflog }   # find last string in difflog
     Keys.isearch_just_edges { Search.just_edges }   # delete everything but chars at edges of match
     Keys.isearch_just_firefox { Search.isearch_url }   # delete everything but chars at edges of match

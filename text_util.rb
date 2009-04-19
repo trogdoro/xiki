@@ -1,6 +1,17 @@
 require 'line'
 
 class TextUtil
+
+  def self.case_choices
+    [
+      ['upper', lambda {|o| o.upcase}],
+      ['lower', lambda {|o| o.downcase}],
+      ['title', lambda {|o| TextUtil.title_case(o)}],
+      ['camel', lambda {|o| TextUtil.camel_case(o)}],
+      ['snake', lambda {|o| TextUtil.snake_case(o)}],
+      ]
+  end
+
   def self.unindent txt
     # Delete initial blank line if there
     txt.sub!(/^\n/, '')
@@ -33,6 +44,13 @@ class TextUtil
       gsub(/_([a-z]+)/) {"#{$1.capitalize}"}.
       sub(/(.)/) {$1.upcase}.
       gsub("_", "")
+  end
+
+  def self.title_case s
+    s.gsub(/[ -]/, '_').
+      gsub(/([a-z])([A-Z0-9])/) {"#{$1}_#{$2}"}.downcase.
+      gsub(/([a-z]+)/) {"#{$1.capitalize}"}.
+      gsub(/__*/, " ")
   end
 
 end

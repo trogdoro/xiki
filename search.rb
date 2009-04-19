@@ -762,12 +762,22 @@ class Search
     Line.to_left
   end
 
-  def self.isearch_just_camel
-    Search.clear
-    term = self.match
+  def self.isearch_just_case
+    self.clear
+    txt = self.match
+    lam = Keys.input(:prompt=>'convert to which case?: ', :choices=>TextUtil.case_choices)
     View.delete(Search.left, Search.right)
-    View.insert TextUtil.camel_case(term)
+    View.insert lam[txt]
   end
+
+  def self.isearch_have_case
+    self.clear
+    txt = self.match
+    lam = Keys.input(:prompt=>'convert to which case?: ', :choices=>TextUtil.case_choices)
+    self.to_start  # Go back to start
+    insert lam[txt]
+  end
+
 
   def self.isearch_just_underscores
     Search.clear

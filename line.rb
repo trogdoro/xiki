@@ -202,10 +202,12 @@ class Line
     Line.to_left
     prefix = Keys.prefix
     Code.comment(:line) if prefix == :u
-    times = if prefix.nil? || prefix == :u
+    times = if prefix.nil?
+        1
+      elsif prefix == :u
         0
       elsif prefix == 0
-        1
+        0
       elsif prefix > 0
         prefix + 1
       elsif prefix < 0
