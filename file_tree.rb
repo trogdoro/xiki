@@ -653,8 +653,8 @@ class FileTree
         delete_region(Line.left(2), right)
         self.enter_lines(//)  # Insert all lines
       end
-    when "1".."7"
 
+    when "1".."7"
       if ch == "7" and ! View.bar?   # Open in bar
         delete_region(Line.left(2), right)  # Delete other files
         View.bar
@@ -1325,8 +1325,8 @@ class FileTree
     path.sub!(/\|.+/, '')  # Remove file
     path = Bookmarks.expand(path)
 
-    # Cut off indent and pipe
-    Line.value =~ /(^ +)\|(.+)/
+    # Cut off indent and pipe (including following space)
+    Line.value =~ /(^ +)\| (.+)/
     quote_indent, line = $1, $2
 
     # If starts with pipe

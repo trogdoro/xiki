@@ -396,13 +396,13 @@ class KeyBindings
     Keys.isearch_have_paragraph { Search.have_paragraph }
     Keys.isearch_have_spot { Search.insert_at_spot }
     Keys.isearch_have_move { Search.isearch_move_line }   # Zap: move to spot (as spot)
-    Keys.isearch_have_underscores { Search.isearch_as_snake }
     Keys.isearch_have_variable { Search.insert_var_at_search_start }
     # I: leave unmapped - had issues using it (messes up position)
     # just_...
     define_key :isearch_mode_map, kbd("C-j"), nil
+    Keys.isearch_just_adjust { Search.isearch_just_adjust }
     Keys.isearch_just_bold { Search.isearch_just_surround_with_char('<b>', '</b>') }
-    Keys.isearch_just_camel { Search.isearch_just_case }   # make match be camel case
+    Keys.isearch_just_case { Search.isearch_just_case }   # make match be camel case
     Keys.isearch_just_difflog { Search.jump_to_difflog }   # find last string in difflog
     Keys.isearch_just_edges { Search.just_edges }   # delete everything but chars at edges of match
     Keys.isearch_just_firefox { Search.isearch_url }   # delete everything but chars at edges of match
@@ -413,7 +413,6 @@ class KeyBindings
     Keys.isearch_just_open { Search.isearch_open }
     Keys.isearch_just_plus { Search.just_increment }   # select match
     Keys.isearch_just_replace { Search.isearch_query_replace }   # replace
-    Keys.isearch_just_snake { Search.isearch_just_underscores }   # make match be snake case
     Keys.isearch_just_tag { Search.isearch_just_tag }   # select match
 
     Keys.isearch_just_uppercase { Search.upcase }   # make match be snake case

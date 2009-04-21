@@ -664,6 +664,12 @@ class Search
     View.insert TextUtil.snake_case(term)
   end
 
+  def self.isearch_just_adjust
+    Search.clear
+    transpose_chars 1
+    self.to_start
+  end
+
   # Go to root of tree and do search
   def self.search_at_root txt
     Search.backward("^ *[+-] /")
