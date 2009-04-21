@@ -399,15 +399,15 @@ class FileTree
       Keys.clear_prefix
     when 8
       Keys.clear_prefix
-      if search_string  # If quote, enter lines under
-        self.enter_under
-      else  # If file, enter all lines
-        self.enter_lines //
-      end
+      search_string ?   # If quote, enter lines under
+        self.enter_under :
+        self.enter_lines(//)   # If file, enter all lines
       return
     when 9
       Keys.clear_prefix
-      self.enter_lines
+      search_string ?   # If quote, use path of parent
+        self.enter_lines(nil, :path=>path) :
+        self.enter_lines
       return
 
       # Implement: grab code after delete runs
@@ -1261,33 +1261,33 @@ class FileTree
       View.insert "- " + FileTree.filename_to_next_line(path)
       $el.open_line 1
     end
-
+    line = options[:path] || Line.value
     if pattern.nil?
-      if Line.matches(/\.rb$/)
-        self.enter_lines(/^\s*(def|class|module|it|describe) /)
-      elsif Line.matches(/\.rake$/)
-        self.enter_lines(/^\s*(task|def|class) /)
-      elsif Line.matches(/\.js$/)
-        self.enter_lines(/(^ *(function)| = function\()/)
-      elsif Line.matches(/\.notes$/)
-        self.enter_lines(/^\| /)
+      if line =~ /\.rb$/
+        self.enter_lines(/^\s*(def|class|module|it|describe) /, options)
+      elsif line =~ /\.rake$/
+        self.enter_lines(/^\s*(task|def|class) /, options)
+      elsif line =~ /\.js$/
+        self.enter_lines(/(^ *(function)| = function\()/, options)
+      elsif line =~ /\.notes$/
+        self.enter_lines(/^\| /, options)
       else
         # Delegate to 0
       end
       return
     end
-
     Line.to_left
-    path ||= construct_path  # Get path
+    path ||= options[:path] || construct_path  # Get path
     path = Bookmarks.expand(path)
     indent = Line.indent  # get indent
 
     # Get matches from file
     matches = ""
+    indent_more = options[:path] ? '' : '  '
     IO.foreach(path) do |line|
       line.sub!(/[\r\n]+$/, '')
       next unless line =~ pattern
-      matches << "#{indent}  | #{line}\n"
+      matches << "#{indent}#{indent_more}| #{line}\n"
     end
     self.insert_quoted_and_search matches
   end
