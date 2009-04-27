@@ -410,7 +410,7 @@ class LineLauncher
       end
       return true
     end
-    if View.name =~ /#{Ol.file_path}$/   # If in output log
+    if View.name =~ /_ol\.notes$/   # If in an ol output log file
       Code.ol_launch
       Effects.blink(:what=>:line)
       return true

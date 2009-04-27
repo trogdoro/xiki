@@ -7,6 +7,7 @@ class Clipboard
 
   # Stores things user copies
   @@hash = {}
+  @@entered_as_quote = {}
 
   def self.copy loc=nil, txt=nil
     # Use string if user types it quickly
@@ -168,20 +169,23 @@ class Clipboard
       left += 1
       right -= 1
     end
-    Effects.blink(:left => left, :right => right)
-    Clipboard.set("0", buffer_substring(left, right) )
-    goto_char right
-    set_mark left
+    Effects.blink(:left=>left, :right=>right)
+
+    txt = View.txt(left, right)
+    Clipboard.set "0", txt
+    View.to right
+    View.mark left
+    Clipboard.save_for_yank txt
   end
 
   def self.as_object
     set("0", thing_at_point(:symbol))
     left, right = bounds_of_thing_at_point(:symbol).to_a
-    Effects.blink(:left => left, :right => right)
+    Effects.blink(:left=>left, :right=>right)
   end
 
   def self.copy_everything
-    Effects.blink :what => :all
+    Effects.blink :what=>:all
     Clipboard.set("0", buffer_string)
     set_mark(point_max)
   end
@@ -193,9 +197,9 @@ class Clipboard
     right = Line.left(many+1)
     line = View.txt(left, right)
     Clipboard.set("0", line)
-    Effects.blink :left => left, :right => right
+    Effects.blink :left=>left, :right=>right
     $el.set_mark(right)
-    Keys.save_for_yank line   # Store for retrieval with enter_yank
+    Clipboard.save_for_yank line   # Store for retrieval with enter_yank
   end
 
   def self.enter_replacement
@@ -222,6 +226,26 @@ class Clipboard
     end
     Clipboard.copy("0")
 
-    Keys.save_for_yank View.selection   # Store for retrieval with enter_yank
+    Clipboard.save_for_yank View.selection   # Store for retrieval with enter_yank
   end
+
+  def self.save_for_yank txt
+    key = txt[/[a-z]/i]
+    return unless key
+    @@entered_as_quote[key.downcase] = txt
+  end
+
+  def self.enter_yank
+    ch = Keys.input :one_char => true
+    value = @@entered_as_quote[ch]
+    return unless value
+    View.insert value
+  end
+
+  def self.to_yank
+    ch = Keys.input :one_char => true
+    value = @@entered_as_quote[ch]
+    Search.to $el.regexp_quote(value)
+  end
+
 end

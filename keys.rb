@@ -4,7 +4,6 @@ require 'text_util'
 
 # Methods for defining keyboard shortcuts
 class Keys
-  @@entered_as_quote = {}
 
   @@key_queue =[]  # For defining menus (must be done in reverse)
 
@@ -351,7 +350,7 @@ class Keys
 
     # Store in hash by first letter for use by enter_yank
 
-    Keys.save_for_yank inserted   # Store for retrieval with enter_yank
+    Clipboard.save_for_yank inserted   # Store for retrieval with enter_yank
 
   end
 
@@ -511,19 +510,6 @@ class Keys
 
   def self.before_last
     $el.el4r_lisp_eval("(elt (recent-keys) (- (length (recent-keys)) 2))").to_s
-  end
-
-  def self.save_for_yank txt
-    key = txt[/[a-z]/i]
-    return unless key
-    @@entered_as_quote[key.downcase] = txt
-  end
-
-  def self.yank
-    ch = Keys.input :one_char => true
-    value = @@entered_as_quote[ch]
-    return unless value
-    View.insert value
   end
 
 end

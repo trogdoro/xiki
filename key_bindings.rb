@@ -5,12 +5,12 @@ class KeyBindings
   def self.keys
     Menu.init
 
-    self.a_keys
-    self.o_keys
-    self.e_keys
-    self.t_keys
-    self.l_keys
-    self.d_keys
+    self.as_keys
+    self.open_keys
+    self.enter_keys
+    self.to_keys
+    self.layout_keys
+    self.do_keys
     self.isearch
     self.isearch_meta
     self.misc
@@ -19,7 +19,7 @@ class KeyBindings
 
   end
 
-  def self.a_keys
+  def self.as_keys
     # A: as...
     # Use A prefix for: remembering, saving
 
@@ -56,7 +56,7 @@ class KeyBindings
     Keys.A5 { Clipboard.copy("5") };  Keys.A6 { Clipboard.copy("6") };  Keys.A7 { Clipboard.copy("7") }
   end
 
-  def self.o_keys
+  def self.open_keys
     # O: open...
     # Use O prefix for: opening, jumping to files
 
@@ -119,7 +119,7 @@ class KeyBindings
     Keys.O8 { History.open_current :all => true, :prompt_for_bookmark => true }   # Like do_outline, but inserts all
   end
 
-  def self.e_keys
+  def self.enter_keys
     # E: enter...
     # Use E prefix for: inserting
 
@@ -173,7 +173,7 @@ class KeyBindings
     Keys.enter_viewing { History.enter_viewing }
     # W
     Keys.enter_whitespace { open_line(elvar.current_prefix_arg || 1) }
-    Keys.enter_yank { Keys.yank }
+    Keys.enter_yank { Clipboard.enter_yank }
     # X
     # Y
     # Z
@@ -185,7 +185,7 @@ class KeyBindings
     Keys.E8 { FileTree.enter_lines /./ }   # Like enter_outline, but inserts all
   end
 
-  def self.d_keys
+  def self.do_keys
     # D: do...
     # Use D prefix for: things that modify text or execute code
 
@@ -286,7 +286,7 @@ class KeyBindings
     Keys.D5 { delete_char 5 };  Keys.D6 { delete_char 6 };  Keys.D7 { delete_char 7 };  Keys.D8 { delete_char 7 };
   end
 
-  def self.t_keys
+  def self.to_keys
     # T: to...
     # Use T prefix for: moving cursor, jumping to specific points
 
@@ -312,18 +312,19 @@ class KeyBindings
     Keys.to_spot { Location.to_spot }   # *
     # T: defined above - mapped to what C-t does by default
     Keys.to_up { FileTree.to_parent }   # to parent (last line indented less)
+    Keys.to_visible { Search.to_relative }   # go to nth line, relative to top of window
     Keys.to_words { Move.to_line_text_beginning }   # move to start of words on line *
     Keys.to_x { Move.to_column }   # to x coordinate - ie column
-    Keys.to_visible { Search.to_relative }   # go to nth line, relative to top of window
+    Keys.to_yank { Clipboard.to_yank }
     # Z
     #Keys.T0 { Location.go("$_0") }   # To 0
-    Keys.T1 { Search.to Clipboard["1"] }
-    Keys.T2 { Search.to Clipboard["2"] }
-    Keys.T3 { Search.to Clipboard["3"] }
-    Keys.T4 { Search.to Clipboard["4"] }
+    Keys.T1 { Search.to regexp_quote(Clipboard["1"]) }
+    Keys.T2 { Search.to regexp_quote(Clipboard["2"]) }
+    Keys.T3 { Search.to regexp_quote(Clipboard["3"]) }
+    Keys.T4 { Search.to regexp_quote(Clipboard["4"]) }
   end
 
-  def self.l_keys
+  def self.layout_keys
     # L: layout...
     # Use L prefix for: adjusting the layout, changing what is visible
 

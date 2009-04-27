@@ -473,11 +473,15 @@ class Code
   end
 
   def self.ol_launch
+
+    # Get path from end
+    path = View.name[/\/.+/]
+
     # TODO: get total_lines - current_line
     distance_to_end = Line.number(View.bottom) - Line.number
 
     # Go to log.lines and get n from end
-    arr = IO.readlines("#{Ol.file_path}.lines")
+    arr = IO.readlines("#{path}.lines")
     line = arr[- distance_to_end]
 
     path, line = line.split(':')

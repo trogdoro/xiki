@@ -582,6 +582,10 @@ class View
     $el.set_mark pos
   end
 
+  def self.mark= pos=nil
+    self.set_mark pos
+  end
+
   def self.insert txt
     $el.insert txt
   end

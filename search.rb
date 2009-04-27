@@ -146,7 +146,7 @@ class Search
     Clipboard.set("0", match)
     set_register ?X, match
     x_select_text match
-    Keys.save_for_yank match   # Store for retrieval with enter_yank
+    Clipboard.save_for_yank match   # Store for retrieval with enter_yank
   end
 
   def self.cut
@@ -536,7 +536,8 @@ class Search
   def self.to find
     Move.forward
     if Search.forward(find)
-      Move.backward(find.size)
+      match = $el.buffer_substring $el.match_beginning(0), $el.match_end(0)
+      Move.backward(match.size)
     else
       beep
       message "not found"

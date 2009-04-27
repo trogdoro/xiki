@@ -127,7 +127,7 @@ class Styles
     Styles.define :fringe, :bg=>'000000', :fg=>'666666'
 
     Styles.define :mode_line, :fg=>'ffffff', :bg=>'338833', :border=>['44bb44', -2]
-    Styles.define :mode_line_inactive, :fg=>'dddddd', :bg=>'999999', :border=>['cccccc', -2]
+    Styles.define :mode_line_inactive, :fg=>'ffffff', :bg=>'999999', :border=>['bbbbbb', -2]
   end
 end
 Styles.init
