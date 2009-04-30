@@ -7,8 +7,7 @@ class Ol
   def self.log txt, l=nil, name=nil, time=nil
     path = name ? "/tmp/#{name}_ol.notes" : self.file_path
 
-    # If just txt, delegate to line
-    if l.nil?
+    if l.nil?   # If just txt, delegate to line
       self
       return self.line(txt, caller(0)[1])
     end
@@ -16,12 +15,13 @@ class Ol
     # If n seconds passed since last call
     heading = self.pause_since_last?(time) ? "\n| \n" : nil
 
-    # If an array of lines was passed
-    if l.is_a?(Array)
+    if l.is_a?(Array)   # If an array of lines was passed
       result = ""
       result_lines = ""
-      result << heading if heading
-      result_lines << "\n\n" if heading
+      if heading
+        result << heading
+        result_lines << "\n\n"
+      end
       l.each_with_index do |o, i|
         next unless o
         h = Ol.parse_line(o)
@@ -59,10 +59,10 @@ class Ol
     File.open("#{path}.lines", "a") { |f| f << txt }
   end
 
-  def self.pause_since_last? time=nil
+  def self.pause_since_last? time=nil, no_reset=nil
     time ||= @@last
     difference = Time.now - time[0]
-    time[0] = Time.now
+    time[0] = Time.now unless no_reset
     difference > 3
   end
 
@@ -130,8 +130,11 @@ class Ol
 
   def self.limit_stack stack, pattern=/^\/projects\//
     # Cut off until it doesn't match
+    first = stack.first
     stack.delete_if{|o| o !~ pattern}
     stack.reverse!
+    # Be sure to leave one, if they're all deleted
+    stack << first if stack == []
     stack
   end
 
@@ -140,6 +143,12 @@ class Ol
     result = []
     # For each stack, copy it over if different, or nil if the same
     stack.each_with_index do |o, i|
+      # If it's the last one, don't nil it out
+      if i+1 == stack.size
+        result << o
+        next
+      end
+
       result << (o == last_stack[i] ? nil : o)
     end
     result

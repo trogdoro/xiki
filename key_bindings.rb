@@ -132,7 +132,8 @@ class KeyBindings
     Keys.enter_as_camelcase { insert TextUtil.camel_case(Clipboard.get(0)) }
     Keys.enter_as_debug { Code.enter_as_debug }
     Keys.enter_as_filename { insert Clipboard.get(".") }
-    Keys.enter_as_search { FileTree.enter_as_search }
+    Keys.enter_as_search { insert TextUtil.snake_case(Clipboard.get(0)) }
+    #     Keys.enter_as_search { FileTree.enter_as_search }
     Keys.enter_as_trunk { Code.enter_as_trunk }
     Keys.enter_as_underscores { View.insert TextUtil.snake_case(Clipboard.get(0)) }
     Keys.enter_as_variable { insert "\#{#{Clipboard.get(0)}}" }

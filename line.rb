@@ -208,10 +208,12 @@ class Line
         0
       elsif prefix == 0
         0
-      elsif prefix > 0
-        prefix + 1
-      elsif prefix < 0
+      else
         prefix
+              #       else prefix > 0
+              #         prefix
+              #       elsif prefix < 0
+              #         prefix
       end
 
     Line.next times

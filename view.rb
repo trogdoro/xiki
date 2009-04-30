@@ -800,7 +800,7 @@ class View
   def self.insert_line
     orig_indent = Line.indent
     n = Keys.prefix   # Check for numeric prefix
-    Line.previous if n == :u   # Make U insert before
+    Line.previous unless n.nil?
     Line.next(n) if n.is_a? Fixnum   # If there, move down
     Line.to_right
     View.insert "\n"

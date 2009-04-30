@@ -1156,10 +1156,10 @@ class FileTree
     end
 
     # If C-u or whole thing is quoted already
-    if Keys.prefix_u? || clip =~ /\A  +[-+]?\|/
+    if Keys.prefix_u? || clip =~ /\A  +[-+]?\|[-+ ]/
       # Unquote
       clip = clip.grep(/\|/).join()
-      return insert(clip.gsub(/^ *[-+]?\|./, ""))
+      return insert(clip.gsub(/^ *[-+]?\|[-+ ]/, ""))
     end
 
     # If empty line, just enter tree
