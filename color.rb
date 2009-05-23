@@ -13,7 +13,7 @@ class Color
   >
 
   @@colors = {
-    "r" => :color_rb_red, "o" => :color_rb_orange, "y" => :color_rb_yellow,
+    "r" => :color_rb_red, "t" => :color_rb_orange, "y" => :color_rb_yellow,
     "e" => :color_rb_green, "b" => :color_rb_blue, "u" => :color_rb_purple,
     "l" => :color_rb_light,
   }
@@ -24,15 +24,37 @@ class Color
 
     # If h, just show all colors
     case char
+    when "s"   # Search in all buffers for marked lines
+      CodeTree.display_menu("- Color.search/")
+
+    when "o"   # Outline of marked lines
+      res = self.get_marked_lines
+      res.gsub! /^/, "    | "
+
+      file = View.file
+      path = file ?
+        "- #{File.expand_path(file).sub(/(.+)\//, "\\1/\n  - ")}\n" :
+        "- buffer #{View.name}/\n"
+
+      View.to_buffer("*outline of marked in #{path}")
+      View.clear;  notes_mode
+      View.insert path
+      if res == "    | "
+        return View.insert "    - Nothing was marked in this file!"
+      end
+      View.insert res
+      Keys.clear_prefix
+      View.to_line 3
+      Move.to_line_text_beginning
+
+      FileTree.search :left=> Line.left, :number_means_enter=>true
+
+      return
+
     when "c"   # Copy marked lines
 
-      overlays = overlays_in(View.top, View.bottom)   # Get all overlays
-      res = ""
-      overlays.to_a.reverse.each do |o|   # Loop through and copy all
-        line = View.txt(overlay_start(o), overlay_end(o))
-        line << "\n" unless line =~ /\n$/
-        res << line
-      end
+      res = self.get_marked_lines
+
       Clipboard['0'] = res
 
     when "h"
@@ -118,6 +140,41 @@ class Color
 
   end
 
+  def self.get_marked_lines
+    overlays = overlays_in(View.top, View.bottom)   # Get all overlays
+    res = ""
+    overlays.to_a.reverse.each do |o|   # Loop through and copy all
+      line = View.txt(overlay_start(o), overlay_end(o))
+      line << "\n" unless line =~ /\n$/
+      res << line
+    end
+    res
+  end
+
+  def self.search
+    orig = View.buffer
+    txt = ""
+    Buffers.list.to_a.each do |b|  # Each buffer open
+
+      $el.set_buffer b
+      res = self.get_marked_lines
+      next if res.blank?
+
+      file = View.file
+      next unless file
+      path = file ?
+        "- #{File.expand_path(file).sub(/(.+)\//, "\\1/\n  - ")}\n" :
+        "- buffer #{View.name}/\n"
+
+      txt << path
+      txt << res.gsub!(/^/, "    | ")
+
+    end
+
+    View.to_buffer orig
+
+    CodeTree.tree_search_option + txt
+  end
+
 end
 Color.define_styles
-

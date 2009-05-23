@@ -431,15 +431,15 @@ class Search
     # If key is comma, treat as last edited
     return self.isearch_open_last_edited(match) if dir == :comma
 
-    # Open buffer and search
-    FileTree.grep_with_hashes dir, match, '**'
+    TextUtil.snake_case! match if match =~ /[a-z][A-Z]/   # If camel case, file is probably snake
+
+    FileTree.grep_with_hashes dir, match, '**'   # Open buffer and search
   end
 
   def self.isearch_open_last_edited match
 
     if match =~ /(.+)\.(.+)/
-      # split off, and open
-      match, method = $1, $2
+      match, method = $1, $2   # split off, and open
     end
 
     # Convert to snake case, or nil if already in snake case
@@ -465,8 +465,7 @@ class Search
       end
     end
 
-    # Open it if it matches
-    if found
+    if found   # Open it if it matches
       View.open found
       if method  # If method, go to it
         Move.top

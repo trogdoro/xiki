@@ -10,7 +10,7 @@ class Buffers
 
   def self.current buffer=nil
     if buffer == nil  # If no buffer, show list
-      $el.buffer_list.map { |b| $el.buffer_name(b) }.to_a.each do |b|
+      self.list.map { |b| $el.buffer_name(b) }.to_a.each do |b|
         #name = $el.buffer_name(b)
         puts "+ #{b}"
       end
@@ -24,7 +24,11 @@ class Buffers
   end
 
   def self.viewing_array
-    $el.buffer_list.map { |b| $el.buffer_file_name(b) }.select{|path| path}
+    self.list.map { |b| $el.buffer_file_name(b) }.select{|path| path}
+  end
+
+  def self.list
+    $el.buffer_list
   end
 
   def self.tree times=0, options={}
@@ -42,7 +46,7 @@ class Buffers
     # Get buffer from name
     list = options[:buffer] ?
       [self.from_string(options[:buffer])] :
-      $el.buffer_list
+      self.list
     found = ""
     list.to_a.each do |b|  # Each buffer open
 
@@ -81,7 +85,7 @@ class Buffers
     puts found
     #View.insert found
     View.to_top
-    #$el.highlight_regexp string, :ls_quote_highlight
+    # $el.highlight_regexp string, :ls_quote_highlight
   end
 
   def self.from_string name

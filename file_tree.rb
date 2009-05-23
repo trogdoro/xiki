@@ -370,6 +370,7 @@ class FileTree
     if path.is_a?(Array)
       # Pull off search string if exists
       search_string = path.pop[/\|(.+)/, 1] if path.last =~ /^\|/
+      search_string.sub! /^[ +-]/, '' if search_string   # Should start with space or -|+
       # Discard rest of |... lines
       path = path.grep(/^[^|]/).join('')
     else
@@ -394,8 +395,10 @@ class FileTree
       path = File.expand_path(path)
     end
     # Prefix keys with specific behavior
+    prefix_was_u = false
     case Keys.prefix
     when :u   # Just open file
+      prefix_was_u = true
       Keys.clear_prefix
     when 8
       Keys.clear_prefix
@@ -461,7 +464,7 @@ class FileTree
       end
 
       beginning_of_line
-      recenter 0
+      recenter(0) unless prefix_was_u
       Effects.blink(:what=>:line)
     end
   end
@@ -472,8 +475,7 @@ class FileTree
     Cursor.blue
     error = ""
 
-    # Make cursor blue
-    recursive = options[:recursive]
+    recursive = options[:recursive]   # Make cursor blue
     left = options[:left] || point_min
     right = options[:right] || point_max
 
@@ -589,10 +591,22 @@ class FileTree
       Line.to_left
     when "\C-e"
       Line.to_right
-    when :meta_s
-      self.to_parent
-      self.kill_under
-      self.dir :date_sort=>true
+    when "\C-j"
+      ch = Keys.input :one_char => true
+      Ol << "ch: #{ch.inspect}"
+      if ch == 't'   # just_time
+        self.to_parent
+        self.kill_under
+        self.dir :date_sort=>true
+      elsif ch == 's'   # just_size
+        self.to_parent
+        self.kill_under
+        self.dir :size_sort=>true
+      elsif ch == 'n'   # just_name
+        self.to_parent
+        self.kill_under
+        self.dir
+      end
 
     when :return, "\C-m", :control_period, :right   # If C-., go in but don't collapse siblings
       Keys.clear_prefix
@@ -645,6 +659,7 @@ class FileTree
     when "8"
       # If a quote, insert lines indented lower
       if Line.matches(/\|/)
+        CodeTree.kill_siblings
         self.enter_under
       elsif self.dir?  # A Dir, so do recursive search
         delete_region(Line.left(2), right)
@@ -943,7 +958,9 @@ class FileTree
     # Remove linebreak from end
     str = str.sub(/\n\z/, "")
     if buffer_file_name
-      "#{elvar.default_directory}\n  #{file_name_nondirectory(buffer_file_name)}\n" + str.gsub(/^/, "    | ")
+      "#{elvar.default_directory}\n  #{file_name_nondirectory(buffer_file_name)}\n" +
+        str.gsub(/^/, "    | ").
+        gsub(/^    \| $/, "    |")   # Remove trailing spaces on blank lines
     else
       "- From #{buffer_name}:\n" + str.gsub(/^/, "    #")
     end
@@ -1022,7 +1039,9 @@ class FileTree
     # Move .notes files to top
     files = files.select{|i| i =~ /\.notes$/} + files.select{|i| i !~ /\.notes$/}
 
-    View.insert((dirs + files).join("\n") + "\n")
+    both = options[:date_sort] || options[:size_sort] ?
+      files + dirs : dirs + files
+    View.insert(both.join("\n") + "\n")
     right = point
     goto_char left
 
@@ -1159,7 +1178,7 @@ class FileTree
     if Keys.prefix_u? || clip =~ /\A  +[-+]?\|[-+ ]/
       # Unquote
       clip = clip.grep(/\|/).join()
-      return insert(clip.gsub(/^ *[-+]?\|[-+ ]/, ""))
+      return insert(clip.gsub(/^ *[-+]?\|([-+ ]|$)/, ""))   # Remove | ..., |+...., |<blank>, etc
     end
 
     # If empty line, just enter tree
@@ -1294,7 +1313,7 @@ class FileTree
 
   def self.insert_under txt, options={}
 
-    escape = options[:escape] || '|'
+    escape = options[:escape] || '| '
     txt = txt.gsub!(/^/, escape)
 
     # Add linebreak at end if none
@@ -1344,7 +1363,8 @@ class FileTree
         end
         # Grab rest until another pipe
         break if l =~ /^\| /
-        matches << "#{quote_indent}| #{l}\n"
+        l = " #{l}" unless l.blank?
+        matches << "#{quote_indent}|#{l}\n"
       end
 
       # Insert and start search
@@ -1367,7 +1387,9 @@ class FileTree
         # Grab rest until not indented less
         #Try this: Line.indent(l)
         break if l[/^\s*/].gsub("\t", '        ').length == indent
-        matches << "#{quote_indent}| #{l}\n"
+
+        l = " #{l}" unless l.blank?
+        matches << "#{quote_indent}|#{l}\n"
       end
 
       # Insert and start search
@@ -1424,7 +1446,9 @@ class FileTree
         select {|i| i !~ /\/\.(\.*|svn|git)$/}.sort
 
       if options[:date_sort]
-        all = all.sort{|a,b| File.new(b).mtime <=> File.new(a).mtime}
+        all = all.sort{|a,b| File.mtime(b) <=> File.mtime(a)}
+      elsif options[:size_sort]
+        all = all.sort{|a,b| File.size(b) <=> File.size(a)}
       end
 
       dirs = all.select{|i| FileTest.directory?(i)}#.sort

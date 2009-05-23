@@ -151,8 +151,9 @@ class Code
     orig_stdout = $stdout;  $stdout = StringIO.new
     stdout = nil
     exception = nil
-    begin
-      # Run code
+    begin   # Run code
+      # Good place to debug
+      # Ol << "code: #{code.inspect}"
       returned = el4r_ruby_eval(code)
     rescue Exception => e
       exception = e
@@ -194,6 +195,7 @@ class Code
     xiki = View.dir =~ /\/xiki/   # Identify if xiki
 
     args = []
+    extra = "DS_SUPPRESS=true;"
 
     if Keys.prefix_u
       if xiki
@@ -228,7 +230,8 @@ class Code
         orig = Location.new
         orig_index = View.index
 
-        unless Keys.prefix == 8   # If not C-8, only run this test
+        if Keys.prefix == 8   # If not C-8, only run this test
+        else
           before_search = Location.new
           Line.next
 
@@ -245,6 +248,7 @@ class Code
           it ||= 0;  describe ||= 0
 
           if it > describe   # If it, pass rspec -e "should...
+            extra = "DS_SUPPRESS=false; "
             View.cursor = it
             test = Line.value[/"(.+)"/, 1]
             args << '-e'
@@ -278,11 +282,11 @@ class Code
     #     args << '-D'   # Show diffs
 
     if xiki
-      command = "spec #{args.join(' ')}"
+      command = "#{extra}spec #{args.join(' ')}"
     else
       args = args.map{|o| o =~ /^"/ ? o : "\"#{o}\"" }.join(",\n")   # Only add quotes if not already there
       command = "Spec::Runner::CommandLine.run(Spec::Runner::OptionParser.parse([#{args}], $stderr, $stdout))"
-      command = "p :reload; #{command}"
+      command = "#{extra}p :reload; #{command}"
     end
     View.insert command
     Console.enter
@@ -330,13 +334,12 @@ class Code
     return Code.indent if ! Keys.prefix
     new_indent = Keys.prefix || 0
     orig = Location.new
-    # Pull out block
-    txt = View.selection :delete => true
+    txt = View.selection :delete => true   # Pull out block
+
     txt = TextUtil.unindent(txt)
-    # Add back new indent
-    txt.gsub!(/^/, ' ' * new_indent)
-    # Delete lines with just spaces
-    txt.gsub!(/^ +$/, '')
+    txt.gsub!(/^/, ' ' * new_indent)   # Add back new indent
+    txt.gsub!(/^ +$/, '')   # Blank out lines with just spaces
+
     insert txt
     View.set_mark
     orig.go
@@ -504,6 +507,13 @@ class Code
 
   def self.to_ruby o
     o.to_ruby
+  end
+
+  def self.isearch_just_should
+    Search.clear
+    term = Search.match
+    View.delete(Search.left, Search.right)
+    View.insert term.sub(/\.(.+)/, ".should_receive(:\\1)")
   end
 
 private

@@ -283,8 +283,10 @@ class KeyBindings
         LineLauncher.launch
       end
     }
-    Keys.D1 { delete_char 1 };  Keys.D2 { delete_char 2 };  Keys.D3 { delete_char 3 };  Keys.D4 { delete_char 4 }
-    Keys.D5 { delete_char 5 };  Keys.D6 { delete_char 6 };  Keys.D7 { delete_char 7 };  Keys.D8 { delete_char 7 };
+    Keys.D1 { query_replace_regexp($el.regexp_quote(Clipboard.get("1")), Clipboard.get("2")) }
+    Keys.D2 { query_replace_regexp($el.regexp_quote(Clipboard.get("2")), Clipboard.get("1")) }
+    #     Keys.D1 { delete_char 1 };  Keys.D2 { delete_char 2 };  Keys.D3 { delete_char 3 };  Keys.D4 { delete_char 4 }
+    #     Keys.D5 { delete_char 5 };  Keys.D6 { delete_char 6 };  Keys.D7 { delete_char 7 };  Keys.D8 { delete_char 7 };
   end
 
   def self.to_keys
@@ -414,8 +416,9 @@ class KeyBindings
     Keys.isearch_just_name { Search.just_name }
     Keys.isearch_just_open { Search.isearch_open }
     Keys.isearch_just_plus { Search.just_increment }   # select match
-    Keys.isearch_just_replace { Search.isearch_query_replace }   # replace
+    Keys.isearch_just_replace { Search.isearch_query_replace :start_with_search_string }   # replace
     Keys.isearch_just_tag { Search.isearch_just_tag }   # select match
+    Keys.isearch_just_should { Code.isearch_just_should }   # rspec should_receive
 
     Keys.isearch_just_uppercase { Search.upcase }   # make match be snake case
     Keys.isearch_just_variable { Search.isearch_just_surround_with_char '#{', '}' }
@@ -440,72 +443,39 @@ class KeyBindings
     Keys.isearch_zap { Search.zap }   # zap - delete up until search start
 
     # Surround with characters (quotes and brackets)
-    define_key :isearch_mode_map, kbd('C-j C-"') do
-      Search.isearch_just_surround_with_char '"'
-    end
-    define_key :isearch_mode_map, kbd("C-j C-'") do
-      Search.isearch_just_surround_with_char "'"
-    end
-    define_key :isearch_mode_map, kbd("C-j C-9") do
-      Search.isearch_just_surround_with_char '(', ')'
-    end
-    define_key :isearch_mode_map, kbd("C-j C-[") do
-      Search.isearch_just_surround_with_char '[', ']'
-    end
-    define_key :isearch_mode_map, kbd("C-j C-{") do
-      Search.isearch_just_surround_with_char '{', '}'
-    end
 
-    define_key :isearch_mode_map, kbd("C-h C-'") do
-      Search.insert_quote_at_search_start
-    end
+    define_key(:isearch_mode_map, kbd("C-'")) { Search.isearch_just_surround_with_char "'" }
+    define_key(:isearch_mode_map, kbd("C-j C-'")) { Search.isearch_just_surround_with_char '"' }
 
-    define_key :isearch_mode_map, kbd("C-1") do
-      Search.isearch_copy_as("1")
-    end
-    define_key :isearch_mode_map, kbd("C-2") do
-      Search.isearch_copy_as("2")
-    end
-    define_key :isearch_mode_map, kbd("C-3") do
-      Search.isearch_copy_as("3")
-    end
-    define_key :isearch_mode_map, kbd("C-4") do
-      Search.isearch_copy_as("4")
-    end
+    define_key(:isearch_mode_map, kbd("C-9")) { Search.isearch_just_surround_with_char '(', ')' }
+    define_key(:isearch_mode_map, kbd("C-j C-9")) { Search.isearch_just_surround_with_char '[', ']'}
 
-    define_key :isearch_mode_map, kbd("C-5") do
-      Search.isearch_copy_as("5")
-    end
-    define_key :isearch_mode_map, kbd("C-6") do
-      Search.isearch_copy_as("6")
-    end
-    define_key :isearch_mode_map, kbd("C-7") do
-      Search.isearch_copy_as("7")
-    end
+    define_key(:isearch_mode_map, kbd("C-[")) { Search.isearch_just_surround_with_char '[', ']' }
+    define_key(:isearch_mode_map, kbd("C-j C-[")) { Search.isearch_just_surround_with_char '{', '}' }
 
-    define_key :isearch_mode_map, kbd("C-=") do   # Add one char from isearch
-      $el.isearch_yank_char
-    end
-    define_key :isearch_mode_map, kbd("C--") do   # Remove one char from isearch
-      $el.isearch_del_char
-    end
-    define_key :isearch_mode_map, kbd("C-/") do   # Remove last action from search results
-      $el.isearch_delete_char
-    end
-    define_key :isearch_mode_map, kbd("C-,") do   # Remove last action from search results
-      Search.isearch_query_replace
-    end
+    define_key(:isearch_mode_map, kbd("C-h C-'")) { Search.insert_quote_at_search_start }
+    define_key(:isearch_mode_map, kbd("C-1")) { Search.isearch_copy_as("1") }
+    define_key(:isearch_mode_map, kbd("C-2")) { Search.isearch_copy_as("2") }
+    define_key(:isearch_mode_map, kbd("C-3")) { Search.isearch_copy_as("3") }
+    define_key(:isearch_mode_map, kbd("C-4")) { Search.isearch_copy_as("4") }
 
-    define_key :isearch_mode_map, kbd("C-\\") do   # Hide: hide non-matching
-      Search.hide
-    end
+    define_key(:isearch_mode_map, kbd("C-5")) { Search.isearch_copy_as("5") }
+    define_key(:isearch_mode_map, kbd("C-6")) { Search.isearch_copy_as("6") }
+    define_key(:isearch_mode_map, kbd("C-7")) { Search.isearch_copy_as("7") }
+
+    define_key(:isearch_mode_map, kbd("C-=")) { $el.isearch_yank_char }   # Add one char from isearch
+    define_key(:isearch_mode_map, kbd("C--")) { $el.isearch_del_char }   # Remove one char from isearch
+    define_key(:isearch_mode_map, kbd("C-/")) { $el.isearch_delete_char }   # Remove last action from search results
+    define_key(:isearch_mode_map, kbd("C-,")) { Search.isearch_query_replace }   # Remove last action from search results
+
+    define_key(:isearch_mode_map, kbd("C-\\")) { Search.hide }   # Hide: hide non-matching
 
   end
 
   # Meta keys during isearch
   def self.isearch_meta
 
-    Keys._A(:isearch_mode_map) { Search.isearch_query_replace :start_with_search_string }   # Alter: query-replace, using search string as initial input
+    #     Keys._A(:isearch_mode_map) { Search.isearch_query_replace :start_with_search_string }   # Alter: query-replace, using search string as initial input
     Keys._C(:isearch_mode_map) { Search.copy_and_comment }   # Comment line and copy it to starting point
     Keys._D(:isearch_mode_map) { Search.downcase }   # Downcase
     Keys._E(:isearch_mode_map) { Search.insert_tree_at_spot }   # Enter
@@ -530,27 +500,6 @@ class KeyBindings
     # Y
     # Z
 
-    define_key :isearch_mode_map, kbd("M-1") do   # pull in 1 word
-      $el.isearch_yank_char
-      #Search.isearch_pull_in_words 1
-    end
-    define_key :isearch_mode_map, kbd("M-2") do   # pull in 2 word
-      Search.isearch_pull_in_words 2
-    end
-    define_key :isearch_mode_map, kbd("M-3") do   # pull in 3 word
-      Search.isearch_pull_in_words 3
-    end
-    define_key :isearch_mode_map, kbd("M-4") do   # pull in 4 word
-      Search.isearch_pull_in_words 4
-    end
-    define_key :isearch_mode_map, kbd("M-5") do   # pull in 5 word
-      Search.isearch_pull_in_words 5
-    end
-
-    define_key :isearch_mode_map, kbd("M-0") do   # Recenter
-      Search.clear
-      recenter 0
-    end
   end
 
   def self.misc
@@ -586,9 +535,7 @@ class KeyBindings
     define_key :java_mode_map, kbd("C-d"), nil
 
     # C-l in ediff mode
-    defun(:ediff_disable_C_l) do
-      define_key :ediff_mode_map, kbd("C-l"), nil
-    end
+    defun(:ediff_disable_C_l) { define_key(:ediff_mode_map, kbd("C-l"), nil) }
     add_hook :ediff_keymap_setup_hook, :ediff_disable_C_l
 
     ControlTab.keys

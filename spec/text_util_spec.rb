@@ -5,67 +5,80 @@ require 'text_util'
 describe TextUtil, "#unindent" do
   it "indents to the left" do
     before =
-"  hey
-    you
-"
+      "  hey
+          you
+      ".gsub(/^      /, '')
     after =
-"hey
-  you
-"
+      "hey
+        you
+      ".gsub(/^      /, '')
+    TextUtil.unindent(before).should == after
+  end
+
+  it "doesn't delete blank lines" do
+    before =
+      "  hey
+
+          you
+      ".gsub(/^      /, '')
+    after =
+      "hey
+
+        you
+      ".gsub(/^      /, '')
     TextUtil.unindent(before).should == after
   end
 
   it "works when inital linebreak" do
     before =
-"
-  hey
-    you
-"
+      "
+        hey
+          you
+      ".gsub(/^      /, '')
     after =
-"hey
-  you
-"
+      "hey
+        you
+      ".gsub(/^      /, '')
     TextUtil.unindent(before).should == after
   end
 
-
   it "works when tabs exist" do
     before =
-"\they
-\tyou
-"
+      "\they
+      \tyou
+      ".gsub(/^      /, '')
     after =
-"hey
-you
-"
+      "hey
+      you
+      ".gsub(/^      /, '')
     TextUtil.unindent(before).should == after
   end
 
   it "works when space on 2nd line" do
     before =
       "Dev Todo
-       * Ad
-       * 70:
-       "
+             * Ad
+             * 70:
+             ".gsub(/^      /, '')
     after =
-"Dev Todo
-* Ad
-* 70:
-"
+      "Dev Todo
+      * Ad
+      * 70:
+      ".gsub(/^      /, '')
     TextUtil.unindent(before).should == after
   end
 
   it "shouldn't change if only 2 spaces over" do
     before =
       "Dev Todo
-  * Ad
-  * 70:
-"
+        * Ad
+        * 70:
+      ".gsub(/^      /, '')
     after =
       "Dev Todo
-  * Ad
-  * 70:
-"
+        * Ad
+        * 70:
+      ".gsub(/^      /, '')
     TextUtil.unindent(before).should == after
 
   end
@@ -78,6 +91,10 @@ describe TextUtil, "#snake_case" do
     TextUtil.snake_case("/CorePlatform").should == "/core_platform"
     TextUtil.snake_case("core platform").should == "core_platform"
     TextUtil.snake_case("core-platform").should == "core_platform"
+
+    hi = "HiYou"
+    TextUtil.snake_case! hi
+    hi.should == "hi_you"
   end
 end
 

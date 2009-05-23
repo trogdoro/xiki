@@ -62,9 +62,13 @@ class DiffLog
     end
     save_buffer
 
-    if Keys.prefix_u?
+    prefix = Keys.prefix
+    if prefix == :u
       sleep(0.3)
       Firefox.reload
+    elsif prefix == 9
+      sleep(0.3)
+      LineLauncher.do_last_launch
     end
   end
 

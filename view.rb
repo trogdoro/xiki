@@ -84,15 +84,19 @@ class View
   # Creates a new window by splitting the current one
   def self.create
     prefix = elvar.current_prefix_arg
-    # If prefix is 3, do Vertical split
-    if prefix == 3
+    if prefix == 3   # If prefix is 3, do Vertical split
       $el.split_window_horizontally
-      $el.other_window 1
-    elsif Keys.prefix_u?
+      View.next
+    elsif Keys.prefix == 4
+      $el.split_window_vertically
+      Keys.clear_prefix
+      View.next
+      View.enlarge
+    elsif Keys.prefix == :u
       $el.split_window_vertically
     else
       $el.split_window_vertically
-      $el.other_window 1 # unless prefix
+      View.next
     end
   end
 
@@ -104,11 +108,18 @@ class View
     if View.in_bar? && (! options[:stay_in_bar]) && path != "$0"
       View.to_after_bar
     end
-
     # Expand $bookmark strings at beginning
     expanded = Bookmarks.expand(path)
-    # Handle opening in other window
-    if expanded
+    if expanded == ""   # If nothing there, return false
+      path.sub!(/^- /, '')
+      if path =~ /^\$\w+$/
+        buffer = Bookmarks.buffer_bookmark path.sub(/^\$/, '')
+        View.to_buffer buffer if buffer
+      end
+      return nil
+    end
+
+    if expanded   # Handle opening in other window
       if options[:same_view]
         $el.find_file expanded
       # If already there, do nothing
@@ -650,6 +661,10 @@ class View
 
   def self.column
     point - point_at_bol
+  end
+
+  def self.column= to
+    Move.to_column to
   end
 
   def self.cursor

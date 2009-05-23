@@ -1,4 +1,5 @@
 require 'line'
+require 'ol'
 
 class TextUtil
 
@@ -13,23 +14,18 @@ class TextUtil
   end
 
   def self.unindent txt
-    # Delete initial blank line if there
-    txt.sub!(/^\n/, '')
+    txt.sub!(/\A\n/, '')   # Delete initial blank line if there
 
-    # Untab indent
-    txt.gsub!(/^\s+/) { |t| t.gsub("\t", '        ') }
+    txt.gsub!(/^\s+/) { |t| t.gsub("\t", '        ') }   # Untab indent
 
     # If 1st line has no indent and 2nd line has indent (at least 3 spaces)
     if txt !~ /\A / and txt =~ /\A.+\n(   +)/
-      # Indent left by 2nd indent
-      indent = $1
+      indent = $1   # Indent left by 2nd indent
       return txt.gsub(/^#{indent}/, '')
     end
 
-    # Get indent of first line
-    old_indent = Line.indent(txt)
-    # Delete current indent
-    txt.gsub!(/^#{old_indent}/, '')
+    old_indent = Line.indent(txt)   # Get indent of first line
+    txt.gsub!(/^#{old_indent}/, '')   # Delete current indent
     txt
   end
 
@@ -39,6 +35,10 @@ class TextUtil
       gsub(/__+/, "_")
   end
 
+  def self.snake_case! s
+    s.replace self.snake_case s
+  end
+
   def self.camel_case s
     s.gsub(/[ -]/, '_').
       gsub(/_([a-z]+)/) {"#{$1.capitalize}"}.
@@ -46,11 +46,19 @@ class TextUtil
       gsub("_", "")
   end
 
+  def self.camel_case! s
+    s.replace self.camel_case s
+  end
+
   def self.title_case s
     s.gsub(/[ -]/, '_').
       gsub(/([a-z])([A-Z0-9])/) {"#{$1}_#{$2}"}.downcase.
       gsub(/([a-z]+)/) {"#{$1.capitalize}"}.
       gsub(/__*/, " ")
+  end
+
+  def self.title_case! s
+    s.replace self.title_case s
   end
 
 end

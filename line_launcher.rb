@@ -316,13 +316,12 @@ class LineLauncher
       other_window -1
     end
 
-
     self.add(/^ *-? *(http|file).?:\/\/.+/) do |line|   # url
       browse_url line[/(http|file).?:\/\/.+/]
     end
 
-    self.add(/^ *\$[^#*!]+[^\/]$/) do |line|   # Bookmark
-      View.open(line)
+    self.add(/^[ +-]*\$[^#*!\/]+$/) do |line|   # Bookmark
+      View.open Line.without_indent(line)
     end
 
     self.add(/^ *p /) do |line|
@@ -375,7 +374,7 @@ class LineLauncher
       # If it doesn't have path, add it
       #       path = "#{View.dir}#{path}" if path !~ /^\//
       View.open path
-      goto_line line.to_i
+      View.to_line line.to_i
     end
 
     # Let trees try to handle it
@@ -419,9 +418,17 @@ class LineLauncher
   end
 
   def self.do_last_launch
+
     orig = View.index
     Move.to_window(1)
-    LineLauncher.launch_or_hide(:blink => (true))
+
+    if Line.matches(/^ +\|/)
+      Keys.clear_prefix
+      FileTree.to_parent
+      FileTree.kill_under
+    end
+
+    LineLauncher.launch_or_hide :blink=>true
     View.to_nth orig
   end
 

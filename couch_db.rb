@@ -106,12 +106,12 @@ class CouchDb
       return record.gsub("\\n", "\n").gsub(/^/, '|')
     end
 
-    record = RestTree.request 'GET', "#{@@server}/#{db}/#{id}", nil
+    # Doc passed, so save it
 
-    # If a record was found, add rev
+    # If a record is found, add rev
+    record = RestTree.request 'GET', "#{@@server}/#{db}/#{id}", nil
     if record !~ /404 /
       rev = JSON[record]['_rev']
-
       # Insert rev after first {, or replace if there already
       if doc =~ /"_rev":"\d+"/
         doc.sub! /("_rev":")\d+(")/, "\\1#{rev}\\2"
@@ -119,7 +119,6 @@ class CouchDb
         doc.sub! /\{/, "{\"_rev\":\"#{rev}\", "
       end
     end
-
     # Update it
     res = RestTree.request 'PUT', "#{@@server}/#{db}/#{id}", doc
     "|#{res}"
@@ -127,7 +126,7 @@ class CouchDb
 
   def self.views db
     db.sub! /\/$/, ''
-    views = JSON[RestTree.request('GET', "#{@@server}/#{db}/_design/d1", nil)]['views']
+    views = JSON[RestTree.request('GET', "#{@@server}/#{db}/_design/d1", nil)]['views'] rescue(return "- none found!")
 
     views.keys.each do |k|
       puts "y Cdb.#{db[/(.+)_/, 1]} :#{k}#, :key=>''"

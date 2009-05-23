@@ -79,8 +79,9 @@ class Line
     point_at_bol == point
   end
 
-  def self.without_indent
-    self.value.sub(/^\s+/, "")
+  def self.without_indent txt=nil
+    txt ||= self.value
+    txt.sub(/^\s+/, "")
   end
 
   def self.bounds
@@ -198,6 +199,8 @@ class Line
   end
 
   def self.duplicate_line
+    column = View.column
+
     line = "#{Line.value}\n"
     Line.to_left
     prefix = Keys.prefix
@@ -219,9 +222,12 @@ class Line
     Line.next times
     View.insert line
     Line.previous
+
+    View.column = column
   end
 
   def self.move direction
+    column = View.column
     many = Keys.prefix_times
 
     many = (0 - many) if direction == :previous
@@ -230,6 +236,7 @@ class Line
     View.insert line
 
     Line.previous
+    View.column = column
   end
 
 end

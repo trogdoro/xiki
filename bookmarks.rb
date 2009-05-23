@@ -60,11 +60,20 @@ class Bookmarks
 
   end
 
-  # Like bookmark-bookmark_jump, but accepts buffers
+  # Like bookmark-jump, but accepts buffers
   def self.jump name
     # If normal bookmark found, use it
     return bookmark_jump(name) if bookmark_get_filename(name)
 
+    buffer = self.buffer_bookmark name
+
+    if buffer == :buffer_not_open
+      return View.message "Buffer '#{buffer}' not currently open."
+    end
+    View.to_buffer buffer
+  end
+
+  def self.buffer_bookmark name
     # Load bookmarks.yml
     bookmarks_yml = File.expand_path("~/bookmarks.yml")
     return nil unless File.exists?(bookmarks_yml)
@@ -75,17 +84,14 @@ class Bookmarks
     found = bookmarks.find {|bm| bm[0] == name}
     return nil unless found
 
-
     unless View.buffer_open?(found[1])
-      View.message "Buffer '#{found[1]}' not currently open."
-      return true
+      return :buffer_not_open
     end
     # Do nothing if already open
 
-
-    View.to_buffer found[1]
-    true
+    found[1]
   end
+
 
 
   # If string passed, go to file+point of bookmark.
@@ -106,6 +112,7 @@ class Bookmarks
 
     # Open file or jump to if already open
     path = bookmark_get_filename( "#{prefix_to_bm}#{keys}" )
+
     if path.nil?   # If not found, try buffer in bookmarks.yml
       return if self.jump( "#{prefix_to_bm}#{keys}" )
       message("no path found")
@@ -144,8 +151,10 @@ class Bookmarks
     if path =~ /\$([._a-zA-Z0-9-]+)([\\\/]?)(.*)/
       bm, slash, rest = $1, $2, $3
 
+      bm_orig = bm
       # Expand bookmark
       bm = bookmark_get_filename(bm)
+
       # If a slash, cut off filename if there is one (only dir is wanted)
       if slash != ""
         bm.sub!(/[^\\\/]+$/, "")

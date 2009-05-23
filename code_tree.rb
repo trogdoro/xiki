@@ -260,7 +260,7 @@ class CodeTree
     # If last parameter was |..., make it be all the lines
     if data.first =~ /^ *\|/
       data.first.replace( self.escape(
-        self.siblings(:include_self=>true).map{|i| i[/^ *\|(.*)/, 1] + "\n"}.join('')
+        self.siblings(:include_self=>true).map{|i| "#{i[/^ *\|(.*)/, 1]}\n"}.join('')
         ))
     end
 

@@ -13,8 +13,7 @@ class ControlTab
 
     prefix = Keys.prefix
 
-    # If C-0 prefix, just burry buffer
-    if prefix == :uu
+    if prefix == 0   # If C-0 prefix, just burry buffer
       $el.bury_buffer
 
       # Store original order, and windows originally opened
@@ -24,8 +23,7 @@ class ControlTab
       return
     end
 
-    # If first tab, clear edited
-    first_tab_in_sequence = Keys.before_last !~ /\btab$/
+    first_tab_in_sequence = Keys.before_last !~ /\btab$/   # If first tab, clear edited
 
     @@edited = nil if first_tab_in_sequence
 
@@ -50,7 +48,8 @@ class ControlTab
 
       # Check for prefix, and store correct test for files to go through accordingly
       case prefix
-      when 0   # Not dirs or files
+      when :uu   # Not dirs or files
+        #       when 0   # Not dirs or files
         @@consider_test = lambda{|b| ! buffer_file_name(b) && ! buffer_name(b)[/Minibuf/] && ! elvar.mode_name[/^Dired/] && buffer_name(b) !~ /^\*(tree|console) / }
       when 1   # Files only
         @@consider_test = lambda{|b| buffer_file_name(b)}
@@ -86,17 +85,11 @@ class ControlTab
         #         end
       end
 
-      puts "ControlTab: 5"
-
       # Remember we're starting at the top of the buffer list
       @@switch_index = 0
 
-      puts "ControlTab: 6"
-
       # Go to next eligible buffer
       self.move_to_next
-
-      puts "ControlTab: 7"
 
       switch_to_buffer(@@original[@@switch_index])
 
@@ -105,7 +98,6 @@ class ControlTab
       self.restore_original_order   # Restore order up to this buffer
       self.move_to_next   # Point to next eligible buffer
       switch_to_buffer(@@original[@@switch_index])  # Switch to eligible
-      #insert @@switch_index.to_s
 
     end
   end

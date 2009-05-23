@@ -28,11 +28,12 @@ class RubyConsole
   def connect
     timeout(10) do
       open_channel  # Connect
-
-      #usec = Time.now.usec
 # TODO: try to indent this
       send_it %Q[conf.echo = false
-$out_bufr = ''
+
+# Temorary hack for nuby 1.8.4
+$out_bufr = defined?(StringIO) ? StringIO.new : ''
+
 module Kernel
   def puts *args
     args.each { |a|
@@ -57,16 +58,19 @@ end
   def send_it the_command
     time_stamp = "-eor#{Time.now.usec}-"
     the_command = "\
-$out_bufr = ''
+# Temorary hack for nuby 1.8.4
+$out_bufr = defined?(StringIO) ? StringIO.new : ''
 begin
 #{the_command}
 rescue Exception => e
   puts e.message
 end
-out = $out_bufr
+# Temorary hack for nuby 1.8.4
+out = $out_bufr.respond_to?(:string) ? $out_bufr.string : $out_bufr
 puts '#{time_stamp}'
 $stdout.print out
 "
+
     #the_command.gsub!(/$/, " # input!")
     begin
       @channel.send_data(the_command)
@@ -82,18 +86,17 @@ $stdout.print out
   def open_channel
     @session = if @server
       user, server, port = Remote.split_root @server
-#         $el.ml [user, server, port]
-#         $el.ml @console_command
       Remote.new_connection(user, server, port)
     else
       Net::SSH.start('localhost', ENV['USER'] || ENV['USERNAME'])
     end
-
     @channel = @session.open_channel do |ch|
       ch.exec @console_command do |ch, success|
         raise "could not execute command" unless success
         # When console returns (prints) something
         ch.on_data do |c, data|
+          # Use to debug problems / errors on server
+          # Ol << "data: #{data.inspect}"
           RubyConsole.output << data
           #print data
         end
@@ -102,7 +105,6 @@ $stdout.print out
         ch.on_extended_data do |c, type, data|
           print "error: #{data}"
         end
-
         ch.on_close { puts "done!" }
       end
     end
