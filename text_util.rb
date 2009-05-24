@@ -40,6 +40,11 @@ class TextUtil
   end
 
   def self.camel_case s
+    # If it's all capitals, make subsequent copitals lowercase
+    if s =~ /^[A-Z_-]+$/
+      s = s.gsub(/([A-Z][A-Z]+)/) {"#{$1.capitalize}"}
+    end
+
     s.gsub(/[ -]/, '_').
       gsub(/_([a-z]+)/) {"#{$1.capitalize}"}.
       sub(/(.)/) {$1.upcase}.

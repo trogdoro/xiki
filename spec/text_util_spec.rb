@@ -101,6 +101,7 @@ end
 describe TextUtil, "#camel_case" do
   it "converts to camel" do
     TextUtil.camel_case("core_platform").should == "CorePlatform"
+    TextUtil.camel_case("CORE_PLATFORM").should == "CorePlatform"
     TextUtil.camel_case("CorePlatform").should == "CorePlatform"
     TextUtil.camel_case("/CorePlatform").should == "/CorePlatform"
     TextUtil.camel_case("core platform").should == "CorePlatform"
@@ -109,7 +110,7 @@ describe TextUtil, "#camel_case" do
 end
 
 describe TextUtil, "#title_case" do
-  it "converts to camel" do
+  it "converts to title case" do
     TextUtil.title_case("core_platform").should == "Core Platform"
     TextUtil.title_case("CorePlatform").should == "Core Platform"
     TextUtil.title_case("/CorePlatform").should == "/Core Platform"

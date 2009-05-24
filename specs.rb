@@ -28,7 +28,7 @@ class Specs
         View.open "#{Bookmarks['$m']}#{path}"
         Keys.clear_prefix
         View.to_highest
-        Search.forward $el.regexp_quote(test)
+        Search.forward " it .#{$el.regexp_quote(test)}"
         Move.to_line_text_beginning
         return
       end
