@@ -36,7 +36,7 @@ class TextUtil
   end
 
   def self.snake_case! s
-    s.replace self.snake_case s
+    s.replace self.snake_case(s)
   end
 
   def self.camel_case s
@@ -52,7 +52,7 @@ class TextUtil
   end
 
   def self.camel_case! s
-    s.replace self.camel_case s
+    s.replace self.camel_case(s)
   end
 
   def self.title_case s
@@ -63,7 +63,7 @@ class TextUtil
   end
 
   def self.title_case! s
-    s.replace self.title_case s
+    s.replace self.title_case(s)
   end
 
 end

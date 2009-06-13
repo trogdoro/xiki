@@ -312,14 +312,17 @@ class CodeTree
   def self.sibling_bounds
     indent_size = Line.indent.size   # Get indent
     indent_less = indent_size - 1
-    indent_less = 0 if indent_less < 0
+    #     indent_less = 0 if indent_less < 0
 
     orig = Location.new
 
     right1 = Line.left   # Right side of lines before
 
     # Search for line indented less (backward)
-    Search.backward "^ \\{0,#{indent_less}\\}\\($\\|[^ \n]\\)"
+    indent_less < 0 ?
+      Search.backward("^$") :
+      Search.backward("^ \\{0,#{indent_less}\\}\\($\\|[^ \n]\\)")
+
     Line.next
     left1 = Line.left   # Left side of lines before
 
@@ -331,7 +334,9 @@ class CodeTree
     Line.to_left
     left2 = View.cursor
     # Search for line indented less
-    Search.forward "^ \\{0,#{indent_less}\\}\\($\\|[^ \n]\\)"
+    indent_less < 0 ?
+      Search.forward("^$") :
+      Search.forward("^ \\{0,#{indent_less}\\}\\($\\|[^ \n]\\)")
     right2 = Line.left   # Left side of lines before
     orig.go
 
@@ -378,6 +383,25 @@ class CodeTree
     left1, right1, left2, right2 = self.sibling_bounds
     View.delete left2, right2
     View.delete left1, right1
+  end
+
+  def self.kill_rest
+    column = View.column
+
+    right1 = Line.left
+    left2 = Line.left 2
+
+    Line.next if Search.backward("^$", :go_anyway=>true)   # Go to beginning of paragraph
+    left1 = Line.left
+
+    Search.forward("^$", :go_anyway=>true)   # Go to end of paragraph
+    right2 = Line.left
+
+    View.delete left2, right2   # Always delete after
+    Line.previous
+
+    # Optionally delete before
+    View.delete(left1, right1) if Keys.prefix_u(:clear=>true)
 
   end
 

@@ -71,6 +71,7 @@ class Bookmarks
       return View.message "Buffer '#{buffer}' not currently open."
     end
     View.to_buffer buffer
+    return true
   end
 
   def self.buffer_bookmark name

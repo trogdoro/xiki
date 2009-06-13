@@ -132,10 +132,10 @@ class KeyBindings
     Keys.enter_as_camelcase { insert TextUtil.camel_case(Clipboard.get(0)) }
     Keys.enter_as_debug { Code.enter_as_debug }
     Keys.enter_as_filename { insert Clipboard.get(".") }
-    Keys.enter_as_search { insert TextUtil.snake_case(Clipboard.get(0)) }
+    Keys.enter_as_snake { insert TextUtil.snake_case(Clipboard.get(0)) }
     #     Keys.enter_as_search { FileTree.enter_as_search }
-    Keys.enter_as_trunk { Code.enter_as_trunk }
-    Keys.enter_as_underscores { View.insert TextUtil.snake_case(Clipboard.get(0)) }
+    Keys.enter_as_test { Specs.enter_as_rspec }
+    Keys.enter_as_url { View.insert Firefox.value('document.location') }
     Keys.enter_as_variable { insert "\#{#{Clipboard.get(0)}}" }
     Keys.enter_bullet { Notes.bullet }
     Keys.enter_clipboard { Clipboard.paste("0") }   # paste **
@@ -179,10 +179,10 @@ class KeyBindings
     # Y
     # Z
     #Keys.E0 { Clipboard.paste("0") }   # Enter 0: paste from "0" tag
-    Keys.E1 { Clipboard.paste("1") }   # Enter 1
-    Keys.E2 { Clipboard.paste("2") }   # Enter 2
-    Keys.E3 { Clipboard.paste("3") };   Keys.E4 { Clipboard.paste("4") }
-    Keys.E5 { Clipboard.paste("5") };   Keys.E6 { Clipboard.paste("6") };   Keys.E7 { Clipboard.paste("7") }
+    Keys.E1 { Clipboard.paste(1) }   # Enter 1
+    Keys.E2 { Clipboard.paste(2) }   # Enter 2
+    Keys.E3 { Clipboard.paste(3) };   Keys.E4 { Clipboard.paste(4) }
+    Keys.E5 { Clipboard.paste(5) };   Keys.E6 { Clipboard.paste(6) };   Keys.E7 { Clipboard.paste(7) }
     Keys.E8 { FileTree.enter_lines /./ }   # Like enter_outline, but inserts all
   end
 
@@ -204,7 +204,7 @@ class KeyBindings
     Keys.do_backward { backward_kill_word(Keys.prefix || 1) }   # delete word backward
     Keys.do_code_align { Code.do_code_align }
     Keys.do_click_back { Firefox.back }   # compare with last AV version
-    Keys.do_code_comment { Code.comment }
+    Keys.do_comment_code { Code.comment }
     Keys.do_create_directory { FileTree.create_dir }
     Keys.do_compare_file { Repository.diff_one_file }   # compare current file with subversion
     Keys.do_click_hyperlink { Firefox.click }   # compare with last AV version
@@ -232,6 +232,7 @@ class KeyBindings
     Keys.do_junior { FileTree.move_dir_to_junior }   # Move a dir to next line, and indent
     Keys.do_kill_all { View.kill_all }   # kill all text in buffer
     Keys.do_kill_filter { Search.kill_filter }
+    Keys.do_kill_rest { CodeTree.kill_rest }   # kill adjacent lines at same indent as this one
     Keys.do_kill_siblings { CodeTree.kill_siblings }   # kill adjacent lines at same indent as this one
     Keys.do_kill_thing { delete_region(* bounds_of_thing_at_point( :sexp )) }   # kill adjacent lines at same indent as this one
     Keys.do_lines_arbitrary { Code.randomize_lines }
@@ -321,10 +322,10 @@ class KeyBindings
     Keys.to_yank { Clipboard.to_yank }
     # Z
     #Keys.T0 { Location.go("$_0") }   # To 0
-    Keys.T1 { Search.to regexp_quote(Clipboard["1"]) }
-    Keys.T2 { Search.to regexp_quote(Clipboard["2"]) }
-    Keys.T3 { Search.to regexp_quote(Clipboard["3"]) }
-    Keys.T4 { Search.to regexp_quote(Clipboard["4"]) }
+    Keys.T1 { Search.to regexp_quote(Clipboard[1]) }
+    Keys.T2 { Search.to regexp_quote(Clipboard[2]) }
+    Keys.T3 { Search.to regexp_quote(Clipboard[3]) }
+    Keys.T4 { Search.to regexp_quote(Clipboard[4]) }
   end
 
   def self.layout_keys
@@ -367,7 +368,7 @@ class KeyBindings
     Keys.L2 { Move.to_window(2, :blink=>true) }   # Layout 2
     Keys.L3 { Move.to_window(3, :blink=>true) };  Keys.L4 { Move.to_window(4, :blink=>true) }
     Keys.L5 { Move.to_window(5, :blink=>true) };  Keys.L6 { Move.to_window(6, :blink=>true) };  Keys.L7 { Move.to_window(7, :blink=>true) };  Keys.L8 { Move.to_window(8, :blink=>true) }
-    Keys.L9 { Move.to_window(9, :blink=>true) }
+    Keys.L9 { Move.to_last_window(:blink=>true) }
 
     # Todo: if prefix passed, expand window, but leave other windows open with that much space in each
     #    Keys.LCR { Colors.highlight  }   # Layout Tree: show bar on left with the quick bookmark named "-t"
@@ -416,14 +417,15 @@ class KeyBindings
     Keys.isearch_just_name { Search.just_name }
     Keys.isearch_just_open { Search.isearch_open }
     Keys.isearch_just_plus { Search.just_increment }   # select match
-    Keys.isearch_just_replace { Search.isearch_query_replace :start_with_search_string }   # replace
+    Keys.isearch_just_replace { Search.isearch_query_replace :match }   # replace
     Keys.isearch_just_tag { Search.isearch_just_tag }   # select match
-    Keys.isearch_just_should { Code.isearch_just_should }   # rspec should_receive
+    #     Keys.isearch_just_should { Code.isearch_just_should }   # rspec should_receive
+    Keys.isearch_just_surround { Search.isearch_just_wrap }   # make match be snake case
 
     Keys.isearch_just_uppercase { Search.upcase }   # make match be snake case
     Keys.isearch_just_variable { Search.isearch_just_surround_with_char '#{', '}' }
 
-    Keys.isearch_just_wrap { Search.isearch_just_wrap }   # make match be snake case
+    Keys.isearch_just_web { Search.isearch_google }   # make match be snake case
     Keys.isearch_just_yellow { Search.just_orange }
     Keys.isearch_kill { Search.cut; Location.as_spot('deleted') }   # cut
     Keys.isearch_look { Search.uncover }   # Look: show results for search string in a bookmark
@@ -454,6 +456,13 @@ class KeyBindings
     define_key(:isearch_mode_map, kbd("C-j C-[")) { Search.isearch_just_surround_with_char '{', '}' }
 
     define_key(:isearch_mode_map, kbd("C-h C-'")) { Search.insert_quote_at_search_start }
+
+    # Just 1
+    define_key(:isearch_mode_map, kbd("C-j C-1")) { Search.isearch_query_replace Clipboard[1] }
+    define_key(:isearch_mode_map, kbd("C-j C-2")) { Search.isearch_query_replace Clipboard[2] }
+
+    define_key(:isearch_mode_map, kbd("C-0")) { Search.isearch_query_replace Clipboard[0] }
+
     define_key(:isearch_mode_map, kbd("C-1")) { Search.isearch_copy_as("1") }
     define_key(:isearch_mode_map, kbd("C-2")) { Search.isearch_copy_as("2") }
     define_key(:isearch_mode_map, kbd("C-3")) { Search.isearch_copy_as("3") }
@@ -475,11 +484,12 @@ class KeyBindings
   # Meta keys during isearch
   def self.isearch_meta
 
+    # Note: deprecated / (don't even work?)
+
     #     Keys._A(:isearch_mode_map) { Search.isearch_query_replace :start_with_search_string }   # Alter: query-replace, using search string as initial input
     Keys._C(:isearch_mode_map) { Search.copy_and_comment }   # Comment line and copy it to starting point
     Keys._D(:isearch_mode_map) { Search.downcase }   # Downcase
     Keys._E(:isearch_mode_map) { Search.insert_tree_at_spot }   # Enter
-    Keys._G(:isearch_mode_map) { Search.isearch_google }   # Google search
     # H
     #Keys._I(:isearch_mode_map) { Search.insert_var_at_search_start }   # Interpolate: paste as interpolated variable
     # J

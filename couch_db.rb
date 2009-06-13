@@ -49,7 +49,7 @@ class CouchDb
         POST
           {"docs":[
             {"_id":"a", "txt":"Aye"},
-            {"_id":"b", "txt":"Bee"}
+            {"_id":"b", "txt":"Bee"},
           ]}
       - bar/
         + PUT {\"txt\":\"hi\"}
@@ -134,15 +134,20 @@ class CouchDb
   end
 
   def self.all_docs db
-    puts "y Cdb.#{db[/(.+)_/, 1]}"
-    puts "y Cdb.all :#{db[/(.+)_/, 1]}#, :key=>''"
+    db = db[/(.+)_/, 1]
+    puts "y Cdb.#{db}"
+    puts "y Cdb.all :#{db}#, :key=>''"
+    puts "- descending: y Cdb.all :#{db}, :skip=>1, :descending=>true"
   end
 
   def self.crud db
-    puts "y Cdb.#{db[/(.+)_/, 1]} ''"
-    puts "y Cdb.#{db[/(.+)_/, 1]}! '', 'txt'=>''"
-    puts "y Cdb.delete :#{db[/(.+)_/, 1]}, ''"
-    puts "y Cdb.#{db[/(.+)_/, 1]} :startkey=>'b', :endkey=>'n', :skip=>2, :limit=>3"
+    db = db[/(.+)_/, 1]
+    puts "y Cdb.#{db} ''"
+    puts "- save: y Cdb.#{db}! '', 'txt'=>''"
+    puts "- delete: y Cdb.delete :#{db}, ''"
+    puts "- search: y Cdb.#{db} :startkey=>'b', :endkey=>'n', :skip=>2, :limit=>3"
+    puts "- first: y Cdb.all :#{db}, :limit=>1, :include_docs=>true"
+    puts "- last: y Cdb.all :#{db}, :skip=>1, :limit=>1, :descending=>true, :include_docs=>true"
   end
 
 end

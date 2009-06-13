@@ -192,7 +192,7 @@ class LineLauncher
     end
 
     self.add :paren=>"jso" do   # - (js): js to run in firefox
-      FileTree.insert_under Firefox.run(CodeTree.line_or_children)
+      FileTree.insert_under Firefox.value(CodeTree.line_or_children)
     end
 
     self.add :paren=>"html" do   # Run in browser
@@ -316,7 +316,7 @@ class LineLauncher
       other_window -1
     end
 
-    self.add(/^ *-? *(http|file).?:\/\/.+/) do |line|   # url
+    self.add(/^ *[+-]? *(http|file).?:\/\/.+/) do |line|   # url
       browse_url line[/(http|file).?:\/\/.+/]
     end
 

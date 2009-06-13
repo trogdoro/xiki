@@ -401,8 +401,10 @@ class Keys
 
   # Whether C-u was held down before this
   # Deprecated
-  def self.prefix_u
-    self.prefix == :u
+  def self.prefix_u options={}
+    result = self.prefix == :u
+    self.clear_prefix if options[:clear]
+    result
   end
 
   def self.prefix_n options={}
@@ -419,7 +421,7 @@ class Keys
   end
 
   def self.bookmark_as_path options={}
-    bm = Keys.input(:timed => true, :prompt => "Enter bookmark in which to search: ")
+    bm = Keys.input(:timed=>true, :prompt=>"Enter a bookmark: ")
     if bm == " "   # If space, return special token
       return :space
     elsif bm == "/"   # If slash, return special token

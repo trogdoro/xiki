@@ -22,19 +22,26 @@ class Clipboard
   end
 
   def self.cut loc=nil
+    # If numeric prefix, reset region
+    prefix = Keys.prefix :clear=>true
+    if prefix.is_a?(Fixnum)
+      Line.to_left
+      View.mark = Line.left 1+prefix
+    end
+
     self.copy loc
     delete_region(region_beginning, region_end)
   end
 
   def self.paste loc=nil
     # Use string if user types it quickly
-    loc ||= Keys.input(:one_char => true, :prompt => "Enter one char: ") || "0"
+    loc ||= Keys.input(:one_char => true, :prompt => "Enter one char: ") || 0
 
     set_mark_command nil
 
     # Get from corresponding register
     (elvar.current_prefix_arg || 1).times do
-      insert @@hash[loc]
+      insert @@hash[loc.to_s]
     end
   end
 

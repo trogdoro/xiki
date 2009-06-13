@@ -112,15 +112,20 @@ class Move
 
   def self.to_window n, options={}
 
-    # Get views in this window
-    views = window_list(window_frame(frame_first_window), true, frame_first_window).to_ary
+    views = View.list   # Get views in this window
 
-    # If they wanted to go further than exists
-    if n >= views.size
+    if n >= views.size   # If they wanted to go further than exists
       select_window(views[views.size - 2])
     else
       select_window(views[n-1])
     end
+
+    Effects.blink(:what=>:line) if options[:blink]
+  end
+
+  def self.to_last_window options={}
+
+    View.to_nth(View.list.size - 1)
 
     Effects.blink(:what=>:line) if options[:blink]
   end

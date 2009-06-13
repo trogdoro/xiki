@@ -17,7 +17,6 @@ class Notes
     buffer_substring(after_header, right)
   end
 
-
   def self.expand_block up=false
     # If nothing hidden, hide all but current
     if point_min == 1 && (buffer_size + 1 == point_max)
@@ -238,7 +237,7 @@ class Notes
       :bold =>  true
     Styles.define :notes_h3_pipe,
       :face => 'arial', :size => "-1",
-      :fg => 'ddddf0'
+      :fg => '222244'
 
     # ||||...
     Styles.define :notes_h4,
@@ -295,13 +294,13 @@ class Notes
     Styles.clear
 
     # |... lines (headings)
-    Styles.apply("^\\(| \\)\\(.*\n\\)", nil, :notes_h1_pipe, :notes_h1)
+    Styles.apply("^\\(|\\)\\( \n\\|.*\n\\)", nil, :notes_h1_pipe, :notes_h1)
     Styles.apply("^\\(| .+?: \\)\\(.+\n\\)", nil, :notes_h1_pipe, :notes_h1)
 
     @@h1_styles.each do |k, v|
       l = k.to_s[/_..(.)$/, 1]
       next unless l
-      Styles.apply("^\\(| #{l} \\)\\(.*\n\\)", nil, "#{k}_pipe".to_sym, k)
+      Styles.apply("^\\(| #{l}\\)\\(\n\\| .*\n\\)", nil, "#{k}_pipe".to_sym, k)
       Styles.apply("^\\(| #{l} .+: \\)\\(.*\n\\)", nil, "#{k}_pipe".to_sym, k)
     end
 
@@ -398,13 +397,13 @@ class Notes
   def self.bullet bullet_text="- "
     prefix = Keys.prefix :clear=>true
 
-    # If U prefix, go to the end
-    Move.to_end if prefix == :u
+    Move.to_end if prefix == :u   # If U prefix, go to the end
 
     if ! Line.blank?   # If non-blank line
-      if Line.matches(/^ *[|+-]/)   # If bullet already
-        # If cursor at end or beginning of line
-        if Line.point == Line.right || Line.point == Line.left
+
+      if Line.matches(/^\|/) || Line.matches(/^ *[+-]/) || bullet_text != "- "    # If bullet already, or not adding bullets
+
+        if Line.point == Line.left || Line.point == Line.right   # If cursor at beginning of line
           Line.to_right
           # Will move down one line
         else   # Else, leave rest of line to be text of bullet
@@ -419,18 +418,20 @@ class Notes
           View.insert((" " * prefix) + "- #{line}")
         else
           prev_indent = Line.value(0)[/^ */]
-          View.insert "#{prev_indent}  - #{line}"
+          prev_indent << "  " unless prev_indent == ""
+          View.insert "#{prev_indent}- #{line}"
         end
         return
       end
 
     end
-
     if prefix.is_a? Fixnum   # If numeric prefix, indent by n
       View.insert((" " * prefix) + bullet_text)
     else   # Get bullet indent of previous line
-      prev = Line.value(0)[/^( *)[+-]/, 1]
-      prev = prev ? "  #{prev}#{bullet_text}" : bullet_text
+      prev = Line.value(0)[/^( *)/]
+      # Indent further, unless it we're doing bullets and not following bullet
+      prev << "  " unless bullet_text == "- " && ! Line.value(0)[/^ *[+-]/]
+      prev = "#{prev}#{bullet_text}"
       View.insert prev
 
       if prefix == :uu
@@ -496,78 +497,79 @@ class Notes
     end
   end
 
-  # returns an instance of BlockNotes representing the block the point is currently in
+  # Returns an instance of BlockNotes representing the block the point is currently in
   def self.get_block
-    left, after_header, right = View.block_positions "^| "
+    left, after_header, right = View.block_positions "^|\\( \\|$\\)"
     NotesBlock.new(left, after_header, right)
   end
 
   private
-    class NotesBlock
-      include ElMixin
 
-      attr_accessor :left, :after_header, :right
-      attr_accessor :header, :text
+  class NotesBlock
+    include ElMixin
 
-      def initialize(left, after_header, right)
-        @left, @after_header, @right = left, after_header, right
-        @header = buffer_substring left, after_header
-        @text = buffer_substring after_header, right
-      end
+    attr_accessor :left, :after_header, :right
+    attr_accessor :header, :text
 
-      def positions
-        [left, after_header, right]
-      end
-
-      def content
-        header + text
-      end
-
-      def to_s
-        content
-      end
-
-      def blink
-        Effects.blink :left => after_header, :right => right
-      end
-
-      def delete_content
-        delete_region left, right
-      end
-
-      # initialize an overlay for this notes block
-      # it has a special hook that updates name to be header always
-      # this way we can always find the overlay corresponding to header
-
-      def show_text
-        @header_overlay ||= Overlay.find_or_make(left, after_header - 1)
-        @header_overlay.before_string = ''
-        @header_overlay.after_string = ''
-
-        @body_overlay ||= Overlay.find_or_make(after_header, right)
-        @body_overlay.invisible = false
-      end
-
-      def hide_text
-        @header_overlay ||= Overlay.find_or_make(left, after_header - 1)
-
-        @header_overlay.before_string = ''
-        @header_overlay.after_string = ' (more...)'
-
-        @body_overlay ||= Overlay.find_or_make(after_header, right)
-        @body_overlay.invisible = true
-      end
-
-      # cuts the block, and stores it in archive.file.notes
-      # example: ruby.notes -> archive.ruby.notes
-      def archive
-        delete_content
-        filename = 'archive.' + $el.file_name_nondirectory(buffer_file_name)
-        timestamp = "--- archived on #{Time.now.strftime('%Y-%m-%d at %H:%M')} --- \n"
-        append_to_file timestamp, nil, filename
-        append_to_file content, nil, filename 
-      end
+    def initialize(left, after_header, right)
+      @left, @after_header, @right = left, after_header, right
+      @header = buffer_substring left, after_header
+      @text = buffer_substring after_header, right
     end
+
+    def positions
+      [left, after_header, right]
+    end
+
+    def content
+      header + text
+    end
+
+    def to_s
+      content
+    end
+
+    def blink
+      Effects.blink :left => after_header, :right => right
+    end
+
+    def delete_content
+      delete_region left, right
+    end
+
+    # initialize an overlay for this notes block
+    # it has a special hook that updates name to be header always
+    # this way we can always find the overlay corresponding to header
+
+    def show_text
+      @header_overlay ||= Overlay.find_or_make(left, after_header - 1)
+      @header_overlay.before_string = ''
+      @header_overlay.after_string = ''
+
+      @body_overlay ||= Overlay.find_or_make(after_header, right)
+      @body_overlay.invisible = false
+    end
+
+    def hide_text
+      @header_overlay ||= Overlay.find_or_make(left, after_header - 1)
+
+      @header_overlay.before_string = ''
+      @header_overlay.after_string = ' (more...)'
+
+      @body_overlay ||= Overlay.find_or_make(after_header, right)
+      @body_overlay.invisible = true
+    end
+
+    # cuts the block, and stores it in archive.file.notes
+    # example: ruby.notes -> archive.ruby.notes
+    def archive
+      delete_content
+      filename = 'archive.' + $el.file_name_nondirectory(buffer_file_name)
+      timestamp = "--- archived on #{Time.now.strftime('%Y-%m-%d at %H:%M')} --- \n"
+      append_to_file timestamp, nil, filename
+      append_to_file content, nil, filename 
+    end
+  end
 
 end
 Notes.define_styles

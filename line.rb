@@ -23,6 +23,10 @@ class Line
   >
 
   # Text on current line (minus linebreak)
+  def self.[] regex, index=0
+    self.value[regex, index]
+  end
+
   def self.value n=1, options={}
     eol = "(point-at-eol #{n})"
 

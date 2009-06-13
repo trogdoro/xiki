@@ -489,11 +489,8 @@ class FileTree
     end
 
     #ch = char_to_string(ch_raw)
-
     # While narrowing down list
-    # Be careful editing, duo to ranges (_-_)
-    while (ch =~ /[ !"$-),-.:<?-~]/) ||
-    # while (ch =~ /[ !"$-),-.:<-~]/) ||
+    while (ch =~ /[ "%-),-.:<?-~]/) ||   # Be careful editing, due to ranges (_-_)
         (recursive && ch_raw == 2 || ch_raw == 6) ||
         ch == :up || ch == :down
       break if recursive && ch == '/'   # Slash means enter in a dir
@@ -578,7 +575,6 @@ class FileTree
       end
 
     end
-
     # Exiting, so restore cursor
     Cursor.restore :before_file_tree
 
@@ -637,6 +633,14 @@ class FileTree
       self.stop_and_insert left, right, pattern
       View.insert self.indent("- **/", 0)
       View.to(Line.right - 1)
+
+    when "$"   # Insert '$ ' for command
+      self.stop_and_insert left, right, pattern
+      View.insert self.indent("$ ", 0)
+
+    when "!"   # Insert '!' for command
+      self.stop_and_insert left, right, pattern
+      View.insert self.indent("!", 0)
 
     when "+"   # Create dir
       self.stop_and_insert left, right, pattern, :dont_disable_control_lock=>true
@@ -1174,19 +1178,16 @@ class FileTree
       return
     end
 
-    # If C-u or whole thing is quoted already
-    if Keys.prefix_u? || clip =~ /\A  +[-+]?\|[-+ ]/
+    if Keys.prefix_u? || clip =~ /\A  +[-+]?\|[-+ ]/   # If C-u or whole thing is quoted already
       # Unquote
       clip = clip.grep(/\|/).join()
       return insert(clip.gsub(/^ *[-+]?\|([-+ ]|$)/, ""))   # Remove | ..., |+...., |<blank>, etc
     end
 
-    # If empty line, just enter tree
-    if Line.blank?
+    if Line.blank?   # If empty line, just enter tree
       start = point
       t = Clipboard.get("=")
-      # Indent prefix spaces, or 2
-      indent = Keys.prefix || 0
+      indent = Keys.prefix || 0   # Indent prefix spaces, or 2
       t = t.gsub(/^/, " " * indent)
       self.add_pluses_and_minuses t, '-', '-'
       View.insert t
@@ -1195,8 +1196,8 @@ class FileTree
       return
     end
 
-    # Get current indent
-    indent = Line.indent
+
+    indent = Line.indent   # Get current indent
     on_comment_line = Line.matches /^ +\|/
     Line.next
 
@@ -1206,8 +1207,9 @@ class FileTree
     end
 
     indent += " " * Keys.prefix_or_0   # If numeric prefix, add to indent
-    clip = clip.sub /\n+$/, ''
-    clip.gsub! /^/, "#{indent}\| "
+    clip = clip.sub /\n+\z/, ''   # Remove last \n
+    clip = clip.gsub /^/, "#{indent}\| "
+    clip = clip.gsub /^( *\|) $/, "\\1"   # Remove blank lines
     View.insert "#{clip}\n"
   end
 
@@ -1306,7 +1308,8 @@ class FileTree
     IO.foreach(path) do |line|
       line.sub!(/[\r\n]+$/, '')
       next unless line =~ pattern
-      matches << "#{indent}#{indent_more}| #{line}\n"
+      line = line == "" ? "" : " #{line}"
+      matches << "#{indent}#{indent_more}|#{line}\n"
     end
     self.insert_quoted_and_search matches
   end

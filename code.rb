@@ -169,10 +169,46 @@ class Code
 
   def self.open_related_rspec
     if View.file =~ /\/(app|spec)\//   # If normal specs
-      if View.file =~ /\/app\//   # If in spec, open corresponding file
+      if View.file =~ /\/app\//   # If in file, open corresponding spec
+
+        if Keys.prefix_u   # If C-u, store method
+          orig = View.cursor
+          Move.to_end
+          Search.backward "^ +def "
+          method = Line.value[/^ +def (self\.)?(\w+)/, 2]   # Save method name
+          View.cursor = orig
+        end
+
         View.open View.file.sub('/app/', '/spec/unit/').sub(/\.rb/, '_spec.rb')
-      else   # Otherwise, open file corresponding spec
+
+        if method   # Jump to method if they were on def... line
+          Keys.clear_prefix
+          View.to_highest
+          Search.forward "^ *describe .+##{method}"
+          Move.to_line_text_beginning
+          View.recenter_top
+        end
+
+      else   # Otherwise, open corresponding file
+
+        if Keys.prefix_u   # If C-u, store method
+          orig = View.cursor
+          Move.to_end
+          Search.backward "^ *describe "
+          method = Line.value[/^ *describe .+#(\w+)/, 1]   # Save method name
+          View.cursor = orig
+        end
+
         View.open View.file.sub('/spec/unit/', '/app/').sub(/\_spec.rb/, '.rb')
+
+        if method   # Jump to method if they were on def... line
+          Keys.clear_prefix
+          View.to_highest
+          Search.forward "^ *def \\(self\\.\\)?#{method}\\>"
+          Move.to_line_text_beginning
+          View.recenter_top
+        end
+
       end
       return
     end
@@ -193,21 +229,19 @@ class Code
   def self.do_as_rspec options={}
 
     xiki = View.dir =~ /\/xiki/   # Identify if xiki
-
     args = []
     extra = "DS_SUPPRESS=true;"
+    prefix = Keys.prefix
 
-    if Keys.prefix_u
-      if xiki
-        args << "spec"
-      else
-        args << 'spec/unit'
-        args << '-p'
-        args << '**/*.rb'
-      end
+    if prefix == 9
+      Specs.run_spec_in_place
+      return
+    elsif prefix == :u
+      xiki ?
+        (args << "spec") :
+        (args << 'spec/unit' << '-p' << '**/*.rb')
 
-      # If already in shell, don't change dir
-      if View.mode == :shell_mode
+      if View.mode == :shell_mode   # If already in shell, don't change dir
         dir = nil
       else
         begin
@@ -216,7 +250,7 @@ class Code
           dir, spec = View.file.match(/(.+)\/(app\/.+)/)[1,2]
         end
       end
-      # /projects/memorizable/memorizable.merb/app/models/main.rb
+      # /projects/memorize/memorize.merb/app/models/main.rb
     elsif View.file !~ /_spec\.rb$/   # If not in an rspec file, delegate to: do_related_rspec
       orig = Location.new
       self.do_related_rspec
@@ -230,7 +264,7 @@ class Code
         orig = Location.new
         orig_index = View.index
 
-        if Keys.prefix == 8   # If not C-8, only run this test
+        if prefix == 8   # If not C-8, only run this test
         else
           before_search = Location.new
           Line.next
@@ -330,6 +364,21 @@ class Code
   end
 
   def self.indent_to
+    if View.cursor == View.mark   # If C-space was just hit, manually indent this line
+      prefix = (Keys.prefix_n :clear=>true) || 0
+      old_column = View.column
+      line = Line.value 1, :delete=>true
+
+      old_indent = line[/^ */].size
+      View.insert line.sub(/^ */, (' ' * prefix))
+
+      old_column == 0 ?
+      Move.to_axis :
+        Move.to_column(old_column + (prefix - old_indent))   # Move to old location + indent diff
+
+      return
+    end
+
     # If no prefix, just indent code according to mode
     return Code.indent if ! Keys.prefix
     new_indent = Keys.prefix || 0
@@ -353,23 +402,23 @@ class Code
     insert txt
   end
 
-  def self.enter_as_trunk
-    bm = Keys.input(:timed => true, :input => 'Enter bookmark: ')
-    bm = Bookmarks["$#{bm}"]
-    if Keys.prefix_u?
-      View.insert "#{bm}\n  ##/"
-      $el.backward_char
-      return ControlLock.disable
-    end
-    View.insert "#{bm}\n  ###{Clipboard[0]}/"
-    #View.insert "$tr/###{Clipboard[0]}/"
-    LineLauncher.launch
-  end
+  #   def self.enter_as_trunk
+  #     bm = Keys.input(:timed => true, :input => 'Enter bookmark: ')
+  #     bm = Bookmarks["$#{bm}"]
+  #     if Keys.prefix_u?
+  #       View.insert "#{bm}\n  ##/"
+  #       $el.backward_char
+  #       return ControlLock.disable
+  #     end
+  #     View.insert "#{bm}\n  ###{Clipboard[0]}/"
+  #     #View.insert "$tr/###{Clipboard[0]}/"
+  #     LineLauncher.launch
+  #   end
 
   def self.enter_as_debug
 
     orig = View.range[0]
-    txt = View.selection :delete => true
+    txt = View.selection :delete=>true
     count = 0
     txt.gsub!(/^.+/) { |m|
       if m =~ /^\s+(end|else|elsif|})/
@@ -385,7 +434,7 @@ class Code
   end
 
   def self.do_kill_duplicates
-    txt = View.selection :delete => true
+    txt = View.selection :delete=>true
     l = txt.split("\n")
     orig = Location.new
     View.insert l.uniq.join("\n") + "\n"
@@ -393,7 +442,7 @@ class Code
   end
 
   def self.randomize_lines
-    txt = View.selection :delete => true
+    txt = View.selection :delete=>true
     l = txt.split("\n")
     orig = Location.new
     View.insert l.sort_by{ rand }.sort_by{ rand }.join("\n") + "\n"
@@ -403,7 +452,7 @@ class Code
 
   def self.do_next_paragraph
     orig = Location.new
-    line = Line.value 1, :include_linebreak => true, :delete => true   # Get line
+    line = Line.value 1, :include_linebreak=>true, :delete=>true   # Get line
     Move.backward
     Search.forward "\n\n+"
     View.insert line

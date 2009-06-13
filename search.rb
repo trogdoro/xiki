@@ -197,16 +197,19 @@ class Search
     end
   end
 
-  def self.isearch_query_replace start_with_search_string=false
-
-    txt = $el.regexp_quote($el.elvar.isearch_string)
-
+  def self.isearch_query_replace after=nil
     self.clear
-    to = start_with_search_string ?
-      Keys.input(:prompt=>"Change instances of '#{txt}' to: ", :initial_input=>txt) :
-      Keys.input(:prompt=>"Change instances of '#{txt}' to: ")
-    @@query_from, @@query_to = txt, to
-    query_replace_regexp(txt, to)
+    before = $el.regexp_quote(self.match)   # Always start with isearch match
+
+    # If before not there or is :match, prompt for input
+    if after.nil? || after == :match
+      initial_input = after == :match ? before : ''
+      after =
+        Keys.input(:prompt=>"Change instances of '#{before}' to: ", :initial_input=>initial_input)
+      @@query_from, @@query_to = before, after
+    end
+
+    $el.query_replace_regexp before, after
   end
 
   def self.grep
@@ -437,7 +440,6 @@ class Search
   end
 
   def self.isearch_open_last_edited match
-
     if match =~ /(.+)\.(.+)/
       match, method = $1, $2   # split off, and open
     end
@@ -450,16 +452,15 @@ class Search
     snake = "#{snake}."
 
     # For each file edited
-    found = elvar.editedhistory_history.to_a.find do |p|
+    found = elvar.editedhistory_history.to_a.find do |o|
 
-      next if p =~ /:/  # Ignore files with colons (tramp)
-      name = p[/.*\/(.*)/, 1]  # Strip off path
-
+      next if o =~ /.notes$/  # Ignore notes files
+      next if o =~ /:/  # Ignore files with colons (tramp)
+      name = o[/.*\/(.*)/, 1]  # Strip off path
 
       # Check for match
-      if name =~ /#{Regexp.quote(match)}/i ||
-          (snake && name =~ /#{Regexp.quote(snake)}/i)
-        p
+      if name =~ /#{Regexp.quote(match)}/i || (snake && name =~ /#{Regexp.quote(snake)}/i)
+        o
       else
         false
       end
@@ -553,15 +554,11 @@ class Search
     Search.clear
     term = self.match
     term.gsub!(' ', '%20')
-  #return insert term
-    browse_url "http://google.com/search?q=#{term}"
-  end
 
-  def self.isearch_url
-    Search.clear
-    term = self.match
-    term.gsub!(' ', '%20')
-    browse_url term
+    term =~ /^http:\/\// ?   # If url, just browse
+      browse_url(term) :
+      browse_url("http://google.com/search?q=#{term}")
+
   end
 
   def self.isearch_move_line

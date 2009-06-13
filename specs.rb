@@ -35,8 +35,7 @@ class Specs
 
       test.gsub! "'", "\\\\'"   # Escape single quotes
 
-      command = "Spec::Runner::CommandLine.run(Spec::Runner::OptionParser.parse(['#{path}', '-e', '#{test}'], $out_bufr, $out_bufr))"
-      txt = RubyConsole[:ml].run(command)
+      txt = self.run_spec path, test
 
       txt.sub! /^F\n\n1\)\n/, ''   # Remove 1st few lines
       txt.sub! /^\.\n\nFinished in.+\n\n/, ''   # Remove 1st when passing
@@ -49,4 +48,52 @@ class Specs
     end
   end
 
+  def self.run_spec path, test
+    command = "Spec::Runner::CommandLine.run(Spec::Runner::OptionParser.parse(['#{path}', '-e', '#{test}'], $out_bufr, $out_bufr))"
+    RubyConsole[:ml].run(command)
+  end
+
+  # Pastes in for the line in the clipboard:
+  #   Spec.foo "bar"
+  def self.enter_as_rspec
+    if Line.blank?   # Assume clipboard contains "it..." line
+      snippet = Clipboard['=']
+      clazz = snippet[/(\w+)_spec\.rb/, 1]
+      desc = snippet[/  it (".+")/, 1]
+      View.insert "Specs.#{clazz} #{desc}\n"
+      return
+    end
+
+    desc = Line[/  it (".+")/, 1]
+    return unless desc
+
+    orig = View.cursor
+    Search.backward "^ *[+-] "
+    clazz = Line[/(\w+)_spec\.rb/, 1]
+
+    View.cursor = orig
+
+    Line.delete :leave_linebreak
+    View.insert "Specs.#{clazz} #{desc}"
+    Move.to_axis
+
+  end
+
+  def self.run_spec_in_place
+    Keys.clear_prefix
+    cursor = View.cursor
+    Move.to_end
+
+    Search.backward '^ *it '   # Go up to "it ..." line
+    path = View.file.sub /.+\/spec\//, 'spec/'
+    test = Line.value[/(["'])(.+)\1/, 2]   # "
+    test.gsub! "'", "\\\\'"   # Escape single quotes
+
+    txt = self.run_spec path, test
+    Search.forward '^  end$'
+    Move.forward
+    View.insert "#{txt.gsub(/^/, '  # ').gsub(/^  # $/, '  #')}"
+
+    View.cursor = cursor
+  end
 end
