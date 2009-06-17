@@ -2,11 +2,11 @@ class Specs
 
   class << self
     def method_missing(func, *args, &block)
-      test, line = args
+      test, quote = args
 
-      if line   # If there's a line, jump to it
-        line = Line.value
-        line =~ /([\.\/].+):(\d+)/
+      if quote   # If there's a quote, we're jumping, not running
+        quote = Line.value
+        quote =~ /([\.\/].+):(\d+)/
 
         path, line = $1, $2
         path.sub! /^\.\//, Bookmarks['$m']   # Fix relative paths
@@ -28,17 +28,18 @@ class Specs
         View.open "#{Bookmarks['$m']}#{path}"
         Keys.clear_prefix
         View.to_highest
-        Search.forward " it .#{$el.regexp_quote(test)}"
+        if test =~ /^#/
+          Search.forward "^ *describe .+#{$el.regexp_quote(test)}"
+        else
+          Search.forward "^ *it .#{$el.regexp_quote(test)}"
+        end
         Move.to_line_text_beginning
         return
       end
 
-      test.gsub! "'", "\\\\'"   # Escape single quotes
-
       txt = self.run_spec path, test
-
       txt.sub! /^F\n\n1\)\n/, ''   # Remove 1st few lines
-      txt.sub! /^\.\n\nFinished in.+\n\n/, ''   # Remove 1st when passing
+      txt.sub! /^\.+\n\nFinished in.+\n\n/, ''   # Remove 1st when passing
       txt.sub! /^\(irb\):.+/m, ''   # Remove everything after (irb)
 
       txt.gsub! /^#{Bookmarks['$m']}/m, './'   # Shorten the paths
@@ -48,8 +49,28 @@ class Specs
     end
   end
 
+  def self.line_of_test path, test
+    found = nil; number = 1
+    IO.foreach(Bookmarks["$m/#{path}"]) do |line|
+      if line =~ /^ *describe.+#{test}\b/
+        break found = number
+      end
+      number += 1
+    end
+    found
+  end
+
   def self.run_spec path, test
-    command = "Spec::Runner::CommandLine.run(Spec::Runner::OptionParser.parse(['#{path}', '-e', '#{test}'], $out_bufr, $out_bufr))"
+    params = [path]
+
+    if test =~ /^#/   # If starts with #, find line number
+      found = self.line_of_test path, test
+      params << "-l" << (found ? "#{found}" : "0")
+    elsif test.is_a?(String)
+      params << "-e" << test
+    end
+
+    command = "Spec::Runner::CommandLine.run(Spec::Runner::OptionParser.parse(#{params.inspect}, $out_bufr, $out_bufr))"
     RubyConsole[:ml].run(command)
   end
 
@@ -59,8 +80,8 @@ class Specs
     if Line.blank?   # Assume clipboard contains "it..." line
       snippet = Clipboard['=']
       clazz = snippet[/(\w+)_spec\.rb/, 1]
-      desc = snippet[/  it (".+")/, 1]
-      View.insert "Specs.#{clazz} #{desc}\n"
+      desc = snippet[/(".+")/, 1]
+      View.insert "Specs.#{clazz} #{desc}"
       return
     end
 

@@ -11,9 +11,9 @@ class Javascript
     result = self.run_internal txt
     # Insert result at end of block
     orig = Location.new
-    Search.forward "^|"
+    View.cursor = right
     Line.to_left
-    View.insert result
+    View.insert result.gsub(/^/, '  ')
     orig.go
   end
 

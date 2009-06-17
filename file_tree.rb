@@ -305,8 +305,8 @@ class FileTree
     Styles.apply("^[ +-]*\\([^|\n]+/\\)$", nil, :ls_dir)  # Most dirs
 
     # Bullets
-    Styles.apply("^[ \t]*[+-] [a-zA-Z0-9_,? ().-]+?: \\(.+/\\)$", nil, :ls_dir)
-    Styles.apply("^[ +-]*\\([^|\n]+/\\)$", nil, :ls_dir)  # Dirs with labels
+    Styles.apply("^[ \t]*[+-] [a-zA-Z0-9_,? ().:-]+?: \\(.+/\\)$", nil, :ls_dir)   # Dirs with labels
+    Styles.apply("^[ +-]*\\([^|\n]+/\\)$", nil, :ls_dir)   # Dirs with bullets
 
     #Styles.apply('^[ -]*\\([ a-zA-Z0-9\/_\.$-]*\\w/\\)$', nil, :ls_dir)  # Most dirs
     Styles.apply('^ *\\(//?\\)$', nil, :ls_dir)  # /

@@ -115,7 +115,7 @@ class Move
     views = View.list   # Get views in this window
 
     if n >= views.size   # If they wanted to go further than exists
-      select_window(views[views.size - 2])
+      select_window(views[views.size - 1])
     else
       select_window(views[n-1])
     end

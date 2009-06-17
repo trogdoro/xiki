@@ -800,4 +800,26 @@ class Search
     # Prompt user to get char
     char = View.prompt(", lower, camel, snake")
   end
+
+  def self.isearch_restart path
+    Search.clear
+    term = self.match
+
+    if path == "$t"   # If $t, open bar
+      FileTree.open_in_bar; Effects.blink(:what=>:line)
+    elsif path == "$f"
+      FileTree.open_in_bar
+      View.to_nth 1
+      Effects.blink(:what => :line)
+    else
+      View.open Bookmarks[path]
+    end
+
+    View.wrap
+    View.to_highest
+
+    isearch_resume term, nil, nil, true, term, true
+    isearch_update
+
+  end
 end

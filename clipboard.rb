@@ -22,9 +22,13 @@ class Clipboard
   end
 
   def self.cut loc=nil
-    # If numeric prefix, reset region
-    prefix = Keys.prefix :clear=>true
-    if prefix.is_a?(Fixnum)
+    prefix = Keys.prefix :clear=>true   # If numeric prefix, reset region
+
+    if prefix == 0
+      l, r = View.paragraph :bounds=>true
+      View.cursor = l
+      View.mark = r
+    elsif prefix.is_a?(Fixnum)
       Line.to_left
       View.mark = Line.left 1+prefix
     end
@@ -39,8 +43,7 @@ class Clipboard
 
     set_mark_command nil
 
-    # Get from corresponding register
-    (elvar.current_prefix_arg || 1).times do
+    (elvar.current_prefix_arg || 1).times do   # Get from corresponding register
       insert @@hash[loc.to_s]
     end
   end
@@ -221,18 +224,29 @@ class Clipboard
 
 
   def self.as_clipboard
+    prefix = Keys.prefix :clear=>true
+
+    if prefix == 0
+      l, r = View.paragraph :bounds=>true
+      Effects.blink :left=>l, :right=>r
+      cursor = View.cursor
+      View.cursor = l
+      Clipboard["0"] = View.txt(l, r)
+      View.cursor = cursor
+      return
+    end
+
     # If numeric prefix, get next n lines and put in clipboard
-    if Keys.prefix and ! Keys.prefix_u?
-      l, r = Line.left, Line.left(Keys.prefix + 1)
-      Effects.blink :left => l, :right => r
+    if prefix.is_a?(Fixnum)
+      l, r = Line.left, Line.left(prefix + 1)
+      Effects.blink :left=>l, :right=>r
       Clipboard["0"] = View.txt(l, r)
 
       View.set_mark(r)
-
       return
     end
-    Clipboard.copy("0")
 
+    Clipboard.copy("0")
     Clipboard.save_for_yank View.selection   # Store for retrieval with enter_yank
   end
 

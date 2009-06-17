@@ -270,7 +270,8 @@ class KeyBindings
     Keys.do_search { Search.tree_grep }   # do grep search *
     #    Keys.DS { elvar.current_prefix_arg ? johns_thing : Search.grep }   # Do Search: do grep search
     Keys.do_tree { FileTree.tree(:recursive=>true) }   # draw filesystem tree for current dir or bookmark
-    Keys.do_under { FileTree.kill_under }   # kill tree children (lines indented more)
+    #     Keys.do_under { FileTree.kill_under }   # kill tree children (lines indented more)
+    Keys.do_upper { LineLauncher.do_last_launch }
     #Keys.display_up { message FileTree.construct_path( :indented => true ) }   # Display ancestors (by indent level)
     Keys.do_version { Repository.code_tree_diff_unadded }   # Compare with repos (with what hasn't been added yet)
     Keys.do_whitespace { Deletes.delete_whitespace }   # delete blank lines
@@ -410,7 +411,7 @@ class KeyBindings
     Keys.isearch_just_case { Search.isearch_just_case }   # make match be camel case
     Keys.isearch_just_difflog { Search.jump_to_difflog }   # find last string in difflog
     Keys.isearch_just_edges { Search.just_edges }   # delete everything but chars at edges of match
-    Keys.isearch_just_firefox { Search.isearch_url }   # delete everything but chars at edges of match
+    Keys.isearch_just_files { Search.isearch_restart "$f" }   # isearch for this string in $f
     Keys.isearch_just_have { Search.just_select }   # select match
     Keys.isearch_just_lowercase { Search.downcase }
     Keys.isearch_just_macro { Search.just_macro }
@@ -418,7 +419,7 @@ class KeyBindings
     Keys.isearch_just_open { Search.isearch_open }
     Keys.isearch_just_plus { Search.just_increment }   # select match
     Keys.isearch_just_replace { Search.isearch_query_replace :match }   # replace
-    Keys.isearch_just_tag { Search.isearch_just_tag }   # select match
+    Keys.isearch_just_todo { Search.isearch_restart "$t" }   # isearch for this string in $t
     #     Keys.isearch_just_should { Code.isearch_just_should }   # rspec should_receive
     Keys.isearch_just_surround { Search.isearch_just_wrap }   # make match be snake case
 
