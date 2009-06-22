@@ -46,10 +46,10 @@ class Keys
     elsif meth =~ /_/   # Add menu item, if more than one word
 
       if args.size == 0   # If global keymap
-        #         # Make lisp function
-        #         $el.defun(meth.to_sym, :interactive=>true) do
-        #           block.call
-        #         end
+        # Make lisp function
+        $el.defun(meth.to_sym, :interactive=>true) do
+          block.call
+        end
         @@key_queue << [menu, item]
       end
 

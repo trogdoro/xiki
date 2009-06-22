@@ -422,11 +422,12 @@ class LineLauncher
     orig = View.index
     Move.to_window(1)
 
-    if Line.matches(/^ +\|/)
-      Keys.clear_prefix
-      FileTree.to_parent
-      FileTree.kill_under
-    end
+    #     if Line.matches(/^ +\|/)
+    # Always collapse and go up to parent
+    Keys.clear_prefix
+    FileTree.to_parent
+    FileTree.kill_under
+    #     end
 
     LineLauncher.launch_or_hide :blink=>true
     View.to_nth orig

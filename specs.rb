@@ -4,6 +4,8 @@ class Specs
     def method_missing(func, *args, &block)
       test, quote = args
 
+      quote = test if args.size == 1 && test =~ /\n/   # If only 1 arg and it's multiline, it must be a quote
+
       if quote   # If there's a quote, we're jumping, not running
         quote = Line.value
         quote =~ /([\.\/].+):(\d+)/

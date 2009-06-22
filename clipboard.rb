@@ -22,6 +22,7 @@ class Clipboard
   end
 
   def self.cut loc=nil
+    loc = loc.to_s
     prefix = Keys.prefix :clear=>true   # If numeric prefix, reset region
 
     if prefix == 0
@@ -35,6 +36,8 @@ class Clipboard
 
     self.copy loc
     delete_region(region_beginning, region_end)
+
+    Location.as_spot('deleted')
   end
 
   def self.paste loc=nil
@@ -48,7 +51,6 @@ class Clipboard
     end
   end
 
-
   def self.get key='0', options={}
     val = @@hash[key.to_s]
     if options[:add_linebreak]
@@ -58,11 +60,11 @@ class Clipboard
   end
 
   def self.[] key
-    self.get key
+    self.get key.to_s
   end
 
   def self.[]= key, to
-    self.set key, to
+    self.set key.to_s, to
   end
 
   def self.display
@@ -87,6 +89,7 @@ class Clipboard
   end
 
   def self.set loc, str, append=nil
+    loc = loc.to_s
     # Save in corresponding register (or append if prefix)
     if append
       @@hash[loc] += str
@@ -231,10 +234,13 @@ class Clipboard
       Effects.blink :left=>l, :right=>r
       cursor = View.cursor
       View.cursor = l
+      Location.as_spot('copy')
       Clipboard["0"] = View.txt(l, r)
       View.cursor = cursor
       return
     end
+
+    Location.as_spot('copy')
 
     # If numeric prefix, get next n lines and put in clipboard
     if prefix.is_a?(Fixnum)

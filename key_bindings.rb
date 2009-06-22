@@ -34,7 +34,7 @@ class KeyBindings
     # H
     #Keys.as_indented { Clipboard.as_indented }
     # J
-    Keys.as_kill { Clipboard.cut("0"); Location.as_spot('deleted') }   # cut) **
+    Keys.as_kill { Clipboard.cut(0) }   # cut) **
     Keys.as_line { Clipboard.as_line }
     Keys.as_macro { Macros.record }   # start recording macro *
     Keys.as_name { Clipboard.copy }   # copies using key (prompted for)
@@ -103,6 +103,7 @@ class KeyBindings
     Keys.open_rake_outline { CodeTree.display_menu("- Rake.menu/") }
     Keys.open_region_path { find_file buffer_substring(region_beginning, region_end) }
     Keys.open_related_test { Code.open_related_rspec }
+    # S
     Keys.open_search { Search.outline_search }   # hide search via outline *
     Keys.open_tree { FileTree.tree }   # draw a tree, prompting for bookmark tag *
     Keys.open_up { View.show_dir }   # open enclosing dir **
@@ -298,8 +299,8 @@ class KeyBindings
     Keys.TT { transpose_chars elvar.current_prefix_arg }   # TT - toggle character (T's default)
     Keys.to_axis { Move.to_axis }   # to beginning of file *
     Keys.to_backward { backward_word(Keys.prefix || 1) }   # move backward one word
-    Keys.to_clipboard { Search.to Clipboard[0] }   # move cursor to next instance of clipboard
-    Keys.to_deleted { Location.to_spot('deleted') }   # **
+    Keys.to_column { Move.to_column }   # to x coordinate - ie column
+    # D
     Keys.to_end { Move.to_end }   # To end of line **
     Keys.to_forward { forward_word(Keys.prefix || 1) }   # move forward one word
     Keys.to_highest { View.to_highest }   # to beginning of file **
@@ -319,14 +320,15 @@ class KeyBindings
     Keys.to_up { FileTree.to_parent }   # to parent (last line indented less)
     Keys.to_visible { Search.to_relative }   # go to nth line, relative to top of window
     Keys.to_words { Move.to_line_text_beginning }   # move to start of words on line *
-    Keys.to_x { Move.to_column }   # to x coordinate - ie column
-    Keys.to_yank { Clipboard.to_yank }
+    # X
+    #     Keys.to_yank { Clipboard.to_yank }
     # Z
     #Keys.T0 { Location.go("$_0") }   # To 0
-    Keys.T1 { Search.to regexp_quote(Clipboard[1]) }
-    Keys.T2 { Search.to regexp_quote(Clipboard[2]) }
-    Keys.T3 { Search.to regexp_quote(Clipboard[3]) }
-    Keys.T4 { Search.to regexp_quote(Clipboard[4]) }
+    Keys.T1 { Search.isearch_to_line(1) };  Keys.T2 { Search.isearch_to_line(2) }
+    Keys.T3 { Search.isearch_to_line(3) };  Keys.T4 { Search.isearch_to_line(4) }
+    Keys.T5 { Search.isearch_to_line(5) };  Keys.T6 { Search.isearch_to_line(6) }
+    Keys.T7 { Search.isearch_to_line(7) };  Keys.T8 { Search.isearch_to_line(8) }
+    Keys.T9 { Search.isearch_to_line(9) };  Keys.T0 { Search.isearch_to_line }
   end
 
   def self.layout_keys
@@ -385,10 +387,10 @@ class KeyBindings
   def self.isearch
     Keys.isearch_axis { Search.to_left }
     # B: leave unmapped for back
-    Keys.isearch_clipboard { Search.copy }   # Clipboard (copy)
+    Keys.isearch_clipboard { Search.isearch_clipboard }   # Clipboard (copy)
     Keys.isearch_delete { Search.isearch_delete }   # Delete
     Keys.isearch_enter { Search.paste_here }   # Enter: insert clipboard, replacing match
-    Keys.isearch_forward { Search.go_to_end }   # Forward
+    Keys.isearch_foreward { Search.go_to_end }   # Forward
     Keys.isearch_g { Search.stop }   # Stop searching
     # have_...
     define_key :isearch_mode_map, kbd("C-h"), nil
@@ -428,11 +430,11 @@ class KeyBindings
 
     Keys.isearch_just_web { Search.isearch_google }   # make match be snake case
     Keys.isearch_just_yellow { Search.just_orange }
-    Keys.isearch_kill { Search.cut; Location.as_spot('deleted') }   # cut
+    Keys.isearch_kill { Search.cut }   # cut
     Keys.isearch_look { Search.uncover }   # Look: show results for search string in a bookmark
     # M: leave unmapped for stop
     # N: leave unmapped for next
-    Keys.isearch_outline { Search.isearch_find_in_buffers(:current_only => true) }   # Outline
+    Keys.isearch_outline { Search.isearch_outline }   # Outline
     # P: leave unmapped for previous
     # Q: leave unmapped for quoting
     # R: leave unmapped for reverse
@@ -458,20 +460,20 @@ class KeyBindings
 
     define_key(:isearch_mode_map, kbd("C-h C-'")) { Search.insert_quote_at_search_start }
 
-    # Just 1
     define_key(:isearch_mode_map, kbd("C-j C-1")) { Search.isearch_query_replace Clipboard[1] }
     define_key(:isearch_mode_map, kbd("C-j C-2")) { Search.isearch_query_replace Clipboard[2] }
 
-    define_key(:isearch_mode_map, kbd("C-0")) { Search.isearch_query_replace Clipboard[0] }
 
-    define_key(:isearch_mode_map, kbd("C-1")) { Search.isearch_copy_as("1") }
-    define_key(:isearch_mode_map, kbd("C-2")) { Search.isearch_copy_as("2") }
-    define_key(:isearch_mode_map, kbd("C-3")) { Search.isearch_copy_as("3") }
-    define_key(:isearch_mode_map, kbd("C-4")) { Search.isearch_copy_as("4") }
+    define_key(:isearch_mode_map, kbd("C-j C-0")) { Search.isearch_ Clipboard[0] }
 
-    define_key(:isearch_mode_map, kbd("C-5")) { Search.isearch_copy_as("5") }
-    define_key(:isearch_mode_map, kbd("C-6")) { Search.isearch_copy_as("6") }
-    define_key(:isearch_mode_map, kbd("C-7")) { Search.isearch_copy_as("7") }
+    define_key(:isearch_mode_map, kbd("C-0")) { Search.isearch_or_copy(0) }   # isearch_just_0
+    define_key(:isearch_mode_map, kbd("C-1")) { Search.isearch_or_copy("1") }
+    define_key(:isearch_mode_map, kbd("C-2")) { Search.isearch_or_copy("2") }
+    define_key(:isearch_mode_map, kbd("C-3")) { Search.isearch_or_copy("3") }
+    define_key(:isearch_mode_map, kbd("C-4")) { Search.isearch_or_copy("4") }
+    define_key(:isearch_mode_map, kbd("C-5")) { Search.isearch_or_copy("5") }
+    define_key(:isearch_mode_map, kbd("C-6")) { Search.isearch_or_copy("6") }
+    define_key(:isearch_mode_map, kbd("C-7")) { Search.isearch_or_copy("7") }
 
     define_key(:isearch_mode_map, kbd("C-=")) { $el.isearch_yank_char }   # Add one char from isearch
     define_key(:isearch_mode_map, kbd("C--")) { $el.isearch_del_char }   # Remove one char from isearch

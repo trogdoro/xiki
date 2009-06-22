@@ -1325,10 +1325,10 @@ class FileTree
     # Insert linebreak if at end of file
 
     self.indent(txt)
-    self.insert_quoted_and_search txt
+    self.insert_quoted_and_search(txt, options)
   end
 
-  def self.insert_quoted_and_search matches
+  def self.insert_quoted_and_search matches, options={}
     # Insert matches
     Line.next
     left = point
@@ -1337,7 +1337,7 @@ class FileTree
     goto_char left
     Line.to_words
     # Do a search
-    self.search(:left => left, :right => right)
+    self.search(:left => left, :right => right) unless options[:no_search]
   end
 
   # Insert section from a file under it in tree

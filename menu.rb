@@ -18,6 +18,8 @@ class Menu
   end
 
   def self.add_item menu, name, function
+    menu[1] = "Search" if menu[1] == "ISearch"
+
     menu_spaces = menu.join(' ').downcase
     lisp = "
       (define-key global-map
@@ -39,7 +41,7 @@ class Menu
       ['Xiki', 'As'],
       ['Xiki', 'Enter'],
       ['Xiki', 'Do'],
-      ['Xiki', 'ISearch']
+      ['Xiki', 'Search']
     ]
     menus.reverse.each do |tuple|
       #       puts "#{tuple[0]}, #{tuple[1]}"

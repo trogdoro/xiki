@@ -62,11 +62,9 @@ class Search
     match = self.match
     View.delete(Search.left, Search.right)
 
-    Location.as_spot('deleted')
     self.to_start  # Go back to start
 
-    # If reverse, move back width of thing deleted
-    Move.backward match.length if was_reverse
+    Move.backward match.length if was_reverse   # If reverse, move back width of thing deleted
 
     insert match
 
@@ -89,20 +87,33 @@ class Search
 
   def self.isearch_select_inner
     self.clear
-    set_mark match_beginning(0) + 1
-    goto_char match_end(0) - 1
+    set_mark self.left + 1
+    goto_char self.right - 1
     Effects.blink :what=>:region
   end
 
   def self.isearch_delete
-    self.clear
-    View.delete(Search.left, Search.right)
+    # If nothing searched for, go to spot of last delete
+    if self.match == ""   # If nothing searched for yet
+      self.isearch_stop_at_end
+      Location.to_spot('deleted')
+    else
+      self.clear
+      View.delete(Search.left, Search.right)
+      Location.as_spot('deleted')
+    end
   end
 
   def self.paste_here
-    self.clear
-    View.delete(Search.left, Search.right)
-    insert Clipboard.get
+
+    if self.match == ""   # If nothing searched for yet
+      # Up for grabs
+    else
+      self.clear
+      View.delete(Search.left, Search.right)
+      insert Clipboard.get
+    end
+
   end
 
   def self.copy_and_comment
@@ -143,22 +154,32 @@ class Search
   def self.copy
     self.clear
     match = self.match
-    Clipboard.set("0", match)
+    Clipboard[0] = self.match
     set_register ?X, match
     x_select_text match
     Clipboard.save_for_yank match   # Store for retrieval with enter_yank
   end
 
   def self.cut
-    self.clear
-    match = self.match
-    Clipboard.set("0", match)
-    set_register ?X, match
-    delete_region match_beginning(0), match_end(0)
+
+    # If nothing searched for, go to spot of last delete
+    if self.match == ""   # If nothing searched for yet
+      self.isearch_stop_at_end
+      Location.to_spot('cut')
+    else
+
+      self.clear
+      match = self.match
+      Clipboard.set(0, match)
+      set_register ?X, match
+      View.delete self.left, self.right
+      Location.as_spot('cut')
+    end
+
   end
   def self.go_to_end
     self.clear
-    goto_char match_end(0)
+    goto_char self.right
   end
 
   # Clears the isearch, allowing for inserting, or whatever else
@@ -199,15 +220,18 @@ class Search
 
   def self.isearch_query_replace after=nil
     self.clear
+    left, right = Search.left, Search.right
     before = $el.regexp_quote(self.match)   # Always start with isearch match
 
     # If before not there or is :match, prompt for input
     if after.nil? || after == :match
       initial_input = after == :match ? before : ''
-      after =
-        Keys.input(:prompt=>"Change instances of '#{before}' to: ", :initial_input=>initial_input)
+      after = Keys.input(:prompt=>"Change instances of '#{before}' to: ", :initial_input=>initial_input)
       @@query_from, @@query_to = before, after
     end
+
+    View.delete left, right
+    View.insert after
 
     $el.query_replace_regexp before, after
   end
@@ -251,7 +275,7 @@ class Search
       else
         pattern = pattern + regexp_quote(ch)
         # Filter text and put back
-        delete_region left, right
+        View.delete left, right
         # Replace out lines that don't match
         lines = lines.grep(/#{pattern}/i)
         # Put back into buffer
@@ -425,18 +449,18 @@ class Search
   # During isearch, open most recently edited file with the search string in its name
 
   def self.isearch_to
-    self.clear
-    match = self.match
-
-    # Get key
-    dir = Keys.bookmark_as_path(:prompt=>"Enter bookmark to look in (or comma for recently edited): ")
-
-    # If key is comma, treat as last edited
-    return self.isearch_open_last_edited(match) if dir == :comma
-
-    TextUtil.snake_case! match if match =~ /[a-z][A-Z]/   # If camel case, file is probably snake
-
-    FileTree.grep_with_hashes dir, match, '**'   # Open buffer and search
+    if self.match == ""   # If nothing searched for yet
+      self.isearch_stop_at_end
+      Location.to_spot('copy')
+      Search.isearch Clipboard[0]
+    else
+      self.clear
+      match = self.match
+      dir = Keys.bookmark_as_path(:prompt=>"Enter bookmark to look in (or comma for recently edited): ")
+      return self.isearch_open_last_edited(match) if dir == :comma   # If key is comma, treat as last edited
+      TextUtil.snake_case! match if match =~ /[a-z][A-Z]/   # If camel case, file is probably snake
+      FileTree.grep_with_hashes dir, match, '**'   # Open buffer and search
+    end
   end
 
   def self.isearch_open_last_edited match
@@ -479,6 +503,16 @@ class Search
 
   end
 
+  def self.isearch_or_copy name
+    if self.match == ""   # If nothing searched for yet
+      self.isearch Clipboard[name]
+    else   # Else, if nothing searched for
+      self.clear
+      Clipboard[name] = self.match
+      #       Clipboard.set(name, self.match)
+    end
+  end
+
   def self.isearch_copy_as name
     self.clear
     Clipboard.set(name, self.match)
@@ -511,12 +545,12 @@ class Search
   end
 
   def self.stop
-    Search.clear
+    self.clear
     self.to_start  # Go back to start
   end
 
   def self.match
-    buffer_substring(match_beginning(0), match_end(0))
+    buffer_substring(self.left, self.right)
   end
 
   def self.forward search, options={}
@@ -536,7 +570,7 @@ class Search
   def self.to find
     Move.forward
     if Search.forward(find)
-      match = $el.buffer_substring $el.match_beginning(0), $el.match_end(0)
+      match = $el.buffer_substring self.left, self.right
       Move.backward(match.size)
     else
       beep
@@ -546,12 +580,12 @@ class Search
   end
 
   def self.isearch_open
-    Search.clear
+    self.clear
     View.open(self.match)
   end
 
   def self.isearch_google
-    Search.clear
+    self.clear
     term = self.match
     term.gsub!(' ', '%20')
 
@@ -565,7 +599,7 @@ class Search
     isearch_done
     isearch_clean_overlays
     line = buffer_substring point_at_bol, point_at_eol + 1
-    delete_region point_at_bol, point_at_eol + 1
+    View.delete point_at_bol, point_at_eol + 1
     #self.to_start  # Go back to start
     exchange_point_and_mark
     insert line
@@ -588,13 +622,13 @@ class Search
   end
 
   def self.upcase
-    Search.clear
-    upcase_region(match_beginning(0), match_end(0))
+    self.clear
+    upcase_region(self.left, self.right)
   end
 
   def self.downcase
-    Search.clear
-    downcase_region(match_beginning(0), match_end(0))
+    self.clear
+    downcase_region(self.left, self.right)
   end
 
   def self.enter_search bm=nil, input=nil
@@ -648,21 +682,21 @@ class Search
   end
 
   def self.isearch_as_camel
-    Search.clear
+    self.clear
     term = self.match
     self.to_start
     View.insert TextUtil.camel_case(term)
   end
 
   def self.isearch_as_snake
-    Search.clear
+    self.clear
     term = self.match
     self.to_start
     View.insert TextUtil.snake_case(term)
   end
 
   def self.isearch_just_adjust
-    Search.clear
+    self.clear
     transpose_chars 1
     self.to_start
   end
@@ -680,14 +714,14 @@ class Search
   end
 
   def self.just_select
-    Search.clear
+    self.clear
     View.set_mark(Search.right)
     View.to(Search.left)
     Effects.blink :what=>:region
   end
 
   def self.isearch_just_tag
-    Search.clear
+    self.clear
 
     left, right = Search.left, Search.right
     tag = Keys.input :timed=>true, :prompt=>"Enter tag name: "
@@ -710,7 +744,7 @@ class Search
 
 
   def self.isearch_just_wrap
-    Search.clear
+    self.clear
     left, right = Search.left, Search.right
 
     wrap_with = Keys.input :timed=>true, :prompt=>"Enter string to wrap match with: "
@@ -725,12 +759,12 @@ class Search
 
 
   def self.just_orange
-    Search.clear
+    self.clear
     Overlay.face(:notes_label, :left=>Search.left, :right=>Search.right)
   end
 
   def self.just_edges
-    Search.clear
+    self.clear
     left, right = Search.left+1, Search.right-1
     Effects.blink :left=>left, :right=>right
     View.delete(left, right)
@@ -739,7 +773,7 @@ class Search
 
   def self.isearch_just_surround_with_char left, right=nil
     right ||= left
-    Search.clear
+    self.clear
     View.to(Search.right)
     View.insert right
     View.to(Search.left)
@@ -749,19 +783,19 @@ class Search
 
   # Copy match as name (like Keys.as_name)
   def self.just_name
-    Search.clear
+    self.clear
     term = self.match
     Clipboard.copy nil, term
     Effects.blink :left=>left, :right=>right
   end
 
   def self.just_macro
-    Search.clear
+    self.clear
     Macros.run
   end
 
   def self.to_left
-    Search.clear
+    self.clear
     Line.to_left
   end
 
@@ -783,7 +817,7 @@ class Search
 
 
   def self.isearch_just_underscores
-    Search.clear
+    self.clear
     term = self.match
     View.delete(Search.left, Search.right)
     View.insert TextUtil.snake_case(term)
@@ -802,7 +836,7 @@ class Search
   end
 
   def self.isearch_restart path
-    Search.clear
+    self.clear
     term = self.match
 
     if path == "$t"   # If $t, open bar
@@ -818,8 +852,43 @@ class Search
     View.wrap
     View.to_highest
 
-    isearch_resume term, nil, nil, true, term, true
-    isearch_update
+    self.isearch term
 
   end
+
+  def self.isearch txt, options={}
+    isearch_resume txt, (options[:regex] ?true:nil), nil, true, txt, true
+    isearch_update
+  end
+
+  def self.isearch_stop_at_end
+    # Kind of a hack - search for anything, so it won't error when we stop
+    isearch_resume "[^`]", true, nil, true, "", true
+    Search.stop
+    View.message ""
+  end
+
+  def self.isearch_outline
+    if self.match == ""   # If nothing searched for yet
+      # Up for grabs
+    else
+      self.clear
+      Search.isearch_find_in_buffers(:current_only => true)
+    end
+  end
+
+  def self.isearch_clipboard
+    if self.match == ""   # If nothing searched for yet
+      self.isearch Clipboard[0]
+    else
+      self.copy
+      Location.as_spot('copy')
+    end
+  end
+
+  def self.isearch_to_line first=""
+    line = "#{first}#{Keys.input(:prompt=>"goto line: #{first}")}"
+    View.to_line line
+  end
+
 end

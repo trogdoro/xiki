@@ -260,7 +260,7 @@ class CodeTree
     # If last parameter was |..., make it be all the lines
     if data.first =~ /^ *\|/
       data.first.replace( self.escape(
-        self.siblings(:include_self=>true).map{|i| "#{i[/^ *\|(.*)/, 1]}\n"}.join('')
+        self.siblings(:include_self=>true).map{|i| "#{i[/^ *\|.(.*)/, 1]}\n"}.join('')
         ))
     end
 
@@ -386,6 +386,7 @@ class CodeTree
   end
 
   def self.kill_rest
+    prefix = Keys.prefix(:clear=>true)
     column = View.column
 
     right1 = Line.left
@@ -397,11 +398,16 @@ class CodeTree
     Search.forward("^$", :go_anyway=>true)   # Go to end of paragraph
     right2 = Line.left
 
+    if prefix.is_a?(Fixnum)
+      View.cursor = left2
+      right2 = Line.left(prefix + 1)
+    end
+
     View.delete left2, right2   # Always delete after
     Line.previous
 
     # Optionally delete before
-    View.delete(left1, right1) if Keys.prefix_u(:clear=>true)
+    View.delete(left1, right1) if prefix == :u
 
   end
 
