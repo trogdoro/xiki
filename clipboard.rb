@@ -234,13 +234,13 @@ class Clipboard
       Effects.blink :left=>l, :right=>r
       cursor = View.cursor
       View.cursor = l
-      Location.as_spot('copy')
+      Location.as_spot('clipboard')
       Clipboard["0"] = View.txt(l, r)
       View.cursor = cursor
       return
     end
 
-    Location.as_spot('copy')
+    Location.as_spot('clipboard')
 
     # If numeric prefix, get next n lines and put in clipboard
     if prefix.is_a?(Fixnum)

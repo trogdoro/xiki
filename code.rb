@@ -559,7 +559,7 @@ class Code
   end
 
   def self.isearch_just_should
-    Search.clear
+    Search.stop
     term = Search.match
     View.delete(Search.left, Search.right)
     View.insert term.sub(/\.(.+)/, ".should_receive(:\\1)")

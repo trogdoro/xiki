@@ -471,6 +471,8 @@ class FileTree
 
   # Incremental search
   def self.search options={}
+    return if $xiki_no_search
+
     Cursor.remember :before_file_tree
     Cursor.blue
     error = ""

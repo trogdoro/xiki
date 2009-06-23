@@ -23,7 +23,6 @@ class KeyBindings
     # A: as...
     # Use A prefix for: remembering, saving
 
-    #Keys.AA { View.beep; View.message('Use to_axis instead') }   # AA - beginning of line (A's default) **
     Keys.AA { Line.to_left }   # AA - beginning of line (A's default) **
     Keys.as_bookmark { Bookmarks.save }   # remember bookmark
     Keys.as_clipboard { Clipboard.as_clipboard }   # **
@@ -34,7 +33,7 @@ class KeyBindings
     # H
     #Keys.as_indented { Clipboard.as_indented }
     # J
-    Keys.as_kill { Clipboard.cut(0) }   # cut) **
+    Keys.as_kill { Clipboard.cut(0); Location.as_spot('cut') }   # cut) **
     Keys.as_line { Clipboard.as_line }
     Keys.as_macro { Macros.record }   # start recording macro *
     Keys.as_name { Clipboard.copy }   # copies using key (prompted for)
@@ -60,7 +59,6 @@ class KeyBindings
     # O: open...
     # Use O prefix for: opening, jumping to files
 
-    #Keys.OO { View.beep; View.message('Use enter_whitespace instead') }   # OO - open line (O's default)
     Keys.OO { open_line elvar.current_prefix_arg || 1 }   # OO - open line (O's default)
     #     Keys.open_a_calendar { calendar }
     #Keys.OAD { Svn.jump_to_diff }
@@ -129,7 +127,6 @@ class KeyBindings
     #   - ideas: embed, emit, entry
     #     Keys.EAB { Code.enter_as_backslash }   # Enter As Bash: enter with \ at eol's
     Keys.EE { Line.to_right }   # EE - end of line (E's default) **
-    #Keys.EE { View.beep; View.message('Use to_end instead') }   # AA - beginning of line (A's default) **
     Keys.enter_as_camelcase { insert TextUtil.camel_case(Clipboard.get(0)) }
     Keys.enter_as_debug { Code.enter_as_debug }
     Keys.enter_as_filename { insert Clipboard.get(".") }
@@ -192,7 +189,6 @@ class KeyBindings
     # Use D prefix for: things that modify text or execute code
 
     Keys.D { insert "Apparently this is necessary to remap C-d" }
-    #Keys.DD { View.beep; View.message('Use delete_you instead') }   # DD - delete character (D's default) **
     Keys.DD { delete_char elvar.current_prefix_arg || 1 }   # DD - delete character (D's default) **
     Keys.do_as_camelcase { Clipboard.do_as_camel_case }   # change word to camel case (LikeThat)
     Keys.do_as_javascript { Javascript.run }
@@ -250,7 +246,7 @@ class KeyBindings
       end
     }
     Keys.do_lines_individual { Code.do_kill_duplicates }   # Uniqify, delete duplicates
-    Keys.do_last_launch { LineLauncher.do_last_launch }
+    Keys.do_last_launch { View.alert("Use instead:  to_up") }
     Keys.do_line_next { Line.move(:next) }
     Keys.do_line_previous { Line.move(:previous) }
     Keys.do_lines_reverse { reverse_region(region_beginning, region_end) }
@@ -272,7 +268,7 @@ class KeyBindings
     #    Keys.DS { elvar.current_prefix_arg ? johns_thing : Search.grep }   # Do Search: do grep search
     Keys.do_tree { FileTree.tree(:recursive=>true) }   # draw filesystem tree for current dir or bookmark
     #     Keys.do_under { FileTree.kill_under }   # kill tree children (lines indented more)
-    Keys.do_upper { LineLauncher.do_last_launch }
+    Keys.do_up { LineLauncher.do_last_launch }
     #Keys.display_up { message FileTree.construct_path( :indented => true ) }   # Display ancestors (by indent level)
     Keys.do_version { Repository.code_tree_diff_unadded }   # Compare with repos (with what hasn't been added yet)
     Keys.do_whitespace { Deletes.delete_whitespace }   # delete blank lines
@@ -286,10 +282,14 @@ class KeyBindings
         LineLauncher.launch
       end
     }
+    Keys.set("C-d C-/") { Code.comment }
+
     Keys.D1 { query_replace_regexp($el.regexp_quote(Clipboard.get("1")), Clipboard.get("2")) }
     Keys.D2 { query_replace_regexp($el.regexp_quote(Clipboard.get("2")), Clipboard.get("1")) }
     #     Keys.D1 { delete_char 1 };  Keys.D2 { delete_char 2 };  Keys.D3 { delete_char 3 };  Keys.D4 { delete_char 4 }
     #     Keys.D5 { delete_char 5 };  Keys.D6 { delete_char 6 };  Keys.D7 { delete_char 7 };  Keys.D8 { delete_char 7 };
+
+
   end
 
   def self.to_keys
@@ -389,14 +389,13 @@ class KeyBindings
     # B: leave unmapped for back
     Keys.isearch_clipboard { Search.isearch_clipboard }   # Clipboard (copy)
     Keys.isearch_delete { Search.isearch_delete }   # Delete
-    Keys.isearch_enter { Search.paste_here }   # Enter: insert clipboard, replacing match
+    Keys.isearch_enter { Search.enter }   # Enter: insert clipboard, replacing match
     Keys.isearch_foreward { Search.go_to_end }   # Forward
-    Keys.isearch_g { Search.stop }   # Stop searching
+    Keys.isearch_g { Search.cancel }   # Stop searching
     # have_...
     define_key :isearch_mode_map, kbd("C-h"), nil
     Keys.isearch_have_bullet { Search.have_label }
     Keys.isearch_have_case { Search.isearch_have_case }
-    # Keys.isearch_have_deleted {  }  # Move match to where you last deleted something
     Keys.isearch_have_within { Search.isearch_have_within }   # Grab everything except chars on edges
     Keys.isearch_have_javascript { Search.isearch_log_javascript }
     Keys.isearch_have_line { Search.have_line }   # copy line back to search start
@@ -422,8 +421,7 @@ class KeyBindings
     Keys.isearch_just_plus { Search.just_increment }   # select match
     Keys.isearch_just_replace { Search.isearch_query_replace :match }   # replace
     Keys.isearch_just_todo { Search.isearch_restart "$t" }   # isearch for this string in $t
-    #     Keys.isearch_just_should { Code.isearch_just_should }   # rspec should_receive
-    Keys.isearch_just_surround { Search.isearch_just_wrap }   # make match be snake case
+    Keys.isearch_just_search { Search.isearch_just_search }   # Add "##search" line in tree for match
 
     Keys.isearch_just_uppercase { Search.upcase }   # make match be snake case
     Keys.isearch_just_variable { Search.isearch_just_surround_with_char '#{', '}' }
@@ -455,25 +453,24 @@ class KeyBindings
     define_key(:isearch_mode_map, kbd("C-9")) { Search.isearch_just_surround_with_char '(', ')' }
     define_key(:isearch_mode_map, kbd("C-j C-9")) { Search.isearch_just_surround_with_char '[', ']'}
 
-    define_key(:isearch_mode_map, kbd("C-[")) { Search.isearch_just_surround_with_char '[', ']' }
+    #     define_key(:isearch_mode_map, kbd("C-[")) { Search.isearch_just_surround_with_char '[', ']' }
     define_key(:isearch_mode_map, kbd("C-j C-[")) { Search.isearch_just_surround_with_char '{', '}' }
 
     define_key(:isearch_mode_map, kbd("C-h C-'")) { Search.insert_quote_at_search_start }
 
-    define_key(:isearch_mode_map, kbd("C-j C-1")) { Search.isearch_query_replace Clipboard[1] }
-    define_key(:isearch_mode_map, kbd("C-j C-2")) { Search.isearch_query_replace Clipboard[2] }
+    define_key(:isearch_mode_map, kbd("C-j C-1")) { Search.enter(Clipboard[1]) }
+    define_key(:isearch_mode_map, kbd("C-j C-2")) { Search.enter(Clipboard[2]) }
+    define_key(:isearch_mode_map, kbd("C-h C-1")) { Search.isearch_query_replace Clipboard[1] }
+    define_key(:isearch_mode_map, kbd("C-h C-2")) { Search.isearch_query_replace Clipboard[2] }
 
 
-    define_key(:isearch_mode_map, kbd("C-j C-0")) { Search.isearch_ Clipboard[0] }
+    define_key(:isearch_mode_map, kbd("C-j C-0")) { Search.isearch_query_replace Clipboard[0] }
 
-    define_key(:isearch_mode_map, kbd("C-0")) { Search.isearch_or_copy(0) }   # isearch_just_0
     define_key(:isearch_mode_map, kbd("C-1")) { Search.isearch_or_copy("1") }
     define_key(:isearch_mode_map, kbd("C-2")) { Search.isearch_or_copy("2") }
     define_key(:isearch_mode_map, kbd("C-3")) { Search.isearch_or_copy("3") }
     define_key(:isearch_mode_map, kbd("C-4")) { Search.isearch_or_copy("4") }
     define_key(:isearch_mode_map, kbd("C-5")) { Search.isearch_or_copy("5") }
-    define_key(:isearch_mode_map, kbd("C-6")) { Search.isearch_or_copy("6") }
-    define_key(:isearch_mode_map, kbd("C-7")) { Search.isearch_or_copy("7") }
 
     define_key(:isearch_mode_map, kbd("C-=")) { $el.isearch_yank_char }   # Add one char from isearch
     define_key(:isearch_mode_map, kbd("C--")) { $el.isearch_del_char }   # Remove one char from isearch
@@ -481,6 +478,9 @@ class KeyBindings
     define_key(:isearch_mode_map, kbd("C-,")) { Search.isearch_query_replace }   # Remove last action from search results
 
     define_key(:isearch_mode_map, kbd("C-\\")) { Search.hide }   # Hide: hide non-matching
+
+    define_key(:isearch_mode_map, kbd("C-0")) { Search.isearch_pause_or_resume }   # isearch_just_0
+    define_key(:isearch_mode_map, kbd("C-8")) { Search.isearch_query_replace Clipboard[0] }   # isearch_just_0
 
   end
 

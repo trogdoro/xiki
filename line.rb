@@ -19,7 +19,7 @@ class Line
 
     # Tests
     - blank: p Line.blank?
-    - matches something: p Line.matches(/s...thing/)
+    - matches something: p Line[/s...thing/]
   >
 
   # Text on current line (minus linebreak)

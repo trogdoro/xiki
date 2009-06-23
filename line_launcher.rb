@@ -76,21 +76,22 @@ class LineLauncher
 
     View.bar if Keys.prefix == 7
 
+    $xiki_no_search = options[:no_search]   # If :no_search, disable search
+
     if line =~ /^( *)[+-] .+?: (.+)/   # Split label off, if there
       line = $1 + $2
     end
-    # If try each potential paren match
-    if paren && @@paren_launchers[paren]
+
+    if paren && @@paren_launchers[paren]   # If try each potential paren match
       if @@just_show
         Ol << paren
       else
         @@paren_launchers[paren].call
       end
-      return
+      return $xiki_no_search = false
     end
 
-    # Try each potential regex match
-    @@launchers.each do |launcher|
+    @@launchers.each do |launcher|   # Try each potential regex match
       regex, block = launcher
       # If we found a match, launch it
       if line =~ regex
@@ -100,12 +101,12 @@ class LineLauncher
         else
           block.call line
         end
+        $xiki_no_search = false
         return true
       end
     end
 
-    # Try each potential label match
-    @@label_launchers.each do |launcher|
+    @@label_launchers.each do |launcher|   # Try each potential label match
       regex, block = launcher
       # If we found a match, launch it
       if label =~ regex
@@ -115,32 +116,33 @@ class LineLauncher
         else
           block.call label
         end
+        $xiki_no_search = false
         return true
       end
     end
 
-    return if self.launch_by_proc   # Try procs (currently all trees)
+    if self.launch_by_proc   # Try procs (currently all trees)
+      return $xiki_no_search = false
+    end
 
     if @@just_show
       Ol << "Nothing matched.  Just passing to FileTree."
-      return
+      return $xiki_no_search = false
     end
 
     FileTree.launch   # Default to FileTree
+    $xiki_no_search = false
   end
 
   def self.launch_by_proc
 
-    # Get path to pass to procs, to help them decide
-    list = FileTree.construct_path(:list => true)
+    list = FileTree.construct_path(:list => true)   # Get path to pass to procs, to help them decide
 
     # Try each proc
     @@launchers_procs.each do |launcher|   # For each potential match
       condition_proc, block = launcher
-      # If we found a match, launch it
-      if condition_proc.call list
-        # Run it
-        if @@just_show
+      if condition_proc.call list   # If we found a match, launch it
+        if @@just_show   # Run it
           Ol << condition_proc.to_ruby
         else
           block.call list
@@ -421,15 +423,16 @@ class LineLauncher
 
     orig = View.index
     Move.to_window(1)
+    line = Line.value
 
-    #     if Line.matches(/^ +\|/)
-    # Always collapse and go up to parent
-    Keys.clear_prefix
-    FileTree.to_parent
+    # Go to parent and collapse, if not at left margin and not a bullet
+    if line =~ /^ / && line !~ /^[ *][+-] /
+      Keys.clear_prefix
+      FileTree.to_parent
+    end
     FileTree.kill_under
-    #     end
 
-    LineLauncher.launch_or_hide :blink=>true
+    LineLauncher.launch_or_hide :blink=>true, :no_search=>true
     View.to_nth orig
   end
 

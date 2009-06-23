@@ -46,7 +46,8 @@ class Specs
 
       txt.gsub! /^#{Bookmarks['$m']}/m, './'   # Shorten the paths
 
-      CodeTree.no_search_option + txt.gsub(/^/, '| ')
+      # CodeTree.no_search_option +
+      txt.gsub(/^/, '| ')
 
     end
   end
