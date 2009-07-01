@@ -150,7 +150,8 @@ class Console
     orig = Location.new
     orig_view = View.index
     path = FileTree.construct_path(:list=>true)
-    path[0] = Bookmarks[path[0]] if path[0] =~ /^\$[\w-]/   # Expand out bookmark at root, if there
+
+    path[0] = Bookmarks[path[0]] if path[0] =~ /^(\.\/|\$[\w-])/   # Expand out bookmark or ./, if there
     if path.first =~ /^\//   # If has dir (possibly remote)
       line = path.join('')
       dir, command = line.match(/(.+?)\$ (.+)/)[1..2]
@@ -171,16 +172,16 @@ class Console
     line = Line.without_label :leave_indent=>true
     #p Line.without_label
     # If indented, check whether file tree, extracting if yes
-    if Line.value =~ /^\s+!/
+    if line =~ /^\s+!/
       orig = View.cursor
-      # - of previous line
       path = FileTree.construct_path(:list=>true)
+      if path[0] =~ /@/   # If there's a @, it's remote
+        return Remote.command path
+      end
       if FileTree.handles?(path)
-        # Remove all !foo lines
-        while(path.last =~ /^!/)
+        while(path.last =~ /^!/) do   # Remove all !foo lines from path
           path.pop
         end
-
         dir = path.join('')
       end
       View.to orig

@@ -36,9 +36,9 @@ class Keys
     menu, item = meth_title.match(/(.+?) (.+)/)[1..2] if meth_title =~ /. ./
 
     # If 1st word is 'isearch', use it as map
-    if meth =~ /^isearch_/
-      @@key_queue << ["ISearch", item]
-      meth.sub! /^isearch_/, ''
+    if meth =~ /^search_/
+      @@key_queue << ["Search", item]
+      meth.sub! /^search_/, ''
       meth = self.words_to_letters meth
       args = [:isearch_mode_map]
     elsif meth =~ /[A-Z]/   # If capital letters

@@ -426,7 +426,7 @@ class LineLauncher
     line = Line.value
 
     # Go to parent and collapse, if not at left margin and not a bullet
-    if line =~ /^ / && line !~ /^[ *][+-] /
+    if line =~ /^ / && line !~ /^ *[+-] /
       Keys.clear_prefix
       FileTree.to_parent
     end

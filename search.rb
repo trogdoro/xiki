@@ -148,9 +148,9 @@ class Search
     #  exchange_point_and_mark
     #  insert match
     DiffLog.open
-    end_of_buffer
-    search_backward match
-    recenter
+    View.to_bottom
+
+    Search.isearch match, :reverse=>true
   end
 
   def self.copy
@@ -479,16 +479,14 @@ class Search
 
     match = "#{match}."
     snake = "#{snake}."
-
     # For each file edited
     found = elvar.editedhistory_history.to_a.find do |o|
 
       next if o =~ /.notes$/  # Ignore notes files
       next if o =~ /:/  # Ignore files with colons (tramp)
       name = o[/.*\/(.*)/, 1]  # Strip off path
-
       # Check for match
-      if name =~ /#{Regexp.quote(match)}/i || (snake && name =~ /#{Regexp.quote(snake)}/i)
+      if name =~ /^#{Regexp.quote(match)}/i || (snake && name =~ /^#{Regexp.quote(snake)}/i)
         o
       else
         false
@@ -505,12 +503,11 @@ class Search
     else
       message "'#{match}' not found (no recently edited file with that substring found)."
     end
-
   end
 
   def self.isearch_or_copy name
     if self.match == ""   # If nothing searched for yet
-      self.isearch Clipboard[name]
+      self.isearch Clipboard[name], :reverse=>self.was_reverse
     else   # Else, if nothing searched for
       self.stop
       Clipboard[name] = self.match
@@ -597,7 +594,7 @@ class Search
     term = self.match
     term.gsub!(' ', '%20')
 
-    term =~ /^http:\/\// ?   # If url, just browse
+    term =~ /^https?:\/\// ?   # If url, just browse
       browse_url(term) :
       browse_url("http://google.com/search?q=#{term}")
 
@@ -686,7 +683,7 @@ class Search
     match = self.match
     self.stop
     self.to_start
-    View.insert "console.log(\"#{match}: \" + #{match})"
+    View.insert "console.log(\"#{match}: \" + #{match});"
   end
 
   def self.isearch_as_camel
@@ -867,7 +864,7 @@ class Search
   end
 
   def self.isearch txt, options={}
-    isearch_resume txt, (options[:regex] ?true:nil), nil, true, txt, true
+    isearch_resume txt, (options[:regex] ?true:nil), nil, (! options[:reverse]), txt, true
     isearch_update
   end
 
@@ -887,9 +884,13 @@ class Search
     end
   end
 
+  def self.was_reverse
+    ! $el.elvar.isearch_forward
+  end
+
   def self.isearch_clipboard
     if self.match == ""   # If nothing searched for yet
-      self.isearch Clipboard[0]
+      self.isearch Clipboard[0], :reverse=>self.was_reverse
     else
       self.copy
       Location.as_spot('clipboard')
@@ -915,7 +916,7 @@ class Search
   end
 
   def self.isearch_just_search
-    self.stop
+    self.just_orange
     match = self.match
 
     FileTree.to_parent   # Go to parent

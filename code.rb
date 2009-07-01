@@ -33,6 +33,10 @@ class Code
     [left, right]
   end
 
+  def self.to_comment
+    $el.comment_search_forward View.bottom
+  end
+
   def self.comment left=nil, right=nil
     Line.to_left
     left, right = Code.bounds_of_thing(left, right)
@@ -59,14 +63,12 @@ class Code
       when 9   # Pass whole file as ruby
         return Console.run("ruby #{View.file_name}", :buffer => "*console ruby")
 
-      # If prefix of 1-6
-      when 1..6
+      when 1..6   # If prefix of 1-6
         started = point
         left = Line.left
         right = point_at_bol(elvar.current_prefix_arg+1)
         goto_char started
-      else
-        # Move this into ruby - block.rb?
+      else   # Move this into ruby - block.rb?
         ignore, left, right = View.block_positions "^|"
       end
 
@@ -94,10 +96,8 @@ class Code
       insert "- error: #{exception.message}\n- backtrace:\n#{backtrace}"
     end
 
-    # Move cursor back to where we started
-    orig.go
-    # Go to where we ended up
-    ended_up.go
+    orig.go   # Move cursor back to where we started
+    ended_up.go   # Go to where we ended up
 
   end
 

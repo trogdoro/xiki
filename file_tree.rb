@@ -1307,6 +1307,11 @@ class FileTree
     # Get matches from file
     matches = ""
     indent_more = options[:path] ? '' : '  '
+    if path =~ /@/   # If remote dir
+      contents = Remote.file_contents path
+      FileTree.insert_under contents, :escape=>'!'
+      return
+    end
     IO.foreach(path) do |line|
       line.sub!(/[\r\n]+$/, '')
       next unless line =~ pattern

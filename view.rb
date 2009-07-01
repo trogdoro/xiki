@@ -397,17 +397,9 @@ class View
     Keys.clear_prefix
     View.to_after_bar
 
-    # how to know if only 1
-    # width == width of all
-
     # If there's only one column (last view is at left), go to top
-    if self.edges[0] == 0
-      Move.to_window(1)
-    end
-
-    down.times do
-      View.next
-    end
+    Move.to_window(1) if self.edges[0] == 0
+    down.times { View.next }
     Effects.blink(:what=>:line) if options[:blink]
   end
 
@@ -567,7 +559,7 @@ class View
 
   # Returns whether a buffer is open / exists
   def self.buffer_open? name
-    buffer_list.find{|b| buffer_name(b) == name}
+    Buffers.list.find{|b| buffer_name(b) == name}
   end
 
   def self.buffer_visible? name
@@ -714,6 +706,11 @@ class View
     nil
   end
 
+  def self.alert txt
+    self.beep
+    self.message txt
+  end
+
   def self.beep
     $el.beep
   end
@@ -857,6 +854,32 @@ class View
   def self.edges view=nil
     view ||= self.current
     $el.window_edges(view).to_a
+  end
+
+  def self.layout_right view=nil
+    if Keys.prefix   # If numeric prefix, go to nth
+      down = Keys.prefix_times - 1
+      Keys.clear_prefix
+      self.to_after_bar
+      # If there's only one column (last view is at left), go to top
+      Move.to_window(1) if self.edges[0] == 0
+      down.times { self.next }
+      Effects.blink(:what=>:line)# if options[:blink]
+      return
+    end
+
+    current = View.name
+
+    second_visible = Buffers.list.each{|b|
+      name = buffer_name(b)
+      next unless name != current
+      next unless self.buffer_visible?(name)
+      next unless self.edges(get_buffer_window(b))[0] != 0  # Window is at left of frame
+      break name   # Found
+    }
+    self.to_buffer second_visible
+    Effects.blink(:what=>:line)# if options[:blink]
+
   end
 
 end

@@ -329,6 +329,9 @@ class KeyBindings
     Keys.T5 { Search.isearch_to_line(5) };  Keys.T6 { Search.isearch_to_line(6) }
     Keys.T7 { Search.isearch_to_line(7) };  Keys.T8 { Search.isearch_to_line(8) }
     Keys.T9 { Search.isearch_to_line(9) };  Keys.T0 { Search.isearch_to_line }
+
+    Keys.set("C-t C-/") { Code.to_comment }
+
   end
 
   def self.layout_keys
@@ -356,7 +359,7 @@ class KeyBindings
     Keys.layout_output { Code.open_log_view; Effects.blink(:what=>:line) }
     Keys.layout_previous { View.previous(:blink=>true) }   # previous view **
     # Q
-    Keys.layout_right { View.to_upper(:blink=>true) }   # Go to view to the right
+    Keys.layout_right { View.layout_right }   # Go to view to the right
     Keys.layout_search { Keys.prefix_u? ? Search.find_in_buffers(Keys.input(:prompt=>"Search all open files for: ")) : Hide.search }   # *
     Keys.layout_todo { FileTree.open_in_bar; Effects.blink(:what=>:line) }   # show bar on left with the quick bookmark named "-t" *
     Keys.layout_uncover { Hide.reveal }   # Reveal all hidden text
@@ -385,65 +388,66 @@ class KeyBindings
 
   # Control keys during isearch
   def self.isearch
-    Keys.isearch_axis { Search.to_left }
+    Keys.search_axis { Search.to_left }
     # B: leave unmapped for back
-    Keys.isearch_clipboard { Search.isearch_clipboard }   # Clipboard (copy)
-    Keys.isearch_delete { Search.isearch_delete }   # Delete
-    Keys.isearch_enter { Search.enter }   # Enter: insert clipboard, replacing match
-    Keys.isearch_foreward { Search.go_to_end }   # Forward
-    Keys.isearch_g { Search.cancel }   # Stop searching
+    Keys.search_clipboard { Search.isearch_clipboard }   # Clipboard (copy)
+    Keys.search_delete { Search.isearch_delete }   # Delete
+    Keys.search_enter { Search.enter }   # Enter: insert clipboard, replacing match
+    Keys.search_frontward { Search.go_to_end }   # Forward
+    Keys.search_g { Search.cancel }   # Stop searching
     # have_...
     define_key :isearch_mode_map, kbd("C-h"), nil
-    Keys.isearch_have_bullet { Search.have_label }
-    Keys.isearch_have_case { Search.isearch_have_case }
-    Keys.isearch_have_within { Search.isearch_have_within }   # Grab everything except chars on edges
-    Keys.isearch_have_javascript { Search.isearch_log_javascript }
-    Keys.isearch_have_line { Search.have_line }   # copy line back to search start
-    Keys.isearch_have_output { Search.isearch_log }
-    Keys.isearch_have_paragraph { Search.have_paragraph }
-    Keys.isearch_have_spot { Search.insert_at_spot }
-    Keys.isearch_have_move { Search.isearch_move_line }   # Zap: move to spot (as spot)
-    Keys.isearch_have_variable { Search.insert_var_at_search_start }
+    Keys.search_have_bullet { Search.have_label }
+    Keys.search_have_case { Search.isearch_have_case }
+    Keys.search_have_within { Search.isearch_have_within }   # Grab everything except chars on edges
+    Keys.search_have_javascript { Search.isearch_log_javascript }
+    Keys.search_have_line { Search.have_line }   # copy line back to search start
+    Keys.search_have_output { Search.isearch_log }
+    Keys.search_have_paragraph { Search.have_paragraph }
+    Keys.search_have_spot { Search.insert_at_spot }
+    Keys.search_have_move { Search.isearch_move_line }   # Zap: move to spot (as spot)
+    Keys.search_have_variable { Search.insert_var_at_search_start }
     # I: leave unmapped - had issues using it (messes up position)
     # just_...
     define_key :isearch_mode_map, kbd("C-j"), nil
-    Keys.isearch_just_adjust { Search.isearch_just_adjust }
-    Keys.isearch_just_bold { Search.isearch_just_surround_with_char('<b>', '</b>') }
-    Keys.isearch_just_case { Search.isearch_just_case }   # make match be camel case
-    Keys.isearch_just_difflog { Search.jump_to_difflog }   # find last string in difflog
-    Keys.isearch_just_edges { Search.just_edges }   # delete everything but chars at edges of match
-    Keys.isearch_just_files { Search.isearch_restart "$f" }   # isearch for this string in $f
-    Keys.isearch_just_have { Search.just_select }   # select match
-    Keys.isearch_just_lowercase { Search.downcase }
-    Keys.isearch_just_macro { Search.just_macro }
-    Keys.isearch_just_name { Search.just_name }
-    Keys.isearch_just_open { Search.isearch_open }
-    Keys.isearch_just_plus { Search.just_increment }   # select match
-    Keys.isearch_just_replace { Search.isearch_query_replace :match }   # replace
-    Keys.isearch_just_todo { Search.isearch_restart "$t" }   # isearch for this string in $t
-    Keys.isearch_just_search { Search.isearch_just_search }   # Add "##search" line in tree for match
+    Keys.search_just_adjust { Search.isearch_just_adjust }
+    Keys.search_just_bold { Search.isearch_just_surround_with_char('<b>', '</b>') }
+    Keys.search_just_case { Search.isearch_just_case }   # make match be camel case
+    Keys.search_just_difflog { Search.jump_to_difflog }   # find last string in difflog
+    Keys.search_just_edges { Search.just_edges }   # delete everything but chars at edges of match
+    Keys.search_just_files { Search.isearch_restart "$f" }   # isearch for this string in $f
+    Keys.search_just_have { Search.just_select }   # select match
+    Keys.search_just_lowercase { Search.downcase }
+    Keys.search_just_macro { Search.just_macro }
+    Keys.search_just_name { Search.just_name }
+    Keys.search_just_open { Search.isearch_open }
+    Keys.search_just_plus { Search.just_increment }   # select match
+    Keys.search_just_replace { Search.isearch_query_replace :match }   # replace
+    Keys.search_just_todo { Search.isearch_restart "$t" }   # isearch for this string in $t
+    # Keys.search_just_tag { Search.isearch_just_tag }   # select match
+    Keys.search_just_search { Search.isearch_just_search }   # Add "##search" line in tree for match
 
-    Keys.isearch_just_uppercase { Search.upcase }   # make match be snake case
-    Keys.isearch_just_variable { Search.isearch_just_surround_with_char '#{', '}' }
+    Keys.search_just_uppercase { Search.upcase }   # make match be snake case
+    Keys.search_just_variable { Search.isearch_just_surround_with_char '#{', '}' }
 
-    Keys.isearch_just_web { Search.isearch_google }   # make match be snake case
-    Keys.isearch_just_yellow { Search.just_orange }
-    Keys.isearch_kill { Search.cut }   # cut
-    Keys.isearch_look { Search.uncover }   # Look: show results for search string in a bookmark
+    Keys.search_just_web { Search.isearch_google }   # make match be snake case
+    Keys.search_just_yellow { Search.just_orange }
+    Keys.search_kill { Search.cut }   # cut
+    Keys.search_look { Search.uncover }   # Look: show results for search string in a bookmark
     # M: leave unmapped for stop
     # N: leave unmapped for next
-    Keys.isearch_outline { Search.isearch_outline }   # Outline
+    Keys.search_outline { Search.isearch_outline }   # Outline
     # P: leave unmapped for previous
     # Q: leave unmapped for quoting
     # R: leave unmapped for reverse
     # S: leave unmapped for search
-    Keys.isearch_to { Search.isearch_to }   # To: open file / jump to method
-    Keys.isearch_usurp { Search.isearch_pull_in_sexp }   # usurp: pull sexp into search string
-    Keys.isearch_value { Search.insert_at_search_start }   # Value: copy value back to search start
+    Keys.search_to { Search.isearch_to }   # To: open file / jump to method
+    Keys.search_usurp { Search.isearch_pull_in_sexp }   # usurp: pull sexp into search string
+    Keys.search_value { Search.insert_at_search_start }   # Value: copy value back to search start
     # W: leave unmapped for pulling into search
-    Keys.isearch_xtract { Search.move_to_search_start }   # Xtract: move back to search start
+    Keys.search_xtract { Search.move_to_search_start }   # Xtract: move back to search start
     # Y: leave unmapped for yank
-    Keys.isearch_zap { Search.zap }   # zap - delete up until search start
+    Keys.search_zap { Search.zap }   # zap - delete up until search start
 
     # Surround with characters (quotes and brackets)
 
@@ -453,7 +457,7 @@ class KeyBindings
     define_key(:isearch_mode_map, kbd("C-9")) { Search.isearch_just_surround_with_char '(', ')' }
     define_key(:isearch_mode_map, kbd("C-j C-9")) { Search.isearch_just_surround_with_char '[', ']'}
 
-    #     define_key(:isearch_mode_map, kbd("C-[")) { Search.isearch_just_surround_with_char '[', ']' }
+    define_key(:isearch_mode_map, kbd("C-h C-[")) { Search.isearch_just_surround_with_char '[', ']' }
     define_key(:isearch_mode_map, kbd("C-j C-[")) { Search.isearch_just_surround_with_char '{', '}' }
 
     define_key(:isearch_mode_map, kbd("C-h C-'")) { Search.insert_quote_at_search_start }
@@ -464,7 +468,7 @@ class KeyBindings
     define_key(:isearch_mode_map, kbd("C-h C-2")) { Search.isearch_query_replace Clipboard[2] }
 
 
-    define_key(:isearch_mode_map, kbd("C-j C-0")) { Search.isearch_query_replace Clipboard[0] }
+    define_key(:isearch_mode_map, kbd("C-h C-0")) { Search.isearch_query_replace Clipboard[0] }
 
     define_key(:isearch_mode_map, kbd("C-1")) { Search.isearch_or_copy("1") }
     define_key(:isearch_mode_map, kbd("C-2")) { Search.isearch_or_copy("2") }

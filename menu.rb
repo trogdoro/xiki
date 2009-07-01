@@ -18,7 +18,6 @@ class Menu
   end
 
   def self.add_item menu, name, function
-    menu[1] = "Search" if menu[1] == "ISearch"
 
     menu_spaces = menu.join(' ').downcase
     lisp = "

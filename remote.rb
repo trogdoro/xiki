@@ -25,7 +25,14 @@ class Remote
   def self.default_dirs;  @@default_dirs;  end
 
   # Called when dir or file is launched
+  def self.file_contents whole_path
+    user, server, port, path = self.split_root(whole_path)
+    connection = self.connection whole_path
+    connection.sftp.download!(path)
+  end
+
   def self.dir root, *path_append
+
     connection = self.connection root
 
     user, server, port, path = self.split_root(root)
@@ -42,11 +49,13 @@ class Remote
 
     timeout(6) do
       if path =~ /\/$/   # If a dir
-        out = connection.exec!("ls -p #{path}")
+        out = connection.exec!("ls -pa #{path}")
         out ||= ""
         out = out.grep(/^[^#]+$/).join("")   # Weed out #...#
         out.gsub!(/@/, '/')   # Change @ to /
 
+        # Get rid of . and ..
+        out = out.split("\n").select{|o| o !~ /^\.+\/$/}.join("\n")+"\n"
         self.sort(out)
 
       else   # If a file
@@ -76,6 +85,28 @@ class Remote
         # - Use it to determine whether file changed when saving
 
       end
+    end
+  end
+
+  def self.command root #, *path_append
+
+    the_command = root.last[/! ?(.+)/, 1]
+    # Pull off command
+    while(root.last =~ /^!/) do   # Remove all !foo lines from root
+      root.pop
+    end
+    root = root.join('')
+    connection = self.connection root
+
+    user, server, port, path = self.split_root(root)
+
+    path << "/" unless path =~ /\/$/   # Add slash to path if none there
+
+    timeout(6) do
+      out = connection.exec!("cd \"#{path}\"; #{the_command}")
+      out ||= ""
+
+      FileTree.insert_under out, :escape=>'!'
     end
   end
 
