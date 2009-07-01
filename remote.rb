@@ -146,7 +146,7 @@ class Remote
 
   def self.sort lines
     l = lines.split("\n")
-    l.sort!{|a,b| a.sub(/(.+)\//, "/\1") <=> b.sub(/(.+)\//, "/\1")}
+    l.sort!{|a,b| a.sub(/(.+)\//, "\\1") <=> b.sub(/(.+)\//, "\\1")}
   end
 
   def self.remote_buffer_name(server, path)
