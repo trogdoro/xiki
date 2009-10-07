@@ -225,17 +225,6 @@ class Merb
     puts RubyConsole.at(:ml, "y #{model}.all(#{where}:order => [:updated_at.desc], :limit => #{number})")
   end
 
-  def self.open_next_error
-    Bookmarks.go("$s")
-    View.to_bottom
-    Search.backward 'Started request handling'
-    Search.forward('^\/')
-
-    Color.colorize :r
-    LineLauncher.launch
-    Color.colorize :r
-  end
-
   def self.version
     Console.run('merb --version', :sync=>true)
   end

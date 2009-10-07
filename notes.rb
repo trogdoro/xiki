@@ -47,34 +47,42 @@ class Notes
   end
 
   def self.to_block up=false
+    heading_regex = "^|\\( \\|$\\)"
     if up
       (Keys.prefix || 1).times do
         Line.to_left
-        re_search_backward "^| "
+        Search.backward heading_regex
       end
     else
       (Keys.prefix || 1).times do
-        Line.next if Line.matches(/^\| /)
-        re_search_forward "^| "
+        Line.next if Line[/^\|( |$)/]
+
+        Search.forward heading_regex
+
         Line.to_left
       end
     end
   end
 
   def self.move_block up=false
+
+    times = Keys.prefix_times
+
+    orig = Location.new
+
     block = get_block
     block.blink
     block.delete_content
 
     if up
-      (Keys.prefix || 1).times do
+      times.times do
         re_search_backward "^| ", nil, 1
       end
       insert block.content
       search_backward_regexp "^| "
     else
       re_search_forward "^| "
-      (Keys.prefix || 1).times do
+      times.times do
         re_search_forward "^| ", nil, 1
       end
       beginning_of_line
@@ -82,7 +90,11 @@ class Notes
       search_backward_regexp "^| "
     end
     moved_block = get_block
-    moved_block.blink
+
+    times == 1 ?
+      moved_block.blink :
+      orig.go
+
   end
 
   def self.insert_heading

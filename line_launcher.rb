@@ -304,6 +304,11 @@ class LineLauncher
       #insert el4r_ruby_eval(line).to_s
     end
 
+    self.add :paren=>"wp" do |line|
+      url = "http://en.wikipedia.org/wiki/#{Line.without_label}"
+      Keys.prefix_u ? $el.browse_url(url) : Firefox.url(url)
+    end
+
     self.add /^ *[$\/].+\$ / do   # $ run command in shell
       Console.launch_dollar
     end
@@ -319,7 +324,17 @@ class LineLauncher
     end
 
     self.add(/^ *[+-]? *(http|file).?:\/\/.+/) do |line|   # url
-      browse_url line[/(http|file).?:\/\/.+/]
+      prefix = Keys.prefix
+      Keys.clear_prefix
+
+      url = line[/(http|file).?:\/\/.+/]
+
+      if prefix == 8
+        FileTree.insert_under RestTree.request("GET", url)
+        next
+      end
+
+      prefix == :u ? browse_url(url) : Firefox.url(url)
     end
 
     self.add(/^[ +-]*\$[^#*!\/]+$/) do |line|   # Bookmark
@@ -422,12 +437,17 @@ class LineLauncher
   def self.do_last_launch
 
     orig = View.index
+
+    unless Keys.prefix_u :clear=>true
+      View.clear "*output - tail of /tmp/output_ol.notes"
+      View.clear "*output - tail of /tmp/ds_ol.notes"
+    end
+
     Move.to_window(1)
     line = Line.value
 
-    # Go to parent and collapse, if not at left margin and not a bullet
-    if line =~ /^ / && line !~ /^ *[+-] /
-      Keys.clear_prefix
+    # Go to parent and collapse, if not at left margin
+    if line =~ /^ / #&& line !~ /^ *[+-] /  # and not a bullet
       FileTree.to_parent
     end
     FileTree.kill_under

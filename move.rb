@@ -209,12 +209,22 @@ class Move
   end
 
   def self.to_quote
-    # If on a quote, move off
+    prefix = Keys.prefix
+    if prefix.nil?
+      times = 1
+      Keys.clear_prefix
+    else
+      times = prefix
+      View.to_relative
+    end
+
     Keys.prefix_times.times do
       Line.next if Line.matches(/^ *\|/)
       re_search_forward "^ +|"
       backward_char
     end
+
+    # If on a quote, move off
   end
 
   # Move to file in tree (not dir) ?

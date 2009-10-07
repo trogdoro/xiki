@@ -140,4 +140,8 @@ class Firefox
     #     socket.close
   end
 
+  def self.url txt
+    self.run "window.location = '#{txt}'"
+  end
+
 end

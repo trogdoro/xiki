@@ -58,15 +58,23 @@ class Search
 
   def self.move_to_search_start
     self.stop
-    was_reverse = elvar.isearch_opoint > point
+    was_reverse = self.was_reverse
     match = self.match
     View.delete(Search.left, Search.right)
 
+    deleted = View.cursor
     self.to_start  # Go back to start
-
     Move.backward match.length if was_reverse   # If reverse, move back width of thing deleted
 
     insert match
+
+    # Save spot where it was deleted (must do after modification, for bookmark to work)
+    View.cursor = deleted
+    Move.forward(match.length) unless was_reverse
+    Location.as_spot('deleted')
+
+    self.to_start  # Go back to start
+    Move.forward(match.length) unless was_reverse
 
   end
 
@@ -127,6 +135,12 @@ class Search
     Move.to_line_text_beginning
   end
 
+  def self.isearch_just_comment
+    self.stop
+    Code.comment Line.left, Line.right
+    Move.to_line_text_beginning
+  end
+
   def self.isearch_open
     self.stop
     Location.go( self.match )
@@ -145,8 +159,6 @@ class Search
   def self.jump_to_difflog
     self.stop
     match = self.match
-    #  exchange_point_and_mark
-    #  insert match
     DiffLog.open
     View.to_bottom
 
@@ -180,17 +192,27 @@ class Search
 
   end
   def self.go_to_end
-    self.stop
+    match = self.stop
+
+    if match.nil?   # If nothing searched for yet
+      Search.isearch_restart "$f", :restart=>true
+      return
+    end
+
     goto_char self.right
   end
 
   # Clears the isearch, allowing for inserting, or whatever else
   def self.stop
-    # Make it do special clear if nothing found
-    return self.isearch_stop_at_end if self.match == ""
+    match = self.match
+
+    # Make it do special clear if nothing found (to avoid weird isearch error)
+    return self.isearch_stop_at_end if (match||"") == "" && ! self.blank?
 
     $el.isearch_done
     $el.isearch_clean_overlays
+
+    match
   end
 
   def self.to_start
@@ -251,6 +273,9 @@ class Search
       when :u;  Clipboard.get
       when 1;  Clipboard.get("1")
       when 2;  Clipboard.get("2")
+      when 3;  Clipboard.get("3")
+      when 5;  "^ *(class|module) .*#{Regexp.escape(Keys.input(:prompt=>'Class/module to search for: '))}"
+      when 6;  "^ *def .*#{Regexp.escape(Keys.input(:prompt=>'Method to search for: '))}"
       else;  Keys.input(:prompt=>"Text to search for: ")
       end
 
@@ -306,9 +331,19 @@ class Search
   end
 
   def self.uncover
+    match = self.stop
+    # If nothing searched for, go to place something was copied by name
+    if match.nil?
 
-    self.stop
-    match = self.match
+      loc = Keys.input(:one_char=>true, :prompt=>"Enter one char to insert corresponding string: ")
+
+      Bookmarks.go "_n#{loc}", :point=>true
+
+      txt = Clipboard.hash[loc.to_s]
+      self.isearch txt
+
+      return
+    end
 
     bm = Keys.bookmark_as_path
 
@@ -326,7 +361,6 @@ class Search
 
     # Search in bookmark
     FileTree.grep_with_hashes bm, match
-
   end
 
   def self.left
@@ -441,25 +475,19 @@ class Search
             (backward-char))
           (forward-sexp) (point)))=
 
-  #     el4r_lisp_eval %q=
-  #       (isearch-yank-internal
-  #         (lambda ()
-  #           (if (and (string-match "[{<\\\\\"'(\\\\[]" (char-to-string (char-before (point))))
-  #             (not (string-match "[{<\\\\\"'(\\\\[]" (char-to-string (char-after (point))))))
-  #             (backward-char))
-  #           (forward-sexp) (point)))=
-
   end
 
   # During isearch, open most recently edited file with the search string in its name
 
   def self.isearch_to
-    if self.match == ""   # If nothing searched for yet
-      self.isearch_stop_at_end
-      Location.to_spot('paused')
-      Search.isearch $xiki_paused_isearch_string
+
+    match = self.stop
+
+    if match.nil?   # If nothing searched for yet
+
+      Search.isearch_restart "$t", :restart=>true
+
     else
-      self.stop
       match = self.match
       dir = Keys.bookmark_as_path(:prompt=>"Enter bookmark to look in (or comma for recently edited): ")
       return self.isearch_open_last_edited(match) if dir == :comma   # If key is comma, treat as last edited
@@ -534,18 +562,6 @@ class Search
     FileTree.search(:left=>left, :right=>right, :recursive=>true)
   end
 
-  def self.to_relative
-    if Keys.prefix == 0
-      goto_char window_end - 1
-      Line.to_left
-      return
-    end
-    goto_char window_start
-    ((Keys.prefix || 1) -1).times do
-      Line.next
-    end
-  end
-
   def self.cancel
     self.stop
     self.to_start  # Go back to start
@@ -553,9 +569,12 @@ class Search
 
   def self.match
     left = self.left
-    return :not_found if left == 0
+    return nil if left == 0 || self.blank?
     buffer_substring(left, self.right)
+  end
 
+  def self.blank
+    elvar.isearch_success == true
   end
 
   def self.forward search, options={}
@@ -676,6 +695,7 @@ class Search
     match = self.match
     self.stop
     self.to_start
+    return View.insert "Ol.line" if match.blank?
     View.insert "Ol << \"#{match}: \#{#{match}.inspect}\""
   end
 
@@ -683,7 +703,7 @@ class Search
     match = self.match
     self.stop
     self.to_start
-    View.insert "console.log(\"#{match}: \" + #{match});"
+    View.insert "p(\"#{match}: \" + #{match});"
   end
 
   def self.isearch_as_camel
@@ -778,8 +798,16 @@ class Search
   end
 
   def self.isearch_just_surround_with_char left, right=nil
+    term = self.match
     right ||= left
     self.stop
+
+    if term == ""
+      View.insert "()"
+      Move.backward
+      return
+    end
+
     View.to(Search.right)
     View.insert right
     View.to(Search.left)
@@ -792,7 +820,9 @@ class Search
   def self.just_name
     self.stop
     term = self.match
-    Clipboard.copy nil, term
+    loc ||= Keys.input(:one_char=>true, :prompt=>"Enter one char (to store this as): ") || "0"
+    Clipboard.copy loc, term
+    Bookmarks.save("_n#{loc}")
     Effects.blink :left=>left, :right=>right
   end
 
@@ -822,7 +852,6 @@ class Search
     insert lam[txt]
   end
 
-
   def self.isearch_just_underscores
     self.stop
     term = self.match
@@ -842,9 +871,8 @@ class Search
     char = View.prompt(", lower, camel, snake")
   end
 
-  def self.isearch_restart path
-    self.stop
-    term = self.match
+  def self.isearch_restart path, options={}
+    term = self.stop
 
     if path == "$t"   # If $t, open bar
       FileTree.open_in_bar; Effects.blink(:what=>:line)
@@ -852,6 +880,8 @@ class Search
       FileTree.open_in_bar
       View.to_nth 1
       Effects.blink(:what => :line)
+    elsif path == :right
+      View.layout_right 1
     else
       View.open Bookmarks[path]
     end
@@ -859,7 +889,7 @@ class Search
     View.wrap
     View.to_highest
 
-    self.isearch term
+    options[:restart] ? $el.isearch_forward : self.isearch(term)
 
   end
 
@@ -876,11 +906,30 @@ class Search
   end
 
   def self.isearch_outline
-    if self.match == ""   # If nothing searched for yet
+    match = self.stop
+
+    if match.nil?   # If nothing searched for yet
+      Search.outline_search
       # Up for grabs
     else
-      self.stop
       Search.isearch_find_in_buffers(:current_only => true)
+    end
+  end
+
+  def self.isearch_next_or_name
+    was_reverse = self.was_reverse
+    match = self.stop
+
+    if match.nil?   # If nothing searched for yet
+      loc = Keys.input(:one_char=>true, :prompt=>"Enter one char to insert corresponding string: ")
+      txt = Clipboard.hash[loc.to_s]
+      # If there was nothing error out
+      return View.message('not found!') if txt.nil?
+
+      self.isearch txt, :reverse=>was_reverse
+    else
+      self.stop
+      $el.next_line
     end
   end
 
@@ -895,11 +944,6 @@ class Search
       self.copy
       Location.as_spot('clipboard')
     end
-  end
-
-  def self.isearch_to_line first=""
-    line = "#{first}#{Keys.input(:prompt=>"goto line: #{first}")}"
-    View.to_line line
   end
 
   def self.isearch_pause_or_resume
@@ -923,7 +967,7 @@ class Search
     FileTree.to_parent if Line[/^ *- ##/]
 
     FileTree.insert_under "- \#\##{match}/", :escape=>'', :no_search=>true
-    LineLauncher.launch#(:blink => (true))
+    LineLauncher.launch
   end
 
   def self.isearch_enter_and_next
@@ -939,6 +983,33 @@ class Search
     View.delete(Search.left, Search.right)
     View.insert Clipboard[0]
     Search.isearch match
+  end
+
+  def self.isearch_move_to path
+    match = self.match
+    match = Line.value if match.blank?   # Use line if nothing searched for
+    Search.stop
+
+    match = FileTree.snippet(match) if path == "$f"   # If $f, grab path also
+
+    orig = Location.new
+
+    View.open path
+    Location.save(:insert_orig)
+    View.to_highest
+
+    View.insert("\n", :dont_move=>true) unless Line.blank?   # Make room if line not blank
+
+    View.insert match
+
+    # Add line after if before heading
+    unless match =~ /\n$/   # If there wasn't a linebreak at the end of the match
+      Line.next
+      View.insert("\n", :dont_move=>true) if Line[/^\|/]
+    end
+
+    Location.jump(:insert_orig)
+    orig.go
   end
 
 end

@@ -11,11 +11,11 @@ class Clipboard
 
   def self.copy loc=nil, txt=nil
     # Use string if user types it quickly
-    loc ||= Keys.input(:one_char => true, :prompt => "Enter one char (to store this as): ") || "0"
+    loc ||= Keys.input(:one_char=>true, :prompt=>"Enter one char (to store this as): ") || "0"
 
     unless txt
       left, right = View.range
-      Effects.blink :left => left, :right => right
+      Effects.blink :left=>left, :right=>right
       txt = buffer_substring(region_beginning, region_end)
     end
     self.set(loc, txt, Keys.prefix)
@@ -108,23 +108,35 @@ class Clipboard
   end
 
   def self.do_as_snake_case
-    word = Line.symbol(:delete => true)
-    insert TextUtil.snake_case(word)
+    Keys.prefix_times.times do
+      word = Line.symbol(:delete => true)
+      insert TextUtil.snake_case(word)
+      Move.forward
+    end
   end
 
   def self.do_as_camel_case
-    word = Line.symbol(:delete => true)
-    insert TextUtil.camel_case(word)
+    Keys.prefix_times.times do
+      word = Line.symbol(:delete => true)
+      insert TextUtil.camel_case(word)
+      Move.forward
+    end
   end
 
   def self.do_as_upper_case
-    word = Line.symbol(:delete => true)
-    insert word.upcase
+    Keys.prefix_times.times do
+      word = Line.symbol(:delete => true)
+      insert word.upcase
+      Move.forward
+    end
   end
 
   def self.do_as_lower_case
-    word = Line.symbol(:delete => true)
-    insert word.downcase
+    Keys.prefix_times.times do
+      word = Line.symbol(:delete => true)
+      insert word.downcase
+      Move.forward
+    end
   end
 
   def self.copy_paragraph options={}

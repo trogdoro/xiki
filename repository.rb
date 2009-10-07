@@ -70,14 +70,15 @@ class Repository
   end
 
   # Shows revs for one file
-  def self.log_by_file search, project, file=nil, rev=nil
+  def self.log_by_file search, limit, project, file=nil, rev=nil, line=nil
     dir = self.extract_dir project
     if file.nil?   # If no file, tell them they have to paste it
       return "- Replace this line with a path - I'm normally called via Keys.open_list_log"
     end
+
     if rev.nil?   # If no rev, list all revs
       search = "-S'#{search}'" unless search.empty?
-      txt = Console.run "git log --pretty=oneline #{search} #{file}", :sync=>true, :dir=>dir
+      txt = Console.run "git log -#{limit} --pretty=oneline #{search} #{file}", :sync=>true, :dir=>dir
       txt.gsub! ':', '-'
       txt.gsub! /(.+?) (.+)/, "\\2: \\1"
       txt.gsub! /^- /, ''
@@ -85,14 +86,20 @@ class Repository
       #return "- TODO: show all revs"
     end
 
-    # File passed, show diff
-    txt = Git.diff "git show #{@@git_diff_options} --pretty=oneline #{rev} #{file}", dir
-    txt.sub!(/.+?@@.+?\n/m, '')
-    txt.gsub /^/, '|'
+    if line.nil?   # If no diff, show diff
+      # File passed, show diff
+      txt = Git.diff "git show #{@@git_diff_options} --pretty=oneline #{rev} #{file}", dir
+      txt.sub!(/.+?@@/m, '@@')
+      return txt.gsub /^/, '|'
+    end
 
+    # Line passed, so jump to it
+    project.sub! /^project - /, ''
+    self.jump_to_file_in_tree project
+    nil
   end
 
-  def self.log search, project, rev=nil, file=nil
+  def self.log search, project, rev=nil, file=nil, line=nil
     dir = self.extract_dir project
 
     if rev.nil?   # If no rev, list all revs
@@ -114,12 +121,18 @@ class Repository
       return txt.split("\n").sort.map{|l| "+ #{l}\n"}.join('')
     end
 
-    # File passed, show diff
-    txt = Git.diff "git show #{@@git_diff_options} --pretty=oneline #{rev} #{file}", dir
-    txt.sub!(/.+?@@.+?\n/m, '')
-    txt.gsub! /^/, '|'
-    puts txt
-    return
+    if line.nil?   # If no line but file passed, show diff
+      txt = Git.diff "git show #{@@git_diff_options} --pretty=oneline #{rev} #{file}", dir
+      txt.sub!(/.+?@@/m, '@@')
+      txt.gsub! /^/, '|'
+      puts txt
+      return
+    end
+
+    # Line passed, so jump to file
+    project.sub! /^project - /, ''
+    self.jump_to_file_in_tree project
+    nil
   end
 
   def self.diff_one_file
@@ -143,7 +156,7 @@ class Repository
     relative.sub! /^\//, ''   # Insert codetree
 
     CodeTree.display_menu(
-      "- Repository.menu/\n  - project - #{repos}\n    - .log_by_file \"\"/\n      - #{relative}"
+      "- Repository.menu/\n  - project - #{repos}\n    - .log_by_file \"\", 10/\n      - #{relative}"
       )
   end
 

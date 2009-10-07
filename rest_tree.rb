@@ -38,9 +38,6 @@ class RestTree
     result.gsub! "\cm", ''
     FileTree.insert_under result
 
-    #     # Add linebreak at end if none
-    #     txt = JSON[txt].to_yaml if Keys.prefix_u
-
   end
 
   # Tell LineLauncher whether we're in a rest tree
@@ -69,7 +66,7 @@ class RestTree
     list
   end
 
-  def self.request verb, url, body
+  def self.request verb, url, body=nil
     begin
       net_http_class = Net::HTTP.const_get(verb.capitalize)
       url.gsub!('"', '%22')

@@ -4,7 +4,8 @@ class Files
   @@dir_hash = {
     'j' => '.js',
     'r' => '.rb',
-    'r' => '/spec/',
+    's' => '/spec/',
+    'a' => '/app/',
     'm' => '/app/models/',
     'v' => '/app/views/',
     'c' => '/app/controllers/',

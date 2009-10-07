@@ -26,7 +26,7 @@ class RubyConsole
   end
 
   def connect
-    timeout(10) do
+    timeout(25) do
       open_channel  # Connect
 # TODO: try to indent this
       send_it %Q[conf.echo = false

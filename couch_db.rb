@@ -26,7 +26,12 @@ class CouchDb
 
     if db.nil?   # If no db yet, list all
       txt = Net::HTTP.get(URI.parse("#{@@server}/_all_dbs"))
-      return JSON[txt].map{|i| "#{i}/"}
+      dbs = JSON[txt]
+
+      # Unless C-u, only show _development dbs
+      dbs = dbs.select{|o| o =~ /_development$/} unless Keys.prefix == :u
+
+      return dbs.map{|i| "#{i}/"}
     end
 
     %Q[

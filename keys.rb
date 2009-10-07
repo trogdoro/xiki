@@ -219,6 +219,7 @@ class Keys
   end
 
   def self.to_letter ch
+    return nil if ch.nil?
     if ch < 27
       ch += 96
     elsif 67108912 <= ch and ch <= 67108921

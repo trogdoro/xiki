@@ -262,7 +262,7 @@ class FileTree
     #   | Quoted text
     Styles.define :ls_quote,
       :size => "-1",
-      :fg => "88c"
+      :fg => "aad"
 
     #   001| Quoted text lines
     Styles.define :ls_quote_line_number,
@@ -319,32 +319,36 @@ class FileTree
   # Mapped to Enter when on a FileTree buffer.  Opens file cursor is on in the tree.
   # It assumes the path to a dir is on the current line.
   def self.construct_path options={}
-    path = []
-    orig = point
+    begin
+      path = []
+      orig = point
 
-    # Do until we're at a root dir
-    line = Line.value
-    while(! self.is_root?(line) )
-      break unless line =~ /^ /  # If at left margin, assume it's the parent
-      Line.value =~ /^  ( *)(.+)/
-      spaces, item = $1, $2
-      item = self.clean_path item unless options[:raw]
-      path.unshift item  # Add item to list
-      search_backward_regexp "^#{spaces}[^\t \n]"
+      # Do until we're at a root dir
       line = Line.value
-    end
-    # Add root of tree
-    root = Line.value.sub(/^ +/, '')
-    root = self.clean_path(root) unless options[:raw]
-    path.unshift root
+      while(! self.is_root?(line) )
+        break unless line =~ /^ /  # If at left margin, assume it's the parent
+        Line.value =~ /^  ( *)(.+)/
+        spaces, item = $1, $2
+        item = self.clean_path item unless options[:raw]
+        path.unshift item  # Add item to list
+        search_backward_regexp "^#{spaces}[^\t \n]"
+        line = Line.value
+      end
+      # Add root of tree
+      root = Line.value.sub(/^ +/, '')
+      root = self.clean_path(root) unless options[:raw]
+      path.unshift root
 
-    goto_char orig
-    if options[:indented]
-      indentify_path path
-    elsif options[:list]
-      path
-    else
-      path.join
+      goto_char orig
+      if options[:indented]
+        indentify_path path
+      elsif options[:list]
+        path
+      else
+        path.join
+      end
+    rescue Exception=>e
+      raise ".construct_path couldn't construct the path - is this a well-formed tree\?"
     end
   end
 
@@ -1295,7 +1299,7 @@ class FileTree
       elsif line =~ /\.notes$/
         self.enter_lines(/^\| /, options)
       else
-        # Delegate to 0
+        self.enter_lines(/^[^ \t\n]/, options)
       end
       return
     end
@@ -1309,7 +1313,7 @@ class FileTree
     indent_more = options[:path] ? '' : '  '
     if path =~ /@/   # If remote dir
       contents = Remote.file_contents path
-      FileTree.insert_under contents, :escape=>'!'
+      FileTree.insert_under contents
       return
     end
     IO.foreach(path) do |line|
@@ -1325,13 +1329,14 @@ class FileTree
 
     escape = options[:escape] || '| '
     txt = txt.gsub!(/^/, escape)
+    txt.gsub!(/^\| $/, '|')
 
     # Add linebreak at end if none
     txt = "#{txt}\n" unless txt =~ /\n/
 
     # Insert linebreak if at end of file
 
-    self.indent(txt)
+    self.indent txt
     self.insert_quoted_and_search(txt, options)
   end
 
@@ -1339,7 +1344,7 @@ class FileTree
     # Insert matches
     Line.next
     left = point
-    View.insert matches
+    View.insert matches, options
     right = point
     goto_char left
     Line.to_words

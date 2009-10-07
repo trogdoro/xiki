@@ -10,6 +10,7 @@ class TextUtil
       ['title', lambda {|o| TextUtil.title_case(o)}],
       ['camel', lambda {|o| TextUtil.camel_case(o)}],
       ['snake', lambda {|o| TextUtil.snake_case(o)}],
+      ['hyphen', lambda {|o| TextUtil.hyphen_case(o)}],
       ]
   end
 
@@ -37,6 +38,12 @@ class TextUtil
 
   def self.snake_case! s
     s.replace self.snake_case(s)
+  end
+
+  def self.hyphen_case s
+    s.gsub(/[ _]/, '-').
+      gsub(/([a-z])([A-Z0-9])/) {"#{$1}-#{$2}"}.downcase.
+      gsub(/--+/, "-")
   end
 
   def self.camel_case s

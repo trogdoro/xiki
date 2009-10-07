@@ -11,6 +11,7 @@ class Console
 
   # Run the command in a console
   def self.run command, options={}
+
     dir = options[:dir]
     sync = options[:sync]
     buffer = options[:buffer]
@@ -42,9 +43,10 @@ class Console
     end
 
     if sync
+
       return command if options[:no_enter]
       profile = File.exists?(File.expand_path('~/.profile')) ? '. ~/.profile;' : ''
-      stdin, stdout, stderr = Open3.popen3("#{profile}cd #{dir};#{command}")
+      stdin, stdout, stderr = Open3.popen3("#{profile}cd \"#{dir}\";#{command}")
       result = ""
       result << stdout.readlines.join('')
       result << stderr.readlines.join('')

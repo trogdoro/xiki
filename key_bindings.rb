@@ -60,7 +60,7 @@ class KeyBindings
     # Use O prefix for: opening, jumping to files
 
     Keys.OO { open_line elvar.current_prefix_arg || 1 }   # OO - open line (O's default)
-    #     Keys.open_a_calendar { calendar }
+    Keys.open_a_calendar { calendar }
     #Keys.OAD { Svn.jump_to_diff }
     Keys.open_as_elisp { find_function_at_point }   # jump to definition of lisp function
     Keys.open_as_highest { FileTree.open_as_upper }
@@ -93,7 +93,6 @@ class KeyBindings
     Keys.open_list_repository { Repository.open_list_repository }
     Keys.open_link_top { Links.open_first }   # open first hyperlink on page
     Keys.open_menu { CodeTree.open_menu }   # Open all menus and show them **
-    Keys.open_next_error { Merb.open_next_error }
     Keys.open_not_saved { History.open_unsaved }
     # O: defined above - mapped to what C-o does by default
     Keys.open_point { Bookmarks.go(nil, :point => true) }
@@ -130,6 +129,7 @@ class KeyBindings
     Keys.enter_as_camelcase { insert TextUtil.camel_case(Clipboard.get(0)) }
     Keys.enter_as_debug { Code.enter_as_debug }
     Keys.enter_as_filename { insert Clipboard.get(".") }
+    Keys.enter_as_hyphenated { insert TextUtil.hyphen_case(Clipboard.get(0)) }
     Keys.enter_as_snake { insert TextUtil.snake_case(Clipboard.get(0)) }
     #     Keys.enter_as_search { FileTree.enter_as_search }
     Keys.enter_as_test { Specs.enter_as_rspec }
@@ -145,6 +145,7 @@ class KeyBindings
     Keys.enter_insert_date { App.enter_date }    # insert date string (and time if C-u)
     Keys.enter_insert_command { insert("- (/): "); ControlLock.disable }    # insert date string (and time if C-u)
     Keys.enter_insert_search { View.insert("- google: ") }
+    Keys.enter_insert_wikipedia { View.insert("- (wp): ") }
     Keys.enter_in_todo { FileTree.enter_snippet }   # enter tree quote of region in $T
     Keys.enter_junior { Notes.bullet("") }
     Keys.enter_key { Keys.insert_code }
@@ -229,6 +230,7 @@ class KeyBindings
     Keys.do_junior { FileTree.move_dir_to_junior }   # Move a dir to next line, and indent
     Keys.do_kill_all { View.kill_all }   # kill all text in buffer
     Keys.do_kill_filter { Search.kill_filter }
+    Keys.do_kill_paragraph { View.kill_paragraph }   # kill all text in buffer
     Keys.do_kill_rest { CodeTree.kill_rest }   # kill adjacent lines at same indent as this one
     Keys.do_kill_siblings { CodeTree.kill_siblings }   # kill adjacent lines at same indent as this one
     Keys.do_kill_thing { delete_region(* bounds_of_thing_at_point( :sexp )) }   # kill adjacent lines at same indent as this one
@@ -255,6 +257,7 @@ class KeyBindings
     Keys.do_linebreaks_windows { set_buffer_file_coding_system :dos }
     Keys.do_macro { Macros.run }   # do last macro *
     Keys.do_name_buffer { Buffers.rename }
+    Keys.do_notes_colors { Notes.apply_styles }
     Keys.do_number_enter { Incrementer.enter }
     Keys.do_name_files { wdired_change_to_wdired_mode }
     Keys.do_number_increment { Incrementer.increment }
@@ -289,7 +292,6 @@ class KeyBindings
     #     Keys.D1 { delete_char 1 };  Keys.D2 { delete_char 2 };  Keys.D3 { delete_char 3 };  Keys.D4 { delete_char 4 }
     #     Keys.D5 { delete_char 5 };  Keys.D6 { delete_char 6 };  Keys.D7 { delete_char 7 };  Keys.D8 { delete_char 7 };
 
-
   end
 
   def self.to_keys
@@ -318,17 +320,17 @@ class KeyBindings
     Keys.to_spot { Location.to_spot }   # *
     # T: defined above - mapped to what C-t does by default
     Keys.to_up { FileTree.to_parent }   # to parent (last line indented less)
-    Keys.to_visible { Search.to_relative }   # go to nth line, relative to top of window
+    Keys.to_visible { View.to_relative }   # go to nth line, relative to top of window
     Keys.to_words { Move.to_line_text_beginning }   # move to start of words on line *
     # X
     #     Keys.to_yank { Clipboard.to_yank }
     # Z
     #Keys.T0 { Location.go("$_0") }   # To 0
-    Keys.T1 { Search.isearch_to_line(1) };  Keys.T2 { Search.isearch_to_line(2) }
-    Keys.T3 { Search.isearch_to_line(3) };  Keys.T4 { Search.isearch_to_line(4) }
-    Keys.T5 { Search.isearch_to_line(5) };  Keys.T6 { Search.isearch_to_line(6) }
-    Keys.T7 { Search.isearch_to_line(7) };  Keys.T8 { Search.isearch_to_line(8) }
-    Keys.T9 { Search.isearch_to_line(9) };  Keys.T0 { Search.isearch_to_line }
+    Keys.T1 { View.to_line_with_prefix(1) };  Keys.T2 { View.to_line_with_prefix(2) }
+    Keys.T3 { View.to_line_with_prefix(3) };  Keys.T4 { View.to_line_with_prefix(4) }
+    Keys.T5 { View.to_line_with_prefix(5) };  Keys.T6 { View.to_line_with_prefix(6) }
+    Keys.T7 { View.to_line_with_prefix(7) };  Keys.T8 { View.to_line_with_prefix(8) }
+    Keys.T9 { View.to_line_with_prefix(9) };  Keys.T0 { View.to_line_with_prefix }
 
     Keys.set("C-t C-/") { Code.to_comment }
 
@@ -359,7 +361,8 @@ class KeyBindings
     Keys.layout_output { Code.open_log_view; Effects.blink(:what=>:line) }
     Keys.layout_previous { View.previous(:blink=>true) }   # previous view **
     # Q
-    Keys.layout_right { View.layout_right }   # Go to view to the right
+    Keys.layout_right { View.to_upper(:blink=>true) }   # Go to view to the right
+    #     Keys.layout_right { View.layout_right }   # Go to view to the right
     Keys.layout_search { Keys.prefix_u? ? Search.find_in_buffers(Keys.input(:prompt=>"Search all open files for: ")) : Hide.search }   # *
     Keys.layout_todo { FileTree.open_in_bar; Effects.blink(:what=>:line) }   # show bar on left with the quick bookmark named "-t" *
     Keys.layout_uncover { Hide.reveal }   # Reveal all hidden text
@@ -399,14 +402,16 @@ class KeyBindings
     define_key :isearch_mode_map, kbd("C-h"), nil
     Keys.search_have_bullet { Search.have_label }
     Keys.search_have_case { Search.isearch_have_case }
-    Keys.search_have_within { Search.isearch_have_within }   # Grab everything except chars on edges
+    Keys.search_have_files { Search.isearch_move_to "$f" }
     Keys.search_have_javascript { Search.isearch_log_javascript }
     Keys.search_have_line { Search.have_line }   # copy line back to search start
     Keys.search_have_output { Search.isearch_log }
     Keys.search_have_paragraph { Search.have_paragraph }
     Keys.search_have_spot { Search.insert_at_spot }
-    Keys.search_have_move { Search.isearch_move_line }   # Zap: move to spot (as spot)
+    Keys.search_have_move { Search.isearch_move_line }
+    Keys.search_have_todo { Search.isearch_move_to "$t" }
     Keys.search_have_variable { Search.insert_var_at_search_start }
+    Keys.search_have_within { Search.isearch_have_within }   # Grab everything except chars on edges
     # I: leave unmapped - had issues using it (messes up position)
     # just_...
     define_key :isearch_mode_map, kbd("C-j"), nil
@@ -422,9 +427,11 @@ class KeyBindings
     Keys.search_just_name { Search.just_name }
     Keys.search_just_open { Search.isearch_open }
     Keys.search_just_plus { Search.just_increment }   # select match
-    Keys.search_just_replace { Search.isearch_query_replace :match }   # replace
+    Keys.search_just_right { Search.isearch_restart :right }   # replace
+    #     Keys.search_just_replace { Search.isearch_query_replace :match }   # replace
     Keys.search_just_todo { Search.isearch_restart "$t" }   # isearch for this string in $t
     # Keys.search_just_tag { Search.isearch_just_tag }   # select match
+    Keys.search_just_query { Search.isearch_query_replace :match }   # replace
     Keys.search_just_search { Search.isearch_just_search }   # Add "##search" line in tree for match
 
     Keys.search_just_uppercase { Search.upcase }   # make match be snake case
@@ -435,7 +442,7 @@ class KeyBindings
     Keys.search_kill { Search.cut }   # cut
     Keys.search_look { Search.uncover }   # Look: show results for search string in a bookmark
     # M: leave unmapped for stop
-    # N: leave unmapped for next
+    Keys.search_next { Search.isearch_next_or_name }   # Next, or name (if nothing searched for yet)
     Keys.search_outline { Search.isearch_outline }   # Outline
     # P: leave unmapped for previous
     # Q: leave unmapped for quoting
@@ -451,8 +458,10 @@ class KeyBindings
 
     # Surround with characters (quotes and brackets)
 
+    define_key(:isearch_mode_map, kbd("C-`")) { Search.isearch_just_surround_with_char "~" }
     define_key(:isearch_mode_map, kbd("C-'")) { Search.isearch_just_surround_with_char "'" }
     define_key(:isearch_mode_map, kbd("C-j C-'")) { Search.isearch_just_surround_with_char '"' }
+    define_key(:isearch_mode_map, kbd("C-j C-/")) { Search.isearch_just_comment }
 
     define_key(:isearch_mode_map, kbd("C-9")) { Search.isearch_just_surround_with_char '(', ')' }
     define_key(:isearch_mode_map, kbd("C-j C-9")) { Search.isearch_just_surround_with_char '[', ']'}
@@ -462,8 +471,9 @@ class KeyBindings
 
     define_key(:isearch_mode_map, kbd("C-h C-'")) { Search.insert_quote_at_search_start }
 
-    define_key(:isearch_mode_map, kbd("C-j C-1")) { Search.enter(Clipboard[1]) }
-    define_key(:isearch_mode_map, kbd("C-j C-2")) { Search.enter(Clipboard[2]) }
+    define_key(:isearch_mode_map, kbd("C-j C-1")) { Search.enter(Clipboard[1]) }   # isearch_just_1
+    define_key(:isearch_mode_map, kbd("C-j C-2")) { Search.enter(Clipboard[2]) }   # isearch_just_2
+    define_key(:isearch_mode_map, kbd("C-j C-3")) { Search.enter(Clipboard[3]) }   # isearch_just_3
     define_key(:isearch_mode_map, kbd("C-h C-1")) { Search.isearch_query_replace Clipboard[1] }
     define_key(:isearch_mode_map, kbd("C-h C-2")) { Search.isearch_query_replace Clipboard[2] }
 
@@ -547,6 +557,8 @@ class KeyBindings
     # Unmap keys in modes that interfere
     el4r_lisp_eval("(require 'shell)")
     define_key :shell_mode_map, kbd("C-d"), nil
+    #     el4r_lisp_eval("(require 'php)")
+    #     define_key :php_mode_map, kbd("C-d"), nil
     el4r_lisp_eval("(require 'dired)")
     define_key :dired_mode_map, kbd("C-o"), nil
     define_key :java_mode_map, kbd("C-d"), nil

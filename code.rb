@@ -227,7 +227,6 @@ class Code
   end
 
   def self.do_as_rspec options={}
-
     xiki = View.dir =~ /\/xiki/   # Identify if xiki
     args = []
     extra = "DS_SUPPRESS=true;"
@@ -565,10 +564,11 @@ class Code
     View.insert term.sub(/\.(.+)/, ".should_receive(:\\1)")
   end
 
-private
   def self.clear_and_go_back location
     if location   # Go back to starting point
       View.clear
+
+      View.clear "*output - tail of /tmp/ds_ol.notes"
       View.to_window location
       return true   # Indicate to exit method
     end

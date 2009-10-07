@@ -105,11 +105,12 @@ class Bookmarks
     if bookmark && bookmark.type == Symbol
       prefix_to_bm = bookmark.to_s
     elsif bookmark && bookmark.type == String
-      return self.jump(bookmark.sub(/^\$/, ""))
+      keys = bookmark
+      #       return self.jump(bookmark.sub(/^\$/, ""))
     end
 
     # Use input from user or "default"
-    keys = Keys.input(:timed => true, :prompt => "Enter bookmark to jump to: ") || "0"
+    keys ||= Keys.input(:timed => true, :prompt => "Enter bookmark to jump to: ") || "0"
 
     # Open file or jump to if already open
     path = bookmark_get_filename( "#{prefix_to_bm}#{keys}" )

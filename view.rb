@@ -181,6 +181,9 @@ class View
     select_window(self.list[n])
   end
 
+  def self.[] n
+    self.nth n
+  end
   def self.nth n
     orig = View.window
     View.to_nth n
@@ -195,6 +198,14 @@ class View
     file = View.file
     View.to_window orig
     file
+  end
+
+  def self.buffer_of_nth n
+    window = View.window
+    View.to_nth n
+    buffer = window_buffer
+    View.to_window window
+    buffer
   end
 
   def self.dir_of_nth n
@@ -522,7 +533,15 @@ class View
     point_max
   end
 
-  def self.clear
+  def self.clear name=nil
+    if name
+      if View.buffer_visible?(name)
+        View.to_buffer(name)
+        View.clear
+      end
+      return
+    end
+
     $el.erase_buffer
   end
 
@@ -589,8 +608,14 @@ class View
     self.set_mark pos
   end
 
-  def self.insert txt
-    $el.insert txt
+  def self.insert txt, options={}
+    if options[:utf8]
+      File.open("/tmp/tmp.txt", "w") {|f| f << txt}
+      $el.insert_file_contents "/tmp/tmp.txt"
+    else
+      $el.insert txt
+    end
+    Move.backward txt.size if options[:dont_move]
   end
 
   def self.unindent txt
@@ -623,9 +648,13 @@ class View
     buffer_substring(point, point_max)
   end
 
-
   def self.to_line n=nil
     Move.to_line n
+  end
+
+  def self.to_line_with_prefix first=""
+    line = "#{first}#{Keys.input(:prompt=>"goto line: #{first}")}"
+    View.to_line line
   end
 
   def self.to n
@@ -756,6 +785,12 @@ class View
     $el.erase_buffer
   end
 
+  def self.kill_paragraph
+    left, right = View.paragraph(:bounds => true)
+    Effects.blink(:left=>left, :right=>right)
+    View.delete(left, right)
+  end
+
   def self.expand_path path
     # Expand .
     path = path.gsub /^\.\//, View.dir.sub(/\/$/, '')+'/'
@@ -812,12 +847,21 @@ class View
   def self.insert_line
     orig_indent = Line.indent
     n = Keys.prefix   # Check for numeric prefix
-    Line.previous unless n.nil?
-    Line.next(n) if n.is_a? Fixnum   # If there, move down
+    if(n)
+      Line.previous unless n.nil?
+      Line.next(n) if n.is_a? Fixnum   # If there, move down
+      Line.to_right
+      View.insert "\n"
+      # Optionally indent
+      $el.indent_for_tab_command unless(View.mode == :fundamental_mode && orig_indent == '')
+      return
+    end
+
+    # No numeric prefix, so just grab this line's opening indent text
+    indent_txt = Line[/^[ |\/\\#-]+/] || ""
     Line.to_right
-    View.insert "\n"
-    # Optionally indent
-    $el.indent_for_tab_command unless(View.mode == :fundamental_mode && orig_indent == '')
+    View.insert "\n#{indent_txt}"
+
   end
 
   # Make another option show up for View.dimensions
@@ -856,10 +900,12 @@ class View
     $el.window_edges(view).to_a
   end
 
-  def self.layout_right view=nil
-    if Keys.prefix   # If numeric prefix, go to nth
-      down = Keys.prefix_times - 1
-      Keys.clear_prefix
+  def self.layout_right nth=nil
+    nth ||= Keys.prefix
+    if nth   # If numeric prefix, go to nth
+      down = nth - 1
+        # Keys.prefix_times - 1
+        #       Keys.clear_prefix
       self.to_after_bar
       # If there's only one column (last view is at left), go to top
       Move.to_window(1) if self.edges[0] == 0
@@ -880,6 +926,24 @@ class View
     self.to_buffer second_visible
     Effects.blink(:what=>:line)# if options[:blink]
 
+  end
+
+  def self.split options={}
+    options[:horizontally] ?
+      $el.split_window_horizontally :
+      $el.split_window_vertically
+  end
+
+  def self.to_relative
+    if Keys.prefix == 0
+      goto_char window_end - 1
+      Line.to_left
+      return
+    end
+    $el.goto_char window_start
+    ((Keys.prefix || 1) -1).times do
+      Line.next
+    end
   end
 
 end
