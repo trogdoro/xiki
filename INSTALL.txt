@@ -32,7 +32,7 @@ This file tells how to install Xiki.  See README.txt for a description of Xiki.
 
 | Trouble-shooting
 - If you get an error (and you probably will)
-  - Re-load your emacs file and look at the log
+  - Restart emacs (or reload .emacs) and look at the log
     - Named something like: /tmp/el4r......log
   - Go to the end and search backward for the last error
     - probably contains ":Error:"
