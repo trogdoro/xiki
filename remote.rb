@@ -89,7 +89,6 @@ class Remote
   end
 
   def self.command root #, *path_append
-
     the_command = root.last[/! ?(.+)/, 1]
     # Pull off command
     while(root.last =~ /^!/) do   # Remove all !foo lines from root
@@ -103,7 +102,8 @@ class Remote
     path << "/" unless path =~ /\/$/   # Add slash to path if none there
 
     timeout(6) do
-      out = connection.exec!("cd \"#{path}\"; #{the_command}")
+      out = connection.exec!("cd \"#{path}\" && #{the_command}")
+      #       out = connection.exec!("cd \"#{path}\"; #{the_command}")
       out ||= ""
 
       FileTree.insert_under out, :escape=>'!'

@@ -368,7 +368,7 @@ class LineLauncher
       browse_url "http://www.google.com/search?q=#{url}"
     end
 
-    self.add(/^ *$/) do |line|  # Empty line: open dir
+    self.add(/^ *$/) do |line|  # Empty line: insert CodeTree menu
       CodeTree.insert_menu "- CodeTree.menu/"
     end
 

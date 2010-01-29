@@ -79,6 +79,7 @@ class Console
     View.handle_bar
     dir ||= elvar.default_directory
     View.to_buffer generate_new_buffer("*console #{dir}")
+    raise "dir '#{dir}' doesn't exist" unless File.directory?(dir)
     elvar.default_directory = dir
     $el.shell current_buffer
   end
@@ -121,7 +122,9 @@ class Console
       if dir =~ /(.+?)(\/.+)/   # Split off dir if there
         line = self.ssh_line($1)
         Console.enter line
-        Console.enter "cd #{$2}"
+        options[:cd_and_wait] ?
+          View.insert("cd #{$2} && ") :
+          Console.enter("cd #{$2}")
       else
         line = self.ssh_line(dir)
         Console.enter line
@@ -157,7 +160,7 @@ class Console
     if path.first =~ /^\//   # If has dir (possibly remote)
       line = path.join('')
       dir, command = line.match(/(.+?)\$ (.+)/)[1..2]
-      Console.to_shell_buffer dir
+      Console.to_shell_buffer dir, :cd_and_wait=>true
     else   # Otherwise, if by itself
       command = Line.without_label.match(/.*?\$ (.+)/)[1]
       Console.to_shell_buffer   # Go to shell if one is visible, and starts with "*console"
@@ -188,7 +191,6 @@ class Console
       end
       View.to orig
     end
-
     line =~ / *(.*?)!+ ?(.+)/
     dir ||= $1 unless $1.empty?
     command = $2
