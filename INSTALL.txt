@@ -25,7 +25,20 @@ This file tells how to install Xiki.  See README.txt for a description of Xiki.
   - Sample configuration
     - /Users/hasselhoff/.el4r/
       - init.rb
-        |$LOAD_PATH.unshift "/projects/xiki"
-        |require 'xiki'
-        |KeyBindings.keys   # Use default key bindings
-        |Styles.use_xiki_color_scheme   # Use xiki's color scheme
+        | $LOAD_PATH.unshift "/projects/xiki"
+        | require 'xiki'
+        | KeyBindings.keys   # Use default key bindings
+        | Styles.use_xiki_color_scheme   # Use xiki's color scheme
+
+| Trouble-shooting
+- If you get an error (and you probably will)
+  - Re-load your emacs file and look at the log
+    - Named something like: /tmp/el4r......log
+  - Go to the end and search backward for the last error
+    - probably contains ":Error:"
+
+- If you got partially through the load
+  - you will be able to use these keys to trouble-shoot:
+    - M-l to reload
+    - M-e to look at the latest error
+
