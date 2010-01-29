@@ -65,6 +65,7 @@ class Repository
       + .status_tree/
       - .initialize
       + .branches/
+      + .stash/
       - .files/
       ].strip.gsub(/^      /, '')
   end
@@ -139,12 +140,16 @@ class Repository
     self.git_diff_one_file
   end
 
-
   def self.git_diff_one_file
     repos = self.git_path   # Get root of repos
     relative = View.file.sub(/^#{repos}/, '')   # Split off root from relative path
-    relative.sub! /^\//, ''   # Insert codetree
+    relative.sub! /^\//, ''
 
+    if Keys.prefix_u :clear=>true
+      return
+    end
+
+    # Insert codetree
     CodeTree.display_menu(
       "- Repository.menu/\n  - project - #{repos}\n    - .diff/\n      - #{relative}"
       )
@@ -543,16 +548,26 @@ class Repository
     "
     - #{self.extract_dir(project)}/
       - list branches:
-      !git branch
-      !git branch -r
+      ! git branch
+      ! git branch -r
       - create branch:
-      !git branch foo
+      ! git branch foo
         - switch to:
-        !git checkout foo
+        ! git checkout foo
         - delete:
-        !git branch -d foo
+        ! git branch -d foo
       - switch to main branch:
-      !git checkout master
+      ! git checkout master
+    "
+  end
+
+  def self.stash project
+    "
+    - #{self.extract_dir(project)}/
+      - Temporarily revert uncommitted changes:
+      ! git stash
+      - Restore uncommitted changes:
+      ! git stash pop
     "
   end
 

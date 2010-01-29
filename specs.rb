@@ -31,9 +31,9 @@ class Specs
         Keys.clear_prefix
         View.to_highest
         if test =~ /^#/
-          Search.forward "^ *describe .+#{$el.regexp_quote(test)}"
+          Search.forward "^ *describe .+['\"]#{$el.regexp_quote(test)}['\"]"
         else
-          Search.forward "^ *it .#{$el.regexp_quote(test)}"
+          Search.forward "^ *it ['\"]#{$el.regexp_quote(test)}['\"]"
         end
         Move.to_line_text_beginning
         return
@@ -80,26 +80,59 @@ class Specs
   # Pastes in for the line in the clipboard:
   #   Spec.foo "bar"
   def self.enter_as_rspec
+    # If U, add it in $t
+    prefix_u = Keys.prefix_u :clear=>true
+    if prefix_u
+      u_orig = Location.new
+      Clipboard.as_line
+
+      View.open "$t"
+      #       Location.save(:insert_orig)
+      View.to_highest
+
+      View.insert("\n", :dont_move=>true) unless Line.blank?   # Make room if line not blank
+    end
+
     if Line.blank?   # Assume clipboard contains "it..." line
       snippet = Clipboard['=']
       clazz = snippet[/(\w+)_spec\.rb/, 1]
       desc = snippet[/(".+")/, 1]
+
+      # If no description, do enter_as_title
+      if desc.nil?
+        View.insert TextUtil.title_case(Clipboard.get(0))
+      else
+        View.insert "Specs.#{clazz} #{desc}"
+      end
+    else
+
+
+      desc = Line[/  it (".+")/, 1]
+
+      # If no description, do enter_as_title
+      return View.insert TextUtil.title_case(Clipboard.get(0)) if desc.nil?
+
+      orig = View.cursor
+      Search.backward "^ *[+-] "
+      clazz = Line[/(\w+)_spec\.rb/, 1]
+
+      View.cursor = orig
+
+      Line.delete :leave_linebreak
       View.insert "Specs.#{clazz} #{desc}"
-      return
+      Move.to_axis
     end
 
-    desc = Line[/  it (".+")/, 1]
-    return unless desc
+    if prefix_u
+      # Add line after if before heading
+      unless match =~ /\n$/   # If there wasn't a linebreak at the end of the match
+        Line.next
+        View.insert("\n", :dont_move=>true) if Line[/^\|/]
+      end
 
-    orig = View.cursor
-    Search.backward "^ *[+-] "
-    clazz = Line[/(\w+)_spec\.rb/, 1]
-
-    View.cursor = orig
-
-    Line.delete :leave_linebreak
-    View.insert "Specs.#{clazz} #{desc}"
-    Move.to_axis
+      #       Location.jump(:insert_orig)
+      u_orig.go
+    end
 
   end
 
@@ -120,4 +153,8 @@ class Specs
 
     View.cursor = cursor
   end
+
+  #   def self.insert_in_todo
+  #   end
+
 end

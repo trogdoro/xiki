@@ -94,15 +94,17 @@ class CodeTree
       # End up where script took us
       ended_up.go
 
-      if options[:tree_search]  # If they want to do a tree search
+      if options[:tree_search]   # If they want to do a tree search
         goto_char left
         FileTree.select_next_file
-        FileTree.search(:left => left, :right => right, :recursive => true)
+        FileTree.search(:left=>left, :right=>right, :recursive=>true)
       # If script didn't move us (line or buffer), do incremental search
       elsif !options[:no_search] && !buffer_changed && point == orig_left
+
+        # TODO No search if there aren't more than 3 lines
         goto_char left
         Line.to_words
-        FileTree.search(:left => left, :right => right, :number_means_enter => true)
+        FileTree.search(:left=>left, :right=>right, :number_means_enter=>true)
       end
       Move.to_line_text_beginning(1) if options[:no_search]
     end
@@ -353,9 +355,9 @@ class CodeTree
 
     # Combine and process siblings
     if options[:include_self]
-      siblings = View.txt(left1, right2)
+      siblings = View.txt(options.merge(:left=>left1, :right=>right2))
     else
-      siblings = View.txt(left1, right1) + View.txt(left2, right2)
+      siblings = View.txt(options.merge(:left=>left1, :right=>right1)) + View.txt(options.merge(:left=>left2, :right=>right2))
     end
 
     siblings.gsub! /^#{Line.indent} .*\n/, ''   # Remove more indented lines
@@ -380,9 +382,17 @@ class CodeTree
   end
 
   def self.kill_siblings
+    prefix = Keys.prefix :clear=>true
+
     left1, right1, left2, right2 = self.sibling_bounds
-    View.delete left2, right2
-    View.delete left1, right1
+
+    if prefix == :u
+      View.delete left1, right2
+      return
+    end
+
+    View.delete left2, right2 unless prefix == 1
+    View.delete left1, right1 unless prefix == 2
   end
 
   def self.kill_rest

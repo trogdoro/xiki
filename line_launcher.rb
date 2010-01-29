@@ -61,7 +61,6 @@ class LineLauncher
 
     # Else, launch
     self.launch options
-
   end
 
   # Call the appropriate launcher if we find one, passing it line
@@ -181,8 +180,8 @@ class LineLauncher
       browse_url "http://dictionary.reference.com/browse/#{url}"
     end
 
-    self.add :paren=>"click" do   # - (js): js to run in firefox
-      Firefox.run("$('a:contains(#{CodeTree.line_or_children}):first').click()")
+    self.add :paren=>"click" do
+      Firefox.run("var a = $('a:contains(#{CodeTree.line_or_children}):first'); a.attr('href') == '#' ? a.click() : window.location = a.attr('href');")
     end
 
     self.add :paren=>"click last" do   # - (js): js to run in firefox
@@ -191,6 +190,9 @@ class LineLauncher
 
     self.add :paren=>"js" do   # - (js): js to run in firefox
       Firefox.run(CodeTree.line_or_children)
+    end
+    self.add :paren=>"jsp" do   # - (js): js to run in firefox
+      Firefox.run("p(#{CodeTree.line_or_children})")
     end
 
     self.add :paren=>"jso" do   # - (js): js to run in firefox

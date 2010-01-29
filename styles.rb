@@ -109,15 +109,22 @@ class Styles
   end
 
   def self.use_xiki_color_scheme
-    # Use black
-    return self.use_xiki_color_scheme_black if Styles.inverse
+    return self.use_xiki_color_scheme_black if Styles.inverse   # Use black
 
-    set_face_background :trailing_whitespace, "#eeeeee"
+    set_face_background :trailing_whitespace, "#cccccc"
     Styles.define :default, :bg=>'ffffff', :fg=>'000000'
-    Styles.define :cursor, :bg=>'000000', :fg=>'ffffff'
-    Styles.define :fringe, :bg=>'ffffff', :fg=>'999999'
-    Styles.define :mode_line, :fg=>'000000', :bg=>'666666', :border=>['666666', -1]
+    Styles.define :cursor, :bg=>'333333', :fg=>'ffffff'
+    Styles.define :fringe, :bg=>'ffffff', :fg=>'cccccc'   # eg border / status
+    Styles.define :mode_line, :fg=>'222222', :bg=>'666666', :border=>['666666', -1]
+    #     Styles.define :mode_line, :fg=>'000000', :bg=>'666666', :border=>['666666', -1]
     Styles.define :mode_line_inactive, :fg=>'999999', :bg=>'cccccc', :border=>['cccccc', -1]
+
+    #     Styles.define :ls_quote,
+    #       :size => "-1",
+    #       :fg => "669"
+    #       :fg => "88b"
+    #       :fg => "aad"
+
   end
 
   def self.use_xiki_color_scheme_black
@@ -128,6 +135,7 @@ class Styles
 
     Styles.define :mode_line, :fg=>'ffffff', :bg=>'338833', :border=>['44bb44', -2]
     Styles.define :mode_line_inactive, :fg=>'ffffff', :bg=>'999999', :border=>['bbbbbb', -2]
+
   end
 end
 Styles.init

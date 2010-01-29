@@ -3,11 +3,11 @@ class Merb
   def self.menu name=nil, port=nil
     unless name  # Print menu
       r = "+ current dir: #{View.dir}, 4000\n"
-      r << "+ upper: #{View.dir_of_after_bar}, 4000\n" if View.bar?
+      r << "+ upper: #{View.dir_of_after_bar}, 4000\n" if View.in_bar?
       r + "
+      + tmp: /tmp/merb1, 4000
       + .links/
-      - .snippets
-      + .models/
+      - .snippets/
       + .version/
       ".unindent
     else  # Print options
@@ -18,6 +18,7 @@ class Merb
       + .shells/
       + .generate/
       + .rake/
+      + .models/
       + .db/
       + .files/
       "
@@ -64,11 +65,8 @@ class Merb
 
   def self.links
     puts "
-      - open-source book: http://merb.4ninjas.org/
-      - mattetti recommended: http://www.socialface.com/slapp/
-      - Just in Time: http://jit.nuance9.com/2007/11/merb-datamapper-getting-rolling.html
-      - Keith found: http://paulbarry.com/articles/2007/11/16/merb-and-data-mapper
-      - Merborial: http://rorblog.techcfl.com/2008/02/01/merborial-getting-started-with-merb-and-datamapper/
+      - home: http://www.merbivore.com/
+      - open-source book: http://book.merbist.com/
       "
   end
 
@@ -92,7 +90,8 @@ class Merb
     # Split into dir and name
     dir = self.path_from_dir(dir)
     path, name = dir.match(/(.+)\/(.+)/)[1..2]
-    Console.run "merb-gen app #{name}", :dir=>path, :buffer=>"*merb-gen app #{name}"
+    out = Console.run "merb-gen app -f --no-color #{name}", :dir=>path, :buffer=>"*merb-gen app #{name}", :sync=>true
+    out.gsub /^/, "| "
   end
 
   def self.start dir, port
@@ -100,18 +99,20 @@ class Merb
   end
 
   def self.shell dir, port
-    buffer = "*" + self.name_from_dir(dir) + " merb shell"
+    Console.run "", :dir=>self.path_from_dir(dir)#, :buffer=>"*merb #{dir}"
 
-    path = self.path_from_dir(dir)
-    View.to_after_bar
+    #     buffer = "*" + self.name_from_dir(dir) + " merb shell"
 
-    # Just go there if already open
-    if View.buffer_open? buffer
-      View.to_buffer buffer
-      return
-    end
+    #     path = self.path_from_dir(dir)
+    #     View.to_after_bar
 
-    Console.run nil, :path => path, :buffer => buffer
+    #     # Just go there if already open
+    #     if View.buffer_open? buffer
+    #       View.to_buffer buffer
+    #       return
+    #     end
+
+    #     Console.run nil, :path => path, :buffer => buffer
   end
 
 #   def self.url path='/', dir=nil, port

@@ -172,7 +172,7 @@ class Console
   # Mapped to !! or ! in LineLauncher
   def self.launch options={}
     line = Line.without_label :leave_indent=>true
-    #p Line.without_label
+
     # If indented, check whether file tree, extracting if yes
     if line =~ /^\s+!/
       orig = View.cursor
@@ -189,13 +189,13 @@ class Console
       View.to orig
     end
 
-    line =~ / *(.*?)!+(.+)/
+    line =~ / *(.*?)!+ ?(.+)/
     dir ||= $1 unless $1.empty?
     command = $2
     if options[:sync]
       output = Console.run command, :dir=>dir, :sync=>true
       output.sub!(/\A\z/, "\n")   # Add linebreak if blank
-      output.gsub!(/^/, '!')
+      output.gsub!(/^/, '! ')
       FileTree.indent(output)
       FileTree.insert_quoted_and_search output
     else

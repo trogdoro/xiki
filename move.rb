@@ -21,6 +21,8 @@ class Move
 
     column ||= Line.indent(line).size
 
+    #     column *= 2
+
     # If negative, reverse direction and amke positive
     if column < 0
       direction_down = false
@@ -132,7 +134,7 @@ class Move
 
   def self.to_line n=nil
     # Use arg or numeric prefix or get input
-    n = n || elvar.current_prefix_arg || Keys.input
+    n = n || elvar.current_prefix_arg || Keys.input(:prompt=>"Go to line number: ")
     goto_line n.to_i
   end
 

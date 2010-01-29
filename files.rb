@@ -181,6 +181,17 @@ class Files
     $el.shell_command("open \"#{path}\"")
   end
 
+  def self.do_load_file
+    $el.revert_buffer(true, true, true)
+
+    View.message "Reverted file"
+
+    return if ! Keys.prefix_u
+
+    View.message $el.auto_revert_mode ? "Enabled Auto-revert" : "Disabled Auto-revert"
+
+  end
+
 end
 
 $el.el4r_lisp_eval("(require 'recentf)")

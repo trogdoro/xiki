@@ -45,7 +45,7 @@ class KeyBindings
     Keys.as_thing { Clipboard.as_thing }  # copy sexp at point
     #Keys.as_update_remote { FileTree.save_remote }
     Keys.as_version { History.backup_file }   # creates backup
-    Keys.as_windows { View.save }   # remember window configuration as tag
+    Keys.as_window { View.save }   # remember window configuration as name
     Keys.as_xtract { Clipboard.cut("0") }   # cut **
     # Y
     # Z
@@ -65,6 +65,7 @@ class KeyBindings
     Keys.open_as_elisp { find_function_at_point }   # jump to definition of lisp function
     Keys.open_as_highest { FileTree.open_as_upper }
     Keys.open_as_lowest { FileTree.open_as_upper(:lowest) }
+    Keys.open_as_utf { revert_buffer_with_coding_system('utf-8'.to_sym) }
     Keys.open_as_2 { FileTree.open_as_upper(:second) }
     Keys.open_as_root { Files.open_sudo }
     Keys.open_a_shell { Console.open }
@@ -84,7 +85,7 @@ class KeyBindings
     Keys.open_list_bookmarks { CodeTree.display_menu("- Bookmarks.tree/") }
     Keys.open_list_faces { list_faces_display }
     Keys.open_lisp_error { Code.show_el4r_error }
-    Keys.open_lisp_info { info("elisp") }
+    Keys.open_lisp_info { info("elisp") }   # Open manual
     Keys.open_list_log { Repository.open_list_log }   # compare current file with subversion
     Keys.open_log_tree { Rails.tree_from_log }
     Keys.open_list_databases { CodeTree.display_menu('- CouchDb.databases/') }
@@ -105,7 +106,7 @@ class KeyBindings
     Keys.open_tree { FileTree.tree }   # draw a tree, prompting for bookmark tag *
     Keys.open_up { View.show_dir }   # open enclosing dir **
     Keys.open_viewing { Buffers.open_viewing }   # show currently open files and buffers **
-    Keys.open_windows { View.restore }   # open window configuration by tag
+    Keys.open_windows { View.restore }   # open window configuration by name
     Keys.open_xiki_docs { Help.display_docs }
     Keys.open_xiki_help { CodeTree.display_menu("- Help.menu/") }   # **
     # Y
@@ -126,7 +127,7 @@ class KeyBindings
     #   - ideas: embed, emit, entry
     #     Keys.EAB { Code.enter_as_backslash }   # Enter As Bash: enter with \ at eol's
     Keys.EE { Line.to_right }   # EE - end of line (E's default) **
-    Keys.enter_as_camelcase { insert TextUtil.camel_case(Clipboard.get(0)) }
+    Keys.enter_as_camelcase { View.insert TextUtil.camel_case(Clipboard.get(0)) }
     Keys.enter_as_debug { Code.enter_as_debug }
     Keys.enter_as_filename { insert Clipboard.get(".") }
     Keys.enter_as_hyphenated { insert TextUtil.hyphen_case(Clipboard.get(0)) }
@@ -142,8 +143,10 @@ class KeyBindings
     Keys.enter_file { View.insert(Keys.bookmark_as_path(:include_file=>true)); Line.to_left }   # Given a bookmark
     Keys.enter_history { History.enter_history }   # enter recently viewed files
     #Keys.EH { FileTree.enter_lines(/^\| /) }
+    Keys.enter_insert_1 { Notes.enter_do_bullet }    # insert date string (and time if C-u)
     Keys.enter_insert_date { App.enter_date }    # insert date string (and time if C-u)
     Keys.enter_insert_command { insert("- (/): "); ControlLock.disable }    # insert date string (and time if C-u)
+    Keys.enter_insert_ruby { code = Keys.input(:prompt=>"Enter ruby code to eval and insert results: "); View.insert(eval(code).to_s)}
     Keys.enter_insert_search { View.insert("- google: ") }
     Keys.enter_insert_wikipedia { View.insert("- (wp): ") }
     Keys.enter_in_todo { FileTree.enter_snippet }   # enter tree quote of region in $T
@@ -180,8 +183,9 @@ class KeyBindings
     #Keys.E0 { Clipboard.paste("0") }   # Enter 0: paste from "0" tag
     Keys.E1 { Clipboard.paste(1) }   # Enter 1
     Keys.E2 { Clipboard.paste(2) }   # Enter 2
-    Keys.E3 { Clipboard.paste(3) };   Keys.E4 { Clipboard.paste(4) }
-    Keys.E5 { Clipboard.paste(5) };   Keys.E6 { Clipboard.paste(6) };   Keys.E7 { Clipboard.paste(7) }
+    Keys.E3 { Clipboard.paste(3) }
+    Keys.E4 { Clipboard.paste(4) };   Keys.E5 { Clipboard.paste(5) };   Keys.E6 { Clipboard.paste(6) }
+    Keys.E7 { Clipboard.paste(7) };   Keys.E7 { Clipboard.paste(8) };   Keys.E7 { Clipboard.paste(9) }
     Keys.E8 { FileTree.enter_lines /./ }   # Like enter_outline, but inserts all
   end
 
@@ -192,8 +196,10 @@ class KeyBindings
     Keys.D { insert "Apparently this is necessary to remap C-d" }
     Keys.DD { delete_char elvar.current_prefix_arg || 1 }   # DD - delete character (D's default) **
     Keys.do_as_camelcase { Clipboard.do_as_camel_case }   # change word to camel case (LikeThat)
+    Keys.do_as_html { Firefox.do_as_html }
     Keys.do_as_javascript { Javascript.run }
     Keys.do_as_lowercase { Clipboard.do_as_lower_case }   # change word to camel case (LikeThat)
+    Keys.do_as_python { Python.run }
     Keys.do_as_snakecase { Clipboard.do_as_snake_case }   # Change word to snake case (like_that)
     Keys.do_as_test { Code.do_as_rspec }
     Keys.do_as_uppercase { Clipboard.do_as_upper_case }   # change word to camel case (LikeThat)
@@ -239,7 +245,7 @@ class KeyBindings
     Keys.do_last_command { Console.do_last_command }
     Keys.do_line_duplicate { Line.duplicate_line }
     #     Keys.do_load_emacs { App.load_emacs }   # *
-    Keys.do_load_file { revert_buffer(true, true, true) }
+    Keys.do_load_file { Files.do_load_file }
     Keys.do_lines_having {   # delete lines matching a regex
       unless elvar.current_prefix_arg
         delete_matching_lines( Keys.input(:prompt => "Delete lines having: ") )
@@ -407,6 +413,7 @@ class KeyBindings
     Keys.search_have_line { Search.have_line }   # copy line back to search start
     Keys.search_have_output { Search.isearch_log }
     Keys.search_have_paragraph { Search.have_paragraph }
+    #     Keys.search_have_rspec { Specs.insert_in_todo }
     Keys.search_have_spot { Search.insert_at_spot }
     Keys.search_have_move { Search.isearch_move_line }
     Keys.search_have_todo { Search.isearch_move_to "$t" }
@@ -423,7 +430,8 @@ class KeyBindings
     Keys.search_just_files { Search.isearch_restart "$f" }   # isearch for this string in $f
     Keys.search_just_have { Search.just_select }   # select match
     Keys.search_just_lowercase { Search.downcase }
-    Keys.search_just_macro { Search.just_macro }
+    Keys.search_just_macro { Search.just_marker }
+    #     Keys.search_just_macro { Search.just_macro }
     Keys.search_just_name { Search.just_name }
     Keys.search_just_open { Search.isearch_open }
     Keys.search_just_plus { Search.just_increment }   # select match
@@ -485,6 +493,10 @@ class KeyBindings
     define_key(:isearch_mode_map, kbd("C-3")) { Search.isearch_or_copy("3") }
     define_key(:isearch_mode_map, kbd("C-4")) { Search.isearch_or_copy("4") }
     define_key(:isearch_mode_map, kbd("C-5")) { Search.isearch_or_copy("5") }
+    define_key(:isearch_mode_map, kbd("C-6")) { Search.isearch_or_copy("6") }
+    define_key(:isearch_mode_map, kbd("C-7")) { Search.isearch_or_copy("7") }
+    define_key(:isearch_mode_map, kbd("C-8")) { Search.isearch_or_copy("8") }
+    #     define_key(:isearch_mode_map, kbd("C-9")) { Search.isearch_or_copy("9") }
 
     define_key(:isearch_mode_map, kbd("C-=")) { $el.isearch_yank_char }   # Add one char from isearch
     define_key(:isearch_mode_map, kbd("C--")) { $el.isearch_del_char }   # Remove one char from isearch
@@ -494,7 +506,7 @@ class KeyBindings
     define_key(:isearch_mode_map, kbd("C-\\")) { Search.hide }   # Hide: hide non-matching
 
     define_key(:isearch_mode_map, kbd("C-0")) { Search.isearch_pause_or_resume }   # isearch_just_0
-    define_key(:isearch_mode_map, kbd("C-8")) { Search.isearch_query_replace Clipboard[0] }   # isearch_just_0
+    #     define_key(:isearch_mode_map, kbd("C-8")) { Search.isearch_query_replace Clipboard[0] }   # isearch_just_0
 
   end
 

@@ -1,14 +1,15 @@
 # Helps you to insert "1", "2", "3"....   Useful during macros.
 class Incrementer
-  @@i = 1
   def self.start
-    @@i = Keys.prefix_n || 0
+    Clipboard['n'] = (Keys.prefix_n || 0).to_s
   end
+
   def self.increment
-    @@i += 1
+    Clipboard['n'] = Clipboard['n'].next
   end
+
   def self.enter
-    View.insert @@i.to_s
     self.increment if Keys.prefix_u
+    View.insert Clipboard['n']
   end
 end

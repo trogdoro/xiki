@@ -210,39 +210,35 @@ class FileTree
 
   def self.define_styles
 
-    # Bullets
-    Styles.define :ls_bullet,
-      :face => 'courier', :size => "+2",  # Mac
+    if Styles.inverse   # Bullets
+      Styles.define :ls_bullet,
+        :face => 'courier', :size => "+2",  # Mac
+        :fg => "dd7700", :bold => true
+    else
+      Styles.define :ls_bullet,
+        :face => 'courier', :size => "+2",  # Mac
+        :fg => "ff7700", :bold => true
+    end
+
       #:face => 'courier new', :size => "+4",  # Mac
       #:face => 'arial black', :size => "0",  # Mac
       #:face => 'Monaco', :size => "0",  # Mac
       #:fg => "444444", :bold => true
-      :fg => "dd7700", :bold => true
+    #       :fg => "dd7700", :bold => true
 
-    Styles.define :diff_line_number,
-      :fg => "334",
-      :bold => true,
-      :size => "-2"
-
-    Styles.define :diff_red,
-      :bg => "ffdddd", :fg => "cc4444",
-      :size => "-1"
-    Styles.define :diff_green,
-      :bg => "ddffcc", :fg => "337744",
-      :size => "-1"
-
-    Styles.define :diff_small,
-      :fg => "dddddd",
-      :size => "-11"
+    Styles.define :diff_line_number, :bold => true, :size => "-2",
+      :fg => "ccc"
+    Styles.define :diff_red, :bg => "ffdddd", :fg => "cc4444"
+    Styles.define :diff_green, :bg => "ddffcc", :fg => "337744"
+    Styles.define :diff_small, :fg => "dddddd", :size => "-11"
+    #       :size => "-1"
 
     if Styles.inverse
-      Styles.define :diff_red,
-        :bg => "440000", :fg => "ee3333"
-      Styles.define :diff_green,
-        :bg => "113300", :fg => "44dd33"
-      Styles.define :diff_small,
-        :fg => "222222",
-        :size => "-11"
+      Styles.define :diff_line_number, :bold => true, :size => "-2",
+        :fg => "334"
+      Styles.define :diff_red, :bg => "440000", :fg => "ee3333"
+      Styles.define :diff_green, :bg => "113300", :fg => "44dd33"
+      Styles.define :diff_small, :fg => "222222", :size => "-11"
     end
 
     # dir/
@@ -254,15 +250,21 @@ class FileTree
 
     # ##search/
     Styles.define :ls_search,
-      :fg => "dd7700",
+      :fg => "ff7700",
+    #       :fg => "dd7700",
       :face => "verdana",
       :size => "-2",
       :bold => true
 
-    #   | Quoted text
-    Styles.define :ls_quote,
-      :size => "-1",
-      :fg => "aad"
+    if Styles.inverse   #   | Quoted text
+      Styles.define :ls_quote,
+        :size => "-1",
+        :fg => "aad"
+    else
+      Styles.define :ls_quote,
+        :size => "-1",
+        :fg => "77b"
+    end
 
     #   001| Quoted text lines
     Styles.define :ls_quote_line_number,
@@ -278,6 +280,9 @@ class FileTree
 
   def self.apply_styles
     el4r_lisp_eval "(setq font-lock-defaults '(nil t))"
+
+    # Must go before quotes - if it goes after, it breaks them
+    Styles.apply("\\(~\\)\\(.+?\\)\\(~\\)", :notes_label)
 
     #   |... lines (quotes)
     Styles.apply("^ +\\(| *\\)", nil, :ls_quote)
@@ -435,7 +440,11 @@ class FileTree
     else   # Otherwise, move to after bar if the bar is open
       #View.to_after_bar
       # Only go to bar if after bar (for example, after OE)
-      View.to_after_bar if View.in_bar?
+
+      #       from_t = path == Bookmarks['$t']
+      #       options[:same_view] ||= path == Bookmarks['$t']
+      # Code in View.open goes out of bar
+      #       View.to_after_bar if View.in_bar? && ! from_t
     end
 
     if remote   # Open or go to file
@@ -477,13 +486,19 @@ class FileTree
   def self.search options={}
     return if $xiki_no_search
 
+    recursive = options[:recursive]
+    left = options[:left] || point_min
+    right = options[:right] || point_max
+
+    # No search if there aren't more than 3 lines
+    return if((Line.number(right) - Line.number(left)) <= 1 && View.txt(left, right) !~ /\/$/) && options[:always_search].nil?
+
+      # Only exit if line doesn't end with /
+
+    # Make cursor blue
     Cursor.remember :before_file_tree
     Cursor.blue
     error = ""
-
-    recursive = options[:recursive]   # Make cursor blue
-    left = options[:left] || point_min
-    right = options[:right] || point_max
 
     pattern = ""
     lines = buffer_substring(left, right).split "\n"
@@ -922,7 +937,8 @@ class FileTree
       # Open tree (ignoring prefix)
       self.open_in_bar :ignore_prefix=>true
       # Find nth file in tree
-      beginning_of_buffer
+      View.to_highest
+      #beginning_of_buffer
       Keys.prefix.times do
         re_search_forward "^  +[a-zA-Z0-9_.-]+$"
       end
@@ -930,8 +946,6 @@ class FileTree
       Line.next if Line.next_matches(/^ *\|/)
       Move.to_line_text_beginning
       self.open :ignore_prefix=>true
-      #self.open
-  #    View.bar
       return
     end
 
@@ -1057,7 +1071,7 @@ class FileTree
 
     Move.to_line_text_beginning
 
-    self.search(:left => left, :right => right)   # Kick off hidesearch (deleting)
+    self.search(:left=>left, :right=>right, :always_search=>true)   # Kick off hidesearch (deleting)
 
   end
 
@@ -1415,6 +1429,7 @@ class FileTree
   # Mapped to shortcuts that displays the trees
   def self.tree options={}
     dir = Keys.bookmark_as_path(:prompt=>"file_tree in which dir? (enter bookmark): ")
+    dir = "/" if dir == :slash
     if dir.nil?
       beep
       return View.message("Bookmark doesn't exist.")
@@ -1552,9 +1567,14 @@ class FileTree
   end
 
   def self.create_dir
-    make_directory(elvar.default_directory)
+    # If in tree, create dir in tree
+    if Line[/^ *[+-] [\/\w _-]+\/$/]
+      $el.make_directory FileTree.construct_path
+      return
+    end
 
-    # TODO: if in tree, create dir in tree
+    $el.make_directory elvar.default_directory
+
     # Construct path
     # Prompt for name
     #Keys.input
@@ -1641,23 +1661,26 @@ private
     self.plus_to_minus_maybe
     dir = self.construct_path
     raw = self.construct_path(:raw => true, :list => true)
+
     files = contents = nil
-    case raw.join('')
-    when /\*\*(.+)##(.+)/  # *foo means search in files
+    if raw.join('') =~ /\*\*(.+)##(.+)/  # *foo means search in files
       files, contents = $1, $2.sub!(/\/$/, '')
-    when /\*\*(.+)/  # *foo means search in files
+    elsif raw.last =~ /\*\*(.+)/  # *foo means search in files
       files = $1
-    when /##(.+)/  # ##foo means search in filenames
+    elsif raw.last =~ /##(.+)/  # ##foo means search in filenames
       contents = $1.sub!(/\/$/, '')
       if raw[-2] =~ /\*\*(.+)/   # If prev is **, use it
         files = $1
       elsif raw[-2] =~ /(.+[^\/])$/   # If prev line is file, just show matches
         contents = Regexp.new(contents, Regexp::IGNORECASE)
         list = self.grep_one_file(Bookmarks.expand(dir), contents, "  ")
+
         #files = "^#{$1}$"
       end
+
       #files = $1 if Line.value(0) =~ /\*\*(.+)/
     end
+
     files.sub!(/\/$/, '') if files
     #contents.sub!(/\/$/, '') if contents
     options = {:raw => true}
@@ -1667,6 +1690,7 @@ private
       list = self.grep dir, contents, options
       list.shift  # Pull off first dir, so they'll be relative
     end
+
     Line.to_next
     left = point
     tree = list.join("\n") + "\n"

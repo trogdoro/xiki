@@ -38,15 +38,20 @@ class Code
   end
 
   def self.comment left=nil, right=nil
-    Line.to_left
-    left, right = Code.bounds_of_thing(left, right)
-    left, right = right, left if View.cursor == right   # In case cursor is at right side
+    # If 0 prefix, comment paragraph
+    if Keys.prefix == 0
+      left, right = View.paragraph(:bounds => true)
+    else
+      Line.to_left
+      left, right = Code.bounds_of_thing(left, right)
+      left, right = right, left if View.cursor == right   # In case cursor is at right side
+    end
+
     View.to left
     View.set_mark right
 
     comment_or_uncomment_region View.range_left, View.range_right
     Code.indent View.range_left, View.range_right
-
   end
 
   def self.run   # Evaluates file, paragraph, or next x lines using el4r
@@ -311,6 +316,8 @@ class Code
       #       Console.run "merb -i -e test", :dir=>dir, :buffer=>buffer
     end
     View.clear
+
+    View.wrap(:on) if prefix == :u
 
     #     args << '-D'   # Show diffs
 

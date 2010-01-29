@@ -105,7 +105,7 @@ class View
   # By default it will open in 2nd view if we're in the bar view.
   def self.open path, options={}
     # Open after bar if in bar
-    if View.in_bar? && (! options[:stay_in_bar]) && path != "$0"
+    if View.in_bar? && (! options[:stay_in_bar]) && path != "$0" && path != Bookmarks['$t'] && path != Bookmarks['$f']
       View.to_after_bar
     end
     # Expand $bookmark strings at beginning
@@ -238,7 +238,8 @@ class View
       orig << [window_buffer(w), window_height(w)]
     end
     delete_other_windows
-    split_window_horizontally 45
+    split_window_horizontally 32   # Width of bar
+    #     split_window_horizontally 45   # Width of bar
     other_window 1
     o = nil
     # For each window but last
@@ -281,7 +282,8 @@ class View
     if self.bar?
       buffer = selected_window
       select_window frame_first_window
-      enlarge_window (39 - window_width), true
+      enlarge_window (27 - window_width), true
+      #       enlarge_window (39 - window_width), true
       select_window buffer
     end
   end
@@ -458,6 +460,17 @@ class View
       left = options[:left] || point_min
       right = options[:right] || point_max
     end
+
+    # If :utf8 option, write to file via elisp and read via ruby (for correct encoding)
+    if options.is_a?(Hash) && options[:utf8]
+      # Write to file via elisp
+      $el.write_region left, right, "/tmp/utf.txt", nil
+
+      # Read via ruby (so correct encoding is obtained)
+      Ol.line
+      return File.read("/tmp/utf.txt")
+    end
+
     $el.buffer_substring left, right
   end
 
@@ -611,7 +624,10 @@ class View
   def self.insert txt, options={}
     if options[:utf8]
       File.open("/tmp/tmp.txt", "w") {|f| f << txt}
+      orig = $el.elvar.coding_system_for_read   # Read file as utf-8
+      $el.elvar.coding_system_for_read = 'utf-8'.to_sym
       $el.insert_file_contents "/tmp/tmp.txt"
+      $el.elvar.coding_system_for_read = orig
     else
       $el.insert txt
     end
@@ -709,6 +725,7 @@ class View
   end
 
   def self.visibility
+    # I.e. transparency / opacity
     c = Keys.input(:one_char => true, :prompt => 'Layout Visibility: [f]ull, [h]igh, [m]edium, [l]ow   [s]tylized, [p]lain')
     case c.to_sym
     when :f
@@ -753,7 +770,10 @@ class View
     self.add_dimension_option 'full', proc {View.dimensions_full}
     self.add_dimension_option 'large', proc {View.dimensions_set(145, 58, 46, 22)}
     self.add_dimension_option 'medium', proc {View.dimensions_set(145, 50)}
-    self.add_dimension_option 'small', proc {View.dimensions_set(80, 28)}
+    #     self.add_dimension_option 'small', proc {View.dimensions_set(80, 28, 50, 500)}
+    self.add_dimension_option 'small', proc {View.dimensions_set(89, 25, 49, 542)}
+    #     self.add_dimension_option 'small', proc {View.dimensions_set(90, 28, 50, 500)}
+    #     self.add_dimension_option 'small', proc {View.dimensions_set(80, 28)}
 
     $el.winner_mode 1 rescue nil
   end

@@ -68,7 +68,9 @@ class Color
       Hide.search
       return
     when "n"   # to next marker
-      pos = next_overlay_change(View.cursor)
+      #       Keys.prefix_times do
+        pos = next_overlay_change(View.cursor)
+      #       end
       # If no overlay, may be at end, so continue on
       pos = next_overlay_change(pos) unless overlays_at(pos)
       return View.to(pos)
@@ -114,27 +116,28 @@ class Color
     overlay_put over, :face, face
   end
 
-  # Define font
-  def self.define_styles
-    Styles.define :color_rb_red, :bg => "ffd5d5"
-    Styles.define :color_rb_orange, :bg => "ffe5bb"
-    Styles.define :color_rb_yellow, :bg => "f9f9aa"
-    Styles.define :color_rb_green, :bg => "e0ffcc"
-    Styles.define :color_rb_light, :bg => "222222"
-    Styles.define :color_rb_blue, :bg => "dde5ff"
-    Styles.define :color_rb_purple, :bg => "f2ddff"
+  def self.define_styles   # For Keys.layout_kolor_light, etc.
 
     Styles.define :color_rb_glow1, :bg => "ffcc99"
     Styles.define :color_rb_glow2, :bg => "ff9933"
 
     if Styles.inverse
-
       Styles.define :color_rb_red, :bg => "390000"
       Styles.define :color_rb_orange, :bg => "441500"
       Styles.define :color_rb_yellow, :bg => "333300"
       Styles.define :color_rb_green, :bg => "002200"
+      Styles.define :color_rb_light, :bg => "222222"
       Styles.define :color_rb_blue, :bg => "000055"
       Styles.define :color_rb_purple, :bg => "220033"
+
+    else
+      Styles.define :color_rb_red, :bg => "ffd5d5"
+      Styles.define :color_rb_orange, :bg => "ffe5bb"
+      Styles.define :color_rb_yellow, :bg => "f9f9aa"
+      Styles.define :color_rb_green, :bg => "e0ffcc"
+      Styles.define :color_rb_light, :bg => "dddddd"
+      Styles.define :color_rb_blue, :bg => "dde5ff"
+      Styles.define :color_rb_purple, :bg => "f2ddff"
 
     end
 

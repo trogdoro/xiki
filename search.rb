@@ -101,25 +101,27 @@ class Search
   end
 
   def self.isearch_delete
+    match = self.stop
     # If nothing searched for, go to spot of last delete
-    if self.match == ""   # If nothing searched for yet
-      self.isearch_stop_at_end
+    if match.nil?   # If nothing searched for yet
+      #       self.isearch_stop_at_end
       Location.to_spot('deleted')
     else
-      self.stop
+      #       self.stop
       View.delete(Search.left, Search.right)
       Location.as_spot('deleted')
     end
   end
 
   def self.enter txt=nil
+
+    match = self.stop
     txt ||= Clipboard[0]
-    if self.match == ""   # If nothing searched for yet
-      self.isearch_stop_at_end
+    if match.nil?   # If nothing searched for yet
+      #       self.isearch_stop_at_end
       Location.to_spot('clipboard')
       Search.isearch txt
     else
-      self.stop
       View.delete(Search.left, Search.right)
       insert txt
     end
@@ -152,7 +154,7 @@ class Search
     View.delete(Search.left, Search.right)
 
     orig = View.cursor
-    View.insert((match.to_i + 1).to_s)
+    View.insert(match.next)
     View.cursor = orig
   end
 
@@ -176,14 +178,12 @@ class Search
 
   def self.cut
 
+    match = self.stop
+
     # If nothing searched for, go to spot of last delete
-    if self.match == ""   # If nothing searched for yet
-      self.isearch_stop_at_end
+    if match.nil?   # If nothing searched for yet
       Location.to_spot('cut')
     else
-
-      self.stop
-      match = self.match
       Clipboard.set(0, match)
       set_register ?X, match
       View.delete self.left, self.right
@@ -207,11 +207,18 @@ class Search
     match = self.match
 
     # Make it do special clear if nothing found (to avoid weird isearch error)
-    return self.isearch_stop_at_end if (match||"") == "" && ! self.blank?
+    if match.nil?
+      if self.not_found?
+        match = :not_found
+      else
+        # Done so isearch_done won't error
+        isearch_resume "[^`]", true, nil, true, "", true
+        View.message ""
+      end
+    end
 
     $el.isearch_done
     $el.isearch_clean_overlays
-
     match
   end
 
@@ -246,9 +253,9 @@ class Search
   end
 
   def self.isearch_query_replace after=nil
-    self.stop
+    match = self.stop
     left, right = Search.left, Search.right
-    before = $el.regexp_quote(self.match)   # Always start with isearch match
+    before = $el.regexp_quote(match)   # Always start with isearch match
 
     # If before not there or is :match, prompt for input
     if after.nil? || after == :match
@@ -335,7 +342,7 @@ class Search
     # If nothing searched for, go to place something was copied by name
     if match.nil?
 
-      loc = Keys.input(:one_char=>true, :prompt=>"Enter one char to insert corresponding string: ")
+      loc = Keys.input(:one_char=>true, :prompt=>"Enter one char to go to where it was copied from: ")
 
       Bookmarks.go "_n#{loc}", :point=>true
 
@@ -408,12 +415,17 @@ class Search
 
   end
 
-  def self.highlight_found
-    self.stop
-    match = self.match
 
-    #Hide.show
-    highlight_regexp(match, :hi_yellow)
+  def self.just_marker
+    match = self.stop
+
+    highlight_regexp(Regexp.quote(match), :notes_label)
+  end
+
+  def self.highlight_found
+    match = self.stop
+
+    highlight_regexp(Regexp.quote(match), :hi_yellow)
   end
 
   def self.hide
@@ -534,7 +546,7 @@ class Search
   end
 
   def self.isearch_or_copy name
-    if self.match == ""   # If nothing searched for yet
+    if self.match.nil?   # If nothing searched for yet
       self.isearch Clipboard[name], :reverse=>self.was_reverse
     else   # Else, if nothing searched for
       self.stop
@@ -569,12 +581,14 @@ class Search
 
   def self.match
     left = self.left
-    return nil if left == 0 || self.blank?
-    buffer_substring(left, self.right)
+    return nil if left == 0# || self.nil?
+    result = buffer_substring(left, self.right)
+    return nil if result == ""
+    result
   end
 
-  def self.blank
-    elvar.isearch_success == true
+  def self.not_found?
+    ! elvar.isearch_success
   end
 
   def self.forward search, options={}
@@ -692,10 +706,9 @@ class Search
   end
 
   def self.isearch_log
-    match = self.match
-    self.stop
+    match = self.stop
     self.to_start
-    return View.insert "Ol.line" if match.blank?
+    return View.insert "Ol.line" if match.nil?
     View.insert "Ol << \"#{match}: \#{#{match}.inspect}\""
   end
 
@@ -783,7 +796,6 @@ class Search
   end
 
 
-
   def self.just_orange
     self.stop
     Overlay.face(:notes_label, :left=>Search.left, :right=>Search.right)
@@ -818,8 +830,7 @@ class Search
 
   # Copy match as name (like Keys.as_name)
   def self.just_name
-    self.stop
-    term = self.match
+    term = self.stop
     loc ||= Keys.input(:one_char=>true, :prompt=>"Enter one char (to store this as): ") || "0"
     Clipboard.copy loc, term
     Bookmarks.save("_n#{loc}")
@@ -901,8 +912,12 @@ class Search
   def self.isearch_stop_at_end
     # Kind of a hack - search for anything, so it won't error when we stop
     isearch_resume "[^`]", true, nil, true, "", true
-    Search.cancel
+
+    self.stop
+    self.to_start  # Go back to start
+
     View.message ""
+    nil
   end
 
   def self.isearch_outline
@@ -921,7 +936,7 @@ class Search
     match = self.stop
 
     if match.nil?   # If nothing searched for yet
-      loc = Keys.input(:one_char=>true, :prompt=>"Enter one char to insert corresponding string: ")
+      loc = Keys.input(:one_char=>true, :prompt=>"Enter one char to search for corresponding string: ")
       txt = Clipboard.hash[loc.to_s]
       # If there was nothing error out
       return View.message('not found!') if txt.nil?
@@ -938,8 +953,10 @@ class Search
   end
 
   def self.isearch_clipboard
-    if self.match == ""   # If nothing searched for yet
-      self.isearch Clipboard[0], :reverse=>self.was_reverse
+    reverse = self.was_reverse
+    match = self.stop
+    if match.nil?   # If nothing searched for yet
+      self.isearch Clipboard[0], :reverse=>reverse
     else
       self.copy
       Location.as_spot('clipboard')
@@ -947,13 +964,13 @@ class Search
   end
 
   def self.isearch_pause_or_resume
-    if self.match == ""   # If nothing searched for yet, resume search
-      self.isearch_stop_at_end
+    match = self.stop
+
+    if match.nil?   # If nothing searched for yet, resume search
       Location.to_spot('paused')
       Search.isearch $xiki_paused_isearch_string
     else
       # If search in progress, stop it, remembering spot
-      self.stop
       $xiki_paused_isearch_string = self.match.downcase
       Location.as_spot('paused')
     end
@@ -987,7 +1004,7 @@ class Search
 
   def self.isearch_move_to path
     match = self.match
-    match = Line.value if match.blank?   # Use line if nothing searched for
+    match = Line.value if match.nil?   # Use line if nothing searched for
     Search.stop
 
     match = FileTree.snippet(match) if path == "$f"   # If $f, grab path also

@@ -238,9 +238,22 @@ class Bookmarks
   end
 
   def self.tree
+    #     paths = elvar.bookmark_alist.collect {|bm|
+    #       bm.to_a[1].to_a[0][1]
+    #     }.select{|path| path =~ /^\/.+\w$/}
+
     paths = elvar.bookmark_alist.collect {|bm|
-      bm.to_a[1].to_a[0][1]
-    }.select{|path| path =~ /^\/.+\w$/}
+      ary = bm.to_a
+      key = ary[0]
+      path = ary[1].to_a[0][1]
+      [key, path]
+    }
+    paths = paths.select{|a| a[1] =~ /^\/.+\w$/}   # Remove bm's to dirs
+    paths.collect! {|bm|
+      path = bm[1]
+      path.sub! /(.+\/)/, "\\1#{bm[0]}: "
+      path
+    }
 
     puts CodeTree.tree_search_option + FileTree.paths_to_tree(paths)
   end

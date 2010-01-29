@@ -2,8 +2,16 @@ class Deletes
   extend ElMixin
   def self.delete_whitespace
 
-    prefix = Keys.prefix   # Prefix means add that many spaces after deleting
-    Keys.prefix = nil   # So it doesn't mess up other commands
+    prefix = Keys.prefix(:clear=>true)   # Number prefix means add that many lines after deleting
+
+    if prefix == :u   # If U, remove whitespace within region
+      txt = View.selection :delete=>true
+      linebreak_on_end = txt[/\n\z/]
+      txt.gsub! /^ *[+-] /, ''
+      txt.gsub! /[\n\t ]/, ''
+      View.insert("#{txt}#{linebreak_on_end}", :dont_move=>true)
+      return
+    end
 
     # If at end of line, go forward, and remember to delete backward
     was_blank = Line.blank?

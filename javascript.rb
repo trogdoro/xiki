@@ -3,6 +3,26 @@ class Javascript
     # Get block contents
     txt, left, right = View.txt_per_prefix #:prefix=>Keys.prefix
 
+    if Keys.prefix_u
+      funcs = <<-JS
+        function p(s) {
+          if(s == null)
+            s = "[blank]";
+
+          try {prepend_index++;}
+          catch(e) { prepend_index = 0; }
+
+          var d = document.createElement('div');
+          document.body.appendChild(d);
+          d.innerHTML = '<div style="top:'+(prepend_index*13)+'px; margin-left:5px; position:absolute; font-size:10px; z-index:1002; color:#000; filter: alpha(opacity=85); -moz-opacity: .85; opacity: .85; background-color:#999;">'+s+'</div>';
+
+        }
+      JS
+
+      Firefox.run "#{funcs}\n#{txt}"
+      return
+    end
+
     txt << "
       function p(txt) {
         print(txt);

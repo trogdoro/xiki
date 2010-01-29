@@ -212,19 +212,38 @@ class Notes
     # |...
     h1_size = "+2"
 
-    # Colors of headings
-    @@h1_styles = {
-      :notes_h1  => "666699",
-      :notes_h1r => "661111",   # | r This will be red
-      :notes_h1o => "884411",   # | o This will be orange
-      :notes_h1y => "aa9933",
-      :notes_h1e => "336633",
-      :notes_h1g => "336633",
-      :notes_h1p => "663366",
-      :notes_h1m => "662222",
-      :notes_h1x => "333333",
-      :notes_h1t => "005555",
-      }
+    # Colors of "| ..." headings
+    if Styles.inverse   # If black bg
+      @@h1_styles = {
+        :notes_h1  => "666699",
+        :notes_h1r => "661111",   # | r This will be red
+        :notes_h1o => "884411",   # | o This will be orange
+        :notes_h1y => "aa9933",
+        :notes_h1e => "336633",
+        :notes_h1g => "336633",
+        :notes_h1b => "666699",
+        :notes_h1p => "663366",
+        :notes_h1m => "662222",
+        :notes_h1x => "333333",
+        :notes_h1t => "005555",
+        }
+    else
+      # Colors of headings
+      @@h1_styles = {
+        :notes_h1  => "9999bb",
+        :notes_h1r => "bb6666",   # | r This will be red
+        :notes_h1o => "bb8833",   # | o This will be orange
+        :notes_h1y => "bbbb33",
+        :notes_h1e => "336633",
+        :notes_h1g => "77bb66",
+        :notes_h1b => "9999bb",
+        :notes_h1p => "bb88bb",
+        :notes_h1m => "994444",
+        :notes_h1x => "999999",
+        :notes_h1t => "005555",
+        }
+    end
+
 
     @@h1_styles.each do |k, v|
       lighter = v.gsub(/../) {|c| (c.to_i(16) + "44".to_i(16)).to_s(16)}
@@ -270,10 +289,6 @@ class Notes
       :face => 'arial', :size => "-2",
       :fg => "ee7700", :bold => true
 
-    Styles.define :notes_exclamation,  # Green bold text
-      :face => 'arial black', :size => "0",
-      :fg => "55aa22", :bold => true
-
     # Strikethrough
     Styles.define(:strike, :strike => true)
 
@@ -290,14 +305,26 @@ class Notes
     Styles.define :notes_green, :fg => "0C0"
 
     if Styles.inverse
-      Styles.define :notes_h1,
-        :fg => 'ffffff', :bg => "3b3b5e"
-      Styles.define :notes_h1_pipe,
-        :fg => '9191b3', :bg => "3b3b5e"
-      Styles.define :notes_h2,
-        :fg => '555588', :bg => "111122"
-      Styles.define :notes_h2_pipe,
-        :fg => '3b3b5e', :bg => "111122"
+
+      Styles.define :notes_h2, :fg => '555588', :bg => "111122"
+      Styles.define :notes_h2_pipe, :fg => '3b3b5e', :bg => "111122"
+
+      Styles.define :notes_exclamation,  # Green bold text
+        :face => 'arial black', :size => "0",
+        :fg => "66bb22", :bold => true
+      #         :fg => "449911", :bold => true
+
+      #       Styles.define :notes_h1,
+      #         :fg => 'ffffff', :bg => "3b3b5e"
+      Styles.define :notes_h1_pipe, :fg => '9191b3', :bg => "3b3b5e"
+    else
+
+      Styles.define :notes_exclamation,  # Green bold text
+        :face => 'arial black', :size => "0",
+        :fg => "77cc44", :bold => true
+      #         :fg => "66bb33", :bold => true
+
+      Styles.define :notes_h1_pipe, :fg => 'bbbbee', :bg => "9999bb"
     end
   end
 
@@ -306,7 +333,8 @@ class Notes
     Styles.clear
 
     # |... lines (headings)
-    Styles.apply("^\\(|\\)\\( \n\\|.*\n\\)", nil, :notes_h1_pipe, :notes_h1)
+    #     Styles.apply("^\\(|\\)\\( \n\\|.*\n\\)", nil, :notes_h1_pipe, :notes_h1)
+    Styles.apply("^\\(|\\)\\(.*\n\\)", nil, :notes_h1_pipe, :notes_h1)
     Styles.apply("^\\(| .+?: \\)\\(.+\n\\)", nil, :notes_h1_pipe, :notes_h1)
 
     @@h1_styles.each do |k, v|
@@ -317,14 +345,14 @@ class Notes
     end
 
     # ||... lines
-    Styles.apply("^\\(|| \\)\\(.*\n\\)", nil, :notes_h2_pipe, :notes_h2)
+    Styles.apply("^\\(||\\)\\(.*\n\\)", nil, :notes_h2_pipe, :notes_h2)
     Styles.apply("^\\(|| .+?: \\)\\(.+\n\\)", nil, :notes_h2_pipe, :notes_h2)
 
     # |||... lines
-    Styles.apply("^\\(||| \\)\\(.+\n\\)", nil, :notes_h3_pipe, :notes_h3)
+    Styles.apply("^\\(|||\\)\\(.*\n\\)", nil, :notes_h3_pipe, :notes_h3)
 
     # ||||... lines
-    Styles.apply("^\\(|||| ?\\)\\(.+\n\\)", nil, :notes_h4_pipe, :notes_h4)
+    Styles.apply("^\\(||||\\)\\(.*\n\\)", nil, :notes_h4_pipe, :notes_h4)
 
     #     # ~emphasis~ strings
     #     Styles.apply("\\(~\\)\\(.+?\\)\\(~\\)", :notes_label)
@@ -433,6 +461,7 @@ class Notes
           prev_indent << "  " unless prev_indent == ""
           View.insert "#{prev_indent}- #{line}"
         end
+        Move.to_line_text_beginning
         return
       end
 
@@ -581,6 +610,23 @@ class Notes
       append_to_file timestamp, nil, filename
       append_to_file content, nil, filename 
     end
+  end
+
+  def self.enter_do_bullet
+    line = Line.value
+    indent, first_char = line.match(/^( *)(.)/)[1..2]
+
+    if first_char == "|"   # If quote, insert before
+      Move.to_axis
+      $el.open_line(1)
+      View.insert "#{indent}- do!"
+      return
+    end
+
+    # If bullet, insert under
+    Notes.bullet
+    View.insert "do!"
+
   end
 
 end

@@ -144,4 +144,18 @@ class Firefox
     self.run "window.location = '#{txt}'"
   end
 
+  def self.do_as_html
+    # Grab block
+    txt, left, right = View.txt_per_prefix #:prefix=>Keys.prefix
+
+    # Write to temp file
+    File.open("/tmp/tmp.html", "w") { |f| f << txt }
+
+    # Then load in browser (or reload)
+    Firefox.value('document.location') == "file:///tmp/tmp.html" ?
+      Firefox.reload :
+      $el.browse_url("file:///tmp/tmp.html")
+
+  end
+
 end
