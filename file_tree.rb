@@ -1447,6 +1447,18 @@ class FileTree
     end
   end
 
+  def self.parent
+    return nil unless Line[/^ /]
+
+    orig = View.cursor   # Store original location
+
+    self.to_parent
+    parent = Line.without_label
+
+    View.cursor = orig
+    parent
+  end
+
   def self.to_parent
     times = (Keys.prefix || 1)
     Keys.prefix = nil

@@ -36,7 +36,12 @@ class RestTree
     result = self.request verb, url, body
     result = "#{result}\n" unless result =~ /\n\z/
     result.gsub! "\cm", ''
-    FileTree.insert_under result
+
+    # Quote unless begins with "|"
+    result.gsub! /^/, "| "
+    result.gsub! /^\| ( *[-+] )/, "\\1"
+
+    FileTree.insert_under result, :escape=>''
 
   end
 

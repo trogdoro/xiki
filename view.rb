@@ -39,9 +39,9 @@ class View
   end
 
   # Make current window larger.  Take into account that there might be other vertical windows
-  def self.enlarge
+  def self.enlarge height=nil
     default_height = 3
-    small = Keys.prefix || default_height
+    small = Keys.prefix || height || default_height
     small = default_height if small == :u
 
     small += 1
@@ -63,7 +63,7 @@ class View
       self.enlarge_internal :up, ws, selected, biggest, small
     end
     #     self.enlarge_internal :down, ws, selected, biggest, small
-
+    nil
   end
 
   def self.enlarge_internal direction, ws, selected, biggest, small
@@ -238,8 +238,8 @@ class View
       orig << [window_buffer(w), window_height(w)]
     end
     delete_other_windows
-    split_window_horizontally 32   # Width of bar
-    #     split_window_horizontally 45   # Width of bar
+    #     split_window_horizontally 32   # Width of bar
+    split_window_horizontally 45   # Width of bar
     other_window 1
     o = nil
     # For each window but last
@@ -282,8 +282,8 @@ class View
     if self.bar?
       buffer = selected_window
       select_window frame_first_window
-      enlarge_window (27 - window_width), true
-      #       enlarge_window (39 - window_width), true
+      #       enlarge_window (27 - window_width), true
+      enlarge_window (39 - window_width), true
       select_window buffer
     end
   end
@@ -771,7 +771,11 @@ class View
     self.add_dimension_option 'large', proc {View.dimensions_set(145, 58, 46, 22)}
     self.add_dimension_option 'medium', proc {View.dimensions_set(145, 50)}
     #     self.add_dimension_option 'small', proc {View.dimensions_set(80, 28, 50, 500)}
-    self.add_dimension_option 'small', proc {View.dimensions_set(89, 25, 49, 542)}
+
+    self.add_dimension_option 'tiny', proc {View.dimensions_set(89, 12, 479, 1717)}
+    self.add_dimension_option 'small', proc {View.dimensions_set(89, 24, 479, 1537)}
+    #     self.add_dimension_option 'small', proc {View.dimensions_set(89, 25, 49, 542)}   # Half of small? (for screencasts)
+
     #     self.add_dimension_option 'small', proc {View.dimensions_set(90, 28, 50, 500)}
     #     self.add_dimension_option 'small', proc {View.dimensions_set(80, 28)}
 

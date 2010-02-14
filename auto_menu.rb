@@ -6,10 +6,11 @@ module AutoMenu
       extend AutoMenu
 
       def self.auto_menu item=nil
-        "+ .reminders
-         + .backup
-           + .backup_code()
-         ".gsub(/^       /, '')
+        "
+        + .reminders
+        + .backup
+          + .backup_code()
+        "
       end
 
     - This will now return relevant substrings from Foo.auto_menu
@@ -17,7 +18,6 @@ module AutoMenu
   >
 
   def method_missing(func, *args, &block)
-
     # Exit if no auto_menu()
     unless self.respond_to?(:auto_menu)
       raise NoMethodError.new("function #{func} undefined")
@@ -25,9 +25,13 @@ module AutoMenu
 
     # Get whole menu, to take subset based on method
     orig_stdout = $stdout;  $stdout = StringIO.new
-    self.auto_menu  # Invoke auto_menu on extending class
-    tree = TextUtil.unindent($stdout.string)
+    output = self.auto_menu  # Invoke auto_menu on extending class
+    tree = $stdout.string
     $stdout = orig_stdout
+
+    tree = output if tree.blank?
+
+    tree = TextUtil.unindent(tree)
 
     # If they called menu(), print out top-level bullets
     if func == :menu

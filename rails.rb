@@ -29,16 +29,6 @@ class Rails
 
   end
 
-  def self.cr2 options={}
-    # Did you pass me my ancestors?
-    #puts "hhiiii"
-    # Get name from parent
-    parent = options[:ancestors][-1]
-    name = parent[/:(\w+)/, 1]
-    #insert name
-    puts Console.run("rails -s #{name}", :sync => true)
-  end
-
   def self.create dir, port=nil
     puts "rails -s #{dir}"
     puts Console.run("rails -s #{dir}", :sync => true)

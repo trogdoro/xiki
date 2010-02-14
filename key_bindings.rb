@@ -162,7 +162,7 @@ class KeyBindings
     Keys.enter_log_line { Code.enter_log_line }
     Keys.enter_log_time { Code.enter_log_time }
 
-    Keys.enter_menu { CodeTree.insert_menus }
+    #     Keys.enter_menu { CodeTree.insert_menus }   # Redundant with C-enter on blank line
     Keys.enter_name { Clipboard.paste }   # paste thing saved as name
     Keys.enter_outline { FileTree.enter_lines }   # in tree, enter methods or headings
     # Find new key for thisKeys.EO { DiffLog.enter_old }   # Enter Old: enter newly-deleted from last save
@@ -568,7 +568,8 @@ class KeyBindings
 
     # Unmap keys in modes that interfere
     el4r_lisp_eval("(require 'shell)")
-    define_key :shell_mode_map, kbd("C-d"), nil
+    define_key :shell_mode_map, kbd("C-d"), nil   # shell-mode etc. special C-d shortcuts over-ride xiki
+    define_key :objc_mode_map, kbd("C-d"), nil
     #     el4r_lisp_eval("(require 'php)")
     #     define_key :php_mode_map, kbd("C-d"), nil
     el4r_lisp_eval("(require 'dired)")

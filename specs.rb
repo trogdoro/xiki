@@ -2,6 +2,18 @@ class Specs
 
   class << self
     def method_missing(func, *args, &block)
+      bm = nil
+      if args[0].is_a?(Symbol)   # If symbol, use that as bookmark
+        bm = args.shift
+      else   # Climb tree one level
+        parent = FileTree.parent
+        bm = parent.sub(/./, '') if parent =~ /^:\w+$/
+      end
+
+      bm = (bm || 'm').to_sym
+
+      #       thing, opts = nil, thing if thing.is_a?(Hash)
+
       test, quote = args
 
       quote = test if args.size == 1 && test =~ /\n/   # If only 1 arg and it's multiline, it must be a quote
@@ -11,7 +23,7 @@ class Specs
         quote =~ /([\.\/].+):(\d+)/
 
         path, line = $1, $2
-        path.sub! /^\.\//, Bookmarks['$m']   # Fix relative paths
+        path.sub! /^\.\//, Bookmarks["$#{bm}"]   # Fix relative paths
 
         View.open path
         View.to_line line.to_i
@@ -21,13 +33,14 @@ class Specs
       clazz = func.to_s
       dir = 'models'   # Assume model
 
+
       dir = 'controllers' if clazz =~ /s$/   # If it ends with s, assume controller
       dir = 'helpers' if clazz =~ /_helpers$/
 
       path = "spec/unit/#{dir}/#{clazz}_spec.rb"
 
       if Keys.prefix_u   # If U prefix, jump to test
-        View.open "#{Bookmarks['$m']}#{path}"
+        View.open "#{Bookmarks["$#{bm}"]}#{path}"
         Keys.clear_prefix
         View.to_highest
         if test =~ /^#/
@@ -39,13 +52,14 @@ class Specs
         return
       end
 
-      txt = self.run_spec path, test
+      txt = self.run_spec path, test, bm
       txt.sub! /^F\n\n1\)\n/, ''   # Remove 1st few lines
       txt.sub! /^\.+\n\nFinished in.+\n\n/, ''   # Remove 1st when passing
       txt.sub! /^\(irb\):.+/m, ''   # Remove everything after (irb)
 
-      txt.gsub! /^#{Bookmarks['$m']}/m, './'   # Shorten the paths
+      txt.gsub! /^#{Bookmarks["$#{bm}"]}/m, './'   # Shorten the paths
 
+      txt.sub! /nil\n$/, ''
       # CodeTree.no_search_option +
       txt.gsub(/^/, '| ')
 
@@ -63,7 +77,7 @@ class Specs
     found
   end
 
-  def self.run_spec path, test
+  def self.run_spec path, test, bm
     params = [path]
 
     if test =~ /^#/   # If starts with #, find line number
@@ -74,7 +88,7 @@ class Specs
     end
 
     command = "Merb::Mailer.delivery_method=:test_send; Spec::Runner::CommandLine.run(Spec::Runner::OptionParser.parse(#{params.inspect}, $out_bufr, $out_bufr)); Merb::Mailer.delivery_method=nil"
-    RubyConsole[:ml].run(command)
+    RubyConsole[bm].run(command)
   end
 
   # Pastes in for the line in the clipboard:

@@ -366,6 +366,8 @@ class Search
       return
     end
 
+    View.to_after_bar if View.in_bar?
+
     # Search in bookmark
     FileTree.grep_with_hashes bm, match
   end
@@ -708,7 +710,7 @@ class Search
   def self.isearch_log
     match = self.stop
     self.to_start
-    return View.insert "Ol.line" if match.nil?
+    return View.insert("Ol.line") if match.nil?
     View.insert "Ol << \"#{match}: \#{#{match}.inspect}\""
   end
 

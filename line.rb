@@ -215,12 +215,12 @@ class Line
         0
       elsif prefix == 0
         0
-      else
+              #       else
+              #         prefix
+      elsif prefix > 0
+        prefix + 1
+      elsif prefix < 0
         prefix
-              #       else prefix > 0
-              #         prefix
-              #       elsif prefix < 0
-              #         prefix
       end
 
     Line.next times
