@@ -1603,7 +1603,7 @@ class FileTree
     @@one_view_in_bar_by_default = to
   end
 
-  def self.copy_path
+  def self.copy_path options={}
     Effects.blink(:what=>:line)
     # If no space at left, grab dir of file
     return Clipboard["0"] = View.file unless Line.matches(/^ /)
@@ -1627,7 +1627,7 @@ class FileTree
     dir =~ /\/$/ ? dir : "#{dir}/"
   end
 
-private
+  # private
   def self.search_dir_names(lines, regexp)
     result = []
     stack = [0]
@@ -1793,6 +1793,122 @@ private
   def self.dir? txt=nil
     txt ||= Line.value
     txt =~ /^[^,|\n]*\/$/
+  end
+
+  def self.delete_file
+    if ! Line[/^ +[+-] /]   # Error if not indented and ^/- /
+      View.beep
+      return View.message "You need to be in a file tree to delete."
+    end
+
+    dest_path = self.construct_path
+
+    executable = dest_path =~ /\/$/ ? "rmdir" : "rm"
+
+    command = "#{executable} \"#{dest_path}\""
+
+    answer = Keys.input :one_char=>true, :prompt=>"Are you sure you want to delete #{dest_path} ?"   #"
+
+    return unless answer =~ /y/i
+
+    result = Console.run command, :sync=>true
+    if ! result.blank?
+      View.beep
+      View.message "#{result}"
+      return
+    end
+
+    Line.delete
+    Move.to_line_text_beginning
+
+  end
+
+  def self.copy_to
+    prefix = Keys.prefix
+
+    if ! Line[/^ *[+-] /]   # Error if not indented and ^/- /
+      View.beep
+      return View.message "You need to be in a file tree to copy."
+    end
+
+    dest_path = self.construct_path
+    dest_dir = dest_path.sub(/(.+\/).*/, "\\1")
+
+    # TODO Pull off path if flie
+
+    orig = Location.new   # Save where we are
+    Location.to_spot
+    source_path = self.construct_path
+
+    if prefix == :u
+      Line.delete
+      # Adjust orig if in same file
+      orig.line = orig.line - 1 if orig.file == View.file && orig.line > View.line_number
+    end
+
+    orig.go   # Go back to where we were
+
+    stem = source_path.sub(/.+\/(.+)/, "\\1")   # Cut of path of source
+    indent = Line.indent
+
+    if dest_path =~ /\/$/   # If dest is a dir, insert junior
+      Line.next
+      indent << "  "
+    end
+
+    executable = prefix == :u ? "mv" : "cp -r"
+
+    dest_stem = ""
+    # Add ".1" if prefix is 1
+    if prefix == 1
+      stem.sub! '.', '.1.'
+      dest_stem = "/#{stem}"
+    end
+
+    source_path.sub! /\/$/, ''   # Remove slash if dir (so it copies dir, not contents)
+    command = "#{executable} \"#{source_path}\" \"#{dest_dir}#{dest_stem}\""
+
+    result = Console.run command, :sync=>true
+    if ! result.blank?   # If output isn't as expected, beep and show error
+      View.beep
+      View.message "#{result}"
+      return
+    end
+
+    Line.to_left
+    View.insert "#{indent}+ #{stem}\n", :dont_move=>true
+    Move.to_line_text_beginning
+  end
+
+  def self.rename_file
+
+    column = View.column
+
+    if ! Line[/^ *[+-] /]   # Error if not indented and ^/- /
+      View.beep
+      return View.message "TODO: implement renaming current file?"
+    end
+
+    # If dired mode, use wdired
+    return $el.wdired_change_to_wdired_mode if $el.elvar.major_mode.to_s == "dired-mode"
+
+    source_path = self.construct_path
+    is_dir = source_path =~ /\/$/
+    source_path.sub! /\/$/, ''
+
+    new_name = Keys.input :prompt=>"Rename #{source_path} to what?: "
+
+    dest_path = "#{source_path.sub(/(.+\/).+/, "\\1#{new_name}")}"
+
+    command = "mv \"#{source_path}\" \"#{dest_path}\""
+
+    Console.run command, :sync=>true
+
+    indent = Line.indent
+    Line.delete
+    View.insert((is_dir ? "#{indent}- #{new_name}/\n" : "#{indent}+ #{new_name}\n"), :dont_move=>true)
+
+    View.column = column
   end
 
   def self.open_as_upper where=false

@@ -306,8 +306,8 @@ class Notes
 
     if Styles.inverse
 
-      Styles.define :notes_h2, :fg => '555588', :bg => "111122"
-      Styles.define :notes_h2_pipe, :fg => '3b3b5e', :bg => "111122"
+      Styles.define :notes_h2, :fg => '555588', :bg => "222233"
+      Styles.define :notes_h2_pipe, :fg => '3b3b5e', :bg => "222233"
 
       Styles.define :notes_exclamation,  # Green bold text
         :face => 'arial black', :size => "0",
@@ -316,7 +316,7 @@ class Notes
 
       #       Styles.define :notes_h1,
       #         :fg => 'ffffff', :bg => "3b3b5e"
-      Styles.define :notes_h1_pipe, :fg => '9191b3', :bg => "3b3b5e"
+      #       Styles.define :notes_h1_pipe, :fg => '9191b3', :bg => "3b3b5e"
     else
 
       Styles.define :notes_exclamation,  # Green bold text

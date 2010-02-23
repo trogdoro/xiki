@@ -148,13 +148,24 @@ class Search
     Location.go( self.match )
   end
 
-  def self.just_increment
+  def self.just_increment options={}
+
     self.stop
     match = self.match
     View.delete(Search.left, Search.right)
 
     orig = View.cursor
-    View.insert(match.next)
+
+    result =
+      if options[:decrement]
+        match =~ /[a-z]/i ?
+          (match[0] - 1) :
+          (match.to_i - 1).to_s
+      else
+        match.next
+      end
+
+    View.insert(result)
     View.cursor = orig
   end
 
@@ -276,6 +287,12 @@ class Search
 
   def self.tree_grep
     dir = Keys.bookmark_as_path   # Get path (from bookmark)
+
+    if dir == :space   # If space, search in buffers
+      self.find_in_buffers Keys.input(:prompt=>"Search all open files for: ")
+      return
+    end
+
     input = case Keys.prefix
       when :u;  Clipboard.get
       when 1;  Clipboard.get("1")
@@ -895,6 +912,10 @@ class Search
       Effects.blink(:what => :line)
     elsif path == :right
       View.layout_right 1
+    elsif path == :next
+      View.next
+    elsif path == :previous
+      View.previous
     else
       View.open Bookmarks[path]
     end
@@ -929,7 +950,7 @@ class Search
       Search.outline_search
       # Up for grabs
     else
-      Search.isearch_find_in_buffers(:current_only => true)
+      Search.isearch_find_in_buffers(:current_only=>true)
     end
   end
 

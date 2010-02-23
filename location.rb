@@ -4,6 +4,16 @@ class Location
   extend ElMixin
   include ElMixin
 
+  @sample_usage = "
+    orig = Location.new   # Save where we are
+    Line.next 4;  View.open '/tmp'   # Go Somewhere else
+    orig.go   # Go back to where we were
+  "
+
+  attr_writer :line
+  attr_writer :file
+  attr_writer :column
+
   @@spots = {}
 
   # Save file and location

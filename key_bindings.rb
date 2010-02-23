@@ -217,15 +217,14 @@ class KeyBindings
     Keys.do_count_matches {  View.count_matches }
     Keys.do_copy_next { Files.copy }   # copy file to next view
     Keys.do_compare_one { Repository.diff }   # compare one revision with previous revision
+    Keys.do_clean_quotes { Files.do_clean_quotes }
     Keys.do_compare_repository { Repository.diff_dir }
     Keys.do_compare_saved { DiffLog.compare_with_saved }
-    Keys.do_clean_trailing {
-      with(:save_excursion) do
-        beginning_of_buffer;  replace_string(char_to_string(13), "")
-        beginning_of_buffer;  replace_regexp(/ +$/, "")
-      end
-    }
+
+    Keys.do_copy_to { FileTree.copy_to }
+
     Keys.do_compare_views { ediff_buffers( window_buffer(nth(0, window_list)), window_buffer(nth(1, window_list))) }   # compare buffers in first two views
+    Keys.do_clean_whitespace { View.gsub!(/ +$/, "") }   # Deletes trailing whitespace
     Keys.DC1 { Clipboard.diff_1_and_2 }   # Compare contents of clipboards "1" and "2"
     # D: defined above - mapped to what C-d does by default
     Keys.do_expand { dabbrev_expand nil }   # expand abbreviation
@@ -235,7 +234,8 @@ class KeyBindings
     Keys.do_indent { Code.indent_to }
     Keys.do_junior { FileTree.move_dir_to_junior }   # Move a dir to next line, and indent
     Keys.do_kill_all { View.kill_all }   # kill all text in buffer
-    Keys.do_kill_filter { Search.kill_filter }
+    Keys.do_kill_file { FileTree.delete_file }
+    Keys.do_kill_matching { Search.kill_filter }
     Keys.do_kill_paragraph { View.kill_paragraph }   # kill all text in buffer
     Keys.do_kill_rest { CodeTree.kill_rest }   # kill adjacent lines at same indent as this one
     Keys.do_kill_siblings { CodeTree.kill_siblings }   # kill adjacent lines at same indent as this one
@@ -245,7 +245,7 @@ class KeyBindings
     Keys.do_last_command { Console.do_last_command }
     Keys.do_line_duplicate { Line.duplicate_line }
     #     Keys.do_load_emacs { App.load_emacs }   # *
-    Keys.do_load_file { Files.do_load_file }
+    Keys.do_load_file { Files.do_load_file }   # U prefix will auto-update / auto-refresh to relflect changes
     Keys.do_lines_having {   # delete lines matching a regex
       unless elvar.current_prefix_arg
         delete_matching_lines( Keys.input(:prompt => "Delete lines having: ") )
@@ -265,7 +265,7 @@ class KeyBindings
     Keys.do_name_buffer { Buffers.rename }
     Keys.do_notes_colors { Notes.apply_styles }
     Keys.do_number_enter { Incrementer.enter }
-    Keys.do_name_files { wdired_change_to_wdired_mode }
+    Keys.do_name_files { FileTree.rename_file }
     Keys.do_number_increment { Incrementer.increment }
     Keys.do_next_paragraph { Code.do_next_paragraph }   # Move line to start of next paragraph
     Keys.do_number_start { Incrementer.start }
@@ -411,6 +411,7 @@ class KeyBindings
     Keys.search_have_files { Search.isearch_move_to "$f" }
     Keys.search_have_javascript { Search.isearch_log_javascript }
     Keys.search_have_line { Search.have_line }   # copy line back to search start
+    Keys.search_have_name { Search.just_name }
     Keys.search_have_output { Search.isearch_log }
     Keys.search_have_paragraph { Search.have_paragraph }
     #     Keys.search_have_rspec { Specs.insert_in_todo }
@@ -430,17 +431,17 @@ class KeyBindings
     Keys.search_just_files { Search.isearch_restart "$f" }   # isearch for this string in $f
     Keys.search_just_have { Search.just_select }   # select match
     Keys.search_just_lowercase { Search.downcase }
-    Keys.search_just_macro { Search.just_marker }
+    Keys.search_just_marker { Search.just_marker }
     #     Keys.search_just_macro { Search.just_macro }
-    Keys.search_just_name { Search.just_name }
+    Keys.search_just_next { Search.isearch_restart :next }
     Keys.search_just_open { Search.isearch_open }
-    Keys.search_just_plus { Search.just_increment }   # select match
+    Keys.search_just_previous { Search.isearch_restart :previous }
+    Keys.search_just_query { Search.isearch_query_replace :match }   # replace
     Keys.search_just_right { Search.isearch_restart :right }   # replace
     #     Keys.search_just_replace { Search.isearch_query_replace :match }   # replace
+    Keys.search_just_search { Search.isearch_just_search }   # Add "##search" line in tree for match
     Keys.search_just_todo { Search.isearch_restart "$t" }   # isearch for this string in $t
     # Keys.search_just_tag { Search.isearch_just_tag }   # select match
-    Keys.search_just_query { Search.isearch_query_replace :match }   # replace
-    Keys.search_just_search { Search.isearch_just_search }   # Add "##search" line in tree for match
 
     Keys.search_just_uppercase { Search.upcase }   # make match be snake case
     Keys.search_just_variable { Search.isearch_just_surround_with_char '#{', '}' }
@@ -470,6 +471,9 @@ class KeyBindings
     define_key(:isearch_mode_map, kbd("C-'")) { Search.isearch_just_surround_with_char "'" }
     define_key(:isearch_mode_map, kbd("C-j C-'")) { Search.isearch_just_surround_with_char '"' }
     define_key(:isearch_mode_map, kbd("C-j C-/")) { Search.isearch_just_comment }
+    define_key(:isearch_mode_map, kbd("C-j C-/")) { Search.isearch_just_comment }
+    define_key(:isearch_mode_map, kbd("C-j C-=")) { Search.just_increment }
+    define_key(:isearch_mode_map, kbd("C-j C--")) { Search.just_increment(:decrement=>true) }
 
     define_key(:isearch_mode_map, kbd("C-9")) { Search.isearch_just_surround_with_char '(', ')' }
     define_key(:isearch_mode_map, kbd("C-j C-9")) { Search.isearch_just_surround_with_char '[', ']'}

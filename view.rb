@@ -970,5 +970,12 @@ class View
     end
   end
 
+  def self.gsub! from, to
+    with(:save_excursion) do
+      View.to_highest
+      replace_regexp(from, to)
+    end
+  end
+
 end
 View.init

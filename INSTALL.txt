@@ -19,7 +19,7 @@ This file tells how to install Xiki.  See README.txt for a description of Xiki.
   - Option 1: Download as zip
     - Click on the 'download' button
   - Option 2: Clone from git
-    - If you want to do this you probably already know how:)
+    - git clone git@github.com:trogdoro/xiki.git
 
 - 3: Require Xiki in EmacsRuby's config
   - Sample configuration

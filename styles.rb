@@ -129,9 +129,14 @@ class Styles
 
   def self.use_xiki_color_scheme_black
     set_face_background :trailing_whitespace, "#333333"
+    #     Styles.define :default, :bg=>'2A211C', :fg=>'ccbbaa'
+    #     Styles.define :default, :bg=>'1c1712', :fg=>'ccbbaa'
     Styles.define :default, :bg=>'000000', :fg=>'ffffff'
+    #     Styles.define :default, :bg=>'000000', :fg=>'cccccc'
     Styles.define :cursor, :bg=>'ffffff', :fg=>'000000'
-    Styles.define :fringe, :bg=>'000000', :fg=>'666666'
+    Styles.define :fringe, :bg=>'111111', :fg=>'666666'
+    #     Styles.define :fringe, :bg=>'2A211C', :fg=>'666666'
+    #     Styles.define :fringe, :bg=>'000000', :fg=>'666666'
 
     Styles.define :mode_line, :fg=>'ffffff', :bg=>'338833', :border=>['44bb44', -2]
     Styles.define :mode_line_inactive, :fg=>'ffffff', :bg=>'999999', :border=>['bbbbbb', -2]

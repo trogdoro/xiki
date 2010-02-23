@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 class Files
   extend ElMixin
 
@@ -189,7 +190,12 @@ class Files
     return if ! Keys.prefix_u
 
     View.message $el.auto_revert_mode ? "Enabled Auto-revert" : "Disabled Auto-revert"
+  end
 
+  def self.do_clean_quotes
+    with(:save_excursion) do
+      $el.clean_crazy_quotes
+    end
   end
 
 end
