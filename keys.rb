@@ -492,6 +492,9 @@ class Keys
     elsif ['left', 'right', 'up', 'down', ].member?(ch_initial)
       return [ch_initial.to_sym, 0]   # Arbitrary indicator for arrow keys
 
+    elsif ch_initial == "C-return"
+      return [:control_return, 13]
+
     elsif ch_initial == "return"
       return [:return, 13]
 

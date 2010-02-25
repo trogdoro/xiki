@@ -1,3 +1,5 @@
+require "ruby_console"
+
 class Rails
   extend ElMixin
 

@@ -1,3 +1,5 @@
+require "line_launcher"
+
 class Merb
 
   def self.menu name=nil, port=nil

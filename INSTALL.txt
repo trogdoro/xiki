@@ -14,7 +14,7 @@ This file tells how to install Xiki.  See README.txt for a description of Xiki.
       ruby -S el4r-rctool -p
       ruby -S el4r-rctool -i
 
-- 2: Download Xiki from github
+- 2: Get Xiki from github
   - Go to: http://github.com/trogdoro/xiki
   - Option 1: Download as zip
     - Click on the 'download' button
@@ -23,7 +23,7 @@ This file tells how to install Xiki.  See README.txt for a description of Xiki.
 
 - 3: Require Xiki in EmacsRuby's config
   - Sample configuration
-    - /Users/hasselhoff/.el4r/
+    - /home/hasselhoff/.el4r/
       - init.rb
         | $LOAD_PATH.unshift "/projects/xiki"
         | require 'xiki'
@@ -39,6 +39,6 @@ This file tells how to install Xiki.  See README.txt for a description of Xiki.
 
 - If you got partially through the load
   - you will be able to use these keys to trouble-shoot:
-    - M-l to reload
+    - M-l to reload xiki and .emacs
     - M-e to look at the latest error
 

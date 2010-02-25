@@ -625,7 +625,7 @@ class FileTree
         self.dir
       end
 
-    when :return, "\C-m", :control_period, :right   # If C-., go in but don't collapse siblings
+    when :control_return, :return, "\C-m", :control_period, :right   # If C-., go in but don't collapse siblings
       Keys.clear_prefix
       LineLauncher.launch
     when "\t"   # If tab, hide siblings and go in
