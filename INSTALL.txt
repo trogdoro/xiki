@@ -43,6 +43,7 @@ This file tells how to install Xiki.  See README.txt for a description of Xiki.
 - If you got partially through the load
   - you will be able to use these keys to trouble-shoot:
     - M-l to reload xiki and .emacs
+      - also use this when you see "el4r-instance is dead"
     - M-e to look at the latest error
 
 - If you get a "can't find header dir for ruby" error

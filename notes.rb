@@ -218,7 +218,7 @@ class Notes
         :notes_h1  => "666699",
         :notes_h1r => "661111",   # | r This will be red
         :notes_h1o => "884411",   # | o This will be orange
-        :notes_h1y => "aa9933",
+        :notes_h1y => "887711",
         :notes_h1e => "336633",
         :notes_h1g => "336633",
         :notes_h1b => "666699",
@@ -539,8 +539,8 @@ class Notes
   end
 
   # Returns an instance of BlockNotes representing the block the point is currently in
-  def self.get_block
-    left, after_header, right = View.block_positions "^|\\( \\|$\\)"
+  def self.get_block regex="^|\\( \\|$\\)"
+    left, after_header, right = View.block_positions regex
     NotesBlock.new(left, after_header, right)
   end
 

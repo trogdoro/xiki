@@ -482,8 +482,8 @@ class View
     prefix = Keys.prefix
     #     prefix = options[:prefix]
     case prefix
-    when 0   # Do paragraph (aka "block" for some reason)
-      left, right = Block.value
+    when 0   # Do paragraph
+      left, right = View.paragraph(:bounds=>true)
     when 1..6
       left = Line.left
       right = $el.point_at_bol(prefix+1)

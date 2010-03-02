@@ -316,7 +316,7 @@ class FileTree
     #Styles.apply('^[ -]*\\([ a-zA-Z0-9\/_\.$-]*\\w/\\)$', nil, :ls_dir)  # Most dirs
     Styles.apply('^ *\\(//?\\)$', nil, :ls_dir)  # /
     Styles.apply('^ *\\(\./\\)$', nil, :ls_dir)  # ./
-    Styles.apply('^ *[+-] \\(##.+/\\)$', nil, :ls_search)  # ##_/
+    Styles.apply('^ *[+-] \\(##.*/\\)$', nil, :ls_search)  # ##_/
     Styles.apply('^ *[+-] \\(\*\*.+/\\)$', nil, :ls_search)  # ##_/
 
   end
@@ -1882,6 +1882,9 @@ class FileTree
 
   def self.rename_file
 
+    # If dired mode, use wdired
+    return $el.wdired_change_to_wdired_mode if $el.elvar.major_mode.to_s == "dired-mode"
+
     column = View.column
 
     if ! Line[/^ *[+-] /]   # Error if not indented and ^/- /
@@ -1889,8 +1892,6 @@ class FileTree
       return View.message "TODO: implement renaming current file?"
     end
 
-    # If dired mode, use wdired
-    return $el.wdired_change_to_wdired_mode if $el.elvar.major_mode.to_s == "dired-mode"
 
     source_path = self.construct_path
     is_dir = source_path =~ /\/$/

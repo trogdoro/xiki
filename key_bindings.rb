@@ -240,7 +240,7 @@ class KeyBindings
     Keys.do_kill_rest { CodeTree.kill_rest }   # kill adjacent lines at same indent as this one
     Keys.do_kill_siblings { CodeTree.kill_siblings }   # kill adjacent lines at same indent as this one
     Keys.do_kill_thing { delete_region(* bounds_of_thing_at_point( :sexp )) }   # kill adjacent lines at same indent as this one
-    Keys.do_lines_arbitrary { Code.randomize_lines }
+    Keys.do_lines_arbitrary { Code.randomize_lines }   # Shuffle lines
     Keys.do_load_browser { Firefox.reload }
     Keys.do_last_command { Console.do_last_command }
     Keys.do_line_duplicate { Line.duplicate_line }

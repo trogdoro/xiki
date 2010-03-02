@@ -63,7 +63,7 @@ class Code
       when :u   # Load file in emacsruby
         return self.load_this_file
       when 8   # Put into file and run in console
-        File.open("/tmp/tmp.rb", "w") { |f| f << Notes.get_block.text }
+        File.open("/tmp/tmp.rb", "w") { |f| f << Notes.get_block("^|").text }
         return Console.run "ruby -I. /tmp/tmp.rb", :dir=>View.dir
       when 9   # Pass whole file as ruby
         return Console.run("ruby #{View.file_name}", :buffer => "*console ruby")
@@ -103,7 +103,6 @@ class Code
 
     orig.go   # Move cursor back to where we started
     ended_up.go   # Go to where we ended up
-
   end
 
   def self.run_in_rails_console

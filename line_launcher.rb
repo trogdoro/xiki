@@ -415,6 +415,12 @@ class LineLauncher
       CodeTree.launch :path=>list
     end
 
+    # HtmlTree
+    condition_proc = proc {|list| HtmlTree.handles? list}
+    LineLauncher.add condition_proc do |list|
+      HtmlTree.launch :path=>list
+    end
+
   end
 
   def self.file_and_mode_hooks
