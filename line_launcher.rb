@@ -415,10 +415,10 @@ class LineLauncher
       CodeTree.launch :path=>list
     end
 
-    # HtmlTree
-    condition_proc = proc {|list| HtmlTree.handles? list}
+    # UrlTree
+    condition_proc = proc {|list| UrlTree.handles? list}
     LineLauncher.add condition_proc do |list|
-      HtmlTree.launch :path=>list
+      UrlTree.launch :path=>list
     end
 
   end
