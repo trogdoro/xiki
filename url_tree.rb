@@ -1,4 +1,4 @@
-class RestTree
+class UrlTree
   def self.handles? list
     list.first =~ /^http:\/\//
   end
