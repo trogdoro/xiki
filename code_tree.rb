@@ -1,4 +1,5 @@
 require 'line'
+require 'ol'
 
 class CodeTree
   extend ElMixin
@@ -124,7 +125,7 @@ class CodeTree
     ""
   end
 
-  def self.display_menu menu
+  def self.display_menu menu, options={}
     View.bar if Keys.prefix_u?
 
     dir = View.dir
@@ -138,7 +139,7 @@ class CodeTree
 
     insert "#{menu}"
     open_line 1
-    CodeTree.launch
+    CodeTree.launch options
   end
 
   def self.open_menu
@@ -254,10 +255,14 @@ class CodeTree
       return Line.without_label(:line=>path[-1]).sub(/\/$/, '')
     end
 
-
     # Extract any params from after method
     method_with_params, params = metho.match(/(\w+\??)(.*)/)[1..2]
     params.sub!(/^\((.*)\)$/, "\\1")  # Remove parens if they're there
+
+    # Surround with curly brackets if it's a hash
+    if params =~ /=>/ and ! params !~ /\{/
+      params = " {#{params.strip}}"
+    end
 
     # If last parameter was |..., make it be all the lines
     if data.first =~ /^ *\|/
@@ -275,7 +280,6 @@ class CodeTree
     # TODO Get rid of comma if there is one
     params.sub!(/^, /, '')
     "#{clazz}.#{method_with_params}(#{params})"
-
   end
 
   def self.extract_class l

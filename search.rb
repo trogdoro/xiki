@@ -170,8 +170,7 @@ class Search
   end
 
   def self.jump_to_difflog
-    self.stop
-    match = self.match
+    match = self.stop
     DiffLog.open
     View.to_bottom
 
@@ -509,13 +508,11 @@ class Search
   end
 
   # During isearch, open most recently edited file with the search string in its name
-
   def self.isearch_to
 
     match = self.stop
 
     if match.nil?   # If nothing searched for yet
-
       Search.isearch_restart "$t", :restart=>true
 
     else
@@ -539,7 +536,7 @@ class Search
     match = "#{match}."
     snake = "#{snake}."
     # For each file edited
-    found = elvar.editedhistory_history.to_a.find do |o|
+    found = (Files.edited_array + Files.history_array).find do |o|
 
       next if o =~ /.notes$/  # Ignore notes files
       next if o =~ /:/  # Ignore files with colons (tramp)
@@ -584,7 +581,9 @@ class Search
     Line.start
   end
 
-  def self.kill_filter
+  def self.kill_filter options={}
+    # TODO: Get options[:kill_matching]=>true to delete matching
+    # - and map to Keys.do_kill_matching
     Line.start
     left = point
     re_search_forward "^$", nil, 1
@@ -928,6 +927,7 @@ class Search
   end
 
   def self.isearch txt, options={}
+    txt ||= ""   # Searchig for nil causes error
     isearch_resume txt, (options[:regex] ?true:nil), nil, (! options[:reverse]), txt, true
     isearch_update
   end

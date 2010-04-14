@@ -63,3 +63,9 @@ class Xiki
   end
 
 end
+
+# unless RubyConsole[:x]
+# Ol.line
+#   RubyConsole.register(:x, "cd #{Bookmarks['$x']}; irb -r 'spec'")
+#   #   RubyConsole[:x].run("gem 'rspec'; require 'spec'\n")
+# end

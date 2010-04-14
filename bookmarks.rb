@@ -1,5 +1,6 @@
 require 'location'
 require 'keys'
+require 'yaml'
 
 class Bookmarks
   extend ElMixin
@@ -13,6 +14,20 @@ class Bookmarks
   >
 
   def self.save arg=nil
+
+    in_a_file_tree = FileTree.handles? rescue nil
+
+    # If we're in a notes file, and in a file tree
+    if View.file =~ /\.notes$/ && in_a_file_tree && ! Line[/^ *\|/]
+      path = FileTree.construct_path
+      keys = Keys.input(:timed=>true, :prompt=>"Name of bookmark for #{path.sub(/.+\/(.)/, "\\1")}: ") || "0"
+      with(:save_window_excursion) do
+        $el.find_file path
+        self.set keys
+      end
+      return
+    end
+
     # If arg is a symbol, use it as the prefix
     prefix = ""
     if arg && arg.type == Symbol
@@ -22,7 +37,7 @@ class Bookmarks
       return
     end
     # Use input from user or "default"
-    keys = Keys.input(:timed => true) || "0"
+    keys = Keys.input(:timed=>true, :prompt=>"Name of bookmark for #{View.file_name}: ") || "0"
     self.set "#{prefix}#{keys}"
 
     # Append to bookmark file

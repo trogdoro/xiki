@@ -4,6 +4,13 @@ class Ol
   @@last = [Time.now - 1000]
   @@timed_last = Time.now
 
+  # For when the caller constructs what to log on its own
+  def self.log_directly txt, line, name=nil
+    path = name ? "/tmp/#{name}_ol.notes" : self.file_path
+    self.write_to_file path, txt
+    self.write_to_file_lines path, line
+  end
+
   def self.log txt, l=nil, name=nil, time=nil
     path = name ? "/tmp/#{name}_ol.notes" : self.file_path
 

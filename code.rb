@@ -157,7 +157,6 @@ class Code
     exception = nil
     begin   # Run code
       # Good place to debug
-      # Ol << "code: #{code.inspect}"
       returned = el4r_ruby_eval(code)
     rescue Exception => e
       exception = e
@@ -174,7 +173,6 @@ class Code
   def self.open_related_rspec
     if View.file =~ /\/(app|spec)\//   # If normal specs
       if View.file =~ /\/app\//   # If in file, open corresponding spec
-
         if Keys.prefix_u   # If C-u, store method
           orig = View.cursor
           Move.to_end
@@ -194,7 +192,6 @@ class Code
         end
 
       else   # Otherwise, open corresponding file
-
         if Keys.prefix_u   # If C-u, store method
           orig = View.cursor
           Move.to_end
@@ -204,6 +201,7 @@ class Code
         end
 
         View.open View.file.sub('/spec/unit/', '/app/').sub(/\_spec.rb/, '.rb')
+        View.open View.file.sub('/spec/', '/app/').sub(/\_spec.rb/, '.rb')
 
         if method   # Jump to method if they were on def... line
           Keys.clear_prefix
@@ -240,9 +238,7 @@ class Code
       Specs.run_spec_in_place
       return
     elsif prefix == :u
-      xiki ?
-        (args << "spec") :
-        (args << 'spec/unit' << '-p' << '**/*.rb')
+      args << "spec"
 
       if View.mode == :shell_mode   # If already in shell, don't change dir
         dir = nil
@@ -253,7 +249,7 @@ class Code
           dir, spec = View.file.match(/(.+)\/(app\/.+)/)[1,2]
         end
       end
-      # /projects/memorize/memorize.merb/app/models/main.rb
+
     elsif View.file !~ /_spec\.rb$/   # If not in an rspec file, delegate to: do_related_rspec
       orig = Location.new
       self.do_related_rspec
@@ -325,13 +321,12 @@ class Code
     else
       args = args.map{|o| o =~ /^"/ ? o : "\"#{o}\"" }.join(",\n")   # Only add quotes if not already there
       command = "Spec::Runner::CommandLine.run(Spec::Runner::OptionParser.parse([#{args}], $stderr, $stdout))"
-      command = "#{extra}p :reload; #{command}"
+      # Rails version (commented out - it's currently hard-coded to use merb)
+      #       command = "#{extra}p :reload; reload!; #{command}"
     end
     View.insert command
     Console.enter
-    #     View.to_highest
     View.to 1
-    #       Console.run "spec #{spec}#{test}", :dir=>dir, :buffer=>buffer, :reuse_buffer=>true
 
     orig.go unless orig.nil? || View.index == orig_index   # Go back unless in same view
   end
@@ -581,3 +576,4 @@ class Code
     return false   # Don't exit
   end
 end
+

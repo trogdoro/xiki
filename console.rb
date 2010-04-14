@@ -9,6 +9,16 @@ class Console
     - Synchronously: Console.run("ls", :dir => "/etc", :sync => true)
   ]
 
+  @@log = File.expand_path("~/.emacs.d/consolelog.notes")
+
+  def self.menu
+    ['.log']
+  end
+
+  def self.log
+    View.open @@log
+  end
+
   # Run the command in a console
   def self.run command, options={}
 
@@ -94,6 +104,7 @@ class Console
   end
 
   def self.to_shell_buffer dir=nil, options={}
+
     if dir
       dir = "#{dir}/" unless dir =~ /\/$/
       pattern = /^\*console #{Regexp.quote(dir)}(<|$)/
@@ -102,7 +113,6 @@ class Console
       return true if View.mode == :shell_mode
       pattern = /^\*console/
     end
-
     return true if View.name =~ pattern   # If already there, do nothing
 
     w = View.list.find{|w| buffer_name(window_buffer(w)) =~ pattern}
@@ -110,7 +120,6 @@ class Console
       View.to_window(w)
       return true
     end
-
     # Wasn't found in visible, so don't create it if so instructed
     return false   if options[:no_create]
 
@@ -169,18 +178,20 @@ class Console
     View.insert command
     Console.enter
 
+    self.append_log "#{command}", dir, '$ '
+
     orig.go unless orig_view == View.index
   end
 
   # Mapped to !! or ! in LineLauncher
   def self.launch options={}
     line = Line.without_label :leave_indent=>true
-
     # If indented, check whether file tree, extracting if yes
     if line =~ /^\s+!/
       orig = View.cursor
       path = FileTree.construct_path(:list=>true)
       if path[0] =~ /@/   # If there's a @, it's remote
+        self.append_log path[1], path[0]
         return Remote.command path
       end
       if FileTree.handles?(path)
@@ -194,6 +205,7 @@ class Console
     line =~ / *(.*?)!+ ?(.+)/
     dir ||= $1 unless $1.empty?
     command = $2
+
     if options[:sync]
       output = Console.run command, :dir=>dir, :sync=>true
       output.sub!(/\A\z/, "\n")   # Add linebreak if blank
@@ -202,12 +214,29 @@ class Console
       FileTree.insert_quoted_and_search output
     else
       View.handle_bar
-      Console.run command, :dir=>dir#, :buffer=>"*console #{dir}"
+      Console.run command, :dir=>dir  #, :buffer=>"*console #{dir}"
     end
+
+    self.append_log command, dir, '! '
+
+  end
+
+  def self.append_log command, dir, prefix=''
+    if dir.nil?
+      dir ||= View.dir
+      dir = "#{dir}/" if dir !~ /\/$/
+    end
+
+    command = command.dup
+    command.gsub!(/^/, prefix) unless command =~ /^ *!/
+    command.gsub!(/^/, '  ')
+
+    txt = "- #{dir}\n#{command}\n"
+    File.open(@@log, "a") { |f| f << txt } rescue nil
   end
 
   def self.ssh_line path
-    path.sub! /^\//, ''
+    path = path.sub /^\//, ''
     path.sub! /\/$/, ''
 
     if path =~ /(.+):(.+)/   # If port exists (colon)

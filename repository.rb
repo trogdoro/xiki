@@ -59,6 +59,7 @@ class Repository
       + .diff/
       + .diff :expand/
       + .push
+      + .pull
       + .log ""/
       + .log_by_file/
       + .status/
@@ -151,7 +152,8 @@ class Repository
 
     # Insert codetree
     CodeTree.display_menu(
-      "- Repository.menu/\n  - project - #{repos}\n    - .diff/\n      - #{relative}"
+      "- Repository.menu/\n  - project - #{repos}\n    - .diff/\n      - #{relative}",
+      :no_search=>true
       )
   end
 
@@ -404,6 +406,12 @@ class Repository
   def self.push project
     dir = self.extract_dir project
     Console.run "git push origin master", :dir=>dir
+    nil
+  end
+
+  def self.pull project
+    dir = self.extract_dir project
+    Console.run "git pull origin master", :dir=>dir
     nil
   end
 

@@ -29,8 +29,7 @@ module AutoMenu
     tree = $stdout.string
     $stdout = orig_stdout
 
-    tree = output if tree.blank?
-
+    tree = output if (tree||"").empty?
     tree = TextUtil.unindent(tree)
 
     # If they called menu(), print out top-level bullets

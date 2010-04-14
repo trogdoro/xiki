@@ -1,4 +1,4 @@
-gem 'jchris-couchrest'
+gem 'couchrest'
 require 'couchrest'
 
 class CouchDb

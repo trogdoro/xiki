@@ -9,21 +9,27 @@ require 'socket'
 =end
 
 class Firefox
+
+  @@log_unique_token = "aa"
+
   def self.menu
-    puts "
-      .reload
-      .exec \"alert('hey')\"
-      .exec \"create()\"
-      "
+    [ '.reload',
+      '.exec "alert(\'hey\')"',
+      '.exec "create()"'
+    ]
+  end
+
+  def self.last_stack_trace
+    Firefox.value('window.content.tmp_stack')
   end
 
   def self.reload
     Code.open_log_view if Keys.prefix_u && View.buffer_visible?('*output - tail of #{Ol.file_path}')
-    prefix = Keys.prefix_n
+    prefix = Keys.prefix_n :clear=>true
     if prefix   # If numeric prefix, go to that tab
       tab = prefix - 1
       if tab == -1   # If 0, close tab
-        Firefox.exec "getWindows()[0].getBrowser().removeCurrentTab();"
+        self.close_tab
       else
         self.exec "getWindows()[0].getBrowser().tabContainer.selectedIndex = #{tab};"
       end
@@ -31,6 +37,13 @@ class Firefox
       self.exec "getWindows()[0].getBrowser().reload()"
     end
 
+  end
+
+  def self.close_tab
+    times = Keys.prefix_n :clear=>true
+    (times||1).times do
+      Firefox.exec "getWindows()[0].getBrowser().removeCurrentTab();"
+    end
   end
 
   # Called internally by others
@@ -152,10 +165,32 @@ class Firefox
     File.open("/tmp/tmp.html", "w") { |f| f << txt }
 
     # Then load in browser (or reload)
-    Firefox.value('document.location') == "file:///tmp/tmp.html" ?
+    Firefox.value('document.location.toString()') == "file:///tmp/tmp.html" ?
       Firefox.reload :
       $el.browse_url("file:///tmp/tmp.html")
 
+  end
+
+  def self.enter_log_javascript_line
+
+    $el.open_line(1) unless Line.blank?
+
+    if Keys.prefix_u
+      View.insert "p_stack();"
+    elsif Keys.prefix_uu
+
+      txt = Firefox.value('window.content.tmp_stack')
+      matches = txt.scan(/\$pu.+?:\d+/)
+
+      txts = matches.map{|o| "- #{o.gsub(/.+\//, '')}"}
+      paths = matches.map{|o| Bookmarks[o]}
+
+    else
+      View.insert "p('js#{@@log_unique_token}');"
+      @@log_unique_token.next!
+    end
+
+    Line.to_left
   end
 
 end

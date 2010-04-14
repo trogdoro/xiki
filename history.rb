@@ -192,9 +192,8 @@ class History
     bm = Bookmarks['$bak']
     unless bm.any?   # If no bookmark, just show error
       View.beep
-      return "Error: create a bookmark named 'bak' first, in a dir where you backups will go."
+      return View.message("Error: create a bookmark named 'bak' first, in a dir where you backups will go.")
     end
-
     # Copy file
     $el.copy_file View.file, "#{bm}#{View.file_name} #{Time.now.strftime('%Y-%m-%d %H-%M')}"
   end

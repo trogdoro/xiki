@@ -10,18 +10,17 @@ class ControlTab
 
   # Primary method.  Is mapped to C-tab and does the switching.
   def self.go
-
     prefix = Keys.prefix
 
-    if prefix == 0   # If C-0 prefix, just burry buffer
-      $el.bury_buffer
-
-      # Store original order, and windows originally opened
-      @@original = buffer_list.to_a   # Hide evidence that we were on top (lest it restore us)
-      @@open_windows = window_list.collect {|b| window_buffer b}
-      @@consider_test = lambda{|b| ! buffer_name(b)[/Minibuf/] }
-      return
-    end
+    # Commented out for now, so we can use 0 for .js files - think of other plan for these keys so this can be brought back
+    #     if prefix == 0   # If C-0 prefix, just burry buffer
+    #       $el.bury_buffer
+    #       # Store original order, and windows originally opened
+    #       @@original = buffer_list.to_a   # Hide evidence that we were on top (lest it restore us)
+    #       @@open_windows = window_list.collect {|b| window_buffer b}
+    #       @@consider_test = lambda{|b| ! buffer_name(b)[/Minibuf/] }
+    #       return
+    #     end
 
     first_tab_in_sequence = Keys.before_last !~ /\btab$/   # If first tab, clear edited
 
@@ -71,6 +70,8 @@ class ControlTab
         @@consider_test = lambda{|b| buffer_file_name(b) =~ /\/app\/controllers\//}
       when 9   # test
         @@consider_test = lambda{|b| buffer_file_name(b) =~ /_spec\.rb$/}
+      when 0   # js
+        @@consider_test = lambda{|b| buffer_file_name(b) =~ /\.js$/}
       else
 
 

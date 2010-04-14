@@ -11,6 +11,7 @@ This file tells how to install Xiki.  See README.txt for a description of Xiki.
       tar xzf el4r-1.0.4.tar.gz
       cd el4r-1.0.4
       ruby setup.rb
+      cd bin
       ruby -S el4r-rctool -p
       ruby -S el4r-rctool -i
 
@@ -31,7 +32,7 @@ This file tells how to install Xiki.  See README.txt for a description of Xiki.
         | Styles.use_xiki_color_scheme   # Use xiki's color scheme
 
 - 4: Install dependant packages
-  $ sudo gem install ParseTree net-ssh
+  $ sudo gem install ParseTree ruby2ruby net-ssh net-sftp
 
 | Trouble-shooting
 - If you get an error (and you probably will)

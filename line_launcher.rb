@@ -8,7 +8,7 @@ class LineLauncher
   # Set this to true to just see which launcher applied.
   # Look in /tmp/output.notes
   @@just_show = false
-  #@@just_show = true
+  # @@just_show = true
 
   @@launchers = []
   @@launchers_regexes = {}   # Only tracks whether we've added it yet
@@ -369,7 +369,8 @@ class LineLauncher
     end
 
     self.add(/^ *$/) do |line|  # Empty line: insert CodeTree menu
-      CodeTree.insert_menu "- CodeTree.menu/"
+      View.beep
+      View.message "There was nothing on this line to launch."
     end
 
     self.add(/^ *\*/) do |line|  # *... buffer
@@ -388,7 +389,7 @@ class LineLauncher
 
     self.add(/^[^\|@:]+[\/\w\-]+\.\w+:\d+/) do |line|  # Stack traces, etc
       # Match again (necessary)
-      line =~ /([\/.\w\-]+):(\d+)/
+      line =~ /([$\/.\w\-]+):(\d+)/
       path, line = $1, $2
       # If it doesn't have path, add it
       #       path = "#{View.dir}#{path}" if path !~ /^\//
@@ -443,15 +444,17 @@ class LineLauncher
   end
 
   def self.do_last_launch
-
     orig = View.index
 
-    unless Keys.prefix_u :clear=>true
-      View.clear "*output - tail of /tmp/output_ol.notes"
-      View.clear "*output - tail of /tmp/ds_ol.notes"
+    View.clear "*output - tail of /tmp/output_ol.notes"
+    View.clear "*output - tail of /tmp/ds_ol.notes"
+
+    if Keys.prefix_u :clear=>true
+      View.to_nth orig
+    else
+      Move.to_window 1
     end
 
-    Move.to_window(1)
     line = Line.value
 
     # Go to parent and collapse, if not at left margin

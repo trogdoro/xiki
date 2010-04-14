@@ -76,60 +76,93 @@ class Rails
   end
 
   def self.models model=nil, option=nil
-    unless model  # If no model, show all
+    if model.nil?  # If no model, show all
       RubyConsole[:rails].run("Dir.glob(RAILS_ROOT + '/app/models/**/*.rb').each { |file| require file }")
-      puts RubyConsole[:rails].run("puts Object.subclasses_of(ActiveRecord::Base).map{|m| \"\#{m}/\"}").sort
+      puts RubyConsole[:rails].run("puts Object.subclasses_of(ActiveRecord::Base).map{|m| \"+ \#{m}/\"}").sort
       return
     end
 
-    unless option  # If no option, show options
-      puts "
-        first/
-        recent 1/
-        id: 10000/
-        count/
-        associations/
-        columns/
-        .source_file
-        "
-      return
-    end
-
-    model.sub! /\/$/, ''  # Remove / from model
-
-    case option  # Show one model
-    when 'first/'
-      puts RubyConsole[:rails].run("y #{model}.find(:first)")
-    when 'count/'
-      puts RubyConsole[:rails].run("y #{model}.count")
-    when /recent (\d+)\//
-      limit = $1
-      puts RubyConsole[:rails].run(%Q[
-        columns = #{model}.columns.map {|c| c.name}
-        date =  # Find best ..._at field
-          if columns.member?("updated_at")
-            "updated_at"
-          else  # Most recent, using the id
-            "id"
-          end
-        y #{model}.find(:all, :conditions => "\#{date} IS NOT NULL", :order => "\#{date} desc", :limit => #{limit.to_i})
-        ])
-    when '5'
-      puts RubyConsole[:rails].run("y #{model}.find(:first)")
-    when 'associations/'
-      puts RubyConsole[:rails].run("#{model}.reflect_on_all_associations.each {|a| puts \"\#{a.macro} \#{a.name}\"}")
-    when 'columns/'
-      puts RubyConsole[:rails].run(%Q[
-        puts #{model}.columns.map {|c| "- \#{c.type}: \#{c.name}"}.sort
-        #puts #{model}.columns.map {|c| c.inspect}
-        ])
-    when /^(.+: .+)\/$/
-      where = $1.gsub(': ', '=')
-      puts RubyConsole[:rails].run("y #{model}.find(:all, :conditions => \"#{where}\")")
-    else
-      puts "- unknown option!"
-    end
+    puts "
+      + .first/
+      + .by :id=>1/
+      + .by :recent=>1/
+      + .count/
+      + .associations/
+      + .columns/
+      - .source
+      "
   end
+
+  def self.first model
+    model.sub! /\/$/, ''
+    RubyConsole[:rails].run("y #{model}.find(:first)").strip.gsub(/^/, '| ')
+  end
+
+  def self.by options, model, ident=nil, content=nil
+    model.sub! /\/$/, ''
+
+    field, val = options.to_a.first
+
+    if ident.nil?   # If no record passed, just show all
+      result = RubyConsole[:rails].run(%Q[
+        columns = #{model}.columns.map {|c| c.name}
+        if #{field == :recent}   # If it's :recent, handle it specially
+          date = columns.member?("updated_at") ? "updated_at" : "id"   # Find best ..._at field
+          all = #{model}.find(:all, :conditions => "\#{date} IS NOT NULL", :order => "\#{date} desc", :limit => #{val})
+        else
+          all = #{model}.find(:all, :conditions=>'#{field}=#{val.inspect}')
+        end
+        has_name = all.first.has_attribute?(:name)
+        all.each {|r| puts "- \#{has_name ? r.name : 'id'}: \#{r.id}/" }
+      ])
+      return result
+    end
+
+    if content.nil?   # If no content passed, just show one
+      # Display 1 result
+      result = RubyConsole[:rails].run("y #{model}.find(#{ident.inspect})")
+      return result.strip.gsub(/^/, '| ')
+    end
+
+    # Content passed, so save
+    result = RubyConsole[:rails].run(%Q[
+      content = #{content.inspect}
+      hash = YAML::load(content).attributes
+
+      model = #{model}.find_or_create_by_id hash['id']
+      response = model.update_attributes hash
+      puts response ? "saved!" : "error!"
+    ])
+
+    "- #{result}"
+
+  end
+
+
+
+  def self.count model
+    model.sub! /\/$/, ''
+    count = RubyConsole[:rails].run("puts #{model}.count")
+    "- #{count}"
+  end
+
+  def self.associations model
+    model.sub! /\/$/, ''
+    result = RubyConsole[:rails].run("#{model}.reflect_on_all_associations.each {|a| puts \"\#{a.macro} \#{a.name}\"}")
+    result.strip.gsub(/^/, '- ')
+  end
+
+
+  def self.columns model
+    model.sub! /\/$/, ''
+
+    puts RubyConsole[:rails].run(%Q[
+      puts #{model}.columns.map {|c| "- \#{c.type}: \#{c.name}"}.sort
+      ])
+  end
+
+
+
 
   def self.source_open model
     View.to_after_bar
@@ -137,9 +170,10 @@ class Rails
     View.open("$tr/app/models/#{model}.rb")
   end
 
-  def self.source_file model
+  def self.source model
+    model.sub! /\/$/, ''
     model = TextUtil.snake_case(model).gsub('::', '/')
-    puts "#{Bookmarks['$tr']}app/models/\n  #{model}.rb\n"
+    View.open Bookmarks["$rails/app/models/#{model}.rb"]
   end
 
   def self.tree_from_log
@@ -178,12 +212,13 @@ class Rails
 end
 
 Keys.ORM { CodeTree.display_menu("- Rails.models/") }   # Open Rails Models
-Keys.ERM {   # Enter Rails Models
+Keys.enter_list_models {   # Enter Rails Models
   $el.insert "- Rails.models/"
   $el.open_line 1
   CodeTree.launch
 }
 
 unless RubyConsole[:rails]
-  RubyConsole.register(:rails, "cd #{Bookmarks['$tr']}; script/console", "#{ENV['USERNAME']}@localhost:22")  # Do this only once
+  RubyConsole.register(:rails, "cd #{Bookmarks['$rails']}; script/console")  # Do this only once
 end
+

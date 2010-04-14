@@ -8,27 +8,35 @@ class Buffers
       "
   end
 
+
+
   def self.current buffer=nil
-    if buffer == nil  # If no buffer, show list
-      self.list.map { |b| $el.buffer_name(b) }.to_a.each do |b|
-        #name = $el.buffer_name(b)
-        puts "+ #{b}"
+    if buffer == nil  # If no buffer passed in, show list
+      case Keys.prefix
+      when nil:  return list.select{ |b| $el.buffer_file_name(b) }.map{ |b| $el.buffer_name(b) }
+      when 0:  return list.select{ |b| ! $el.buffer_file_name(b) }.map{ |b| $el.buffer_name(b) }[1..-1]
+      when :u:  return names_array
+        #       else  #CodeTree.display_menu("- Files.edited #{Keys.prefix}/")
       end
+
       return
     end
 
     # Switch to buffer
     View.to_after_bar if View.in_bar?
     View.to_buffer(buffer)
-
   end
 
   def self.viewing_array
     self.list.map { |b| $el.buffer_file_name(b) }.select{|path| path}
   end
 
+  def self.names_array
+    self.list.map { |b| $el.buffer_name(b) }.to_a
+  end
+
   def self.list
-    $el.buffer_list
+    $el.buffer_list.to_a
   end
 
   def self.tree times=0, options={}
@@ -41,6 +49,7 @@ class Buffers
   end
 
   def self.search string, options={}
+
     orig = View.buffer
 
     # Get buffer from name
@@ -48,11 +57,15 @@ class Buffers
       [self.from_string(options[:buffer])] :
       self.list
     found = ""
+
     list.to_a.each do |b|  # Each buffer open
 
       file = $el.buffer_file_name(b)
 
       next unless file
+      next if file =~ /_ol.notes/
+      next if ["todo.notes", "files.notes"].
+        member? file.sub(/.+\//, '')
 
       # Skip if a verboten file
       unless options[:buffer]

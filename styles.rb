@@ -128,7 +128,7 @@ class Styles
   end
 
   def self.use_xiki_color_scheme_black
-    set_face_background :trailing_whitespace, "#333333"
+    set_face_background :trailing_whitespace, "#555555"
     #     Styles.define :default, :bg=>'2A211C', :fg=>'ccbbaa'
     #     Styles.define :default, :bg=>'1c1712', :fg=>'ccbbaa'
     Styles.define :default, :bg=>'000000', :fg=>'ffffff'

@@ -102,7 +102,7 @@ class Notes
 
     times = Keys.prefix_u? ? 1 : (Keys.prefix || 1)
     times.times { insert "|" }
-    View.insert " "
+    View.insert " " unless times > 1
 
     open_line(4) if Keys.prefix_u?   # If U create blank lines.
 
@@ -304,7 +304,7 @@ class Notes
     Styles.define :notes_yellow, :fg => "CC0"
     Styles.define :notes_green, :fg => "0C0"
 
-    if Styles.inverse
+    if Styles.inverse   # If black and white
 
       Styles.define :notes_h2, :fg => '555588', :bg => "222233"
       Styles.define :notes_h2_pipe, :fg => '3b3b5e', :bg => "222233"
@@ -323,8 +323,6 @@ class Notes
         :face => 'arial black', :size => "0",
         :fg => "77cc44", :bold => true
       #         :fg => "66bb33", :bold => true
-
-      Styles.define :notes_h1_pipe, :fg => 'bbbbee', :bg => "9999bb"
     end
   end
 

@@ -127,6 +127,12 @@ class Files
     CodeTree.tree_search_option + paths.join("\n")
   end
 
+  def self.history_flat
+    paths = history_array
+    paths.map!{|i| i.sub(/(.+\/)(.+)/, "- \\1\n  - \\2")}
+    CodeTree.tree_search_option + paths.join("\n")
+  end
+
   def self.history_array
     elvar.recentf_list.to_a
   end
@@ -156,21 +162,21 @@ class Files
 
   def self.open_edited
     case Keys.prefix
-    when nil:  CodeTree.display_menu("- Files.edited 25/")
+    when nil:  Keys.prefix = nil; CodeTree.display_menu("- Files.edited_flat/")
     when 0:  CodeTree.display_menu("- Files.edited/")
-    when :u:  Keys.prefix = nil; CodeTree.display_menu("- Files.edited_flat/")
+    when :u:  CodeTree.display_menu("- Files.edited 7/")
     else  CodeTree.display_menu("- Files.edited #{Keys.prefix}/")
     end
   end
 
   def self.open_history
     case Keys.prefix
-    when nil:  CodeTree.display_menu("- Files.history 25/")
-    when 0, :u:  CodeTree.display_menu("- Files.history/")
+    when nil:  Keys.prefix = nil; CodeTree.display_menu("- Files.history_flat/")
+    when 0:  CodeTree.display_menu("- Files.history/")
+    when :u:  CodeTree.display_menu("- Files.history 7/")
     else  CodeTree.display_menu("- Files.history #{Keys.prefix}/")
     end
   end
-
 
   def self.open? name
     buffer_list.find{|b| buffer_file_name(b) == name}

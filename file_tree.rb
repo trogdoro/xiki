@@ -235,7 +235,7 @@ class FileTree
 
     if Styles.inverse
       Styles.define :diff_line_number, :bold => true, :size => "-2",
-        :fg => "334"
+        :fg => "445"
       Styles.define :diff_red, :bg => "440000", :fg => "ee3333"
       Styles.define :diff_green, :bg => "113300", :fg => "44dd33"
       Styles.define :diff_small, :fg => "222222", :size => "-11"
@@ -610,7 +610,6 @@ class FileTree
       Line.to_right
     when "\C-j"
       ch = Keys.input :one_char => true
-      Ol << "ch: #{ch.inspect}"
       if ch == 't'   # just_time
         self.to_parent
         self.kill_under
@@ -1183,7 +1182,8 @@ class FileTree
   def self.enter_quote
     Line.to_left
     clip = Clipboard.get(0, :add_linebreak => true)
-    if self.dir?   # If current line is path
+    dir = self.construct_path rescue nil
+    if self.dir? && FileTree.handles? # If current line is path
       self.plus_to_minus_maybe
       indent = Line.indent
       dir = self.construct_path
