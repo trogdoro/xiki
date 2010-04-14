@@ -127,6 +127,7 @@ class KeyBindings
     #   - ideas: embed, emit, entry
     #     Keys.EAB { Code.enter_as_backslash }   # Enter As Bash: enter with \ at eol's
     Keys.EE { Line.to_right }   # EE - end of line (E's default) **
+    Keys.enter_as_added { Numbers.enter_as_added }   # Add dollars or numbers in clipboard
     Keys.enter_as_camelcase { View.insert TextUtil.camel_case(Clipboard.get(0)) }
     Keys.enter_as_debug { Code.enter_as_debug }
     Keys.enter_as_filename { insert Clipboard.get(".") }
@@ -161,7 +162,7 @@ class KeyBindings
     Keys.enter_log_line { Code.enter_log_line }
     Keys.enter_log_time { Code.enter_log_time }
 
-    #     Keys.enter_menu { CodeTree.insert_menus }   # Redundant with C-enter on blank line
+    Keys.enter_menu { CodeTree.insert_menus }   # Redundant with C-enter on blank line
     Keys.enter_name { Clipboard.paste }   # paste thing saved as name
     Keys.enter_outline { FileTree.enter_lines }   # in tree, enter methods or headings
     # Find new key for thisKeys.EO { DiffLog.enter_old }   # Enter Old: enter newly-deleted from last save
