@@ -141,7 +141,9 @@ $stdout.print out
   end
 
   def self.at key, the_command
-    self[key].run the_command
+    console = self[key]
+    raise "No console has been defined for key '#{key}'." unless console
+    console.run the_command
   end
 
   def session

@@ -882,7 +882,7 @@ class View
     end
 
     # No numeric prefix, so just grab this line's opening indent text
-    indent_txt = Line[/^[ |\/\\#-]+/] || ""
+    indent_txt = Line[/^[ |\/\\#+-]+/] || ""
     Line.to_right
     View.insert "\n#{indent_txt}"
 

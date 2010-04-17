@@ -9,7 +9,7 @@ class Console
     - Synchronously: Console.run("ls", :dir => "/etc", :sync => true)
   ]
 
-  @@log = File.expand_path("~/.emacs.d/consolelog.notes")
+  @@log = File.expand_path("~/.emacs.d/console_log.notes")
 
   def self.menu
     ['.log']

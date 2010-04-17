@@ -7,6 +7,12 @@ class Search
   extend ElMixin
   @@case_options = nil
 
+  @@log = File.expand_path("~/.emacs.d/search_log.notes")
+
+  def self.menu
+    ['.log']
+  end
+
   def self.case_options
     return @@case_options if @@case_options
     @@case_options = []   # Set to empty if not set yet
@@ -302,6 +308,8 @@ class Search
       else;  Keys.input(:prompt=>"Text to search for: ")
       end
 
+    self.append_log input, dir
+
     FileTree.grep_with_hashes dir, input
   end
 
@@ -315,7 +323,6 @@ class Search
     regex = Regexp.new("\\bdef .*#{match}\\b", Regexp::IGNORECASE)
     FileTree.grep dir, regex, :bar=>true
   end
-
 
   # Incrementeal search between cursor and end of paragraph (kills unmatching lines)
   def self.kill_search(left, right)
@@ -1050,6 +1057,16 @@ class Search
 
     Location.jump(:insert_orig)
     orig.go
+  end
+
+  def self.log
+    View.open @@log
+  end
+
+  def self.append_log search, dir#, prefix=''
+    search = search.dup
+    txt = "- #{dir}\n  - ###{search}/\n"
+    File.open(@@log, "a") { |f| f << txt } rescue nil
   end
 
 end

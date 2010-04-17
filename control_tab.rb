@@ -61,7 +61,8 @@ class ControlTab
       when 4   # Consoles
         @@consider_test = lambda{|b| buffer_name(b) =~ /^(\*console|\*merb) /i}
       when 5   # .rhtml files
-        @@consider_test = lambda{|b| buffer_file_name(b) =~ /\.(html\.haml|html\.erb|html|rhtml)$/}
+        @@consider_test = lambda{|b| buffer_file_name(b) =~ /\.html/}
+        #         @@consider_test = lambda{|b| buffer_file_name(b) =~ /\.(html\.haml|html\.erb|html|rhtml)$/}
       when 6   # Ruby files only
         @@consider_test = lambda{|b| buffer_file_name(b) =~ /\.rb$/}
       when 7   # .notes files
