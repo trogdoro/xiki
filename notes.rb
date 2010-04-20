@@ -215,32 +215,32 @@ class Notes
     # Colors of "| ..." headings
     if Styles.inverse   # If black bg
       @@h1_styles = {
-        :notes_h1  => "666699",
-        :notes_h1r => "661111",   # | r This will be red
-        :notes_h1o => "884411",   # | o This will be orange
-        :notes_h1y => "887711",
-        :notes_h1e => "336633",
-        :notes_h1g => "336633",
-        :notes_h1b => "666699",
-        :notes_h1p => "663366",
-        :notes_h1m => "662222",
-        :notes_h1x => "333333",
-        :notes_h1t => "005555",
+        :notes_h1 =>"666666",
+        :notes_h1r=>"661111",   # | r This will be red
+        :notes_h1o=>"884411",   # | o This will be orange
+        :notes_h1y=>"887711",
+        :notes_h1e=>"336633",
+        :notes_h1g=>"336633",
+        :notes_h1b=>"666699",
+        :notes_h1p=>"663366",
+        :notes_h1m=>"662222",
+        :notes_h1x=>"333333",
+        :notes_h1t=>"005555",
         }
     else
       # Colors of headings
       @@h1_styles = {
-        :notes_h1  => "9999bb",
-        :notes_h1r => "bb6666",   # | r This will be red
-        :notes_h1o => "bb8833",   # | o This will be orange
-        :notes_h1y => "bbbb33",
-        :notes_h1e => "336633",
-        :notes_h1g => "77bb66",
-        :notes_h1b => "9999bb",
-        :notes_h1p => "bb88bb",
-        :notes_h1m => "994444",
-        :notes_h1x => "999999",
-        :notes_h1t => "005555",
+        :notes_h1 =>"9999bb",
+        :notes_h1r=>"bb6666",   # | r This will be red
+        :notes_h1o=>"bb8833",   # | o This will be orange
+        :notes_h1y=>"bbbb33",
+        :notes_h1e=>"336633",
+        :notes_h1g=>"77bb66",
+        :notes_h1b=>"9999bb",
+        :notes_h1p=>"bb88bb",
+        :notes_h1m=>"994444",
+        :notes_h1x=>"999999",
+        :notes_h1t=>"005555",
         }
     end
 

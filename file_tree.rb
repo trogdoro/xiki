@@ -243,7 +243,7 @@ class FileTree
 
     # dir/
     Styles.define :ls_dir,
-      :fg => "99e",
+      :fg => "808080",
       :face => "verdana",
       :size => "-2",
       :bold => true
@@ -251,7 +251,6 @@ class FileTree
     # ##search/
     Styles.define :ls_search,
       :fg => "ff7700",
-    #       :fg => "dd7700",
       :face => "verdana",
       :size => "-2",
       :bold => true
@@ -259,7 +258,7 @@ class FileTree
     if Styles.inverse   #   | Quoted text
       Styles.define :ls_quote,
         :size => "-1",
-        :fg => "aad"
+        :fg => "aaa"
     else
       Styles.define :ls_quote,
         :size => "-1",
