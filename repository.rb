@@ -346,7 +346,7 @@ class Repository
       option = is_unadded ? "- action: .add\n" : "- action: .commit \"message\"\n"
 
       if expand   # If showing diffs right away
-        txt = Git.diff "git diff #{self.git_diff_options}#{is_unadded ? '' : ' HEAD'}", dir
+        txt = Git.diff "git diff --patience --relative #{self.git_diff_options}#{is_unadded ? '' : ' HEAD'}", dir
 
         if txt =~ /^fatal: ambiguous argument 'HEAD': unknown revision/
           txt = "- Warning: Couldn't diff because no revisions exist yet in repository\n" +
@@ -390,8 +390,8 @@ class Repository
       end
 
       txt = is_unadded ?
-        Git.diff("git diff #{self.git_diff_options} #{file}", dir) :
-        Git.diff("git diff #{self.git_diff_options} HEAD #{file}", dir)
+        Git.diff("git diff --patience --relative #{self.git_diff_options} #{file}", dir) :
+        Git.diff("git diff --patience --relative #{self.git_diff_options} HEAD #{file}", dir)
       self.clean! txt
       txt.gsub!(/^ ?diff .+\n/, '')
       txt.gsub!(/^/, '|')

@@ -37,7 +37,7 @@ class Clipboard
     self.copy loc
     delete_region(region_beginning, region_end)
 
-    Location.as_spot('deleted')
+    Location.as_spot('killed')
   end
 
   def self.paste loc=nil

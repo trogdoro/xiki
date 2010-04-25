@@ -33,7 +33,7 @@ class KeyBindings
     # H
     #Keys.as_indented { Clipboard.as_indented }
     # J
-    Keys.as_kill { Clipboard.cut(0); Location.as_spot('cut') }   # cut) **
+    Keys.as_kill { Clipboard.cut(0); Location.as_spot('killed') }   # cut) **
     Keys.as_line { Clipboard.as_line }
     Keys.as_macro { Macros.record }   # start recording macro *
     Keys.as_name { Clipboard.copy }   # copies using key (prompted for)
@@ -409,6 +409,7 @@ class KeyBindings
     Keys.search_have_bullet { Search.have_label }
     Keys.search_have_case { Search.isearch_have_case }
     Keys.search_have_files { Search.isearch_move_to "$f" }
+    Keys.search_have_highest { Search.isearch_restart :top }
     Keys.search_have_javascript { Search.isearch_log_javascript }
     Keys.search_have_line { Search.have_line }   # copy line back to search start
     Keys.search_have_name { Search.just_name }

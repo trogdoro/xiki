@@ -77,7 +77,7 @@ class Search
     # Save spot where it was deleted (must do after modification, for bookmark to work)
     View.cursor = deleted
     Move.forward(match.length) unless was_reverse
-    Location.as_spot('deleted')
+    Location.as_spot('killed')
 
     self.to_start  # Go back to start
     Move.forward(match.length) unless was_reverse
@@ -109,13 +109,13 @@ class Search
   def self.isearch_delete
     match = self.stop
     # If nothing searched for, go to spot of last delete
-    if match.nil?   # If nothing searched for yet
-      #       self.isearch_stop_at_end
-      Location.to_spot('deleted')
+    if match.nil?   # If nothing searched for yet, search difflog
+      DiffLog.open
+      View.to_bottom
+      Search.isearch nil, :reverse=>true
     else
-      #       self.stop
       View.delete(Search.left, Search.right)
-      Location.as_spot('deleted')
+      Location.as_spot('killed')
     end
   end
 
@@ -193,20 +193,19 @@ class Search
   end
 
   def self.cut
-
     match = self.stop
 
     # If nothing searched for, go to spot of last delete
     if match.nil?   # If nothing searched for yet
-      Location.to_spot('cut')
+      Location.to_spot('killed')
     else
       Clipboard.set(0, match)
       set_register ?X, match
       View.delete self.left, self.right
-      Location.as_spot('cut')
+      Location.as_spot('killed')
     end
-
   end
+
   def self.go_to_end
     match = self.stop
 
@@ -916,6 +915,8 @@ class Search
       FileTree.open_in_bar
       View.to_nth 1
       Effects.blink(:what => :line)
+    elsif path == :top
+      # Will go to highest below
     elsif path == :right
       View.layout_right 1
     elsif path == :next
