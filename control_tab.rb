@@ -47,17 +47,17 @@ class ControlTab
 
       # Check for prefix, and store correct test for files to go through accordingly
       case prefix
-      when :uu   # Not dirs or files
+      when :uu   # Buffers but not dirs or files
         #       when 0   # Not dirs or files
         @@consider_test = lambda{|b| ! buffer_file_name(b) && ! buffer_name(b)[/Minibuf/] && ! elvar.mode_name[/^Dired/] && buffer_name(b) !~ /^\*(tree|console) / }
       when 1   # Files only
         @@consider_test = lambda{|b| buffer_file_name(b)}
         #       when 2   # Dirs only
         #         @@consider_test = lambda{|b| elvar.mode_name[/^Dired/] }
-      when 2   # Models
-        @@consider_test = lambda{|b| buffer_file_name(b) =~ /\/app\/models\//}
-      when 3   # ...trees only
-        @@consider_test = lambda{|b| buffer_name(b) =~ /^\*tree /}
+      when 2
+        # Available
+      when 3   # ...css
+        @@consider_test = lambda{|b| buffer_name(b) =~ /\.(css|sass)/}
       when 4   # Consoles
         @@consider_test = lambda{|b| buffer_name(b) =~ /^(\*console|\*merb) /i}
       when 5   # .rhtml files
@@ -65,16 +65,19 @@ class ControlTab
         #         @@consider_test = lambda{|b| buffer_file_name(b) =~ /\.(html\.haml|html\.erb|html|rhtml)$/}
       when 6   # Ruby files only
         @@consider_test = lambda{|b| buffer_file_name(b) =~ /\.rb$/}
+      when 68   # controller
+        @@consider_test = lambda{|b| buffer_file_name(b) =~ /\/app\/controllers\//}
+      when 66   # Models
+        @@consider_test = lambda{|b| buffer_file_name(b) =~ /\/app\/models\//}
       when 7   # .notes files
         @@consider_test = lambda{|b| buffer_file_name(b) =~ /\.notes$/}
-      when 8   # controller
-        @@consider_test = lambda{|b| buffer_file_name(b) =~ /\/app\/controllers\//}
+      when 8   # ...trees
+        @@consider_test = lambda{|b| buffer_name(b) =~ /^\*tree /}
       when 9   # test
-        @@consider_test = lambda{|b| buffer_file_name(b) =~ /_spec\.rb$/}
+        @@consider_test = lambda{|b| buffer_file_name(b) =~ /_(spec|test)\.rb$/}
       when 0   # js
         @@consider_test = lambda{|b| buffer_file_name(b) =~ /\.js$/}
       else
-
 
         #         if View.in_bar?  # If in the bar, only notes or trees
         #           @@consider_test = lambda{|b| buffer_file_name(b) =~ /\.notes$/ ||
