@@ -16,7 +16,6 @@ class KeyBindings
     self.misc
 
     Keys.add_menu_items
-
   end
 
   def self.as_keys
@@ -87,6 +86,7 @@ class KeyBindings
     Keys.open_lisp_error { Code.show_el4r_error }
     Keys.open_lisp_info { info("elisp") }   # Open manual
     Keys.open_log_list { Repository.open_list_log }   # Show log of git diffs
+    Keys.open_log_searches { Search.log }
     Keys.open_log_tree { Rails.tree_from_log }
     Keys.open_list_databases { CodeTree.display_menu('- CouchDb.databases/') }
     Keys.open_list_models { CodeTree.display_menu("- Merb.models/") }
@@ -454,6 +454,7 @@ class KeyBindings
     # M: leave unmapped for stop
     Keys.search_next { Search.isearch_next_or_name }   # Next, or name (if nothing searched for yet)
     Keys.search_outline { Search.isearch_outline }   # Outline
+    Keys.search_previous { Search.isearch_previous }   # Just go to last line
     # P: leave unmapped for previous
     # Q: leave unmapped for quoting
     # R: leave unmapped for reverse

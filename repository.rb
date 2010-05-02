@@ -416,7 +416,7 @@ class Repository
   end
 
   def self.code_tree_diff options={}
-    dir = Keys.bookmark_as_path
+    dir = Keys.bookmark_as_path :prompt=>"Enter a bookmark to push: "
     expand = Keys.prefix_uu ? "" : ", :expand"
     menu = "- Repository.menu/\n  - project - #{dir}\n    - .diff#{expand}/"
     if options[:enter]

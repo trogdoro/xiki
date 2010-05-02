@@ -364,12 +364,16 @@ class Search
     # If nothing searched for, go to place something was copied by name
     if match.nil?
 
-      loc = Keys.input(:one_char=>true, :prompt=>"Enter one char to go to where it was copied from: ")
+      Search.log
+      View.to_bottom
+      Search.isearch nil, :reverse=>true
 
-      Bookmarks.go "_n#{loc}", :point=>true
-
-      txt = Clipboard.hash[loc.to_s]
-      self.isearch txt
+      # Went back to original location of have_name...
+      #       loc = Keys.input(:one_char=>true, :prompt=>"Enter one char to go to where it was copied from: ")
+      #       Bookmarks.go "_n#{loc}", :point=>true
+      #       txt = Clipboard.hash[loc.to_s]
+      #       self.isearch txt
+      #       return
 
       return
     end
@@ -389,6 +393,8 @@ class Search
     end
 
     View.to_after_bar if View.in_bar?
+
+    self.append_log match, bm
 
     # Search in bookmark
     FileTree.grep_with_hashes bm, match
@@ -857,7 +863,7 @@ class Search
     term = self.stop
     loc ||= Keys.input(:one_char=>true, :prompt=>"Enter one char (to store this as): ") || "0"
     Clipboard.copy loc, term
-    Bookmarks.save("_n#{loc}")
+    #     Bookmarks.save("_n#{loc}")
     Effects.blink :left=>left, :right=>right
   end
 
@@ -956,10 +962,24 @@ class Search
 
     if match.nil?   # If nothing searched for yet
       Search.outline_search
-      # Up for grabs
     else
       Search.isearch_find_in_buffers(:current_only=>true)
     end
+  end
+
+  def self.isearch_previous
+    match = self.stop
+    if match.nil?   # If nothing searched for yet, search in git diff
+      Repository.code_tree_diff
+      View.to_highest
+      Search.isearch nil
+
+      # Up for grabs
+      #       Line.previous
+      return
+    end
+
+    $el.previous_line
   end
 
   def self.isearch_next_or_name

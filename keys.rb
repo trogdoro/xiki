@@ -422,7 +422,7 @@ class Keys
   end
 
   def self.bookmark_as_path options={}
-    bm = Keys.input(:timed=>true, :prompt=>"Enter a bookmark: ")
+    bm = Keys.input(:timed=>true, :prompt=>options[:prompt]||"Enter a bookmark: ")
     if bm == " "   # If space, return special token
       return :space
     elsif bm == "/"   # If slash, return special token
