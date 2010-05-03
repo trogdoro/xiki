@@ -75,7 +75,7 @@ class Repository
   def self.log_by_file search, limit, project, file=nil, rev=nil, line=nil
     dir = self.extract_dir project
     if file.nil?   # If no file, tell them they have to paste it
-      return "- Replace this line with a path - I'm normally called via Keys.open_list_log"
+      return "- Replace this line with a path - I'm normally called via Keys.show_log_one_file"
     end
 
     if rev.nil?   # If no rev, list all revs
@@ -157,7 +157,12 @@ class Repository
       )
   end
 
-  def self.open_list_log
+  def self.show_log
+    dir = Keys.bookmark_as_path :prompt=>"Enter a bookmark to show the log for: "
+    CodeTree.display_menu("- Repository.menu/\n  - project - #{dir}\n    - .log ''/")
+  end
+
+  def self.show_log_one_file
     repos = self.git_path   # Get root of repos
     relative = View.file.sub(/^#{repos}/, '')   # Split off root from relative path
     relative.sub! /^\//, ''   # Insert codetree

@@ -82,10 +82,11 @@ class KeyBindings
     Keys.open_just { Files.open_just }
     Keys.open_key { Keys.jump_to_code }   # jump to ruby code of key definition *
     Keys.open_list_bookmarks { CodeTree.display_menu("- Bookmarks.tree/") }
-    Keys.open_list_faces { list_faces_display }
     Keys.open_lisp_error { Code.show_el4r_error }
+    Keys.open_list_faces { list_faces_display }
     Keys.open_lisp_info { info("elisp") }   # Open manual
-    Keys.open_log_list { Repository.open_list_log }   # Show log of git diffs
+    Keys.open_log_list { Repository.show_log_one_file }   # Show git diffs o 1 file
+    Keys.open_log_push { Repository.show_log }   # Show git diffs for a bookmark
     Keys.open_log_searches { Search.log }
     Keys.open_log_tree { Rails.tree_from_log }
     Keys.open_list_databases { CodeTree.display_menu('- CouchDb.databases/') }

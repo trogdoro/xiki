@@ -873,7 +873,13 @@ class Search
   end
 
   def self.to_left
-    self.stop
+    match = self.stop
+    if match.nil?   # If nothing searched for yet
+      dir = Keys.bookmark_as_path :prompt=>"Enter a bookmark to show the log for: "
+      CodeTree.display_menu("- Repository.menu/\n  - project - #{dir}\n    - .log ''/")
+      return
+    end
+
     Line.to_left
   end
 
@@ -969,13 +975,12 @@ class Search
 
   def self.isearch_previous
     match = self.stop
-    if match.nil?   # If nothing searched for yet, search in git diff
+
+    if ! View.at_bottom && match.nil?   # If nothing searched for yet, search in git diff
       Repository.code_tree_diff
       View.to_highest
       Search.isearch nil
 
-      # Up for grabs
-      #       Line.previous
       return
     end
 

@@ -530,6 +530,10 @@ class View
     end_of_buffer
   end
 
+  def self.at_bottom
+    self.cursor == self.bottom
+  end
+
   def self.to_end
     end_of_buffer
   end
