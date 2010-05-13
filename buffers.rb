@@ -64,8 +64,11 @@ class Buffers
 
       next unless file
       next if file =~ /_ol.notes/
-      next if ["todo.notes", "files.notes"].
-        member? file.sub(/.+\//, '')
+
+      if options[:buffer].nil?   # If we're not searching in one buffer
+        next if ["todo.notes", "files.notes"].
+          member? file.sub(/.+\//, '')
+      end
 
       # Skip if a verboten file
       unless options[:buffer]

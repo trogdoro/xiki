@@ -17,8 +17,8 @@ class Bookmarks
 
     in_a_file_tree = FileTree.handles? rescue nil
 
-    # If we're in a notes file, and in a file tree
-    if View.file =~ /\.notes$/ && in_a_file_tree && ! Line[/^ *\|/]
+    # If we're in a file tree, bookmark it
+    if in_a_file_tree && ! Line[/^ *\|/]
       path = FileTree.construct_path
       keys = Keys.input(:timed=>true, :prompt=>"Name of bookmark for #{path.sub(/.+\/(.)/, "\\1")}: ") || "0"
       with(:save_window_excursion) do

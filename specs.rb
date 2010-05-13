@@ -130,7 +130,13 @@ class Specs
       snippet = Clipboard['=']
       path = snippet[/.+/]
       clazz = snippet[/(\w+)_spec\.rb/, 1]
+
       desc = snippet[/(".+")/, 1]
+      #       is_test = clazz.nil?
+      #       clazz ||= snippet[/(\w+)_test\.rb/, 1]
+
+      #       desc = snippet[/(".+")/, 1] || snippet[/('.+')/, 1]
+
       # If no description, do enter_as_title
       if desc.nil?
         View.insert TextUtil.title_case(Clipboard.get(0))

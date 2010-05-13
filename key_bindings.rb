@@ -142,8 +142,9 @@ class KeyBindings
     Keys.enter_clipboard { Clipboard.paste("0") }   # paste **
     Keys.enter_difflog { App.enter_from_difflog }   # Save point and go to difflog to search
     # E: defined above - mapped to what C-e does by default
-    Keys.enter_file { View.insert(Keys.bookmark_as_path(:include_file=>true)); Line.to_left }   # Given a bookmark
-    Keys.enter_history { History.enter_history }   # enter recently viewed files
+    Keys.enter_file { View.insert(File.expand_path(Keys.bookmark_as_path(:include_file=>true))); Line.to_left }   # Given a bookmark
+    #     Keys.enter_history { History.enter_history }   # enter recently viewed files
+    Keys.enter_have { Console.insert_command }
     #Keys.EH { FileTree.enter_lines(/^\| /) }
     Keys.enter_insert_1 { Notes.enter_do_bullet }    # insert date string (and time if C-u)
     Keys.enter_insert_date { App.enter_date }    # insert date string (and time if C-u)
@@ -470,9 +471,10 @@ class KeyBindings
 
     # Surround with characters (quotes and brackets)
 
+    define_key(:isearch_mode_map, kbd("C-'")) { Search.isearch_just_surround_with_char '"' }
+    define_key(:isearch_mode_map, kbd("C-j C-'")) { Search.isearch_just_surround_with_char "'" }
+
     define_key(:isearch_mode_map, kbd("C-`")) { Search.isearch_just_surround_with_char "~" }
-    define_key(:isearch_mode_map, kbd("C-'")) { Search.isearch_just_surround_with_char "'" }
-    define_key(:isearch_mode_map, kbd("C-j C-'")) { Search.isearch_just_surround_with_char '"' }
     define_key(:isearch_mode_map, kbd("C-j C-/")) { Search.isearch_just_comment }
     define_key(:isearch_mode_map, kbd("C-j C-=")) { Search.just_increment }
     define_key(:isearch_mode_map, kbd("C-j C--")) { Search.just_increment(:decrement=>true) }

@@ -88,6 +88,7 @@ class Console
   def self.open dir=nil
     View.handle_bar
     dir ||= elvar.default_directory
+    dir = File.expand_path(dir)+"/"
     View.to_buffer generate_new_buffer("*console #{dir}")
     raise "dir '#{dir}' doesn't exist" unless File.directory?(dir)
     elvar.default_directory = dir
@@ -245,6 +246,18 @@ class Console
     else
       "ssh #{path}"
     end
+  end
+
+  def self.insert_command
+
+    bm = Keys.input(:timed => true, :prompt => "Enter bookmark for dir to insert command: ")
+    dir = Bookmarks.expand bm, :just_bookmark=>true
+    dir = "#{File.expand_path(dir)}"
+
+    prompt = Keys.prefix_u ? '!' : '$'
+
+    View.insert "- #{dir}/\n  #{prompt} "
+
   end
 
 end

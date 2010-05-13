@@ -161,6 +161,8 @@ class FileTree
     path.sub!(/\/$/, '')
     entries = Dir["#{path}/*"].entries.sort
 
+    entries = entries.select{|o| o !~ /\/(vendor|log)$/}   # Don't search in unwanted dirs
+
     # Process dirs
     entries.each{ |f|
       next unless FileTest.directory?(f)

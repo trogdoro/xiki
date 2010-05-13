@@ -393,6 +393,12 @@ class LineLauncher
       path, line = $1, $2
       # If it doesn't have path, add it
       #       path = "#{View.dir}#{path}" if path !~ /^\//
+
+      # If relative dir, prepend current dir
+      if path =~ /^\w/
+        path = "#{View.dir}/#{path}"
+      end
+
       View.open path
       View.to_line line.to_i
     end

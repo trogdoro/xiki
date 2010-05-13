@@ -118,7 +118,7 @@ $stdout.print out
     @@output = ""
 
     # Remove up until beginning of output
-    out.sub!(/.*^.?.?.?\$stdout\.print out\n/m, '')
+    out.sub!(/.*^.*\$stdout\.print out\n/m, '')
     # Remove last line
     out.sub!(/^.?.?.?-eor\d+-\n.*/, '')
 

@@ -180,7 +180,7 @@ class Repository
     inbetween.gsub!(/^ +\|-.*\n/, '')
     inbetween = inbetween.count("\n")
     line = Line.value[/\+(\d+)/, 1]
-    Search.backward "^ +- "
+    Search.backward "^ +[+-] "
     file = Line.without_label
     goto_char orig
 
@@ -572,6 +572,8 @@ class Repository
         ! git branch -d foo
       - switch to main branch:
       ! git checkout master
+      - delete remote branch:
+      ! git push origin :my_branch
     "
   end
 

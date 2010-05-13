@@ -9,6 +9,13 @@ class DiffLog
 
   # Open file having difflog
   def self.open
+    if Keys.prefix_u   # Show diffs for current file only
+      dir = View.dir
+      # TODO finish
+
+      return
+    end
+
     # If open, just switch to it and revert
     if View.buffer_open?("difflog.notes")
       View.to_buffer("difflog.notes")

@@ -1,3 +1,5 @@
+#   $ /usr/local/Cellar/mysql/5.1.45/bin/mysql -u root -p "" -e "SELECT VERSION();"
+
 class Mysql
   def self.menu
     puts "
