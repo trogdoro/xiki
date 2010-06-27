@@ -32,6 +32,7 @@ class RestTree
 
     FileTree.plus_to_minus_maybe
     verb, url, body = self.launch_inner options[:path], CodeTree.children
+    url = "http://#{url}" unless url =~ %r"http://"
 
     result = self.request verb, url, body
     result = "#{result}\n" unless result =~ /\n\z/
@@ -47,12 +48,12 @@ class RestTree
 
   # Tell LineLauncher whether we're in a rest tree
   def self.handles? list
-    list.any? {|i| i =~ /^ *(GET|PUT|POST|DELETE) http:\/\//}
+    list.any? {|i| i =~ /^ *(GET|PUT|POST|DELETE)/}
   end
 
   # Pull out root
   def self.extract_root_verb path
-    path.first.sub! /^ *(GET|PUT|POST|DELETE) (http:\/\/)/, "\\2"
+    path.first.sub! /^ *(GET|PUT|POST|DELETE) /, "\\2"
     $1
   end
 
@@ -64,7 +65,7 @@ class RestTree
 
   def self.remove_before_root list
     # Delete from beginning until root is found
-    while list.first !~ /^ *(GET|PUT|POST|DELETE) (http:\/\/)/
+    while list.first !~ /^ *(GET|PUT|POST|DELETE) /
       break unless list.any?
       list.shift
     end

@@ -773,11 +773,15 @@ class View
     @@dimension_options ||= []   # Set to empty if not set yet
     self.add_dimension_option 'full', proc {View.dimensions_full}
     self.add_dimension_option 'large', proc {View.dimensions_set(145, 58, 46, 22)}
-    self.add_dimension_option 'medium', proc {View.dimensions_set(145, 50)}
+    self.add_dimension_option 'medium', proc {
+      View.dimensions_set(145, 50)
+      }
     #     self.add_dimension_option 'small', proc {View.dimensions_set(80, 28, 50, 500)}
 
     self.add_dimension_option 'tiny', proc {View.dimensions_set(89, 12, 479, 1717)}
-    self.add_dimension_option 'small', proc {View.dimensions_set(89, 24, 479, 1537)}
+    self.add_dimension_option 'small', proc {
+      View.dimensions_set(89, 24, 9, 137)
+      }
     #     self.add_dimension_option 'small', proc {View.dimensions_set(89, 25, 49, 542)}   # Half of small? (for screencasts)
 
     #     self.add_dimension_option 'small', proc {View.dimensions_set(90, 28, 50, 500)}
@@ -887,7 +891,13 @@ class View
 
     # No numeric prefix, so just grab this line's opening indent text
     indent_txt = Line[/^[ |\/\\#+$-]+/] || ""
-    Line.to_right
+
+    Deletes.delete_whitespace if ! Line.at_left && ! Line.at_right
+
+    if Line.at_left
+      Line.to_right
+    end
+
     View.insert "\n#{indent_txt}"
 
   end

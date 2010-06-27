@@ -119,7 +119,8 @@ class CodeTree
     end
     l.map! {|c| c.sub(/^#.+::/, '')}
     l.sort.each do |c|
-      next if c == "CodeTree"
+
+      next if ["CodeTree", "Xiki"].member?(c)
       puts "+ #{c}.menu/"
     end
     ""
@@ -142,10 +143,6 @@ class CodeTree
     CodeTree.launch options
   end
 
-  def self.open_menu
-    CodeTree.display_menu("- CodeTree.menu/")
-  end
-
   def self.layout_menu
     View.bar if Keys.prefix_u?
 
@@ -161,11 +158,6 @@ class CodeTree
     insert "- #{menu}/"
     open_line 1
     CodeTree.launch
-  end
-
-  def self.insert_menus
-    # Implement
-    self.insert_menu "- CodeTree.menu/"
   end
 
   def self.insert_menu txt

@@ -307,6 +307,8 @@ class Search
       else;  Keys.input(:prompt=>"Text to search for: ")
       end
 
+    input.gsub! "#", "\\#"
+
     self.append_log input, dir
 
     FileTree.grep_with_hashes dir, input
@@ -393,6 +395,7 @@ class Search
     end
 
     View.to_after_bar if View.in_bar?
+    match.gsub! "#", "\\#"
 
     self.append_log match, bm
 
@@ -946,7 +949,7 @@ class Search
 
   end
 
-  def self.isearch txt, options={}
+  def self.isearch txt=nil, options={}
     txt ||= ""   # Searchig for nil causes error
     isearch_resume txt, (options[:regex] ?true:nil), nil, (! options[:reverse]), txt, true
     isearch_update
@@ -1093,6 +1096,20 @@ class Search
     search = search.dup
     txt = "- #{dir}\n  - ###{search}/\n"
     File.open(@@log, "a") { |f| f << txt } rescue nil
+  end
+
+  def self.back
+    match = self.stop
+
+    if match.nil?   # If nothing searched for yet, resume search
+      Repository.diff_one_file
+      Search.isearch
+      # TODO
+      #       Location.to_spot('paused')
+      #       Search.isearch $xiki_paused_isearch_string
+    else
+      Move.backward
+    end
   end
 
 end

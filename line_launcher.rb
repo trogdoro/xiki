@@ -135,7 +135,7 @@ class LineLauncher
 
   def self.launch_by_proc
 
-    list = FileTree.construct_path(:list => true)   # Get path to pass to procs, to help them decide
+    list = FileTree.construct_path(:list=>true)   # Get path to pass to procs, to help them decide
 
     # Try each proc
     @@launchers_procs.each do |launcher|   # For each potential match

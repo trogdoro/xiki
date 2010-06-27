@@ -354,7 +354,9 @@ class FileTree
         path.join
       end
     rescue Exception=>e
+      #       return options[:list] ? [Line.without_label] : Line.without_label
       raise ".construct_path couldn't construct the path - is this a well-formed tree\?"
+      #       return nil
     end
   end
 
@@ -512,7 +514,7 @@ class FileTree
 
     #ch = char_to_string(ch_raw)
     # While narrowing down list
-    while (ch =~ /[ "%-),-.:<?-~]/) ||   # Be careful editing, due to ranges (_-_)
+    while (ch =~ /[ "%-),.-.:<?-~]/) ||   # Be careful editing, due to ranges (_-_)
         (recursive && ch_raw == 2 || ch_raw == 6) ||
         ch == :up || ch == :down
       break if recursive && ch == '/'   # Slash means enter in a dir
@@ -661,7 +663,11 @@ class FileTree
 
     when "!"   # Insert '!' for command
       self.stop_and_insert left, right, pattern
-      View.insert self.indent("!", 0)
+      View.insert self.indent("! ", 0)
+
+    when "-"   # Insert '!' for command
+      self.stop_and_insert left, right, pattern
+      View.insert self.indent("- ", 0)
 
     when "+"   # Create dir
       self.stop_and_insert left, right, pattern, :dont_disable_control_lock=>true
@@ -1882,7 +1888,6 @@ class FileTree
   end
 
   def self.rename_file
-
     # If dired mode, use wdired
     return $el.wdired_change_to_wdired_mode if $el.elvar.major_mode.to_s == "dired-mode"
 
@@ -1892,13 +1897,14 @@ class FileTree
       View.beep
       return View.message "TODO: implement renaming current file?"
     end
-
-
     source_path = self.construct_path
     is_dir = source_path =~ /\/$/
     source_path.sub! /\/$/, ''
 
-    new_name = Keys.input :prompt=>"Rename #{source_path} to what?: "
+    new_name = Keys.input(
+      :prompt=>"Rename #{source_path} to what?: ",
+      :initial_input=>(Keys.prefix_u? ? "" : File.basename(source_path))
+      )
 
     dest_path = "#{source_path.sub(/(.+\/).+/, "\\1#{new_name}")}"
 

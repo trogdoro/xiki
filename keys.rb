@@ -518,4 +518,13 @@ class Keys
     $el.el4r_lisp_eval("(elt (recent-keys) (- (length (recent-keys)) 2))").to_s
   end
 
+  def self.menu
+    ['.history']
+  end
+
+  def self.history
+    $el.view_lossage
+    nil
+  end
+
 end

@@ -47,7 +47,7 @@ class Notes
   end
 
   def self.to_block up=false
-    heading_regex = "^|\\( \\|$\\)"
+    heading_regex = "^[|=]\\( \\|$\\)"
     if up
       (Keys.prefix || 1).times do
         Line.to_left
@@ -55,7 +55,7 @@ class Notes
       end
     else
       (Keys.prefix || 1).times do
-        Line.next if Line[/^\|( |$)/]
+        Line.next if Line[/^[|=]( |$)/]
 
         Search.forward heading_regex
 
@@ -65,6 +65,7 @@ class Notes
   end
 
   def self.move_block up=false
+    header_regex = "^|\\( \\|$\\)"
 
     times = Keys.prefix_times
 
@@ -76,18 +77,19 @@ class Notes
 
     if up
       times.times do
-        re_search_backward "^| ", nil, 1
+        Search.backward header_regex, :go_anyway=>true
       end
       insert block.content
-      search_backward_regexp "^| "
+      Search.backward header_regex
     else
-      re_search_forward "^| "
+      Search.forward header_regex
       times.times do
-        re_search_forward "^| ", nil, 1
+        Search.forward header_regex, :go_anyway=>true
       end
       beginning_of_line
-      insert block.content
-      search_backward_regexp "^| "
+      View.insert block.content
+
+      Search.backward header_regex
     end
     moved_block = get_block
 
@@ -332,6 +334,8 @@ class Notes
 
     # |... lines (headings)
     #     Styles.apply("^\\(|\\)\\( \n\\|.*\n\\)", nil, :notes_h1_pipe, :notes_h1)
+    Styles.apply("^\\(=\\)\\(.*\n\\)", nil, :notes_h1_pipe, :notes_h1)
+
     Styles.apply("^\\(|\\)\\(.*\n\\)", nil, :notes_h1_pipe, :notes_h1)
     Styles.apply("^\\(| .+?: \\)\\(.+\n\\)", nil, :notes_h1_pipe, :notes_h1)
 

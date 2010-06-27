@@ -257,7 +257,40 @@ class Console
     prompt = Keys.prefix_u ? '!' : '$'
 
     View.insert "- #{dir}/\n  #{prompt} "
-
   end
 
+  def self.do_as_execute options={}
+
+    if FileTree.handles? && ! Line.matches(/^\s*\|/)   # If we're in a file tree
+      path = FileTree.construct_path
+
+      if Line.matches(/\/$/)   # If a dir
+        command = Keys.input :prompt=>"Do shell command in '#{path}': "
+        output = Console.run(command, :dir=>path, :sync=>true)
+        FileTree.insert_under(output) if options[:insert]
+        return View.message "Command ran with output: #{output.strip}."
+      elsif Keys.prefix_n
+        View.message "Running command on multiple files isn't implemented yet."
+        return
+      end
+
+      file = Line.without_label
+      command = Keys.input :prompt=>"Do shell command on '#{file}': "
+      command = command =~ / _ / ? command.sub(' _ ', " \"#{file}\" ") : "#{command} \"#{file}\""
+
+      output = Console.run(command, :dir=>File.dirname(path), :sync=>true)
+      FileTree.insert_under(output) if options[:insert]
+
+      return View.message "Command ran with output: #{output.strip}."
+    end
+
+    path = View.dir
+
+    command = Keys.input :prompt=>"Do shell command in '#{path}': "
+    output = Console.run(command, :dir=>path, :sync=>true)
+    View.insert(output) if options[:insert]
+
+    return View.message "Command ran with output: #{output.strip}."
+
+  end
 end

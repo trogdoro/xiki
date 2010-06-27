@@ -24,11 +24,22 @@ Requirer.safe_require classes
 Requirer.safe_require ['key_bindings.rb']
 
 class Xiki
+  def self.insert_menu
+    # Implement
+    CodeTree.insert_menu "- Xiki.menu/"
+  end
+
+  def self.open_menu
+    CodeTree.display_menu("- Xiki.menu/")
+  end
+
   def self.menu
-    [
-      ".tests",
-      '.test Search, "should convert case correctly"',
-    ]
+    CodeTree.menu
+
+    #     [
+    #       ".tests",
+    #       '.test Search, "should convert case correctly"',
+    #     ]
   end
 
   def self.test clazz, test, quoted=nil

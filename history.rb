@@ -194,8 +194,15 @@ class History
       View.beep
       return View.message("Error: create a bookmark named 'bak' first, in a dir where you backups will go.")
     end
+
+    path = Keys.prefix_u? && FileTree.handles? ?   # If backup file in tree
+      FileTree.construct_path :
+      View.file
+
+    name = path.sub(/.+\//, '')
+
     # Copy file
-    $el.copy_file View.file, "#{bm}#{View.file_name} #{Time.now.strftime('%Y-%m-%d %H-%M')}"
+    $el.copy_file path, "#{bm}#{name} #{Time.now.strftime('%Y-%m-%d %H-%M')}"
   end
 
   def self.diff_with_backup

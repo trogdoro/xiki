@@ -71,7 +71,7 @@ class KeyBindings
     Keys.open_as_tail { Files.open_tail }
     Keys.open_bookmark { Bookmarks.go }
     Keys.open_current { CodeTree.display_menu("- Buffers.current/") }   # open buffer list **
-    Keys.open_difflog { DiffLog.open }   # shows diffs of what you've edited *
+    Keys.open_diffs { DiffLog.open }   # shows diffs of what you've edited *
     Keys.open_edited { Files.open_edited }   # show recently edited files *
     Keys.open_file { Files.open }
     # G: leave unmapped for escape
@@ -94,7 +94,7 @@ class KeyBindings
     Keys.open_list_names { Clipboard.list }
     Keys.open_list_repository { Repository.open_list_repository }
     Keys.open_link_top { Links.open_first }   # open first hyperlink on page
-    Keys.open_menu { CodeTree.open_menu }   # Open all menus and show them **
+    Keys.open_menu { Xiki.open_menu }   # Open all menus and show them **
     Keys.open_not_saved { History.open_unsaved }
     # O: defined above - mapped to what C-o does by default
     Keys.open_point { Bookmarks.go(nil, :point => true) }
@@ -131,8 +131,10 @@ class KeyBindings
     Keys.enter_as_added { Numbers.enter_as_added }   # Add dollars or numbers in clipboard
     Keys.enter_as_camelcase { View.insert TextUtil.camel_case(Clipboard.get(0)) }
     Keys.enter_as_debug { Code.enter_as_debug }
+    Keys.enter_as_execute { Console.do_as_execute(:insert=>true) }   # change word to camel case (LikeThat)
     Keys.enter_as_filename { insert Clipboard.get(".") }
     Keys.enter_as_hyphenated { insert TextUtil.hyphen_case(Clipboard.get(0)) }
+    Keys.enter_as_jquery { insert "#{Keys.prefix_u? ? "- (js): " : ""}$(\"#{Clipboard.get(0)}\")#{Keys.prefix_u? ? ".blink()" : ""}" }
     Keys.enter_as_snake { insert TextUtil.snake_case(Clipboard.get(0)) }
     #     Keys.enter_as_search { FileTree.enter_as_search }
     Keys.enter_as_test { Specs.enter_as_rspec }
@@ -143,8 +145,8 @@ class KeyBindings
     Keys.enter_difflog { App.enter_from_difflog }   # Save point and go to difflog to search
     # E: defined above - mapped to what C-e does by default
     Keys.enter_file { View.insert(File.expand_path(Keys.bookmark_as_path(:include_file=>true))); Line.to_left }   # Given a bookmark
-    #     Keys.enter_history { History.enter_history }   # enter recently viewed files
-    Keys.enter_have { Console.insert_command }
+    Keys.enter_history { History.enter_history }   # enter recently viewed files
+    #     Keys.enter_have { Console.insert_command }
     #Keys.EH { FileTree.enter_lines(/^\| /) }
     Keys.enter_insert_1 { Notes.enter_do_bullet }    # insert date string (and time if C-u)
     Keys.enter_insert_date { App.enter_date }    # insert date string (and time if C-u)
@@ -164,7 +166,8 @@ class KeyBindings
     Keys.enter_log_line { Code.enter_log_line }
     Keys.enter_log_time { Code.enter_log_time }
 
-    Keys.enter_menu { CodeTree.insert_menus }   # Redundant with C-enter on blank line
+    Keys.enter_menu { Xiki.insert_menu }   # Redundant with C-enter on blank line
+    #     Keys.enter_menu { CodeTree.insert_menus }   # Redundant with C-enter on blank line
     Keys.enter_name { Clipboard.paste }   # paste thing saved as name
     Keys.enter_outline { FileTree.enter_lines }   # in tree, enter methods or headings
     # Find new key for thisKeys.EO { DiffLog.enter_old }   # Enter Old: enter newly-deleted from last save
@@ -198,6 +201,7 @@ class KeyBindings
     Keys.D { insert "Apparently this is necessary to remap C-d" }
     Keys.DD { delete_char elvar.current_prefix_arg || 1 }   # DD - delete character (D's default) **
     Keys.do_as_camelcase { Clipboard.do_as_camel_case }   # change word to camel case (LikeThat)
+    Keys.do_as_execute { Console.do_as_execute }   # change word to camel case (LikeThat)
     Keys.do_as_html { Firefox.do_as_html }
     Keys.do_as_javascript { Javascript.run }
     Keys.do_as_lowercase { Clipboard.do_as_lower_case }   # change word to camel case (LikeThat)
@@ -219,7 +223,7 @@ class KeyBindings
     Keys.do_count_matches {  View.count_matches }
     Keys.do_copy_next { Files.copy }   # copy file to next view
     Keys.do_compare_one { Repository.diff }   # compare one revision with previous revision
-    Keys.do_clean_quotes { Files.do_clean_quotes }
+    Keys.do_clean_quotes { Files.do_clean_quotes }   # Fix special chars
     Keys.do_compare_repository { Repository.diff_dir }
     Keys.do_compare_saved { DiffLog.compare_with_saved }
 
@@ -400,6 +404,7 @@ class KeyBindings
   # Control keys during isearch
   def self.isearch
     Keys.search_axis { Search.to_left }
+    Keys.search_back { Search.back }
     # B: leave unmapped for back
     Keys.search_clipboard { Search.isearch_clipboard }   # Clipboard (copy)
     Keys.search_delete { Search.isearch_delete }   # Delete
