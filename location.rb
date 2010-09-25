@@ -10,11 +10,15 @@ class Location
     orig.go   # Go back to where we were
   "
 
-  attr_writer :line
-  attr_writer :file
-  attr_writer :column
+  attr_accessor :line
+  attr_accessor :file
+  attr_accessor :column
 
   @@spots = {}
+
+  def file_or_buffer
+    @file || @buffer
+  end
 
   # Save file and location
   def initialize *args
@@ -32,6 +36,7 @@ class Location
     end
 
     @file = buffer_file_name
+    @buffer = View.name
     @line = line_number_at_pos
     @column = point - point_at_bol
 

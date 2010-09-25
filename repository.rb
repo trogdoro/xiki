@@ -40,8 +40,8 @@ class Repository
 
       # If current dir is in a repos, add it
       current_dir_repos = self.git_path
-      result << FileTree.add_slash_maybe(
-        "current dir - #{current_dir_repos ? current_dir_repos : View.dir}")
+      result << FileTree.add_slash_maybe("current dir - #{current_dir_repos ? current_dir_repos : View.dir}")
+
       # If current dir isn't one, try after bar
       if ! current_dir_repos and View.bar?
         after_bar = View.dir_of_after_bar
@@ -49,11 +49,15 @@ class Repository
         result << FileTree.add_slash_maybe(
           "upper - #{current_dir_repos ? current_dir_repos : after_bar}")
       end
+
+      result << "tmp dir - /tmp/t1/"
+
       return result
     end
 
     # If project, show options
     puts %Q[
+      + .create/
       + .diff_unadded/
       + .diff_unadded :expand/
       + .diff/
@@ -64,7 +68,6 @@ class Repository
       + .log_by_file/
       + .status/
       + .status_tree/
-      - .initialize
       + .branches/
       + .stash/
       - .files/
@@ -343,6 +346,7 @@ class Repository
     if file.nil?   # If launching .diff/.diff_unadded directly (not a file)
 
       txt = Console.run "git status", :dir=>dir, :sync=>true
+
       hash = Git.status_to_hash(Git.status_internal(txt))
 
       untracked = hash[:untracked].map{|i| i[1]}
@@ -422,12 +426,16 @@ class Repository
 
   def self.code_tree_diff options={}
     dir = Keys.bookmark_as_path :prompt=>"Enter a bookmark to push: "
-    expand = Keys.prefix_uu ? "" : ", :expand"
+
+    prefix = Keys.prefix
+    expand = prefix == :uu ? "" : ", :expand"
     menu = "- Repository.menu/\n  - project - #{dir}\n    - .diff#{expand}/"
+
     if options[:enter]
       View.insert(menu)
       LineLauncher.launch
     else
+      View.bar if prefix == 9
       CodeTree.display_menu(menu)
     end
   end
@@ -546,13 +554,23 @@ class Repository
     end
   end
 
-  def self.initialize project
-    dir = self.extract_dir project
-    # Create dir if not there
-    Dir.mkdir(dir) if not File.directory?(dir)
-    Console.run("git init", :dir => dir)
-    nil
+  def self.create project
+    "
+    - #{self.extract_dir(project)}/
+      - create: ! git init
+      - make test files: ! echo 'a\\na\\na' > a.txt; echo 'b\\nb\\nb' > b.txt
+      - add files: ! git add .
+      - commit: ! git commit -m \"First commit.\"
+    "
   end
+
+  #   def self.initialize project
+  #     dir = self.extract_dir project
+  #     # Create dir if not there
+  #     Dir.mkdir(dir) if not File.directory?(dir)
+  #     Console.run("git init", :dir => dir)
+  #     nil
+  #   end
 
   def self.files project
     "- #{self.extract_dir(project)}/"
@@ -580,10 +598,14 @@ class Repository
   def self.stash project
     "
     - #{self.extract_dir(project)}/
-      - Temporarily revert uncommitted changes:
+      - Temporarily put away uncommitted changes:
       ! git stash
       - Restore uncommitted changes:
+      ! git stash apply
       ! git stash pop
+      - list: ! git stash list
+      - files: ! git stash show
+      - diff: ! git stash show --patience
     "
   end
 

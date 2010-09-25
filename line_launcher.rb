@@ -175,7 +175,12 @@ class LineLauncher
       browse_url "http://thesaurus.reference.com/browse/#{url}"
     end
 
-    self.add :paren=>"dic" do   # - (th): thesaurus.com
+    self.add :paren=>"twitter" do   # - (twitter): twitter search
+      url = Line.without_label.sub(/^\s+/, '').gsub('"', '%22').gsub(':', '%3A').gsub(' ', '%20')
+      browse_url "http://search.twitter.com/search?q=#{url}"
+    end
+
+    self.add :paren=>"dic" do   # - (dic): dictionary.com lookup
       url = Line.without_label.sub(/^\s+/, '').gsub('"', '%22').gsub(':', '%3A').gsub(' ', '%20')
       browse_url "http://dictionary.reference.com/browse/#{url}"
     end

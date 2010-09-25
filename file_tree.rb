@@ -228,16 +228,14 @@ class FileTree
       #:fg => "444444", :bold => true
     #       :fg => "dd7700", :bold => true
 
-    Styles.define :diff_line_number, :bold => true, :size => "-2",
-      :fg => "ccc"
+    Styles.define :diff_line_number, :bold => true, :size => "-2", :fg => "ccc"
     Styles.define :diff_red, :bg => "ffdddd", :fg => "cc4444"
     Styles.define :diff_green, :bg => "ddffcc", :fg => "337744"
     Styles.define :diff_small, :fg => "dddddd", :size => "-11"
     #       :size => "-1"
 
     if Styles.inverse
-      Styles.define :diff_line_number, :bold => true, :size => "-2",
-        :fg => "445"
+      Styles.define :diff_line_number, :bold => true, :size => "-2", :fg => "333"
       Styles.define :diff_red, :bg => "440000", :fg => "ee3333"
       Styles.define :diff_green, :bg => "113300", :fg => "44dd33"
       Styles.define :diff_small, :fg => "222222", :size => "-11"
@@ -361,7 +359,7 @@ class FileTree
   end
 
   def self.handles? list=nil
-    list ||= self.construct_path(:list => true)
+    list ||= self.construct_path(:list => true)   # Use current line by default
     self.matches_root_pattern?(list.first)
   end
 
@@ -467,16 +465,19 @@ class FileTree
       # Search for exact line match
       found = search_forward_regexp("^#{regexp_quote(search_string)}$", nil, true)
 
-      # If not found, search for substring of line
-      unless found
+      unless found   # If not found, search for substring of line, but with a break at the end
         Move.top
-        search_forward_regexp("#{regexp_quote(search_string)}", nil, true)
+        found = search_forward_regexp("#{regexp_quote(search_string)}[^_a-zA-Z0-9]", nil, true)
       end
 
-      # If not found, search for it stripped
-      unless found
+      unless found   # If not found, search for substring of line
         Move.top
-        search_forward_regexp("#{regexp_quote(search_string.strip)}")
+        found = search_forward_regexp("#{regexp_quote(search_string)}", nil, true)
+      end
+
+      unless found   # If not found, search for it stripped
+        Move.top
+        found = search_forward_regexp("#{regexp_quote(search_string.strip)}")
       end
 
       beginning_of_line
@@ -1582,17 +1583,28 @@ class FileTree
   def self.matches_root_pattern? path
     without_label = Line.without_label :line=>path#, :leave_indent=>true
     without_label =~ /^\/[^\n,]*$/ ||
-    without_label =~ /^(~\/|\.+\/|\$[\w-].*$)/
+    without_label =~ /^(~\/|\.+\/|\$[\w-]*\/?$)/
   end
 
-  def self.create_dir
-    # If in tree, create dir in tree
-    if Line[/^ *[+-] [\/\w _-]+\/$/]
-      $el.make_directory FileTree.construct_path
-      return
-    end
+  # If cursor on a tree, returns it, otherwise return path of current file
+  def self.tree_path_or_this_file dir_only=false
 
-    $el.make_directory elvar.default_directory
+    # If in tree, use that dir
+    path = FileTree.handles? ?
+      FileTree.construct_path :
+      View.file
+
+    path = Files.just_dir(path) if dir_only
+
+    path
+
+  end
+
+  def self.do_create_dir
+
+    path = self.tree_path_or_this_file :dir_only
+
+    $el.make_directory path
 
     # Construct path
     # Prompt for name
@@ -1849,8 +1861,9 @@ class FileTree
 
     if prefix == :u
       Line.delete
+
       # Adjust orig if in same file
-      orig.line = orig.line - 1 if orig.file == View.file && orig.line > View.line_number
+      orig.line = orig.line - 1 if orig.file_or_buffer == View.file_or_buffer && orig.line > View.line_number
     end
 
     orig.go   # Go back to where we were
@@ -1903,7 +1916,7 @@ class FileTree
 
     new_name = Keys.input(
       :prompt=>"Rename #{source_path} to what?: ",
-      :initial_input=>(Keys.prefix_u? ? "" : File.basename(source_path))
+      :initial_input=>(Keys.prefix_u? ? File.basename(source_path) : "")
       )
 
     dest_path = "#{source_path.sub(/(.+\/).+/, "\\1#{new_name}")}"

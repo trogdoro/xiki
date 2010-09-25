@@ -524,7 +524,6 @@ class Search
 
   # During isearch, open most recently edited file with the search string in its name
   def self.isearch_to
-
     match = self.stop
 
     if match.nil?   # If nothing searched for yet
@@ -568,7 +567,8 @@ class Search
       View.open found
       if method  # If method, go to it
         Move.top
-        re_search_forward "^ +def \\(self\\.\\)?#{method}\\>"
+        re_search_forward "^ +def \\(self\\.\\)?#{method}[^_a-zA-Z0-9]"
+        Move.to_axis
         recenter 0
       end
     else
@@ -983,7 +983,6 @@ class Search
       Repository.code_tree_diff
       View.to_highest
       Search.isearch nil
-
       return
     end
 

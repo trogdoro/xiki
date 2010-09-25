@@ -186,7 +186,7 @@ class Code
         if method   # Jump to method if they were on def... line
           Keys.clear_prefix
           View.to_highest
-          Search.forward "^ *describe .+##{method}"
+          Search.forward "^ *describe .+##{method}[^_a-zA-Z0-9]"
           Move.to_line_text_beginning
           View.recenter_top
         end
@@ -206,7 +206,7 @@ class Code
         if method   # Jump to method if they were on def... line
           Keys.clear_prefix
           View.to_highest
-          Search.forward "^ *def \\(self\\.\\)?#{method}\\>"
+          Search.forward "^ *def \\(self\\.\\)?#{method}[^_a-zA-Z0-9]"
           Move.to_line_text_beginning
           View.recenter_top
         end
@@ -238,7 +238,7 @@ class Code
       Specs.run_spec_in_place
       return
     elsif prefix == :u
-      args << "spec"
+      args << "spec/unit"
 
       if View.mode == :shell_mode   # If already in shell, don't change dir
         dir = nil
@@ -544,7 +544,14 @@ class Code
 
   def self.enter_log_line
     $el.open_line(1) unless Line.blank?
-    View.insert("Ol.line")
+    if Keys.prefix_u?
+      View.insert "Ol << '!'"
+      Line.to_right
+      Move.backward 2
+      return
+    end
+
+    View.insert "Ol.line"
     Line.to_left
   end
 

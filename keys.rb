@@ -134,6 +134,7 @@ class Keys
   #   - Terminated by pause:  Keys.input(:optional => true)
   #     - A pause at the beginning will result in no input (nil)
   def self.input options={}
+
     return self.input_with_choices(options) if options[:choices]
 
     Cursor.remember :before_input
@@ -174,7 +175,6 @@ class Keys
     end
 
     keys = ""
-
 
     $el.elvar.inhibit_quit = true
 
@@ -222,7 +222,10 @@ class Keys
     return nil if ch.nil?
     if ch < 27
       ch += 96
-    elsif 67108912 <= ch and ch <= 67108921
+
+    # Now it includes C-.  Do we want that?!
+    elsif 67108910 <= ch and ch <= 67108921
+      #     elsif 67108912 <= ch and ch <= 67108921
       ch -= 67108864
     end
     ch.chr

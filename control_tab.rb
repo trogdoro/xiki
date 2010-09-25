@@ -47,7 +47,7 @@ class ControlTab
 
       # Check for prefix, and store correct test for files to go through accordingly
       case prefix
-      when :uu   # Buffers but not dirs or files
+      when 0, :uu   # Buffers but not dirs or files
         #       when 0   # Not dirs or files
         @@consider_test = lambda{|b| ! buffer_file_name(b) && ! buffer_name(b)[/Minibuf/] && ! elvar.mode_name[/^Dired/] && buffer_name(b) !~ /^\*(tree|console) / }
       when 1   # Files only
@@ -69,14 +69,16 @@ class ControlTab
         @@consider_test = lambda{|b| buffer_file_name(b) =~ /\/app\/controllers\//}
       when 66   # Models
         @@consider_test = lambda{|b| buffer_file_name(b) =~ /\/app\/models\//}
+      when 60   # Tests
+        @@consider_test = lambda{|b| buffer_file_name(b) =~ /_(spec|test)\.rb$/}
       when 7   # .notes files
         @@consider_test = lambda{|b| buffer_file_name(b) =~ /\.notes$/}
       when 8   # ...trees
         @@consider_test = lambda{|b| buffer_name(b) =~ /^\*tree /}
-      when 9   # test
-        @@consider_test = lambda{|b| buffer_file_name(b) =~ /_(spec|test)\.rb$/}
-      when 0   # js
+      when 9   # js
         @@consider_test = lambda{|b| buffer_file_name(b) =~ /\.js$/}
+        #       when 0   # test
+        #         @@consider_test = lambda{|b| buffer_file_name(b) =~ /_(spec|test)\.rb$/}
       else
 
         #         if View.in_bar?  # If in the bar, only notes or trees

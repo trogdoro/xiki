@@ -33,6 +33,8 @@ class Git
     txt.gsub!(/^#\t/, "- ")
     txt.gsub!(/^#\n/, '')
     txt.gsub!(/^#/, '|')
+    txt.gsub! /.+ \.\..+\n/, ""
+    txt
   end
 
   # Takes as input the output of .status_internal.

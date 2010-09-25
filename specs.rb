@@ -70,6 +70,10 @@ class Specs
 
       txt.sub! /nil\n$/, ''
       # CodeTree.no_search_option +
+
+      txt.gsub!(/.+\/gems\/rr-.+\n/, '')
+      txt.gsub!(/.+\/gems\/rspec-.+\n/, '')
+
       txt.gsub(/^/, '| ')
 
     end

@@ -122,13 +122,13 @@ class Files
   end
 
   def self.edited_flat
-    paths = edited_array
+    paths = edited_array[0..120]
     paths.map!{|i| i.sub(/(.+\/)(.+)/, "- \\1\n  - \\2")}
     CodeTree.tree_search_option + paths.join("\n")
   end
 
   def self.history_flat
-    paths = history_array
+    paths = history_array[0..120]
     paths.map!{|i| i.sub(/(.+\/)(.+)/, "- \\1\n  - \\2")}
     CodeTree.tree_search_option + paths.join("\n")
   end
@@ -202,6 +202,54 @@ class Files
     with(:save_excursion) do
       $el.clean_crazy_quotes
     end
+  end
+
+  # Use File.basename
+  #   def self.name path   # Extract name from path
+  #     path.sub(/.+\/(.+)/, "\\1")   # Cut of path
+  #   end
+
+  # Use File.dirname
+  #   def self.dir path   # Extract dir from path
+  #     return "" unless path =~ /\//
+  #     path.sub(/(.+)\/.*/, "\\1")   # Cut of path
+  #   end
+
+  def self.enter_file
+    path = File.expand_path(Keys.bookmark_as_path(:include_file=>true))
+    path << "/" if File.directory? path
+    View.insert(path)
+  end
+
+  # This is currently mac-specific
+  def self.open_last_screenshot
+
+    dirs = `ls -t #{Bookmarks["$dt"]}`
+    screenshot = Bookmarks["$dt"]+dirs[/.+/]
+
+    self.open_as screenshot, "Adobe Illustrator"
+
+  end
+
+  # This is currently mac-specific
+  def self.open_as file, application
+    command = "open -a \"#{application}\" \"#{file}\""
+
+    $el.shell_command(command)
+  end
+
+  def self.open_in_window
+
+    file = FileTree.tree_path_or_this_file
+
+    # Else, reveal current file
+    command = "open --reveal \"#{file}\""
+    $el.shell_command(command)
+
+  end
+
+  def self.just_dir path
+    path =~ /\/$/ ? path : File.dirname(path)+"/"
   end
 
 end

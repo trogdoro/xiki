@@ -13,10 +13,11 @@ class Firefox
   @@log_unique_token = "aa"
 
   def self.menu
-    [ '.reload',
-      '.exec "alert(\'hey\')"',
-      '.exec "create()"'
-    ]
+    ".reload
+     .include_jquery_and_utils
+     - (js): p('hi')
+     - (js): $('a').blink()
+     "
   end
 
   def self.last_stack_trace
@@ -48,8 +49,13 @@ class Firefox
 
   # Called internally by others
   def self.exec txt
-    con = Net::Telnet::new("Host" => "localhost", "Port" => 9997)
-    con.cmd txt
+    begin
+      con = Net::Telnet::new("Host" => "localhost", "Port" => 9997)
+      con.cmd txt
+    rescue
+      View.message "JSSH appears to be down!"
+      ""
+    end
   end
 
   def self.click
@@ -129,25 +135,36 @@ class Firefox
   end
 
   def self.run txt
-    socket = self.connection
-    txt.gsub!("\n", ' ')
-    txt.gsub!('"', "\\\"")
+    begin
+      socket = self.connection
+      txt.gsub!("\n", ' ')
+      txt.gsub!('"', "\\\"")
 
-    socket.send "document.location = \"javascript: #{txt}; void(0)\"\n", 0
-    read_socket(socket)
-    nil
+      socket.send "document.location = \"javascript: #{txt}; void(0)\"\n", 0
+      read_socket(socket)
+      nil
 
-    # TODO 1 try this!
-    #     socket.close
+      # TODO 1 try this!
+      #     socket.close
+    rescue
+      View.message "JSSH appears to be down!"
+      nil
+    end
+
   end
 
   def self.value txt
-    socket = self.connection
-    txt.gsub!("\n", ' ')
-    txt.gsub!('"', "\\\"")
 
-    socket.send "#{txt};\n", 0
-    read_socket(socket)
+    begin
+      socket = self.connection
+      txt.gsub!("\n", ' ')
+      txt.gsub!('"', "\\\"")
+      socket.send "#{txt};\n", 0
+      read_socket(socket)
+    rescue
+      View.message "JSSH appears to be down!"
+      ""
+    end
 
     # TODO 1 try this!
     #     socket.close
@@ -191,6 +208,20 @@ class Firefox
     end
 
     Line.to_left
+  end
+
+  def self.include_jquery_and_utils
+
+    Firefox.run "
+var s=document.createElement('script');
+s.setAttribute('src', 'http://jquery.com/src/jquery-latest.js');
+document.getElementsByTagName('body')[0].appendChild(s);
+
+var s=document.createElement('script');
+s.setAttribute('src', 'http://xiki.org/javascripts/util.js');
+document.getElementsByTagName('body')[0].appendChild(s);
+"
+
   end
 
 end

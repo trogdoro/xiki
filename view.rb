@@ -575,6 +575,10 @@ class View
     file ? File.expand_path(file) : nil
   end
 
+  def self.file_or_buffer
+    self.file || self.name
+  end
+
   def self.file_name
     buffer_file_name ?
       file_name_nondirectory(buffer_file_name) :

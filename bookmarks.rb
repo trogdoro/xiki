@@ -76,6 +76,7 @@ class Bookmarks
 
   # Like bookmark-jump, but accepts buffers
   def self.jump name
+
     # If normal bookmark found, use it
     return bookmark_jump(name) if bookmark_get_filename(name)
 
@@ -84,6 +85,8 @@ class Bookmarks
     if buffer == :buffer_not_open
       return View.message "Buffer '#{buffer}' not currently open."
     end
+    return nil if buffer.nil?
+
     View.to_buffer buffer
     return true
   end
@@ -130,8 +133,10 @@ class Bookmarks
     path = bookmark_get_filename( "#{prefix_to_bm}#{keys}" )
 
     if path.nil?   # If not found, try buffer in bookmarks.yml
-      return if self.jump( "#{prefix_to_bm}#{keys}" )
-      message("no path found")
+
+      return true if self.jump( "#{prefix_to_bm}#{keys}" )
+      View.beep
+      message("Bookmark not found!")
       return
     end
 

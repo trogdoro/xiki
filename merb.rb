@@ -96,7 +96,8 @@ class Merb
   end
 
   def self.start dir, port
-    Console.run "merb -p #{port}", :dir=>self.path_from_dir(dir), :buffer=>"*merb #{dir}"
+    Console.run "merb -a thin -p #{port}", :dir=>self.path_from_dir(dir), :buffer=>"*merb #{dir}"
+    #     Console.run "merb -p #{port}", :dir=>self.path_from_dir(dir), :buffer=>"*merb #{dir}"
   end
 
   def self.shell dir, port

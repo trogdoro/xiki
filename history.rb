@@ -203,6 +203,9 @@ class History
 
     # Copy file
     $el.copy_file path, "#{bm}#{name} #{Time.now.strftime('%Y-%m-%d %H-%M')}"
+
+    View.message "File '#{name}' was backed up to $bak"
+
   end
 
   def self.diff_with_backup

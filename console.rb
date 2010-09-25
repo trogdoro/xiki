@@ -210,7 +210,7 @@ class Console
     if options[:sync]
       output = Console.run command, :dir=>dir, :sync=>true
       output.sub!(/\A\z/, "\n")   # Add linebreak if blank
-      output.gsub!(/^/, '! ')
+      output.gsub!(/^/, '| ')
       FileTree.indent(output)
       FileTree.insert_quoted_and_search output
     else

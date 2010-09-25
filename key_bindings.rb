@@ -79,6 +79,7 @@ class KeyBindings
     Keys.open_in_bar { View.open_in_bar }
     Keys.open_in_right { View.open_in_right }
     Keys.open_in_os { Files.open_in_os }
+    Keys.open_in_window { Files.open_in_window }
     Keys.open_just { Files.open_just }
     Keys.open_key { Keys.jump_to_code }   # jump to ruby code of key definition *
     Keys.open_list_bookmarks { CodeTree.display_menu("- Bookmarks.tree/") }
@@ -87,7 +88,7 @@ class KeyBindings
     Keys.open_lisp_info { info("elisp") }   # Open manual
     Keys.open_log_list { Repository.show_log_one_file }   # Show git diffs o 1 file
     Keys.open_log_push { Repository.show_log }   # Show git diffs for a bookmark
-    Keys.open_log_searches { Search.log }
+    Keys.open_last_screenshot { Files.open_last_screenshot }
     Keys.open_log_tree { Rails.tree_from_log }
     Keys.open_list_databases { CodeTree.display_menu('- CouchDb.databases/') }
     Keys.open_list_models { CodeTree.display_menu("- Merb.models/") }
@@ -134,7 +135,7 @@ class KeyBindings
     Keys.enter_as_execute { Console.do_as_execute(:insert=>true) }   # change word to camel case (LikeThat)
     Keys.enter_as_filename { insert Clipboard.get(".") }
     Keys.enter_as_hyphenated { insert TextUtil.hyphen_case(Clipboard.get(0)) }
-    Keys.enter_as_jquery { insert "#{Keys.prefix_u? ? "- (js): " : ""}$(\"#{Clipboard.get(0)}\")#{Keys.prefix_u? ? ".blink()" : ""}" }
+    Keys.enter_as_jquery { Javascript.enter_as_jquery }
     Keys.enter_as_snake { insert TextUtil.snake_case(Clipboard.get(0)) }
     #     Keys.enter_as_search { FileTree.enter_as_search }
     Keys.enter_as_test { Specs.enter_as_rspec }
@@ -144,7 +145,7 @@ class KeyBindings
     Keys.enter_clipboard { Clipboard.paste("0") }   # paste **
     Keys.enter_difflog { App.enter_from_difflog }   # Save point and go to difflog to search
     # E: defined above - mapped to what C-e does by default
-    Keys.enter_file { View.insert(File.expand_path(Keys.bookmark_as_path(:include_file=>true))); Line.to_left }   # Given a bookmark
+    Keys.enter_file { Files.enter_file }   # Given a bookmark
     Keys.enter_history { History.enter_history }   # enter recently viewed files
     #     Keys.enter_have { Console.insert_command }
     #Keys.EH { FileTree.enter_lines(/^\| /) }
@@ -152,7 +153,8 @@ class KeyBindings
     Keys.enter_insert_date { App.enter_date }    # insert date string (and time if C-u)
     Keys.enter_insert_command { insert("- (/): "); ControlLock.disable }    # insert date string (and time if C-u)
     Keys.enter_insert_ruby { code = Keys.input(:prompt=>"Enter ruby code to eval and insert results: "); View.insert(eval(code).to_s)}
-    Keys.enter_insert_search { View.insert("- google: ") }
+    Keys.enter_insert_search {View.insert(Line.matches(/^ *- $/) ? "google: " : "- google: ")}
+
     Keys.enter_insert_wikipedia { View.insert("- (wp): ") }
     Keys.enter_in_todo { FileTree.enter_snippet }   # enter tree quote of region in $T
     Keys.enter_junior { Notes.bullet("") }
@@ -201,7 +203,7 @@ class KeyBindings
     Keys.D { insert "Apparently this is necessary to remap C-d" }
     Keys.DD { delete_char elvar.current_prefix_arg || 1 }   # DD - delete character (D's default) **
     Keys.do_as_camelcase { Clipboard.do_as_camel_case }   # change word to camel case (LikeThat)
-    Keys.do_as_execute { Console.do_as_execute }   # change word to camel case (LikeThat)
+    Keys.do_as_execute { Console.do_as_execute }   # Run shell command on tree
     Keys.do_as_html { Firefox.do_as_html }
     Keys.do_as_javascript { Javascript.run }
     Keys.do_as_lowercase { Clipboard.do_as_lower_case }   # change word to camel case (LikeThat)
@@ -215,7 +217,7 @@ class KeyBindings
     Keys.do_backward { backward_kill_word(Keys.prefix || 1) }   # delete word backward
     Keys.do_code_align { Code.do_code_align }
     Keys.do_click_back { Firefox.back }   # compare with last AV version
-    Keys.do_create_directory { FileTree.create_dir }
+    Keys.do_create_directory { FileTree.do_create_dir }
     Keys.do_compare_file { Repository.diff_one_file }   # compare current file with subversion
     Keys.do_click_hyperlink { Firefox.click }   # compare with last AV version
     Keys.do_code_indent { Code.indent }
@@ -479,7 +481,12 @@ class KeyBindings
     define_key(:isearch_mode_map, kbd("C-'")) { Search.isearch_just_surround_with_char '"' }
     define_key(:isearch_mode_map, kbd("C-j C-'")) { Search.isearch_just_surround_with_char "'" }
 
+    define_key(:isearch_mode_map, kbd("C-j C-,")) { Search.isearch_just_surround_with_char "~" }
+
+    define_key(:isearch_mode_map, kbd("C-j C-SPC")) { Search.isearch_just_surround_with_char " " }
+
     define_key(:isearch_mode_map, kbd("C-`")) { Search.isearch_just_surround_with_char "~" }
+
     define_key(:isearch_mode_map, kbd("C-j C-/")) { Search.isearch_just_comment }
     define_key(:isearch_mode_map, kbd("C-j C-=")) { Search.just_increment }
     define_key(:isearch_mode_map, kbd("C-j C--")) { Search.just_increment(:decrement=>true) }
