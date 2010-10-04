@@ -86,14 +86,14 @@ class KeyBindings
     Keys.open_lisp_error { Code.show_el4r_error }
     Keys.open_list_faces { list_faces_display }
     Keys.open_lisp_info { info("elisp") }   # Open manual
-    Keys.open_log_list { Repository.show_log_one_file }   # Show git diffs o 1 file
-    Keys.open_log_push { Repository.show_log }   # Show git diffs for a bookmark
+    Keys.open_log_list { Git.show_log_one_file }   # Show git diffs o 1 file
+    Keys.open_log_push { Git.show_log }   # Show git diffs for a bookmark
     Keys.open_last_screenshot { Files.open_last_screenshot }
     Keys.open_log_tree { Rails.tree_from_log }
     Keys.open_list_databases { CodeTree.display_menu('- CouchDb.databases/') }
     Keys.open_list_models { CodeTree.display_menu("- Merb.models/") }
     Keys.open_list_names { Clipboard.list }
-    Keys.open_list_repository { Repository.open_list_repository }
+    Keys.open_list_repository { Git.open_list_repository }
     Keys.open_link_top { Links.open_first }   # open first hyperlink on page
     Keys.open_menu { Xiki.open_menu }   # Open all menus and show them **
     Keys.open_not_saved { History.open_unsaved }
@@ -139,7 +139,7 @@ class KeyBindings
     Keys.enter_as_snake { insert TextUtil.snake_case(Clipboard.get(0)) }
     #     Keys.enter_as_search { FileTree.enter_as_search }
     Keys.enter_as_test { Specs.enter_as_rspec }
-    Keys.enter_as_url { View.insert Firefox.value('document.location.toString()') }
+    Keys.enter_as_url { Firefox.enter_as_url }
     Keys.enter_as_variable { insert "\#{#{Clipboard.get(0)}}" }
     Keys.enter_bullet { Notes.bullet }
     Keys.enter_clipboard { Clipboard.paste("0") }   # paste **
@@ -173,7 +173,7 @@ class KeyBindings
     Keys.enter_name { Clipboard.paste }   # paste thing saved as name
     Keys.enter_outline { FileTree.enter_lines }   # in tree, enter methods or headings
     # Find new key for thisKeys.EO { DiffLog.enter_old }   # Enter Old: enter newly-deleted from last save
-    Keys.enter_push { Repository.code_tree_diff(:enter=>true) }   # Commit to repos, push, etc
+    Keys.enter_push { Git.code_tree_diff(:enter=>true) }   # Commit to repos, push, etc
     Keys.enter_quote { FileTree.enter_quote }
     Keys.enter_row { View.insert_line }
     Keys.enter_search { Search.enter_search }
@@ -218,15 +218,15 @@ class KeyBindings
     Keys.do_code_align { Code.do_code_align }
     Keys.do_click_back { Firefox.back }   # compare with last AV version
     Keys.do_create_directory { FileTree.do_create_dir }
-    Keys.do_compare_file { Repository.diff_one_file }   # compare current file with subversion
+    Keys.do_compare_file { Git.diff_one_file }   # compare current file with subversion
     Keys.do_click_hyperlink { Firefox.click }   # compare with last AV version
     Keys.do_code_indent { Code.indent }
     Keys.do_compare_last { History.diff_with_backup }   # compare with last AV version
     Keys.do_count_matches {  View.count_matches }
     Keys.do_copy_next { Files.copy }   # copy file to next view
-    Keys.do_compare_one { Repository.diff }   # compare one revision with previous revision
+    #     Keys.do_compare_one { Git.diff }   # compare one revision with previous revision
     Keys.do_clean_quotes { Files.do_clean_quotes }   # Fix special chars
-    Keys.do_compare_repository { Repository.diff_dir }
+    Keys.do_compare_repository { Git.diff_dir }
     Keys.do_compare_saved { DiffLog.compare_with_saved }
 
     Keys.do_copy_to { FileTree.copy_to }
@@ -278,7 +278,7 @@ class KeyBindings
     Keys.do_next_paragraph { Code.do_next_paragraph }   # Move line to start of next paragraph
     Keys.do_number_start { Incrementer.start }
     Keys.do_outline { History.open_current :outline => true, :prompt_for_bookmark => true }
-    Keys.do_push { Repository.code_tree_diff }   # Commit to repos, push, etc
+    Keys.do_push { Git.code_tree_diff }   # Commit to repos, push, etc
     Keys.do_query { Search.query_replace }   # do query replace *
     Keys.do_run { Code.run }   # run code as ruby *
     Keys.do_search { Search.tree_grep }   # do grep search *
@@ -287,7 +287,7 @@ class KeyBindings
     #     Keys.do_under { FileTree.kill_under }   # kill tree children (lines indented more)
     Keys.do_up { LineLauncher.do_last_launch }
     #Keys.display_up { message FileTree.construct_path( :indented => true ) }   # Display ancestors (by indent level)
-    Keys.do_version { Repository.code_tree_diff_unadded }   # Compare with repos (with what hasn't been added yet)
+    Keys.do_version { Git.code_tree_diff_unadded }   # Compare with repos (with what hasn't been added yet)
     Keys.do_whitespace { Deletes.delete_whitespace }   # delete blank lines
     # X
     Keys.do_you { delete_char elvar.current_prefix_arg || 1 }   # Delete character
@@ -327,7 +327,8 @@ class KeyBindings
     #Keys.to_line { Move.to_line }   # move to line number *
     Keys.to_matching { Move.to_other_bracket }   # to matching bracket, etc
     Keys.to_next { Move.to_next_paragraph }   # to next paragraph *
-    Keys.to_outline { History.open_current :outline => true }   # *
+    Keys.to_outline { FileTree.to_outline }   # *
+    #     Keys.to_outline { History.open_current :outline=>true }   # *
     Keys.to_previous { Move.to_previous_paragraph }   # to beginning of previous paragraph *
     Keys.to_quote { Move.to_quote }   # move to next ...|... quote
     Keys.to_row { Move.to_line }   # go to nth line, relative to top of window
@@ -363,7 +364,8 @@ class KeyBindings
 
     Keys.layout_expand { View.enlarge }   # *
     # F
-    Keys.layout_files { FileTree.open_in_bar; View.to_nth 1; Effects.blink(:what=>:line) }
+    Keys.layout_files { View.layout_files }
+    #     Keys.layout_files { FileTree.open_in_bar; View.to_nth 1; Effects.blink(:what=>:line) }
     Keys.layout_hide { View.hide }   # **
     Keys.layout_indent { Hide.hide_by_indent }   # only show lines indented less than x
     Keys.layout_jump { View.shift }
@@ -372,13 +374,13 @@ class KeyBindings
     Keys.layout_marker { Color.colorize }   # colorize line, etc
     #Keys.layout_menu { CodeTree.layout_menu }   # show menu bare in current state
     Keys.layout_next { View.next(:blink=>true) }   # next view **
-    Keys.layout_output { Code.open_log_view; Effects.blink(:what=>:line) }
+    Keys.layout_output { View.layout_output }
     Keys.layout_previous { View.previous(:blink=>true) }   # previous view **
     # Q
     Keys.layout_right { View.to_upper(:blink=>true) }   # Go to view to the right
     #     Keys.layout_right { View.layout_right }   # Go to view to the right
     Keys.layout_search { Keys.prefix_u? ? Search.find_in_buffers(Keys.input(:prompt=>"Search all open files for: ")) : Hide.search }   # *
-    Keys.layout_todo { FileTree.open_in_bar; Effects.blink(:what=>:line) }   # show bar on left with the quick bookmark named "-t" *
+    Keys.layout_todo { View.layout_todo }   # show bar on left with the quick bookmark named "-t" *
     Keys.layout_uncover { Hide.reveal }   # Reveal all hidden text
     # V
     Keys.layout_visibility { View.visibility }
@@ -440,12 +442,12 @@ class KeyBindings
     Keys.search_just_edges { Search.just_edges }   # delete everything but chars at edges of match
     Keys.search_just_files { Search.isearch_restart "$f" }   # isearch for this string in $f
     Keys.search_just_have { Search.just_select }   # select match
-    Keys.search_just_lowercase { Search.downcase }
-    Keys.search_just_marker { Search.just_marker }
+    Keys.search_just_last { Search.isearch_restart :previous }
+    Keys.search_just_mark { Search.just_marker }
     #     Keys.search_just_macro { Search.just_macro }
     Keys.search_just_next { Search.isearch_restart :next }
-    Keys.search_just_open { Search.isearch_open }
-    Keys.search_just_previous { Search.isearch_restart :previous }
+    Keys.search_just_outline { Search.isearch_restart "$o" }
+    Keys.search_just_push { Git.search_just_push }
     Keys.search_just_query { Search.isearch_query_replace :match }   # replace
     Keys.search_just_right { Search.isearch_restart :right }   # replace
     #     Keys.search_just_replace { Search.isearch_query_replace :match }   # replace
@@ -453,7 +455,7 @@ class KeyBindings
     Keys.search_just_todo { Search.isearch_restart "$t" }   # isearch for this string in $t
     # Keys.search_just_tag { Search.isearch_just_tag }   # select match
 
-    Keys.search_just_uppercase { Search.upcase }   # make match be snake case
+    #     Keys.search_just_uppercase { Search.upcase }   # make match be snake case
     Keys.search_just_variable { Search.isearch_just_surround_with_char '#{', '}' }
 
     Keys.search_just_web { Search.isearch_google }   # make match be snake case

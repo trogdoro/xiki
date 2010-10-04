@@ -970,6 +970,23 @@ class View
 
   end
 
+  def self.layout_todo # nth=nil
+    FileTree.open_in_bar
+    Effects.blink(:what=>:line)
+  end
+
+  def self.layout_files # nth=nil
+    FileTree.open_in_bar
+    View.to_nth 1
+    Effects.blink(:what=>:line)
+  end
+
+  def self.layout_output # nth=nil
+    Code.open_log_view
+    Effects.blink(:what=>:line)
+  end
+
+
   def self.split options={}
     options[:horizontally] ?
       $el.split_window_horizontally :

@@ -173,7 +173,7 @@ class Code
   def self.open_related_rspec
     if View.file =~ /\/(app|spec)\//   # If normal specs
       if View.file =~ /\/app\//   # If in file, open corresponding spec
-        if Keys.prefix_u   # If C-u, store method
+        unless Keys.prefix_u   # Unless C-u, store method
           orig = View.cursor
           Move.to_end
           Search.backward "^ +def "
@@ -186,13 +186,13 @@ class Code
         if method   # Jump to method if they were on def... line
           Keys.clear_prefix
           View.to_highest
-          Search.forward "^ *describe .+##{method}[^_a-zA-Z0-9]"
+          Search.forward "^ *describe .+##{method}[^_a-zA-Z0-9]", :beginning=>true
           Move.to_line_text_beginning
           View.recenter_top
         end
 
       else   # Otherwise, open corresponding file
-        if Keys.prefix_u   # If C-u, store method
+        unless Keys.prefix_u   # unless C-u, store method
           orig = View.cursor
           Move.to_end
           Search.backward "^ *describe "
@@ -206,7 +206,7 @@ class Code
         if method   # Jump to method if they were on def... line
           Keys.clear_prefix
           View.to_highest
-          Search.forward "^ *def \\(self\\.\\)?#{method}[^_a-zA-Z0-9]"
+          Search.forward "^ *def \\(self\\.\\)?#{method}[^_a-zA-Z0-9]", :beginning=>true
           Move.to_line_text_beginning
           View.recenter_top
         end
@@ -234,10 +234,9 @@ class Code
     extra = "DS_SUPPRESS=true;"
     prefix = Keys.prefix
 
-    if prefix == 9
-      Specs.run_spec_in_place
-      return
-    elsif prefix == :u
+    return Specs.run_spec_in_place if prefix.nil?
+
+    if prefix == :u
       args << "spec/unit"
 
       if View.mode == :shell_mode   # If already in shell, don't change dir
@@ -249,56 +248,59 @@ class Code
           dir, spec = View.file.match(/(.+)\/(app\/.+)/)[1,2]
         end
       end
+    end
 
-    elsif View.file !~ /_spec\.rb$/   # If not in an rspec file, delegate to: do_related_rspec
+    # Prefix must be something - 9, I guess, by convention
+
+    if View.file !~ /_spec\.rb$/   # If not in an rspec file, delegate to: do_related_rspec
       orig = Location.new
       self.do_related_rspec
       orig.go
       return
-    else
-      if options[:line]   # If specific line, just use it
-        args << '-l'
-        args << options[:line]
-      else   # Otherwise, figure out what to run
-        orig = Location.new
-        orig_index = View.index
-
-        if prefix == 8   # If not C-8, only run this test
-        else
-          before_search = Location.new
-          Line.next
-
-          # Find first preceding "it " or "describe "
-          it = Search.backward "^ *it ", :dont_move=>true
-          describe = Search.backward "^ *describe\\>", :dont_move=>true
-
-          if it.nil? && describe.nil?
-            View.beep
-            before_search.go
-            return View.message "Couldn't find it... or describe... block"
-          end
-
-          it ||= 0;  describe ||= 0
-
-          if it > describe   # If it, pass rspec -e "should...
-            extra = "DS_SUPPRESS=false; "
-            View.cursor = it
-            test = Line.value[/"(.+)"/, 1]
-            args << '-e'
-            args << "\"#{test}\""
-          else   # If describe, pass rspec line number
-            View.cursor = describe
-            args << '-l'
-            args << View.line_number
-          end
-          before_search.go
-        end
-      end
-
-      # Chop off up until before /spec/
-      dir, spec = View.file.match(/(.+)\/(spec\/.+)/)[1,2]
-      args.unshift spec
     end
+
+    if options[:line]   # If specific line, just use it
+      args << '-l'
+      args << options[:line]
+    else   # Otherwise, figure out what to run
+      orig = Location.new
+      orig_index = View.index
+
+      if prefix == 8   # If not C-8, only run this test
+      else
+        before_search = Location.new
+        Line.next
+
+        # Find first preceding "it " or "describe "
+        it = Search.backward "^ *it ", :dont_move=>true
+        describe = Search.backward "^ *describe\\>", :dont_move=>true
+
+        if it.nil? && describe.nil?
+          View.beep
+          before_search.go
+          return View.message "Couldn't find it... or describe... block"
+        end
+
+        it ||= 0;  describe ||= 0
+
+        if it > describe   # If it, pass rspec -e "should...
+          extra = "DS_SUPPRESS=false; "
+          View.cursor = it
+          test = Line.value[/"(.+)"/, 1]
+          args << '-e'
+          args << "\"#{test}\""
+        else   # If describe, pass rspec line number
+          View.cursor = describe
+          args << '-l'
+          args << View.line_number
+        end
+        before_search.go
+      end
+    end
+
+    # Chop off up until before /spec/
+    dir, spec = View.file.match(/(.+)\/(spec\/.+)/)[1,2]
+    args.unshift spec
 
     buffer = "*console for rspec - #{dir}"
     # If spec buffer open, just switch to it

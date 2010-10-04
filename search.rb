@@ -567,7 +567,8 @@ class Search
       View.open found
       if method  # If method, go to it
         Move.top
-        re_search_forward "^ +def \\(self\\.\\)?#{method}[^_a-zA-Z0-9]"
+        # Ol.line
+        Search.forward "^ +def \\(self\\.\\)?#{method}[^_a-zA-Z0-9]", :beginning=>true
         Move.to_axis
         recenter 0
       end
@@ -628,6 +629,7 @@ class Search
     orig = View.cursor
     found = re_search_forward search, nil, (options[:go_anyway] ? 1 : true)
     View.cursor = orig if options[:dont_move]
+    View.cursor = self.left if options[:beginning]
     found
   end
 
@@ -879,7 +881,7 @@ class Search
     match = self.stop
     if match.nil?   # If nothing searched for yet
       dir = Keys.bookmark_as_path :prompt=>"Enter a bookmark to show the log for: "
-      CodeTree.display_menu("- Repository.menu/\n  - project - #{dir}\n    - .log ''/")
+      CodeTree.display_menu("- Git.menu/\n  - project - #{dir}\n    - .log ''/")
       return
     end
 
@@ -925,11 +927,13 @@ class Search
     term = self.stop
 
     if path == "$t"   # If $t, open bar
-      FileTree.open_in_bar; Effects.blink(:what=>:line)
+      View.layout_todo
+      #       FileTree.open_in_bar; Effects.blink(:what=>:line)
     elsif path == "$f"
-      FileTree.open_in_bar
-      View.to_nth 1
-      Effects.blink(:what => :line)
+      View.layout_files
+    elsif path == "$o"
+      View.layout_output
+      options[:reverse] = true
     elsif path == :top
       # Will go to highest below
     elsif path == :right
@@ -945,8 +949,13 @@ class Search
     View.wrap
     View.to_highest
 
-    options[:restart] ? $el.isearch_forward : self.isearch(term)
+    if options[:reverse]
+      View.to_bottom
+      options[:restart] ? $el.isearch_backward : self.isearch(term, :reverse=>true)
+      return
+    end
 
+    options[:restart] ? $el.isearch_forward : self.isearch(term)
   end
 
   def self.isearch txt=nil, options={}
@@ -970,7 +979,9 @@ class Search
     match = self.stop
 
     if match.nil?   # If nothing searched for yet
-      Search.outline_search
+      #       Search.outline_search
+      Search.isearch_restart "$o", :restart=>true
+
     else
       Search.isearch_find_in_buffers(:current_only=>true)
     end
@@ -980,7 +991,7 @@ class Search
     match = self.stop
 
     if ! View.at_bottom && match.nil?   # If nothing searched for yet, search in git diff
-      Repository.code_tree_diff
+      Git.code_tree_diff
       View.to_highest
       Search.isearch nil
       return
@@ -1101,7 +1112,7 @@ class Search
     match = self.stop
 
     if match.nil?   # If nothing searched for yet, resume search
-      Repository.diff_one_file
+      Git.diff_one_file
       Search.isearch
       # TODO
       #       Location.to_spot('paused')

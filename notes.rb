@@ -182,13 +182,12 @@ class Notes
     # y
     # z
 
-    define_key :notes_mode_map, kbd("C-\\") do
-
-      widen; Hide.show
-      Hide.hide_unless /^\| /
-      recenter -2
-      Hide.search
-    end
+    #     define_key :notes_mode_map, kbd("C-\\") do
+    #       widen; Hide.show
+    #       Hide.hide_unless /^\| /
+    #       recenter -2
+    #       Hide.search
+    #     end
 
     define_key(:notes_mode_map, kbd("M-<mouse-1>"), :notes_mouse_meta_click)
     define_key(:notes_mode_map, kbd("<double-mouse-1>"), :notes_mouse_double_click)

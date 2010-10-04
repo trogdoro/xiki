@@ -9,6 +9,7 @@ class History
   end
 
   def self.open_current options={}
+
     if options[:paths]
       paths = options[:paths]
     elsif options[:prompt_for_bookmark]
@@ -17,6 +18,7 @@ class History
       path = File.expand_path(path)
       paths = [path]
     elsif options[:outline] || options[:all]
+
       paths = [buffer_file_name(buffer_list[0])]
     else  # No options passed
       times = Keys.prefix
@@ -36,7 +38,6 @@ class History
       FileTree.enter_lines
 
     else  # If entering in new buffer
-
       # By default happen in same view
       View.bar if options[:bar]  # If to go to bar
 
@@ -205,11 +206,27 @@ class History
     $el.copy_file path, "#{bm}#{name} #{Time.now.strftime('%Y-%m-%d %H-%M')}"
 
     View.message "File '#{name}' was backed up to $bak"
-
   end
 
   def self.diff_with_backup
-    $el.ediff_files Dir["#{Bookmarks['$bak']}#{View.file_name}*"].last, View.file
+
+    if Keys.prefix_u
+      $el.ediff_files Dir["#{Bookmarks['$bak']}#{View.file_name}*"].last, View.file
+      return
+    end
+
+    backup = Dir["#{Bookmarks['$bak']}#{View.file_name}*"].last
+    diff = Console.run "diff -w -U 0 \"#{backup}\" \"#{buffer_file_name}\"", :sync=>true
+    diff = DiffLog.format(View.path, View.file_name, diff)
+
+    View.to_buffer("*diff with saved*")
+    View.clear
+    notes_mode
+
+    insert diff.count("\n") > 2 ?
+      diff :
+      "| Alert\n- ~No Differences~\n"
+
   end
 
 end

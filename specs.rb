@@ -33,9 +33,11 @@ class Specs
       clazz = func.to_s
       dir = 'models'   # Assume model
 
-
       dir = 'controllers' if clazz =~ /s$/   # If it ends with s, assume controller
       dir = 'helpers' if clazz =~ /_helpers$/
+
+      # Special cases
+      dir = 'controllers' if clazz == "application"
 
       # Try in unit/ dir first
       path = "spec/unit/#{dir}/#{clazz}_spec.rb"
@@ -191,7 +193,7 @@ class Specs
     Search.backward '^ *it '   # Go up to "it ..." line
     path = View.file.sub /.+\/spec\//, 'spec/'
     test = Line.value[/(["'])(.+)\1/, 2]   # "
-    test.gsub! "'", "\\\\'"   # Escape single quotes
+    #     test.gsub! '"', "\\\\'"   # Escape single quotes
 
     bms = Projects.listing.map{|o| o[1]}
     file_path = View.file

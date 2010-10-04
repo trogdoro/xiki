@@ -19,6 +19,10 @@ class Javascript
         }
       JS
 
+      # Remove comments
+      txt.gsub! %r'^ *// .+', ''
+      txt.gsub! %r'  // .+', ''
+
       Firefox.run "#{funcs}\n#{txt.gsub('\\', '\\\\\\')}"
       return
     end
@@ -39,9 +43,6 @@ class Javascript
 
   def self.run_internal txt
 
-    # Remove comments
-    txt.gsub! %r'^ *// .+', ''
-    txt.gsub! %r'  // .+', ''
 
     # Write to temp file
     File.open("/tmp/tmp.js", "w") { |f| f << txt }

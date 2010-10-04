@@ -224,4 +224,17 @@ document.getElementsByTagName('body')[0].appendChild(s);
 
   end
 
+  def self.enter_as_url
+
+    if Keys.prefix_u
+      Firefox.exec("getWindows()[0].getBrowser().tabContainer.selectedIndex = getWindows()[0].getBrowser().tabContainer.selectedIndex + 1;")
+    end
+
+    View.insert Firefox.value('document.location.toString()');
+
+    View.insert("\n") if Keys.prefix_u
+
+
+  end
+
 end

@@ -463,15 +463,20 @@ class FileTree
     elsif search_string   # Else, search for |... string if it passed
       Move.top
       # Search for exact line match
-      found = search_forward_regexp("^#{regexp_quote(search_string)}$", nil, true)
+      found = Search.forward "^#{regexp_quote(search_string)}$"
+      #       found = search_forward_regexp("^#{regexp_quote(search_string)}$", nil, true)
+
 
       unless found   # If not found, search for substring of line, but with a break at the end
         Move.top
-        found = search_forward_regexp("#{regexp_quote(search_string)}[^_a-zA-Z0-9]", nil, true)
+        # :beginning
+        found = Search.forward "#{regexp_quote(search_string)}\\([^_a-zA-Z0-9\n]\\|$\\)", :beginning=>true
+        #         found = search_forward_regexp("#{regexp_quote(search_string)}\\([^_a-zA-Z0-9\n]\\|$\\)", nil, true)
       end
 
       unless found   # If not found, search for substring of line
         Move.top
+
         found = search_forward_regexp("#{regexp_quote(search_string)}", nil, true)
       end
 
@@ -1289,7 +1294,33 @@ class FileTree
   end
 
   # Grabs matching lines in file and starts hide search
+  def self.outline_pattern extension=nil, options={}
+    if extension.nil?
+      extension = View.file_name[/\.(\w+)$/, 1]
+    end
+
+    elisp = options[:elisp]
+
+    if extension == "rb"
+      "^\s*(def|class|module|it|describe) "
+      #       elisp ? "^\\s-*\\(def\\|class\\|module\\|it\\|describe\\) " : "^\s*(def|class|module|it|describe) "
+    elsif extension == "rake"
+      "^\\s*(task|def|class) "
+      #       elisp ? "^\\s-*\\(task\\|def\\|class\\) " : "^\\s*(task|def|class) "
+    elsif extension == "js"
+      "(^ *(function)| = function\\()"
+      #       elisp ? "\\(^ *function\\| = function(\\)" : "(^ *(function)| = function\\()"
+    elsif extension == "notes"
+      "^\\| "
+      #       elisp ? "^| " : "^\\| "
+    else
+      "^[^ \\t\\n]"
+      #       elisp ? "^[^ \\t\\n]" : "^[^ \\t\\n]"
+    end
+  end
+
   def self.enter_lines pattern=nil, options={}
+
     # If dir, delegate to C-. (they meant to just open it)
     return LineLauncher.launch if self.dir?
 
@@ -1307,23 +1338,15 @@ class FileTree
         FileTree.ls :here => true, :dir => path
         return
       end
+
       View.insert "- " + FileTree.filename_to_next_line(path)
       $el.open_line 1
     end
+
     line = options[:path] || Line.value
+    extension = line[/\.(\w+)$/, 1]
     if pattern.nil?
-      if line =~ /\.rb$/
-        self.enter_lines(/^\s*(def|class|module|it|describe) /, options)
-      elsif line =~ /\.rake$/
-        self.enter_lines(/^\s*(task|def|class) /, options)
-      elsif line =~ /\.js$/
-        self.enter_lines(/(^ *(function)| = function\()/, options)
-      elsif line =~ /\.notes$/
-        self.enter_lines(/^\| /, options)
-      else
-        self.enter_lines(/^[^ \t\n]/, options)
-      end
-      return
+      return self.enter_lines(/#{outline_pattern extension}/, options)
     end
     Line.to_left
     path ||= options[:path] || construct_path  # Get path
@@ -1338,13 +1361,31 @@ class FileTree
       FileTree.insert_under contents
       return
     end
+
+    # Adjust so it finds if we're on the line
+    current_line = options[:current_line] + 1 if options[:current_line]
+
+    line_found = nil
+    #     current_outline_line = 0
+    matches_count = 0
+    i = 0
+
     IO.foreach(path) do |line|
+      i+=1
       line.sub!(/[\r\n]+$/, '')
+
+      if current_line && line_found.nil?
+        line_found = matches_count if i == current_line
+      end
+
       next unless line =~ pattern
       line = line == "" ? "" : " #{line}"
       matches << "#{indent}#{indent_more}|#{line}\n"
+
+      matches_count+=1
     end
-    self.insert_quoted_and_search matches
+
+    self.insert_quoted_and_search matches, :line_found=>line_found
   end
 
   def self.insert_under txt, options={}
@@ -1368,10 +1409,13 @@ class FileTree
     left = point
     View.insert matches, options
     right = point
+
     goto_char left
+    Line.next(options[:line_found]-1) if options[:line_found]
+
     Line.to_words
     # Do a search
-    self.search(:left => left, :right => right) unless options[:no_search]
+    self.search(:left=>left, :right=>right) unless options[:no_search]
   end
 
   # Insert section from a file under it in tree
@@ -1468,8 +1512,15 @@ class FileTree
   end
 
   def self.to_parent
-    times = (Keys.prefix || 1)
-    Keys.prefix = nil
+    prefix = Keys.prefix :clear=>true
+
+    # U means go to previous line at margin
+    if prefix == :u
+      Search.backward "^[^ \t\n]"
+      return
+    end
+
+    times = prefix || 1
     times.times do
       indent = Line.value[/^  ( *)/, 1]
       #search_backward_regexp "^#{indent}[^\t \n#]"
@@ -1954,6 +2005,19 @@ class FileTree
     end
     FileTree.open :path=>path, :same_view=>true
     View.to_window(view) if orig_u
+  end
+
+  def self.to_outline
+    current_line = Line.number
+
+    paths = [buffer_file_name(buffer_list[0])]
+    View.to_buffer("*tree outline")
+    View.clear;  notes_mode
+    View.insert FileTree.paths_to_tree(paths)
+    View.to_top
+    Keys.clear_prefix
+    FileTree.select_next_file
+    FileTree.enter_lines nil, :current_line=>current_line
   end
 
 end
