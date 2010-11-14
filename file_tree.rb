@@ -1941,7 +1941,7 @@ class FileTree
 
     result = Console.run command, :sync=>true
 
-    if (result||"").blank?   # If output isn't as expected, beep and show error
+    if (result||"").any?   # If output isn't as expected, beep and show error
       View.beep
       View.message "#{result}"
       return
