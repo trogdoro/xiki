@@ -26,12 +26,12 @@ class RubyConsole
   end
 
   def connect
-    timeout(25) do
-      open_channel  # Connect
-# TODO: try to indent this
-      send_it %Q[conf.echo = false
-
-# Temorary hack for nuby 1.8.4
+    begin
+      timeout(25) do
+        open_channel  # Connect
+  # TODO: try to indent this
+        send_it %Q[conf.echo = false
+# Temporary hack for nuby 1.8.4
 $out_bufr = defined?(StringIO) ? StringIO.new : ''
 
 module Kernel
@@ -51,21 +51,27 @@ module Kernel
   end
 end
 ]
-    end
-  end
+
+
+      end#timeout
+    rescue Timeout::Error=>e
+      Ol << 'Timed out in RubyConsole!'
+    end#begin
+  end#def
 
   # Send output
   def send_it the_command
     time_stamp = "-eor#{Time.now.usec}-"
+
     the_command = "\
-# Temorary hack for nuby 1.8.4
+# Temporary hack for nuby 1.8.4
 $out_bufr = defined?(StringIO) ? StringIO.new : ''
 begin
 #{the_command}
 rescue Exception => e
   puts e.message
 end
-# Temorary hack for nuby 1.8.4
+# Temporary hack for nuby 1.8.4
 out = $out_bufr.respond_to?(:string) ? $out_bufr.string : $out_bufr
 puts '#{time_stamp}'
 $stdout.print out
@@ -74,9 +80,9 @@ $stdout.print out
     #the_command.gsub!(/$/, " # input!")
     begin
       @channel.send_data(the_command)
-      @session.loop 10 do |session|
+      @session.loop 2 do |session|
         # Return true, unless found output
-        @@output !~ /^#{time_stamp}$/
+        @@output !~ /^#{time_stamp}$/ && @@output !~ /___CLOSED___/
       end
     rescue Exception => e
       puts "too slow! #{e.message}"
@@ -105,7 +111,9 @@ $stdout.print out
         ch.on_extended_data do |c, type, data|
           print "error: #{data}"
         end
-        ch.on_close { puts "done!" }
+        ch.on_close {
+          RubyConsole.output << "___CLOSED___"
+        }
       end
     end
 

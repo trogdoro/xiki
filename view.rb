@@ -894,7 +894,7 @@ class View
     end
 
     # No numeric prefix, so just grab this line's opening indent text
-    indent_txt = Line[/^[ |\/\\#+$-]+/] || ""
+    indent_txt = Line[/^[ |\/\\#+!-]+/] || ""
 
     Deletes.delete_whitespace if ! Line.at_left && ! Line.at_right
 

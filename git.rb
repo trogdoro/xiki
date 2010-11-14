@@ -160,6 +160,7 @@ class Git
       + .branches/
       + .stash/
       - .files/
+      - .format_diff_command "git diff 2b58e1e3b59ff8b5a6c5baf355501c0771b53097 code.rb"/
       ].strip.gsub(/^      /, '')
   end
 
@@ -244,6 +245,15 @@ class Git
     relative.sub! /^\//, ''
 
     if Keys.prefix_u :clear=>true
+
+      orig_path = "/tmp/#{View.file_name}__orig"
+
+      # Get relative path
+      txt = Console.run "git show HEAD:#{relative}", :sync=>true, :dir=>repos
+      File.open(orig_path, "w") { |f| f << txt }
+
+      $el.ediff_files orig_path, View.file
+
       return
     end
 
@@ -269,16 +279,17 @@ class Git
       )
   end
 
-  def self.jump_to_file_in_tree dir
+  def self.jump_to_file_in_tree dir, options={}
     orig = View.cursor
-    Search.backward "^ +\|@@" unless Line.matches(/^ +\|@@/)
 
+    Search.backward "^ +\|@@" unless Line.matches(/^ +\|@@/)
     inbetween = View.txt(orig, View.cursor)
     inbetween.gsub!(/^ +\|-.*\n/, '')
     inbetween = inbetween.count("\n")
     line = Line.value[/\+(\d+)/, 1]
+
     Search.backward "^ +[+-] "
-    file = Line.without_label
+    file = options[:file] || Line.without_label
 
     goto_char orig
 
@@ -406,19 +417,12 @@ class Git
     project, file, line = args
     dir = self.extract_dir project
 
-    if self.git?(dir)
-      self.git_diff_unadded(expand, dir, file, line)
-    else
-      self.svn_diff_unadded(dir, file)
-    end
+    self.git_diff_unadded(expand, dir, file, line)
   end
-
 
   def self.git_diff_unadded expand, dir, file, line
     self.git_diff_or_diff_unadded true, expand, dir, file, line
   end
-
-  # TODO: try renaming and running?
 
   def self.diff *args
     #   def self.do_compare_one *args
@@ -505,10 +509,23 @@ class Git
       return puts(txt)
     end
 
-  Ol.line
     # If line passed, jump to it
     self.jump_to_file_in_tree dir
     nil
+  end
+
+  def self.format_diff_command command, project, line=nil
+    dir = self.extract_dir project
+
+    # If no line, just do diff
+    if line.nil?
+      txt = Console.run command, :dir=>dir, :sync=>true
+      return txt.gsub!(/^/, '  |')
+    end
+
+    self.jump_to_file_in_tree dir, :file=>command[/.+ (.+)/, 1]
+    nil
+
   end
 
   def self.push project
@@ -524,7 +541,7 @@ class Git
   end
 
   def self.code_tree_diff options={}
-    dir = Keys.bookmark_as_path :prompt=>"Enter a bookmark to push: "
+    dir = Keys.bookmark_as_path :prompt=>"Enter a bookmark to git diff in: "
 
     prefix = Keys.prefix
     expand = prefix == :uu ? "" : ", :expand"

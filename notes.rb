@@ -211,7 +211,7 @@ class Notes
       :face => 'arial'
 
     # |...
-    h1_size = "+2"
+    h1_size = "+3"
 
     # Colors of "| ..." headings
     if Styles.inverse   # If black bg
@@ -247,9 +247,11 @@ class Notes
 
 
     @@h1_styles.each do |k, v|
-      lighter = v.gsub(/../) {|c| (c.to_i(16) + "44".to_i(16)).to_s(16)}
-      Styles.define k,                  :face => 'arial', :size => h1_size, :fg => 'ffffff', :bg => v, :bold =>  true
-      Styles.define "#{k}_pipe".to_sym, :face => 'arial', :size => h1_size, :fg => lighter,   :bg => v, :bold =>  true
+      lighter = v.gsub(/../) {|c| (c.to_i(16) + "66".to_i(16)).to_s(16)}
+      Styles.define k,
+        :face => 'arial', :size => h1_size, :fg => 'ffffff', :bg => v, :bold =>  true
+      Styles.define "#{k}_pipe".to_sym,
+        :face => 'arial', :size => h1_size, :fg => lighter,   :bg => v, :bold =>  true
     end
 
     # ||...
@@ -307,23 +309,18 @@ class Notes
 
     if Styles.inverse   # If black and white
 
-      Styles.define :notes_h2, :fg => '555588', :bg => "222233"
+      Styles.define :notes_h2, :fg => '7777aa', :bg => "222233"
       Styles.define :notes_h2_pipe, :fg => '3b3b5e', :bg => "222233"
 
       Styles.define :notes_exclamation,  # Green bold text
         :face => 'arial black', :size => "0",
         :fg => "66bb22", :bold => true
-      #         :fg => "449911", :bold => true
 
-      #       Styles.define :notes_h1,
-      #         :fg => 'ffffff', :bg => "3b3b5e"
-      #       Styles.define :notes_h1_pipe, :fg => '9191b3', :bg => "3b3b5e"
     else
 
       Styles.define :notes_exclamation,  # Green bold text
         :face => 'arial black', :size => "0",
         :fg => "77cc44", :bold => true
-      #         :fg => "66bb33", :bold => true
     end
   end
 

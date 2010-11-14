@@ -124,9 +124,16 @@ class Search
     match = self.stop
     txt ||= Clipboard[0]
     if match.nil?   # If nothing searched for yet
-      #       self.isearch_stop_at_end
-      Location.to_spot('clipboard')
-      Search.isearch txt
+
+      bm = Keys.input :timed=>true, :prompt=>"Enter a bookmark to search edits: "
+      path = bm == "." ?
+        View.file :
+        Bookmarks.expand("$#{bm}")
+
+      DiffLog.open path
+
+      Search.isearch nil, :reverse=>true
+
     else
       View.delete(Search.left, Search.right)
       insert txt
@@ -178,6 +185,14 @@ class Search
   def self.jump_to_difflog
     match = self.stop
     DiffLog.open
+    View.to_bottom
+
+    Search.isearch match, :reverse=>true
+  end
+
+  def self.just_edits
+    match = self.stop
+    DiffLog.open View.file
     View.to_bottom
 
     Search.isearch match, :reverse=>true
@@ -629,7 +644,8 @@ class Search
     orig = View.cursor
     found = re_search_forward search, nil, (options[:go_anyway] ? 1 : true)
     View.cursor = orig if options[:dont_move]
-    View.cursor = self.left if options[:beginning]
+    View.cursor = self.left if options[:beginning] && View.cursor != View.bottom
+
     found
   end
 
@@ -1112,11 +1128,8 @@ class Search
     match = self.stop
 
     if match.nil?   # If nothing searched for yet, resume search
-      Git.diff_one_file
-      Search.isearch
-      # TODO
-      #       Location.to_spot('paused')
-      #       Search.isearch $xiki_paused_isearch_string
+
+      Search.tree_grep
     else
       Move.backward
     end

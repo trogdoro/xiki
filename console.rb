@@ -210,7 +210,13 @@ class Console
     if options[:sync]
       output = Console.run command, :dir=>dir, :sync=>true
       output.sub!(/\A\z/, "\n")   # Add linebreak if blank
+
       output.gsub!(/^/, '| ')
+
+      # Expose "!" and "- label: !" lines as commands
+      output.gsub!(/^\| !/, '!')
+      output.gsub!(/^\| (- [\w ,-]+: !)/, "\\1")
+
       FileTree.indent(output)
       FileTree.insert_quoted_and_search output
     else
@@ -265,7 +271,7 @@ class Console
       path = FileTree.construct_path
 
       if Line.matches(/\/$/)   # If a dir
-        command = Keys.input :prompt=>"Do shell command in '#{path}': "
+        command = Keys.input :prompt=>"Shell command on this file (* means the filename): "
         output = Console.run(command, :dir=>path, :sync=>true)
         FileTree.insert_under(output) if options[:insert]
         return View.message "Command ran with output: #{output.strip}."
@@ -276,7 +282,7 @@ class Console
 
       file = Line.without_label
       command = Keys.input :prompt=>"Do shell command on '#{file}': "
-      command = command =~ / _ / ? command.sub(' _ ', " \"#{file}\" ") : "#{command} \"#{file}\""
+      command = command =~ /\*/ ? command.gsub('*', file) : "#{command} \"#{file}\""
 
       output = Console.run(command, :dir=>File.dirname(path), :sync=>true)
       FileTree.insert_under(output) if options[:insert]

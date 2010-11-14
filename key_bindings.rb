@@ -131,7 +131,7 @@ class KeyBindings
     Keys.EE { Line.to_right }   # EE - end of line (E's default) **
     Keys.enter_as_added { Numbers.enter_as_added }   # Add dollars or numbers in clipboard
     Keys.enter_as_camelcase { View.insert TextUtil.camel_case(Clipboard.get(0)) }
-    Keys.enter_as_debug { Code.enter_as_debug }
+    #     Keys.enter_as_debug { Code.enter_as_debug }
     Keys.enter_as_execute { Console.do_as_execute(:insert=>true) }   # change word to camel case (LikeThat)
     Keys.enter_as_filename { insert Clipboard.get(".") }
     Keys.enter_as_hyphenated { insert TextUtil.hyphen_case(Clipboard.get(0)) }
@@ -281,7 +281,11 @@ class KeyBindings
     Keys.do_push { Git.code_tree_diff }   # Commit to repos, push, etc
     Keys.do_query { Search.query_replace }   # do query replace *
     Keys.do_run { Code.run }   # run code as ruby *
-    Keys.do_search { Search.tree_grep }   # do grep search *
+    Keys.do_search {
+      View.beep
+      View.message "changed to search_bookmark" + "!" * 600
+    }   # do grep search *
+    #     Keys.do_search { Search.tree_grep }   # do grep search *
     #    Keys.DS { elvar.current_prefix_arg ? johns_thing : Search.grep }   # Do Search: do grep search
     Keys.do_tree { FileTree.tree(:recursive=>true) }   # draw filesystem tree for current dir or bookmark
     #     Keys.do_under { FileTree.kill_under }   # kill tree children (lines indented more)
@@ -419,6 +423,7 @@ class KeyBindings
     define_key :isearch_mode_map, kbd("C-h"), nil
     Keys.search_have_bullet { Search.have_label }
     Keys.search_have_case { Search.isearch_have_case }
+    Keys.search_have_edges { Search.just_edges }   # Delete everything but chars at edges of match
     Keys.search_have_files { Search.isearch_move_to "$f" }
     Keys.search_have_highest { Search.isearch_restart :top }
     Keys.search_have_javascript { Search.isearch_log_javascript }
@@ -426,6 +431,9 @@ class KeyBindings
     Keys.search_have_name { Search.just_name }
     Keys.search_have_output { Search.isearch_log }
     Keys.search_have_paragraph { Search.have_paragraph }
+
+    Keys.search_have_repository { Git.search_just_push }   # select match
+
     #     Keys.search_have_rspec { Specs.insert_in_todo }
     Keys.search_have_spot { Search.insert_at_spot }
     Keys.search_have_move { Search.isearch_move_line }
@@ -439,23 +447,20 @@ class KeyBindings
     Keys.search_just_bold { Search.isearch_just_surround_with_char('<b>', '</b>') }
     Keys.search_just_case { Search.isearch_just_case }   # make match be camel case
     Keys.search_just_difflog { Search.jump_to_difflog }   # find last string in difflog
-    Keys.search_just_edges { Search.just_edges }   # delete everything but chars at edges of match
+    Keys.search_just_edits { Search.just_edits }   # delete everything but chars at edges of match
     Keys.search_just_files { Search.isearch_restart "$f" }   # isearch for this string in $f
     Keys.search_just_have { Search.just_select }   # select match
-    Keys.search_just_last { Search.isearch_restart :previous }
     Keys.search_just_mark { Search.just_marker }
     #     Keys.search_just_macro { Search.just_macro }
     Keys.search_just_next { Search.isearch_restart :next }
     Keys.search_just_outline { Search.isearch_restart "$o" }
-    Keys.search_just_push { Git.search_just_push }
+    Keys.search_just_previous { Search.isearch_restart :previous }
     Keys.search_just_query { Search.isearch_query_replace :match }   # replace
     Keys.search_just_right { Search.isearch_restart :right }   # replace
-    #     Keys.search_just_replace { Search.isearch_query_replace :match }   # replace
     Keys.search_just_search { Search.isearch_just_search }   # Add "##search" line in tree for match
     Keys.search_just_todo { Search.isearch_restart "$t" }   # isearch for this string in $t
-    # Keys.search_just_tag { Search.isearch_just_tag }   # select match
+    Keys.search_just_look { Search.isearch_open }   # select match
 
-    #     Keys.search_just_uppercase { Search.upcase }   # make match be snake case
     Keys.search_just_variable { Search.isearch_just_surround_with_char '#{', '}' }
 
     Keys.search_just_web { Search.isearch_google }   # make match be snake case

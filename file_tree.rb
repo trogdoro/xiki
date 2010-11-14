@@ -235,7 +235,7 @@ class FileTree
     #       :size => "-1"
 
     if Styles.inverse
-      Styles.define :diff_line_number, :bold => true, :size => "-2", :fg => "333"
+      Styles.define :diff_line_number, :bold => true, :size => "-2", :fg => "444444"
       Styles.define :diff_red, :bg => "440000", :fg => "ee3333"
       Styles.define :diff_green, :bg => "113300", :fg => "44dd33"
       Styles.define :diff_small, :fg => "222222", :size => "-11"
@@ -297,7 +297,7 @@ class FileTree
     # With numbers
     Styles.apply("^ +\\(:[0-9]+\\)\\(|.*\n\\)", nil, :ls_quote_line_number, :ls_quote)
     # |+... diffs
-    Styles.apply("^ +\\(:[0-9]+\\)$", nil, :diff_line_number)
+    Styles.apply("^ +\\(:[0-9]+\\)$", nil, :ls_quote)
     Styles.apply("^ +\\(|\\+.*\\)", nil, :diff_green)   # whole lines
     Styles.apply("^ +\\(|\-.*\\)", nil, :diff_red)
     Styles.apply("^ +\\(|@@ .*\n\\)", nil, :diff_line_number)
@@ -1302,7 +1302,7 @@ class FileTree
     elisp = options[:elisp]
 
     if extension == "rb"
-      "^\s*(def|class|module|it|describe) "
+      "^\s*(def|class|module|it|describe|create_table) "
       #       elisp ? "^\\s-*\\(def\\|class\\|module\\|it\\|describe\\) " : "^\s*(def|class|module|it|describe) "
     elsif extension == "rake"
       "^\\s*(task|def|class) "
@@ -1940,7 +1940,8 @@ class FileTree
     command = "#{executable} \"#{source_path}\" \"#{dest_dir}#{dest_stem}\""
 
     result = Console.run command, :sync=>true
-    if ! result.blank?   # If output isn't as expected, beep and show error
+
+    if (result||"").blank?   # If output isn't as expected, beep and show error
       View.beep
       View.message "#{result}"
       return

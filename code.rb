@@ -248,59 +248,59 @@ class Code
           dir, spec = View.file.match(/(.+)\/(app\/.+)/)[1,2]
         end
       end
-    end
 
-    # Prefix must be something - 9, I guess, by convention
+    # Prefix must be something - 9, I guess, by convention??
 
-    if View.file !~ /_spec\.rb$/   # If not in an rspec file, delegate to: do_related_rspec
+    elsif View.file !~ /_spec\.rb$/   # If not in an rspec file, delegate to: do_related_rspec
       orig = Location.new
       self.do_related_rspec
       orig.go
       return
-    end
+    else
 
-    if options[:line]   # If specific line, just use it
-      args << '-l'
-      args << options[:line]
-    else   # Otherwise, figure out what to run
-      orig = Location.new
-      orig_index = View.index
+      if options[:line]   # If specific line, just use it
+        args << '-l'
+        args << options[:line]
+      else   # Otherwise, figure out what to run
+        orig = Location.new
+        orig_index = View.index
 
-      if prefix == 8   # If not C-8, only run this test
-      else
-        before_search = Location.new
-        Line.next
+        if prefix == 1   # If C-1, only run this test
+        else
+          before_search = Location.new
+          Line.next
 
-        # Find first preceding "it " or "describe "
-        it = Search.backward "^ *it ", :dont_move=>true
-        describe = Search.backward "^ *describe\\>", :dont_move=>true
+          # Find first preceding "it " or "describe "
+          it = Search.backward "^ *it ", :dont_move=>true
+          describe = Search.backward "^ *describe\\>", :dont_move=>true
 
-        if it.nil? && describe.nil?
-          View.beep
+          if it.nil? && describe.nil?
+            View.beep
+            before_search.go
+            return View.message "Couldn't find it... or describe... block"
+          end
+
+          it ||= 0;  describe ||= 0
+
+          if it > describe   # If it, pass rspec -e "should...
+            extra = "DS_SUPPRESS=false; "
+            View.cursor = it
+            test = Line.value[/"(.+)"/, 1]
+            args << '-e'
+            args << "\"#{test}\""
+          else   # If describe, pass rspec line number
+            View.cursor = describe
+            args << '-l'
+            args << View.line_number
+          end
           before_search.go
-          return View.message "Couldn't find it... or describe... block"
         end
-
-        it ||= 0;  describe ||= 0
-
-        if it > describe   # If it, pass rspec -e "should...
-          extra = "DS_SUPPRESS=false; "
-          View.cursor = it
-          test = Line.value[/"(.+)"/, 1]
-          args << '-e'
-          args << "\"#{test}\""
-        else   # If describe, pass rspec line number
-          View.cursor = describe
-          args << '-l'
-          args << View.line_number
-        end
-        before_search.go
       end
-    end
 
-    # Chop off up until before /spec/
-    dir, spec = View.file.match(/(.+)\/(spec\/.+)/)[1,2]
-    args.unshift spec
+      # Chop off up until before /spec/
+      dir, spec = View.file.match(/(.+)\/(spec\/.+)/)[1,2]
+      args.unshift spec
+    end
 
     buffer = "*console for rspec - #{dir}"
     # If spec buffer open, just switch to it
@@ -309,7 +309,8 @@ class Code
     else   # Otherwise open it and run console
       xiki ?
         Console.run("", :dir=>dir, :buffer=>buffer) :
-        Console.run("merb -i", :dir=>dir, :buffer=>buffer)
+        Console.run("bundle exec merb -i", :dir=>dir, :buffer=>buffer)
+        #         Console.run("merb -i", :dir=>dir, :buffer=>buffer)
       #       Console.run "merb -i -e test", :dir=>dir, :buffer=>buffer
     end
     View.clear
@@ -366,6 +367,28 @@ class Code
   end
 
   def self.indent_to
+
+
+    # If universal, indent current line 2 over
+    if Keys.prefix_u
+      cursor = View.cursor
+      Move.to_axis
+      View.insert "  "
+      View.to cursor + 2
+      return
+    end
+
+    if Keys.prefix_uu
+      orig = View.cursor
+      Move.to_axis
+      was_near_axis = View.cursor+2 > orig
+      View.delete View.cursor, View.cursor+2
+      View.to orig-2 unless was_near_axis
+      return
+    end
+
+    # If universal, indent current line 2 to left
+
     if View.cursor == View.mark   # If C-space was just hit, manually indent this line
       prefix = (Keys.prefix_n :clear=>true) || 0
       old_column = View.column

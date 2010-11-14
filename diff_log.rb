@@ -8,10 +8,35 @@ class DiffLog
   @@temp_path = elvar.temporary_file_directory + "latest-diff.txt"
 
   # Open file having difflog
-  def self.open
-    if Keys.prefix_u   # Show diffs for current file only
-      dir = View.dir
-      # TODO finish
+  def self.open path=nil
+
+    path ||= View.file if Keys.prefix_u(:clear=>true)   # Show diffs for current file only
+
+    if path
+      # If it's a dir
+      path_tree = File.directory?(path) ?
+        "^- #{path}" :
+        "^- #{File.dirname path}/\n  - #{File.basename path}\n"
+
+      diffs = ""
+
+      with(:save_window_excursion) do
+        DiffLog.open
+
+        60.times do
+          break unless Search.backward path_tree
+          top = View.cursor
+          Line.next
+          Search.forward "^[^ \t\n]", :go_anyway=>true, :beginning=>true
+          diffs = "#{View.txt(top, View.cursor)}#{diffs}"
+          View.to top
+        end
+      end
+
+      View.to_buffer "*edits of #{View.file}"
+      View.clear
+      View.insert diffs
+      Notes.mode
 
       return
     end
@@ -119,3 +144,5 @@ private
     self.format(View.path, View.file_name, diff)
   end
 end
+
+
