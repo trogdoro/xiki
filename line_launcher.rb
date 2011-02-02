@@ -129,6 +129,12 @@ class LineLauncher
       return $xiki_no_search = false
     end
 
+    # If nothing found so far, don't do anything if...
+    if line =~ /^\|/
+      View.beep
+      return View.message "Don't know what to do with this line"
+    end
+
     FileTree.launch   # Default to FileTree
     $xiki_no_search = false
   end
@@ -186,7 +192,23 @@ class LineLauncher
     end
 
     self.add :paren=>"click" do
-      Firefox.run("var a = $('a:contains(#{CodeTree.line_or_children}):first'); a.attr('href') == '#' ? a.click() : window.location = a.attr('href');")
+      txt = CodeTree.line_or_children
+
+      # If starts with number like "2:edit", extract it
+      nth = txt.slice! /^\d+:/
+      nth = nth ? (nth[/\d+/].to_i - 1) : 0
+
+      Firefox.run("$('a, *[onclick]').filter(':contains(#{txt}):eq(#{nth})').click()")
+    end
+
+    self.add :paren=>"blink" do
+      txt = CodeTree.line_or_children
+
+      # If starts with number like "2:edit", extract it
+      nth = txt.slice! /^\d+:/
+      nth = nth ? (nth[/\d+/].to_i - 1) : 0
+
+      Firefox.run("$('a, *[onclick]').filter(':contains(#{txt}):eq(#{nth})').blink()")
     end
 
     self.add :paren=>"click last" do   # - (js): js to run in firefox
@@ -194,10 +216,13 @@ class LineLauncher
     end
 
     self.add :paren=>"js" do   # - (js): js to run in firefox
-      Firefox.run(CodeTree.line_or_children)
+      Firefox.run(CodeTree.line_or_children.gsub('\\', '\\\\\\'))
     end
     self.add :paren=>"jsp" do   # - (js): js to run in firefox
-      Firefox.run("p(#{CodeTree.line_or_children})")
+      Firefox.run("p(#{CodeTree.line_or_children.gsub('\\', '\\\\\\')})")
+    end
+    self.add :paren=>"jsc" do   # - (js): js to run in firefox
+      Firefox.run("console.log(#{CodeTree.line_or_children.gsub('\\', '\\\\\\')})")
     end
 
     self.add :paren=>"jso" do   # - (js): js to run in firefox
@@ -340,7 +365,7 @@ class LineLauncher
         FileTree.insert_under RestTree.request("GET", url)
         next
       end
-
+      url.gsub! '%', '%25'
       prefix == :u ? browse_url(url) : Firefox.url(url)
     end
 
@@ -459,6 +484,8 @@ class LineLauncher
 
     View.clear "*output - tail of /tmp/output_ol.notes"
     View.clear "*output - tail of /tmp/ds_ol.notes"
+    View.clear "*visits - tail of /tmp/visit_log.notes"
+    View.clear "*tail memorize.merb/log/development.log"
 
     if Keys.prefix_u :clear=>true
       View.to_nth orig

@@ -23,7 +23,7 @@ class DiffLog
       with(:save_window_excursion) do
         DiffLog.open
 
-        60.times do
+        40.times do
           break unless Search.backward path_tree
           top = View.cursor
           Line.next

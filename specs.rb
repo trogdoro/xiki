@@ -9,9 +9,7 @@ class Specs
         parent = FileTree.parent
         bm = parent.sub(/./, '') if parent =~ /^:\w+$/
       end
-
-      bm = (bm || 'm').to_sym
-
+      bm = (bm || 'mt').to_sym
       #       thing, opts = nil, thing if thing.is_a?(Hash)
 
       test, quote = args
@@ -110,11 +108,11 @@ class Specs
 
     # Assume merb if a merb file exists
     # Merb
-    if File.exists?(Bookmarks["$#{bm}/public/merb.fcgi"])
+    if File.exists?(Bookmarks["$#{bm}/bin/merb"])
       command = "Merb::Mailer.delivery_method=:test_send; Spec::Runner::CommandLine.run(Spec::Runner::OptionParser.parse(#{params.inspect}, $out_bufr, $out_bufr)); Merb::Mailer.delivery_method=nil"
     end
-
-    RubyConsole[bm].run(command)
+    result = RubyConsole[bm].run(command)
+    result
   end
 
   # Pastes in for the line in the clipboard:
@@ -122,6 +120,9 @@ class Specs
   def self.enter_as_rspec
     # If U, add it in $t
     prefix_u = Keys.prefix_u :clear=>true
+
+    line = Line.value
+
     if prefix_u
       u_orig = Location.new
       Clipboard.as_line
@@ -130,18 +131,18 @@ class Specs
       #       Location.save(:insert_orig)
       View.to_highest
 
-      View.insert("\n", :dont_move=>true) unless Line.blank?   # Make room if line not blank
+      View.insert("\n", :dont_move=>true) unless line.empty?   # Make room if line not blank
     end
+
     if Line.blank?   # Assume clipboard contains "it..." line
+
       snippet = Clipboard['=']
+
+
       path = snippet[/.+/]
       clazz = snippet[/(\w+)_spec\.rb/, 1]
 
       desc = snippet[/(".+")/, 1]
-      #       is_test = clazz.nil?
-      #       clazz ||= snippet[/(\w+)_test\.rb/, 1]
-
-      #       desc = snippet[/(".+")/, 1] || snippet[/('.+')/, 1]
 
       # If no description, do enter_as_title
       if desc.nil?
@@ -160,7 +161,8 @@ class Specs
 
       desc = Line[/  it (".+")/, 1]
 
-      # If no description, do enter_as_title
+      # If no description, do title case
+      # WTF was this trying to do?!
       return View.insert TextUtil.title_case(Clipboard.get(0)) if desc.nil?
 
       orig = View.cursor
@@ -172,6 +174,7 @@ class Specs
       View.insert "Specs.#{clazz} #{desc}"
       Move.to_axis
     end
+
     if prefix_u
       # Add line after if before heading
       unless match =~ /\n$/   # If there wasn't a linebreak at the end of the match
@@ -184,6 +187,26 @@ class Specs
     end
 
   end
+
+
+  def self.enter_as_test_from_visit
+    line = Clipboard[0]
+
+    params_str = line[/\{(.+)}/, 1]
+    params = eval "{#{params_str}}"
+    params_symbols = params.map{|k, v| ":#{k}=>#{v.inspect}"} * ",\n    "
+
+    View.insert %Q`
+      it "__" do
+        c = dispatch_to(#{TextUtil.camel_case params['controller']}, #{params['action']},
+          #{params_symbols}) do |c|
+        end
+        c.body.should =~ /result...__/
+      end
+      `.unindent
+
+  end
+
 
   def self.run_spec_in_place
     Keys.clear_prefix
@@ -204,15 +227,12 @@ class Specs
 
     bm_were_in = bm_were_in.sub(/./, '').to_sym
 
-    txt = self.run_spec path, test, bm_were_in
+    txt = self.run_spec path, test, :mt
     Search.forward '^  end$'
     Move.forward
     View.insert "#{txt.gsub(/^/, '  # ').gsub(/^  # $/, '  #')}"
 
     View.cursor = cursor
   end
-
-  #   def self.insert_in_todo
-  #   end
 
 end

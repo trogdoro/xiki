@@ -1,6 +1,7 @@
 class Elvar
   def method_missing(func, *args, &block)
-    print "<blocked>"
+    # Do nothing
+    print "B"
   end
 end
 
@@ -9,6 +10,7 @@ module ElMixin
     Elvar.new
   end
   def method_missing(func, *args, &block)
-    print "<blocked>"
+    # Do nothing
+    print "B"
   end
 end

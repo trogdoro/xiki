@@ -12,9 +12,10 @@ class Buffers
 
   def self.current buffer=nil
     if buffer == nil  # If no buffer passed in, show list
-      case Keys.prefix
+      case Keys.prefix :clear=>true
       when nil:  return list.select{ |b| $el.buffer_file_name(b) }.map{ |b| $el.buffer_name(b) }
       when 0:  return list.select{ |b| ! $el.buffer_file_name(b) }.map{ |b| $el.buffer_name(b) }[1..-1]
+      when 8:  return Buffers.open_viewing
       when :u:  return names_array
         #       else  #CodeTree.display_menu("- Files.edited #{Keys.prefix}/")
       end
@@ -86,7 +87,7 @@ class Buffers
 
           found_yet = true
         end
-        found << "    |#{Line.value}\n"
+        found << "    | #{Line.value}\n"
         Line.end
       end
       View.to started

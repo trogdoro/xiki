@@ -204,8 +204,7 @@ class Git
 
     if rev.nil?   # If no rev, list all revs
       search = "-S'#{search}'" unless search.empty?
-
-      txt = Console.run "git log -100 --pretty=oneline #{search}", :sync=>true, :dir=>dir
+      txt = Console.run "git log -1000 --pretty=oneline #{search}", :sync=>true, :dir=>dir
       txt.gsub! ':', '-'
       txt.gsub! /(.+?) (.+)/, "\\2: \\1"
       txt.gsub! /^- /, ''

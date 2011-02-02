@@ -467,7 +467,6 @@ class View
       $el.write_region left, right, "/tmp/utf.txt", nil
 
       # Read via ruby (so correct encoding is obtained)
-      Ol.line
       return File.read("/tmp/utf.txt")
     end
 
@@ -478,9 +477,9 @@ class View
   # - 3 means 3 lines, etc.
   # - no prefix means the notes block
   # - etc
-  def self.txt_per_prefix
-    prefix = Keys.prefix
-    #     prefix = options[:prefix]
+  def self.txt_per_prefix prefix=Keys.prefix
+    prefix = prefix.abs if prefix.is_a?(Fixnum)
+
     case prefix
     when 0   # Do paragraph
       left, right = View.paragraph(:bounds=>true)
@@ -755,8 +754,10 @@ class View
     $el.buffer_name
   end
 
-  def self.message txt
+  def self.message txt, options={}
     $el.message txt
+    View.beep if options[:beep]
+
     nil
   end
 
@@ -970,9 +971,9 @@ class View
 
   end
 
-  def self.layout_todo # nth=nil
+  def self.layout_todo options={}
     FileTree.open_in_bar
-    Effects.blink(:what=>:line)
+    Effects.blink(:what=>:line) unless options[:no_blink]
   end
 
   def self.layout_files # nth=nil
@@ -1010,6 +1011,22 @@ class View
       View.to_highest
       replace_regexp(from, to)
     end
+  end
+
+  def self.enter_upper
+    prefix = Keys.prefix :clear=>true
+    orig = Location.new
+
+    View.layout_todo :no_blink=>true
+    todo_orig = Location.new
+    View.to_highest
+    line = Line.value
+    Line.delete if prefix == :u
+
+    todo_orig.go
+    orig.go
+
+    View.insert line
   end
 
 end

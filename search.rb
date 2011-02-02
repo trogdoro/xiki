@@ -123,8 +123,8 @@ class Search
 
     match = self.stop
     txt ||= Clipboard[0]
-    if match.nil?   # If nothing searched for yet
 
+    if match.nil?   # If nothing searched for yet, do search_edits
       bm = Keys.input :timed=>true, :prompt=>"Enter a bookmark to search edits: "
       path = bm == "." ?
         View.file :
@@ -136,7 +136,7 @@ class Search
 
     else
       View.delete(Search.left, Search.right)
-      insert txt
+      View.insert txt
     end
 
   end
@@ -284,6 +284,9 @@ class Search
 
   def self.isearch_query_replace after=nil
     match = self.stop
+    was_upper = match =~ /[A-Z]/
+
+    match.downcase!
     left, right = Search.left, Search.right
     before = $el.regexp_quote(match)   # Always start with isearch match
 
@@ -295,7 +298,9 @@ class Search
     end
 
     View.delete left, right
-    View.insert after
+    View.insert was_upper ?
+      TextUtil.title_case(after) :
+      after
 
     $el.query_replace_regexp before, after
   end
@@ -324,20 +329,9 @@ class Search
 
     input.gsub! "#", "\\#"
 
-    self.append_log input, dir
+    self.append_log dir, "- ###{input}/"
 
     FileTree.grep_with_hashes dir, input
-  end
-
-  def self.isearch_tree_grep_method
-    self.stop
-    match = self.match
-
-    dir = Bookmarks.expand("$a")
-
-    # Do search
-    regex = Regexp.new("\\bdef .*#{match}\\b", Regexp::IGNORECASE)
-    FileTree.grep dir, regex, :bar=>true
   end
 
   # Incrementeal search between cursor and end of paragraph (kills unmatching lines)
@@ -412,7 +406,7 @@ class Search
     View.to_after_bar if View.in_bar?
     match.gsub! "#", "\\#"
 
-    self.append_log match, bm
+    self.append_log bm, "- ###{match}/"
 
     # Search in bookmark
     FileTree.grep_with_hashes bm, match
@@ -928,7 +922,21 @@ class Search
   end
 
   def self.zap
-    self.stop
+    match = self.stop
+
+    if match.nil?   # If nothing searched for yet
+      char = Keys.input(:one_char=>true, :prompt=>"Enter one char: ")
+      if char == "m"
+        CodeTree.display_menu("- $a/\n  - ## def /")
+      elsif char == "f"
+        CodeTree.display_menu("- $wj/\n  - ##\\bfunction.*\\(/")
+      else
+        View.beep
+        View.message "Don't know what to do with that char."
+      end
+      return
+    end
+
     right = View.point
     self.to_start   # Go back to search start
     View.delete(View.point, right)
@@ -962,7 +970,7 @@ class Search
       View.open Bookmarks[path]
     end
 
-    View.wrap
+    View.wrap unless options[:restart]   # Don't change wrapping if starting search
     View.to_highest
 
     if options[:reverse]
@@ -1092,12 +1100,18 @@ class Search
     match = Line.value if match.nil?   # Use line if nothing searched for
     Search.stop
 
-    match = FileTree.snippet(match) if path == "$f"   # If $f, grab path also
-
     orig = Location.new
 
-    View.open path
-    Location.save(:insert_orig)
+    if path == "$t"   # If $f, grab path also
+      View.layout_todo
+    elsif path == "$f"   # If $f, grab path also
+      match = FileTree.snippet(match)
+      match = "- #{match.sub(/^  /, '  - ')}"
+      View.layout_files
+    else
+      View.open path
+    end
+
     View.to_highest
 
     View.insert("\n", :dont_move=>true) unless Line.blank?   # Make room if line not blank
@@ -1110,7 +1124,7 @@ class Search
       View.insert("\n", :dont_move=>true) if Line[/^\|/]
     end
 
-    Location.jump(:insert_orig)
+    View.to_highest
     orig.go
   end
 
@@ -1118,9 +1132,8 @@ class Search
     View.open @@log
   end
 
-  def self.append_log search, dir#, prefix=''
-    search = search.dup
-    txt = "- #{dir}\n  - ###{search}/\n"
+  def self.append_log dir, txt#, prefix=''
+    txt = "- #{dir}\n  #{txt}\n"
     File.open(@@log, "a") { |f| f << txt } rescue nil
   end
 

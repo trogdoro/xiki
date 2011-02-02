@@ -5,6 +5,7 @@ class Computer
   end
 
   def self.ip
-    puts `ifconfig`.grep(/\binet\b/)[1]
+    txt = `ifconfig`
+    puts txt.grep(/\binet\b/)[1][/[\d.]+/]
   end
 end

@@ -1,9 +1,12 @@
 class Javascript
   def self.run
-    # Get block contents
-    txt, left, right = View.txt_per_prefix #:prefix=>Keys.prefix
 
-    if Keys.prefix_u
+    prefix = Keys.prefix :clear=>true
+
+    # Get block contents
+    txt, left, right = View.txt_per_prefix prefix
+
+    if prefix == :u || prefix == :- || (prefix.is_a?(Fixnum) && prefix < 0)
       funcs = <<-JS
         function p(s) {
           if(s == null)

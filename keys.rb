@@ -383,7 +383,6 @@ class Keys
 
     # Clear prefix if :clear
     $el.elvar.current_prefix_arg = nil if options[:clear]
-
     str = pre.to_s
 
     if str =~ /^\(/
@@ -391,6 +390,8 @@ class Keys
       return :uuu if str == "(64)"
       return :u
     end
+
+    return :- if "#{pre}" == "-"
     return pre
   end
 

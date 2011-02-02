@@ -26,20 +26,27 @@ Requirer.safe_require ['key_bindings.rb']
 class Xiki
   def self.insert_menu
     # Implement
-    CodeTree.insert_menu "- Xiki.menu/"
+    CodeTree.insert_menu "- Xiki.menus/"
   end
 
   def self.open_menu
-    CodeTree.display_menu("- Xiki.menu/")
+    CodeTree.display_menu("- Xiki.menus/")
   end
 
-  def self.menu
+  def self.menus
     CodeTree.menu
 
     #     [
     #       ".tests",
     #       '.test Search, "should convert case correctly"',
     #     ]
+  end
+
+  def self.menu
+    [
+      ".run_tests",
+      '.test Search, "should convert case correctly"',
+    ]
   end
 
   def self.test clazz, test, quoted=nil
@@ -55,8 +62,7 @@ class Xiki
     end
 
     if quoted.nil?   # If no quoted, run test
-
-      command = "spec spec/#{clazz}_spec.rb -e \"#{test}\""
+      command = "rspec spec/#{clazz}_spec.rb -e \"#{test}$\""
       result = Console.run command, :dir=>"$x", :sync=>true
 
       return result.gsub(/^/, '| ').gsub(/ +$/, '')
@@ -69,8 +75,8 @@ class Xiki
     nil
   end
 
-  def self.tests
-    Console.run "spec spec", :dir=>"$x"
+  def self.run_tests
+    Console.run "rspec spec", :dir=>"$x"
   end
 
 end

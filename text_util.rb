@@ -33,7 +33,8 @@ class TextUtil
   def self.snake_case s
     s.gsub(/[ -]/, '_').
       gsub(/([a-z])([A-Z0-9])/) {"#{$1}_#{$2}"}.downcase.
-      gsub(/__+/, "_")
+      gsub(/__+/, "_").
+      gsub(/[^\w]/, "")
   end
 
   def self.snake_case! s
@@ -55,7 +56,8 @@ class TextUtil
     s.gsub(/[ -]/, '_').
       gsub(/_([a-z]+)/) {"#{$1.capitalize}"}.
       sub(/(.)/) {$1.upcase}.
-      gsub("_", "")
+      gsub("_", "").
+      gsub(/[^\w]/, "")
   end
 
   def self.camel_case! s

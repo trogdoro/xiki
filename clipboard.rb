@@ -240,7 +240,6 @@ class Clipboard
 
   def self.as_clipboard
     prefix = Keys.prefix :clear=>true
-
     if prefix == 0
       l, r = View.paragraph :bounds=>true
       Effects.blink :left=>l, :right=>r
@@ -249,6 +248,13 @@ class Clipboard
       Location.as_spot('clipboard')
       Clipboard["0"] = View.txt(l, r)
       View.cursor = cursor
+      return
+    end
+
+    if prefix == :-
+      l, r = View.range
+      Effects.blink :left=>l, :right=>r
+      Clipboard["0"] = View.selection.gsub(/^ *\|.?/, '')
       return
     end
 

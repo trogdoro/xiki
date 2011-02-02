@@ -309,7 +309,7 @@ class Code
     else   # Otherwise open it and run console
       xiki ?
         Console.run("", :dir=>dir, :buffer=>buffer) :
-        Console.run("bundle exec merb -i", :dir=>dir, :buffer=>buffer)
+        Console.run("bundle exec merb -i -e test", :dir=>dir, :buffer=>buffer)
         #         Console.run("merb -i", :dir=>dir, :buffer=>buffer)
       #       Console.run "merb -i -e test", :dir=>dir, :buffer=>buffer
     end
@@ -368,7 +368,6 @@ class Code
 
   def self.indent_to
 
-
     # If universal, indent current line 2 over
     if Keys.prefix_u
       cursor = View.cursor
@@ -406,6 +405,7 @@ class Code
 
     # If no prefix, just indent code according to mode
     return Code.indent if ! Keys.prefix
+
     new_indent = Keys.prefix || 0
     orig = Location.new
     txt = View.selection :delete => true   # Pull out block
@@ -414,9 +414,12 @@ class Code
     txt.gsub!(/^/, ' ' * new_indent)   # Add back new indent
     txt.gsub!(/^ +$/, '')   # Blank out lines with just spaces
 
-    insert txt
-    View.set_mark
-    orig.go
+    View.insert txt
+
+    if orig.line != Line.number   # If we're at the end
+      View.set_mark
+      orig.go
+    end
   end
 
   def self.enter_as_backslash

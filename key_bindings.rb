@@ -12,7 +12,6 @@ class KeyBindings
     self.layout_keys
     self.do_keys
     self.isearch
-    self.isearch_meta
     self.misc
 
     Keys.add_menu_items
@@ -79,7 +78,7 @@ class KeyBindings
     Keys.open_in_bar { View.open_in_bar }
     Keys.open_in_right { View.open_in_right }
     Keys.open_in_os { Files.open_in_os }
-    Keys.open_in_window { Files.open_in_window }
+    Keys.open_in_window { Files.open_in_window }   # Expose file in OS folder
     Keys.open_just { Files.open_just }
     Keys.open_key { Keys.jump_to_code }   # jump to ruby code of key definition *
     Keys.open_list_bookmarks { CodeTree.display_menu("- Bookmarks.tree/") }
@@ -179,7 +178,7 @@ class KeyBindings
     Keys.enter_search { Search.enter_search }
     #Keys.enter_spot { Location.enter_at_spot }   # enter selected text at spot
     Keys.enter_tree { FileTree.tree(:here=>true) }
-    Keys.enter_under { LineLauncher.launch(:blink=>true) }
+    Keys.enter_upper { View.enter_upper }
     Keys.enter_viewing { History.enter_viewing }
     # W
     Keys.enter_whitespace { open_line(elvar.current_prefix_arg || 1) }
@@ -266,7 +265,12 @@ class KeyBindings
     Keys.do_line_next { Line.move(:next) }
     Keys.do_line_previous { Line.move(:previous) }
     Keys.do_lines_reverse { reverse_region(region_beginning, region_end) }
-    Keys.do_lines_sort { sort_lines(nil, region_beginning, region_end) }
+    Keys.do_lines_sort {
+      old = elvar.sort_fold_case
+      elvar.sort_fold_case = true
+      sort_lines(nil, region_beginning, region_end)
+      elvar.sort_fold_case = old
+    }
     Keys.do_linebreaks_unix { set_buffer_file_coding_system :unix }
     Keys.do_linebreaks_windows { set_buffer_file_coding_system :dos }
     Keys.do_macro { Macros.run }   # do last macro *
@@ -430,9 +434,7 @@ class KeyBindings
     Keys.search_have_line { Search.have_line }   # copy line back to search start
     Keys.search_have_name { Search.just_name }
     Keys.search_have_output { Search.isearch_log }
-    Keys.search_have_paragraph { Search.have_paragraph }
-
-    Keys.search_have_repository { Git.search_just_push }   # select match
+    Keys.search_have_push { Git.search_just_push }
 
     #     Keys.search_have_rspec { Specs.insert_in_todo }
     Keys.search_have_spot { Search.insert_at_spot }
@@ -447,16 +449,16 @@ class KeyBindings
     Keys.search_just_bold { Search.isearch_just_surround_with_char('<b>', '</b>') }
     Keys.search_just_case { Search.isearch_just_case }   # make match be camel case
     Keys.search_just_difflog { Search.jump_to_difflog }   # find last string in difflog
-    Keys.search_just_edits { Search.just_edits }   # delete everything but chars at edges of match
+    Keys.search_just_edits { Search.just_edits }   # Search in diff of edits to this file
     Keys.search_just_files { Search.isearch_restart "$f" }   # isearch for this string in $f
     Keys.search_just_have { Search.just_select }   # select match
     Keys.search_just_mark { Search.just_marker }
     #     Keys.search_just_macro { Search.just_macro }
     Keys.search_just_next { Search.isearch_restart :next }
-    Keys.search_just_outline { Search.isearch_restart "$o" }
+    Keys.search_just_output { Search.isearch_restart "$o" }
     Keys.search_just_previous { Search.isearch_restart :previous }
     Keys.search_just_query { Search.isearch_query_replace :match }   # replace
-    Keys.search_just_right { Search.isearch_restart :right }   # replace
+    Keys.search_just_right { Search.isearch_restart :right }   # Search in top-right view
     Keys.search_just_search { Search.isearch_just_search }   # Add "##search" line in tree for match
     Keys.search_just_todo { Search.isearch_restart "$t" }   # isearch for this string in $t
     Keys.search_just_look { Search.isearch_open }   # select match
@@ -534,37 +536,6 @@ class KeyBindings
 
     define_key(:isearch_mode_map, kbd("C-0")) { Search.isearch_pause_or_resume }   # isearch_just_0
     #     define_key(:isearch_mode_map, kbd("C-8")) { Search.isearch_query_replace Clipboard[0] }   # isearch_just_0
-
-  end
-
-  # Meta keys during isearch
-  def self.isearch_meta
-
-    # Note: deprecated / (don't even work?)
-
-    #     Keys._A(:isearch_mode_map) { Search.isearch_query_replace :start_with_search_string }   # Alter: query-replace, using search string as initial input
-    Keys._C(:isearch_mode_map) { Search.copy_and_comment }   # Comment line and copy it to starting point
-    Keys._D(:isearch_mode_map) { Search.downcase }   # Downcase
-    Keys._E(:isearch_mode_map) { Search.insert_tree_at_spot }   # Enter
-    # H
-    #Keys._I(:isearch_mode_map) { Search.insert_var_at_search_start }   # Interpolate: paste as interpolated variable
-    # J
-    # K
-    #Keys._L(:isearch_mode_map) { Search.isearch_log }
-    Keys._M(:isearch_mode_map) { Search.isearch_tree_grep_method }   # Method: do tree grep (prompt for dir)
-    # N
-    Keys._O(:isearch_mode_map) { Search.isearch_find_in_buffers(:current_only => true, :in_bar => true) }   # Outline: in side bar
-    # P
-    # Q
-    # R
-    # S
-    Keys._U(:isearch_mode_map) { Search.upcase }   # Upcase
-    Keys._V(:isearch_mode_map) { Search.isearch_find_in_buffers(:in_bar => true) }   # Visited: show matches in visited files
-    # V
-    Keys._W(:isearch_mode_map) { Search.isearch_select_inner }   # Within: select 1 char within match
-    Keys._X(:isearch_mode_map) { Search.isearch_move_line }
-    # Y
-    # Z
 
   end
 

@@ -19,8 +19,8 @@ class FileTreeTest < Test::Unit::TestCase
        |  full/
        |    database.rhtml
        |")
-    assert_no_match( /empty\//, tree )
-    assert_match( /full\//, tree )
+    assert_no_match /empty\//, tree
+    assert_match /full\//, tree
 
     tree = call_clear_empty_dirs(
       "|- /projects/
@@ -149,6 +149,7 @@ class FileTreeTest < Test::Unit::TestCase
     assert_equal true, FileTree.is_root?("  ./hey")
     assert_equal false, FileTree.is_root?("  .you")
     assert_equal true, FileTree.is_root?("  $tr/")
+    assert_equal true, FileTree.is_root?("  $tr/##abc/")
     #     assert_equal false, FileTree.is_root?("  $tr")
   end
 

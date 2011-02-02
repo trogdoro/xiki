@@ -435,8 +435,6 @@ class Notes
   def self.bullet bullet_text="- "
     prefix = Keys.prefix :clear=>true
 
-    Move.to_end if prefix == :u   # If U prefix, go to the end
-
     if ! Line.blank?   # If non-blank line
 
       if Line.matches(/^\|/) || Line.matches(/^ *[+-]/) || bullet_text != "- "    # If bullet already, or not adding bullets
@@ -448,6 +446,7 @@ class Notes
           Deletes.delete_whitespace
         end
         View.insert "\n"
+
       else   # If not bullet, make it a bullet
         # Get line minus indent, and indent one deeper than previous
         line = Line.value(1, :delete=>true).sub(/^ +/, '')
@@ -460,10 +459,11 @@ class Notes
           View.insert "#{prev_indent}- #{line}"
         end
         Move.to_line_text_beginning
+
         return
       end
-
     end
+
     if prefix.is_a? Fixnum   # If numeric prefix, indent by n
       View.insert((" " * prefix) + bullet_text)
     else   # Get bullet indent of previous line
@@ -478,6 +478,29 @@ class Notes
         Move.backward 3
       end
     end
+
+    return if bullet_text == ""   # Don't indent rest if not using bullets (enter_junior)
+
+    next_line = Line.value(2)
+    return if prefix == :u || next_line.empty?  # Don't indent rest if no next line
+    return if next_line !~ /^ /   # Don't indent rest of lines if at left margin
+    return if Line.matches /^[ -]*$/   # Exit if new bullet was blank
+
+    indent = Line.indent
+
+    return if indent.empty?   # Don't indent anything if new bullet wasn't indented
+
+    cursor = View.cursor
+    Line.next
+    top = View.cursor
+
+    # Find next line not indented underneath
+    Search.forward "^ \\{0,#{indent.size-1}\\}\\($\\|[^ \n]\\)", :beginning=>true
+    $el.indent_rigidly top, Line.left, 2
+    View.cursor = cursor
+
+    $el.forward_word
+    $el.skip_chars_forward "/"
 
     #ControlLock.disable
   end

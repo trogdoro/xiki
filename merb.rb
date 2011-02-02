@@ -232,11 +232,34 @@ class Merb
     Console.run('merb --version', :sync=>true)
   end
 
+  def self.launch_merb_log_line line
+    #     if Keys.prefix_u   # If U, just go there
+    # Pull out action and controller
+    action = line[/"action"=>"(.+?)"/, 1]
+    controller = line[/"controller"=>"(.+?)"/, 1]
+    # Open controller
+    View.open "$co/#{controller}.rb"
+    # Jump to method
+    View.to_highest
+    Search.forward "^\\s-+def #{action}[^a-z_]"
+    Move.to_line_text_beginning
+
+  end
+
   def self.init
     LineLauncher.add :paren=>"l4" do
       url = "http://localhost:4000/#{Line.without_label}"
       Keys.prefix_u ? $el.browse_url(url) : Firefox.url(url)
     end
+
+    # Jump to controller from line in merb log
+    LineLauncher.add(/^.* ~ Routed to: \{/) do |line|
+      Merb.launch_merb_log_line line
+    end
+
   end
 end
+
+
+
 Merb.init

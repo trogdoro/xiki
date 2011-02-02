@@ -1,4 +1,5 @@
 $:.unshift "spec/"
+require 'rubygems'
 require 'el_mixin'
 require 'remote'
 require 'core_ext'

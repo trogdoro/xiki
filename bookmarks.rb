@@ -137,7 +137,7 @@ class Bookmarks
       return true if self.jump( "#{prefix_to_bm}#{keys}" )
       View.beep
       message("Bookmark not found!")
-      return
+      return :not_found
     end
 
     prefix = Keys.prefix

@@ -120,7 +120,7 @@ class CodeTree
     l.map! {|c| c.sub(/^#.+::/, '')}
     l.sort.each do |c|
 
-      next if ["CodeTree", "Xiki"].member?(c)
+      next if ["CodeTree"].member?(c)
       puts "+ #{c}.menu/"
     end
     ""
@@ -140,7 +140,7 @@ class CodeTree
 
     insert "#{menu}"
     open_line 1
-    CodeTree.launch options
+    LineLauncher.launch options
   end
 
   def self.layout_menu
@@ -316,7 +316,7 @@ class CodeTree
 
     right1 = Line.left   # Right side of lines before
 
-    # Search for line indented less (backward)
+    # Search for line indented less - parent (to get siblings after)
     indent_less < 0 ?
       Search.backward("^$") :
       Search.backward("^ \\{0,#{indent_less}\\}\\($\\|[^ \n]\\)")
@@ -326,7 +326,7 @@ class CodeTree
 
     orig.go
 
-    # Search for line indented same or less (to get past siblings)
+    # Search for line indented same or less (to get siblings after)
     Line.next
     Search.forward "^ \\{0,#{indent_size}\\}\\($\\|[^ \n]\\)"
     Line.to_left
