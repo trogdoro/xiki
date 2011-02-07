@@ -192,8 +192,19 @@ class Firefox
 
     $el.open_line(1) unless Line.blank?
 
-    if Keys.prefix_u
+    prefix = Keys.prefix
+
+    if prefix.nil?
+      View.insert "pf('js#{@@log_unique_token}');"
+      @@log_unique_token.next!
+
+    elsif prefix == :u
+      View.insert "p('js#{@@log_unique_token}');"
+      @@log_unique_token.next!
+
+    elsif prefix == :-
       View.insert "p_stack();"
+
     elsif Keys.prefix_uu
 
       txt = Firefox.value('window.content.tmp_stack')
@@ -202,9 +213,6 @@ class Firefox
       txts = matches.map{|o| "- #{o.gsub(/.+\//, '')}"}
       paths = matches.map{|o| Bookmarks[o]}
 
-    else
-      View.insert "p('js#{@@log_unique_token}');"
-      @@log_unique_token.next!
     end
 
     Line.to_left
@@ -225,16 +233,12 @@ document.getElementsByTagName('body')[0].appendChild(s);
   end
 
   def self.enter_as_url
-
     if Keys.prefix_u
       Firefox.exec("getWindows()[0].getBrowser().tabContainer.selectedIndex = getWindows()[0].getBrowser().tabContainer.selectedIndex + 1;")
     end
 
     View.insert Firefox.value('document.location.toString()');
-
     View.insert("\n") if Keys.prefix_u
-
-
   end
 
 end

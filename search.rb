@@ -370,25 +370,7 @@ class Search
     browse_url "http://google.com/search?q=#{View.selection}"
   end
 
-  def self.uncover
-    match = self.stop
-    # If nothing searched for, go to place something was copied by name
-    if match.nil?
-
-      Search.log
-      View.to_bottom
-      Search.isearch nil, :reverse=>true
-
-      # Went back to original location of have_name...
-      #       loc = Keys.input(:one_char=>true, :prompt=>"Enter one char to go to where it was copied from: ")
-      #       Bookmarks.go "_n#{loc}", :point=>true
-      #       txt = Clipboard.hash[loc.to_s]
-      #       self.isearch txt
-      #       return
-
-      return
-    end
-
+  def self.search_in_bookmark
     bm = Keys.bookmark_as_path
 
     if bm == :space   # If space, search in buffers
@@ -410,6 +392,29 @@ class Search
 
     # Search in bookmark
     FileTree.grep_with_hashes bm, match
+  end
+
+  def self.uncover
+    match = self.stop
+    # If nothing searched for, go to place something was copied by name
+    if match.nil?
+
+      Search.log
+      View.to_bottom
+      Search.isearch nil, :reverse=>true
+
+      # Went back to original location of have_name...
+      #       loc = Keys.input(:one_char=>true, :prompt=>"Enter one char to go to where it was copied from: ")
+      #       Bookmarks.go "_n#{loc}", :point=>true
+      #       txt = Clipboard.hash[loc.to_s]
+      #       self.isearch txt
+      #       return
+
+      return
+    end
+
+    self.search_in_bookmark
+
   end
 
   def self.left
@@ -1137,14 +1142,13 @@ class Search
     File.open(@@log, "a") { |f| f << txt } rescue nil
   end
 
-  def self.back
+  def self.bookmark
     match = self.stop
 
     if match.nil?   # If nothing searched for yet, resume search
-
       Search.tree_grep
     else
-      Move.backward
+      Search.search_in_bookmark
     end
   end
 

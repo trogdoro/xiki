@@ -311,6 +311,7 @@ class KeyBindings
 
     Keys.D1 { query_replace_regexp($el.regexp_quote(Clipboard.get("1")), Clipboard.get("2")) }
     Keys.D2 { query_replace_regexp($el.regexp_quote(Clipboard.get("2")), Clipboard.get("1")) }
+    Keys.D3 { query_replace_regexp($el.regexp_quote(Clipboard.get("3")), Clipboard.get("4")) }
     #     Keys.D1 { delete_char 1 };  Keys.D2 { delete_char 2 };  Keys.D3 { delete_char 3 };  Keys.D4 { delete_char 4 }
     #     Keys.D5 { delete_char 5 };  Keys.D6 { delete_char 6 };  Keys.D7 { delete_char 7 };  Keys.D8 { delete_char 7 };
 
@@ -416,7 +417,7 @@ class KeyBindings
   # Control keys during isearch
   def self.isearch
     Keys.search_axis { Search.to_left }
-    Keys.search_back { Search.back }
+    Keys.search_bookmark { Search.bookmark }
     # B: leave unmapped for back
     Keys.search_clipboard { Search.isearch_clipboard }   # Clipboard (copy)
     Keys.search_delete { Search.isearch_delete }   # Delete
