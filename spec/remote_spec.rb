@@ -6,13 +6,13 @@ require 'core_ext'
 
 describe Remote, "#calculate_local_path" do
   it "should put dashes in path" do
-    Remote.calculate_local_path("/tmp/foo.txt").should == "/tmp/remote_rb/tmp,foo.txt"
+    Remote.calculate_local_path("/tmp/foo.txt", "server.com").should == "/tmp/remote_rb/server.com,tmp,foo.txt"
   end
 end
 
 describe Remote, "#calculate_remote_path" do
   it "should remove dashes from path" do
-    Remote.calculate_remote_path("/tmp/remote_rb/tmp,foo.txt").should == "/tmp/foo.txt"
+    Remote.calculate_remote_path("/tmp/remote_rb/server.com,tmp,foo.txt").should == "/tmp/foo.txt"
   end
 end
 

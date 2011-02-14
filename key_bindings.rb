@@ -82,6 +82,7 @@ class KeyBindings
     Keys.open_just { Files.open_just }
     Keys.open_key { Keys.jump_to_code }   # jump to ruby code of key definition *
     Keys.open_list_bookmarks { CodeTree.display_menu("- Bookmarks.tree/") }
+    Keys.open_log_console { Console.log; View.to_bottom; Search.isearch nil, :reverse=>true }
     Keys.open_lisp_error { Code.show_el4r_error }
     Keys.open_list_faces { list_faces_display }
     Keys.open_lisp_info { info("elisp") }   # Open manual
@@ -469,7 +470,7 @@ class KeyBindings
     Keys.search_just_web { Search.isearch_google }   # make match be snake case
     Keys.search_just_yellow { Search.just_orange }
     Keys.search_kill { Search.cut }   # cut
-    Keys.search_look { Search.uncover }   # Look: show results for search string in a bookmark
+    Keys.search_log { Search.search_log }   # Log: search in search log
     # M: leave unmapped for stop
     Keys.search_next { Search.isearch_next_or_name }   # Next, or name (if nothing searched for yet)
     Keys.search_outline { Search.isearch_outline }   # Outline

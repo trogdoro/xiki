@@ -61,7 +61,7 @@ class Remote
       else   # If a file
 
         Dir.mkdir @@temp_dir unless File.exists? @@temp_dir
-        local_path = self.calculate_local_path path
+        local_path = self.calculate_local_path path, server
 
         was_open = Files.open? local_path
 
@@ -181,12 +181,12 @@ class Remote
 
   end
 
-  def self.calculate_local_path path
-    "#{@@temp_dir}/#{path.gsub('/', ',')[1..-1]}"
+  def self.calculate_local_path path, server
+    "#{@@temp_dir}/#{server},#{path.gsub('/', ',')[1..-1]}"
   end
 
   def self.calculate_remote_path path
-    path.gsub(/^#{@@temp_dir}/, '').gsub(',', '/')
+    path.gsub(/^#{@@temp_dir}\/.+?,/, '/').gsub(',', '/')
   end
 
   def self.init

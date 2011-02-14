@@ -46,7 +46,17 @@ class Xiki
     [
       ".run_tests",
       '.test Search, "should convert case correctly"',
+      '.visit_github_page',
+      '.visit_github_commits',
     ]
+  end
+
+  def self.visit_github_page
+    Firefox.url "http://github.com/trogdoro/xiki"
+  end
+
+  def self.visit_github_commits
+    Firefox.url "https://github.com/trogdoro/xiki/commits/master"
   end
 
   def self.test clazz, test, quoted=nil

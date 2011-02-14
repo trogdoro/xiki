@@ -370,7 +370,7 @@ class Search
     browse_url "http://google.com/search?q=#{View.selection}"
   end
 
-  def self.search_in_bookmark
+  def self.search_in_bookmark match
     bm = Keys.bookmark_as_path
 
     if bm == :space   # If space, search in buffers
@@ -394,14 +394,13 @@ class Search
     FileTree.grep_with_hashes bm, match
   end
 
-  def self.uncover
+  def self.search_log
     match = self.stop
     # If nothing searched for, go to place something was copied by name
-    if match.nil?
 
-      Search.log
-      View.to_bottom
-      Search.isearch nil, :reverse=>true
+    Search.log
+    View.to_bottom
+    Search.isearch match, :reverse=>true
 
       # Went back to original location of have_name...
       #       loc = Keys.input(:one_char=>true, :prompt=>"Enter one char to go to where it was copied from: ")
@@ -409,11 +408,6 @@ class Search
       #       txt = Clipboard.hash[loc.to_s]
       #       self.isearch txt
       #       return
-
-      return
-    end
-
-    self.search_in_bookmark
 
   end
 
@@ -1012,6 +1006,17 @@ class Search
       Search.isearch_restart "$o", :restart=>true
 
     else
+      if ! View.file   # If buffer, not file
+        buffer_name = View.buffer_name
+        txt = View.txt
+        View.to_buffer "* outline of matches in: #{buffer_name}"
+        Notes.mode
+        View.kill_all
+        View.insert txt.grep(Regexp.new(match)).join
+
+        return
+      end
+
       Search.isearch_find_in_buffers(:current_only=>true)
     end
   end
@@ -1148,7 +1153,7 @@ class Search
     if match.nil?   # If nothing searched for yet, resume search
       Search.tree_grep
     else
-      Search.search_in_bookmark
+      Search.search_in_bookmark match
     end
   end
 
