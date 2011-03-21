@@ -155,6 +155,9 @@ class KeyBindings
     Keys.enter_insert_ruby { code = Keys.input(:prompt=>"Enter ruby code to eval and insert results: "); View.insert(eval(code).to_s)}
     Keys.enter_insert_search {View.insert(Line.matches(/^ *- $/) ? "google: " : "- google: ")}
 
+    Keys.enter_insert_old { DiffLog.enter_old }   # Enter Old: enter newly-deleted from last save
+    Keys.enter_insert_new { DiffLog.enter_new }   # Enter Old: enter newly-deleted from last save
+
     Keys.enter_insert_wikipedia { View.insert("- (wp): ") }
     Keys.enter_in_todo { FileTree.enter_snippet }   # enter tree quote of region in $T
     Keys.enter_junior { Notes.bullet("") }
@@ -172,7 +175,6 @@ class KeyBindings
     #     Keys.enter_menu { CodeTree.insert_menus }   # Redundant with C-enter on blank line
     Keys.enter_name { Clipboard.paste }   # paste thing saved as name
     Keys.enter_outline { FileTree.enter_lines }   # in tree, enter methods or headings
-    # Find new key for thisKeys.EO { DiffLog.enter_old }   # Enter Old: enter newly-deleted from last save
     Keys.enter_push { Git.code_tree_diff(:enter=>true) }   # Commit to repos, push, etc
     Keys.enter_quote { FileTree.enter_quote }
     Keys.enter_row { View.insert_line }
@@ -310,11 +312,10 @@ class KeyBindings
     }
     Keys.set("C-d C-/") { Code.comment }
 
-    Keys.D1 { query_replace_regexp($el.regexp_quote(Clipboard.get("1")), Clipboard.get("2")) }
-    Keys.D2 { query_replace_regexp($el.regexp_quote(Clipboard.get("2")), Clipboard.get("1")) }
-    Keys.D3 { query_replace_regexp($el.regexp_quote(Clipboard.get("3")), Clipboard.get("4")) }
-    #     Keys.D1 { delete_char 1 };  Keys.D2 { delete_char 2 };  Keys.D3 { delete_char 3 };  Keys.D4 { delete_char 4 }
-    #     Keys.D5 { delete_char 5 };  Keys.D6 { delete_char 6 };  Keys.D7 { delete_char 7 };  Keys.D8 { delete_char 7 };
+    Keys.D1 { Search.query_replace Clipboard.get("1"), Clipboard.get("2") }
+    Keys.D2 { Search.query_replace Clipboard.get("2"), Clipboard.get("1") }
+    Keys.D3 { Search.query_replace Clipboard.get("3"), Clipboard.get("4") }
+    Keys.D4 { Search.query_replace Clipboard.get("4"), Clipboard.get("3") }
 
   end
 

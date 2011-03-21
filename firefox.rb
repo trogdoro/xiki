@@ -195,11 +195,11 @@ class Firefox
     prefix = Keys.prefix
 
     if prefix.nil?
-      View.insert "pf('js#{@@log_unique_token}');"
+      View.insert "p('js#{@@log_unique_token}');"
       @@log_unique_token.next!
 
     elsif prefix == :u
-      View.insert "p('js#{@@log_unique_token}');"
+      View.insert "pp('js#{@@log_unique_token}');"
       @@log_unique_token.next!
 
     elsif prefix == :-

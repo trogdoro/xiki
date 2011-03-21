@@ -104,10 +104,9 @@ class Notes
 
     times = Keys.prefix_u? ? 1 : (Keys.prefix || 1)
     times.times { insert "|" }
-    View.insert " " unless times > 1
+    View.insert " " # unless times > 1
 
     open_line(4) if Keys.prefix_u?   # If U create blank lines.
-
 
     # If U, get letter from next bullet
     if Keys.prefix_u?
@@ -637,22 +636,14 @@ class Notes
     line = Line.value
     indent, first_char = line.match(/^( *)(.)/)[1..2]
 
-    if first_char == "|"   # If quote, insert before
-      Move.to_axis
-      $el.open_line(1)
-      View.insert "#{indent}- do!"
-      return
-    end
-
-    # If bullet, insert under
-    Notes.bullet
-    View.insert "do!"
+    Move.to_axis
+    $el.open_line(1)
+    View.insert "#{indent}- do!"
+    return
 
   end
-
 end
-Notes.define_styles
-#Notes.keys  # Define local keys
-Notes.init
 
+Notes.define_styles
+Notes.init
 Notes.keys  # Define local keys

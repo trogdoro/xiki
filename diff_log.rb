@@ -54,35 +54,34 @@ class DiffLog
     recenter -4
   end
 
-  # Reused by EIO and EIN
-  def self.old_or_new_diff &closure
-    diff = get_register ?D
-    # Get rid of path lines
-    diff.gsub! /^\/.+\n/, ""
-    # Delegate to closure
-    closure.call(diff)
-    insert diff
+  # Insert old text deleted during last save
+  def self.last_diff
+    with(:save_window_excursion) do
+      DiffLog.open
+      Search.backward "^-"
+      txt = View.txt View.cursor, View.bottom
+    end
   end
 
-  # Insert old text deleted during last save
   def self.enter_old
-    self.old_or_new_diff do |diff|
-      # Get rid of +... lines
-      diff.gsub! /^\+.*\n/, ""
-      # Remove - from -... lines
-      diff.gsub! /^-/, ""
-    end
+    diff = DiffLog.last_diff
+    diff.gsub! /^ *[+:-].*\n/, ""   # Only leave red and green lines
+
+    diff.gsub! /^ +\|\+.*\n/, ""
+    diff.gsub! /^ +\|\-/, ""
+
+    View.insert diff
   end
 
   # Insert new text added during last save
   def self.enter_new
-    self.old_or_new_diff do |diff|
-      diff
-      # Get rid of -... lines
-      diff.gsub! /^-.*\n/, ""
-      # Remove + from +... lines
-      diff.gsub! /^\+/, ""
-    end
+    diff = DiffLog.last_diff
+    diff.gsub! /^ *[+:-].*\n/, ""   # Only leave red and green lines
+
+    diff.gsub! /^ +\|\-.*\n/, ""
+    diff.gsub! /^ +\|\+/, ""
+
+    View.insert diff
   end
 
   # Appends diff to difflog, then saves.  Map to AF.

@@ -112,7 +112,7 @@ class Styles
     return self.use_xiki_color_scheme_black if Styles.inverse   # Use black
 
     set_face_background :trailing_whitespace, "#cccccc"
-    Styles.define :default, :bg=>'ffffff', :fg=>'000000'
+    Styles.define :default, :bg=>'ffffff', :fg=>'000000'# , :height=>110
     Styles.define :cursor, :bg=>'333333', :fg=>'ffffff'
     Styles.define :fringe, :bg=>'ffffff', :fg=>'cccccc'   # eg border / status
     Styles.define :mode_line, :fg=>'222222', :bg=>'666666', :border=>['666666', -1]

@@ -1920,6 +1920,19 @@ class FileTree
 
   end
 
+  def self.copy_to_latest_screenshot dest_path, dest_dir
+    desktop = Bookmarks['$dt']
+
+    latest_screenshot = `ls -t #{desktop} "Screen shot*"`[/Screen shot .*/]
+
+    return View.message("No screenshot found.") if latest_screenshot.empty?
+
+    command = "mv \"#{desktop}#{latest_screenshot}\" \"#{dest_path}\""
+
+    result = Console.run command, :sync=>true
+    View.message result
+  end
+
   def self.copy_to
     prefix = Keys.prefix
 
@@ -1930,6 +1943,10 @@ class FileTree
 
     dest_path = self.construct_path
     dest_dir = dest_path.sub(/(.+\/).*/, "\\1")
+
+    if prefix == 2
+      return self.copy_to_latest_screenshot dest_path, dest_dir
+    end
 
     # TODO Pull off path if file
 

@@ -257,7 +257,12 @@ class Search
   end
 
   # Do query replace depending on what they type
-  def self.query_replace
+  def self.query_replace s1=nil, s2=nil
+    if s1 && s2   # If manually passed in
+      $el.query_replace_regexp($el.regexp_quote(s1 || ""), s2 || "")
+      return
+    end
+
     first = Keys.input(:timed=>true)
     # If they typed 'o', use clipboard 1 and clipboard 2
     if first == "o" || first == "1"
@@ -386,7 +391,7 @@ class Search
     end
 
     View.to_after_bar if View.in_bar?
-    match.gsub! "#", "\\#"
+    match.gsub!(/([#()])/, "\\\\\\1")
 
     self.append_log bm, "- ###{match}/"
 
@@ -436,6 +441,7 @@ class Search
     switch_to_buffer "*tree find in buffers"
     notes_mode
     erase_buffer
+
     View.insert "+ Buffers.search #{new_args}/"
     open_line 1
     CodeTree.launch :no_search=>true
@@ -1017,7 +1023,23 @@ class Search
         return
       end
 
-      Search.isearch_find_in_buffers(:current_only=>true)
+      # If file
+      # search in just one file!
+
+      dir = View.dir
+      file_name = View.file_name
+      View.to_buffer "*tree grep";  View.dir = dir
+      View.clear;  notes_mode
+      View.insert "
+        - #{dir}/
+          - #{file_name}
+            - ###{Regexp.quote(match)}/
+        ".unindent
+
+      View.to_line 3
+      FileTree.launch
+
+      #       Search.isearch_find_in_buffers(:current_only=>true)
     end
   end
 

@@ -219,7 +219,9 @@ class LineLauncher
       Firefox.run(CodeTree.line_or_children.gsub('\\', '\\\\\\'))
     end
     self.add :paren=>"jsp" do   # - (js): js to run in firefox
-      Firefox.run("p(#{CodeTree.line_or_children.gsub('\\', '\\\\\\')})")
+      txt = CodeTree.line_or_children.gsub('\\', '\\\\\\')
+      txt = txt.strip.sub(/;$/, '')   # Remove any semicolon at end
+      Firefox.run("p(#{txt})")
     end
     self.add :paren=>"jsc" do   # - (js): js to run in firefox
       Firefox.run("console.log(#{CodeTree.line_or_children.gsub('\\', '\\\\\\')})")
