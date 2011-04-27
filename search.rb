@@ -4,6 +4,9 @@ require 'line'
 require 'text_util'
 
 class Search
+
+  SPECIAL_ORDER = "_'\"[]{}<>-+\\/!$_"
+
   extend ElMixin
   @@case_options = nil
 
@@ -62,10 +65,8 @@ class Search
     insert match[/^.(.*).$/, 1]
   end
 
-  def self.move_to_search_start
-    self.stop
+  def self.move_to_search_start match
     was_reverse = self.was_reverse
-    match = self.match
     View.delete(Search.left, Search.right)
 
     deleted = View.cursor
@@ -165,17 +166,30 @@ class Search
 
     self.stop
     match = self.match
+
     View.delete(Search.left, Search.right)
 
     orig = View.cursor
 
+    position = SPECIAL_ORDER.index match
+
+    # If one of certain chars, use custom order
     result =
-      if options[:decrement]
-        match =~ /[a-z]/i ?
-          (match[0] - 1) :
-          (match.to_i - 1).to_s
+      if position   # Change '[' to ']', etc
+
+        increment_or_decrement = options[:decrement] ? -1 : 1
+        SPECIAL_ORDER[position+increment_or_decrement].chr
+
       else
-        match.next
+        if options[:decrement]
+          #           match.previous   # Doesn't decrement "10" properly
+          match =~ /[a-z]/i ?
+          (match[0] - 1) :
+            (match.to_i - 1).to_s
+        else
+
+          match.next
+        end
       end
 
     View.insert(result)
@@ -397,6 +411,28 @@ class Search
 
     # Search in bookmark
     FileTree.grep_with_hashes bm, match
+  end
+
+  def self.search_like_timer
+
+    match = self.stop
+
+    # Prompt for time
+    minutes = Keys.input :prompt=>'How many minutes? ', :timed=>true
+    times = {"1"=>"30/30", "2"=>"1/1", "3"=>"90/90", "4"=>"2/2", "5"=>"2:30/2:30", "6"=>"3/3", "9"=>"45/45"}[minutes]
+
+    if match.nil?
+      input = Keys.input :prompt=>'Add timer for what? '
+      return Firefox.run("$('#timers').val('')", :tab=>1) if input == ""
+      input = "#{times} #{input}" unless input =~ /^\d/
+    else
+
+      return Firefox.run("$('#timers').val('')", :tab=>1) if input == ""
+
+      input = "#{times} #{match}"
+    end
+
+    Firefox.run "$('#timers').val(\"#{input}\n\")", :tab=>1
   end
 
   def self.search_log
@@ -1053,7 +1089,7 @@ class Search
       return
     end
 
-    $el.previous_line
+    Search.move_to_search_start match
   end
 
   def self.isearch_next_or_name

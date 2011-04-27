@@ -17,7 +17,7 @@ class Color
     #     "r"=>:color_rb_red, "t"=>:color_rb_orange, "y"=>:color_rb_yellow,
     "e"=>:color_rb_green, "b"=>:color_rb_blue, "u"=>:color_rb_purple,
     "l"=>:color_rb_light,
-    "m"=>:color_rb_map,
+    "w"=>:color_rb_white,
   }
 
   def self.colorize char=nil
@@ -165,7 +165,7 @@ class Color
       Styles.define :color_rb_orange, :bg => "441500"
       Styles.define :color_rb_yellow, :bg => "444400"
       Styles.define :color_rb_green, :bg => "113311"
-      Styles.define :color_rb_map, :fg=>'222222', :bg=>'ffffff', :border=>['ffffff', -1]
+      Styles.define :color_rb_white, :fg=>'222222', :bg=>'ffffff', :border=>['ffffff', -1]
 
       Styles.define :color_rb_light, :bg => "444444"
 
@@ -178,7 +178,7 @@ class Color
       Styles.define :color_rb_yellow, :bg => "f9f9aa"
       Styles.define :color_rb_green, :bg => "e0ffcc"
       Styles.define :color_rb_light, :bg => "dddddd"
-      Styles.define :color_rb_map, :fg=>'222222', :bg=>'666666', :border=>['666666', -1]
+      Styles.define :color_rb_white, :fg=>'222222', :bg=>'666666', :border=>['666666', -1]
 
       Styles.define :color_rb_blue, :bg => "dde5ff"
       Styles.define :color_rb_purple, :bg => "f2ddff"

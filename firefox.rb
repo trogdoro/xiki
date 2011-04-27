@@ -117,6 +117,8 @@ class Firefox
     result
   end
 
+
+
   def self.connection
 
     socket = TCPSocket::new("localhost", "9997")
@@ -124,8 +126,14 @@ class Firefox
     read_socket(socket)
 
     vars = "var window = getWindows()[0];"
+    #     vars = "var window = getWindows()[1];"
+
     vars += "var browser = window.getBrowser();"
+
+    #     vars += "var document = browser.tabContainer.childNodes[0].contentDocument;"
+
     vars += "var document = browser.contentDocument;"
+
     vars += "var body = document.body;"
 
     socket.send("#{vars}\n", 0)
@@ -134,13 +142,12 @@ class Firefox
     socket
   end
 
-  def self.run txt
+  def self.run_raw txt
+
     begin
       socket = self.connection
-      txt.gsub!("\n", ' ')
-      txt.gsub!('"', "\\\"")
 
-      socket.send "document.location = \"javascript: #{txt}; void(0)\"\n", 0
+      socket.send "#{txt}\n", 0
       read_socket(socket)
       nil
 
@@ -152,6 +159,22 @@ class Firefox
     end
 
   end
+
+  def self.run txt, options={}
+
+    txt.gsub!("\n", ' ')
+    txt.gsub!('"', "\\\"")
+
+    if options[:tab]
+      self.run_raw "getWindows()[0].gBrowser.getBrowserAtIndex(#{options[:tab]-1}).contentDocument.location = \"javascript: #{txt}; void(0)\""
+    else
+      self.run_raw "document.location = \"javascript: #{txt}; void(0)\""
+    end
+
+    nil
+  end
+
+
 
   def self.value txt
 

@@ -490,7 +490,8 @@ class Git
       end
       txt << untracked.join("")
       txt = "- Warning: nothing to show" if ! txt.any?
-      return CodeTree.no_search_option + option + txt
+
+      return CodeTree.no_search_option + option + txt + "- revert: .checkout\n"
     end
 
     if line.nil?   # If no line passed, re-do diff for 1 file
@@ -524,7 +525,6 @@ class Git
 
     self.jump_to_file_in_tree dir, :file=>command[/.+ (.+)/, 1]
     nil
-
   end
 
   def self.push project
@@ -649,17 +649,16 @@ class Git
 
     siblings = CodeTree.siblings :include_label=>true
 
-    left1, right1, left2, right2 = CodeTree.sibling_bounds
-
     # Remove "untracked (ignore)"
     siblings = siblings.select{|i| i !~ /^. untracked \(ignore\)/}.map{|i| Line.without_label(:line=>i)}
 
-    if message == 'message'   # Error if no siblings
+    if message == 'message'   # Error if left default commit message
       return "- Error: You must change 'message' to be your commit message." if message == "message"
     end
-    unless siblings.any?
+
+    unless siblings.any?   # Error if no siblings
       return "- Error: No files to commit\n" +
-             "  - They should be siblings of .commit, and already be added."
+             "- They should be siblings of .commit, and already be added!"
     end
 
     if self.git?(dir)
@@ -667,6 +666,20 @@ class Git
     else
       Console.run "svn ci -m \"#{message}\" #{siblings.join(' ')}", :dir=>dir
     end
+  end
+
+  def self.checkout project#, file=nil
+    dir = self.extract_dir project
+
+    siblings = CodeTree.siblings :include_label=>true
+    siblings.map!{|i| Line.without_label(:line=>i)}
+
+    unless siblings.any?   # Error if no siblings
+      return "- Error: No files to checkout\n" +
+             "- They should be siblings of .checkout!"
+    end
+
+    Console.run "git checkout #{siblings.join(' ')}", :dir=>dir #, :no_enter=>true
   end
 
   def self.create project

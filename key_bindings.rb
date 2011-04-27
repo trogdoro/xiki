@@ -44,7 +44,7 @@ class KeyBindings
     #Keys.as_update_remote { FileTree.save_remote }
     Keys.as_version { History.backup_file }   # creates backup
     Keys.as_window { View.save }   # remember window configuration as name
-    Keys.as_xtract { Clipboard.cut("0") }   # cut **
+    #     Keys.as_xtract { Clipboard.cut("0") }   # cut **
     # Y
     # Z
     #Keys.A0 { Clipboard.copy("0") }   # As 0: copy as key "0"
@@ -268,12 +268,14 @@ class KeyBindings
     Keys.do_line_next { Line.move(:next) }
     Keys.do_line_previous { Line.move(:previous) }
     Keys.do_lines_reverse { reverse_region(region_beginning, region_end) }
+
     Keys.do_lines_sort {
-      old = elvar.sort_fold_case
+      old = elvar.sort_fold_case# rescue true
       elvar.sort_fold_case = true
       sort_lines(nil, region_beginning, region_end)
       elvar.sort_fold_case = old
     }
+
     Keys.do_linebreaks_unix { set_buffer_file_coding_system :unix }
     Keys.do_linebreaks_windows { set_buffer_file_coding_system :dos }
     Keys.do_macro { Macros.run }   # do last macro *
@@ -322,6 +324,10 @@ class KeyBindings
   def self.to_keys
     # T: to...
     # Use T prefix for: moving cursor, jumping to specific points
+
+    el4r_lisp_eval(%Q`(global-set-key (kbd "C-\'") \'repeat)`)
+
+    #     Keys.set("C-'") { $el.repeat 1 }
 
     Keys.TT { transpose_chars elvar.current_prefix_arg }   # TT - toggle character (T's default)
     Keys.to_axis { Move.to_axis }   # to beginning of file *
@@ -464,18 +470,23 @@ class KeyBindings
     Keys.search_just_right { Search.isearch_restart :right }   # Search in top-right view
     Keys.search_just_search { Search.isearch_just_search }   # Add "##search" line in tree for match
     Keys.search_just_todo { Search.isearch_restart "$t" }   # isearch for this string in $t
-    Keys.search_just_look { Search.isearch_open }   # select match
 
     Keys.search_just_variable { Search.isearch_just_surround_with_char '#{', '}' }
 
     Keys.search_just_web { Search.isearch_google }   # make match be snake case
     Keys.search_just_yellow { Search.just_orange }
     Keys.search_kill { Search.cut }   # cut
-    Keys.search_log { Search.search_log }   # Log: search in search log
+
+    define_key :isearch_mode_map, kbd("C-l"), nil
+    Keys.search_like_file { Search.isearch_open }   # Log: search in search log
+    Keys.search_like_timer { Search.search_like_timer }   # Log: search in search log
+    Keys.search_like_log { Search.search_log }   # Log: search in search log
+
+    #     Keys.search_log { Search.search_log }   # Log: search in search log
     # M: leave unmapped for stop
     Keys.search_next { Search.isearch_next_or_name }   # Next, or name (if nothing searched for yet)
     Keys.search_outline { Search.isearch_outline }   # Outline
-    Keys.search_previous { Search.isearch_previous }   # Just go to last line
+    Keys.search_previous { Search.isearch_previous }   # Just go to previous line
     # P: leave unmapped for previous
     # Q: leave unmapped for quoting
     # R: leave unmapped for reverse
@@ -484,7 +495,10 @@ class KeyBindings
     Keys.search_usurp { Search.isearch_pull_in_sexp }   # usurp: pull sexp into search string
     Keys.search_value { Search.insert_at_search_start }   # Value: copy value back to search start
     # W: leave unmapped for pulling into search
-    Keys.search_xtract { Search.move_to_search_start }   # Xtract: move back to search start
+    Keys.search_xtract {
+      View.beep
+      View.message "use 'pull'" + "!" * 600
+    }   # Xtract: move back to search start
     # Y: leave unmapped for yank
     Keys.search_zap { Search.zap }   # zap - delete up until search start
 
@@ -571,6 +585,7 @@ class KeyBindings
     el4r_lisp_eval("(require 'shell)")
     define_key :shell_mode_map, kbd("C-d"), nil   # shell-mode etc. special C-d shortcuts over-ride xiki
     define_key :objc_mode_map, kbd("C-d"), nil
+    define_key :c_mode_map, kbd("C-d"), nil
     #     el4r_lisp_eval("(require 'php)")
     el4r_lisp_eval("(require 'dired)")
     define_key :dired_mode_map, kbd("C-o"), nil

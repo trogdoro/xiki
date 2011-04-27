@@ -38,8 +38,14 @@ class History
       FileTree.enter_lines
 
     else  # If entering in new buffer
+
       # By default happen in same view
       View.bar if options[:bar]  # If to go to bar
+
+      # If only one path, go to it's buffer if already open
+      if paths.size == 1
+        View.open paths[0]
+      end
 
       View.to_buffer("*tree of current")
       View.clear;  notes_mode

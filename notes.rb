@@ -329,7 +329,8 @@ class Notes
 
     # |... lines (headings)
     #     Styles.apply("^\\(|\\)\\( \n\\|.*\n\\)", nil, :notes_h1_pipe, :notes_h1)
-    Styles.apply("^\\(=\\)\\(.*\n\\)", nil, :notes_h1_pipe, :notes_h1)
+    Styles.apply("^\\(= \\)\\(.*\n\\)", nil, :notes_h1_pipe, :notes_h1)
+    Styles.apply("^\\(== \\)\\(.*\n\\)", nil, :notes_h2_pipe, :notes_h2)
 
     Styles.apply("^\\(|\\)\\(.*\n\\)", nil, :notes_h1_pipe, :notes_h1)
     Styles.apply("^\\(| .+?: \\)\\(.+\n\\)", nil, :notes_h1_pipe, :notes_h1)
@@ -472,7 +473,7 @@ class Notes
       prev = "#{prev}#{bullet_text}"
       View.insert prev
 
-      if prefix == :uu
+      if prefix == :uu || prefix == :-
         View.insert "(): "
         Move.backward 3
       end
