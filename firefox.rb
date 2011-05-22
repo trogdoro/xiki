@@ -32,10 +32,10 @@ class Firefox
       if tab == -1   # If 0, close tab
         self.close_tab
       else
-        self.exec "getWindows()[0].getBrowser().tabContainer.selectedIndex = #{tab};"
+        Firefox.mozrepl_command("window.getBrowser().tabContainer.selectedIndex = #{tab}", :browser=>true)
       end
     else
-      self.exec "getWindows()[0].getBrowser().reload()"
+      Firefox.mozrepl_command("window.getBrowser().reload()", :browser=>true)
     end
 
   end
@@ -43,7 +43,7 @@ class Firefox
   def self.close_tab
     times = Keys.prefix_n :clear=>true
     (times||1).times do
-      Firefox.exec "getWindows()[0].getBrowser().removeCurrentTab();"
+      self.run "window.getBrowser().removeCurrentTab();", :browser=>true
     end
   end
 
@@ -119,78 +119,18 @@ class Firefox
 
 
 
-  def self.connection
-
-    socket = TCPSocket::new("localhost", "9997")
-    socket.sync = true
-    read_socket(socket)
-
-    vars = "var window = getWindows()[0];"
-    #     vars = "var window = getWindows()[1];"
-
-    vars += "var browser = window.getBrowser();"
-
-    #     vars += "var document = browser.tabContainer.childNodes[0].contentDocument;"
-
-    vars += "var document = browser.contentDocument;"
-
-    vars += "var body = document.body;"
-
-    socket.send("#{vars}\n", 0)
-    read_socket(socket)
-
-    socket
-  end
-
-  def self.run_raw txt
-
-    begin
-      socket = self.connection
-
-      socket.send "#{txt}\n", 0
-      read_socket(socket)
-      nil
-
-      # TODO 1 try this!
-      #     socket.close
-    rescue
-      View.message "JSSH appears to be down!"
-      nil
-    end
-
-  end
 
   def self.run txt, options={}
 
-    txt.gsub!("\n", ' ')
-    txt.gsub!('"', "\\\"")
+    Firefox.mozrepl_command txt, options
 
-    if options[:tab]
-      self.run_raw "getWindows()[0].gBrowser.getBrowserAtIndex(#{options[:tab]-1}).contentDocument.location = \"javascript: #{txt}; void(0)\""
-    else
-      self.run_raw "document.location = \"javascript: #{txt}; void(0)\""
-    end
-
-    nil
   end
-
 
 
   def self.value txt
 
-    begin
-      socket = self.connection
-      txt.gsub!("\n", ' ')
-      txt.gsub!('"', "\\\"")
-      socket.send "#{txt};\n", 0
-      read_socket(socket)
-    rescue
-      View.message "JSSH appears to be down!"
-      ""
-    end
+    self.run(txt).sub(/^"(.+)"$/, "\\1")
 
-    # TODO 1 try this!
-    #     socket.close
   end
 
   def self.url txt
@@ -257,11 +197,40 @@ document.getElementsByTagName('body')[0].appendChild(s);
 
   def self.enter_as_url
     if Keys.prefix_u
-      Firefox.exec("getWindows()[0].getBrowser().tabContainer.selectedIndex = getWindows()[0].getBrowser().tabContainer.selectedIndex + 1;")
+      self.run "window.getBrowser().tabContainer.selectedIndex += 1", :browser=>true
     end
 
     View.insert Firefox.value('document.location.toString()');
     View.insert("\n") if Keys.prefix_u
+  end
+
+  def self.mozrepl_read s
+    r = ''
+    loop do
+     r << s.readchar.chr
+     break if r =~ /^repl\d*> $/
+    end
+    r.sub /^repl\d*> /, ''
+  end
+
+  def self.mozrepl_command js, options={}
+    s = TCPSocket::new("localhost", "4242")
+
+    initial_crap = mozrepl_read s
+    repl = initial_crap[/repl\d+/] || 'repl'
+    if options[:tab]   # Run js in page on nth tab
+      s.puts("#{repl}.enter(window.gBrowser.getBrowserAtIndex(#{options[:tab]}).contentDocument)\n;")
+      mozrepl_read s
+    elsif options[:browser]   # Run js at browser outer level
+    else   # Run js in page
+      s.puts("#{repl}.enter(content.wrappedJSObject)\n;")
+      mozrepl_read s
+    end
+
+    s.puts js
+    txt = mozrepl_read s
+    s.close
+    txt.strip
   end
 
 end

@@ -26,6 +26,7 @@ class CodeTree
     # Determine code to eval
     code = self.determine_code_from_path path
     orig.go
+
     self.run code, options
   end
 
@@ -251,8 +252,9 @@ class CodeTree
     method_with_params, params = metho.match(/(\w+\??)(.*)/)[1..2]
     params.sub!(/^\((.*)\)$/, "\\1")  # Remove parens if they're there
 
-    # Surround with curly brackets if it's a hash
-    if params =~ /=>/ and ! params !~ /\{/
+    # Surround with curly brackets if it's a hash, and no curly brackets already
+    # Assumes all params are in a hash, which may not be right
+    if params =~ /=>/ && params !~ /\}$/
       params = " {#{params.strip}}"
     end
 

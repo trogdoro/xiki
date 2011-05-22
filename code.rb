@@ -573,7 +573,7 @@ class Code
   def self.enter_log_line
     $el.open_line(1) unless Line.blank?
     if Keys.prefix_u?
-      View.insert "Ol << '!'"
+      View.insert 'Ol << "!"'
       Line.to_right
       Move.backward 2
       return

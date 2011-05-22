@@ -5,7 +5,7 @@ require 'text_util'
 
 class Search
 
-  SPECIAL_ORDER = "_'\"[]{}<>-+\\/!$_"
+  SPECIAL_ORDER = "X!='\"[]{}<>_-+*@#\\/!$X"
 
   extend ElMixin
   @@case_options = nil
@@ -420,19 +420,20 @@ class Search
     # Prompt for time
     minutes = Keys.input :prompt=>'How many minutes? ', :timed=>true
     times = {"1"=>"30/30", "2"=>"1/1", "3"=>"90/90", "4"=>"2/2", "5"=>"2:30/2:30", "6"=>"3/3", "9"=>"45/45"}[minutes]
-
     if match.nil?
       input = Keys.input :prompt=>'Add timer for what? '
-      return Firefox.run("$('#timers').val('')", :tab=>1) if input == ""
+      return Firefox.run("$('#timers').val('')", :tab=>0) if input == ""
       input = "#{times} #{input}" unless input =~ /^\d/
     else
-
-      return Firefox.run("$('#timers').val('')", :tab=>1) if input == ""
-
+      return Firefox.run("$('#timers').val('')", :tab=>0) if input == ""
       input = "#{times} #{match}"
     end
 
-    Firefox.run "$('#timers').val(\"#{input}\n\")", :tab=>1
+    # Replace field
+    Firefox.run "$('#timers').val(\"#{input}\")", :tab=>0
+    #     # Append to field
+    #     Firefox.run "$('#timers').val($('#timers').val()+\"#{input}\n\")", :tab=>1
+
   end
 
   def self.search_log
@@ -998,6 +999,9 @@ class Search
       View.layout_files
     elsif path == "$o"
       View.layout_output
+      options[:reverse] = true
+    elsif path == "$d"
+      View.open "$d"
       options[:reverse] = true
     elsif path == :top
       # Will go to highest below

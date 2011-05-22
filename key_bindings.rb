@@ -83,7 +83,7 @@ class KeyBindings
     Keys.open_key { Keys.jump_to_code }   # jump to ruby code of key definition *
     Keys.open_list_bookmarks { CodeTree.display_menu("- Bookmarks.tree/") }
     Keys.open_log_console { Console.log; View.to_bottom; Search.isearch nil, :reverse=>true }
-    Keys.open_lisp_error { Code.show_el4r_error }
+    #     Keys.open_last_error { Code.show_el4r_error }
     Keys.open_list_faces { list_faces_display }
     Keys.open_lisp_info { info("elisp") }   # Open manual
     Keys.open_log_list { Git.show_log_one_file }   # Show git diffs o 1 file
@@ -478,11 +478,12 @@ class KeyBindings
     Keys.search_kill { Search.cut }   # cut
 
     define_key :isearch_mode_map, kbd("C-l"), nil
-    Keys.search_like_file { Search.isearch_open }   # Log: search in search log
-    Keys.search_like_timer { Search.search_like_timer }   # Log: search in search log
-    Keys.search_like_log { Search.search_log }   # Log: search in search log
+    Keys.search_like_data { Search.isearch_restart "$d" }
+    Keys.search_like_file { Search.isearch_open }
+    Keys.search_like_timer { Search.search_like_timer }
+    Keys.search_like_log { Search.search_log }
 
-    #     Keys.search_log { Search.search_log }   # Log: search in search log
+    #     Keys.search_log { Search.search_log }
     # M: leave unmapped for stop
     Keys.search_next { Search.isearch_next_or_name }   # Next, or name (if nothing searched for yet)
     Keys.search_outline { Search.isearch_outline }   # Outline

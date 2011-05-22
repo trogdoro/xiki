@@ -458,12 +458,17 @@ class Notes
           prev_indent << "  " unless prev_indent == ""
           View.insert "#{prev_indent}- #{line}"
         end
-        Move.to_line_text_beginning
+
+        Move.to_column 2
+        #         Move.to_line_text_beginning
+        if prefix == :-
+          View.insert "(): "
+          Move.backward 3
+        end
 
         return
       end
     end
-
     if prefix.is_a? Fixnum   # If numeric prefix, indent by n
       View.insert((" " * prefix) + bullet_text)
     else   # Get bullet indent of previous line
@@ -473,7 +478,7 @@ class Notes
       prev = "#{prev}#{bullet_text}"
       View.insert prev
 
-      if prefix == :uu || prefix == :-
+      if prefix == :-
         View.insert "(): "
         Move.backward 3
       end
@@ -634,11 +639,17 @@ class Notes
   end
 
   def self.enter_do_bullet
-    line = Line.value
-    indent, first_char = line.match(/^( *)(.)/)[1..2]
 
-    Move.to_axis
-    $el.open_line(1)
+    # If on blank line, just insert it
+    if ! Line.blank?
+
+      line = Line.value
+      indent, first_char = line.match(/^( *)(.)/)[1..2]
+
+      Move.to_axis
+      $el.open_line(1)
+    end
+
     View.insert "#{indent}- do!"
     return
 
