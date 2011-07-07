@@ -610,5 +610,14 @@ class Code
     end
     return false   # Don't exit
   end
+
+  def self.do_list_ancestors
+    path = FileTree.construct_path(:list=>true)[0..-1]
+    result = ""
+    path.each_with_index { |o, i| result << "#{'  ' * i}#{o}\n" }
+
+    View.message result.strip
+  end
+
 end
 

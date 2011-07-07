@@ -18,7 +18,7 @@ class CodeTree
     orig = Location.new
     Line.to_left
     line = Line.without_indent
-    path = options[:path] || FileTree.construct_path(:list => true)
+    path = options[:path] || FileTree.construct_path(:list=>true)
     path.each do |l|
       # if '- .xx:/", get rid of trailing slash
       l.sub!(/^([+-] .*\..+)\/$/, "\\1")

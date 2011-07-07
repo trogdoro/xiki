@@ -139,16 +139,34 @@ class Notes
   end
 
   def self.move_block_to_top no_clipboard=false
+
+    prefix_u = Keys.prefix_u :clear=>true
     block = get_block
-    block.blink
+
+    if prefix_u
+      line = View.line_number
+      scroll = View.scroll_position
+      orig_right = block.right
+    end
+
+    block.blink unless prefix_u
     block.delete_content
 
     beginning_of_buffer
     insert block.content
 
-    goto_line 2
     moved_block = get_block
-    moved_block.blink
+    moved_block.blink unless prefix_u
+
+    if prefix_u
+      View.to_line line
+      View.scroll_position = scroll
+      View.cursor = orig_right
+      Line.next
+    else
+      View.to_line 2
+    end
+
   end
 
   def self.keys

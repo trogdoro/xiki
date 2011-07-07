@@ -121,16 +121,12 @@ class Firefox
 
 
   def self.run txt, options={}
-
-    Firefox.mozrepl_command txt, options
-
+    result = Firefox.mozrepl_command txt, options
+    result.sub /^"(.+)"$/, "\\1"
   end
 
-
   def self.value txt
-
     self.run(txt).sub(/^"(.+)"$/, "\\1")
-
   end
 
   def self.url txt
@@ -205,12 +201,19 @@ document.getElementsByTagName('body')[0].appendChild(s);
   end
 
   def self.mozrepl_read s
-    r = ''
-    loop do
-     r << s.readchar.chr
-     break if r =~ /^repl\d*> $/
+    begin
+      timeout(4) do
+        r = ''
+        loop do
+          r << s.readchar.chr
+          break if r =~ /^repl\d*> $/
+        end
+        r.sub /^repl\d*> /, ''
+      end
+    rescue Timeout::Error=>e
+      raise "Seems like mozrepl isnt responding.  Is the internet down??"
     end
-    r.sub /^repl\d*> /, ''
+
   end
 
   def self.mozrepl_command js, options={}

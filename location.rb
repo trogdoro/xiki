@@ -70,6 +70,9 @@ class Location
     # If string, look up location in map and go to it
     elsif path.class == String and path[/^\$./]
       View.open(path, :goto_point => true)
+
+      # Jump to specific boomkark point - redundant??
+      # Is this even a bookmark?
       bookmark_jump(path.sub(/^\$/, ""))
       return
     end

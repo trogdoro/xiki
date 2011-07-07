@@ -5,6 +5,28 @@
 # switch-to-buffer-other-window
 # switch-to-buffer-other-window-maybe
 # Represents a division of a window (in emacs terms, it's a window (which is within a frame))
+
+=begin
+
+# Sample code for the most commonly-used
+
+View.path
+  /projects/xiki/xiki_git/
+
+View.file
+  /projects/xiki/xiki_git/view.rb
+
+View.file_name
+  view.rb
+
+View.open "/tmp/"
+  # Switches to the view (opening if necessary)
+
+p Line.value
+  # Grabs text on this line
+
+=end
+
 class View
   include ElMixin
   extend ElMixin
@@ -1027,6 +1049,14 @@ class View
     orig.go
 
     View.insert line
+  end
+
+  def self.scroll_position
+    $el.line_number_at_pos(point) - $el.line_number_at_pos(window_start)
+  end
+
+  def self.scroll_position= pos
+    $el.recenter pos
   end
 
 end

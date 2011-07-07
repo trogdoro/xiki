@@ -14,7 +14,7 @@ class Color
 
   @@colors = {
     "r"=>:color_rb_red, "y"=>:color_rb_yellow,
-    #     "r"=>:color_rb_red, "t"=>:color_rb_orange, "y"=>:color_rb_yellow,
+    "t"=>:color_rb_orange,
     "e"=>:color_rb_green, "b"=>:color_rb_blue, "u"=>:color_rb_purple,
     "l"=>:color_rb_light,
     "w"=>:color_rb_white,
@@ -162,7 +162,7 @@ class Color
 
     if Styles.inverse
       Styles.define :color_rb_red, :bg => "550000"
-      Styles.define :color_rb_orange, :bg => "441500"
+      Styles.define :color_rb_orange, :bg => "442500"
       Styles.define :color_rb_yellow, :bg => "444400"
       Styles.define :color_rb_green, :bg => "113311"
       Styles.define :color_rb_white, :fg=>'222222', :bg=>'ffffff', :border=>['ffffff', -1]

@@ -161,4 +161,12 @@ class Ol
     result
   end
 
+  def self.browser html
+    path = "/tmp/browser.#{Time.now.usec}.html"
+    url = "file://#{path}"
+    File.open(path, "w") { |f| f << html }
+
+    `open '#{url}'`
+  end
+
 end

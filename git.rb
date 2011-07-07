@@ -491,7 +491,7 @@ class Git
       txt << untracked.join("")
       txt = "- Warning: nothing to show" if ! txt.any?
 
-      return CodeTree.no_search_option + option + txt + "- .add\n- revert: .checkout\n"
+      return CodeTree.no_search_option + option + txt + "- .add\n- .delete\n- revert: .checkout\n"
     end
 
     if line.nil?   # If no line passed, re-do diff for 1 file
@@ -680,6 +680,20 @@ class Git
     end
 
     Console.run "git checkout #{siblings.join(' ')}", :dir=>dir #, :no_enter=>true
+  end
+
+  def self.delete project
+    dir = self.extract_dir project
+
+    siblings = CodeTree.siblings :include_label=>true
+    siblings.map!{|i| Line.without_label(:line=>i)}
+
+    unless siblings.any?   # Error if no siblings
+      return "- Error: No files to delete\n" +
+             "- They should be siblings of .delete!"
+    end
+
+    Console.run "rm #{siblings.join(' ')}", :dir=>dir #, :no_enter=>true
   end
 
   def self.create project

@@ -720,6 +720,13 @@ class Search
 
   end
 
+  def self.search_thesaurus
+    term = self.stop
+
+    url = term.sub(/^\s+/, '').gsub('"', '%22').gsub(':', '%3A').gsub(' ', '%20')
+    browse_url "http://thesaurus.reference.com/browse/#{url}"
+  end
+
   def self.isearch_move_line
     isearch_done
     isearch_clean_overlays
@@ -932,9 +939,7 @@ class Search
   def self.to_left
     match = self.stop
     if match.nil?   # If nothing searched for yet
-      dir = Keys.bookmark_as_path :prompt=>"Enter a bookmark to show the log for: "
-      CodeTree.display_menu("- Git.menu/\n  - project - #{dir}\n    - .log ''/")
-      return
+      return CodeTree.display_menu("- Search.history/")
     end
 
     Line.to_left
@@ -1217,6 +1222,15 @@ class Search
     else
       Search.search_in_bookmark match
     end
+  end
+
+  def self.history txt=nil
+    if txt
+      ControlTab.go
+      Search.isearch txt
+      return
+    end
+    elvar.search_ring.to_a
   end
 
 end

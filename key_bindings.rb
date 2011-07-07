@@ -250,7 +250,7 @@ class KeyBindings
     Keys.do_kill_rest { CodeTree.kill_rest }   # kill adjacent lines at same indent as this one
     Keys.do_kill_siblings { CodeTree.kill_siblings }   # kill adjacent lines at same indent as this one
     Keys.do_kill_thing { delete_region(* bounds_of_thing_at_point( :sexp )) }   # kill adjacent lines at same indent as this one
-    Keys.do_lines_arbitrary { Code.randomize_lines }   # Shuffle lines
+    Keys.do_list_ancestors { Code.do_list_ancestors }   # Shuffle lines
     Keys.do_load_browser { Firefox.reload }
     Keys.do_last_command { Console.do_last_command }
     Keys.do_line_duplicate { Line.duplicate_line }
@@ -264,6 +264,7 @@ class KeyBindings
       end
     }
     Keys.do_lines_individual { Code.do_kill_duplicates }   # Uniqify, delete duplicates
+    Keys.do_lines_jumble { Code.randomize_lines }   # Shuffle lines
     Keys.do_last_launch { View.alert("Use instead:  to_up") }
     Keys.do_line_next { Line.move(:next) }
     Keys.do_line_previous { Line.move(:previous) }
@@ -473,16 +474,19 @@ class KeyBindings
 
     Keys.search_just_variable { Search.isearch_just_surround_with_char '#{', '}' }
 
-    Keys.search_just_web { Search.isearch_google }   # make match be snake case
     Keys.search_just_yellow { Search.just_orange }
     Keys.search_kill { Search.cut }   # cut
 
     define_key :isearch_mode_map, kbd("C-l"), nil
     Keys.search_like_data { Search.isearch_restart "$d" }
     Keys.search_like_file { Search.isearch_open }
+    Keys.search_like_synonym { Search.search_thesaurus }
     Keys.search_like_timer { Search.search_like_timer }
-    Keys.search_like_log { Search.search_log }
 
+    Keys.search_just_web { Search.isearch_google }   # make match be snake case
+    Keys.search_like_url { Search.isearch_google }
+
+    Keys.search_like_log { Search.search_log }
     #     Keys.search_log { Search.search_log }
     # M: leave unmapped for stop
     Keys.search_next { Search.isearch_next_or_name }   # Next, or name (if nothing searched for yet)
@@ -558,6 +562,12 @@ class KeyBindings
   end
 
   def self.misc
+
+    $el.global_set_key kbd("C-S-v"), :scroll_down
+    $el.global_set_key kbd("M-c"), :kill_ring_save
+    $el.global_set_key kbd("M-v"), :yank
+    #     $el.global_set_key kbd("M-x") { Clipboard.cut(0); Location.as_spot("killed") }
+
     # Control-Shift combinations
     Keys.set("C-S-c") { Clipboard.copy("0") }
     Keys.set("C-S-e") { Clipboard.paste("0") }

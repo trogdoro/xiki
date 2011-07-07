@@ -2,6 +2,8 @@ class Specs
 
   class << self
     def method_missing(func, *args, &block)
+      prefix = Keys.prefix
+
       bm = nil
       if args[0].is_a?(Symbol)   # If symbol, use that as bookmark
         bm = args.shift
@@ -15,7 +17,6 @@ class Specs
       test, quote = args
 
       quote = test if args.size == 1 && test =~ /\n/   # If only 1 arg and it's multiline, it must be a quote
-
       if quote   # If there's a quote, we're jumping, not running
         quote = Line.value
         quote =~ /([\.\/].+):(\d+)/
@@ -48,7 +49,8 @@ class Specs
       #         path.sub! /.+\//, 'spec/'
       #       end
 
-      if Keys.prefix_u   # If U prefix, jump to test
+      if prefix == :u   # If U prefix, jump to test
+
         View.open "#{Bookmarks["$#{bm}"]}#{path}"
         Keys.clear_prefix
         View.to_highest
@@ -228,7 +230,7 @@ class Specs
     bm_were_in = bm_were_in.sub(/./, '').to_sym
 
     txt = self.run_spec path, test, :mt
-    Search.forward '^  end$'
+    Search.forward '^  +end$'
     Move.forward
     View.insert "#{txt.gsub(/^/, '  # ').gsub(/^  # $/, '  #')}"
 
