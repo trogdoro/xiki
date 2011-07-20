@@ -504,10 +504,8 @@ class Code
   end
 
   def self.open_log_view
-    orig = View.current if Keys.prefix_u?
-
-    prefix_u = Keys.prefix_u?
-    Keys.prefix = nil
+    prefix = Keys.prefix :clear=>true
+    orig = View.current if prefix == :u
 
     file = Ol.file_path
     buffer = "*output - tail of #{file}"
@@ -546,7 +544,7 @@ class Code
     lines = "#{file}.lines"
     `touch #{lines}` unless File.exists?(lines)
 
-    Console.run "tail -f #{file}", :buffer => buffer, :dir => '/tmp', :dont_leave_bar => true
+    Console.run "tail #{prefix == :- ? '-n 100' : ''} -f #{file}", :buffer=>buffer, :dir=>'/tmp', :dont_leave_bar=>true
     Notes.mode
 
     return if self.clear_and_go_back orig

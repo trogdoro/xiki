@@ -8,15 +8,17 @@ class Move
   def self.to_indent
     direction_down = true   # Assume down
     prefix = Keys.prefix
-    if prefix == :u   # If U, reverse
-      direction_down = false
-    else
-      column = Keys.prefix   # If numeric, make that be the indent
-    end
     line = Line.value
-    # If end of block, reverse direction
-    if line =~ /^ *(end|\]|\}|\))$/
-      direction_down = ! direction_down
+
+    if prefix.is_a? Fixnum   # If U, reverse
+      column = prefix   # If numeric, make that be the indent
+    else
+      direction_down = ! direction_down if line =~ /^ *(end|\]|\}|\))$/   # If end of block, reverse direction
+
+      if prefix == :u   # If U, reverse
+        direction_down = false
+      else
+      end
     end
 
     column ||= Line.indent(line).size

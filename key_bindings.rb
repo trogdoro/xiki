@@ -35,12 +35,13 @@ class KeyBindings
     Keys.as_line { Clipboard.as_line }
     Keys.as_macro { Macros.record }   # start recording macro *
     Keys.as_name { Clipboard.copy }   # copies using key (prompted for)
-    Keys.as_object { Clipboard.as_object }   # copy object / symbol at point
+    Keys.as_object { Clipboard.as_thing }   # copy object / symbol at point
+    #     Keys.as_object { Clipboard.as_object }   # copy object / symbol at point
     Keys.as_paragraph { Clipboard.copy_paragraph }   # copy paragraph
     Keys.as_quick { Bookmarks.save :q }   # like AB but uses different temporary namespace
     Keys.as_rest { Clipboard.copy_paragraph(:rest => true) }
     Keys.as_spot { Location.as_spot }   # remember point in file *
-    Keys.as_thing { Clipboard.as_thing }  # copy sexp at point
+    Keys.as_todo { Search.move_to "$t", View.selection }  # copy sexp at point
     #Keys.as_update_remote { FileTree.save_remote }
     Keys.as_version { History.backup_file }   # creates backup
     Keys.as_window { View.save }   # remember window configuration as name
@@ -130,7 +131,7 @@ class KeyBindings
     #     Keys.EAB { Code.enter_as_backslash }   # Enter As Bash: enter with \ at eol's
     Keys.EE { Line.to_right }   # EE - end of line (E's default) **
     Keys.enter_as_added { Numbers.enter_as_added }   # Add dollars or numbers in clipboard
-    Keys.enter_as_camelcase { View.insert TextUtil.camel_case(Clipboard.get(0)) }
+    #     Keys.enter_as_camelcase { View.insert TextUtil.camel_case(Clipboard.get(0)) }
     #     Keys.enter_as_debug { Code.enter_as_debug }
     Keys.enter_as_execute { Console.do_as_execute(:insert=>true) }   # change word to camel case (LikeThat)
     Keys.enter_as_filename { insert Clipboard.get(".") }
@@ -202,9 +203,9 @@ class KeyBindings
     # D: do...
     # Use D prefix for: things that modify text or execute code
 
-    Keys.D { insert "Apparently this is necessary to remap C-d" }
+    #     Keys.D { insert "Apparently this is necessary to remap C-d" }
     Keys.DD { delete_char elvar.current_prefix_arg || 1 }   # DD - delete character (D's default) **
-    Keys.do_as_camelcase { Clipboard.do_as_camel_case }   # change word to camel case (LikeThat)
+    #     Keys.do_as_camelcase { Clipboard.do_as_camel_case }   # change word to camel case (LikeThat)
     Keys.do_as_execute { Console.do_as_execute }   # Run shell command on tree
     Keys.do_as_html { Firefox.do_as_html }
     Keys.do_as_javascript { Javascript.run }
@@ -500,10 +501,7 @@ class KeyBindings
     Keys.search_usurp { Search.isearch_pull_in_sexp }   # usurp: pull sexp into search string
     Keys.search_value { Search.insert_at_search_start }   # Value: copy value back to search start
     # W: leave unmapped for pulling into search
-    Keys.search_xtract {
-      View.beep
-      View.message "use 'pull'" + "!" * 600
-    }   # Xtract: move back to search start
+    Keys.search_xiki { Search.xiki }
     # Y: leave unmapped for yank
     Keys.search_zap { Search.zap }   # zap - delete up until search start
 
@@ -563,9 +561,10 @@ class KeyBindings
 
   def self.misc
 
-    $el.global_set_key kbd("C-S-v"), :scroll_down
-    $el.global_set_key kbd("M-c"), :kill_ring_save
-    $el.global_set_key kbd("M-v"), :yank
+    $el.define_key :global_map, kbd("C-S-v"), :scroll_down
+    $el.define_key :global_map, kbd("M-c"), :kill_ring_save
+    $el.define_key :global_map, kbd("M-v"), :yank
+    #     $el.define_key :global_map, kbd("M-x"), :kill_region
     #     $el.global_set_key kbd("M-x") { Clipboard.cut(0); Location.as_spot("killed") }
 
     # Control-Shift combinations

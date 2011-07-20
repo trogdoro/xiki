@@ -24,8 +24,12 @@ class Keys
   # Handles Keys.to_foo etc.
 
   def self.method_missing(meth, *args, &block)
+
     # Accept it if block but no args
     meth = meth.to_s
+
+    meth_orig = meth.dup
+
 
     # Delegate to super unless arg is single symbol
     unless args.size == 0 or (args.size == 1 and args[0].is_a? Symbol)
@@ -79,17 +83,23 @@ class Keys
       $el.define_key map, keys, &block
       "- key was defined: #{keys_raw}"
     rescue Exception => e
-      if map == :global_map && meth =~ /([A-Z])([A-Z]?)./
-        prefix = $2.to_s.empty? ? $el.kbd("C-#{$1.downcase}") : $el.kbd("C-#{$1.downcase} C-#{$2.downcase}")
 
-        begin   # If it appears to be a prefix key (already defined)
-          $el.global_unset_key(prefix)
-          #$el.define map, prefix, nil
-          $el.define_key map, keys, &block
-          "- key #{keys_raw} was defined"
-        rescue Exception => e
-        end
+      return if map != :global_map || meth !~ /([A-Z])([A-Z]?)./   # Only global map and 2 control keys
+      message = e.message
+      prefix = message[/"Key sequence .+? starts with non-prefix key (.+?)"/, 1]
+      return if prefix.nil?
+
+      prefix = $el.kbd(prefix)
+
+      begin   # If it appears to be a prefix key (already defined)
+
+        $el.global_unset_key(prefix)
+        $el.define_key map, keys, &block
+
+      rescue Exception => e
+        Ol << "e (inner): #{e.inspect}"
       end
+
     end
   end
 

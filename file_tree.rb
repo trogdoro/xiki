@@ -374,7 +374,6 @@ class FileTree
   # be mapped to C-. .
   # TODO: remove ignore_prefix, and just use Keys.clear_prefix
   def self.open options={}
-
     original_file = View.file_name
 
     path = options[:path] || self.construct_path(:list=>true)
@@ -451,7 +450,14 @@ class FileTree
       #       View.to_after_bar if View.in_bar? && ! from_t
     end
 
-    if remote   # Open or go to file
+    column = View.column
+    extra_indent = (Line.value[/^ +\|./] || '').length
+    column -= extra_indent
+    column = 0 if column < 0
+
+    # Open or go to file
+
+    if remote
       self.remote_file_contents(path)   # Get text from server and insert
 
     else   # Normal file opening
@@ -460,11 +466,12 @@ class FileTree
       Effects.blink(:what=>:line) unless line_number or search_string
     end
 
+    return unless line_number || search_string
+
     if line_number   # If line number, go to it
       goto_line line_number.to_i
       Effects.blink(:what=>:line)
     elsif search_string   # Else, search for |... string if it passed
-
       Move.top
       # Search for exact line match
       found = Search.forward "^#{regexp_quote(search_string)}$"
@@ -476,12 +483,10 @@ class FileTree
         found = Search.forward "#{regexp_quote(search_string)}\\([^_a-zA-Z0-9\n]\\|$\\)", :beginning=>true
         #         found = search_forward_regexp("#{regexp_quote(search_string)}\\([^_a-zA-Z0-9\n]\\|$\\)", nil, true)
       end
-
       unless found   # If not found, search for substring of line
         Move.top
         found = search_forward_regexp("#{regexp_quote(search_string)}", nil, true)
       end
-
       unless found   # If not found, search for it stripped
         Move.top
         found = search_forward_regexp("#{regexp_quote(search_string.strip)}")
@@ -497,8 +502,10 @@ class FileTree
 
       # Add to log
       Search.append_log dir, "- #{name}\n    | #{search_string}"
-
     end
+
+    View.column = column
+
   end
 
   # Incremental search

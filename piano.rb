@@ -19,16 +19,20 @@ class Piano
     end
   end
 
+  def self.midi
+    @@midi
+  end
+
   def self.keys
     $el.elvar.piano_mode_map = $el.make_sparse_keymap unless $el.boundp :piano_mode_map
 
     key " ", BassDrum2, 10
-    key "-", SnareDrum1, 10
+    key "-", SnareDrum2, 10
     key "1", SnareDrum1, 10
 
-    key "`", ClosedHiHat, 10, 80
+    key "`", ClosedHiHat, 10, 60
     key "1", OpenHiHat, 10, 60
-    key $el.kbd("C-i"), RideCymbal1, 10, 80
+    key $el.kbd("C-i"), RideCymbal1, 10, 60
 
     # Note: keys are optimized for dvorak
     key ";", C3; key "o", Cs3
@@ -90,6 +94,7 @@ class Piano
     # Make piano mode happen for .piano files
     Mode.define(:piano, ".piano") do
       #       Piano.apply_styles
+      Notes.apply_styles
     end
 
     if @@midi.nil?

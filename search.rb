@@ -989,6 +989,24 @@ class Search
     View.delete(View.point, right)
   end
 
+  def self.xiki
+    match = self.stop
+
+    if match.nil?   # If nothing searched for yet
+      char = Keys.input(:one_char=>true, :prompt=>"Enter one char: ")
+      if char == "m"
+        CodeTree.display_menu("- $x/\n  - ## def /")
+      else
+        View.beep
+        View.message "Don't know what to do with that char."
+      end
+      return
+    end
+
+    View.beep
+    View.message "use 'pull'" + "!" * 600
+  end
+
   def self.change_case
     # Prompt user to get char
     char = View.prompt(", lower, camel, snake")
@@ -1175,8 +1193,11 @@ class Search
   def self.isearch_move_to path
     match = self.match
     match = Line.value if match.nil?   # Use line if nothing searched for
-    Search.stop
+    self.move_to path, match
+  end
 
+  def self.move_to path, match
+    Search.stop
     orig = Location.new
 
     if path == "$t"   # If $f, grab path also

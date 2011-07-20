@@ -190,11 +190,14 @@ class Remote
   end
 
   def self.init
-    Keys.do_as_remote do
-      Remote.save_file
-    end
+    # TODO remove this
   end
 
 end
+
+Keys.do_as_remote do
+  Remote.save_file
+end
+
 
 # Remote.init

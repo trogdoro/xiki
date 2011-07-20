@@ -14,7 +14,10 @@ class CouchDb
   end
 
   def self.start
-    Console.run('sudo couchdb', :buffer=>'*couchdb')
+    buffer = '*couchdb'
+    return if View.buffer_open? buffer
+
+    Console.run('sudo couchdb', :buffer=>buffer)
   end
 
   def self.admin_url
