@@ -15,6 +15,7 @@ class Buffers
       case Keys.prefix :clear=>true
       when nil:  return list.select{ |b| $el.buffer_file_name(b) }.map{ |b| $el.buffer_name(b) }
       when 0:  return list.select{ |b| ! $el.buffer_file_name(b) }.map{ |b| $el.buffer_name(b) }[1..-1]
+      when 1:  return list.select{ |b| ! $el.buffer_file_name(b) && $el.buffer_name(b) =~ /!$/ }.map{ |b| $el.buffer_name(b) }
       when 8:  return Buffers.open_viewing
       when :u:  return names_array
         #       else  #CodeTree.display_menu("- Files.edited #{Keys.prefix}/")

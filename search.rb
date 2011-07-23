@@ -677,6 +677,8 @@ class Search
   end
 
   def self.forward search, options={}
+    View.to_highest if options[:from_top]
+
     orig = View.cursor
     found = re_search_forward search, nil, (options[:go_anyway] ? 1 : true)
     View.cursor = orig if options[:dont_move]
@@ -1078,7 +1080,7 @@ class Search
       if ! View.file   # If buffer, not file
         buffer_name = View.buffer_name
         txt = View.txt
-        View.to_buffer "* outline of matches in: #{buffer_name}"
+        View.to_buffer "* outline of matches in #{buffer_name}"
         Notes.mode
         View.kill_all
         View.insert txt.grep(Regexp.new(match)).join

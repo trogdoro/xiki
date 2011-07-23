@@ -1472,7 +1472,8 @@ class FileTree
         end
         # Grab rest until another pipe
         break if l =~ /^\| /
-        l = " #{l}" unless l.blank?
+
+        l = " #{l}" unless l.empty?
         matches << "#{quote_indent}|#{l}\n"
       end
 

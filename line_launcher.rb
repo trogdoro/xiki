@@ -487,7 +487,7 @@ class LineLauncher
     View.clear "*output - tail of /tmp/output_ol.notes"
     View.clear "*output - tail of /tmp/ds_ol.notes"
     View.clear "*visits - tail of /tmp/visit_log.notes"
-    View.clear "*tail memorize.merb/log/development.log"
+    View.clear "*console app"
 
     if Keys.prefix_u :clear=>true
       View.to_nth orig

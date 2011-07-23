@@ -51,9 +51,7 @@ class ControlTab
         #       when 0   # Not dirs or files
         @@consider_test = lambda{|b| ! buffer_file_name(b) && ! buffer_name(b)[/Minibuf/] && ! elvar.mode_name[/^Dired/] && buffer_name(b) !~ /^\*(tree|console) / }
       when 1   # Files only
-        @@consider_test = lambda{|b| buffer_file_name(b)}
-        #       when 2   # Dirs only
-        #         @@consider_test = lambda{|b| elvar.mode_name[/^Dired/] }
+        @@consider_test = lambda{|b| buffer_name(b) =~ /!$/}
       when 2
         # Available
       when 3   # ...css

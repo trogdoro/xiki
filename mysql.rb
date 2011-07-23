@@ -17,6 +17,11 @@ class Mysql
     Console.run "mysqladmin -u root drop #{name}", :buffer => "drop #{name}"
   end
 
+  def self.run db, sql
+    File.open("/tmp/tmp.sql", "w") { |f| f << sql }
+    Console.run "mysql -u root #{db} < /tmp/tmp.sql", :sync=>true
+  end
+
 # Todo
 #CREATE USER chase IDENTIFIED BY 'chase';
 end

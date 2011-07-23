@@ -79,10 +79,17 @@ class Console
       Move.bottom
       if command  # If nil, just open console
         insert command
-        Console.enter unless options[:no_enter]
+        begin
+          Console.enter unless options[:no_enter]
+        rescue
+          Ol << "Console.enter error here!"
+          #           raise (Ol << "Console.enter error here!")
+        end
         #comint_send_input
       end
     end
+
+    nil
   end
 
   def self.open dir=nil
