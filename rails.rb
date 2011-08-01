@@ -173,7 +173,7 @@ class Rails
   def self.source model
     model.sub! /\/$/, ''
     model = TextUtil.snake_case(model).gsub('::', '/')
-    View.open Bookmarks["$rails/app/models/#{model}.rb"]
+    View.open Bookmarks["$rails/app/models/#{model}.rb"] rescue nil
   end
 
   def self.tree_from_log
@@ -218,7 +218,7 @@ Keys.enter_list_models {   # Enter Rails Models
   CodeTree.launch
 }
 
-unless RubyConsole[:rails]
+if RubyConsole[:rails].nil? && Bookmarks['$rails']
   RubyConsole.register(:rails, "cd #{Bookmarks['$rails']}; script/console")  # Do this only once
 end
 

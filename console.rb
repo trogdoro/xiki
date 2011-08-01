@@ -79,13 +79,7 @@ class Console
       Move.bottom
       if command  # If nil, just open console
         insert command
-        begin
-          Console.enter unless options[:no_enter]
-        rescue
-          Ol << "Console.enter error here!"
-          #           raise (Ol << "Console.enter error here!")
-        end
-        #comint_send_input
+        Console.enter unless options[:no_enter]
       end
     end
 
@@ -104,7 +98,12 @@ class Console
 
   def self.enter command=nil
     View.insert command if command
-    comint_send_input
+
+    begin
+      comint_send_input
+    rescue
+      Ol << "Console.enter error here!"
+    end
   end
 
   def self.console?
@@ -149,7 +148,6 @@ class Console
     else
       Console.open dir
     end
-
     return true
   end
 
@@ -176,7 +174,7 @@ class Console
     path[0] = Bookmarks[path[0]] if path[0] =~ /^(\.\/|\$[\w-])/   # Expand out bookmark or ./, if there
     if path.first =~ /^\//   # If has dir (possibly remote)
       line = path.join('')
-      dir, command = line.match(/(.+?)\$ (.+)/)[1..2]
+      dir, command = line.match(/(.+?)\$ (.*)/)[1..2]
       Console.to_shell_buffer dir, :cd_and_wait=>true
     else   # Otherwise, if by itself
       command = Line.without_label.match(/.*?\$ (.+)/)[1]
@@ -277,19 +275,20 @@ class Console
     if FileTree.handles? && ! Line.matches(/^\s*\|/)   # If we're in a file tree
       path = FileTree.construct_path
 
-      if Line.matches(/\/$/)   # If a dir
-        command = Keys.input :prompt=>"Shell command on this file (* means the filename): "
-        output = Console.run(command, :dir=>path, :sync=>true)
-        FileTree.insert_under(output) if options[:insert]
-        return View.message "Command ran with output: #{output.strip}."
-      elsif Keys.prefix_n
-        View.message "Running command on multiple files isn't implemented yet."
-        return
-      end
+      #       # Run command inside of dir
+      #       if Line.matches(/\/$/)   # If a dir
+      #         command = Keys.input :prompt=>"Do shell command on '#{file}': "
+      #         output = Console.run(command, :dir=>path, :sync=>true)
+      #         FileTree.insert_under(output) if options[:insert]
+      #         return View.message "Command ran with output: #{output.strip}."
+      #       elsif Keys.prefix_n
+      #         View.message "Running command on multiple files isn't implemented yet."
+      #         return
+      #       end
 
       file = Line.without_label
-      command = Keys.input :prompt=>"Do shell command on '#{file}': "
-      command = command =~ /\*/ ? command.gsub('*', file) : "#{command} \"#{file}\""
+      command = Keys.input :prompt=>"Shell command on this file (_ means the filename): "
+      command = command =~ /\b_\b/ ? command.gsub(/\b_\b/, "\"#{file}\"") : "#{command} \"#{file}\""
 
       output = Console.run(command, :dir=>File.dirname(path), :sync=>true)
       FileTree.insert_under(output) if options[:insert]

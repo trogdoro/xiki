@@ -5,6 +5,13 @@ require 'ruby_console'
 class LineLauncher
   extend ElMixin
 
+  CLEAR_CONSOLES = [
+    "*output - tail of /tmp/output_ol.notes",
+    "*output - tail of /tmp/ds_ol.notes",
+    "*visits - tail of /tmp/visit_log.notes",
+    "*console app",
+    ]
+
   # Set this to true to just see which launcher applied.
   # Look in /tmp/output.notes
   @@just_show = false
@@ -346,6 +353,7 @@ class LineLauncher
     self.add /^ *[$\/].+\$ / do   # $ run command in shell
       Console.launch_dollar
     end
+
     self.add /^ *\$ / do   # $ run command in shell
       Console.launch_dollar
     end
@@ -484,10 +492,9 @@ class LineLauncher
   def self.do_last_launch
     orig = View.index
 
-    View.clear "*output - tail of /tmp/output_ol.notes"
-    View.clear "*output - tail of /tmp/ds_ol.notes"
-    View.clear "*visits - tail of /tmp/visit_log.notes"
-    View.clear "*console app"
+    CLEAR_CONSOLES.each do |buffer|
+      View.clear buffer
+    end
 
     if Keys.prefix_u :clear=>true
       View.to_nth orig

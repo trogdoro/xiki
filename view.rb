@@ -126,6 +126,10 @@ class View
   # moving to or exposing its view if it's already open.
   # By default it will open in 2nd view if we're in the bar view.
   def self.open path, options={}
+
+    # Pull off line number if there
+    line_number = path.slice!(/:\d+$/)
+
     # Open after bar if in bar
     if View.in_bar? && (! options[:stay_in_bar]) && path != "$0" && path != Bookmarks['$t'] && path != Bookmarks['$f']
       View.to_after_bar
@@ -157,6 +161,10 @@ class View
     # Jump to point if :goto_point (we assume path is just a bookmark)
     if options[:go_to_point] == true
       bookmark_jump path.sub(/^\$/, "")
+    end
+
+    if line_number
+      View.to_line line_number[/\d+/]
     end
   end
 
@@ -305,7 +313,7 @@ class View
       buffer = selected_window
       select_window frame_first_window
       #       enlarge_window (27 - window_width), true
-      enlarge_window (39 - window_width), true
+      enlarge_window (48 - window_width), true
       select_window buffer
     end
   end

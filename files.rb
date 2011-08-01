@@ -128,7 +128,7 @@ class Files
   end
 
   def self.history_flat
-    paths = history_array[0..120]
+    paths = history_array[0..400]
     paths.map!{|i| i.sub(/(.+\/)(.+)/, "- \\1\n  - \\2")}
     CodeTree.tree_search_option + paths.join("\n")
   end

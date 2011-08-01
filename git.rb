@@ -120,6 +120,8 @@ class Git
   end
 
   def self.menu project=nil
+    dir = self.extract_dir project
+
     # If no project, show all projects
     if project.nil?
       result = []
@@ -143,6 +145,8 @@ class Git
       return result
     end
 
+    branch = self.branch_name dir
+
     # If project, show options
     puts %Q[
       + .create/
@@ -150,7 +154,7 @@ class Git
       + .diff_unadded :expand/
       + .diff/
       + .diff :expand/
-      + .push
+      + .push "#{branch}"
       + .pull
       + .log ""/
       + .log :expand/
@@ -162,6 +166,10 @@ class Git
       - .files/
       - .format_diff_command "git diff 2b58e1e3b59ff8b5a6c5baf355501c0771b53097 code.rb"/
       ].strip.gsub(/^      /, '')
+  end
+
+  def self.branch_name dir
+    Console.run("git status", :sync=>true, :dir=>dir)[/# On branch (.+)/, 1]
   end
 
   # Shows revs for one file
@@ -527,9 +535,9 @@ class Git
     nil
   end
 
-  def self.push project
+  def self.push dest, project
     dir = self.extract_dir project
-    Console.run "git push origin master", :dir=>dir
+    Console.run "git push origin #{dest}", :dir=>dir
     nil
   end
 
@@ -541,10 +549,15 @@ class Git
 
   def self.code_tree_diff options={}
     dir = Keys.bookmark_as_path :prompt=>"Enter a bookmark to git diff in: "
+    branch = self.branch_name dir
 
     prefix = Keys.prefix
     expand = prefix == :uu ? "" : ", :expand"
-    menu = "- Git.menu/\n  - project - #{dir}\n    - .diff#{expand}/"
+    menu = "
+      - Git.menu/
+        - project - #{dir}
+          - .push \"#{branch}\"/
+          - .diff#{expand}/".unindent
 
     if options[:enter]
       View.insert(menu)

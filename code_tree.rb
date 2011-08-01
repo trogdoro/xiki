@@ -351,6 +351,8 @@ class CodeTree
   def self.siblings options={}
     left1, right1, left2, right2 = self.sibling_bounds
 
+    return self.siblings(:include_self=>true).join("\n").gsub(/^ *\| ?/, '') if options[:as_string]
+
     # Combine and process siblings
     if options[:include_self]
       siblings = View.txt(options.merge(:left=>left1, :right=>right2))

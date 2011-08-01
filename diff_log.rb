@@ -9,7 +9,6 @@ class DiffLog
 
   # Open file having difflog
   def self.open path=nil
-
     path ||= View.file if Keys.prefix_u(:clear=>true)   # Show diffs for current file only
 
     if path
@@ -23,7 +22,7 @@ class DiffLog
       with(:save_window_excursion) do
         DiffLog.open
 
-        40.times do
+        500.times do
           break unless Search.backward path_tree
           top = View.cursor
           Line.next

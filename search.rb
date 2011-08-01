@@ -711,10 +711,12 @@ class Search
     View.open(self.match)
   end
 
-  def self.isearch_google
+  def self.isearch_google options={}
     self.stop
     term = self.match
-    term.gsub!(' ', '%20')
+    term.gsub!(' ', '+')
+
+    term = "\"#{term}\"" if options[:quote]
 
     term =~ /^https?:\/\// ?   # If url, just browse
       browse_url(term) :

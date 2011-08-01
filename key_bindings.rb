@@ -221,7 +221,7 @@ class KeyBindings
     Keys.do_code_align { Code.do_code_align }
     Keys.do_click_back { Firefox.back }   # compare with last AV version
     Keys.do_create_directory { FileTree.do_create_dir }
-    Keys.do_compare_file { Git.diff_one_file }   # compare current file with subversion
+    #     Keys.do_compare_file { Git.diff_one_file }   # compare current file with subversion
     Keys.do_click_hyperlink { Firefox.click }   # compare with last AV version
     Keys.do_code_indent { Code.indent }
     Keys.do_compare_last { History.diff_with_backup }   # compare with last AV version
@@ -229,7 +229,9 @@ class KeyBindings
     Keys.do_copy_next { Files.copy }   # copy file to next view
     #     Keys.do_compare_one { Git.diff }   # compare one revision with previous revision
     Keys.do_clean_quotes { Files.do_clean_quotes }   # Fix special chars
-    Keys.do_compare_repository { Git.diff_dir }
+
+    Keys.do_compare_repository { Git.diff_one_file }
+
     Keys.do_compare_saved { DiffLog.compare_with_saved }
 
     Keys.do_copy_to { FileTree.copy_to }
@@ -266,7 +268,6 @@ class KeyBindings
     }
     Keys.do_lines_individual { Code.do_kill_duplicates }   # Uniqify, delete duplicates
     Keys.do_lines_jumble { Code.randomize_lines }   # Shuffle lines
-    Keys.do_last_launch { View.alert("Use instead:  to_up") }
     Keys.do_line_next { Line.move(:next) }
     Keys.do_line_previous { Line.move(:previous) }
     Keys.do_lines_reverse { reverse_region(region_beginning, region_end) }
@@ -449,7 +450,7 @@ class KeyBindings
 
     #     Keys.search_have_rspec { Specs.insert_in_todo }
     Keys.search_have_spot { Search.insert_at_spot }
-    Keys.search_have_move { Search.isearch_move_line }
+    #     Keys.search_have_move { Search.isearch_move_line }
     Keys.search_have_todo { Search.isearch_move_to "$t" }
     Keys.search_have_variable { Search.insert_var_at_search_start }
     Keys.search_have_within { Search.isearch_have_within }   # Grab everything except chars on edges
@@ -474,6 +475,7 @@ class KeyBindings
     Keys.search_just_todo { Search.isearch_restart "$t" }   # isearch for this string in $t
 
     Keys.search_just_variable { Search.isearch_just_surround_with_char '#{', '}' }
+    Keys.search_just_wrap { Ol << 'search_just_wrap';  toggle_truncate_lines }   # make match be snake case
 
     Keys.search_just_yellow { Search.just_orange }
     Keys.search_kill { Search.cut }   # cut
@@ -481,11 +483,16 @@ class KeyBindings
     define_key :isearch_mode_map, kbd("C-l"), nil
     Keys.search_like_data { Search.isearch_restart "$d" }
     Keys.search_like_file { Search.isearch_open }
+    Keys.search_line_pull { Search.isearch_move_line }
     Keys.search_like_synonym { Search.search_thesaurus }
     Keys.search_like_timer { Search.search_like_timer }
 
-    Keys.search_just_web { Search.isearch_google }   # make match be snake case
     Keys.search_like_url { Search.isearch_google }
+
+
+    Keys.search_like_web { Search.isearch_google }   # make match be snake case
+
+    Keys.search_like_quote { Search.isearch_google :quote=>true }
 
     Keys.search_like_log { Search.search_log }
     #     Keys.search_log { Search.search_log }
