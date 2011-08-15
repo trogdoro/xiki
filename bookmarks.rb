@@ -46,6 +46,13 @@ class Bookmarks
     end
   end
 
+  def self.[]= bookmark, path
+    with(:save_window_excursion) do
+      View.open path
+      Bookmarks.set bookmark
+    end
+  end
+
   # Like bookmark-set, but accepts buffers
   def self.set name
     # Just create normal bookmark if file

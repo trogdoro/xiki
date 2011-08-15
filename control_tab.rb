@@ -12,8 +12,7 @@ class ControlTab
   def self.go
     prefix = Keys.prefix
 
-    #  # Commented out for now, so we can use 0 for .js files - think of other plan for these keys so this can be brought back
-    if prefix == 0   # If C-0 prefix, just burry buffer
+    if prefix == 6   # If C-0 prefix, just burry buffer
       $el.bury_buffer
       # Store original order, and windows originally opened
       @@original = buffer_list.to_a   # Hide evidence that we were on top (lest it restore us)
@@ -47,20 +46,17 @@ class ControlTab
 
       # Check for prefix, and store correct test for files to go through accordingly
       case prefix
-      when 0, :uu   # Buffers but not dirs or files
-        #       when 0   # Not dirs or files
-        @@consider_test = lambda{|b| ! buffer_file_name(b) && ! buffer_name(b)[/Minibuf/] && ! elvar.mode_name[/^Dired/] && buffer_name(b) !~ /^\*(tree|console) / }
-      when 1   # Files only
-        @@consider_test = lambda{|b| buffer_name(b) =~ /!$/}
-      when 2
-        # Available
+      when 0   # Non-files
+        @@consider_test = lambda{|b| ! buffer_file_name(b) && ! buffer_name(b)[/Minibuf/]}
+
+      when 1   # Only files
+        @@consider_test = lambda{|b| buffer_file_name(b)}
       when 3   # ...css
         @@consider_test = lambda{|b| buffer_name(b) =~ /\.(css|sass)/}
       when 4   # Consoles
         @@consider_test = lambda{|b| buffer_name(b) =~ /^(\*console|\*merb) /i}
       when 5   # .rhtml files
         @@consider_test = lambda{|b| buffer_file_name(b) =~ /\.html/}
-        #         @@consider_test = lambda{|b| buffer_file_name(b) =~ /\.(html\.haml|html\.erb|html|rhtml)$/}
       when 6   # Ruby files only
         @@consider_test = lambda{|b| buffer_file_name(b) =~ /\.rb$/}
       when 68   # controller
@@ -71,23 +67,12 @@ class ControlTab
         @@consider_test = lambda{|b| buffer_file_name(b) =~ /_(spec|test)\.rb$/}
       when 7   # .notes files
         @@consider_test = lambda{|b| buffer_file_name(b) =~ /\.notes$/}
-      when 8   # ...trees
-        @@consider_test = lambda{|b| buffer_name(b) =~ /^\*tree /}
+      when 8   # Anything (just like no arg)
+        @@consider_test = lambda{|b| ! buffer_name(b)[/Minibuf/] }
       when 9   # js
         @@consider_test = lambda{|b| buffer_file_name(b) =~ /\.js$/}
-        #       when 0   # test
-        #         @@consider_test = lambda{|b| buffer_file_name(b) =~ /_(spec|test)\.rb$/}
-      else
-
-        #         if View.in_bar?  # If in the bar, only notes or trees
-        #           @@consider_test = lambda{|b| buffer_file_name(b) =~ /\.notes$/ ||
-        #             buffer_name(b) =~ /^\*\*tree/ ||
-        #             buffer_name(b) =~ /^\*\*CodeTree/
-        #             }
-        #         else
-        # Any buffer but minibuffer
+      else   # Anything (except minibuffer)
         @@consider_test = lambda{|b| ! buffer_name(b)[/Minibuf/] }
-        #         end
       end
 
       # Remember we're starting at the top of the buffer list

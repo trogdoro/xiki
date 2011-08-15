@@ -114,7 +114,7 @@ class Console
 
     if dir
       dir = "#{dir}/" unless dir =~ /\/$/
-      pattern = /^\*console #{Regexp.quote(dir)}(<|$)/
+      pattern = /^\*console #{Regexp.quote(dir)}(<| |$)/
     else
       # If already in a shell (regardless of buffer name)
       return true if View.mode == :shell_mode
@@ -122,11 +122,39 @@ class Console
     end
     return true if View.name =~ pattern   # If already there, do nothing
 
-    w = View.list.find{|w| buffer_name(window_buffer(w)) =~ pattern}
-    if w   # If found, just go to it
+    # Try to find an existing dir
+    View.list.each do |w|
+      next if buffer_name(window_buffer(w)) !~ pattern
       View.to_window(w)
       return true
     end
+
+    if Keys.prefix_u(:clear=>true)
+
+      found = Buffers.list.find do |b|
+        name = Buffers.name b
+        next false unless name =~ pattern
+
+        view = nil
+        with(:save_window_excursion) do
+          View.to_buffer name
+
+          next false unless Console.prompt?
+          cd_dir = View.dir
+          cd_dir = "#{cd_dir}/" unless cd_dir =~ /\/$/ 
+          next false unless cd_dir == dir
+          next false if Console.history.join("\n") =~ /^(ssh|ftp) /
+          true
+        end
+      end
+
+      if found
+        View.to_upper
+        return View.to_buffer(found)
+      end
+
+    end
+
     # Wasn't found in visible, so don't create it if so instructed
     return false   if options[:no_create]
 
@@ -305,4 +333,14 @@ class Console
     return View.message "Command ran with output: #{output.strip}."
 
   end
+
+  def self.prompt?
+    View.txt =~ /\$ \z/
+  end
+
+  def self.history
+    previous_input = $el.elvar.comint_input_ring.to_s
+    previous_input.scan(/#\("(.+?)"/).flatten
+  end
+
 end

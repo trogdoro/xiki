@@ -16,7 +16,8 @@ class Buffers
       when nil:  return list.select{ |b| $el.buffer_file_name(b) }.map{ |b| $el.buffer_name(b) }
       when 0:  return list.select{ |b| ! $el.buffer_file_name(b) }.map{ |b| $el.buffer_name(b) }[1..-1]
       when 1:  return list.select{ |b| ! $el.buffer_file_name(b) && $el.buffer_name(b) =~ /!$/ }.map{ |b| $el.buffer_name(b) }
-      when 8:  return Buffers.open_viewing
+      when 4:  return list.select{ |b| ! $el.buffer_file_name(b) && $el.buffer_name(b) =~ /^\*console / }.map{ |b| $el.buffer_name(b) }
+      when 8:  return list.map{ |b| $el.buffer_name(b) }
       when :u:  return names_array
         #       else  #CodeTree.display_menu("- Files.edited #{Keys.prefix}/")
       end
@@ -122,6 +123,10 @@ class Buffers
     options = {:prompt => "Rename buffer to: "}
     options[:initial_input] = $el.buffer_name if Keys.prefix_u?
     $el.rename_buffer Keys.input(options)
+  end
+
+  def self.name buffer
+    $el.buffer_name(buffer)
   end
 
 end
