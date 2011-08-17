@@ -62,6 +62,9 @@ class Code
       case prefix
       when :u   # Load file in emacsruby
         return self.load_this_file
+      when :-   # Just run selection
+        left = View.range_left
+        right = View.range_right
       when 8   # Put into file and run in console
         File.open("/tmp/tmp.rb", "w") { |f| f << Notes.get_block("^|").text }
         return Console.run "ruby -I. /tmp/tmp.rb", :dir=>View.dir

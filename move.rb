@@ -217,7 +217,7 @@ class Move
     if prefix.nil?
       times = 1
       Keys.clear_prefix
-    else
+    elsif prefix.is_a? Fixnum
       times = prefix
       View.to_relative
     end

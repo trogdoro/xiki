@@ -428,6 +428,7 @@ class LineLauncher
     end
 
     self.add(/^[^\|@:]+[\/\w\-]+\.\w+:\d+/) do |line|  # Stack traces, etc
+
       # Match again (necessary)
       line =~ /([$\/.\w\-]+):(\d+)/
       path, line = $1, $2
@@ -437,6 +438,7 @@ class LineLauncher
       # If relative dir, prepend current dir
       if path =~ /^\w/
         path = "#{View.dir}/#{path}"
+        path.sub! "//", "/"   # View.dir sometimes ends with slash
       end
 
       View.open path

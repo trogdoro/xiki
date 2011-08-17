@@ -15,13 +15,15 @@ class Buffers
       case Keys.prefix :clear=>true
       when nil:  return list.select{ |b| $el.buffer_file_name(b) }.map{ |b| $el.buffer_name(b) }
       when 0:  return list.select{ |b| ! $el.buffer_file_name(b) }.map{ |b| $el.buffer_name(b) }[1..-1]
-      when 1:  return list.select{ |b| ! $el.buffer_file_name(b) && $el.buffer_name(b) =~ /!$/ }.map{ |b| $el.buffer_name(b) }
+        # <<<<<<< Updated upstream
+        #       when 1:  return list.select{ |b| ! $el.buffer_file_name(b) && $el.buffer_name(b) =~ /!$/ }.map{ |b| $el.buffer_name(b) }
+        #       when 1:  return names_array
+      when 1:  return list.select{ |b| $el.buffer_file_name(b) }.map{ |b| $el.buffer_name(b) }[1..-1]
       when 4:  return list.select{ |b| ! $el.buffer_file_name(b) && $el.buffer_name(b) =~ /^\*console / }.map{ |b| $el.buffer_name(b) }
       when 8:  return list.map{ |b| $el.buffer_name(b) }
-      when :u:  return names_array
+      when :u:  return list.select{ |b| ! $el.buffer_file_name(b) && $el.buffer_name(b) =~ /!$/ }.map{ |b| $el.buffer_name(b) }
         #       else  #CodeTree.display_menu("- Files.edited #{Keys.prefix}/")
       end
-
       return
     end
 

@@ -1330,7 +1330,7 @@ class FileTree
     elisp = options[:elisp]
 
     if extension == "rb"
-      "^\s*(def|class|module|it|describe|create_table) "
+      "^\s*(def|class|module|it|describe|create_table|context) "
       #       elisp ? "^\\s-*\\(def\\|class\\|module\\|it\\|describe\\) " : "^\s*(def|class|module|it|describe) "
     elsif extension == "rake"
       "^\\s*(task|def|class) "
@@ -1412,7 +1412,6 @@ class FileTree
 
       matches_count+=1
     end
-
     self.insert_quoted_and_search matches, :line_found=>line_found
   end
 
@@ -1439,7 +1438,7 @@ class FileTree
     right = point
 
     goto_char left
-    Line.next(options[:line_found]-1) if options[:line_found]
+    Line.next(options[:line_found]-1) if options[:line_found] && options[:line_found] > 0
 
     Line.to_words
     # Do a search
@@ -1516,7 +1515,6 @@ class FileTree
       return View.message("Bookmark doesn't exist.")
     end
     dir = Bookmarks.dir_only(dir) if options[:recursive]
-
     options.merge!(:dir => dir)
 
     # If U prefix, open in bar

@@ -45,7 +45,7 @@ class View
     - path minus filename: p View.path
 
     # Select a buffer (going to it if already open)
-    - handles views corretly: View.to_buffer("foo")
+    - handles views correctly: View.to_buffer("foo")
 
     # Misc
     - wrap lines: View.wrap
@@ -126,8 +126,8 @@ class View
   # moving to or exposing its view if it's already open.
   # By default it will open in 2nd view if we're in the bar view.
   def self.open path, options={}
-
     # Pull off line number if there
+    path.sub!(/(.+?:\d+).+/, "\\1")
     line_number = path.slice!(/:\d+$/)
 
     # Open after bar if in bar

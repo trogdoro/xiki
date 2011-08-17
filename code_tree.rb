@@ -116,7 +116,7 @@ class CodeTree
     l = []
     ObjectSpace.each_object(Class) do |c|
       next unless c.respond_to?(:menu) || c.respond_to?(:auto_menu)
-      l << c.name
+      l << c.to_s
     end
     l.map! {|c| c.sub(/^#.+::/, '')}
     l.sort.each do |c|
@@ -128,7 +128,7 @@ class CodeTree
   end
 
   def self.display_menu menu, options={}
-    View.bar if Keys.prefix_u?
+    View.bar if Keys.prefix == 1
 
     dir = View.dir
 
@@ -185,7 +185,7 @@ class CodeTree
         end
       end
       # If function call, it might be the root
-      if l =~ /^[+-]? ?[A-Z][A-Za-z0-9]*\.[a-z]/
+      if l =~ /^[+-]? ?[A-Z][A-Za-z0-9]*\.[a-z_]/
         code_tree_root = index
       end
       index -= 1
@@ -277,13 +277,13 @@ class CodeTree
   end
 
   def self.extract_class l
-    l[/^([A-Z][A-Za-z0-9]*)\.[a-z]/, 1]
+    l[/^([A-Z][A-Za-z0-9]*)\.[a-z_]/, 1]
   end
 
   def self.extract_method l
     l = l.sub(/^[+-] [\w -]+?: /, '').sub(/^[+-] /, '')  # Remove bullets
     # Either class or bol
-    result = l[/^[A-Z][A-Za-z0-9]*\.([a-z].*)/, 1] ||  # Class and method
+    result = l[/^[A-Z][A-Za-z0-9]*\.([a-z_].*)/, 1] ||  # Class and method
       l[/^\.([a-z].*)/, 1]  # Method at beginning of line
     result ? result.sub(/\/$/, '') : nil
   end
@@ -480,7 +480,7 @@ class CodeTree
   end
 
   def self.maybe_code_tree_root line
-    line =~ /^[\s+-]*[A-Z].+\.[a-z]/
+    line =~ /^[\s+-]*[A-Z].+\.[a-z_]/
   end
 
   def self.definite_dir_tree_root line
@@ -490,6 +490,12 @@ class CodeTree
   # Turn list into bulleted string (adding + or - based on ending in slash)
   def self.bulletize list
     (list.map{|l| l =~ /\/$/ ? "+ #{l}" : "- #{l}"}.join("\n")) + "\n"
+  end
+
+  def self.remove_slashes *args
+    args.each do |arg|
+      arg.sub! /\/$/, '' if arg
+    end
   end
 
 end

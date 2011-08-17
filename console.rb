@@ -102,7 +102,7 @@ class Console
     begin
       comint_send_input
     rescue
-      Ol << "Console.enter error here!"
+      #       Ol << "Console.enter error here!"
     end
   end
 
@@ -111,7 +111,6 @@ class Console
   end
 
   def self.to_shell_buffer dir=nil, options={}
-
     if dir
       dir = "#{dir}/" unless dir =~ /\/$/
       pattern = /^\*console #{Regexp.quote(dir)}(<| |$)/
@@ -140,6 +139,7 @@ class Console
           View.to_buffer name
 
           next false unless Console.prompt?
+
           cd_dir = View.dir
           cd_dir = "#{cd_dir}/" unless cd_dir =~ /\/$/ 
           next false unless cd_dir == dir
@@ -334,13 +334,14 @@ class Console
 
   end
 
+  # Whether buffer ends with shell prompt "...$ "
   def self.prompt?
-    View.txt =~ /\$ \z/
+    txt = View.txt(:left=>(View.bottom-5), :right=>View.bottom)
+    txt =~ /\$ \z/
   end
 
   def self.history
-    previous_input = $el.elvar.comint_input_ring.to_s
-    previous_input.scan(/#\("(.+?)"/).flatten
+    $el.elvar.comint_input_ring.to_s.scan(/#\("(.+?)"/).flatten
   end
 
 end

@@ -121,7 +121,6 @@ class Search
   end
 
   def self.enter txt=nil
-
     match = self.stop
     txt ||= Clipboard[0]
 
@@ -158,8 +157,8 @@ class Search
   end
 
   def self.isearch_open
-    self.stop
-    Location.go( self.match )
+    match = self.stop
+    Location.go( match )
   end
 
   def self.just_increment options={}

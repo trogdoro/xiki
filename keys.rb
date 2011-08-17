@@ -444,7 +444,7 @@ class Keys
     elsif bm == ","   # If slash, return special token
       return :comma
     elsif bm =~ /^\.+$/   # If .+ do tree in current dir
-      dir = $el.elvar.default_directory
+      dir = View.dir
       (bm.size - 1).times do
         dir.sub! /\/$/, ''   # Remove / on end if there
         dir.sub! /[^\/]+$/, ''   # Remove dir
