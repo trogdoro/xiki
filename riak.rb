@@ -2,7 +2,7 @@ gem 'httparty'; require 'httparty'
 gem 'json'; require 'json'
 gem 'riak-client'; require 'riak'
 
-class Riaki
+module Riak
 
   RIAK_URL = "http://127.0.0.1:8098"
 
@@ -105,7 +105,7 @@ class Riaki
     if options[:raw]
       response.body
     else
-      result = JSON[response.body]
+      result = ::JSON[response.body]
       result['_link'] = response.headers['link'].split(', ') if Keys.prefix_u
       result
     end
@@ -153,22 +153,22 @@ end
 
 Keys.enter_list_riak do
   Keys.prefix == 0 ?
-    CodeTree.insert_menu('- Riaki.menu/') :
-    CodeTree.insert_menu('- Riaki.buckets/')
+    CodeTree.insert_menu('- Riak.menu/') :
+    CodeTree.insert_menu('- Riak.buckets/')
 end
 
 Launcher.add(:paren=>'r') do
   line = Line.without_label
-  FileTree.insert_under(Riaki.get_hash(line).to_yaml.sub(/^--- \n/, ''))
+  FileTree.insert_under(Riak.get_hash(line).to_yaml.sub(/^--- \n/, ''))
 end
 
 LineLauncher.add(:paren=>'rr') do   # Get raw json version
   line = Line.without_label
-  FileTree.insert_under(Riaki.get_hash(line, :raw=>true))
+  FileTree.insert_under(Riak.get_hash(line, :raw=>true))
 end
 
 Launcher.add(/^riak\//) do
   line = Line.value
-  FileTree.insert_under(Riaki.get_hash(line.sub(/riak\//, '')).to_yaml.sub(/^--- \n/, ''))
+  FileTree.insert_under(Riak.get_hash(line.sub(/riak\//, '')).to_yaml.sub(/^--- \n/, ''))
 end
 
