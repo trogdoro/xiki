@@ -12,7 +12,10 @@ class Console
   @@log = File.expand_path("~/.emacs.d/console_log.notes")
 
   def self.menu
-    ['.log']
+    "- commands you've run: .log
+     - commands in buffers: .tree
+     ".unindent
+    #      - currently open: .list
   end
 
   def self.log
@@ -143,7 +146,7 @@ class Console
           cd_dir = View.dir
           cd_dir = "#{cd_dir}/" unless cd_dir =~ /\/$/ 
           next false unless cd_dir == dir
-          next false if Console.history.join("\n") =~ /^(ssh|ftp) /
+          next false if Console.commands.join("\n") =~ /^(ssh|ftp) /
           true
         end
       end
@@ -203,18 +206,19 @@ class Console
     if path.first =~ /^\//   # If has dir (possibly remote)
       line = path.join('')
       dir, command = line.match(/(.+?)\$ (.*)/)[1..2]
+      self.append_log "#{command}", dir, '$ '
       Console.to_shell_buffer dir, :cd_and_wait=>true
     else   # Otherwise, if by itself
       command = Line.without_label.match(/.*?\$ (.+)/)[1]
+      self.append_log "#{command}", dir, '$ '
       Console.to_shell_buffer   # Go to shell if one is visible, and starts with "*console"
     end
 
     View.insert command
     Console.enter
 
-    self.append_log "#{command}", dir, '$ '
-
     orig.go unless orig_view == View.index
+
   end
 
   # Mapped to !! or ! in LineLauncher
@@ -244,7 +248,7 @@ class Console
       output = Console.run command, :dir=>dir, :sync=>true
       output.sub!(/\A\z/, "\n")   # Add linebreak if blank
 
-      output.gsub!(/^/, '| ')
+      Keys.prefix == 1 ? output.gsub!(/^/, '|') : output.gsub!(/^/, '| ')
 
       # Expose "!" and "- label: !" lines as commands
       output.gsub!(/^\| !/, '!')
@@ -262,6 +266,7 @@ class Console
   end
 
   def self.append_log command, dir, prefix=''
+    return if View.name =~ /_log.notes$/
     if dir.nil?
       dir ||= View.dir
       dir = "#{dir}/" if dir !~ /\/$/
@@ -283,19 +288,8 @@ class Console
       "ssh -p #{$2} #{$1}"
       # Pull out and pass with -p
     else
-      "ssh #{path}"
+      "ssh -A #{path}"
     end
-  end
-
-  def self.insert_command
-
-    bm = Keys.input(:timed => true, :prompt => "Enter bookmark for dir to insert command: ")
-    dir = Bookmarks.expand bm, :just_bookmark=>true
-    dir = "#{File.expand_path(dir)}"
-
-    prompt = Keys.prefix_u ? '!' : '$'
-
-    View.insert "- #{dir}/\n  #{prompt} "
   end
 
   def self.do_as_execute options={}
@@ -324,10 +318,9 @@ class Console
       return View.message "Command ran with output: #{output.strip}."
     end
 
-    path = View.dir
-
-    command = Keys.input :prompt=>"Do shell command in '#{path}': "
-    output = Console.run(command, :dir=>path, :sync=>true)
+    command = Keys.input :prompt=>"Do shell command on '#{View.name}': "
+    command = "#{command} #{View.name}"
+    output = Console.run(command, :dir=>View.dir, :sync=>true)
     View.insert(output) if options[:insert]
 
     return View.message "Command ran with output: #{output.strip}."
@@ -340,8 +333,95 @@ class Console
     txt =~ /\$ \z/
   end
 
-  def self.history
+  def self.history bm
+
+    dir = Bookmarks[bm]
+    dir = Files.dir_of dir
+
+    console_log = IO.read(@@log)
+
+    result = []
+    match = false
+    console_log.split("\n").each do |l|
+      if l =~ /^[+-] /
+        next match = l =~ /\A- #{Regexp.escape dir}/
+      end
+
+      result << "#{l}" if match
+    end
+
+    #     View.to_buffer "*commands run in #{dir}"
+    #     Notes.mode
+    #     View.kill_all
+    #     View result
+    #     View.to_bottom
+    #     Search.isearch nil, :reverse=>true
+
+    return CodeTree.tree_search_option+"- #{dir}\n"+result.reverse.uniq.join("\n")+"\n"
+
+  end
+
+  def self.commands
     $el.elvar.comint_input_ring.to_s.scan(/#\("(.+?)"/).flatten
   end
 
+  def self.custom_history
+    dir = View.dir
+    history = Console.commands
+    history.uniq! unless Keys.prefix_u
+    history = history.join("\n").gsub(/^/, '$ ')
+    View.create :u if ! View.list_names.member?("*shell history")
+    View.to_buffer "*shell history"
+    View.kill_all
+    Notes.mode
+
+    View.insert "#{history}\n"
+    View.to_highest
+    FileTree.search
+  end
+
+  def self.search_last_commands
+
+    bm = Keys.input(:timed => true, :prompt => "bookmark to show commands for (space for currently open): ")
+    return CodeTree.display_menu("- Console.tree/") if bm == " "
+    if bm == "8"
+      Console.log; View.to_bottom; Search.isearch nil, :reverse=>true
+      return
+    end
+
+    CodeTree.display_menu("- Console.history \"$#{bm}\"/")
+  end
+
+  def self.tree console=nil, command=nil
+
+    if console
+      View.to_buffer console.sub /\/$/, ''
+      return
+    end
+
+    txt = ""
+
+    with(:save_excursion) do
+
+      Buffers.list.each do |b|
+        next if $el.buffer_file_name b
+        name = $el.buffer_name b
+        next if name !~ /^\*/
+        $el.set_buffer b
+        next if $el.elvar.major_mode.to_s != 'shell-mode'
+
+        next if name == "*output - tail of /tmp/output_ol.notes"
+
+        txt << "- #{name}/\n"
+        self.commands.reverse.each do |h|
+          txt << "  | $ #{h}\n"
+        end
+      end
+    end
+
+    CodeTree.tree_search_option + txt
+  end
+
 end
+
+Keys.custom_history(:shell_mode_map) { Console.custom_history }

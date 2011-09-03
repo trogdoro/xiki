@@ -98,7 +98,13 @@ class Code
 
     # Insert output
     after_code.go
-    insert out
+
+    if prefix
+      insert(out.gsub /^/, '  ') unless out.blank?
+    else
+      insert("||\n#{out}") unless out.blank?
+    end
+
     if exception
       backtrace = exception.backtrace[0..8].join("\n").gsub(/^/, '  ') + "\n"
       insert "- error: #{exception.message}\n- backtrace:\n#{backtrace}"

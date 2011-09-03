@@ -38,4 +38,26 @@ class Block
 
     fill_paragraph nil
   end
+
+  def self.do_as_something
+
+    prefix = Keys.prefix
+    txt, left, right = View.txt_per_prefix prefix
+
+    result = yield txt
+
+    # Insert result at end of block
+    orig = Location.new
+    View.cursor = right
+    Line.to_left
+
+    if prefix.nil?
+      View.insert("||\n"+result.strip+"\n") unless result.blank?
+    else
+      View.insert(result.strip.gsub(/^/, '  ')+"\n") unless result.blank?
+    end
+
+    orig.go
+  end
+
 end

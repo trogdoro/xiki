@@ -29,12 +29,6 @@ class Git
     txt
   end
 
-  def self.status dir
-    # If no file, show status
-    txt = Console.run("git status", :sync => true, :dir => dir)
-    self.status_internal(txt)
-  end
-
   def self.status_internal txt
     txt.gsub!(/^#\t(.+?): +/, "- \\1: ")
     txt.gsub!(/^#\t/, "- ")
@@ -409,13 +403,15 @@ class Git
 
   def self.status project, file=nil
     dir = self.extract_dir project
-    #dir ||= self.determine_dir
 
-    if file.nil?
-      return Git.status dir
+    if file
+      return View.open("#{dir}/#{file}")   # If file, open it
     end
 
-    View.open("#{dir}/#{file}")   # If file, open it
+    # If no file, show status
+    txt = Console.run("git status", :sync => true, :dir => dir)
+
+    txt.gsub /^/, '| '
 
   end
 
@@ -432,7 +428,6 @@ class Git
   end
 
   def self.diff *args
-    #   def self.do_compare_one *args
     # Parse args
     expand = args.shift if args.first.is_a? Symbol   # Pull out :expand if 2nd arg
     project, file, line = args
@@ -776,13 +771,8 @@ class Git
 
     Git.code_tree_diff
     View.to_highest
-    #     Search.isearch nil
 
-    # Ol.line
-    #     DiffLog.open
-    #     View.to_bottom
-
-    Search.isearch match #, :reverse=>true
+    Search.isearch match
 
   end
 

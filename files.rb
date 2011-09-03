@@ -248,8 +248,20 @@ class Files
 
   end
 
-  def self.just_dir path
-    path =~ /\/$/ ? path : File.dirname(path)+"/"
+  def self.dir_of path
+    if File.directory? path
+      path =~ /\/$/ ? path : "#{path}/"
+    else
+      path[/.+\//]
+    end
+  end
+
+  def self.append path, txt
+
+    return if View.name =~ /_log.notes$/
+    path = File.expand_path path
+    txt = "#{txt.strip}\n"
+    File.open(path, "a") { |f| f << txt }
   end
 
 end

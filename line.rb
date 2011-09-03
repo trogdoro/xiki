@@ -188,6 +188,9 @@ class Line
 
     line
   end
+  class << self
+    alias :content :without_label
+  end
 
   def self.is_bullet? line=nil
     line ||= self.value

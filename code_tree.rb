@@ -67,6 +67,9 @@ class CodeTree
       if stdout =~ /^:code_tree_option_tree_search\n/
         options[:tree_search] = true
         stdout.sub! /.+\n/, ''   # Remove option
+      elsif stdout =~ /^:quote_search_option\n/
+        options[:quote_search] = true
+        stdout.sub! /.+\n/, ''   # Remove option
       elsif stdout =~ /^:code_tree_option_no_search\n/
         options[:no_search] = true
         stdout.sub! /.+\n/, ''   # Remove option
@@ -100,9 +103,14 @@ class CodeTree
         goto_char left
         FileTree.select_next_file
         FileTree.search(:left=>left, :right=>right, :recursive=>true)
+      elsif options[:quote_search]   # If they want to do a tree search
+        goto_char left
+        Search.forward "^ +\\(|\\|- ##\\)"
+        Move.to_line_text_beginning
+        FileTree.search(:left=>left, :right=>right, :recursive_quotes=>true)
+
       # If script didn't move us (line or buffer), do incremental search
       elsif !options[:no_search] && !buffer_changed && point == orig_left
-
         # TODO No search if there aren't more than 3 lines
         goto_char left
         Line.to_words
@@ -469,6 +477,10 @@ class CodeTree
 
   def self.tree_search_option
     ":code_tree_option_tree_search\n"
+  end
+
+  def self.quote_search_option
+    ":quote_search_option\n"
   end
 
   def self.no_search_option

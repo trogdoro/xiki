@@ -83,7 +83,6 @@ class KeyBindings
     Keys.open_just { Files.open_just }
     Keys.open_key { Keys.jump_to_code }   # jump to ruby code of key definition *
     Keys.open_list_bookmarks { CodeTree.display_menu("- Bookmarks.tree/") }
-    Keys.open_log_console { Console.log; View.to_bottom; Search.isearch nil, :reverse=>true }
     #     Keys.open_last_error { Code.show_el4r_error }
     Keys.open_list_faces { list_faces_display }
     Keys.open_lisp_info { info("elisp") }   # Open manual
@@ -134,6 +133,7 @@ class KeyBindings
     #     Keys.enter_as_camelcase { View.insert TextUtil.camel_case(Clipboard.get(0)) }
     #     Keys.enter_as_debug { Code.enter_as_debug }
     Keys.enter_as_execute { Console.do_as_execute(:insert=>true) }   # change word to camel case (LikeThat)
+    Keys.enter_as_dom { CodeTree.insert_menu('- Firefox.dom/') }   # change word to camel case (LikeThat)
     Keys.enter_as_filename { insert Clipboard.get(".") }
     Keys.enter_as_hyphenated { insert TextUtil.hyphen_case(Clipboard.get(0)) }
     Keys.enter_as_jquery { Javascript.enter_as_jquery }
@@ -146,7 +146,8 @@ class KeyBindings
     Keys.enter_clipboard { Clipboard.paste("0") }   # paste **
     Keys.enter_difflog { App.enter_from_difflog }   # Save point and go to difflog to search
     # E: defined above - mapped to what C-e does by default
-    Keys.enter_file { Files.enter_file }   # Given a bookmark
+    Keys.enter_file_path { Files.enter_file }   # Given a bookmark
+    Keys.enter_firefox_tabs { CodeTree.insert_menu('- Firefox.tabs/') }   # Given a bookmark
     Keys.enter_history { History.enter_history }   # enter recently viewed files
     #     Keys.enter_have { Console.insert_command }
     #Keys.EH { FileTree.enter_lines(/^\| /) }
@@ -165,12 +166,17 @@ class KeyBindings
     Keys.enter_key { Keys.insert_code }
     #Keys.EK { Clipboard.paste }   # Enter Clipboard: paste
     Keys.enter_label_bullet { Notes.enter_label_bullet }
-    Keys.enter_log_clipboard { Code.enter_log_clipboard }
+    Keys.enter_last_commands {
+      bm = Keys.input(:timed => true, :prompt => "bookmark to show commands for (space for currently open): ")
+      return CodeTree.insert_menu("- Console.tree/") if bm == " "
+      CodeTree.insert_menu("- Console.history \"$#{bm}\"/")
+    }
     Keys.enter_list_databases { CodeTree.insert_menu('- CouchDb.databases/') }
     Keys.enter_log_javascript { Firefox.enter_log_javascript_line }
     Keys.enter_log_stack { Code.enter_log_stack }
     Keys.enter_log_line { Code.enter_log_line }
     Keys.enter_log_time { Code.enter_log_time }
+    Keys.enter_last_urls { CodeTree.insert_menu("- Launcher.urls/") }
 
     Keys.enter_menu { Xiki.insert_menu }   # Redundant with C-enter on blank line
     #     Keys.enter_menu { CodeTree.insert_menus }   # Redundant with C-enter on blank line
@@ -196,7 +202,7 @@ class KeyBindings
     Keys.E3 { Clipboard.paste(3) }
     Keys.E4 { Clipboard.paste(4) };   Keys.E5 { Clipboard.paste(5) };   Keys.E6 { Clipboard.paste(6) }
     Keys.E7 { Clipboard.paste(7) };   Keys.E7 { Clipboard.paste(8) };   Keys.E7 { Clipboard.paste(9) }
-    Keys.E8 { FileTree.enter_lines /./ }   # Like enter_outline, but inserts all
+    Keys.E8 { FileTree.enter_lines /.*/ }   # Like enter_outline, but inserts all
   end
 
   def self.do_keys
@@ -208,15 +214,15 @@ class KeyBindings
     #     Keys.do_as_camelcase { Clipboard.do_as_camel_case }   # change word to camel case (LikeThat)
     Keys.do_as_execute { Console.do_as_execute }   # Run shell command on tree
     Keys.do_as_html { Firefox.do_as_html }
+    Keys.do_as_browser { Firefox.run_block }
     Keys.do_as_javascript { Javascript.run }
-    Keys.do_as_lowercase { Clipboard.do_as_lower_case }   # change word to camel case (LikeThat)
     Keys.do_as_php { Php.run }
     #     Keys.do_as_python { Python.run }
     Keys.do_as_snakecase { Clipboard.do_as_snake_case }   # Change word to snake case (like_that)
     Keys.do_as_test { Code.do_as_rspec }
     Keys.do_as_uppercase { Clipboard.do_as_upper_case }   # change word to camel case (LikeThat)
-    #     Keys.do_as_underscores { Clipboard.do_as_snake_case }   # Change word to snake case (like_that)
     Keys.do_as_wrap { Block.do_as_wrap }
+    Keys.do_as_xul { Firefox.do_as_xul }
     Keys.do_backward { backward_kill_word(Keys.prefix || 1) }   # delete word backward
     Keys.do_code_align { Code.do_code_align }
     Keys.do_click_back { Firefox.back }   # compare with last AV version
@@ -227,7 +233,6 @@ class KeyBindings
     Keys.do_compare_last { History.diff_with_backup }   # compare with last AV version
     Keys.do_count_matches {  View.count_matches }
     Keys.do_copy_next { Files.copy }   # copy file to next view
-    #     Keys.do_compare_one { Git.diff }   # compare one revision with previous revision
     Keys.do_clean_quotes { Files.do_clean_quotes }   # Fix special chars
 
     Keys.do_compare_repository { Git.diff_one_file }
@@ -481,20 +486,19 @@ class KeyBindings
     Keys.search_kill { Search.cut }   # cut
 
     define_key :isearch_mode_map, kbd("C-l"), nil
+    Keys.search_last_commands { Console.search_last_commands }
     Keys.search_like_data { Search.isearch_restart "$d" }
     Keys.search_like_file { Search.isearch_open }
     Keys.search_line_pull { Search.isearch_move_line }
-    Keys.search_like_synonym { Search.search_thesaurus }
-    Keys.search_like_timer { Search.search_like_timer }
+    Keys.search_like_shell { Search.search_thesaurus }
+    Keys.search_like_thesaurus { Search.search_thesaurus }
 
-    Keys.search_like_url { Search.isearch_google }
-
+    Keys.search_last_urls { CodeTree.display_menu("- Launcher.urls/") }
 
     Keys.search_like_web { Search.isearch_google }   # make match be snake case
-
     Keys.search_like_quote { Search.isearch_google :quote=>true }
 
-    Keys.search_like_log { Search.search_log }
+    Keys.search_last_launched { Search.search_last_launched }
     #     Keys.search_log { Search.search_log }
     # M: leave unmapped for stop
     Keys.search_next { Search.isearch_next_or_name }   # Next, or name (if nothing searched for yet)

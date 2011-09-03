@@ -12,7 +12,7 @@ class ControlTab
   def self.go
     prefix = Keys.prefix
 
-    if prefix == 6   # If C-0 prefix, just burry buffer
+    if prefix == :-   # If C-0 prefix, just burry buffer
       $el.bury_buffer
       # Store original order, and windows originally opened
       @@original = buffer_list.to_a   # Hide evidence that we were on top (lest it restore us)
@@ -48,14 +48,13 @@ class ControlTab
       case prefix
       when 0   # Non-files
         @@consider_test = lambda{|b| ! buffer_file_name(b) && ! buffer_name(b)[/Minibuf/]}
-
       when 1   # Only files
         @@consider_test = lambda{|b| buffer_file_name(b)}
       when 3   # ...css
         @@consider_test = lambda{|b| buffer_name(b) =~ /\.(css|sass)/}
       when 4   # Consoles
         @@consider_test = lambda{|b| buffer_name(b) =~ /^(\*console|\*merb) /i}
-      when 5   # .rhtml files
+      when 5   # haml.html files
         @@consider_test = lambda{|b| buffer_file_name(b) =~ /\.html/}
       when 6   # Ruby files only
         @@consider_test = lambda{|b| buffer_file_name(b) =~ /\.rb$/}

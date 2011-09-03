@@ -212,11 +212,11 @@ class Rails
 end
 
 Keys.ORM { CodeTree.display_menu("- Rails.models/") }   # Open Rails Models
-Keys.enter_list_models {   # Enter Rails Models
-  $el.insert "- Rails.models/"
-  $el.open_line 1
-  CodeTree.launch
-}
+# Keys.enter_list_models {   # Enter Rails Models
+#   $el.insert "- Rails.models/"
+#   $el.open_line 1
+#   CodeTree.launch
+# }
 
 if RubyConsole[:rails].nil? && Bookmarks['$rails']
   RubyConsole.register(:rails, "cd #{Bookmarks['$rails']}; script/console")  # Do this only once

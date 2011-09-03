@@ -1,12 +1,27 @@
-#   $ /usr/local/Cellar/mysql/5.1.45/bin/mysql -u root -p "" -e "SELECT VERSION();"
-
 class Mysql
   def self.menu
     puts "
+      + .dbs/
       + foo/
         - .create_db
         - .drop_db
       "
+  end
+
+  def self.dbs db=nil, table=nil
+    db.sub! /\/$/, '' if db
+    table.sub! /\/$/, '' if table
+
+    if table
+      sql = "select * from #{table} limit 1000"
+      return Mysql.run(db, sql).gsub(/^/, '| ')
+    end
+
+    if db
+      return Mysql.run(db, 'show tables').split.map{|o| "#{o}/"}
+    end
+
+    Mysql.run(nil, 'show databases').split.map{|o| "#{o}/"}
   end
 
   def self.create_db name
@@ -21,8 +36,6 @@ class Mysql
     File.open("/tmp/tmp.sql", "w") { |f| f << sql }
     Console.run "mysql -u root #{db} < /tmp/tmp.sql", :sync=>true
   end
-
-# Todo
-#CREATE USER chase IDENTIFIED BY 'chase';
 end
 
+Keys.enter_list_mysql { CodeTree.insert_menu('- Mysql.dbs/') }

@@ -72,6 +72,7 @@ class LineLauncher
 
   # Call the appropriate launcher if we find one, passing it line
   def self.launch options={}
+
     Effects.blink(:what=>:line) if options[:blink]
     line = options[:line] || Line.value   # Get paren from line
     label = Line.label(line)
@@ -101,9 +102,12 @@ class LineLauncher
       regex, block = launcher
       # If we found a match, launch it
       if line =~ regex
+
+        group = $1
+
         # Run it
         if @@just_show
-          Ol << regex.to_s
+          Ol << "- regex: #{regex.to_s}\n- group: #{group}"
         else
           block.call line
         end
@@ -238,6 +242,17 @@ class LineLauncher
       FileTree.insert_under Firefox.value(CodeTree.line_or_children)
     end
 
+    self.add :paren=>"dom" do   # Run in browser
+      js = %`$.trim($("#{Line.content}").html()).replace(/^/gm, '| ');`
+      html = Firefox.run js
+      if html =~ /\$ is not defined/
+        Firefox.load_jquery
+        next View.insert_under "- Jquery loaded, try again!"
+      end
+      html = html.sub(/\A"/, '').sub(/"\z/, '')
+      View.insert_under "#{html.strip}\n", :escape=>''
+    end
+
     self.add :paren=>"html" do   # Run in browser
       file = Line.without_label  # Grab line
       if Keys.prefix_u?
@@ -342,7 +357,6 @@ class LineLauncher
 
     self.add :paren=>'ruby' do |line|   # - (ruby)
       message el4r_ruby_eval(line)
-      #insert el4r_ruby_eval(line).to_s
     end
 
     self.add :paren=>"wp" do |line|
@@ -358,14 +372,11 @@ class LineLauncher
       Console.launch_dollar
     end
 
-    self.add /\(other\)/ do |line|   # - (other)
-      other_window 1
-      insert line
-      command_execute "\C-m"
-      other_window -1
-    end
+    self.add(/^ *[+-]? *(http|file).?:\/\/.+/) do   # url
+      line = Line.content
 
-    self.add(/^ *[+-]? *(http|file).?:\/\/.+/) do |line|   # url
+      Files.append "~/.emacs.d/url_log.notes", line
+
       prefix = Keys.prefix
       Keys.clear_prefix
 
@@ -432,8 +443,6 @@ class LineLauncher
       # Match again (necessary)
       line =~ /([$\/.\w\-]+):(\d+)/
       path, line = $1, $2
-      # If it doesn't have path, add it
-      #       path = "#{View.dir}#{path}" if path !~ /^\//
 
       # If relative dir, prepend current dir
       if path =~ /^\w/
@@ -516,5 +525,12 @@ class LineLauncher
     View.to_nth orig
   end
 
+  def self.urls
+    txt = File.read File.expand_path("~/.emacs.d/url_log.notes")
+    txt = txt.split("\n").reverse.uniq.join("\n")
+  end
+
 end
+Launcher = LineLauncher   # Temporary alias until we rename it
+
 LineLauncher.init_default_launchers

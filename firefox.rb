@@ -1,6 +1,13 @@
 require 'net/telnet'
 require 'socket'
 
+gem 'simple-tidy'
+require 'simple-tidy'
+gem 'nokogiri-pretty'
+require 'nokogiri-pretty'
+
+require "rexml/document"
+
 =begin
   Usage:
     p Firefox.value "window.title"
@@ -13,11 +20,16 @@ class Firefox
   @@log_unique_token = "aa"
 
   def self.menu
-    ".reload
-     .include_jquery_and_utils
-     - (js): p('hi')
-     - (js): $('a').blink()
-     "
+    "
+    - .dom/
+    - .tabs/
+    - .reload
+    - load js into a page: .include_jquery_and_utils
+    - (js): p('hi')
+    - (js): $('a').blink()
+    - (js): p($('a').length)
+    - (js): $(':text').toggle()
+    "
   end
 
   def self.last_stack_trace
@@ -32,18 +44,18 @@ class Firefox
       if tab == -1   # If 0, close tab
         self.close_tab
       else
-        Firefox.mozrepl_command("window.getBrowser().tabContainer.selectedIndex = #{tab}", :browser=>true)
+        Firefox.mozrepl_command("gBrowser.tabContainer.selectedIndex = #{tab}", :browser=>true)
       end
     else
-      Firefox.mozrepl_command("window.getBrowser().reload()", :browser=>true)
+      Firefox.mozrepl_command("gBrowser.reload()", :browser=>true)
     end
-
+    nil
   end
 
   def self.close_tab
     times = Keys.prefix_n :clear=>true
     (times||1).times do
-      self.run "window.getBrowser().removeCurrentTab();", :browser=>true
+      self.run "gBrowser.removeCurrentTab();", :browser=>true
     end
   end
 
@@ -120,6 +132,35 @@ class Firefox
 
 
 
+  def self.run_block
+
+    # Get block contents
+    txt, left, right = View.txt_per_prefix Keys.prefix
+
+    funcs = %q|
+      function p(s) {
+        if(s == null)
+          s = "[blank]";
+
+        try {prepend_index++;}
+        catch(e) { prepend_index = 0; }
+
+        var d = document.createElement('div');
+        document.body.appendChild(d);
+        d.innerHTML = '<div style="top:'+(prepend_index*13)+'px; margin-left:5px; position:absolute; font-size:10px; z-index:1002; color:#000; filter: alpha(opacity=85); -moz-opacity: .85; opacity: .85; background-color:#999;">'+s+'</div>';
+
+      }
+    |
+
+    # Remove comments
+    txt.gsub! %r'^ *// .+', ''
+    txt.gsub! %r'  // .+', ''
+
+    Firefox.run "#{funcs}\n#{txt.gsub('\\', '\\\\\\')}"
+    return
+
+  end
+
   def self.run txt, options={}
     result = Firefox.mozrepl_command txt, options
     result.sub /^"(.+)"$/, "\\1"
@@ -129,8 +170,32 @@ class Firefox
     self.run(txt).sub(/^"(.+)"$/, "\\1")
   end
 
-  def self.url txt
-    self.run "window.location = '#{txt}'"
+  def self.url url, options={}
+    return $el.browse_url(url) if options[:new]
+
+    # Try to find it in a tab
+
+
+    js = %`
+      var browsers = gBrowser.browsers;
+
+      found = false;
+
+      if((browsers[gBrowser.tabContainer.selectedIndex]).contentDocument.location.href == "#{url}")
+        false;
+      else{
+        for(var i = 0; i < browsers.length; i++) {
+          if(browsers[i].contentDocument.location.href != "#{url}") continue;
+          found = true;
+          gBrowser.tabContainer.selectedIndex = i;
+        }
+        found;
+      }
+      `.unindent
+
+    result = self.run js, :browser=>true
+
+    self.run "window.location = '#{url}'" if result != "true"
   end
 
   def self.do_as_html
@@ -180,23 +245,25 @@ class Firefox
   def self.include_jquery_and_utils
 
     Firefox.run "
-var s=document.createElement('script');
-s.setAttribute('src', 'http://jquery.com/src/jquery-latest.js');
-document.getElementsByTagName('body')[0].appendChild(s);
+      var s=document.createElement('script');
+      s.setAttribute('src', 'http://jquery.com/src/jquery-latest.js');
+      document.getElementsByTagName('body')[0].appendChild(s);
 
-var s=document.createElement('script');
-s.setAttribute('src', 'http://xiki.org/javascripts/util.js');
-document.getElementsByTagName('body')[0].appendChild(s);
-"
+      var s=document.createElement('script');
+      s.setAttribute('src', 'http://xiki.org/javascripts/util.js');
+      document.getElementsByTagName('body')[0].appendChild(s);
+      ".unindent
 
+    nil
   end
 
   def self.enter_as_url
     if Keys.prefix_u
-      self.run "window.getBrowser().tabContainer.selectedIndex += 1", :browser=>true
+      self.run "gBrowser.tabContainer.selectedIndex += 1", :browser=>true
     end
 
-    View.insert Firefox.value('document.location.toString()');
+    url = Firefox.value('document.location.toString()')
+    View.insert url.gsub '%20', '+'
     View.insert("\n") if Keys.prefix_u
   end
 
@@ -236,4 +303,181 @@ document.getElementsByTagName('body')[0].appendChild(s);
     txt.strip
   end
 
+  def self.log
+    View.open "/Users/craig/.emacs.d/url_log.notes"
+  end
+
+  def self.do_as_xul
+    Block.do_as_something do |txt|
+      Firefox.mozrepl_command txt, :browser=>true
+    end
+  end
+
+  def self.tabs url=nil
+    if url
+      url = Line.value.sub /^[ |]*/, ''
+      self.url url, :new=>Keys.prefix_u
+      return
+    end
+
+    js = '
+      var browsers = gBrowser.browsers;
+      txt = "";
+      for(var i = 0; i < browsers.length; i++)
+        txt += "| "+browsers[i].contentDocument.location.href+"\n";
+      txt
+      '.unindent
+
+    result = Firefox.mozrepl_command js, :browser=>true
+    result.gsub! /\/$/, ''
+    result.sub(/\A"/, '').sub(/"\z/, '')
+  end
+
+  def self.dom *args
+
+    prefix = Keys.prefix
+
+    raw_args = args.to_s.sub /\/$/, ''
+
+    # If last arg has linebreakes, save
+    save = args.pop if args.last =~ /\n/
+
+    args.each do |o|
+      o.sub! /\/$/, ''
+      o.sub!(/:(\d+)$/) { ":eq(#{$1.to_i - 1})" }
+      o.sub!(/$/, ':eq(0)') if o !~ /[:#]/
+    end
+    args = ['html'] + args unless args[0] =~ /[.#]/
+    args = args.join ' > '
+
+    if save
+      save.gsub! "\n", "\\n"
+      save.gsub! '"', '\\"'
+
+      js = %`
+        var e = $(\"#{args}\");
+        if(e.length)
+          e.html(\"#{save}\");
+        `.unindent
+
+      if args =~ /(.+) > (.+)/
+        parent, child = $1, $2.sub!(/:.+/, '')
+        Ol << "parent: #{parent.inspect}"
+        Ol << "child: #{child.inspect}"
+        js << %`
+          else
+            $(\"#{parent}\").append(\"<#{child}>#{save}</#{child}>\");
+          `.unindent
+      end
+
+      Firefox.run js
+      return
+    end
+
+    js = %`
+      var kids = [];
+      `.unindent
+
+    if prefix == :-
+      Firefox.run "$(\"#{args}\").blink()"
+      return
+    end
+    if prefix != 8 && prefix != 9
+      js << %`
+        $("#{args}").blink().children().each(function(n, e){
+          var tag = e.nodeName.toLowerCase();
+          var id = $(e).attr('id');
+          if(id) tag += "#"+id
+          kids.push(tag);
+        })
+        `
+    end
+
+    js << %`
+      if(kids.length)
+        String(kids);
+      else
+        "html::"+$("#{args}").html();
+      `.unindent
+
+    kids = Firefox.run js
+    kids = kids.sub(/\A"/, '').sub(/"\z/, '') if kids =~ /\A"/
+    if kids =~ /\Ahtml::/
+      kids = kids.sub(/\Ahtml::/, '').strip
+      return prefix == 8 ?
+        kids.gsub(/^/, '| ') :
+        self.tidy(kids, raw_args)
+    end
+
+    if kids =~ /(\$ is not defined|blink is not a function)/
+      self.load_jquery
+      return "- Jquery required js libs into page, try again!"
+    end
+
+    kids = kids.split ','
+
+    counts = {}
+    kids.each do |k|   # Add on counts
+      counts[k] ||= 0
+      counts[k] += 1
+      k.replace "#{k}:#{counts[k]}" unless k =~ /#/ || counts[k] == 1
+    end
+
+    kids.map{|o| "#{o}/"}
+  end
+
+  def self.tidy html, tag=nil
+
+    File.open("/tmp/tidy.html", "w") { |f| f << html }
+
+    errors = `tidy --indent-spaces 2 --tidy-mark 0 --force-output 1 -i -wrap 0 -o /tmp/tidy.html.out /tmp/tidy.html`
+    html = IO.read("/tmp/tidy.html.out")
+
+    html.gsub! /\n\n+/, "\n"
+
+    if tag == ""   # It's the whole thing, do nothing
+    elsif tag == "head"
+      html.sub! /.+?<head>\n/m, ''
+      html.sub! /^<\/head>\n.+/m, ''
+    else
+      html.sub! /.+?<body>\n/m, ''
+      html.sub! /^<\/body>\n.+/m, ''
+    end
+
+    html.gsub!(/ +$/, '')
+    html.gsub! /^  /, '' unless html =~ /^</
+    html.gsub! /^/, '| '
+    html
+
+      # Try Nokogiri and xsl - Fucking dies part-way through
+      #       return Nokogiri::XML(kids).human.sub(/\A<\?.+\n\n/, '').gsub(/^/, '| ')
+      #       return Nokogiri::XML("<foo>#{kids}</foo>").human.gsub(/^/, '| ')
+      #       return Nokogiri::XML(kids).human.gsub(/^/, '| ')
+
+      # Try REXML (gives errors)
+      #       doc = REXML::Document.new("<foo>#{kids}</foo>")
+      #       out = StringIO.new; doc.write( out, 2 )
+      #       return out.string
+
+  end
+
+  def self.load_jquery
+    self.run "
+      if(! document.getElementById('jqid')){
+        var s=document.createElement('script');
+        s.setAttribute('src', 'http://jquery.com/src/jquery-latest.js'); s.setAttribute('id', 'jqid');
+        document.getElementsByTagName('body')[0].appendChild(s);
+
+        var s=document.createElement('script');
+        s.setAttribute('src', 'http://xiki.org/javascripts/util.js');
+        document.getElementsByTagName('body')[0].appendChild(s);
+      }
+      ".unindent
+  end
+end
+
+Launcher.add(/^#.+/) do |line|
+  Line.delete :br
+  View.insert "- Firefox.dom \"#{line}\"/"
+  LineLauncher.launch
 end

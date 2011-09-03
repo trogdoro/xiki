@@ -8,8 +8,9 @@ class Riaki
 
   def self.menu
     [ ".buckets/",
-      "\.index/",
+      ".index/",
       ".filter/",
+      ".get 'buck/a'",
       ".help/",
       ]
   end
@@ -28,7 +29,7 @@ class Riaki
 
       # Save text if txt passed
       txt = CodeTree.siblings :as_string=>true
-      self.post "#{bucket}/#{key}", YAML::load(txt)
+      self.put "#{bucket}/#{key}", YAML::load(txt)
       return "- saved!"
     end
 
@@ -36,17 +37,15 @@ class Riaki
     if key
       key = "#{bucket}/#{key}"
       begin
-        return self.get(key).to_yaml.sub(/^--- \n/, '').gsub(/^/, '| ')
+        return self.get_hash(key).to_yaml.sub(/^--- \n/, '').gsub(/^/, '| ')
       rescue Exception=>e
-        return self.get(key, :raw=>true).gsub(/^/, '| ')
+        return self.get_hash(key, :raw=>true).gsub(/^/, '| ')
       end
     end
-
     # Show contents of bucket if passed
-    return self.get("#{bucket}?keys=true")['keys'].map{|o| "#{o}/"} if bucket
-
+    return self.get_hash("#{bucket}?keys=true")['keys'].sort.map{|o| "#{o}/"} if bucket
     # Nothing passed, so list buckets
-    self.get("?buckets=true")["buckets"].map{|o| "#{o}/"}
+    self.get_hash("?buckets=true")["buckets"].sort.map{|o| "#{o}/"}
   end
 
   def self.filter bucket=nil, *args
@@ -74,10 +73,9 @@ class Riaki
   end
 
   def self.index bucket=nil, search=nil
-    #bucket.sub! /\/$/, '' if bucket
 
     if search
-      results = self.get "#{bucket}/index/#{search}", :root=>'buckets'#, :raw=>'true'
+      results = self.get_hash "#{bucket}/index/#{search}", :root=>'buckets'#, :raw=>'true'
       return results.to_yaml.gsub(/^/, '| ')
     end
 
@@ -88,7 +86,20 @@ class Riaki
     self.buckets   # Delegate to .buckets to list buckets
   end
 
-  def self.get path, options={}
+  def self.get path, txt=nil
+
+    if txt
+      txt = CodeTree.siblings :as_string=>true
+      self.put path, YAML::load(txt)
+      return "- saved!"
+    end
+
+    hash = self.get_hash(path).to_yaml.sub("--- \n", '').gsub(/^/, '| ')
+
+  end
+
+  def self.get_hash path, options={}
+
     response = HTTParty.get("#{RIAK_URL}/#{options[:root]||'riak'}/#{path}")
     return response.code if response.code.to_s !~ /^2/
     if options[:raw]
@@ -98,7 +109,6 @@ class Riaki
       result['_link'] = response.headers['link'].split(', ') if Keys.prefix_u
       result
     end
-
   end
 
   def self.post path, options={}
@@ -111,6 +121,18 @@ class Riaki
     end
 
     HTTParty.post("#{RIAK_URL}/riak/#{path}", options)
+  end
+
+  def self.put path, options={}
+    # If no body passed in, wrap necessary stuff around it
+    if options[:body].nil?
+      options = {
+        :body=>options.to_json,
+        :headers=>{'Content-Type'=>'application/json'},
+      }
+    end
+
+    HTTParty.put("#{RIAK_URL}/riak/#{path}", options)
   end
 
   def self.delete path
@@ -135,12 +157,18 @@ Keys.enter_list_riak do
     CodeTree.insert_menu('- Riaki.buckets/')
 end
 
-LineLauncher.add(:paren=>'riak') do
+Launcher.add(:paren=>'r') do
   line = Line.without_label
-  FileTree.insert_under(Riaki.get(line).to_yaml.sub(/^--- \n/, ''))
+  FileTree.insert_under(Riaki.get_hash(line).to_yaml.sub(/^--- \n/, ''))
 end
 
-LineLauncher.add(:paren=>'riakr') do   # Get raw json version
+LineLauncher.add(:paren=>'rr') do   # Get raw json version
   line = Line.without_label
-  FileTree.insert_under(Riaki.get(line, :raw=>true))
+  FileTree.insert_under(Riaki.get_hash(line, :raw=>true))
 end
+
+Launcher.add(/^riak\//) do
+  line = Line.value
+  FileTree.insert_under(Riaki.get_hash(line.sub(/riak\//, '')).to_yaml.sub(/^--- \n/, ''))
+end
+

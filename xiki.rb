@@ -7,6 +7,7 @@ require 'ol'
 require 'requirer'
 require 'text_util'
 require 'notes'
+require 'line_launcher'
 
 # Get rest of files to require
 classes = Dir["**/*.rb"]

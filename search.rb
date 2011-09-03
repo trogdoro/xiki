@@ -156,11 +156,6 @@ class Search
     Move.to_line_text_beginning
   end
 
-  def self.isearch_open
-    match = self.stop
-    Location.go( match )
-  end
-
   def self.just_increment options={}
 
     self.stop
@@ -260,8 +255,11 @@ class Search
       end
     end
 
-    $el.isearch_done
+    $el.elvar.isearch_mode = nil
+
     $el.isearch_clean_overlays
+    $el.isearch_done
+
     match
   end
 
@@ -430,25 +428,36 @@ class Search
 
     # Replace field
     Firefox.run "$('#timers').val(\"#{input}\")", :tab=>0
-    #     # Append to field
-    #     Firefox.run "$('#timers').val($('#timers').val()+\"#{input}\n\")", :tab=>1
+  end
+
+  def self.search_last_launched
+    match = self.stop
+
+    bm = Keys.input(:timed => true, :prompt => "bookmark to show launches for (* for all): ")
+
+    if bm == "8"
+      CodeTree.display_menu("- Search.launched/")
+    else
+      CodeTree.display_menu("- Search.launched '$#{bm}'/")
+    end
 
   end
 
-  def self.search_log
-    match = self.stop
-    # If nothing searched for, go to place something was copied by name
+  def self.launched bm=nil
 
-    Search.log
-    View.to_bottom
-    Search.isearch match, :reverse=>true
+    txt = File.read @@log
+    txt = txt.sub(/\A- /, '').split(/^- /).reverse.uniq
 
-      # Went back to original location of have_name...
-      #       loc = Keys.input(:one_char=>true, :prompt=>"Enter one char to go to where it was copied from: ")
-      #       Bookmarks.go "_n#{loc}", :point=>true
-      #       txt = Clipboard.hash[loc.to_s]
-      #       self.isearch txt
-      #       return
+    if bm
+      dir = Bookmarks[bm]
+      dir = "#{dir}/" if dir !~ /\/$/
+
+      txt = txt.select{|o| o =~ /^#{Regexp.escape dir}/}
+    end
+
+    result = "#{CodeTree.quote_search_option}- #{txt.join("- ")}"
+
+    return result
 
   end
 
@@ -491,10 +500,6 @@ class Search
       Line.next 2
       Line.to_words
     end
-    # Do search if only one file
-  #     if list.size == 1
-  #       FileTree.search(:recursive=>false, :left=>Line.left, :right=>View.bottom)
-  #     end
 
   end
 
@@ -633,7 +638,6 @@ class Search
     else   # Else, if nothing searched for
       self.stop
       Clipboard[name] = self.match
-      #       Clipboard.set(name, self.match)
     end
   end
 
@@ -711,15 +715,20 @@ class Search
   end
 
   def self.isearch_google options={}
-    self.stop
-    term = self.match
-    term.gsub!(' ', '+')
+    term = self.stop
+    if term
+      term.gsub!(' ', '+')
 
-    term = "\"#{term}\"" if options[:quote]
+      term = "\"#{term}\"" if options[:quote]
 
-    term =~ /^https?:\/\// ?   # If url, just browse
-      browse_url(term) :
-      browse_url("http://google.com/search?q=#{term}")
+      term =~ /^https?:\/\// ?   # If url, just browse
+        browse_url(term) :
+        browse_url("http://google.com/search?q=#{term}")
+      return
+    end
+
+    Firefox.log
+    Search.isearch nil, :from_bottom=>true
 
   end
 
@@ -799,7 +808,6 @@ class Search
     View.insert("\n#{indent}  - ###{input}/")
     FileTree.launch
 
-    #View.insert dir
   end
 
   def self.isearch_log
@@ -922,7 +930,6 @@ class Search
     View.to(Search.left)
     View.insert left
     View.to Search.left
-    #     View.to Search.right + left.length + right.length
   end
 
   # Copy match as name (like Keys.as_name)
@@ -930,7 +937,6 @@ class Search
     term = self.stop
     loc ||= Keys.input(:one_char=>true, :prompt=>"Enter one char (to store this as): ") || "0"
     Clipboard.copy loc, term
-    #     Bookmarks.save("_n#{loc}")
     Effects.blink :left=>left, :right=>right
   end
 
@@ -1054,6 +1060,12 @@ class Search
   end
 
   def self.isearch txt=nil, options={}
+
+    if options[:from_bottom]
+      View.to_bottom
+      options[:reverse] = true
+    end
+
     txt ||= ""   # Searchig for nil causes error
     isearch_resume txt, (options[:regex] ?true:nil), nil, (! options[:reverse]), txt, true
     isearch_update

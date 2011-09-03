@@ -537,10 +537,13 @@ class FileTree
     end
 
     #ch = char_to_string(ch_raw)
+
     # While narrowing down list
+
     while (ch =~ /[ "%-),.-.:<?-~]/) ||   # Be careful editing, due to ranges (_-_)
         (recursive && ch_raw == 2 || ch_raw == 6) ||
         ch == :up || ch == :down
+
       break if recursive && ch == '/'   # Slash means enter in a dir
       if ch == ','
         pattern = ''
@@ -583,8 +586,10 @@ class FileTree
         regexp = Keys.prefix == 5 ?
           "#{acronym}" :
           "#{acronym}|#{pattern}"
-        regexp = "\\/|#{regexp}" if recursive
-        regexp = "^ *[+-] |#{regexp}" if recursive_quotes
+
+        regexp = "\\/$|#{regexp}" if recursive
+        regexp = "^ *[+-] [^#]|#{regexp}" if recursive_quotes
+
         regexp = /#{regexp}/i
 
         lines_new = nil
@@ -616,7 +621,8 @@ class FileTree
         if recursive
           self.select_next_file
         elsif recursive_quotes
-          Move.to_quote
+          Search.forward "^ +\\(|\\|- ##\\)"
+          Move.to_line_text_beginning
         else
           Move.to_line_text_beginning
         end
@@ -633,6 +639,7 @@ class FileTree
     Cursor.restore :before_file_tree
 
     # Options during search
+
     case ch   # Do option based on last char, or run as command
     when "0"
       file = self.construct_path   # Expand out ~
@@ -859,9 +866,8 @@ class FileTree
   # Goes through files in reverse order and deletes empty dirs
   # Goes through files in reverse order and deletes empty dirs
   def self.clear_empty_dirs! lines, options={}
-
     regex = options[:quotes] ?
-      /^[^|]+$/ :
+      /^ +[+-] [^#]/ :
       /^[^|]+\/$/
 
     lines = lines.split("\n") if lines.is_a?(String)
@@ -873,8 +879,7 @@ class FileTree
       l = lines[i]
       l =~ /^( +)/
       spaces = $1 ? $1.length : 0
-      #       if l =~ /^[^|]+\/$/ && l !~ /\|/   # If dir
-      if l =~ regex   # If thing to exclude (dir, or dir and file)
+      if l =~ regex   # If thing to keep (dir, or dir and file)
         if spaces < file_indent   # If lower than indent, decrement indent
           file_indent -= 2
         else   # Else, delete
@@ -1674,9 +1679,10 @@ class FileTree
       FileTree.construct_path :
       View.file
 
-    path = Files.just_dir(path) if dir_only
-
-    path
+    #     path = Files.just_dir(path) if dir_only
+    if dir_only
+      path = path =~ /\/$/ ? path : File.dirname(path)+"/"
+    end
 
   end
 
@@ -1793,7 +1799,6 @@ class FileTree
     end
 
     files.sub!(/\/$/, '') if files
-    #contents.sub!(/\/$/, '') if contents
     options = {:raw => true}
     options.merge!({:files => files}) if files
 
@@ -1808,7 +1813,6 @@ class FileTree
     View.insert tree.gsub(/^/, indent)
     right = point
     goto_char left
-    #Move.to_line_text_beginning
 
     if Line.matches(/^\s*$/)  # Do nothing
     elsif Line.matches(/^\s+\|/)
@@ -1953,8 +1957,6 @@ class FileTree
     if prefix == 2
       return self.copy_to_latest_screenshot dest_path, dest_dir
     end
-
-    # TODO Pull off path if file
 
     orig = Location.new   # Save where we are
     Location.to_spot

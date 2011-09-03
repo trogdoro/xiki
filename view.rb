@@ -104,17 +104,17 @@ class View
   end
 
   # Creates a new window by splitting the current one
-  def self.create
-    prefix = elvar.current_prefix_arg
+  def self.create prefix=nil
+    prefix ||= Keys.prefix
     if prefix == 3   # If prefix is 3, do Vertical split
       $el.split_window_horizontally
       View.next
-    elsif Keys.prefix == 4
+    elsif prefix == 4
       $el.split_window_vertically
       Keys.clear_prefix
       View.next
       View.enlarge
-    elsif Keys.prefix == :u
+    elsif prefix == :u
       $el.split_window_vertically
     else
       $el.split_window_vertically
@@ -127,7 +127,7 @@ class View
   # By default it will open in 2nd view if we're in the bar view.
   def self.open path, options={}
     # Pull off line number if there
-    path.sub!(/(.+?:\d+).+/, "\\1")
+    path.sub!(/(.+?:\d+).*/, "\\1")
     line_number = path.slice!(/:\d+$/)
 
     # Open after bar if in bar
@@ -191,6 +191,10 @@ class View
   # Return list of windows
   def self.list
     window_list(nil, nil, frame_first_window).to_a
+  end
+
+  def self.list_names
+    self.list.map{|v| buffer_name(window_buffer(v))}
   end
 
   def self.list_files
@@ -591,8 +595,14 @@ class View
     $el.erase_buffer
   end
 
-  def self.dir
-    File.expand_path(elvar.default_directory)
+  def self.dir force_slash=nil
+    result = File.expand_path(elvar.default_directory)
+
+    if force_slash
+      return result =~ /\/$/ ? result : "#{result}/"
+    end
+
+    result
   end
 
   def self.dir= to
@@ -811,16 +821,11 @@ class View
     self.add_dimension_option 'medium', proc {
       View.dimensions_set(145, 50)
       }
-    #     self.add_dimension_option 'small', proc {View.dimensions_set(80, 28, 50, 500)}
 
     self.add_dimension_option 'tiny', proc {View.dimensions_set(89, 12, 479, 1717)}
     self.add_dimension_option 'small', proc {
       View.dimensions_set(89, 24, 9, 137)
       }
-    #     self.add_dimension_option 'small', proc {View.dimensions_set(89, 25, 49, 542)}   # Half of small? (for screencasts)
-
-    #     self.add_dimension_option 'small', proc {View.dimensions_set(90, 28, 50, 500)}
-    #     self.add_dimension_option 'small', proc {View.dimensions_set(80, 28)}
 
     $el.winner_mode 1 rescue nil
   end
@@ -833,8 +838,6 @@ class View
     Search.forward "^$", :go_anyway=>true
     right = Line.right
     orig.go
-    #     left, right = bounds_of_thing_at_point(:paragraph).to_a
-    #     left += 1 if char_after(left) == 10    # Left might include blank line
     left = Line.left if options[:start_here]
     return [left, right] if options[:bounds]
     txt = View.txt(left, right)
@@ -977,8 +980,6 @@ class View
     nth ||= Keys.prefix
     if nth   # If numeric prefix, go to nth
       down = nth - 1
-        # Keys.prefix_times - 1
-        #       Keys.clear_prefix
       self.to_after_bar
       # If there's only one column (last view is at left), go to top
       Move.to_window(1) if self.edges[0] == 0
@@ -1067,5 +1068,14 @@ class View
     $el.recenter pos
   end
 
+  def self.insert_under txt, options={}
+    FileTree.insert_under txt, options
+  end
+
 end
+
+def View txt
+  View.insert txt
+end
+
 View.init
