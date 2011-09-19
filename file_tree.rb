@@ -91,6 +91,7 @@ class FileTree
   end
 
   def self.grep dir, regex, options={}
+
     raw = options[:raw]
 
     # Expand out bookmark (if there is one)
@@ -117,10 +118,10 @@ class FileTree
       t.file_regex = files
     end
     t.list << "- #{dir}/"
-    t.grep_inner dir, regex
+    t.grep_inner dir, regex, :first_time
 
     list = t.list
-    self.clear_empty_dirs! list
+    Tree.clear_empty_dirs! list
     if raw
       return list
     end
@@ -135,12 +136,21 @@ class FileTree
     re_search_forward "|"
   end
 
-  def self.grep_with_hashes(dir, regex, prepend='##')
-    View.to_buffer "*tree grep";  View.dir = dir
-    View.clear;  notes_mode
+  def self.grep_with_hashes path, regex, prepend='##'
 
-    View.insert "- #{dir}\n  - #{prepend}#{regex}/\n"
-    goto_line(2)
+    Search.append_log path, "- #{prepend}#{regex}/"
+
+    View.to_buffer "*tree grep";  View.dir = Files.dir_of(path)
+    View.clear; notes_mode
+
+    if File.directory?(path)
+      View << "- #{File.expand_path path}/\n  - #{prepend}#{regex}/\n"
+    else
+      dir, name = path.match(/(.+\/)(.+)/)[1..2]
+      View << "- #{File.expand_path dir}/\n  - #{name}\n    - #{prepend}#{regex}/\n"
+    end
+
+    View.to_bottom; Line.previous
     self.launch
   end
 
@@ -156,12 +166,24 @@ class FileTree
     result
   end
 
-  def grep_inner path, regex
+  def self.skip
+    @skip || []
+  end
+
+  def grep_inner path, regex, first_time=nil
 
     path.sub!(/\/$/, '')
     entries = Dir["#{path}/*"].entries.sort
 
     entries = entries.select{|o| o !~ /\/(vendor|log)$/}   # Don't search in unwanted dirs
+
+    # Make these be in config!  pass along as instance var
+    # TMP:::: Hard-code skipping image/ dirs (for now) !!!!!!!!!!!!!
+    entries = entries.select{|o| o !~ /\/(images|twilio_sound)$/}
+
+    if first_time and skip = FileTree.skip[path]
+      entries = entries.select{|o| ! skip.member? o[/.+\/(.+)/, 1]}
+    end
 
     # Process dirs
     entries.each{ |f|
@@ -222,17 +244,10 @@ class FileTree
         :fg => "ff7700", :bold => true
     end
 
-      #:face => 'courier new', :size => "+4",  # Mac
-      #:face => 'arial black', :size => "0",  # Mac
-      #:face => 'Monaco', :size => "0",  # Mac
-      #:fg => "444444", :bold => true
-    #       :fg => "dd7700", :bold => true
-
     Styles.define :diff_line_number, :bold => true, :size => "-2", :fg => "ccc"
     Styles.define :diff_red, :bg => "ffdddd", :fg => "cc4444"
     Styles.define :diff_green, :bg => "ddffcc", :fg => "337744"
     Styles.define :diff_small, :fg => "dddddd", :size => "-11"
-    #       :size => "-1"
 
     if Styles.inverse
       Styles.define :diff_line_number, :bold => true, :size => "-2", :fg => "444444"
@@ -320,54 +335,9 @@ class FileTree
 
   end
 
-  # Mapped to Enter when on a FileTree buffer.  Opens file cursor is on in the tree.
-  # It assumes the path to a dir is on the current line.
-  def self.construct_path options={}
-    begin
-      path = []
-      orig = point
-
-      # Do until we're at a root dir
-      line = Line.value
-      while(! self.is_root?(line) )
-        break unless line =~ /^ /  # If at left margin, assume it's the parent
-        Line.value =~ /^  ( *)(.+)/
-        spaces, item = $1, $2
-        item = self.clean_path item unless options[:raw]
-        path.unshift item  # Add item to list
-        search_backward_regexp "^#{spaces}[^\t \n]"
-        line = Line.value
-      end
-      # Add root of tree
-      root = Line.value.sub(/^ +/, '')
-      root = self.clean_path(root) unless options[:raw]
-      path.unshift root
-
-      goto_char orig
-      if options[:indented]
-        indentify_path path
-      elsif options[:list]
-        path
-      else
-        path.join
-      end
-    rescue Exception=>e
-      #       return options[:list] ? [Line.without_label] : Line.without_label
-      raise ".construct_path couldn't construct the path - is this a well-formed tree\?"
-      #       return nil
-    end
-  end
-
   def self.handles? list=nil
-    list ||= self.construct_path(:list => true)   # Use current line by default
-    self.matches_root_pattern?(list.first)
-  end
-
-  def self.clean_path path
-    path.replace Line.without_label(:line=>path, :leave_indent=>true)
-    path.sub!(/^([^|\n-]*)##.+/, "\\1")  # Ignore "##"
-    path.sub!(/^([^|\n-]*)\*\*.+/, "\\1")  # Ignore "\*\*"
-    path
+    list ||= Tree.construct_path(:list => true)   # Use current line by default
+    Tree.matches_root_pattern?(list.first)
   end
 
   # Open the line in the tree that the cursor is on.  This is probably
@@ -376,7 +346,7 @@ class FileTree
   def self.open options={}
     original_file = View.file_name
 
-    path = options[:path] || self.construct_path(:list=>true)
+    path = options[:path] || Tree.construct_path(:list=>true)
     path_orig = path
 
     if path.is_a?(Array)
@@ -415,7 +385,7 @@ class FileTree
     when 8
       Keys.clear_prefix
       search_string ?   # If quote, enter lines under
-        self.enter_under :
+        Tree.enter_under :
         self.enter_lines(//)   # If file, enter all lines
       return
     when 9
@@ -451,9 +421,10 @@ class FileTree
     end
 
     column = View.column
-    extra_indent = (Line.value[/^ +\|./] || '').length
-    column -= extra_indent
-    column = 0 if column < 0
+    if search_string
+      column -= Line.value[/^.*?\|./].length
+      column = 0 if column < 0
+    end
 
     # Open or go to file
 
@@ -475,7 +446,6 @@ class FileTree
       Move.top
       # Search for exact line match
       found = Search.forward "^#{regexp_quote(search_string)}$"
-      #       found = search_forward_regexp("^#{regexp_quote(search_string)}$", nil, true)
 
       unless found   # If not found, search for substring of line, but with a break at the end
         Move.top
@@ -503,395 +473,11 @@ class FileTree
       # Add to log
       Search.append_log dir, "- #{name}\n    | #{search_string}"
     end
-
     View.column = column
 
   end
 
-  # Incremental search
-  def self.search options={}
-    return if $xiki_no_search
-
-    recursive = options[:recursive]
-    recursive_quotes = options[:recursive_quotes]
-    left = options[:left] || point_min
-    right = options[:right] || point_max
-
-    # No search if there aren't more than 3 lines
-    return if((Line.number(right) - Line.number(left)) <= 1 && View.txt(left, right) !~ /\/$/) && options[:always_search].nil?
-
-      # Only exit if line doesn't end with /
-
-    # Make cursor blue
-    Cursor.remember :before_file_tree
-    Cursor.blue
-    error = ""
-
-    pattern = ""
-    lines = buffer_substring(left, right).split "\n"
-    message "Show files matching: "
-
-    ch, ch_raw = Keys.char
-    if ch.nil?
-      return Cursor.restore(:before_file_tree)
-    end
-
-    #ch = char_to_string(ch_raw)
-
-    # While narrowing down list
-
-    while (ch =~ /[ "%-),.-.:<?-~]/) ||   # Be careful editing, due to ranges (_-_)
-        (recursive && ch_raw == 2 || ch_raw == 6) ||
-        ch == :up || ch == :down
-
-      break if recursive && ch == '/'   # Slash means enter in a dir
-      if ch == ','
-        pattern = ''
-      elsif ch_raw == 2   # C-b
-        while(Line.previous == 0)
-          next if self.dir?  # Keep going if line is a dir
-          Line.to_words
-          break  # Otherwise, stop
-        end
-
-      elsif ch_raw == 6   # C-f
-        while(Line.next == 0)
-          next if self.dir?  # Keep going if line is a dir
-          Line.to_words
-          break  # Otherwise, stop
-        end
-      elsif ch == :up
-        Line.previous
-        Line.to_words
-      elsif ch == :down
-        Line.next
-        Line.to_words
-
-      else
-        if ch == "\\"  # If escape, get real char
-          ch = char_to_string(read_char)
-        end
-        pattern << Regexp.quote(ch)
-
-        if pattern =~ /[A-Z]$/   # If upper, remove any lower
-          pattern.sub!(/^[a-z]+/, '')
-        elsif pattern =~ /[a-z]$/   # If lower, remove any upper
-          pattern.sub!(/^[A-Z]+/, '')
-        end
-
-        acronym = acronym_regexp(pattern)
-        delete_region left, right
-
-        # Replace out lines that don't match (and aren't dirs)
-        regexp = Keys.prefix == 5 ?
-          "#{acronym}" :
-          "#{acronym}|#{pattern}"
-
-        regexp = "\\/$|#{regexp}" if recursive
-        regexp = "^ *[+-] [^#]|#{regexp}" if recursive_quotes
-
-        regexp = /#{regexp}/i
-
-        lines_new = nil
-        if pattern =~ /[A-Z]$/   # If upper, search in directory
-          lines_new = search_dir_names(lines, /#{pattern}/i)
-        else
-          lines_new = lines.grep(regexp)
-        end
-        # If search not found, don't delete all
-        if lines_new.size == 0
-          error = " (no matches)"
-          View.beep
-        else
-          lines = lines_new
-        end
-
-        # Remove dirs with nothing under them
-        self.clear_empty_dirs! lines if recursive
-        self.clear_empty_dirs!(lines, :quotes=>true)  if recursive_quotes
-
-        # Put back into buffer
-        View.insert(lines.join("\n") + "\n")
-        right = point
-
-        # Go to first file
-        goto_char left
-
-        # Move to first file
-        if recursive
-          self.select_next_file
-        elsif recursive_quotes
-          Search.forward "^ +\\(|\\|- ##\\)"
-          Move.to_line_text_beginning
-        else
-          Move.to_line_text_beginning
-        end
-
-      end
-      message "Show files matching: #{pattern}#{error}"
-      ch, ch_raw = Keys.char
-      if ch.nil?
-        return Cursor.restore(:before_file_tree)
-      end
-
-    end
-    # Exiting, so restore cursor
-    Cursor.restore :before_file_tree
-
-    # Options during search
-
-    case ch   # Do option based on last char, or run as command
-    when "0"
-      file = self.construct_path   # Expand out ~
-      $el.shell_command("open #{file}")
-    when "\C-a"
-      Line.to_left
-    when "\C-e"
-      Line.to_right
-    when "\C-j"
-      ch = Keys.input :one_char => true
-      if ch == 't'   # just_time
-        self.to_parent
-        self.kill_under
-        self.dir :date_sort=>true
-      elsif ch == 's'   # just_size
-        self.to_parent
-        self.kill_under
-        self.dir :size_sort=>true
-      elsif ch == 'n'   # just_name
-        self.to_parent
-        self.kill_under
-        self.dir
-      end
-
-    when :control_return, :return, "\C-m", :control_period, :right   # If C-., go in but don't collapse siblings
-      Keys.clear_prefix
-      LineLauncher.launch
-    when "\t"   # If tab, hide siblings and go in
-      delete_region(Line.left(2), right)
-      Keys.clear_prefix
-      LineLauncher.launch
-    when :backspace, :left   # Collapse tree
-      self.to_parent
-      self.kill_under
-      self.search(:left => Line.left, :right => Line.left(2))
-
-    when :control_slash   # Collapse tree and exit
-      self.to_parent
-      self.kill_under
-
-    when "9", ";"   # Show methods, or outline
-      delete_region(Line.left(2), right)   # Delete other files
-      self.enter_lines
-
-    when "#"   # Show ##.../ search
-      self.stop_and_insert left, right, pattern
-      View.insert self.indent("- ##/", 0)
-      View.to(Line.right - 1)
-
-    when "*"   # Show **.../ search
-      self.stop_and_insert left, right, pattern
-      View.insert self.indent("- **/", 0)
-      View.to(Line.right - 1)
-
-    when "$"   # Insert '$ ' for command
-      self.stop_and_insert left, right, pattern
-      View.insert self.indent("$ ", 0)
-
-    when "!"   # Insert '!' for command
-      self.stop_and_insert left, right, pattern
-      View.insert self.indent("! ", 0)
-
-    when "-"   # Insert '!' for command
-      self.stop_and_insert left, right, pattern
-      View.insert self.indent("- ", 0)
-
-    when "+"   # Create dir
-      self.stop_and_insert left, right, pattern, :dont_disable_control_lock=>true
-      Line.previous
-      parent = self.construct_path
-      Line.next
-      View.insert self.indent("", 0)
-      name = Keys.input(:prompt=>'Name of dir to create: ')
-      Dir.mkdir("#{parent}#{name}")
-      View.insert "- #{name}/\n"
-      View.insert self.indent("", 0)
-      #Line.to_right
-
-    when ">"   # Split view, then launch
-      delete_region(Line.left(2), right)
-      Keys.clear_prefix
-      View.create
-      LineLauncher.launch
-
-    when "8"
-      # If a quote, insert lines indented lower
-      if Line.matches(/\|/)
-        CodeTree.kill_siblings
-        self.enter_under
-      elsif self.dir?  # A Dir, so do recursive search
-        delete_region(Line.left(2), right)
-        self.dir_recursive
-      else   # A file, so enter lines
-        delete_region(Line.left(2), right)
-        self.enter_lines(//)  # Insert all lines
-      end
-
-    when "1".."7"
-      if ch == "7" and ! View.bar?   # Open in bar
-        delete_region(Line.left(2), right)  # Delete other files
-        View.bar
-        Keys.clear_prefix
-        # Expand or open
-        self.launch
-        return
-      end
-
-      Keys.clear_prefix
-      n = ch.to_i
-
-      # Pull whole string out
-      lines = buffer_substring(left, right).split "\n"
-      delete_region left, right
-
-      if recursive
-
-        filtered = []
-        file_count = 0
-        # Replace out lines that don't match (and aren't dirs)
-        lines.each_with_index do |l, i|
-          is_dir = (l =~ /\/$/)
-          file_count += 1 unless is_dir
-          # If dir or nth, keep
-          filtered << l if (is_dir or (file_count == n))
-          #p l
-        end
-
-        # Remove dirs with nothing under them
-        self.clear_empty_dirs! filtered
-
-        # Put back into buffer
-        View.insert(filtered.join("\n") + "\n")
-        right = point
-
-        # Go to first file and go back into search
-        goto_char left
-        self.select_next_file
-
-        # Todo: merge this and the following .search
-        self.search(:recursive => true, :left => Line.left, :right => Line.left(2))
-      else
-
-        nth = lines[ch.to_i - 1]
-        View.insert "#{nth}\n"
-        previous_line
-        if options[:number_means_enter]  # If explicitly supposed to enter
-          LineLauncher.launch
-        elsif self.dir?  # If a dir, go into it
-          self.dir
-        else
-          Move.to_line_text_beginning
-          # Get back into search, waiting for input
-          self.search(:left => Line.left, :right => Line.left(2))
-        end
-
-      end
-      #self.open
-
-    when "\C-s"
-      isearch_forward
-
-    when "\C-r"
-      isearch_backward
-
-    when "/"   # If slash, append selected dir to parent dir
-
-      # If CodeTree search
-      if ! self.handles?
-        # Kill others
-        View.delete(Line.left(2), right)
-
-        if Line.without_label =~ /^\./   # If just a method
-          # Back up to first . on last line
-          Search.forward "\\."
-          right = View.cursor
-          Line.previous
-          Search.forward "\\."
-        else   # Else, just delete previous line
-          right = View.cursor
-          Line.previous
-          Move.to_line_text_beginning
-        end
-        View.delete(View.cursor, right)
-        return LineLauncher.launch
-      end
-
-      # If line is a dir, do tree-like tab
-      if Line.value =~ /\/$/
-
-        delete_region(Line.left(2), right)  # Delete other files
-        delete_horizontal_space
-        delete_backward_char 1
-
-        # delete -|+ if there
-        if View.txt(View.cursor, Line.right) =~ /^[+-] /
-          $el.delete_char 2
-        end
-
-        self.dir? ?   # Open if a dir
-          self.launch :
-          Line.end
-
-      elsif Line.value =~ /"/  # If it contains quotes, "tab" to field
-        line = Line.delete true
-        View.insert line.sub(/".+"/, '""')
-        Search.forward('"')
-        # TODO make codetree not move cursor back to starting point
-      end
-
-    when "="   # Drill into the file
-      dir = self.construct_path  # Expand out ~
-      View.open(dir)
-
-    when "0"   # Drill into the file
-      delete_region(Line.left(2), right)   # Delete other files
-      self.drill
-
-    else
-      command_execute ch
-    end
-
-  end
-
   # Goes through files in reverse order and deletes empty dirs
-  # Goes through files in reverse order and deletes empty dirs
-  def self.clear_empty_dirs! lines, options={}
-    regex = options[:quotes] ?
-      /^ +[+-] [^#]/ :
-      /^[^|]+\/$/
-
-    lines = lines.split("\n") if lines.is_a?(String)
-
-    file_indent = 0
-    i = lines.length
-    while( i > 0)
-      i -= 1
-      l = lines[i]
-      l =~ /^( +)/
-      spaces = $1 ? $1.length : 0
-      if l =~ regex   # If thing to keep (dir, or dir and file)
-        if spaces < file_indent   # If lower than indent, decrement indent
-          file_indent -= 2
-        else   # Else, delete
-          lines.delete_at i
-        end
-      else   # If file
-        file_indent = spaces   # Set indent
-      end
-    end
-    lines
-  end
-
   def self.select_next_file
     search_forward_regexp /[^\/]$/
     beginning_of_line
@@ -950,7 +536,7 @@ class FileTree
       goto_char left
       self.select_next_file
       # Start incremental search
-      self.search(:recursive => true, :left => left, :right => right)
+      Tree.search(:recursive => true, :left => left, :right => right)
       #self.draw(dir)
     else
       # Insert with linebreak if file
@@ -959,9 +545,9 @@ class FileTree
         View.insert self.filename_to_next_line(dir)  # Add linebreak before filename
         #insert dir.sub(/(.+)\//, "\\1/\n  ")  # Add linebreak before filename
         open_line 1
-        #self.search
+        #Tree.search
         Line.to_words
-        self.search(:left => Line.left, :right => Line.left(2))
+        Tree.search(:left => Line.left, :right => Line.left(2))
         return
       end
 
@@ -1036,9 +622,9 @@ class FileTree
 
   # Recursively display dir in tree   # Insert dir contents at point (usually in existing tree)
   def self.dir options={}
-    return Files.open_in_os(construct_path) if Keys.prefix == 0
+    return Files.open_in_os(Tree.construct_path) if Keys.prefix == 0
 
-    self.plus_to_minus_maybe
+    Tree.plus_to_minus_maybe
     Line.to_left
     if Keys.prefix == 8
       self.dir_recursive
@@ -1054,7 +640,7 @@ class FileTree
     line = Line.value
     left = point
     indent = line[/^ */] + "  "  # Get indent
-    dir = self.construct_path
+    dir = Tree.construct_path
 
     Line.next
 
@@ -1072,7 +658,7 @@ class FileTree
     goto_char left
     #    isearch_forward
     self.select_next_file
-    self.search(:recursive => true, :left => left, :right => right)
+    Tree.search(:recursive => true, :left => left, :right => right)
   end
 
   def self.dir_one_level options={}
@@ -1080,7 +666,7 @@ class FileTree
     line = Line.value
     indent = line[/^ */] + "  "  # Get indent
 
-    dir = Bookmarks.expand(self.construct_path)
+    dir = Bookmarks.expand(Tree.construct_path)
 
     remote = self.is_remote?(dir)
     unless remote
@@ -1115,71 +701,7 @@ class FileTree
 
     Move.to_line_text_beginning
 
-    self.search(:left=>left, :right=>right, :always_search=>true)   # Kick off hidesearch (deleting)
-
-  end
-
-  #   # Does search on the top-level dirs/files of one dir.
-  #   # Called by dir_one_level, among others.
-  #   def self.flat_search options={}
-
-  #   end
-
-  # Drill into a file, showing lines one indent level deeper
-  def self.drill
-    Line.to_left
-    # Get indent between | and tabs
-    match = Line.value.match(/^( *)\|( *)(.+)/)
-    # Get content
-    path = Bookmarks.expand(construct_path)  # Get path
-    matches = ""
-    if match  # It's a quoted line
-      indent, indent_after_bar, rest = match[1,3]
-      indent_after_bar.gsub!("\t", "        ")
-      #"#{indent_after_bar}#{rest}"
-      # Go through and find line
-      found = nil
-      IO.foreach(path[/(.+?)\|/, 1]) do |line|
-        line.sub!(/[\r\n]+$/, '')
-        # If not found yet, check for line
-        if !found && line == "#{indent_after_bar}#{rest}"
-          found = true
-          next
-        end
-        next unless found
-        #         next if line =~ /^\s*$/  # Skip blank lines
-
-        # Exit if indented at same level (unless blank or comment)
-        if((Line.indent(line).length <= indent_after_bar.length) &&
-           (! (line =~ /^\s*$/)) &&
-           (! (line =~ /^\s*#/))
-           )
-          break
-        end
-
-        # Skip unless indented 2 later
-        next unless Line.indent(line).length == 2 + indent_after_bar.length
-
-        matches << "#{indent}| #{line}\n"
-      end
-      self.insert_quoted_and_search matches
-    else  # It's a file
-      indent = Line.value[/^ */]
-      this_was_used = last_was_used = false
-      IO.foreach(path) do |line|  # Print lines with no indent
-        last_was_used = this_was_used
-        this_was_used = false
-        line.sub!(/[\r\n]+$/, '')
-        next if line =~ /^ +/  # Skip non top-level lines
-        next if line =~ /^$/ and ! last_was_used  # Skip blank lines, unless following top-level
-        matches << "#{indent}  | #{line}\n"
-        this_was_used = true
-      end
-      self.insert_quoted_and_search matches
-      # TODO Search in result
-
-      # TODO Do some checking for duplicates
-    end
+    Tree.search(:left=>left, :right=>right, :always_search=>true)   # Kick off hidesearch (deleting)
 
   end
 
@@ -1225,13 +747,18 @@ class FileTree
 
   # Enter what's in clipboard with | to on the left margin, with appropriate indent
   def self.enter_quote
+    # Skip forward if on heading
     Line.to_left
+    if Line[/^\|/]
+      Move.to_end
+      newline
+    end
     clip = Clipboard.get(0, :add_linebreak => true)
-    dir = self.construct_path rescue nil
+    dir = Tree.construct_path rescue nil
     if self.dir? && FileTree.handles? # If current line is path
-      self.plus_to_minus_maybe
+      Tree.plus_to_minus_maybe
       indent = Line.indent
-      dir = self.construct_path
+      dir = Tree.construct_path
       t = Clipboard.get("=")
       t = t.gsub(/^#{dir}/, '')
       if t.sub!(/\A\n/, '')   # If no dir left, indent one over
@@ -1286,34 +813,10 @@ class FileTree
   end
 
   # Remove the following lines indented more than the current one
-  def self.kill_under
-    indent = Line.indent.size
-    pattern = "^ \\{0,#{indent}\\}\\([^ \n]\\|$\\)"
-
-# Is this safe?
-    #     # If on a " | quote" line, ignore | (delete under within quotes)
-    #     if Line.matches /^ +\|/
-    #       indent = Line.value[/^[ |]+/].size
-    #       pattern = "^[ |]\\{0,#{indent}\\}\\([^ |\n]\\|$\\)"
-    #     end
-
-    self.minus_to_plus_maybe
-
-    # Get indent
-    orig = Line.left
-    left = Line.left(Keys.prefix_u? ? 1 : 2)
-    Line.next
-    Search.forward pattern
-    Line.to_left
-    View.delete(left, View.cursor)
-    View.to orig
-
-    #Move.to_line_text_beginning
-  end
 
   # Expand if dir, or open if file
   def self.launch options={}
-    #self.plus_to_minus_maybe
+    #Tree.plus_to_minus_maybe
     line = Line.value
     indent = Line.indent
     list = nil
@@ -1357,7 +860,7 @@ class FileTree
     # If dir, delegate to C-. (they meant to just open it)
     return LineLauncher.launch if self.dir?
 
-    self.plus_to_minus
+    Tree.plus_to_minus
 
     if Line.blank?   # If blank line, get bookmark and enter into current file
 
@@ -1382,7 +885,7 @@ class FileTree
       return self.enter_lines(/#{outline_pattern extension}/, options)
     end
     Line.to_left
-    path ||= options[:path] || construct_path  # Get path
+    path ||= options[:path] || Tree.construct_path  # Get path
     path = Bookmarks.expand(path)
     indent = Line.indent  # get indent
 
@@ -1391,7 +894,7 @@ class FileTree
     indent_more = options[:path] ? '' : '  '
     if path =~ /@/   # If remote dir
       contents = Remote.file_contents path
-      FileTree.insert_under contents
+      Tree.under contents
       return
     end
 
@@ -1417,43 +920,18 @@ class FileTree
 
       matches_count+=1
     end
-    self.insert_quoted_and_search matches, :line_found=>line_found
-  end
 
-  def self.insert_under txt, options={}
+    if Keys.prefix_u
+      matches.gsub!(/    \| /, '    ')
+    end
 
-    escape = options[:escape] || '| '
-    txt = txt.gsub!(/^/, escape)
-    txt.gsub!(/^\| $/, '|')
-
-    # Add linebreak at end if none
-    txt = "#{txt}\n" unless txt =~ /\n/
-
-    # Insert linebreak if at end of file
-
-    self.indent txt
-    self.insert_quoted_and_search(txt, options)
-  end
-
-  def self.insert_quoted_and_search matches, options={}
-    # Insert matches
-    Line.next
-    left = point
-    View.insert matches, options
-    right = point
-
-    goto_char left
-    Line.next(options[:line_found]-1) if options[:line_found] && options[:line_found] > 0
-
-    Line.to_words
-    # Do a search
-    self.search(:left=>left, :right=>right) unless options[:no_search]
+    Tree.insert_quoted_and_search matches, :line_found=>line_found
   end
 
   # Insert section from a file under it in tree
   def self.enter_under
     Line.beginning
-    path = construct_path  # Get path
+    path = Tree.construct_path  # Get path
     path.sub!(/\|.+/, '')  # Remove file
     path = Bookmarks.expand(path)
 
@@ -1482,7 +960,7 @@ class FileTree
       end
 
       # Insert and start search
-      self.insert_quoted_and_search matches
+      Tree.insert_quoted_and_search matches
 
     else  # Otherwise, grab by indent
       # Go through lines in file until we've found it
@@ -1507,7 +985,7 @@ class FileTree
       end
 
       # Insert and start search
-      self.insert_quoted_and_search matches
+      Tree.insert_quoted_and_search matches
     end
   end
 
@@ -1536,36 +1014,14 @@ class FileTree
 
     orig = View.cursor   # Store original location
 
-    self.to_parent
+    Tree.to_parent
     parent = Line.without_label
 
     View.cursor = orig
     parent
   end
 
-  def self.to_parent
-    prefix = Keys.prefix :clear=>true
-
-    # U means go to previous line at margin
-    if prefix == :u
-      Search.backward "^[^ \t\n]"
-      return
-    end
-
-    times = prefix || 1
-    times.times do
-      indent = Line.value[/^  ( *)/, 1]
-      #search_backward_regexp "^#{indent}[^\t \n#]"
-      search_backward_regexp "^#{indent}[^\t \n]"
-      Move.to_line_text_beginning
-    end
-  end
-
   # Returns a regexp to match the acronym
-  def self.acronym_regexp search
-    search.gsub(/([a-zA-Z])/, "[a-z]*[_.]\\1").sub(/.+?\].+?\]/,'^ +')
-  end
-
   def self.is_remote? path
     return path =~ /@/
   end
@@ -1657,26 +1113,12 @@ class FileTree
     path.sub(/(.+)\//, "\\1/\n  - ")  # Add linebreak before filename
   end
 
-  def self.is_root? path
-    # It's the root if it matches a pattern, or is at left margin
-    result = self.matches_root_pattern?(path) || path !~ /^ /
-    result ? true : false
-  end
-
-  def self.matches_root_pattern? path
-    without_label = Line.without_label :line=>path#, :leave_indent=>true
-    (without_label =~ /^\/[^\n,]*$/ ||
-    without_label =~ /^~\// ||
-    without_label =~ /^\.+\// ||
-    without_label =~ /^\$[\w-]*\/?$/)
-  end
-
   # If cursor on a tree, returns it, otherwise return path of current file
   def self.tree_path_or_this_file dir_only=false
 
     # If in tree, use that dir
     path = FileTree.handles? ?
-      FileTree.construct_path :
+      Tree.construct_path :
       View.file
 
     #     path = Files.just_dir(path) if dir_only
@@ -1699,11 +1141,6 @@ class FileTree
   end
 
   # Indent txt to be one level lower than current line
-  def self.indent txt, line=1
-    indent = Line.indent(Line.value(line))
-    txt.gsub!(/^/, "#{indent}  ")
-  end
-
   def self.one_view_in_bar_by_default= to
     @@one_view_in_bar_by_default = to
   end
@@ -1714,7 +1151,7 @@ class FileTree
     return Clipboard["0"] = View.file unless Line.matches(/^ /)
 
     # If space, assume it's a tree
-    dir = self.construct_path
+    dir = Tree.construct_path
     dir = View.file unless dir =~ /^\//
     Clipboard["0"] = dir
   end
@@ -1733,51 +1170,10 @@ class FileTree
   end
 
   # private
-  def self.search_dir_names(lines, regexp)
-    result = []
-    stack = [0]
-    indent = indent_size(lines[0])
-    lines.each do |l|
-      last_indent = indent
-
-      indent, name = l.match(/^( *)(.+)/)[1..2]
-      indent = indent_size(indent)
-      if indent > last_indent
-        stack << 0
-      elsif indent < last_indent
-        (last_indent - indent).times { stack.pop }
-      end
-      stack[stack.size-1] = name
-      # If file, remove this line if path doesn't match
-      if stack.last !~ /\/$/
-        next unless stack[0..-2].join =~ regexp
-      end
-      result << l
-    end
-    result
-  end
-
-  def self.indent_size(line)
-    spaces = line[/^ +/]
-    return 0 unless spaces
-    spaces.size / 2
-  end
-
-  def self.stop_and_insert left, right, pattern, options={}
-    goto_char left
-    #Line.next if options[:recursive]
-    # TODO: delete left if recursive - emulate what "delete" does to delete, first
-    pattern == "" ?
-      delete_region(point, right) :
-      Line.next
-    $el.open_line 1
-    ControlLock.disable unless options[:dont_disable_control_lock]
-  end
-
   def self.grep_syntax indent
-    self.plus_to_minus_maybe
-    dir = self.construct_path
-    raw = self.construct_path(:raw => true, :list => true)
+    Tree.plus_to_minus_maybe
+    dir = Tree.construct_path
+    raw = Tree.construct_path(:raw => true, :list => true)
 
     files = contents = nil
     if raw.join('') =~ /\*\*(.+)##(.+)/  # *foo means search in files
@@ -1803,8 +1199,9 @@ class FileTree
     options.merge!({:files => files}) if files
 
     unless list   # If not already gotten
+      Search.append_log dir, "- ###{contents}/"
       list = self.grep dir, contents, options
-      list.shift  # Pull off first dir, so they'll be relative
+      list.shift   # Pull off first dir, so they'll be relative
     end
 
     Line.to_next
@@ -1813,52 +1210,17 @@ class FileTree
     View.insert tree.gsub(/^/, indent)
     right = point
     goto_char left
-
     if Line.matches(/^\s*$/)  # Do nothing
     elsif Line.matches(/^\s+\|/)
-      self.search :left => left, :right => right
+      Tree.search :left => left, :right => right
     elsif contents   # If we searched for something (and it wasn't just the dir)
       Move.to_quote
-      self.search :left=>left, :right=>right, :recursive_quotes=>true
+      Tree.search :left=>left, :right=>right, :recursive_quotes=>true
     else
       Move.to_junior
+      Tree.search :left=>left, :right=>right, :recursive=>true
     end
 
-  end
-
-  def self.toggle_plus_and_minus
-    orig = Location.new
-    l = Line.value 1, :delete => true
-    case l[/^\s*([+-])/, 1]
-    when '+'
-      View.insert l.sub(/^(\s*)([+-]) /, "\\1- ")
-      orig.go
-      '+'
-    when '-'
-      View.insert l.sub(/^(\s*)([+-]) /, "\\1+ ")
-      orig.go
-      '-'
-    else
-      View.insert l
-      orig.go
-      nil
-    end
-  end
-
-  def self.plus_to_minus
-    self.toggle_plus_and_minus if Line.matches(/^\s*\+ /)
-  end
-
-  def self.plus_to_minus_maybe
-    self.plus_to_minus if Line.matches(/(^\s*[+-] [a-z]|\/$)/)
-  end
-
-  def self.minus_to_plus
-    self.toggle_plus_and_minus if Line.matches(/^\s*- /)
-  end
-
-  def self.minus_to_plus_maybe
-    self.minus_to_plus if Line.matches(/(^\s*[+-] [a-z]|\/$)/)
   end
 
   def self.move_dir_to_junior
@@ -1908,7 +1270,7 @@ class FileTree
       return View.message "You need to be in a file tree to delete."
     end
 
-    dest_path = self.construct_path
+    dest_path = Tree.construct_path
 
     executable = dest_path =~ /\/$/ ? "rmdir" : "rm"
 
@@ -1951,7 +1313,7 @@ class FileTree
       return View.message "You need to be in a file tree to copy."
     end
 
-    dest_path = self.construct_path
+    dest_path = Tree.construct_path
     dest_dir = dest_path.sub(/(.+\/).*/, "\\1")
 
     if prefix == 2
@@ -1960,7 +1322,7 @@ class FileTree
 
     orig = Location.new   # Save where we are
     Location.to_spot
-    source_path = self.construct_path
+    source_path = Tree.construct_path
 
     if prefix == :u
       Line.delete
@@ -2029,7 +1391,7 @@ class FileTree
       View.beep
       return View.message "TODO: implement renaming current file?"
     end
-    source_path = self.construct_path
+    source_path = Tree.construct_path
     is_dir = source_path =~ /\/$/
     source_path.sub! /\/$/, ''
 
@@ -2054,7 +1416,7 @@ class FileTree
   def self.open_as_upper where=false
     orig_u = Keys.prefix_u
     view = View.current
-    path = FileTree.construct_path(:list=>true)
+    path = Tree.construct_path(:list=>true)
 
     if where == :lowest
       Move.to_window 9
@@ -2086,6 +1448,11 @@ class FileTree
     Keys.clear_prefix
     FileTree.select_next_file
     FileTree.enter_lines nil, :current_line=>current_line
+  end
+
+  def self.skip_dirs dir, skip_these
+    dir = Bookmarks[dir].sub /\/$/, ''
+    (@skip ||= {})[dir] = skip_these
   end
 
 end

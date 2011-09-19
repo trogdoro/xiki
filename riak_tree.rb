@@ -10,14 +10,22 @@ module Riak
     [ ".buckets/",
       ".index/",
       ".filter/",
-      ".get 'buck/a'",
+      ".get 'foo/bar'",
       ".help/",
-      ]
+      ".log/",
+      ".ping/",
+    ]
   end
 
   def self.buckets bucket=nil, key=nil, txt=nil
 
-    key.sub! /\/$/, '' if key; key.gsub! '/', '%2F' if key
+
+    if key
+      key.sub! /\/$/, ''
+      key.gsub! '/', '%2F'
+      key.sub! /^"(.*)"$/, "\\1"
+    end
+
     bucket.sub! /\/$/, '' if bucket
 
     if txt
@@ -29,13 +37,20 @@ module Riak
 
       # Save text if txt passed
       txt = CodeTree.siblings :as_string=>true
+
+      data = YAML::load(txt)
+
       self.put "#{bucket}/#{key}", YAML::load(txt)
+
       return "- saved!"
     end
 
     # Show contents of object if passed
     if key
+      Files.append "~/.emacs.d/riak_log.notes", "- Riak.buckets \"#{bucket}\", \"#{key}\"/"
+
       key = "#{bucket}/#{key}"
+
       begin
         return self.get_hash(key).to_yaml.sub(/^--- \n/, '').gsub(/^/, '| ')
       rescue Exception=>e
@@ -49,11 +64,13 @@ module Riak
   end
 
   def self.filter bucket=nil, *args
-
     bucket.sub! /\/$/, '' if bucket
 
     if args.any?
       args = args.join(', ').sub(/\/$/, '')
+
+      Files.append "~/.emacs.d/riak_log.notes", "- Riak.filter \"#{bucket}\", #{args}/"
+
       args = eval "[#{args}]"
 
       results = Riak::MapReduce.new(Riak::Client.new).
@@ -61,7 +78,7 @@ module Riak
         map("function(v){ return [v.key]; }", :keep => true).
         run
 
-      return results.to_yaml.gsub(/^/, '| ')
+      return results.sort.reverse.to_yaml.sub(/\A--- \n/, '').gsub(/^/, '| ')
     end
 
     if bucket   # Examples
@@ -124,15 +141,20 @@ module Riak
   end
 
   def self.put path, options={}
+    Ol << "path: #{path.inspect}"
     # If no body passed in, wrap necessary stuff around it
     if options[:body].nil?
+      Ol.line
       options = {
         :body=>options.to_json,
         :headers=>{'Content-Type'=>'application/json'},
       }
     end
+    Ol << "#{RIAK_URL}/riak/#{path}"
+    Ol << "options: #{options.inspect}"
 
     HTTParty.put("#{RIAK_URL}/riak/#{path}", options)
+    nil
   end
 
   def self.delete path
@@ -149,26 +171,45 @@ module Riak
       ".unindent
   end
 
+  def self.ping
+    `#{Bookmarks['$riak']}/bin/riak ping`
+  end
+
+  def self.log
+    txt = File.read File.expand_path("~/.emacs.d/riak_log.notes")
+    txt = txt.split("\n").reverse.uniq.join("\n")
+  end
+
 end
 
 Keys.enter_list_riak do
-  Keys.prefix == 0 ?
-    CodeTree.insert_menu('- Riak.menu/') :
-    CodeTree.insert_menu('- Riak.buckets/')
+  CodeTree.insert_menu '- Riak.menu/'
+end
+
+Keys.enter_list_buckets do
+  CodeTree.insert_menu '- Riak.buckets/'
 end
 
 Launcher.add(:paren=>'r') do
   line = Line.without_label
-  FileTree.insert_under(Riak.get_hash(line).to_yaml.sub(/^--- \n/, ''))
+  Tree.under(Riak.get_hash(line).to_yaml.sub(/^--- \n/, ''))
 end
 
 LineLauncher.add(:paren=>'rr') do   # Get raw json version
   line = Line.without_label
-  FileTree.insert_under(Riak.get_hash(line, :raw=>true))
+  Tree.under(Riak.get_hash(line, :raw=>true))
 end
 
-Launcher.add(/^riak\//) do
-  line = Line.value
-  FileTree.insert_under(Riak.get_hash(line.sub(/riak\//, '')).to_yaml.sub(/^--- \n/, ''))
+# Launcher.add(/^([+-] )?@?riak/) do |line|
+Launcher.add(/^riak/) do |line|
+  #   Line.gsub! /^riak$/, '- riak/'
+  Line.gsub! /^riak$/, 'riak/'
+  View.under Riak.buckets(*line.split('/')[1..-1])
 end
 
+
+Keys.open_riak_log { CodeTree.display_menu("- Riak.log/") }
+Keys.enter_as_riak { CodeTree.insert_menu("- Riak.log/") }
+
+CodeTree.add_menu "Riak"
+# CodeTree::menus << "Riak"   # Force it, since we're a module

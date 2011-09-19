@@ -273,7 +273,7 @@ class View
     end
     delete_other_windows
     #     split_window_horizontally 32   # Width of bar
-    split_window_horizontally 45   # Width of bar
+    split_window_horizontally 54   # Width of bar
     other_window 1
     o = nil
     # For each window but last
@@ -681,6 +681,10 @@ class View
     Move.backward txt.size if options[:dont_move]
   end
 
+  def self.<< txt
+    self.insert txt
+  end
+
   def self.unindent txt
 
     # Trim off optional first line
@@ -822,10 +826,12 @@ class View
       View.dimensions_set(145, 50)
       }
 
-    self.add_dimension_option 'tiny', proc {View.dimensions_set(89, 12, 479, 1717)}
+    self.add_dimension_option 'tiny', proc {
+      View.dimensions_set(43, 19, 600, 0)
+    }
     self.add_dimension_option 'small', proc {
       View.dimensions_set(89, 24, 9, 137)
-      }
+    }
 
     $el.winner_mode 1 rescue nil
   end
@@ -1068,8 +1074,22 @@ class View
     $el.recenter pos
   end
 
-  def self.insert_under txt, options={}
-    FileTree.insert_under txt, options
+  def self.under txt, options={}
+    options[:escape] = '' if options[:escape].nil?
+    txt = CodeTree.returned_to_s txt
+    Tree.under txt, options.merge(:escape=>'')
+  end
+
+  def a
+    caller(0)[0..2]
+  end
+
+  def self.aa
+    caller(0)[0..2]
+  end
+
+  def self.>> txt
+    Tree.under txt
   end
 
 end

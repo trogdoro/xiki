@@ -1,6 +1,7 @@
 require 'line'
 require 'effects'
 require 'ruby_console'
+gem 'httparty'; require 'httparty'
 
 class LineLauncher
   extend ElMixin
@@ -62,7 +63,8 @@ class LineLauncher
   def self.launch_or_hide options={}
     # If no prefixes and children exist, delete under
     if ! Keys.prefix and ! Line.blank? and CodeTree.children? and ! Line.matches(/^ *\|/)
-      FileTree.kill_under
+      Tree.minus_to_plus
+      Tree.kill_under
       return
     end
 
@@ -72,6 +74,8 @@ class LineLauncher
 
   # Call the appropriate launcher if we find one, passing it line
   def self.launch options={}
+
+    Tree.plus_to_minus
 
     Effects.blink(:what=>:line) if options[:blink]
     line = options[:line] || Line.value   # Get paren from line
@@ -85,8 +89,14 @@ class LineLauncher
 
     $xiki_no_search = options[:no_search]   # If :no_search, disable search
 
-    if line =~ /^( *)[+-] .+?: (.+)/   # Split label off, if there
+    if line =~ /^( *)[+-] .+?: (.+)/   # Split off label, if there
       line = $1 + $2
+    end
+    if line =~ /^( *)[+-] (.+)/   # Split off bullet, if there
+      line = $1 + $2
+    end
+    if line =~ /^ *@(.+)/   # Split off @ and indent if @ exists
+      line = $1
     end
 
     if paren && @@paren_launchers[paren]   # If try each potential paren match
@@ -116,6 +126,7 @@ class LineLauncher
       end
     end
 
+    # Currently "- google:" is the only one
     @@label_launchers.each do |launcher|   # Try each potential label match
       regex, block = launcher
       # If we found a match, launch it
@@ -131,12 +142,25 @@ class LineLauncher
       end
     end
 
+    # If current line is indented and not passed recursively yet
+    if Line.value =~ /^ / && ! options[:line]
+
+      Tree.plus_to_minus
+
+      # merge together (spaces if no slashes) and pass that to launch
+      list = Tree.construct_path(:list=>true)   # Get path to pass to procs, to help them decide
+      found = list.index{|o| o =~ /^@/} and list = list[found..-1]   # Remove before @... node if any
+
+      merged = list.join ''
+      return self.launch :line=>merged
+    end
+
     if self.launch_by_proc   # Try procs (currently all trees)
       return $xiki_no_search = false
     end
 
     if @@just_show
-      Ol << "Nothing matched.  Just passing to FileTree."
+      Ol << "Nothing matched."
       return $xiki_no_search = false
     end
 
@@ -152,7 +176,7 @@ class LineLauncher
 
   def self.launch_by_proc
 
-    list = FileTree.construct_path(:list=>true)   # Get path to pass to procs, to help them decide
+    list = Tree.construct_path(:list=>true)   # Get path to pass to procs, to help them decide
 
     # Try each proc
     @@launchers_procs.each do |launcher|   # For each potential match
@@ -174,9 +198,11 @@ class LineLauncher
     @@launchers = []
     @@launchers_procs = []
 
-    self.add /^  +[+-]?\|/ do |line|  # | FileTree quoted text
-      self.launch_by_proc
-    end
+    # # TODO: why is this needed?!  -  be more specific?
+    #     self.add /^  +[+-]?\|/ do |line|  # | FileTree quoted text
+    # Ol << "!"
+    #       self.launch_by_proc
+    #     end
 
     self.add :paren=>"o" do  # - (t): Insert "Test"
       orig = Location.new
@@ -239,7 +265,7 @@ class LineLauncher
     end
 
     self.add :paren=>"jso" do   # - (js): js to run in firefox
-      FileTree.insert_under Firefox.value(CodeTree.line_or_children)
+      Tree.under Firefox.value(CodeTree.line_or_children)
     end
 
     self.add :paren=>"dom" do   # Run in browser
@@ -247,10 +273,10 @@ class LineLauncher
       html = Firefox.run js
       if html =~ /\$ is not defined/
         Firefox.load_jquery
-        next View.insert_under "- Jquery loaded, try again!"
+        next View.under "- Jquery loaded, try again!"
       end
       html = html.sub(/\A"/, '').sub(/"\z/, '')
-      View.insert_under "#{html.strip}\n", :escape=>''
+      View.under "#{html.strip}\n"
     end
 
     self.add :paren=>"html" do   # Run in browser
@@ -295,8 +321,8 @@ class LineLauncher
     # - (irb): Merb console
     self.add :paren=>"irb" do
       out = RubyConsole.run(Line.without_label)
-      FileTree.indent(out)
-      FileTree.insert_quoted_and_search out  # Insert under
+      Tree.indent(out)
+      Tree.insert_quoted_and_search out  # Insert under
     end
 
     self.add :paren=>"ro" do  # - (ro): Ruby code in other window
@@ -312,8 +338,8 @@ class LineLauncher
 
     LineLauncher.add :paren=>"rails" do  # - (gl): Run in rails console
       out = RubyConsole[:rails].run(Line.without_label)
-      FileTree.indent(out)
-      FileTree.insert_quoted_and_search out  # Insert under
+      Tree.indent(out)
+      Tree.insert_quoted_and_search out  # Insert under
     end
 
 
@@ -364,10 +390,6 @@ class LineLauncher
       Keys.prefix_u ? $el.browse_url(url) : Firefox.url(url)
     end
 
-    self.add /^ *[$\/].+\$ / do   # $ run command in shell
-      Console.launch_dollar
-    end
-
     self.add /^ *\$ / do   # $ run command in shell
       Console.launch_dollar
     end
@@ -383,7 +405,7 @@ class LineLauncher
       url = line[/(http|file).?:\/\/.+/]
 
       if prefix == 8
-        FileTree.insert_under RestTree.request("GET", url)
+        Tree.under RestTree.request("GET", url)
         next
       end
       url.gsub! '%', '%25'
@@ -424,16 +446,16 @@ class LineLauncher
       View.message "There was nothing on this line to launch."
     end
 
-    self.add(/^ *\*/) do |line|  # *... buffer
+    self.add(/^\*/) do |line|  # *... buffer
       #return $el.insert "hey"
       name = Line.without_label.sub(/\*/, '')
       View.to_after_bar
       View.to_buffer name
     end
 
-    self.add(/^ *[$\/][^:\n]+!/) do |l|   # /dir!shell command inline
-      Console.launch :sync=>true
-    end
+    #     self.add(/^ *[$\/][^:\n]+!/) do |l|   # /dir!shell command inline
+    #       Console.launch :sync=>true
+    #     end
     self.add(/^ *!/) do |l|   # !shell command inline
       Console.launch :sync=>true
     end
@@ -453,6 +475,29 @@ class LineLauncher
       View.open path
       View.to_line line.to_i
     end
+
+    # Xiki protocol to server
+    self.add(/^[a-z-]{2,}\.[a-z-]{2,4}\//) do |line|  # **.../: Tree grep in dir
+
+      url = "http://#{line}"
+      url.sub! /\.\w+/, "\\0/xiki"
+      response = HTTParty.get(url)
+      View.under response.body
+    end
+
+    # Menus
+
+    self.add /^db\/?$/ do
+      Line << "/" unless Line =~ /\/$/
+      #   Line.sub!(/^/, "- ") unless Line =~ /^- /
+      View.under "
+        - @riak/
+        - @mysql/
+        - @couchdb/
+        ".unindent
+    end
+
+    # Trees
 
     # Let trees try to handle it
     # RestTree
@@ -517,9 +562,9 @@ class LineLauncher
 
     # Go to parent and collapse, if not at left margin
     if line =~ /^ / #&& line !~ /^ *[+-] /  # and not a bullet
-      FileTree.to_parent
+      Tree.to_parent
     end
-    FileTree.kill_under
+    Tree.kill_under
 
     LineLauncher.launch_or_hide :blink=>true, :no_search=>true
     View.to_nth orig
@@ -530,7 +575,23 @@ class LineLauncher
     txt = txt.split("\n").reverse.uniq.join("\n")
   end
 
+  def self.enter_last_launched
+    bm = Keys.input(:timed => true, :prompt => "bookmark to show launches for (* for all): ")
+
+    if bm == "8" || bm == " "
+      CodeTree.insert_menu("- Search.launched/")
+    else
+      CodeTree.insert_menu("- Search.launched '$#{bm}'/")
+    end
+  end
+
+  def self.do_as_launched
+    txt = "- #{View.file_name}\n    | #{Line.value}"
+    txt.sub!("| ", "- #{Keys.input(:prompt => "enter label: ")}: | ") if Keys.prefix_u
+    Search.append_log "#{View.dir}/", txt
+  end
 end
+
 Launcher = LineLauncher   # Temporary alias until we rename it
 
 LineLauncher.init_default_launchers

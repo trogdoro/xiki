@@ -418,6 +418,7 @@ class Firefox
 
     counts = {}
     kids.each do |k|   # Add on counts
+      k_raw = k.sub /#.+/, ''
       counts[k] ||= 0
       counts[k] += 1
       k.replace "#{k}:#{counts[k]}" unless k =~ /#/ || counts[k] == 1
@@ -480,4 +481,10 @@ Launcher.add(/^#.+/) do |line|
   Line.delete :br
   View.insert "- Firefox.dom \"#{line}\"/"
   LineLauncher.launch
+end
+
+Launcher.add(/^([+-] )?firefox/) do |line|
+  #   Line.gsub! /^firefox$/, '- firefox/'
+  Line.gsub! /^firefox$/, 'firefox/'
+  View.under Firefox.dom(*line.split('/')[1..-1])
 end

@@ -107,7 +107,7 @@ class Remote
       #       out = connection.exec!("cd \"#{path}\"; #{the_command}")
       out ||= ""
 
-      FileTree.insert_under out, :escape=>'| '
+      Tree.under out, :escape=>'| '
     end
   end
 

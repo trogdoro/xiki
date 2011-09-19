@@ -122,13 +122,13 @@ class Files
   end
 
   def self.edited_flat
-    paths = edited_array[0..120]
+    paths = edited_array#[0..120]
     paths.map!{|i| i.sub(/(.+\/)(.+)/, "- \\1\n  - \\2")}
     CodeTree.tree_search_option + paths.join("\n")
   end
 
   def self.history_flat
-    paths = history_array[0..400]
+    paths = history_array#[0..400]
     paths.map!{|i| i.sub(/(.+\/)(.+)/, "- \\1\n  - \\2")}
     CodeTree.tree_search_option + paths.join("\n")
   end
@@ -216,7 +216,7 @@ class Files
   #   end
 
   def self.enter_file
-    path = File.expand_path(Keys.bookmark_as_path(:include_file=>true))
+    path = File.expand_path(Keys.bookmark_as_path(:include_file=>1))
     path << "/" if File.directory? path
     View.insert(path)
   end

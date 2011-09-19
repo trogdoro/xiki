@@ -137,10 +137,6 @@ class Line
     forward_line 0
   end
 
-  class << self
-    alias :start :beginning
-  end
-
   def self.to_left
     self.beginning
   end
@@ -188,7 +184,13 @@ class Line
 
     line
   end
+
+  def self.=~ regex
+    self.value =~ regex
+  end
+
   class << self
+    alias :start :beginning
     alias :content :without_label
   end
 
@@ -197,8 +199,11 @@ class Line
     self.matches /^\s*[+-] /, line
   end
 
+  def self.fuckyou pos=nil
+    return line_number_at_pos pos
+  end
   def self.number pos=nil
-    line_number_at_pos pos
+    $el.xiki_line_number pos || $el.point
   end
 
   def self.to_blank
@@ -246,4 +251,39 @@ class Line
     View.column = column
   end
 
+  def self.sub! from, to
+    value = Line.value
+    value.sub! from, to
+    self.delete :leave
+    self.insert value
+  end
+
+  def self.gsub! from, to
+    value = Line.value
+    value.gsub! from, to
+    self.delete :leave
+    self.insert value
+  end
+
+  def self.<< txt
+    Keys.clear_prefix
+    Move.to_end
+    View.insert txt
+  end
+
+  def self.init
+    # Define lisp function to get list of displayed lines
+    # In case something has been done to change them
+    el4r_lisp_eval %q[
+      (defun xiki-line-number (pos)
+        (save-excursion
+          (goto-char pos)
+          (forward-line 0)
+          (1+ (count-lines 1 (point))))
+      )
+    ]
+  end
+
 end
+
+Line.init

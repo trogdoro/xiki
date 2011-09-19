@@ -11,14 +11,21 @@ class CodeTree
     - show menus: CodeTree.menu
   "
 
+  def self.menus; @menus; end
+
+  def self.add_menu item
+    @menus ||= []
+    @menus << item unless @menus.member? item
+  end
+
   # Mapped to C-.
   def self.launch options={}
     FileTree.extra_line_if_end_of_file
-    FileTree.plus_to_minus_maybe
+    Tree.plus_to_minus_maybe
     orig = Location.new
     Line.to_left
     line = Line.without_indent
-    path = options[:path] || FileTree.construct_path(:list=>true)
+    path = options[:path] || Tree.construct_path(:list=>true)
     path.each do |l|
       # if '- .xx:/", get rid of trailing slash
       l.sub!(/^([+-] .*\..+)\/$/, "\\1")
@@ -30,21 +37,26 @@ class CodeTree
     self.run code, options
   end
 
+  def self.returned_to_s returned
+    if returned.is_a? Array   # Join and bulletize
+      returned.map{|l| "#{l =~ /\/$/ ? '+' : '-'} #{l}\n"}.join('')
+    elsif returned.is_a? Hash
+      (returned.map{|k, v| v =~ /\/$/ ? "+ #{k}: #{v}" : "- #{k}: #{v}"}.join("\n")) + "\n"
+    else
+      "#{returned.strip}\n"
+    end
+  end
+
   def self.run code, options={}
     b = View.buffer
+
     orig = Location.new
     orig_left = point
+
     returned, stdout, e = Code.eval(code)  # Eval code
     # If no stdout (and something was returned), print return value
     if ! stdout.nonempty? and ! returned.nil?
-      stdout =
-        if returned.is_a? Array   # Join and bulletize
-          returned.map{|l| "#{l =~ /\/$/ ? '+' : '-'} #{l}\n"}.join('')
-        elsif returned.is_a? Hash
-          (returned.map{|k, v| v =~ /\/$/ ? "+ #{k}: #{v}" : "- #{k}: #{v}"}.join("\n")) + "\n"
-        else
-          "#{returned}\n"
-        end
+      stdout = self.returned_to_s returned
     else
       message(returned.to_s) if returned and (!returned.is_a?(String) or returned.size < 500)
     end
@@ -74,7 +86,6 @@ class CodeTree
         options[:no_search] = true
         stdout.sub! /.+\n/, ''   # Remove option
       end
-
       ended_up = Location.new
 
       # Go back to where we were before running code
@@ -91,7 +102,7 @@ class CodeTree
 
       stdout.gsub!(/^/, "#{indent}  ")
 
-      insert stdout  # Insert output
+      View << stdout  # Insert output
       right = point
 
       # Move cursor back
@@ -102,21 +113,41 @@ class CodeTree
       if options[:tree_search]   # If they want to do a tree search
         goto_char left
         FileTree.select_next_file
-        FileTree.search(:left=>left, :right=>right, :recursive=>true)
+        Tree.search(:left=>left, :right=>right, :recursive=>true)
       elsif options[:quote_search]   # If they want to do a tree search
         goto_char left
         Search.forward "^ +\\(|\\|- ##\\)"
         Move.to_line_text_beginning
-        FileTree.search(:left=>left, :right=>right, :recursive_quotes=>true)
+        Tree.search(:left=>left, :right=>right, :recursive_quotes=>true)
 
       # If script didn't move us (line or buffer), do incremental search
       elsif !options[:no_search] && !buffer_changed && point == orig_left
         # TODO No search if there aren't more than 3 lines
         goto_char left
+
         Line.to_words
-        FileTree.search(:left=>left, :right=>right, :number_means_enter=>true)
+
+        # Determine how to search based on output!
+
+        params = {:left=>left, :right=>right}
+        original_indent = stdout[/\A */]
+        if stdout =~ /^#{original_indent}  /    # If any indenting
+          if stdout =~ /^  +\|/
+            Search.forward "^ +\\(|\\|- ##\\)", :beginning=>true
+            Move.to_line_text_beginning
+            params[:recursive_quotes] = true
+          else
+            FileTree.select_next_file
+            params[:recursive] = true
+          end
+          Tree.search params
+        else
+          Tree.search params.merge(:number_means_enter=>true)
+        end
+
+      elsif options[:no_search]
+        Move.to_line_text_beginning(1)
       end
-      Move.to_line_text_beginning(1) if options[:no_search]
     end
   end
 
@@ -127,8 +158,7 @@ class CodeTree
       l << c.to_s
     end
     l.map! {|c| c.sub(/^#.+::/, '')}
-    l.sort.each do |c|
-
+    (l + menus).sort.each do |c|
       next if ["CodeTree"].member?(c)
       puts "+ #{c}.menu/"
     end
@@ -176,7 +206,9 @@ class CodeTree
   end
 
   # Determine whether we should handle it
-  def self.handles? list
+  def self.handles? list=nil
+    list ||= Tree.construct_path(:list => true)   # Use current line by default
+
     code_tree_root = nil
     index = list.size - 1
     list.reverse.each do |l|
@@ -394,7 +426,7 @@ class CodeTree
 
     left1, right1, left2, right2 = self.sibling_bounds
 
-    if prefix == :u
+    if prefix == 8
       View.delete left1, right2
       return
     end

@@ -18,7 +18,7 @@ class Bookmarks
 
     # If U and we're in a file tree, bookmark it
     if Keys.prefix_u? && in_a_file_tree && ! Line[/^ *\|/]
-      path = FileTree.construct_path
+      path = Tree.construct_path
       keys = Keys.input(:timed=>true, :prompt=>"Name of bookmark for #{path.sub(/.+\/(.)/, "\\1")}: ") || "0"
       with(:save_window_excursion) do
         $el.find_file path
@@ -209,13 +209,22 @@ class Bookmarks
 
   # Insert $bookmark into to path if it contains a bookmarked path
   def self.collapse path
+    if ! @bookmarks_cache
+      @bookmarks_cache = []
+      # TODO: pull this list out and make configurable
+      %w[a tr p n x 18].each do |name|
 
-    %w[a tr p n].each do |bm|
-      find = bookmark_get_filename(bm)
-      next unless find
-      find.sub!(/[^\/]+$/, "")
-      next unless path =~ /^#{find}/
-      return path.sub(find, "$#{bm}/")
+        bmpath = bookmark_get_filename(name)
+        next unless bmpath
+        bmpath.sub!(/[^\/]+$/, "")
+
+        @bookmarks_cache << [name, bmpath]
+      end
+    end
+
+    @bookmarks_cache.each do |name, bmpath|
+      next unless path =~ /^#{bmpath}/
+      return path.sub(bmpath, "$#{name}/")
     end
     return path
   end
@@ -246,14 +255,16 @@ class Bookmarks
   end
 
   def self.list path=nil
-    unless path   # Print all bookmarks
+
+    if ! path   # Print all bookmarks
       all = elvar.bookmark_alist.collect { |bm|
         item = bm.to_a
         [item[0], item[1].to_a[0][1]]
       }
       all.sort.each do |l|
         n, p = l
-        puts "- #{n.ljust(7)} #{p.sub(/\/$/,'')}"
+        puts "- #{n}: #{p.sub(/\/$/,'')}"
+        #         puts "- #{n.ljust(7)} #{p.sub(/\/$/,'')}"
         #puts "- #{n}: #{p}"
       end
       return

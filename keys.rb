@@ -269,9 +269,9 @@ class Keys
     # If C-n or C-p, pretend like they were mapped to xiki functions
 
     if keys == "\cn"
-      return View.insert('Line.next')
+      return View << 'Line.next'
     elsif keys == "\cp"
-      return View.insert('Line.previous')
+      return View << 'Line.previous'
     end
 
     proc = self.proc_from_key keys
@@ -291,7 +291,9 @@ class Keys
     code.gsub! 'proc { ', ''
     code.gsub! ' }', ''
 
-    View.insert code
+    code.gsub! '(:blink => (true))', ''
+
+    View << code
   end
 
   def self.jump_to_code

@@ -30,7 +30,7 @@ class RestTree
 
   def self.launch options={}
 
-    FileTree.plus_to_minus_maybe
+    Tree.plus_to_minus_maybe
     verb, url, body = self.launch_inner options[:path], CodeTree.children
     url = "http://#{url}" unless url =~ %r"http://"
 
@@ -42,7 +42,7 @@ class RestTree
     result.gsub! /^/, "| "
     result.gsub! /^\| ( *[-+] )/, "\\1"
 
-    FileTree.insert_under result, :escape=>''
+    Tree.under result, :escape=>''
 
   end
 
@@ -107,5 +107,5 @@ LineLauncher.add(/^.*(- )?GET \/.+/) do
   result = RestTree.request "GET", url
 
   result = result.grep(/#{regex}/i).join
-  FileTree.insert_under result#, :escape=>''
+  Tree.under result#, :escape=>''
 end

@@ -27,6 +27,6 @@ class Python
   #   def self.launch
   #     line = Line.without_label
   #     result = self.run_internal line
-  #     FileTree.insert_under result, :escape=>''
+  #     FileTree.under result, :escape=>''
   #   end
 end

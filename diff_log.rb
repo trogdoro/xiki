@@ -8,38 +8,7 @@ class DiffLog
   @@temp_path = elvar.temporary_file_directory + "latest-diff.txt"
 
   # Open file having difflog
-  def self.open path=nil
-    path ||= View.file if Keys.prefix_u(:clear=>true)   # Show diffs for current file only
-
-    if path
-      # If it's a dir
-      path_tree = File.directory?(path) ?
-        "^- #{path}" :
-        "^- #{File.dirname path}/\n  - #{File.basename path}\n"
-
-      diffs = ""
-
-      with(:save_window_excursion) do
-        DiffLog.open
-
-        500.times do
-          break unless Search.backward path_tree
-          top = View.cursor
-          Line.next
-          Search.forward "^[^ \t\n]", :go_anyway=>true, :beginning=>true
-          diffs = "#{View.txt(top, View.cursor)}#{diffs}"
-          View.to top
-        end
-      end
-
-      View.to_buffer "*edits of #{View.file}"
-      View.clear
-      View.insert diffs
-      Notes.mode
-
-      return
-    end
-
+  def self.open
     # If open, just switch to it and revert
     if View.buffer_open?("difflog.notes")
       View.to_buffer("difflog.notes")
@@ -51,6 +20,34 @@ class DiffLog
     Line.previous
     Line.to_words
     recenter -4
+  end
+
+  def self.diffs path=nil
+
+    path = Bookmarks[path]
+
+    # If it's a dir
+    path_tree = File.directory?(path) ?
+      "^- #{path}" :
+      "^- #{File.dirname path}/\n  - #{File.basename path}\n"
+
+    diffs = ""
+
+    with(:save_window_excursion) do
+      DiffLog.open
+
+      300.times do
+        break unless Search.backward path_tree
+        top = View.cursor
+        Line.next
+        Search.forward "^[^ \t\n]", :go_anyway=>true, :beginning=>true
+        diffs << "#{View.txt(top, View.cursor)}"
+        View.to top
+      end
+    end
+
+    diffs
+
   end
 
   # Insert old text deleted during last save
@@ -137,10 +134,8 @@ class DiffLog
 private
   # Util function used by public functions
   def self.saved_diff
-    $el.write_region View.top, View.bottom, @@temp_path
+    $el.write_region nil, nil, @@temp_path
     diff = Console.run "diff -w -U 0 \"#{buffer_file_name}\" \"#{@@temp_path}\"", :sync=>true
     self.format(View.path, View.file_name, diff)
   end
 end
-
-

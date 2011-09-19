@@ -71,7 +71,7 @@ class Color
       View.to_line 3
       Move.to_line_text_beginning
 
-      FileTree.search :left=> Line.left, :number_means_enter=>true
+      Tree.search :left=> Line.left, :number_means_enter=>true
 
       return
 

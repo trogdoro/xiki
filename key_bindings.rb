@@ -82,6 +82,7 @@ class KeyBindings
     Keys.open_in_window { Files.open_in_window }   # Expose file in OS folder
     Keys.open_just { Files.open_just }
     Keys.open_key { Keys.jump_to_code }   # jump to ruby code of key definition *
+    Keys.open_list_appointments { View.bar; CodeTree.display_menu("- Agenda.menu/") }
     Keys.open_list_bookmarks { CodeTree.display_menu("- Bookmarks.tree/") }
     #     Keys.open_last_error { Code.show_el4r_error }
     Keys.open_list_faces { list_faces_display }
@@ -89,7 +90,8 @@ class KeyBindings
     Keys.open_log_list { Git.show_log_one_file }   # Show git diffs o 1 file
     Keys.open_log_push { Git.show_log }   # Show git diffs for a bookmark
     Keys.open_last_screenshot { Files.open_last_screenshot }
-    Keys.open_log_tree { Rails.tree_from_log }
+    #     Keys.open_like_text { txt = View.txt; View.to_buffer "txt"; View << txt }
+    #     Keys.open_log_tree { Rails.tree_from_log }
     Keys.open_list_databases { CodeTree.display_menu('- CouchDb.databases/') }
     Keys.open_list_models { CodeTree.display_menu("- Merb.models/") }
     Keys.open_list_names { Clipboard.list }
@@ -154,18 +156,20 @@ class KeyBindings
     Keys.enter_insert_1 { Notes.enter_do_bullet }    # insert date string (and time if C-u)
     Keys.enter_insert_date { App.enter_date }    # insert date string (and time if C-u)
     Keys.enter_insert_command { insert("- (/): "); ControlLock.disable }    # insert date string (and time if C-u)
+    Keys.enter_insert_log { Code.enter_log_line }   # Enter Old: enter newly-deleted from last save
+    Keys.enter_insert_new { DiffLog.enter_new }   # Enter Old: enter newly-deleted from last save
     Keys.enter_insert_ruby { code = Keys.input(:prompt=>"Enter ruby code to eval and insert results: "); View.insert(eval(code).to_s)}
     Keys.enter_insert_search {View.insert(Line.matches(/^ *- $/) ? "google: " : "- google: ")}
 
     Keys.enter_insert_old { DiffLog.enter_old }   # Enter Old: enter newly-deleted from last save
-    Keys.enter_insert_new { DiffLog.enter_new }   # Enter Old: enter newly-deleted from last save
 
     Keys.enter_insert_wikipedia { View.insert("- (wp): ") }
     Keys.enter_in_todo { FileTree.enter_snippet }   # enter tree quote of region in $T
     Keys.enter_junior { Notes.bullet("") }
     Keys.enter_key { Keys.insert_code }
     #Keys.EK { Clipboard.paste }   # Enter Clipboard: paste
-    Keys.enter_label_bullet { Notes.enter_label_bullet }
+    #     Keys.enter_list_buckets 
+    #     Keys.enter_list_bullet { Notes.enter_label_bullet }
     Keys.enter_last_commands {
       bm = Keys.input(:timed => true, :prompt => "bookmark to show commands for (space for currently open): ")
       return CodeTree.insert_menu("- Console.tree/") if bm == " "
@@ -174,7 +178,7 @@ class KeyBindings
     Keys.enter_list_databases { CodeTree.insert_menu('- CouchDb.databases/') }
     Keys.enter_log_javascript { Firefox.enter_log_javascript_line }
     Keys.enter_log_stack { Code.enter_log_stack }
-    Keys.enter_log_line { Code.enter_log_line }
+    Keys.enter_last_launched { Launcher.enter_last_launched }
     Keys.enter_log_time { Code.enter_log_time }
     Keys.enter_last_urls { CodeTree.insert_menu("- Launcher.urls/") }
 
@@ -216,6 +220,7 @@ class KeyBindings
     Keys.do_as_html { Firefox.do_as_html }
     Keys.do_as_browser { Firefox.run_block }
     Keys.do_as_javascript { Javascript.run }
+    Keys.do_as_launched { Launcher.do_as_launched }
     Keys.do_as_php { Php.run }
     #     Keys.do_as_python { Python.run }
     Keys.do_as_snakecase { Clipboard.do_as_snake_case }   # Change word to snake case (like_that)
@@ -233,6 +238,7 @@ class KeyBindings
     Keys.do_compare_last { History.diff_with_backup }   # compare with last AV version
     Keys.do_count_matches {  View.count_matches }
     Keys.do_copy_next { Files.copy }   # copy file to next view
+    Keys.do_colors_off { $el.font_lock_mode }   # toggles
     Keys.do_clean_quotes { Files.do_clean_quotes }   # Fix special chars
 
     Keys.do_compare_repository { Git.diff_one_file }
@@ -307,7 +313,7 @@ class KeyBindings
     Keys.do_tree { FileTree.tree(:recursive=>true) }   # draw filesystem tree for current dir or bookmark
     #     Keys.do_under { FileTree.kill_under }   # kill tree children (lines indented more)
     Keys.do_up { LineLauncher.do_last_launch }
-    #Keys.display_up { message FileTree.construct_path( :indented => true ) }   # Display ancestors (by indent level)
+    #Keys.display_up { message Tree.construct_path( :indented => true ) }   # Display ancestors (by indent level)
     Keys.do_version { Git.code_tree_diff_unadded }   # Compare with repos (with what hasn't been added yet)
     Keys.do_whitespace { Deletes.delete_whitespace }   # delete blank lines
     # X
@@ -359,7 +365,7 @@ class KeyBindings
     Keys.to_row { Move.to_line }   # go to nth line, relative to top of window
     Keys.to_spot { Location.to_spot }   # *
     # T: defined above - mapped to what C-t does by default
-    Keys.to_up { FileTree.to_parent }   # to parent (last line indented less)
+    Keys.to_up { Tree.to_parent }   # to parent (last line indented less)
     Keys.to_visible { View.to_relative }   # go to nth line, relative to top of window
     Keys.to_words { Move.to_line_text_beginning }   # move to start of words on line *
     # X
@@ -465,6 +471,7 @@ class KeyBindings
     Keys.search_just_adjust { Search.isearch_just_adjust }
     Keys.search_just_bold { Search.isearch_just_surround_with_char('<b>', '</b>') }
     Keys.search_just_case { Search.isearch_just_case }   # make match be camel case
+    #     Keys.search_just_case { Search.isearch_just_case }   # make match be camel case
     Keys.search_just_difflog { Search.jump_to_difflog }   # find last string in difflog
     Keys.search_just_edits { Search.just_edits }   # Search in diff of edits to this file
     Keys.search_just_files { Search.isearch_restart "$f" }   # isearch for this string in $f
@@ -486,11 +493,17 @@ class KeyBindings
     Keys.search_kill { Search.cut }   # cut
 
     define_key :isearch_mode_map, kbd("C-l"), nil
-    Keys.search_last_commands { Console.search_last_commands }
+
+    Keys.search_like_clipboard {
+      reverse = Search.was_reverse
+      match = Search.stop
+      Search.isearch Clipboard[0], :reverse=>reverse
+    }   # make match be camel case
     Keys.search_like_data { Search.isearch_restart "$d" }
     Keys.search_like_file { Search.isearch_open }
+    Keys.search_like_output { Search.isearch_log :string=>1  }
     Keys.search_line_pull { Search.isearch_move_line }
-    Keys.search_like_shell { Search.search_thesaurus }
+    #     Keys.search_like_shell { Search.search_thesaurus }
     Keys.search_like_thesaurus { Search.search_thesaurus }
 
     Keys.search_last_urls { CodeTree.display_menu("- Launcher.urls/") }

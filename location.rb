@@ -37,7 +37,7 @@ class Location
 
     @file = buffer_file_name
     @buffer = View.name
-    @line = line_number_at_pos
+    @line = Line.number
     @column = point - point_at_bol
 
     # Get buffer if no file

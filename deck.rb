@@ -3,7 +3,7 @@ require "mode"
 # Makes text in .deck files huge, and makes left and right arrow keys treat
 # headings as slides.
 class Deck
-  @@size = 40
+  @@size = 10
   def self.define_styles
     Styles.define :deck_plain, :size => "+#{@@size}"#, :face => "arial black"
     Styles.define :deck_h1, :fg => 'ffffff', :bg => "333355", :size => "+#{@@size+10}", :face => "arial black"
@@ -19,16 +19,16 @@ class Deck
     Styles.apply "^\\( *\\)\\(-\\) \\(.+\\)", nil, :deck_plain, :deck_bullet, :deck_plain
   end
 
-  def self.keys
-    $el.elvar.deck_mode_map = $el.make_sparse_keymap unless $el.boundp :deck_mode_map
+  def self.keys mode=:deck_mode_map
+    $el.elvar.deck_mode_map = $el.make_sparse_keymap unless $el.boundp mode
 
-    $el.define_key :deck_mode_map, $el.kbd("<right>") do
+    $el.define_key mode, $el.kbd("<right>") do
       $el.widen; Hide.show
       Notes.to_block
       Notes.expand_block
     end
 
-    $el.define_key :deck_mode_map, $el.kbd("<left>") do
+    $el.define_key mode, $el.kbd("<left>") do
       $el.widen; Hide.show
       Notes.to_block(true)
       Notes.expand_block
@@ -40,7 +40,7 @@ class Deck
     self.keys
     # Make deck mode happen for .deck files
     Mode.define(:deck, ".deck") do
-      Deck.apply_styles
+      Notes.mode
     end
   end
 end

@@ -140,7 +140,6 @@ class Git
     end
 
     branch = self.branch_name dir
-
     # If project, show options
     puts %Q[
       + .create/
@@ -159,10 +158,11 @@ class Git
       + .stash/
       - .files/
       - .format_diff_command "git diff 2b58e1e3b59ff8b5a6c5baf355501c0771b53097 code.rb"/
-      ].strip.gsub(/^      /, '')
+      ].unindent
   end
 
-  def self.branch_name dir
+  def self.branch_name dir=nil
+    dir ||= View.dir
     Console.run("git status", :sync=>true, :dir=>dir)[/# On branch (.+)/, 1]
   end
 
@@ -200,7 +200,6 @@ class Git
     dir = self.extract_dir project
 
     if search == :expand
-      Ol << 'implement: expand all files!'
       return "- implement!"
     end
 
@@ -245,7 +244,9 @@ class Git
     relative = View.file.sub(/^#{repos}/, '')   # Split off root from relative path
     relative.sub! /^\//, ''
 
-    if Keys.prefix_u :clear=>true
+    prefix = Keys.prefix :clear=>true
+
+    if prefix == :u
 
       orig_path = "/tmp/#{View.file_name}__orig"
 
@@ -359,7 +360,7 @@ class Git
 
     View.to_top
     Move.to_junior
-    FileTree.search :recursive => true
+    Tree.search :recursive => true
 
   end
 
@@ -538,7 +539,7 @@ class Git
 
   def self.pull project
     dir = self.extract_dir project
-    Console.run "git pull origin master", :dir=>dir
+    Console.run "git pull", :dir=>dir
     nil
   end
 
@@ -546,13 +547,21 @@ class Git
     dir = Keys.bookmark_as_path :prompt=>"Enter a bookmark to git diff in: "
     branch = self.branch_name dir
 
-    prefix = Keys.prefix
+    prefix = Keys.prefix :clear=>true
     expand = prefix == :uu ? "" : ", :expand"
+
     menu = "
       - Git.menu/
         - project - #{dir}
-          - .push \"#{branch}\"/
-          - .diff#{expand}/".unindent
+      ".unindent
+
+    if prefix != 8
+      menu << "
+        - .push \"#{branch}\"/
+        - .diff#{expand}/
+        ".unindent.gsub(/^/, "    ")
+    end
+    menu.strip!
 
     if options[:enter]
       View.insert(menu)
@@ -750,13 +759,15 @@ class Git
     - #{self.extract_dir(project)}/
       - Temporarily put away uncommitted changes:
       ! git stash
+      ! git stash save \"message\"
       - Restore uncommitted changes:
       ! git stash apply
       ! git stash pop
+      ! git stash drop
       - list: ! git stash list
       - files: ! git stash show
-      - diff: ! git stash show --patience
-    "
+      - diff most recest: ! git stash show --patience
+    ".unindent
   end
 
   def self.git_diff_options

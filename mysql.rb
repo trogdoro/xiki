@@ -1,27 +1,59 @@
 class Mysql
   def self.menu
     puts "
+      + .tables/
       + .dbs/
-      + foo/
-        - .create_db
-        - .drop_db
+      - .create_db 'foo'
+      - .drop_db 'foo'
       "
   end
 
+  def self.default_db db
+    @default_db = db
+  end
+
+  def self.tables table=nil
+    if ! @default_db
+      if ! table
+        return "- Use which db by default?: #{Mysql.dbs[1].sub('/', '')}"
+        #         return "- Use which db by default?: foo"
+      end
+      @default_db = table
+      return "| Default db set temporarily. Add this\n| to a .rb file to make permenant:\n|\n|   Mysql.default_db '#{table}'\n|"
+    end
+    #     return "- Set the default db first:\nMysql.default_db 'foo_db'" if ! @default_db
+
+    self.dbs @default_db, table
+  end
+
   def self.dbs db=nil, table=nil
+
     db.sub! /\/$/, '' if db
     table.sub! /\/$/, '' if table
 
     if table
-      sql = "select * from #{table} limit 1000"
-      return Mysql.run(db, sql).gsub(/^/, '| ')
+      # Whole table
+      if ! Keys.prefix_u
+        sql = "select * from #{table} limit 1000"
+        return self.run(db, sql).gsub(/^/, '| ')
+      else
+        # Get fields to use
+        fields = self.run db, "select * from #{table} limit 1"
+        fields = fields.sub(/\n.+/m, '').split("\t")
+        fields &= ['id', 'slug', 'name', 'partner_id']
+        fields = ['*'] if fields.blank?
+        sql = "select #{fields.join ', '} from #{table} limit 1000"
+        txt = Mysql.run(db, sql)
+
+        return txt.gsub(/^/, '| ')
+      end
     end
 
     if db
-      return Mysql.run(db, 'show tables').split.map{|o| "#{o}/"}
+      return Mysql.run(db, 'show tables').split[1..-1].map{|o| "#{o}/"}
     end
 
-    Mysql.run(nil, 'show databases').split.map{|o| "#{o}/"}
+    Mysql.run(nil, 'show databases').split[1..-1].map{|o| "#{o}/"}
   end
 
   def self.create_db name
@@ -39,3 +71,8 @@ class Mysql
 end
 
 Keys.enter_list_mysql { CodeTree.insert_menu('- Mysql.dbs/') }
+
+Launcher.add(/^([+-] )?mysql/) do |line|
+  Line.gsub! /^mysql$/, 'mysql/'
+  View.under Mysql.tables(*line.split('/')[1..-1])
+end

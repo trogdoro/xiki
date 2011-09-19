@@ -58,7 +58,7 @@ class History
       elsif options[:outline] || options[:prompt_for_bookmark]
         FileTree.enter_lines
       else
-        FileTree.search :recursive => true
+        Tree.search :recursive => true
       end
     end
 
@@ -72,7 +72,7 @@ class History
     View.to_top
     Keys.clear_prefix
     FileTree.select_next_file
-    FileTree.search :recursive => true
+    Tree.search :recursive => true
   end
 
   def self.open_history
@@ -84,7 +84,7 @@ class History
     View.to_top
     Keys.clear_prefix
     FileTree.select_next_file
-    FileTree.search :recursive => true
+    Tree.search :recursive => true
   end
 
   def self.insert_history times
@@ -96,7 +96,7 @@ class History
     self.insert_history self.prefix_times
     right = point
     orig.go
-    FileTree.search :recursive => true, :left => point, :right => right
+    Tree.search :recursive => true, :left => point, :right => right
   end
 
   def self.insert_viewing times
@@ -110,7 +110,7 @@ class History
     self.insert_viewing self.prefix_times
     right = point
     orig.go
-    FileTree.search :recursive => true, :left => point, :right => right
+    Tree.search :recursive => true, :left => point, :right => right
   end
 
   def self.open_unsaved
@@ -133,7 +133,7 @@ class History
     View.to_top
     Keys.clear_prefix
     FileTree.select_next_file
-    FileTree.search :recursive => true
+    Tree.search :recursive => true
   end
 
   def self.setup_editedhistory
@@ -203,7 +203,7 @@ class History
     end
 
     path = Keys.prefix_u? && FileTree.handles? ?   # If backup file in tree
-      FileTree.construct_path :
+      Tree.construct_path :
       View.file
 
     name = path.sub(/.+\//, '')

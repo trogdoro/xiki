@@ -8,7 +8,7 @@ require 'keys'
 class FileTreeTest < Test::Unit::TestCase
 
   def call_clear_empty_dirs tree
-    FileTree.clear_empty_dirs_string tree.gsub(/^ *\|/, '')
+    Tree.clear_empty_dirs_string tree.gsub(/^ *\|/, '')
   end
 
   # Should remove one empty dir

@@ -108,14 +108,15 @@ class Notes
 
     open_line(4) if Keys.prefix_u?   # If U create blank lines.
 
-    # If U, get letter from next bullet
-    if Keys.prefix_u?
-      orig = Location.new
-      Search.forward "^| "   # Find next heading
-      char = Line.value[/^\| (\w) /, 1]   # Pull char off and insert, if there is one
-      orig.go
-      View.insert "#{char} " if char
-    end
+    #     # If U
+    #     # # get letter from next bullet
+    #     if Keys.prefix_u?
+    #       orig = Location.new
+    #       Search.forward "^| "   # Find next heading
+    #       char = Line.value[/^\| (\w) /, 1]   # Pull char off and insert, if there is one
+    #       orig.go
+    #       View.insert "#{char} " if char
+    #     end
 
     #PauseMeansSpace.go
 
@@ -271,13 +272,16 @@ class Notes
         :face => 'arial', :size => h1_size, :fg => lighter,   :bg => v, :bold =>  true
     end
 
+    Styles.define :notes_h1_agenda_pipe, :face => 'arial', :size => h1_size, :fg => '88cc88', :bg => '336633', :bold =>  true
+    Styles.define :notes_h1_agenda, :face => 'arial', :size => h1_size, :fg => 'ffffff', :bg => '336633', :bold => true
+
     # ||...
     Styles.define :notes_h2,
-      :face => 'arial', :size => "0",
+      :face => 'arial', :size => "-1",
       :fg => '8888bb', :bg => "e0e0f2",
       :bold =>  true
     Styles.define :notes_h2_pipe,
-      :face => 'arial', :size => "0",
+      :face => 'arial', :size => "-1",
       :fg => 'bbbbdd', :bg => "e0e0f2",
       :bold =>  true
 
@@ -298,6 +302,7 @@ class Notes
     Styles.define :notes_h4_pipe,
       :face => 'arial', :size => "-2",
       :fg => 'ddddf0'
+
 
     # Labels, emphasis
     Styles.define :notes_label,
@@ -326,8 +331,8 @@ class Notes
 
     if Styles.inverse   # If black and white
 
-      Styles.define :notes_h2, :fg => '7777aa', :bg => "222233"
-      Styles.define :notes_h2_pipe, :fg => '3b3b5e', :bg => "222233"
+      Styles.define :notes_h2, :fg=>'cccccc', :bg=>"333333", :size=>"-1"
+      Styles.define :notes_h2_pipe, :fg=>'555555', :bg=>"333333", :size=>"-1"
 
       Styles.define :notes_exclamation,  # Green bold text
         :face => 'arial black', :size => "0",
@@ -353,9 +358,12 @@ class Notes
     Styles.apply("^\\(|\\)\\(.*\n\\)", nil, :notes_h1_pipe, :notes_h1)
     Styles.apply("^\\(| .+?: \\)\\(.+\n\\)", nil, :notes_h1_pipe, :notes_h1)
 
+    Styles.apply("^\\(| 20[0-9][0-9]-[0-9][0-9]-[0-9][0-9].*:\\)\\(.*\n\\)", nil, :notes_h1_agenda_pipe, :notes_h1_agenda)
+
     @@h1_styles.each do |k, v|
       l = k.to_s[/_..(.)$/, 1]
       next unless l
+      #       Styles.apply("^\\(| #{l}\\)\\(.*\\)", nil, "#{k}_pipe".to_sym, k)
       Styles.apply("^\\(| #{l}\\)\\(\n\\| .*\n\\)", nil, "#{k}_pipe".to_sym, k)
       Styles.apply("^\\(| #{l} .+: \\)\\(.*\n\\)", nil, "#{k}_pipe".to_sym, k)
     end
@@ -565,7 +573,7 @@ class Notes
     # If next line is indented more, kill children
     # If starts with plus or minus, and on plus or minus, launch
     if Line.matches(/^\s*[+-]/) and View.char =~ /[+-]/
-      plus_or_minus = FileTree.toggle_plus_and_minus
+      plus_or_minus = Tree.toggle_plus_and_minus
       if ! CodeTree.children?
         #plus_or_minus == '+'   # If +, expand (launch
 
@@ -576,7 +584,7 @@ class Notes
         end
 
       else   # If -, kill under
-        FileTree.kill_under
+        Tree.kill_under
         Move.to_line_text_beginning
       end
     end
@@ -677,3 +685,11 @@ end
 Notes.define_styles
 Notes.init
 Notes.keys  # Define local keys
+
+
+# TODO - how to turn these on conditionally?
+  # What's the best approach for presentations?
+    # Probably make .deck files use notes mode
+      # Why wasn't working before?
+# require 'deck'
+# Deck.keys :notes_mode_map   # Temporary - only when doing presentations

@@ -200,7 +200,7 @@ class Console
   def self.launch_dollar options={}
     orig = Location.new
     orig_view = View.index
-    path = FileTree.construct_path(:list=>true)
+    path = Tree.construct_path(:list=>true)
 
     path[0] = Bookmarks[path[0]] if path[0] =~ /^(\.\/|\$[\w-])/   # Expand out bookmark or ./, if there
     if path.first =~ /^\//   # If has dir (possibly remote)
@@ -227,7 +227,7 @@ class Console
     # If indented, check whether file tree, extracting if yes
     if line =~ /^\s+!/
       orig = View.cursor
-      path = FileTree.construct_path(:list=>true)
+      path = Tree.construct_path(:list=>true)
       if path[0] =~ /@/   # If there's a @, it's remote
         self.append_log path[1], path[0]
         return Remote.command path
@@ -254,8 +254,8 @@ class Console
       output.gsub!(/^\| !/, '!')
       output.gsub!(/^\| (- [\w ,-]+: !)/, "\\1")
 
-      FileTree.indent(output)
-      FileTree.insert_quoted_and_search output
+      Tree.indent(output)
+      Tree.insert_quoted_and_search output
     else
       View.handle_bar
       Console.run command, :dir=>dir  #, :buffer=>"*console #{dir}"
@@ -295,7 +295,7 @@ class Console
   def self.do_as_execute options={}
 
     if FileTree.handles? && ! Line.matches(/^\s*\|/)   # If we're in a file tree
-      path = FileTree.construct_path
+      path = Tree.construct_path
 
       #       # Run command inside of dir
       #       if Line.matches(/\/$/)   # If a dir
@@ -313,13 +313,13 @@ class Console
       command = command =~ /\b_\b/ ? command.gsub(/\b_\b/, "\"#{file}\"") : "#{command} \"#{file}\""
 
       output = Console.run(command, :dir=>File.dirname(path), :sync=>true)
-      FileTree.insert_under(output) if options[:insert]
+      Tree.under(output) if options[:insert]
 
       return View.message "Command ran with output: #{output.strip}."
     end
 
-    command = Keys.input :prompt=>"Do shell command on '#{View.name}': "
-    command = "#{command} #{View.name}"
+    command = Keys.input :prompt=>"Do shell command on '#{View.file_name}': "
+    command = "#{command} #{View.file_name}"
     output = Console.run(command, :dir=>View.dir, :sync=>true)
     View.insert(output) if options[:insert]
 
@@ -377,7 +377,7 @@ class Console
 
     View.insert "#{history}\n"
     View.to_highest
-    FileTree.search
+    Tree.search
   end
 
   def self.search_last_commands

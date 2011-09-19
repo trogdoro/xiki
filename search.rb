@@ -128,11 +128,10 @@ class Search
       bm = Keys.input :timed=>true, :prompt=>"Enter a bookmark to search edits: "
       path = bm == "." ?
         View.file :
-        Bookmarks.expand("$#{bm}")
+        "$#{bm}"
+        #         Bookmarks.expand("$#{bm}")
 
-      DiffLog.open path
-
-      Search.isearch nil, :reverse=>true
+      CodeTree.display_menu("- DiffLog.diffs \"#{path}\"/")
 
     else
       View.delete(Search.left, Search.right)
@@ -176,7 +175,6 @@ class Search
 
       else
         if options[:decrement]
-          #           match.previous   # Doesn't decrement "10" properly
           match =~ /[a-z]/i ?
           (match[0] - 1) :
             (match.to_i - 1).to_s
@@ -326,9 +324,9 @@ class Search
   end
 
   def self.tree_grep
-    dir = Keys.bookmark_as_path   # Get path (from bookmark)
+    path = Keys.bookmark_as_path :include_file=>1   # Get path (from bookmark)
 
-    if dir == :space   # If space, search in buffers
+    if path == :space   # If space, search in buffers
       self.find_in_buffers Keys.input(:prompt=>"Search all open files for: ")
       return
     end
@@ -345,9 +343,7 @@ class Search
 
     input.gsub! "#", "\\#"
 
-    self.append_log dir, "- ###{input}/"
-
-    FileTree.grep_with_hashes dir, input
+    FileTree.grep_with_hashes path, input
   end
 
   # Incrementeal search between cursor and end of paragraph (kills unmatching lines)
@@ -387,7 +383,7 @@ class Search
   end
 
   def self.search_in_bookmark match
-    bm = Keys.bookmark_as_path
+    bm = Keys.bookmark_as_path :include_file=>1
 
     if bm == :space   # If space, search in buffers
       self.find_in_buffers match
@@ -403,8 +399,6 @@ class Search
 
     View.to_after_bar if View.in_bar?
     match.gsub!(/([#()])/, "\\\\\\1")
-
-    self.append_log bm, "- ###{match}/"
 
     # Search in bookmark
     FileTree.grep_with_hashes bm, match
@@ -435,12 +429,11 @@ class Search
 
     bm = Keys.input(:timed => true, :prompt => "bookmark to show launches for (* for all): ")
 
-    if bm == "8"
+    if bm == "8" || bm == " "
       CodeTree.display_menu("- Search.launched/")
     else
       CodeTree.display_menu("- Search.launched '$#{bm}'/")
     end
-
   end
 
   def self.launched bm=nil
@@ -493,7 +486,7 @@ class Search
     if new_options[:buffer]   # Goto first match
       $el.goto_line 4
       Line.to_words
-      FileTree.search(:recursive=>false, :left=>Line.left, :right=>View.bottom)
+      Tree.search(:recursive=>false, :left=>Line.left, :right=>View.bottom)
     else  # Goto first match in 2nd file
       $el.goto_line 2
       $el.re_search_forward "^  -", nil, true
@@ -587,7 +580,9 @@ class Search
     else
       match = self.match
       dir = Keys.bookmark_as_path(:prompt=>"Enter bookmark to look in (or comma for recently edited): ")
+
       return self.isearch_open_last_edited(match) if dir == :comma   # If key is comma, treat as last edited
+
       TextUtil.snake_case! match if match =~ /[a-z][A-Z]/   # If camel case, file is probably snake
       FileTree.grep_with_hashes dir, match, '**'   # Open buffer and search
     end
@@ -626,6 +621,10 @@ class Search
         Search.forward "^ +def \\(self\\.\\)?#{method}[^_a-zA-Z0-9]", :beginning=>true
         Move.to_axis
         recenter 0
+
+        dir, name = found.match(/(.+\/)(.+)/)[1..2]
+        Search.append_log dir, "- #{name}\n    | #{Line.value}"
+
       end
     else
       message "'#{match}' not found (no recently edited file with that substring found)."
@@ -659,7 +658,7 @@ class Search
     re_search_forward "^$", nil, 1
     right = point
     goto_char left
-    FileTree.search(:left=>left, :right=>right, :recursive=>true)
+    Tree.search(:left=>left, :right=>right, :recursive=>true)
   end
 
   def self.cancel
@@ -1156,10 +1155,9 @@ class Search
   end
 
   def self.isearch_clipboard
-    reverse = self.was_reverse
     match = self.stop
     if match.nil?   # If nothing searched for yet
-      self.isearch Clipboard[0], :reverse=>reverse
+      Console.search_last_commands
     else
       self.copy
       Location.as_spot('clipboard')
@@ -1183,10 +1181,10 @@ class Search
     self.just_orange
     match = self.match
 
-    FileTree.to_parent   # Go to parent
-    FileTree.to_parent if Line[/^ *- ##/]
+    Tree.to_parent   # Go to parent
+    Tree.to_parent if Line[/^ *- ##/]
 
-    FileTree.insert_under "- \#\##{match}/", :escape=>'', :no_search=>true
+    Tree.under "- \#\##{match}/", :escape=>'', :no_search=>true
     LineLauncher.launch
   end
 
@@ -1266,7 +1264,7 @@ class Search
       Search.isearch txt
       return
     end
-    elvar.search_ring.to_a
+    elvar.search_ring.to_a.uniq
   end
 
 end

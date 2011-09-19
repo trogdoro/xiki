@@ -619,13 +619,18 @@ class Code
   end
 
   def self.do_list_ancestors
-    path = FileTree.construct_path(:list=>true)[0..-1]
+    path = Tree.construct_path(:list=>true)[0..-1]
     result = ""
     path.each_with_index { |o, i|
       result << "#{'  ' * i}#{o}\n"
     }
-    View.message result.strip.gsub('%', '%%')
-  end
 
+    result = result.strip.gsub('%', '%%')
+
+    # If U, save in clipboard as quote, ready to be pasted into a tree
+    Clipboard[0] = result if Keys.prefix_u
+
+    View.message result
+  end
 end
 
