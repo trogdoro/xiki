@@ -24,12 +24,14 @@ class DiffLog
 
   def self.diffs path=nil
 
-    path = Bookmarks[path]
-
-    # If it's a dir
-    path_tree = File.directory?(path) ?
-      "^- #{path}" :
-      "^- #{File.dirname path}/\n  - #{File.basename path}\n"
+    if path == nil
+      match_tree = "^- "
+    else
+      path = Bookmarks[path]
+      match_tree = File.directory?(path) ?   # If it's a dir
+        "^- #{path}" :
+        "^- #{File.dirname path}/\n  - #{File.basename path}\n"
+    end
 
     diffs = ""
 
@@ -37,7 +39,7 @@ class DiffLog
       DiffLog.open
 
       300.times do
-        break unless Search.backward path_tree
+        break unless Search.backward match_tree
         top = View.cursor
         Line.next
         Search.forward "^[^ \t\n]", :go_anyway=>true, :beginning=>true
@@ -130,6 +132,14 @@ class DiffLog
       diff :
       "| Alert\n- ~No Differences~\n"
   end
+
+  def self.enter_from_difflog
+    Location.as_spot
+    View.to_after_bar if View.in_bar?
+    DiffLog.open
+    isearch_backward
+  end
+
 
 private
   # Util function used by public functions

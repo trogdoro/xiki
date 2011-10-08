@@ -240,6 +240,7 @@ class Git
   end
 
   def self.git_diff_one_file
+
     repos = self.git_path   # Get root of repos
     relative = View.file.sub(/^#{repos}/, '')   # Split off root from relative path
     relative.sub! /^\//, ''
@@ -261,7 +262,7 @@ class Git
 
     # Insert codetree
     CodeTree.display_menu(
-      "- Git.menu/\n  - project - #{repos}\n    - .diff/\n      - #{relative}",
+      "- Git.menu/\n  - project - #{repos}\n    - .diff #{Line.number}/\n      - #{relative}",
       :no_search=>true
       )
   end
@@ -431,20 +432,43 @@ class Git
   def self.diff *args
     # Parse args
     expand = args.shift if args.first.is_a? Symbol   # Pull out :expand if 2nd arg
+    line_number = args.shift if args.first.is_a? Fixnum   # Pull out :expand if 2nd arg
+
     project, file, line = args
     dir = self.extract_dir project
 
-    if self.git?(dir)
+    result = if self.git?(dir)
       self.git_diff expand, dir, file, line
     else
       self.svn_diff expand, dir, file, line
     end
+
+    return nil if line
+
+    last = 0
+    if line_number
+      target_line, target_boundary = 0, 0
+      result.split("\n").each_with_index do |o, i|
+        target_line += 1 if o =~ /^\|[+ ]/
+        match = o[/^\|@@ .+\+(\d+)/, 1]
+        if target_line >= line_number
+          break
+        end
+        if match
+          target_boundary = target_line = match.to_i
+          last = i
+        end
+      end
+      last += 2
+      last += (target_line - target_boundary)
+    end
+
+    View.under(result, :line_found=>last)
+    nil
   end
 
   def self.git_diff expand, dir, file, line
-
     self.git_diff_or_diff_unadded false, expand, dir, file, line
-
   end
 
   def self.git_diff_or_diff_unadded is_unadded, expand, dir, file, line
@@ -457,8 +481,7 @@ class Git
       untracked = hash[:untracked].map{|i| i[1]}
       untracked.map!{|i| "+ untracked#{is_unadded ? '' : ' (ignore)'}: #{i}\n"}
 
-      option = is_unadded ? "- action: .add\n" : "- action: .commit \"message\"\n"
-
+      option = is_unadded ? "- .add\n" : "- .commit \"message\"\n"
       if expand   # If showing diffs right away
         txt = Git.diff_internal "git diff --patience --relative #{self.git_diff_options}#{is_unadded ? '' : ' HEAD'}", dir
 
@@ -494,8 +517,7 @@ class Git
       end
       txt << untracked.join("")
       txt = "- Warning: nothing to show" if ! txt.any?
-
-      return CodeTree.no_search_option + option + txt + "- .add\n- .delete\n- revert: .checkout\n"
+      return option + txt + "- .add\n- .delete\n- revert: .checkout\n"
     end
 
     if line.nil?   # If no line passed, re-do diff for 1 file
@@ -510,7 +532,7 @@ class Git
       self.clean! txt
       txt.gsub!(/^ ?diff .+\n/, '')
       txt.gsub!(/^/, '|')
-      return puts(txt)
+      return txt
     end
 
     # If line passed, jump to it

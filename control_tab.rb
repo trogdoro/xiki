@@ -28,7 +28,7 @@ class ControlTab
     if prefix == :u   # If U prefix (must be first alt-tab in sequence)
       # Go to last edited file, and store list
       @@edited = elvar.editedhistory_history.to_a
-      @@edited -= View.list_files
+      @@edited -= View.files :visible=>1   # Exclude currently visible files
       find_file @@edited.shift
 
       return
@@ -50,8 +50,10 @@ class ControlTab
         @@consider_test = lambda{|b| ! buffer_file_name(b) && ! buffer_name(b)[/Minibuf/]}
       when 1   # Only files
         @@consider_test = lambda{|b| buffer_file_name(b)}
+        #       when 3   # ...css
+        #         @@consider_test = lambda{|b| buffer_name(b) =~ /\.(css|sass)/}
       when 3   # ...css
-        @@consider_test = lambda{|b| buffer_name(b) =~ /\.(css|sass)/}
+        @@consider_test = lambda{|b| buffer_name(b) =~ /^#/}
       when 4   # Consoles
         @@consider_test = lambda{|b| buffer_name(b) =~ /^(\*console|\*merb) /i}
       when 5   # haml.html files

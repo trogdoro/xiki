@@ -183,7 +183,7 @@ class Console
   end
 
   def self.do_last_command
-    Code.open_log_view if Keys.prefix_u
+    #     Code.open_log_view if Keys.prefix_u
 
     orig = View.index
 
@@ -362,7 +362,10 @@ class Console
   end
 
   def self.commands
-    $el.elvar.comint_input_ring.to_s.scan(/#\("(.+?)"/).flatten
+    matches = $el.elvar.comint_input_ring.to_s.scan(/#\("(.+?)" /).flatten
+
+    matches.map!{|o| o.gsub '\\"', '"'}
+    matches
   end
 
   def self.custom_history

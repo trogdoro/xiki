@@ -42,8 +42,8 @@ class CodeTree
       returned.map{|l| "#{l =~ /\/$/ ? '+' : '-'} #{l}\n"}.join('')
     elsif returned.is_a? Hash
       (returned.map{|k, v| v =~ /\/$/ ? "+ #{k}: #{v}" : "- #{k}: #{v}"}.join("\n")) + "\n"
-    else
-      "#{returned.strip}\n"
+    else returned.is_a? Fixnum
+      "#{returned.to_s.strip}\n"
     end
   end
 
@@ -116,7 +116,7 @@ class CodeTree
         Tree.search(:left=>left, :right=>right, :recursive=>true)
       elsif options[:quote_search]   # If they want to do a tree search
         goto_char left
-        Search.forward "^ +\\(|\\|- ##\\)"
+        Search.forward "|"
         Move.to_line_text_beginning
         Tree.search(:left=>left, :right=>right, :recursive_quotes=>true)
 

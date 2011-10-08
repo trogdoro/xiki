@@ -1,7 +1,7 @@
-require 'line'
 require 'effects'
 require 'ruby_console'
 gem 'httparty'; require 'httparty'
+gem 'activesupport'; require 'active_support/ordered_hash'
 
 class LineLauncher
   extend ElMixin
@@ -18,51 +18,30 @@ class LineLauncher
   @@just_show = false
   # @@just_show = true
 
-  @@launchers = []
-  @@launchers_regexes = {}   # Only tracks whether we've added it yet
+  @@launchers = ActiveSupport::OrderedHash.new
   @@launchers_procs = []
-  @@paren_launchers = {}
-  @@label_launchers = {}
-
-  def self.launchers; @@launchers; end
-
-  def self.add_paren match, block
-    @@paren_launchers[match] = block
-  end
-  def self.add_label match, block
-    @@label_launchers[match] = block
-  end
+  @@launchers_parens = {}
+  @@launchers_labels = {}
+  @@launchers_paths = {}
 
   def self.add arg, &block
-    # If regex, add
-    if arg.class == Regexp
-      self.add_regex arg, block
+    if arg.is_a? Regexp   # If regex, add
+      @@launchers[arg] = block
 
-    # If hash, must be paren
-    elsif arg.class == Hash
-      if arg[:paren]
-        self.add_paren(arg[:paren], block)
-      elsif arg[:label]
-        self.add_label(arg[:label], block)
-      end
-    # If proc, add to procs
-    elsif arg.class == Proc
+    elsif arg.is_a? Hash   # If hash, must be paren
+      (arg[:paren] ? @@launchers_parens : @@launchers_labels)[arg[:paren] || arg[:label]] = block
+    elsif arg.is_a? Proc   # If proc, add to procs
       @@launchers_procs << [arg, block]
-    end
-  end
-
-  def self.add_regex regex, block
-    if @@launchers_regexes[regex]  # If already there, add at at begining
-      @@launchers.unshift [regex, block]
-    else  # If not there yet, add
-      @@launchers << [regex, block]
-      @@launchers_regexes[regex] = true
+    elsif arg.is_a? String
+      @@launchers_paths[arg] = block
+    else
+      raise "Don't know how to launch this"
     end
   end
 
   def self.launch_or_hide options={}
     # If no prefixes and children exist, delete under
-    if ! Keys.prefix and ! Line.blank? and CodeTree.children? and ! Line.matches(/^ *\|/)
+    if ! Keys.prefix and ! Line.blank? and CodeTree.children? # and ! Line.matches(/^ *\|/)
       Tree.minus_to_plus
       Tree.kill_under
       return
@@ -74,7 +53,6 @@ class LineLauncher
 
   # Call the appropriate launcher if we find one, passing it line
   def self.launch options={}
-
     Tree.plus_to_minus
 
     Effects.blink(:what=>:line) if options[:blink]
@@ -99,17 +77,17 @@ class LineLauncher
       line = $1
     end
 
-    if paren && @@paren_launchers[paren]   # If try each potential paren match
+    if paren && @@launchers_parens[paren]   # If try each potential paren match
       if @@just_show
         Ol << paren
       else
-        @@paren_launchers[paren].call
+        @@launchers_parens[paren].call
       end
       return $xiki_no_search = false
     end
 
-    @@launchers.each do |launcher|   # Try each potential regex match
-      regex, block = launcher
+
+    @@launchers.each do |regex, block|   # Try each potential regex match
       # If we found a match, launch it
       if line =~ regex
 
@@ -127,7 +105,7 @@ class LineLauncher
     end
 
     # Currently "- google:" is the only one
-    @@label_launchers.each do |launcher|   # Try each potential label match
+    @@launchers_labels.each do |launcher|   # Try each potential label match
       regex, block = launcher
       # If we found a match, launch it
       if label =~ regex
@@ -142,16 +120,15 @@ class LineLauncher
       end
     end
 
-    # If current line is indented and not passed recursively yet
+    # If current line is indented and not passed recursively yet, try again, passing tree
     if Line.value =~ /^ / && ! options[:line]
-
       Tree.plus_to_minus
 
       # merge together (spaces if no slashes) and pass that to launch
       list = Tree.construct_path(:list=>true)   # Get path to pass to procs, to help them decide
       found = list.index{|o| o =~ /^@/} and list = list[found..-1]   # Remove before @... node if any
 
-      merged = list.join ''
+      merged = list.map{|o| o.sub /\/$/, ''}.join('/')
       return self.launch :line=>merged
     end
 
@@ -160,7 +137,6 @@ class LineLauncher
     end
 
     if @@just_show
-      Ol << "Nothing matched."
       return $xiki_no_search = false
     end
 
@@ -170,7 +146,54 @@ class LineLauncher
       return View.message "Don't know what to do with this line"
     end
 
-    FileTree.launch   # Default to FileTree
+    # See if it matches path launcher
+
+    # Grab thing to match
+    root = line[/^\w+/]
+    if block = @@launchers_paths[root]
+      output = block.call line
+      if output
+        if output !~ /\A *\|/
+          Line << "/" unless Line =~ /\/$/
+        end
+        output = output.unindent if output =~ /\A[ \n]/
+        View >> output
+      end
+      return
+    end
+
+    # Try to auto-complete based on path-launchers
+
+    if line =~ /^(\w+)(\.\.\.)?$/
+      stem = $1
+      matches = @@launchers_paths.keys.select do |possibility|
+        #       matches = (@@launchers_paths.keys + (@@launchers_classes||[])).select do |possibility|
+        possibility =~ /^#{stem}/
+      end
+      if matches.any?
+        if matches.length == 1
+          Line.sub! /^([ +-]*).*/, "\\1#{matches[0]}"
+          Launcher.launch
+          return
+        end
+        Line.sub! /\b$/, "..."
+
+        View >> matches.map{|o| "#{o}"}.join("\n")
+        return
+      end
+    end
+
+    if line =~ /^\w+\.\.\.\/(\w+)$/
+      Tree.to_parent
+      Tree.kill_under
+      Line.sub! /([ @+-]*).+/, "\\1#{$1}"
+      Launcher.launch
+      return
+    end
+
+    View.beep
+    Message << "No launcher matched!"
+
     $xiki_no_search = false
   end
 
@@ -195,14 +218,8 @@ class LineLauncher
   end
 
   def self.init_default_launchers
-    @@launchers = []
+    @@launchers = ActiveSupport::OrderedHash.new
     @@launchers_procs = []
-
-    # # TODO: why is this needed?!  -  be more specific?
-    #     self.add /^  +[+-]?\|/ do |line|  # | FileTree quoted text
-    # Ol << "!"
-    #       self.launch_by_proc
-    #     end
 
     self.add :paren=>"o" do  # - (t): Insert "Test"
       orig = Location.new
@@ -390,6 +407,7 @@ class LineLauncher
       Keys.prefix_u ? $el.browse_url(url) : Firefox.url(url)
     end
 
+
     self.add /^ *\$ / do   # $ run command in shell
       Console.launch_dollar
     end
@@ -420,6 +438,10 @@ class LineLauncher
       CodeTree.run line
     end
 
+    self.add(/^ *pp /) do |line|
+      CodeTree.run line
+    end
+
     self.add(/^ *puts /) do |line|
       CodeTree.run line
     end
@@ -439,6 +461,12 @@ class LineLauncher
     self.add :label=>/^google$/ do |line|  # - google:
       url = Line.without_label.sub(/^\s+/, '').gsub('"', '%22').gsub(':', '%3A').gsub(' ', '%20')
       browse_url "http://www.google.com/search?q=#{url}"
+    end
+
+    self.add "google" do |line|
+      url = line[/\/(.+)/, 1].sub(/^\s+/, '').gsub('"', '%22').gsub(':', '%3A').gsub(' ', '%20')
+      browse_url "http://www.google.com/search?q=#{url}"
+      nil
     end
 
     self.add(/^ *$/) do |line|  # Empty line: insert CodeTree menu
@@ -487,14 +515,47 @@ class LineLauncher
 
     # Menus
 
-    self.add /^db\/?$/ do
-      Line << "/" unless Line =~ /\/$/
-      #   Line.sub!(/^/, "- ") unless Line =~ /^- /
-      View.under "
-        - @riak/
-        - @mysql/
-        - @couchdb/
-        ".unindent
+    self.add "db" do |line|
+      "
+      - @riak/
+      - @mysql/
+      - @couchdb/
+      "
+    end
+
+    # Path launchers
+
+    Launcher.add "shopping" do
+      "- eggs/\n- bananas/\n- milk/\n"
+    end
+
+    Launcher.add "shapes" do |path|
+      "- circle/\n- square/\n- triangle/\n"
+    end
+
+    Launcher.add "tables" do |path|
+      args = path.split('/')[1..-1]
+      #       if path =~ /\/fields$/
+      #       return Mysql.run('homerun_dev', "desc #{table}"), :escape=>'| '
+      #       end
+      Mysql.tables(*args)
+    end
+
+    Launcher.add "rows" do |path|
+      args = path.split('/')[1..-1]
+      Mysql.tables(*args)
+    end
+
+    Launcher.add "columns" do |path|
+      args = path.split('/')[1..-1]
+      if args.size > 0
+        next Mysql.run('homerun_dev', "desc #{args[0]}").gsub!(/^/, '| ')
+      end
+      Mysql.tables(*args)
+    end
+
+    Launcher.add "technologies" do
+      "- TODO: pull out from $te"
     end
 
     # Trees
@@ -523,6 +584,7 @@ class LineLauncher
     LineLauncher.add condition_proc do |list|
       UrlTree.launch :path=>list
     end
+
 
   end
 
@@ -576,20 +638,74 @@ class LineLauncher
   end
 
   def self.enter_last_launched
+    CodeTree.insert_menu self.last_launched_menu
+  end
+
+  def self.last_launched_menu
     bm = Keys.input(:timed => true, :prompt => "bookmark to show launches for (* for all): ")
 
-    if bm == "8" || bm == " "
-      CodeTree.insert_menu("- Search.launched/")
-    else
-      CodeTree.insert_menu("- Search.launched '$#{bm}'/")
-    end
+    menu =
+      if bm == "8" || bm == " "
+        "- Search.launched/"
+      elsif bm == "."
+        "- Search.launched '#{View.file}'/"
+      elsif bm == "3"
+        "- Search.launched '#'/"
+      elsif bm == ";" || bm == ":" || bm == "-"
+        "- Search.launched ':'/"
+      else
+        "- Search.launched '$#{bm}'/"
+      end
   end
+
 
   def self.do_as_launched
     txt = "- #{View.file_name}\n    | #{Line.value}"
     txt.sub!("| ", "- #{Keys.input(:prompt => "enter label: ")}: | ") if Keys.prefix_u
     Search.append_log "#{View.dir}/", txt
   end
+
+  def self.invoke clazz, path
+    camel = TextUtil.camel_case clazz
+    clazz = $el.el4r_ruby_eval(camel) rescue nil
+
+    raise "No class '#{clazz}' found in launcher" if clazz.nil?
+
+    args = path.split "/"
+    args.shift
+
+    # If no args yet, pass in empty list
+    # if clazz.method("menu").arity != 1
+    args = args.map{|o| "\"#{o}\""}.join(", ")
+
+    code = "#{camel}.menu #{args}"
+    returned, out, exception = Code.eval code
+    output = returned
+    output = output.unindent if output =~ /\A[ \n]/
+
+    if exception
+      backtrace = exception.backtrace[0..8].join("\n").gsub(/^/, '  ') + "\n"
+      return "- error: #{exception.message}\n- backtrace:\n#{backtrace}"
+    end
+
+    output
+  end
+
+  def self.add_class_launchers classes
+    classes.each do |clazz|
+      next if clazz =~ /\//
+
+      # Why is this line causing an error??
+      #       clazz = $el.el4r_ruby_eval(TextUtil.camel_case clazz) rescue nil
+      #       method = clazz.method(:menu) rescue nil
+      #       next if method.nil?
+
+      LineLauncher.add clazz do |path|
+        Launcher.invoke clazz, path
+      end
+    end
+  end
+
 end
 
 Launcher = LineLauncher   # Temporary alias until we rename it

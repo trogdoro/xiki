@@ -258,7 +258,7 @@ class FileTree
 
     # dir/
     Styles.define :ls_dir,
-      :fg => "808080",
+    :fg => "888888",
       :face => "verdana",
       :size => "-2",
       :bold => true
@@ -318,10 +318,14 @@ class FileTree
     Styles.apply("^ +\\(|@@ .*\n\\)", nil, :diff_line_number)
 
     # Dir line
-    #Styles.apply('^\\([A-Za-z]\\)$', nil, :ls_dir)  # Most dirs
-    #Styles.apply("\\([A-Za-z][^:\n]+/\\)$", nil, :ls_dir)  # Most dirs
+    # Remove later?
+    Styles.apply("^[ +-]*\\([^|\n]+/\\)$", nil, :ls_dir)  # slash at end
 
-    Styles.apply("^[ +-]*\\([^|\n]+/\\)$", nil, :ls_dir)  # Most dirs
+    Styles.apply("^[ @+-]*\\(\\w+\/\\)", nil, :ls_dir)  # one word and slash
+    Styles.apply("^[ @+-]*\\(\\w+\/.+\/\\)", nil, :ls_dir)  # one word, path, and slash
+
+    Styles.apply("^[ \t]*[+-] [a-zA-Z0-9_,? ().:-]+?: \\(\\w+\/\\)", nil, :ls_dir)   # Dirs with labels
+    Styles.apply("^[ \t]*[+-] [a-zA-Z0-9_,? ().:-]+?: \\(\\w+\/.+\/\\)", nil, :ls_dir)   # Dirs with labels
 
     # Bullets
     Styles.apply("^[ \t]*[+-] [a-zA-Z0-9_,? ().:-]+?: \\(.+/\\)$", nil, :ls_dir)   # Dirs with labels
@@ -892,7 +896,7 @@ class FileTree
     # Get matches from file
     matches = ""
     indent_more = options[:path] ? '' : '  '
-    if path =~ /@/   # If remote dir
+    if path =~ /^\/\w+@/
       contents = Remote.file_contents path
       Tree.under contents
       return
@@ -902,7 +906,6 @@ class FileTree
     current_line = options[:current_line] + 1 if options[:current_line]
 
     line_found = nil
-    #     current_outline_line = 0
     matches_count = 0
     i = 0
 
@@ -1023,7 +1026,7 @@ class FileTree
 
   # Returns a regexp to match the acronym
   def self.is_remote? path
-    return path =~ /@/
+    return path =~ /^\/\w+@/
   end
 
   # Returns the files in the dir
@@ -1440,7 +1443,7 @@ class FileTree
   def self.to_outline
     current_line = Line.number
 
-    paths = [buffer_file_name(buffer_list[0])]
+    paths = View.file
     View.to_buffer("*tree outline")
     View.clear;  notes_mode
     View.insert FileTree.paths_to_tree(paths)

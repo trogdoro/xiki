@@ -83,7 +83,7 @@ class KeyBindings
     Keys.open_just { Files.open_just }
     Keys.open_key { Keys.jump_to_code }   # jump to ruby code of key definition *
     Keys.open_list_appointments { View.bar; CodeTree.display_menu("- Agenda.menu/") }
-    Keys.open_list_bookmarks { CodeTree.display_menu("- Bookmarks.tree/") }
+    Keys.open_list_bookmarks { CodeTree.display_menu("- Bookmarks.list/") }
     #     Keys.open_last_error { Code.show_el4r_error }
     Keys.open_list_faces { list_faces_display }
     Keys.open_lisp_info { info("elisp") }   # Open manual
@@ -146,7 +146,7 @@ class KeyBindings
     Keys.enter_as_variable { insert "\#{#{Clipboard.get(0)}}" }
     Keys.enter_bullet { Notes.bullet }
     Keys.enter_clipboard { Clipboard.paste("0") }   # paste **
-    Keys.enter_difflog { App.enter_from_difflog }   # Save point and go to difflog to search
+    Keys.enter_difflog { DiffLog.enter_from_difflog }   # Save point and go to difflog to search
     # E: defined above - mapped to what C-e does by default
     Keys.enter_file_path { Files.enter_file }   # Given a bookmark
     Keys.enter_firefox_tabs { CodeTree.insert_menu('- Firefox.tabs/') }   # Given a bookmark
@@ -154,12 +154,12 @@ class KeyBindings
     #     Keys.enter_have { Console.insert_command }
     #Keys.EH { FileTree.enter_lines(/^\| /) }
     Keys.enter_insert_1 { Notes.enter_do_bullet }    # insert date string (and time if C-u)
-    Keys.enter_insert_date { App.enter_date }    # insert date string (and time if C-u)
+    Keys.enter_insert_date { View.enter_date }    # insert date string (and time if C-u)
     Keys.enter_insert_command { insert("- (/): "); ControlLock.disable }    # insert date string (and time if C-u)
     Keys.enter_insert_log { Code.enter_log_line }   # Enter Old: enter newly-deleted from last save
     Keys.enter_insert_new { DiffLog.enter_new }   # Enter Old: enter newly-deleted from last save
     Keys.enter_insert_ruby { code = Keys.input(:prompt=>"Enter ruby code to eval and insert results: "); View.insert(eval(code).to_s)}
-    Keys.enter_insert_search {View.insert(Line.matches(/^ *- $/) ? "google: " : "- google: ")}
+    Keys.enter_insert_search {View.insert(Line.matches(/^ *- $/) ? "google/" : "- google/")}
 
     Keys.enter_insert_old { DiffLog.enter_old }   # Enter Old: enter newly-deleted from last save
 
@@ -300,7 +300,7 @@ class KeyBindings
     Keys.do_number_increment { Incrementer.increment }
     Keys.do_next_paragraph { Code.do_next_paragraph }   # Move line to start of next paragraph
     Keys.do_number_start { Incrementer.start }
-    Keys.do_outline { History.open_current :outline => true, :prompt_for_bookmark => true }
+    Keys.do_outline { History.open_current :outline=>true, :prompt_for_bookmark=>true }
     Keys.do_push { Git.code_tree_diff }   # Commit to repos, push, etc
     Keys.do_query { Search.query_replace }   # do query replace *
     Keys.do_run { Code.run }   # run code as ruby *
@@ -534,7 +534,7 @@ class KeyBindings
     define_key(:isearch_mode_map, kbd("C-'")) { Search.isearch_just_surround_with_char '"' }
     define_key(:isearch_mode_map, kbd("C-j C-'")) { Search.isearch_just_surround_with_char "'" }
 
-    define_key(:isearch_mode_map, kbd("C-j C-,")) { Search.isearch_just_surround_with_char "~" }
+    define_key(:isearch_mode_map, kbd("C-j C-,")) { Search.isearch_just_surround_with_char "<", ">" }
 
     define_key(:isearch_mode_map, kbd("C-j C-SPC")) { Search.isearch_just_surround_with_char " " }
 
@@ -572,7 +572,7 @@ class KeyBindings
     #     define_key(:isearch_mode_map, kbd("C-9")) { Search.isearch_or_copy("9") }
 
     define_key(:isearch_mode_map, kbd("C-=")) { $el.isearch_yank_char }   # Add one char from isearch
-    define_key(:isearch_mode_map, kbd("C--")) { $el.isearch_del_char }   # Remove one char from isearch
+    define_key(:isearch_mode_map, kbd("C--")) { Search.subtract_or_last_launched }   # Remove one char from isearch
     define_key(:isearch_mode_map, kbd("C-/")) { $el.isearch_delete_char }   # Remove last action from search results
     define_key(:isearch_mode_map, kbd("C-,")) { Search.isearch_query_replace }   # Replace all occurrences
 

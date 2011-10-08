@@ -13,7 +13,7 @@ class Agenda
 
     # If no line, display all of them
     if line.nil?
-      return IO.read(t).grep(/^\| \d\d\d\d-\d\d-\d\d/).sort.reverse.join("").gsub(/^\| /, '- ')
+      return IO.read(t).grep(/^\| \d\d\d\d-\d\d-\d\d/).sort.join("").gsub(/^\| /, '- ')
     end
 
     line = Line.value

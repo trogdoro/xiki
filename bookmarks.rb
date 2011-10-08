@@ -261,7 +261,7 @@ class Bookmarks
         item = bm.to_a
         [item[0], item[1].to_a[0][1]]
       }
-      all.sort.each do |l|
+      all.each do |l|
         n, p = l
         puts "- #{n}: #{p.sub(/\/$/,'')}"
         #         puts "- #{n.ljust(7)} #{p.sub(/\/$/,'')}"

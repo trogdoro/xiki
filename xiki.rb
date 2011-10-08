@@ -15,6 +15,7 @@ classes = classes.select{|i| i !~ /xiki.rb$/}   # Remove self
 classes = classes.select{|i| i !~ /key_bindings.rb$/}   # Remove key_bindings
 classes = classes.select{|i| i !~ /tests\//}   # Remove tests
 classes = classes.select{|i| i !~ /spec\//}   # Remove tests
+classes = classes.select{|i| i !~ /__/}   # Remove __....rb files
 
 classes.map!{|i| i.sub(/\.rb$/, '')}.sort!
 
@@ -24,6 +25,8 @@ Requirer.safe_require classes
 # key_bindings has many dependencies, require it last
 Requirer.safe_require ['key_bindings.rb']
 
+Launcher.add_class_launchers classes
+
 class Xiki
   def self.insert_menu
     # Implement
@@ -31,16 +34,18 @@ class Xiki
   end
 
   def self.open_menu
-    CodeTree.display_menu("- Xiki.menus/")
+    input = Keys.input(:timed => true, :prompt => "start typing a menu that might exist: ")
+    View.to_buffer "menu"
+    Notes.mode
+    View.kill_all
+    #     input = Keys.input(:timed => true, :prompt => "start typing a word you think there might be a menu for: ")
+    View << "#{input}\n"
+    View.to_highest
+    Launcher.launch
   end
 
   def self.menus
     CodeTree.menu
-
-    #     [
-    #       ".tests",
-    #       '.test Search, "should convert case correctly"',
-    #     ]
   end
 
   def self.menu
@@ -89,11 +94,4 @@ class Xiki
   def self.run_tests
     Console.run "rspec spec", :dir=>"$x"
   end
-
 end
-
-# unless RubyConsole[:x]
-# Ol.line
-#   RubyConsole.register(:x, "cd #{Bookmarks['$x']}; irb -r 'spec'")
-#   #   RubyConsole[:x].run("gem 'rspec'; require 'spec'\n")
-# end

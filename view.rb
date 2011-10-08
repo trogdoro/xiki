@@ -197,11 +197,15 @@ class View
     self.list.map{|v| buffer_name(window_buffer(v))}
   end
 
-  def self.list_files
-    View.window_list.
-      map {|b| window_buffer b}.
-      collect {|u| buffer_file_name u}.
-      select {|f| f}
+  def self.files options={}
+    if options[:visible]
+      return self.window_list.
+        map {|b| window_buffer b}.
+        collect {|u| buffer_file_name u}.
+        select {|f| f}
+    end
+
+    Buffers.list.map { |b| $el.buffer_file_name(b) }.select{|path| path}
   end
 
   # Move to nth window
@@ -719,6 +723,10 @@ class View
     Move.to_line n
   end
 
+  def self.line= n=nil
+    self.to_line n
+  end
+
   def self.to_line_with_prefix first=""
     line = "#{first}#{Keys.input(:prompt=>"goto line: #{first}")}"
     View.to_line line
@@ -1057,6 +1065,9 @@ class View
     View.layout_todo :no_blink=>true
     todo_orig = Location.new
     View.to_highest
+
+    View.line = prefix if prefix.is_a? Fixnum
+
     line = Line.value
     Line.delete if prefix == :u
 
@@ -1077,7 +1088,7 @@ class View
   def self.under txt, options={}
     options[:escape] = '' if options[:escape].nil?
     txt = CodeTree.returned_to_s txt
-    Tree.under txt, options.merge(:escape=>'')
+    Tree.under txt, options# .merge(:escape=>'')
   end
 
   def a
@@ -1089,7 +1100,13 @@ class View
   end
 
   def self.>> txt
-    Tree.under txt
+    View.under txt
+  end
+
+  def self.enter_date
+    insert elvar.current_prefix_arg ?
+      Time.now.strftime("%Y-%m-%d %I:%M%p").sub(' 0', ' ') :
+      Time.now.strftime("%Y-%m-%d")
   end
 
 end

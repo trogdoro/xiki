@@ -1,11 +1,11 @@
 class Buffers
 
   def self.menu buffer=nil
-    puts "
-      - .tree 20/
-      - .current/
-      - .search 'foo'/
-      "
+    "
+    - .tree 20/
+    - .current/
+    - .search 'foo'/
+    "
   end
 
 
@@ -19,6 +19,7 @@ class Buffers
         #       when 1:  return list.select{ |b| ! $el.buffer_file_name(b) && $el.buffer_name(b) =~ /!$/ }.map{ |b| $el.buffer_name(b) }
         #       when 1:  return names_array
       when 1:  return list.select{ |b| $el.buffer_file_name(b) }.map{ |b| $el.buffer_name(b) }[1..-1]
+      when 3:  return list.select{ |b| ! $el.buffer_file_name(b) && $el.buffer_name(b) =~ /^#/ }.map{ |b| $el.buffer_name(b) }
       when 4:  return list.select{ |b| ! $el.buffer_file_name(b) && $el.buffer_name(b) =~ /^\*console / }.map{ |b| $el.buffer_name(b) }
       when 8:  return list.map{ |b| $el.buffer_name(b) }
       when :u:  return list.select{ |b| ! $el.buffer_file_name(b) && $el.buffer_name(b) =~ /!$/ }.map{ |b| $el.buffer_name(b) }
@@ -32,10 +33,6 @@ class Buffers
     View.to_buffer(buffer)
   end
 
-  def self.viewing_array
-    self.list.map { |b| $el.buffer_file_name(b) }.select{|path| path}
-  end
-
   def self.names_array
     self.list.map { |b| $el.buffer_name(b) }.to_a
   end
@@ -46,7 +43,7 @@ class Buffers
 
   def self.tree times=0, options={}
     times ||= History.prefix_times
-    paths = viewing_array[0..(times-1)]
+    paths = View.files[0..(times-1)]
     if options[:dir]
       paths = paths.grep(Regexp.new(Regexp.escape(options[:dir])))
     end

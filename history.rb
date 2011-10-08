@@ -1,6 +1,11 @@
 class History
   extend ElMixin
 
+  FILENAME = File.expand_path "~/.emacs.d/path_log.notes"
+  def self.menu
+    File.read FILENAME
+  end
+
   def self.prefix_times
     prefix = Keys.prefix
     prefix ||= 20
@@ -16,9 +21,15 @@ class History
       bm = Keys.input(:timed => true, :prompt => "Enter bookmark to show outline for: ")
       path = Bookmarks.expand(bm, :just_bookmark => true)
       path = File.expand_path(path)
+
+      if ! options[:all] && View.files.member?(path)
+        View.open path
+        FileTree.to_outline
+        return
+      end
+
       paths = [path]
     elsif options[:outline] || options[:all]
-
       paths = [buffer_file_name(buffer_list[0])]
     else  # No options passed
       times = Keys.prefix
@@ -234,6 +245,7 @@ class History
       "| Alert\n- ~No Differences~\n"
 
   end
+
 
 end
 History.setup_editedhistory

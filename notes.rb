@@ -415,17 +415,14 @@ class Notes
   def self.init
     defun(:notes_mouse_meta_click, :interactive => "e") do |e|
       mouse_set_point(e)
-
       View.insert "hey"
     end
 
     defun(:notes_mouse_double_click, :interactive => "e") do |e|
-      #       if Line.matches(/\/$/)   # If dir, toggle
-      LineLauncher.launch(:blink=>true)
+      LineLauncher.launch_or_hide(:blink=>true)
     end
 
     defun(:notes_mouse_toggle, :interactive => "e") do |e|
-      #LineLauncher.launch_or_hide(:blink=>true)
       mouse_set_point(e)
       Notes.mouse_toggle
     end
@@ -443,9 +440,6 @@ class Notes
         (add-to-list 'auto-mode-alist '("\\\\.xik\\\\'" . notes-mode))
         (add-to-list 'auto-mode-alist '("\\\\.wik\\\\'" . notes-mode)))
       >
-
-  #    el4r_lisp_eval %q[(add-to-list 'auto-mode-alist '("\\\\.notes\\\\'" . notes-mode))]
-  #    el4r_lisp_eval %q[(add-to-list 'auto-mode-alist '("\\\\.\\\\'" . notes-mode))]
   end
 
   def self.mode

@@ -126,17 +126,15 @@ class Search
 
     if match.nil?   # If nothing searched for yet, do search_edits
       bm = Keys.input :timed=>true, :prompt=>"Enter a bookmark to search edits: "
-      path = bm == "." ?
-        View.file :
-        "$#{bm}"
-        #         Bookmarks.expand("$#{bm}")
 
-      CodeTree.display_menu("- DiffLog.diffs \"#{path}\"/")
+      return CodeTree.display_menu("- DiffLog.diffs/") if bm == "8" || bm == " "
 
-    else
-      View.delete(Search.left, Search.right)
-      View.insert txt
+      path = bm == "." ? View.file : "$#{bm}"
+      return CodeTree.display_menu("- DiffLog.diffs \"#{path}\"/")
     end
+
+    View.delete(Search.left, Search.right)
+    View.insert txt
 
   end
 
@@ -385,11 +383,6 @@ class Search
   def self.search_in_bookmark match
     bm = Keys.bookmark_as_path :include_file=>1
 
-    if bm == :space   # If space, search in buffers
-      self.find_in_buffers match
-      return
-    end
-
     if bm == :slash   # If space, go back to root and search
       # Make match be orange
       Overlay.face(:ls_search, :left=>self.left, :right=>self.right)
@@ -398,6 +391,12 @@ class Search
     end
 
     View.to_after_bar if View.in_bar?
+
+    if bm == :space   # If space, search in buffers
+      self.find_in_buffers match
+      return
+    end
+
     match.gsub!(/([#()])/, "\\\\\\1")
 
     # Search in bookmark
@@ -424,32 +423,51 @@ class Search
     Firefox.run "$('#timers').val(\"#{input}\")", :tab=>0
   end
 
+  def self.subtract_or_last_launched
+    match = self.match
+
+    if match   # If currently searching
+      return $el.isearch_del_char
+    end
+
+    self.stop
+
+    self.search_last_launched
+
+  end
+
   def self.search_last_launched
     match = self.stop
 
-    bm = Keys.input(:timed => true, :prompt => "bookmark to show launches for (* for all): ")
-
-    if bm == "8" || bm == " "
-      CodeTree.display_menu("- Search.launched/")
-    else
-      CodeTree.display_menu("- Search.launched '$#{bm}'/")
-    end
+    CodeTree.display_menu Launcher.last_launched_menu
   end
 
   def self.launched bm=nil
-
     txt = File.read @@log
     txt = txt.sub(/\A- /, '').split(/^- /).reverse.uniq
+    if bm && bm == "#"
+      txt = txt.select{|o| o =~ /^  - ##/}
+    elsif bm && bm == ":"
+      txt = txt.select{|o| o =~ /^    - [^#].*: /}
+    elsif bm
 
-    if bm
-      dir = Bookmarks[bm]
-      dir = "#{dir}/" if dir !~ /\/$/
+      #       if bm == "."
+      #         path = View.file
+      #       else
+        path = Bookmarks[bm]
+      #       end
 
-      txt = txt.select{|o| o =~ /^#{Regexp.escape dir}/}
+      if File.file? path   # File
+        regex = /^#{Regexp.escape File.dirname path}\/\n  - #{Regexp.escape File.basename path}/
+      else   # Dir
+        regex = /^#{Regexp.escape path}/
+        path = "#{path}/" if path !~ /\/$/
+      end
+
+      txt = txt.select{|o| o =~ regex}
     end
 
     result = "#{CodeTree.quote_search_option}- #{txt.join("- ")}"
-
     return result
 
   end
@@ -1264,7 +1282,8 @@ class Search
       Search.isearch txt
       return
     end
-    elvar.search_ring.to_a.uniq
+    commands = elvar.search_ring.to_a.uniq
+    commands.map{|o| o =~ /\n/ ? o.inspect : o}
   end
 
 end

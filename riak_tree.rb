@@ -187,7 +187,7 @@ Keys.enter_list_riak do
 end
 
 Keys.enter_list_buckets do
-  CodeTree.insert_menu '- Riak.buckets/'
+  CodeTree.insert_menu '- buckets/'
 end
 
 Launcher.add(:paren=>'r') do
@@ -200,16 +200,18 @@ LineLauncher.add(:paren=>'rr') do   # Get raw json version
   Tree.under(Riak.get_hash(line, :raw=>true))
 end
 
-# Launcher.add(/^([+-] )?@?riak/) do |line|
-Launcher.add(/^riak/) do |line|
-  #   Line.gsub! /^riak$/, '- riak/'
-  Line.gsub! /^riak$/, 'riak/'
-  View.under Riak.buckets(*line.split('/')[1..-1])
+Launcher.add("riak") do |path|
+  "
+  - @buckets/
+  "
 end
 
+Launcher.add "buckets" do |path|
+  args = path.split('/')[1..-1]
+  Riak.buckets(*args)
+end
 
 Keys.open_riak_log { CodeTree.display_menu("- Riak.log/") }
 Keys.enter_as_riak { CodeTree.insert_menu("- Riak.log/") }
 
-CodeTree.add_menu "Riak"
-# CodeTree::menus << "Riak"   # Force it, since we're a module
+CodeTree.add_menu "Riak"   # Force it, since we're a module

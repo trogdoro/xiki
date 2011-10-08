@@ -21,6 +21,7 @@ class Firefox
 
   def self.menu
     "
+    - js/
     - .dom/
     - .tabs/
     - .reload
@@ -483,8 +484,13 @@ Launcher.add(/^#.+/) do |line|
   LineLauncher.launch
 end
 
-Launcher.add(/^([+-] )?firefox/) do |line|
-  #   Line.gsub! /^firefox$/, '- firefox/'
-  Line.gsub! /^firefox$/, 'firefox/'
-  View.under Firefox.dom(*line.split('/')[1..-1])
+Launcher.add "dom" do |line|
+  Firefox.dom(*line.split('/')[1..-1])
 end
+
+Launcher.add "js" do |line|
+  line.sub! /^js\/?/, ''
+  Firefox.run(line)
+  nil
+end
+
