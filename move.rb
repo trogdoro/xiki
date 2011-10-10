@@ -213,7 +213,7 @@ class Move
   end
 
   def self.to_quote
-    prefix = Keys.prefix
+    prefix = Keys.prefix :clear=>true
     if prefix.nil?
       times = 1
       Keys.clear_prefix
@@ -222,7 +222,7 @@ class Move
       View.to_relative
     end
 
-    Keys.prefix_times.times do
+    times.times do
       Line.next if Line.matches(/^ *\|/)
       re_search_forward "^ +|"
       backward_char

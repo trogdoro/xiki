@@ -48,4 +48,8 @@ class Menu
     end
   end
 
+  def self.menu
+    "- TODO: loop through and show all - borrow autocomplete!"
+  end
+
 end

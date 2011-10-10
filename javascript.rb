@@ -36,7 +36,7 @@ class Javascript
       return
     end
 
-    View.insert "- (js): $(\"#{insert_this}\").blink()"
+    View.insert "- js/$(\"#{insert_this}\").blink()"
     Search.backward '"'
 
   end

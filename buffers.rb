@@ -63,6 +63,8 @@ class Buffers
     list.to_a.each do |b|  # Each buffer open
 
       file = $el.buffer_file_name(b)
+      #       file = $el.buffer_file_name(b) || "*#{View.name}"
+      Ol << "show buffers too - wasn't as simple as just removing, because of filename indenting!"
 
       next unless file
       next if file =~ /_ol.notes/

@@ -116,8 +116,12 @@ module Riak
   end
 
   def self.get_hash path, options={}
+    begin
+      response = HTTParty.get("#{RIAK_URL}/#{options[:root]||'riak'}/#{path}")
+    rescue Exception=>e
+      raise "Riak not running?"
+    end
 
-    response = HTTParty.get("#{RIAK_URL}/#{options[:root]||'riak'}/#{path}")
     return response.code if response.code.to_s !~ /^2/
     if options[:raw]
       response.body

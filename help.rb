@@ -8,11 +8,11 @@ class Help
   >
 
   def self.menu
-    puts "
-      + .keys/
-      + .docs/
-      + .classes/
-      "
+    "
+    + .keys/
+    + .docs/
+    + .classes/
+    "
   end
 
   def self.keys type=nil, prefix=nil, command=nil

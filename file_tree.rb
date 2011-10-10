@@ -317,12 +317,13 @@ class FileTree
     Styles.apply("^ +\\(|\-.*\\)", nil, :diff_red)
     Styles.apply("^ +\\(|@@ .*\n\\)", nil, :diff_line_number)
 
-    # Dir line
+    # Path-like lines and parts of lines (make gray)
+
     # Remove later?
     Styles.apply("^[ +-]*\\([^|\n]+/\\)$", nil, :ls_dir)  # slash at end
 
-    Styles.apply("^[ @+-]*\\(\\w+\/\\)", nil, :ls_dir)  # one word and slash
-    Styles.apply("^[ @+-]*\\(\\w+\/.+\/\\)", nil, :ls_dir)  # one word, path, and slash
+    Styles.apply("^[ +-]*\\([.@a-zA-Z0-9 ]+\/\\)", nil, :ls_dir)  # one word and slash
+    Styles.apply("^[ +-]*\\([.@a-zA-Z0-9 ]+\/[.@a-zA-Z0-9 ]+\/\\)", nil, :ls_dir)  # one word, path, and slash
 
     Styles.apply("^[ \t]*[+-] [a-zA-Z0-9_,? ().:-]+?: \\(\\w+\/\\)", nil, :ls_dir)   # Dirs with labels
     Styles.apply("^[ \t]*[+-] [a-zA-Z0-9_,? ().:-]+?: \\(\\w+\/.+\/\\)", nil, :ls_dir)   # Dirs with labels
@@ -426,7 +427,7 @@ class FileTree
 
     column = View.column
     if search_string
-      column -= Line.value[/^.*?\|./].length
+      column -= (Line.value[/^.*?\|./] || '').length
       column = 0 if column < 0
     end
 

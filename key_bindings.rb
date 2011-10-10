@@ -178,9 +178,11 @@ class KeyBindings
     Keys.enter_list_databases { CodeTree.insert_menu('- CouchDb.databases/') }
     Keys.enter_log_javascript { Firefox.enter_log_javascript_line }
     Keys.enter_log_stack { Code.enter_log_stack }
-    Keys.enter_last_launched { Launcher.enter_last_launched }
+    Keys.enter_last_log { CodeTree.insert_menu(Keys.prefix_u ? "- log/" : "- last/") }
+    #     Keys.enter_last_launched { Launcher.enter_last_launched }
     Keys.enter_log_time { Code.enter_log_time }
-    Keys.enter_last_urls { CodeTree.insert_menu("- Launcher.urls/") }
+    Keys.enter_last_urls { CodeTree.insert_menu "- last/urls/" }
+    #     Keys.enter_last_urls { CodeTree.insert_menu("- Launcher.urls/") }
 
     Keys.enter_menu { Xiki.insert_menu }   # Redundant with C-enter on blank line
     #     Keys.enter_menu { CodeTree.insert_menus }   # Redundant with C-enter on blank line

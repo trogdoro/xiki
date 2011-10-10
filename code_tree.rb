@@ -202,7 +202,8 @@ class CodeTree
   def self.insert_menu txt
     View.insert txt
     $el.open_line(1)
-    CodeTree.launch
+    Launcher.launch
+    #     CodeTree.launch
   end
 
   # Determine whether we should handle it

@@ -13,6 +13,8 @@ class LineLauncher
     "*console app",
     ]
 
+  @@log = File.expand_path("~/.emacs.d/path_log.notes")
+
   # Set this to true to just see which launcher applied.
   # Look in /tmp/output.notes
   @@just_show = false
@@ -21,15 +23,18 @@ class LineLauncher
   @@launchers = ActiveSupport::OrderedHash.new
   @@launchers_procs = []
   @@launchers_parens = {}
-  @@launchers_labels = {}
   @@launchers_paths = {}
+
+  def self.log
+    @@log
+  end
 
   def self.add arg, &block
     if arg.is_a? Regexp   # If regex, add
       @@launchers[arg] = block
 
     elsif arg.is_a? Hash   # If hash, must be paren
-      (arg[:paren] ? @@launchers_parens : @@launchers_labels)[arg[:paren] || arg[:label]] = block
+      (@@launchers_parens)[arg[:paren]] = block
     elsif arg.is_a? Proc   # If proc, add to procs
       @@launchers_procs << [arg, block]
     elsif arg.is_a? String
@@ -57,6 +62,7 @@ class LineLauncher
 
     Effects.blink(:what=>:line) if options[:blink]
     line = options[:line] || Line.value   # Get paren from line
+
     label = Line.label(line)
     paren = label[/\((.+)\)/, 1] if label
 
@@ -67,6 +73,8 @@ class LineLauncher
 
     $xiki_no_search = options[:no_search]   # If :no_search, disable search
 
+    is_root = false
+
     if line =~ /^( *)[+-] .+?: (.+)/   # Split off label, if there
       line = $1 + $2
     end
@@ -74,6 +82,7 @@ class LineLauncher
       line = $1 + $2
     end
     if line =~ /^ *@(.+)/   # Split off @ and indent if @ exists
+      is_root = true
       line = $1
     end
 
@@ -85,7 +94,6 @@ class LineLauncher
       end
       return $xiki_no_search = false
     end
-
 
     @@launchers.each do |regex, block|   # Try each potential regex match
       # If we found a match, launch it
@@ -104,24 +112,9 @@ class LineLauncher
       end
     end
 
-    # Currently "- google:" is the only one
-    @@launchers_labels.each do |launcher|   # Try each potential label match
-      regex, block = launcher
-      # If we found a match, launch it
-      if label =~ regex
-        # Run it
-        if @@just_show
-          Ol << regex.to_s
-        else
-          block.call label
-        end
-        $xiki_no_search = false
-        return true
-      end
-    end
-
     # If current line is indented and not passed recursively yet, try again, passing tree
-    if Line.value =~ /^ / && ! options[:line]
+
+    if Line.value =~ /^ / && ! options[:line] && !is_root
       Tree.plus_to_minus
 
       # merge together (spaces if no slashes) and pass that to launch
@@ -129,6 +122,10 @@ class LineLauncher
       found = list.index{|o| o =~ /^@/} and list = list[found..-1]   # Remove before @... node if any
 
       merged = list.map{|o| o.sub /\/$/, ''}.join('/')
+      merged << "/" if list[-1] =~ /\/$/
+      # It's adding the slash, which is good
+        # But add it on end if there was one on end!
+
       return self.launch :line=>merged
     end
 
@@ -151,7 +148,10 @@ class LineLauncher
     # Grab thing to match
     root = line[/^\w+/]
     if block = @@launchers_paths[root]
-      output = block.call line
+
+      self.append_log line
+
+      output = block_call_safely block, line
       if output
         if output !~ /\A *\|/
           Line << "/" unless Line =~ /\/$/
@@ -197,8 +197,16 @@ class LineLauncher
     $xiki_no_search = false
   end
 
-  def self.launch_by_proc
+  def self.block_call_safely block, line
+    begin
+      block.call line
+    rescue Exception=>e
+      backtrace = e.backtrace[0..8].join("\n").gsub(/^/, '  ') + "\n"
+      "- error: #{e.message}\n- backtrace:\n#{backtrace}"
+    end
+  end
 
+  def self.launch_by_proc
     list = Tree.construct_path(:list=>true)   # Get path to pass to procs, to help them decide
 
     # Try each proc
@@ -214,7 +222,6 @@ class LineLauncher
       end
     end
     return false
-
   end
 
   def self.init_default_launchers
@@ -277,8 +284,9 @@ class LineLauncher
       txt = txt.strip.sub(/;$/, '')   # Remove any semicolon at end
       Firefox.run("p(#{txt})")
     end
-    self.add :paren=>"jsc" do   # - (js): js to run in firefox
-      Firefox.run("console.log(#{CodeTree.line_or_children.gsub('\\', '\\\\\\')})")
+    self.add "jsc" do |line|   # - (js): js to run in firefox
+      Firefox.run("console.log(#{line[/\/(.+)/, 1]})")
+      nil
     end
 
     self.add :paren=>"jso" do   # - (js): js to run in firefox
@@ -415,7 +423,7 @@ class LineLauncher
     self.add(/^ *[+-]? *(http|file).?:\/\/.+/) do   # url
       line = Line.content
 
-      Files.append "~/.emacs.d/url_log.notes", line
+      Launcher.append_log "- urls/#{line}"
 
       prefix = Keys.prefix
       Keys.clear_prefix
@@ -505,10 +513,12 @@ class LineLauncher
     end
 
     # Xiki protocol to server
-    self.add(/^[a-z-]{2,}\.[a-z-]{2,4}\//) do |line|  # **.../: Tree grep in dir
-
+    self.add(/^[a-z-]{2,}\.[a-z-]{2,4}(\/|$)/) do |line|  # **.../: Tree grep in dir
+      #       line.sub(/\/$/, '')
+      Line << "/" unless Line =~ /\/$/
       url = "http://#{line}"
       url.sub! /\.\w+/, "\\0/xiki"
+      url.gsub! ' ', '+'
       response = HTTParty.get(url)
       View.under response.body
     end
@@ -706,8 +716,51 @@ class LineLauncher
     end
   end
 
+  def self.append_log path
+
+    return if View.name =~ /_log.notes$/
+
+    path = path.sub /^[+-] /, ''   # Remove bullet
+
+    path = "#{path}/" if path !~ /\//   # Append slash if just root without path
+
+    return if path =~ /^(log|last)(\/|$)/
+
+    path = "- #{path}"
+    #     path = "- path" if path !~ /^[+-] /
+
+    File.open(@@log, "a") { |f| f << "#{path}\n" } rescue nil
+  end
 end
 
 Launcher = LineLauncher   # Temporary alias until we rename it
 
 LineLauncher.init_default_launchers
+
+Launcher.add "log" do
+  log = IO.read(Launcher.log)
+  log.split("\n").map{|o| o.sub /^- /, '- @'}.reverse.uniq.join("\n")+"\n"
+end
+
+Launcher.add "last" do |path|
+  path = path.sub /^last\/?/, ''
+
+  log = IO.read(Launcher.log)
+  paths = log.split("\n")
+
+  # If nothing passed, just list all roots
+
+  if path.empty?
+    paths.map!{|o| o.sub /\/.+/, '/'}   # Cut off after path
+    next paths.reverse.uniq.join("\n")+"\n"
+  end
+
+  # If root passed, show all matching
+  paths = paths.select{|o| o =~ /- #{path}/}.map{|o| o.sub /^- /, '- @'}
+
+  paths.reverse.uniq.join("\n")+"\n"
+
+  # Be sure to include labels
+    # Just labels at root?
+
+end

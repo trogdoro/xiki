@@ -14,10 +14,12 @@ class Remote
   @@default_dirs ||= []
 
   def self.menu
+    out = ""
     @@default_dirs.each do |d|
-      puts "- /#{d}/"
+      out << "- /#{d}/\n"
     end
-    puts "- /user@foo.com/tmp/"
+    out << "- /user@foo.com/tmp/\n"
+    out
   end
 
   # default_dirs attr

@@ -315,7 +315,7 @@ class Notes
       :fg => "ee7700", :bold => true
 
     # Strikethrough
-    Styles.define(:strike, :strike => true)
+    Styles.define(:strike, :strike=>true)
 
     # - <here> (r): foo
     Styles.define :notes_label_link,
@@ -323,11 +323,11 @@ class Notes
       :fg => "66f",
       :bold => true, :underline => true
 
-    Styles.define :notes_g, :fg => "00B"
-    Styles.define :notes_blue, :fg => "46f"
-    Styles.define :notes_red, :fg => "c00"
-    Styles.define :notes_yellow, :fg => "CC0"
-    Styles.define :notes_green, :fg => "0C0"
+    Styles.define :notes_g, :fg=>"00B", :face=>'arial black', :size=>"0", :bold=>true
+    Styles.define :notes_blue, :fg=>"46f", :face=>'arial black', :size=>"0", :bold=>true
+    Styles.define :notes_red, :fg=>"c00", :face=>'arial black', :size=>"0", :bold=>true
+    Styles.define :notes_yellow, :fg=>"CC0", :face=>'arial black', :size=>"0", :bold=>true
+    Styles.define :notes_green, :fg=>"0C0", :face=>'arial black', :size=>"0", :bold=>true
 
     if Styles.inverse   # If black and white
 
@@ -401,14 +401,9 @@ class Notes
     Styles.apply("\\(\(-\\)\\(.+?\\)\\(-\)\\)", nil, :diff_small, :diff_red, :diff_small)
     Styles.apply("\\(\(\\+\\)\\(.+?\\)\\(\\+\)\\)", nil, :diff_small, :diff_green, :diff_small)
 
-    # - google:
-    Styles.apply "^ *\\(-\\) \\(g\\)\\(o\\)\\(o\\)\\(g\\)\\(l\\)\\(e:\\) .*", nil, :ls_bullet,
-      :notes_blue,
-      :notes_red,
-      :notes_yellow,
-      :notes_blue,
-      :notes_green,
-      :notes_red
+    Styles.apply "^ *\\(-\\) \\(g\\)\\(o\\)\\(o\\)\\(g\\)\\(l\\)\\(e\\)\\(/\\)", nil, :ls_bullet,
+      :notes_blue, :notes_red, :notes_yellow, :notes_blue, :notes_green, :notes_red,
+      :ls_dir
   end
 
   # Startup

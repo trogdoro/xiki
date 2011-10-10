@@ -1,11 +1,11 @@
 class Mysql
   def self.menu
-    puts "
-      + .tables/
-      + .dbs/
-      - .create_db 'foo'
-      - .drop_db 'foo'
-      "
+    "
+    + .tables/
+    + .dbs/
+    - .create_db 'foo'
+    - .drop_db 'foo'
+    "
   end
 
   def self.default_db db
@@ -72,7 +72,3 @@ end
 
 Keys.enter_list_mysql { CodeTree.insert_menu('- Mysql.dbs/') }
 
-Launcher.add(/^([+-] )?mysql/) do |line|
-  Line.gsub! /^mysql$/, 'mysql/'
-  View.under Mysql.tables(*line.split('/')[1..-1])
-end

@@ -1,8 +1,19 @@
 class Man
-  class << self
-    def method_missing(func, *args, &block)
-      `man #{func} | col -x -b`.gsub(/^/, '| ').gsub(/^\| $/, '|')
-      #       `man #{func} | col -b`.gsub(/^/, '| ').gsub(/^\| $/, '|')
+  def self.menu command=nil
+    if command == nil
+      return "
+        | Type a command to show its man page:
+        - example: ls
+        - last used: @last/man/
+        "
     end
+
+    `man #{command} | col -x -b`.gsub(/^/, '| ').gsub(/^\| $/, '|')
+
   end
+
+  def self.root
+
+  end
+
 end
