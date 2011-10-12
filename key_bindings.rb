@@ -589,6 +589,9 @@ class KeyBindings
     define_key(:isearch_mode_map, kbd("C-0")) { Search.isearch_pause_or_resume }   # isearch_just_0
     #     define_key(:isearch_mode_map, kbd("C-8")) { Search.isearch_query_replace Clipboard[0] }   # isearch_just_0
 
+    define_key(:isearch_mode_map, kbd("C-8")) { History.open_current :all => true, :prompt_for_bookmark => true }
+
+
   end
 
   def self.misc

@@ -322,11 +322,13 @@ class FileTree
     # Remove later?
     Styles.apply("^[ +-]*\\([^|\n]+/\\)$", nil, :ls_dir)  # slash at end
 
-    Styles.apply("^[ +-]*\\([.@a-zA-Z0-9 ]+\/\\)", nil, :ls_dir)  # one word and slash
-    Styles.apply("^[ +-]*\\([.@a-zA-Z0-9 ]+\/[.@a-zA-Z0-9 ]+\/\\)", nil, :ls_dir)  # one word, path, and slash
+    Styles.apply("^[ +-]*\\([.@a-zA-Z0-9 ]+\/\\)", nil, :ls_dir)  # one word, slash
+    Styles.apply("^[ +-]*\\([.@a-zA-Z0-9 ]+\/[.@a-zA-Z0-9 \/]+\/\\)", nil, :ls_dir)  # one word, path, slash
+    #     Styles.apply("^[ +-]*\\([.@a-zA-Z0-9 ]+\/[.@a-zA-Z0-9 ]+\/\\)", nil, :ls_dir)  # one word, path, slash
 
-    Styles.apply("^[ \t]*[+-] [a-zA-Z0-9_,? ().:-]+?: \\(\\w+\/\\)", nil, :ls_dir)   # Dirs with labels
-    Styles.apply("^[ \t]*[+-] [a-zA-Z0-9_,? ().:-]+?: \\(\\w+\/.+\/\\)", nil, :ls_dir)   # Dirs with labels
+    Styles.apply("^[ \t]*[+-] [a-zA-Z0-9_,? ().:-]+?: \\(\[.@a-zA-Z0-9 ]+\/\\)", nil, :ls_dir)   # label, one word, slash
+    Styles.apply("^[ \t]*[+-] [a-zA-Z0-9_,? ().:-]+?: \\([.@a-zA-Z0-9 ]+\/[.@a-zA-Z0-9 \/]+\/\\)", nil, :ls_dir)   # label, one word, path, slash
+    #     Styles.apply("^[ \t]*[+-] [a-zA-Z0-9_,? ().:-]+?: \\(\\w+\/.+\/\\)", nil, :ls_dir)   # Dirs with labels
 
     # Bullets
     Styles.apply("^[ \t]*[+-] [a-zA-Z0-9_,? ().:-]+?: \\(.+/\\)$", nil, :ls_dir)   # Dirs with labels

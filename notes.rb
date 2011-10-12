@@ -344,6 +344,9 @@ class Notes
         :face => 'arial black', :size => "0",
         :fg => "77cc44", :bold => true
     end
+
+    Styles.define :notes_link, :fg => "88aadd"
+
   end
 
   def self.apply_styles
@@ -404,6 +407,9 @@ class Notes
     Styles.apply "^ *\\(-\\) \\(@?g\\)\\(o\\)\\(o\\)\\(g\\)\\(l\\)\\(e\\)\\(/\\)", nil, :ls_bullet,
       :notes_blue, :notes_red, :notes_yellow, :notes_blue, :notes_green, :notes_red,
       :ls_dir
+
+    Styles.apply("https?://[a-zA-Z0-9\/.~_:-]+", :notes_link)
+
   end
 
   # Startup
