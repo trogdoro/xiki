@@ -319,7 +319,7 @@ class KeyBindings
     #    Keys.DS { elvar.current_prefix_arg ? johns_thing : Search.grep }   # Do Search: do grep search
     Keys.do_tree { FileTree.tree(:recursive=>true) }   # draw filesystem tree for current dir or bookmark
     #     Keys.do_under { FileTree.kill_under }   # kill tree children (lines indented more)
-    Keys.do_up { LineLauncher.do_last_launch }
+    Keys.do_up { Launcher.do_last_launch }
     #Keys.display_up { message Tree.construct_path( :indented => true ) }   # Display ancestors (by indent level)
     Keys.do_version { Git.code_tree_diff_unadded }   # Compare with repos (with what hasn't been added yet)
     Keys.do_whitespace { Deletes.delete_whitespace }   # delete blank lines
@@ -330,7 +330,7 @@ class KeyBindings
       input = Keys.input(:timed => true)
       with(:save_window_excursion) do
         Bookmarks.go(".#{input}")
-        LineLauncher.launch
+        Launcher.launch
       end
     }
     Keys.set("C-d C-/") { Code.comment }
@@ -606,10 +606,10 @@ class KeyBindings
     Keys.B { Move.backward }
     Keys.F { Move.forward }
     Keys.Q { Keys.timed_insert }
-    Keys.set("C-.") { LineLauncher.launch_or_hide(:blink=>true) }
+    Keys.set("C-.") { Launcher.launch_or_hide(:blink=>true) }
 
     # Alternate key for C-. (probably easier to remember)
-    Keys.set("<C-return>") { LineLauncher.launch_or_hide(:blink=>true) }
+    Keys.set("<C-return>") { Launcher.launch_or_hide(:blink=>true) }
 
     if locate_library "ruby-mode"
       el_require :ruby_mode

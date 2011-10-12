@@ -151,11 +151,11 @@ class Tree
       end
     when :control_return, :return, "\C-m", :control_period, :right   # If C-., go in but don't collapse siblings
       Keys.clear_prefix
-      LineLauncher.launch
+      Launcher.launch
     when "\t"   # If tab, hide siblings and go in
       $el.delete_region(Line.left(2), right)
       Keys.clear_prefix
-      LineLauncher.launch
+      Launcher.launch
     when :backspace, :left   # Collapse tree
       self.to_parent
       self.kill_under
@@ -207,7 +207,7 @@ class Tree
       $el.delete_region(Line.left(2), right)
       Keys.clear_prefix
       View.create
-      LineLauncher.launch
+      Launcher.launch
 
     when "8"
       # If a quote, insert lines indented lower
@@ -228,7 +228,7 @@ class Tree
         View.bar
         Keys.clear_prefix
         # Expand or open
-        LineLauncher.launch
+        Launcher.launch
         return
       end
       Keys.clear_prefix
@@ -267,11 +267,11 @@ class Tree
         View.insert "#{nth}\n"
         $el.previous_line
         if options[:number_means_enter]  # If explicitly supposed to enter
-          LineLauncher.launch
+          Launcher.launch
         elsif FileTree.dir?  # If a dir, go into it
-          LineLauncher.launch
+          Launcher.launch
         else
-          LineLauncher.launch
+          Launcher.launch
           return
 
           Move.to_line_text_beginning
@@ -305,7 +305,7 @@ class Tree
           Move.to_line_text_beginning
         end
         View.delete(View.cursor, right)
-        return LineLauncher.launch
+        return Launcher.launch
       end
 
         # If line is a dir, do tree-like tab

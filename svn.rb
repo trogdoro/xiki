@@ -497,7 +497,7 @@ end
 
 #     if options[:enter]
 #       View.insert(menu)
-#       LineLauncher.launch
+#       Launcher.launch
 #     else
 #       View.bar if prefix == 9
 #       CodeTree.display_menu(menu)
@@ -509,7 +509,7 @@ end
 #     menu = "- Repository.menu/\n  - project - #{dir}\n    - .diff_unadded :expand/"
 #     if options[:enter]
 #       View.insert(menu)
-#       LineLauncher.launch
+#       Launcher.launch
 #     else
 #       CodeTree.display_menu(menu)
 #     end

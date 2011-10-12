@@ -179,7 +179,7 @@ class CodeTree
 
     insert "#{menu}"
     open_line 1
-    LineLauncher.launch options
+    Launcher.launch options
   end
 
   def self.layout_menu

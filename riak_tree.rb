@@ -199,7 +199,7 @@ Launcher.add(:paren=>'r') do
   Tree.under(Riak.get_hash(line).to_yaml.sub(/^--- \n/, ''))
 end
 
-LineLauncher.add(:paren=>'rr') do   # Get raw json version
+Launcher.add(:paren=>'rr') do   # Get raw json version
   line = Line.without_label
   Tree.under(Riak.get_hash(line, :raw=>true))
 end

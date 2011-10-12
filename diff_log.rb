@@ -97,7 +97,7 @@ class DiffLog
       Firefox.reload
     elsif prefix == 9
       sleep(0.3)
-      LineLauncher.do_last_launch
+      Launcher.do_last_launch
     end
   end
 

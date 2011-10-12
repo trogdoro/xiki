@@ -799,7 +799,7 @@ class Search
       indent = Line.indent
       Line.to_right
       View.insert "\n#{indent}  - ###{input}/"
-      LineLauncher.launch
+      Launcher.launch
       return
     end
 
@@ -1203,7 +1203,7 @@ class Search
     Tree.to_parent if Line[/^ *- ##/]
 
     Tree.under "- \#\##{match}/", :escape=>'', :no_search=>true
-    LineLauncher.launch
+    Launcher.launch
   end
 
   def self.isearch_enter_and_next

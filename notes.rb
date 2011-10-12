@@ -401,7 +401,7 @@ class Notes
     Styles.apply("\\(\(-\\)\\(.+?\\)\\(-\)\\)", nil, :diff_small, :diff_red, :diff_small)
     Styles.apply("\\(\(\\+\\)\\(.+?\\)\\(\\+\)\\)", nil, :diff_small, :diff_green, :diff_small)
 
-    Styles.apply "^ *\\(-\\) \\(g\\)\\(o\\)\\(o\\)\\(g\\)\\(l\\)\\(e\\)\\(/\\)", nil, :ls_bullet,
+    Styles.apply "^ *\\(-\\) \\(@?g\\)\\(o\\)\\(o\\)\\(g\\)\\(l\\)\\(e\\)\\(/\\)", nil, :ls_bullet,
       :notes_blue, :notes_red, :notes_yellow, :notes_blue, :notes_green, :notes_red,
       :ls_dir
   end
@@ -414,7 +414,7 @@ class Notes
     end
 
     defun(:notes_mouse_double_click, :interactive => "e") do |e|
-      LineLauncher.launch_or_hide(:blink=>true)
+      Launcher.launch_or_hide(:blink=>true)
     end
 
     defun(:notes_mouse_toggle, :interactive => "e") do |e|
@@ -557,7 +557,7 @@ class Notes
   end
 
   def self.mouse_toggle
-    #LineLauncher.launch_or_hide(:blink=>true)
+    #Launcher.launch_or_hide(:blink=>true)
 
     # If next line is indented more, kill children
     # If starts with plus or minus, and on plus or minus, launch
@@ -567,7 +567,7 @@ class Notes
         #plus_or_minus == '+'   # If +, expand (launch
 
         if FileTree.dir? or ! FileTree.handles?   # If on a dir or code_tree
-          LineLauncher.launch
+          Launcher.launch
         else   # If on a file in a FileTree
           FileTree.enter_lines
         end

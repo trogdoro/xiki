@@ -449,7 +449,7 @@ class Code
   #     end
   #     View.insert "#{bm}\n  ###{Clipboard[0]}/"
   #     #View.insert "$tr/###{Clipboard[0]}/"
-  #     LineLauncher.launch
+  #     Launcher.launch
   #   end
 
   def self.enter_as_debug

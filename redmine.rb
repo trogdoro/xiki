@@ -141,7 +141,7 @@ class Redmine
     Keys.XS(:redmine_mode_map) { Redmine.save }
 
     # Make C-. follow link
-    LineLauncher.add(/\[\[.+\]\]/) do |line|  # Redmine wiki links
+    Launcher.add(/\[\[.+\]\]/) do |line|  # Redmine wiki links
       name = line[/\[\[(.+?)\]\]/, 1]
       name.gsub!(/ /, "_")
       Redmine.open(name)

@@ -3,7 +3,7 @@ require 'ruby_console'
 gem 'httparty'; require 'httparty'
 gem 'activesupport'; require 'active_support/ordered_hash'
 
-class LineLauncher
+class Launcher
   extend ElMixin
 
   CLEAR_CONSOLES = [
@@ -361,7 +361,7 @@ class LineLauncher
       insert stdout
     end
 
-    LineLauncher.add :paren=>"rails" do  # - (gl): Run in rails console
+    Launcher.add :paren=>"rails" do  # - (gl): Run in rails console
       out = RubyConsole[:rails].run(Line.without_label)
       Tree.indent(out)
       Tree.insert_quoted_and_search out  # Insert under
@@ -573,25 +573,25 @@ class LineLauncher
     # Let trees try to handle it
     # RestTree
     condition_proc = proc {|list| RestTree.handles? list}
-    LineLauncher.add condition_proc do |list|
+    Launcher.add condition_proc do |list|
       RestTree.launch :path=>list
     end
 
     # FileTree
     condition_proc = proc {|list| FileTree.handles? list}
-    LineLauncher.add condition_proc do |list|
+    Launcher.add condition_proc do |list|
       FileTree.launch :path=>list
     end
 
     # CodeTree
     condition_proc = proc {|list| CodeTree.handles? list}
-    LineLauncher.add condition_proc do |list|
+    Launcher.add condition_proc do |list|
       CodeTree.launch :path=>list
     end
 
     # UrlTree
     condition_proc = proc {|list| UrlTree.handles? list}
-    LineLauncher.add condition_proc do |list|
+    Launcher.add condition_proc do |list|
       UrlTree.launch :path=>list
     end
 
@@ -638,7 +638,7 @@ class LineLauncher
     end
     Tree.kill_under
 
-    LineLauncher.launch_or_hide :blink=>true, :no_search=>true
+    Launcher.launch_or_hide :blink=>true, :no_search=>true
     View.to_nth orig
   end
 
@@ -710,7 +710,7 @@ class LineLauncher
       #       method = clazz.method(:menu) rescue nil
       #       next if method.nil?
 
-      LineLauncher.add clazz do |path|
+      Launcher.add clazz do |path|
         Launcher.invoke clazz, path
       end
     end
@@ -733,9 +733,7 @@ class LineLauncher
   end
 end
 
-Launcher = LineLauncher   # Temporary alias until we rename it
-
-LineLauncher.init_default_launchers
+Launcher.init_default_launchers
 
 Launcher.add "log" do
   log = IO.read(Launcher.log)

@@ -814,7 +814,7 @@ class FileTree
     indent = Line.indent
     Move.to_end
     View.insert "\n#{indent}  - ###{Clipboard["0"]}/"
-    LineLauncher.launch
+    Launcher.launch
   end
 
   # Remove the following lines indented more than the current one
@@ -863,7 +863,7 @@ class FileTree
   def self.enter_lines pattern=nil, options={}
 
     # If dir, delegate to C-. (they meant to just open it)
-    return LineLauncher.launch if self.dir?
+    return Launcher.launch if self.dir?
 
     Tree.plus_to_minus
 

@@ -46,7 +46,7 @@ class RestTree
 
   end
 
-  # Tell LineLauncher whether we're in a rest tree
+  # Tell Launcher whether we're in a rest tree
   def self.handles? list
     list.any? {|i| i =~ /^ *(GET|PUT|POST|DELETE)/}
   end
@@ -97,7 +97,7 @@ class RestTree
 end
 
 
-LineLauncher.add(/^.*(- )?GET \/.+/) do
+Launcher.add(/^.*(- )?GET \/.+/) do
   line = Line.without_label
 
   regex, url = /GET \/(.+?)\/ (.+)/.match(line)[1..2]

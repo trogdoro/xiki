@@ -221,7 +221,7 @@ class Console
 
   end
 
-  # Mapped to !! or ! in LineLauncher
+  # Mapped to !! or ! in Launcher
   def self.launch options={}
     line = Line.without_label :leave_indent=>true
     # If indented, check whether file tree, extracting if yes

@@ -481,7 +481,7 @@ end
 Launcher.add(/^#.+/) do |line|
   Line.delete :br
   View.insert "- Firefox.dom \"#{line}\"/"
-  LineLauncher.launch
+  Launcher.launch
 end
 
 Launcher.add "dom" do |line|
