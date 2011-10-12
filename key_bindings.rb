@@ -87,7 +87,11 @@ class KeyBindings
     #     Keys.open_last_error { Code.show_el4r_error }
     Keys.open_list_faces { list_faces_display }
     Keys.open_lisp_info { info("elisp") }   # Open manual
-    Keys.open_log_list { Git.show_log_one_file }   # Show git diffs o 1 file
+
+    Keys.open_repository_list { Git.show_log_one_file }   # Show git diffs o 1 file
+    Keys.open_log_list { CodeTree.display_menu(Keys.prefix_u ? "- log/" : "- last/") }   # Show git diffs o 1 file
+    #     Keys.open_log_list { Git.show_log_one_file }   # Show git diffs o 1 file
+
     Keys.open_log_push { Git.show_log }   # Show git diffs for a bookmark
     Keys.open_last_screenshot { Files.open_last_screenshot }
     #     Keys.open_like_text { txt = View.txt; View.to_buffer "txt"; View << txt }
@@ -97,6 +101,7 @@ class KeyBindings
     Keys.open_list_names { Clipboard.list }
     Keys.open_list_repository { Git.open_list_repository }
     Keys.open_link_top { Links.open_first }   # open first hyperlink on page
+    Keys.open_last_urls { CodeTree.display_menu "- last/urls/" }
     Keys.open_menu { Xiki.open_menu }   # Open all menus and show them **
     Keys.open_not_saved { History.open_unsaved }
     # O: defined above - mapped to what C-o does by default
