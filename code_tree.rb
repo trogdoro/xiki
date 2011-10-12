@@ -165,23 +165,6 @@ class CodeTree
     ""
   end
 
-  def self.display_menu menu, options={}
-    View.bar if Keys.prefix == 1
-
-    dir = View.dir
-
-    # For buffer name, handle multi-line strings
-    buffer = "*CodeTree " + menu.sub(/.+\n[ -]*/m, '').gsub(/[.,]/, '')
-    View.to_buffer(buffer, :dir=>dir)
-
-    View.clear
-    $el.notes_mode
-
-    insert "#{menu}"
-    open_line 1
-    Launcher.launch options
-  end
-
   def self.layout_menu
     View.bar if Keys.prefix_u?
 
@@ -189,21 +172,8 @@ class CodeTree
     if View.buffer_open? buffer   # If open, switch to it
       View.to_buffer(buffer)
     else # Else open it
-      self.display_menu("- CodeTree.menu/")
+      Launcher.open("- CodeTree.menu/")
     end
-  end
-
-  def self.insert_menu menu
-    insert "- #{menu}/"
-    open_line 1
-    CodeTree.launch
-  end
-
-  def self.insert_menu txt
-    View.insert txt
-    $el.open_line(1)
-    Launcher.launch
-    #     CodeTree.launch
   end
 
   # Determine whether we should handle it

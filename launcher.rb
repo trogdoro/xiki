@@ -648,7 +648,7 @@ class Launcher
   end
 
   def self.enter_last_launched
-    CodeTree.insert_menu self.last_launched_menu
+    Launcher.insert self.last_launched_menu
   end
 
   def self.last_launched_menu
@@ -721,15 +721,35 @@ class Launcher
     return if View.name =~ /_log.notes$/
 
     path = path.sub /^[+-] /, ''   # Remove bullet
-
     path = "#{path}/" if path !~ /\//   # Append slash if just root without path
 
     return if path =~ /^(log|last)(\/|$)/
 
     path = "- #{path}"
-    #     path = "- path" if path !~ /^[+-] /
-
     File.open(@@log, "a") { |f| f << "#{path}\n" } rescue nil
+  end
+
+  def self.insert txt
+    View.insert txt
+    $el.open_line(1)
+    Launcher.launch
+  end
+
+  def self.open menu, options={}
+    View.bar if Keys.prefix == 1
+
+    dir = View.dir
+
+    # For buffer name, handle multi-line strings
+    buffer = "*CodeTree " + menu.sub(/.+\n[ -]*/m, '').gsub(/[.,]/, '')
+    View.to_buffer(buffer, :dir=>dir)
+
+    View.clear
+    $el.notes_mode
+
+    insert "#{menu}"
+    open_line 1
+    Launcher.launch options
   end
 end
 
@@ -760,5 +780,6 @@ Launcher.add "last" do |path|
 
   # Be sure to include labels
     # Just labels at root?
+
 
 end

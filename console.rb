@@ -386,13 +386,13 @@ class Console
   def self.search_last_commands
 
     bm = Keys.input(:timed => true, :prompt => "bookmark to show commands for (space for currently open): ")
-    return CodeTree.display_menu("- Console.tree/") if bm == " "
+    return Launcher.open("- Console.tree/") if bm == " "
     if bm == "8"
       Console.log; View.to_bottom; Search.isearch nil, :reverse=>true
       return
     end
 
-    CodeTree.display_menu("- Console.history \"$#{bm}\"/")
+    Launcher.open("- Console.history \"$#{bm}\"/")
   end
 
   def self.tree console=nil, command=nil

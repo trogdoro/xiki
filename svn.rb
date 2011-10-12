@@ -218,7 +218,7 @@ end
 #     end
 
 #     # Insert codetree
-#     CodeTree.display_menu(
+#     Launcher.open(
 #       "- Repository.menu/\n  - project - #{repos}\n    - .diff/\n      - #{relative}",
 #       :no_search=>true
 #       )
@@ -226,7 +226,7 @@ end
 
 #   def self.show_log
 #     dir = Keys.bookmark_as_path :prompt=>"Enter a bookmark to show the log for: "
-#     CodeTree.display_menu("- Repository.menu/\n  - project - #{dir}\n    - .log ''/")
+#     Launcher.open("- Repository.menu/\n  - project - #{dir}\n    - .log ''/")
 #   end
 
 #   def self.show_log_one_file
@@ -234,7 +234,7 @@ end
 #     relative = View.file.sub(/^#{repos}/, '')   # Split off root from relative path
 #     relative.sub! /^\//, ''   # Insert codetree
 
-#     CodeTree.display_menu(
+#     Launcher.open(
 #       "- Repository.menu/\n  - project - #{repos}\n    - .log_by_file \"\", 10/\n      - #{relative}"
 #       )
 #   end
@@ -500,7 +500,7 @@ end
 #       Launcher.launch
 #     else
 #       View.bar if prefix == 9
-#       CodeTree.display_menu(menu)
+#       Launcher.open(menu)
 #     end
 #   end
 
@@ -511,7 +511,7 @@ end
 #       View.insert(menu)
 #       Launcher.launch
 #     else
-#       CodeTree.display_menu(menu)
+#       Launcher.open(menu)
 #     end
 #   end
 

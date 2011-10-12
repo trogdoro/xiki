@@ -45,10 +45,10 @@ class Color
         # Else, contine on and do Color.search
       end
 
-      return CodeTree.display_menu("- Color.search/") if Keys.prefix == 8
+      return Launcher.open("- Color.search/") if Keys.prefix == 8
 
       # Presumably :u
-      CodeTree.display_menu("- Color.search 'light'/")
+      Launcher.open("- Color.search 'light'/")
       return
 
     when "o"   # Outline of marked lines

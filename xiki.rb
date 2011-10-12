@@ -30,7 +30,7 @@ Launcher.add_class_launchers classes
 class Xiki
   def self.insert_menu
     # Implement
-    CodeTree.insert_menu "- Xiki.menus/"
+    Launcher.insert "- Xiki.menus/"
   end
 
   def self.open_menu

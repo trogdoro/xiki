@@ -23,7 +23,7 @@ class Buffers
       when 4:  return list.select{ |b| ! $el.buffer_file_name(b) && $el.buffer_name(b) =~ /^\*console / }.map{ |b| $el.buffer_name(b) }
       when 8:  return list.map{ |b| $el.buffer_name(b) }
       when :u:  return list.select{ |b| ! $el.buffer_file_name(b) && $el.buffer_name(b) =~ /!$/ }.map{ |b| $el.buffer_name(b) }
-        #       else  #CodeTree.display_menu("- Files.edited #{Keys.prefix}/")
+        #       else  #Launcher.open("- Files.edited #{Keys.prefix}/")
       end
       return
     end
@@ -114,9 +114,9 @@ class Buffers
 
   def self.open_viewing
     case Keys.prefix
-    when nil:  CodeTree.display_menu("- Buffers.tree 25/")
-    when 0:  CodeTree.display_menu("- Buffers.tree/")
-    else  CodeTree.display_menu("- Buffers.tree #{Keys.prefix}/")
+    when nil:  Launcher.open("- Buffers.tree 25/")
+    when 0:  Launcher.open("- Buffers.tree/")
+    else  Launcher.open("- Buffers.tree #{Keys.prefix}/")
     end
   end
 

@@ -70,5 +70,5 @@ class Mysql
   end
 end
 
-Keys.enter_list_mysql { CodeTree.insert_menu('- Mysql.dbs/') }
+Keys.enter_list_mysql { Launcher.insert('- Mysql.dbs/') }
 

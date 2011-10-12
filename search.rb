@@ -127,10 +127,10 @@ class Search
     if match.nil?   # If nothing searched for yet, do search_edits
       bm = Keys.input :timed=>true, :prompt=>"Enter a bookmark to search edits: "
 
-      return CodeTree.display_menu("- DiffLog.diffs/") if bm == "8" || bm == " "
+      return Launcher.open("- DiffLog.diffs/") if bm == "8" || bm == " "
 
       path = bm == "." ? View.file : "$#{bm}"
-      return CodeTree.display_menu("- DiffLog.diffs \"#{path}\"/")
+      return Launcher.open("- DiffLog.diffs \"#{path}\"/")
     end
 
     View.delete(Search.left, Search.right)
@@ -439,7 +439,7 @@ class Search
   def self.search_last_launched
     match = self.stop
 
-    CodeTree.display_menu Launcher.last_launched_menu
+    Launcher.open Launcher.last_launched_menu
   end
 
   def self.launched bm=nil
@@ -965,7 +965,7 @@ class Search
   def self.to_left
     match = self.stop
     if match.nil?   # If nothing searched for yet
-      return CodeTree.display_menu("- Search.history/")
+      return Launcher.open("- Search.history/")
     end
 
     Line.to_left
@@ -1000,9 +1000,9 @@ class Search
     if match.nil?   # If nothing searched for yet
       char = Keys.input(:one_char=>true, :prompt=>"Enter one char: ")
       if char == "m"
-        CodeTree.display_menu("- $a/\n  - ## def /")
+        Launcher.open("- $a/\n  - ## def /")
       elsif char == "f"
-        CodeTree.display_menu("- $wj/\n  - ##\\bfunction.*\\(/")
+        Launcher.open("- $wj/\n  - ##\\bfunction.*\\(/")
       else
         View.beep
         View.message "Don't know what to do with that char."
@@ -1021,7 +1021,7 @@ class Search
     if match.nil?   # If nothing searched for yet
       char = Keys.input(:one_char=>true, :prompt=>"Enter one char: ")
       if char == "m"
-        CodeTree.display_menu("- $x/\n  - ## def /")
+        Launcher.open("- $x/\n  - ## def /")
       else
         View.beep
         View.message "Don't know what to do with that char."

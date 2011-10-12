@@ -148,9 +148,9 @@ class Files
     return message("No dir matching '#{key}' found.  See Files\#@@dir_hash") unless dir
     if Keys.prefix_u?
       Keys.clear_prefix
-      CodeTree.display_menu("- Files.edited(100, :dir => '#{dir}')/")
+      Launcher.open("- Files.edited(100, :dir => '#{dir}')/")
     else
-      CodeTree.display_menu("- Buffers.tree(0, :dir => '#{dir}')/")
+      Launcher.open("- Buffers.tree(0, :dir => '#{dir}')/")
     end
   end
 
@@ -162,19 +162,19 @@ class Files
 
   def self.open_edited
     case Keys.prefix
-    when nil:  Keys.prefix = nil; CodeTree.display_menu("- Files.edited_flat/")
-    when 0:  CodeTree.display_menu("- Files.edited/")
-    when :u:  CodeTree.display_menu("- Files.edited 7/")
-    else  CodeTree.display_menu("- Files.edited #{Keys.prefix}/")
+    when nil:  Keys.prefix = nil; Launcher.open("- Files.edited_flat/")
+    when 0:  Launcher.open("- Files.edited/")
+    when :u:  Launcher.open("- Files.edited 7/")
+    else  Launcher.open("- Files.edited #{Keys.prefix}/")
     end
   end
 
   def self.open_history
     case Keys.prefix
-    when nil:  Keys.prefix = nil; CodeTree.display_menu("- Files.history_flat/")
-    when 0:  CodeTree.display_menu("- Files.history/")
-    when :u:  CodeTree.display_menu("- Files.history 7/")
-    else  CodeTree.display_menu("- Files.history #{Keys.prefix}/")
+    when nil:  Keys.prefix = nil; Launcher.open("- Files.history_flat/")
+    when 0:  Launcher.open("- Files.history/")
+    when :u:  Launcher.open("- Files.history 7/")
+    else  Launcher.open("- Files.history #{Keys.prefix}/")
     end
   end
 

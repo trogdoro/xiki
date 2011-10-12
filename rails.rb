@@ -211,7 +211,7 @@ class Rails
 
 end
 
-Keys.ORM { CodeTree.display_menu("- Rails.models/") }   # Open Rails Models
+Keys.ORM { Launcher.open("- Rails.models/") }   # Open Rails Models
 # Keys.enter_list_models {   # Enter Rails Models
 #   $el.insert "- Rails.models/"
 #   $el.open_line 1

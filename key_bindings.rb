@@ -70,7 +70,7 @@ class KeyBindings
     Keys.open_a_shell { Console.open }
     Keys.open_as_tail { Files.open_tail }
     Keys.open_bookmark { Bookmarks.go }
-    Keys.open_current { CodeTree.display_menu("- Buffers.current/") }   # open buffer list **
+    Keys.open_current { Launcher.open("- Buffers.current/") }   # open buffer list **
     Keys.open_diffs { DiffLog.open }   # shows diffs of what you've edited *
     Keys.open_edited { Files.open_edited }   # show recently edited files *
     Keys.open_file { Files.open }
@@ -82,32 +82,32 @@ class KeyBindings
     Keys.open_in_window { Files.open_in_window }   # Expose file in OS folder
     Keys.open_just { Files.open_just }
     Keys.open_key { Keys.jump_to_code }   # jump to ruby code of key definition *
-    Keys.open_list_appointments { View.bar; CodeTree.display_menu("- Agenda.menu/") }
-    Keys.open_list_bookmarks { CodeTree.display_menu("- Bookmarks.list/") }
+    Keys.open_list_appointments { View.bar; Launcher.open("- Agenda.menu/") }
+    Keys.open_list_bookmarks { Launcher.open("- Bookmarks.list/") }
     #     Keys.open_last_error { Code.show_el4r_error }
     Keys.open_list_faces { list_faces_display }
     Keys.open_lisp_info { info("elisp") }   # Open manual
 
     Keys.open_repository_list { Git.show_log_one_file }   # Show git diffs o 1 file
-    Keys.open_log_list { CodeTree.display_menu(Keys.prefix_u ? "- log/" : "- last/") }   # Show git diffs o 1 file
+    Keys.open_log_list { Launcher.open(Keys.prefix_u ? "- log/" : "- last/") }   # Show git diffs o 1 file
     #     Keys.open_log_list { Git.show_log_one_file }   # Show git diffs o 1 file
 
     Keys.open_log_push { Git.show_log }   # Show git diffs for a bookmark
     Keys.open_last_screenshot { Files.open_last_screenshot }
     #     Keys.open_like_text { txt = View.txt; View.to_buffer "txt"; View << txt }
     #     Keys.open_log_tree { Rails.tree_from_log }
-    Keys.open_list_databases { CodeTree.display_menu('- CouchDb.databases/') }
-    Keys.open_list_models { CodeTree.display_menu("- Merb.models/") }
+    Keys.open_list_databases { Launcher.open('- CouchDb.databases/') }
+    Keys.open_list_models { Launcher.open("- Merb.models/") }
     Keys.open_list_names { Clipboard.list }
     Keys.open_list_repository { Git.open_list_repository }
     Keys.open_link_top { Links.open_first }   # open first hyperlink on page
-    Keys.open_last_urls { CodeTree.display_menu "- last/urls/" }
+    Keys.open_last_urls { Launcher.open "- last/urls/" }
     Keys.open_menu { Xiki.open_menu }   # Open all menus and show them **
     Keys.open_not_saved { History.open_unsaved }
     # O: defined above - mapped to what C-o does by default
     Keys.open_point { Bookmarks.go(nil, :point => true) }
     Keys.open_quick { Bookmarks.go :q }   # like OB but uses different temporary namespace
-    Keys.open_rake_outline { CodeTree.display_menu("- Rake.menu/") }
+    Keys.open_rake_outline { Launcher.open("- Rake.menu/") }
     Keys.open_region_path { find_file buffer_substring(region_beginning, region_end) }
     Keys.open_related_test { Code.open_related_rspec }
     # S
@@ -117,7 +117,7 @@ class KeyBindings
     Keys.open_viewing { Buffers.open_viewing }   # show currently open files and buffers **
     Keys.open_windows { View.restore }   # open window configuration by name
     Keys.open_xiki_docs { Help.display_docs }
-    Keys.open_xiki_help { CodeTree.display_menu("- Help.menu/") }   # **
+    Keys.open_xiki_help { Launcher.open("- Help.menu/") }   # **
     # Y
     # Z
     Keys.O0 { View.open("$0") }   # Open 0: open bookmarked file tagged with "0"
@@ -140,7 +140,7 @@ class KeyBindings
     #     Keys.enter_as_camelcase { View.insert TextUtil.camel_case(Clipboard.get(0)) }
     #     Keys.enter_as_debug { Code.enter_as_debug }
     Keys.enter_as_execute { Console.do_as_execute(:insert=>true) }   # change word to camel case (LikeThat)
-    Keys.enter_as_dom { CodeTree.insert_menu('- Firefox.dom/') }   # change word to camel case (LikeThat)
+    Keys.enter_as_dom { Launcher.insert('- Firefox.dom/') }   # change word to camel case (LikeThat)
     Keys.enter_as_filename { insert Clipboard.get(".") }
     Keys.enter_as_hyphenated { insert TextUtil.hyphen_case(Clipboard.get(0)) }
     Keys.enter_as_jquery { Javascript.enter_as_jquery }
@@ -154,7 +154,7 @@ class KeyBindings
     Keys.enter_difflog { DiffLog.enter_from_difflog }   # Save point and go to difflog to search
     # E: defined above - mapped to what C-e does by default
     Keys.enter_file_path { Files.enter_file }   # Given a bookmark
-    Keys.enter_firefox_tabs { CodeTree.insert_menu('- Firefox.tabs/') }   # Given a bookmark
+    Keys.enter_firefox_tabs { Launcher.insert('- Firefox.tabs/') }   # Given a bookmark
     Keys.enter_history { History.enter_history }   # enter recently viewed files
     #     Keys.enter_have { Console.insert_command }
     #Keys.EH { FileTree.enter_lines(/^\| /) }
@@ -177,20 +177,20 @@ class KeyBindings
     #     Keys.enter_list_bullet { Notes.enter_label_bullet }
     Keys.enter_last_commands {
       bm = Keys.input(:timed => true, :prompt => "bookmark to show commands for (space for currently open): ")
-      return CodeTree.insert_menu("- Console.tree/") if bm == " "
-      CodeTree.insert_menu("- Console.history \"$#{bm}\"/")
+      return Launcher.insert("- Console.tree/") if bm == " "
+      Launcher.insert("- Console.history \"$#{bm}\"/")
     }
-    Keys.enter_list_databases { CodeTree.insert_menu('- CouchDb.databases/') }
+    Keys.enter_list_databases { Launcher.insert('- CouchDb.databases/') }
     Keys.enter_log_javascript { Firefox.enter_log_javascript_line }
     Keys.enter_log_stack { Code.enter_log_stack }
-    Keys.enter_last_log { CodeTree.insert_menu(Keys.prefix_u ? "- log/" : "- last/") }
+    Keys.enter_last_log { Launcher.insert(Keys.prefix_u ? "- log/" : "- last/") }
     #     Keys.enter_last_launched { Launcher.enter_last_launched }
     Keys.enter_log_time { Code.enter_log_time }
-    Keys.enter_last_urls { CodeTree.insert_menu "- last/urls/" }
-    #     Keys.enter_last_urls { CodeTree.insert_menu("- Launcher.urls/") }
+    Keys.enter_last_urls { Launcher.insert "- last/urls/" }
+    #     Keys.enter_last_urls { Launcher.insert("- Launcher.urls/") }
 
     Keys.enter_menu { Xiki.insert_menu }   # Redundant with C-enter on blank line
-    #     Keys.enter_menu { CodeTree.insert_menus }   # Redundant with C-enter on blank line
+    #     Keys.enter_menu { Launcher.inserts }   # Redundant with C-enter on blank line
     Keys.enter_name { Clipboard.paste }   # paste thing saved as name
     Keys.enter_outline { FileTree.enter_lines }   # in tree, enter methods or headings
     Keys.enter_push { Git.code_tree_diff(:enter=>true) }   # Commit to repos, push, etc
@@ -513,7 +513,7 @@ class KeyBindings
     #     Keys.search_like_shell { Search.search_thesaurus }
     Keys.search_like_thesaurus { Search.search_thesaurus }
 
-    Keys.search_last_urls { CodeTree.display_menu("- Launcher.urls/") }
+    Keys.search_last_urls { Launcher.open("- Launcher.urls/") }
 
     Keys.search_like_web { Search.isearch_google }   # make match be snake case
     Keys.search_like_quote { Search.isearch_google :quote=>true }
