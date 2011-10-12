@@ -58,6 +58,7 @@ class Launcher
 
   # Call the appropriate launcher if we find one, passing it line
   def self.launch options={}
+
     Tree.plus_to_minus
 
     Effects.blink(:what=>:line) if options[:blink]
@@ -232,7 +233,7 @@ class Launcher
       orig = Location.new
       txt = Line.without_label  # Grab line
       View.to_after_bar  # Insert after bar
-      insert txt
+      View.insert txt
       command_execute "\C-m"
       orig.go
     end
@@ -328,9 +329,9 @@ class Launcher
       View.to_buffer "*console"
       erase_buffer
       end_of_buffer
-      insert "reload!"
+      View.insert "reload!"
       Console.enter
-      insert line
+      View.insert line
       Console.enter
 
       Move.top
@@ -340,7 +341,7 @@ class Launcher
     self.add :paren=>"r" do
       returned, stdout = Code.eval(Line.without_label)
       message returned.to_s
-      #insert stdout if stdout
+      #View.insert stdout if stdout
     end
 
     # - (irb): Merb console
@@ -358,7 +359,7 @@ class Launcher
 
       returned, stdout = Code.eval(Line.without_label)
       message returned.to_s
-      insert stdout
+      View.insert stdout
     end
 
     Launcher.add :paren=>"rails" do  # - (gl): Run in rails console
@@ -389,7 +390,7 @@ class Launcher
         #stdout.gsub!(/^(  +)\|( *- .+: )/, '\\1\\2')
       end
 
-      insert stdout
+      View.insert stdout
       goto_char started
     end
 
@@ -747,7 +748,7 @@ class Launcher
     View.clear
     $el.notes_mode
 
-    insert "#{menu}"
+    View.insert "#{menu}"
     open_line 1
     Launcher.launch options
   end

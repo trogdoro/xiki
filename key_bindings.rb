@@ -516,6 +516,7 @@ class KeyBindings
     Keys.search_last_urls { Launcher.open("- Launcher.urls/") }
 
     Keys.search_like_web { Search.isearch_google }   # make match be snake case
+    Keys.search_like_repository { Git.search_repository }
     Keys.search_like_quote { Search.isearch_google :quote=>true }
 
     Keys.search_last_launched { Search.search_last_launched }
@@ -523,7 +524,7 @@ class KeyBindings
     # M: leave unmapped for stop
     Keys.search_next { Search.isearch_next_or_name }   # Next, or name (if nothing searched for yet)
     Keys.search_outline { Search.isearch_outline }   # Outline
-    Keys.search_previous { Search.isearch_previous }   # Just go to previous line
+    Keys.search_paths { Search.isearch_paths }   # Just go to previous line
     # P: leave unmapped for previous
     # Q: leave unmapped for quoting
     # R: leave unmapped for reverse

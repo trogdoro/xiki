@@ -806,8 +806,14 @@ class Git
     View.to_highest
 
     Search.isearch match
-
   end
+
+  def self.search_repository
+    Git.code_tree_diff
+    View.to_highest
+    Search.isearch nil
+  end
+
 
 end
 

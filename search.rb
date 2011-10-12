@@ -1138,13 +1138,11 @@ class Search
     end
   end
 
-  def self.isearch_previous
+  def self.isearch_paths
     match = self.stop
 
     if ! View.at_bottom && match.nil?   # If nothing searched for yet, search in git diff
-      Git.code_tree_diff
-      View.to_highest
-      Search.isearch nil
+      Launcher.open("- log/")
       return
     end
 
