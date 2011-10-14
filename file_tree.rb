@@ -295,8 +295,9 @@ class FileTree
   def self.apply_styles
     el4r_lisp_eval "(setq font-lock-defaults '(nil t))"
 
-    # Must go before quotes - if it goes after, it breaks them
+    # Must go before quotes - if it goes after, it supercedes them
     Styles.apply("\\(~\\)\\(.+?\\)\\(~\\)", :notes_label)
+    Styles.apply("https?://[a-zA-Z0-9\/.~_:-]+", :notes_link)   # blue-ify url's
 
     #   |... lines (quotes)
     Styles.apply("^ +\\(| *\\)", nil, :ls_quote)

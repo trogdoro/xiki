@@ -324,10 +324,10 @@ class Notes
       :bold => true, :underline => true
 
     Styles.define :notes_g, :fg=>"00B", :face=>'arial black', :size=>"0", :bold=>true
-    Styles.define :notes_blue, :fg=>"46f", :face=>'arial black', :size=>"0", :bold=>true
-    Styles.define :notes_red, :fg=>"c00", :face=>'arial black', :size=>"0", :bold=>true
+    Styles.define :notes_blue, :fg=>"69f", :face=>'arial black', :size=>"0", :bold=>true
+    Styles.define :notes_red, :fg=>"c55", :face=>'arial black', :size=>"0", :bold=>true
     Styles.define :notes_yellow, :fg=>"CC0", :face=>'arial black', :size=>"0", :bold=>true
-    Styles.define :notes_green, :fg=>"0C0", :face=>'arial black', :size=>"0", :bold=>true
+    Styles.define :notes_green, :fg=>"3C3", :face=>'arial black', :size=>"0", :bold=>true
 
     if Styles.inverse   # If black and white
 
@@ -345,7 +345,7 @@ class Notes
         :fg => "77cc44", :bold => true
     end
 
-    Styles.define :notes_link, :fg => "88aadd"
+    Styles.define :notes_link, :fg => "88bbcc"
 
   end
 
@@ -407,8 +407,6 @@ class Notes
     Styles.apply "^ *\\(-\\) \\(@?g\\)\\(o\\)\\(o\\)\\(g\\)\\(l\\)\\(e\\)\\(/\\)", nil, :ls_bullet,
       :notes_blue, :notes_red, :notes_yellow, :notes_blue, :notes_green, :notes_red,
       :ls_dir
-
-    Styles.apply("https?://[a-zA-Z0-9\/.~_:-]+", :notes_link)
 
   end
 
