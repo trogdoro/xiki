@@ -39,7 +39,6 @@ class Files
   end
 
   def self.copy
-    #from = Files.file_name(:path => true)
     from = Files.file_name
 
     View.next
@@ -122,9 +121,9 @@ class Files
   end
 
   def self.edited_flat
-    paths = edited_array#[0..120]
+    paths = edited_array[0..300]
     paths.map!{|i| i.sub(/(.+\/)(.+)/, "- \\1\n  - \\2")}
-    CodeTree.tree_search_option + paths.join("\n")
+    paths.join("\n")
   end
 
   def self.history_flat

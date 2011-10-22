@@ -8,6 +8,8 @@ require 'clipboard'
 class Notes
   extend ElMixin
 
+  LABEL_REGEX = /(?:[a-zA-Z0-9 _-]+: )?/
+
   def self.menu
     puts "- .help_wiki_format"
   end
@@ -47,7 +49,7 @@ class Notes
   end
 
   def self.to_block up=false
-    heading_regex = "^[|=]\\( \\|$\\)"
+    heading_regex = "^[>|=]\\( \\|$\\)"
     if up
       (Keys.prefix || 1).times do
         Line.to_left
@@ -55,7 +57,7 @@ class Notes
       end
     else
       (Keys.prefix || 1).times do
-        Line.next if Line[/^[|=]( |$)/]
+        Line.next if Line[/^[>|=]( |$)/]
 
         Search.forward heading_regex
 
@@ -65,7 +67,7 @@ class Notes
   end
 
   def self.move_block up=false
-    header_regex = "^|\\( \\|$\\)"
+    header_regex = "^[>|]\\( \\|$\\)"
 
     times = Keys.prefix_times
 
@@ -103,7 +105,7 @@ class Notes
     Line.start
 
     times = Keys.prefix_u? ? 1 : (Keys.prefix || 1)
-    times.times { insert "|" }
+    times.times { insert ">" }
     View.insert " " # unless times > 1
 
     open_line(4) if Keys.prefix_u?   # If U create blank lines.
@@ -180,7 +182,7 @@ class Notes
     Keys.custom_delete(:notes_mode_map) { Notes.cut_block(true) }   # block -> clear
     Keys.custom_expand(:notes_mode_map) { Notes.expand_block }   # Show just block
     Keys.custom_forward(:notes_mode_map) { Notes.move_block }   # Move block down to after next block
-    Keys.custom_heading(:notes_mode_map) { Notes.insert_heading }   # Insert ||... etc. heading
+    Keys.custom_heading(:notes_mode_map) { Notes.insert_heading }   # Insert |... etc. heading
     Keys.custom_item(:notes_mode_map) { Agenda.quick_add_line }
     # j
     Keys.custom_kill(:notes_mode_map) { Notes.cut_block }   # block -> cut
@@ -234,7 +236,7 @@ class Notes
     # Colors of "| ..." headings
     if Styles.inverse   # If black bg
       @@h1_styles = {
-        :notes_h1 =>"666666",
+        :notes_h1 =>"555555",
         :notes_h1r=>"661111",   # | r This will be red
         :notes_h1o=>"884411",   # | o This will be orange
         :notes_h1y=>"887711",
@@ -263,13 +265,13 @@ class Notes
         }
     end
 
-
     @@h1_styles.each do |k, v|
-      lighter = v.gsub(/../) {|c| (c.to_i(16) + "66".to_i(16)).to_s(16)}
+      pipe = v.gsub(/../) {|c| (c.to_i(16) + "22".to_i(16)).to_s(16)}
+      label = v.gsub(/../) {|c| (c.to_i(16) + "55".to_i(16)).to_s(16)}
       Styles.define k,
-        :face => 'arial', :size => h1_size, :fg => 'ffffff', :bg => v, :bold =>  true
-      Styles.define "#{k}_pipe".to_sym,
-        :face => 'arial', :size => h1_size, :fg => lighter,   :bg => v, :bold =>  true
+        :face=>'arial', :size=>h1_size, :fg=>'ffffff', :bg=>v, :bold=> true
+      Styles.define "#{k}_pipe".to_sym, :face=>'arial', :size=>h1_size, :fg=>pipe, :bg=>v, :bold=>true
+      Styles.define "#{k}_label".to_sym, :face=>'arial', :size=>h1_size, :fg=>label, :bg=>v, :bold=>true
     end
 
     Styles.define :notes_h1_agenda_pipe, :face => 'arial', :size => h1_size, :fg => '88cc88', :bg => '336633', :bold =>  true
@@ -288,20 +290,20 @@ class Notes
     # |||...
     Styles.define :notes_h3,
       :face => 'arial', :size => "-1",
-      :fg => '9999ee',#, :bg => "9999cc",
+      :fg => '99e',#, :bg => "9999cc",
       :bold =>  true
     Styles.define :notes_h3_pipe,
       :face => 'arial', :size => "-1",
-      :fg => '222244'
+      :fg => '224'
 
     # ||||...
     Styles.define :notes_h4,
-      :face => 'arial', :size => "-2",
-      :fg => 'bbbbee',
+      :face => 'arial', :size => "-3",
+      :fg => '55b',
       :bold =>  true
     Styles.define :notes_h4_pipe,
-      :face => 'arial', :size => "-2",
-      :fg => 'ddddf0'
+      :face => 'arial', :size => "-3",
+      :fg => '224'
 
 
     # Labels, emphasis
@@ -345,7 +347,7 @@ class Notes
         :fg => "77cc44", :bold => true
     end
 
-    Styles.define :notes_link, :fg => "88bbcc"
+    Styles.define :notes_link, :fg => "9ce"
 
   end
 
@@ -354,21 +356,22 @@ class Notes
     Styles.clear
 
     # |... lines (headings)
-    #     Styles.apply("^\\(|\\)\\( \n\\|.*\n\\)", nil, :notes_h1_pipe, :notes_h1)
+    Styles.apply("^\\([>|]\\)\\(.*\n\\)", nil, :notes_h1_pipe, :notes_h1)
+
+    Styles.apply("^\\(> \\)\\(.*\n\\)", nil, :notes_h1_pipe, :notes_h1)
+    Styles.apply("^\\(>> \\)\\(.*\n\\)", nil, :notes_h2_pipe, :notes_h2)
     Styles.apply("^\\(= \\)\\(.*\n\\)", nil, :notes_h1_pipe, :notes_h1)
     Styles.apply("^\\(== \\)\\(.*\n\\)", nil, :notes_h2_pipe, :notes_h2)
 
-    Styles.apply("^\\(|\\)\\(.*\n\\)", nil, :notes_h1_pipe, :notes_h1)
-    Styles.apply("^\\(| .+?: \\)\\(.+\n\\)", nil, :notes_h1_pipe, :notes_h1)
+    Styles.apply("^\\([>|]\\)\\( .+?: \\)\\(.+\n\\)", nil, :notes_h1_pipe, :notes_h1_label, :notes_h1)
 
     Styles.apply("^\\(| 20[0-9][0-9]-[0-9][0-9]-[0-9][0-9].*:\\)\\(.*\n\\)", nil, :notes_h1_agenda_pipe, :notes_h1_agenda)
 
     @@h1_styles.each do |k, v|
       l = k.to_s[/_..(.)$/, 1]
       next unless l
-      #       Styles.apply("^\\(| #{l}\\)\\(.*\\)", nil, "#{k}_pipe".to_sym, k)
       Styles.apply("^\\(| #{l}\\)\\(\n\\| .*\n\\)", nil, "#{k}_pipe".to_sym, k)
-      Styles.apply("^\\(| #{l} .+: \\)\\(.*\n\\)", nil, "#{k}_pipe".to_sym, k)
+      Styles.apply("^\\(|\\)\\( #{l} .+: \\)\\(.*\n\\)", nil, "#{k}_pipe".to_sym, "#{k}_label".to_sym, k)
     end
 
     # ||... lines
@@ -377,9 +380,11 @@ class Notes
 
     # |||... lines
     Styles.apply("^\\(|||\\)\\(.*\n\\)", nil, :notes_h3_pipe, :notes_h3)
+    Styles.apply("^\\(>>>\\)\\(.*\n\\)", nil, :notes_h3_pipe, :notes_h3)
 
     # ||||... lines
     Styles.apply("^\\(||||\\)\\(.*\n\\)", nil, :notes_h4_pipe, :notes_h4)
+    Styles.apply("^\\(>>>>\\)\\(.*\n\\)", nil, :notes_h4_pipe, :notes_h4)
 
     #     # ~emphasis~ strings
     #     Styles.apply("\\(~\\)\\(.+?\\)\\(~\\)", :notes_label)
@@ -387,8 +392,6 @@ class Notes
     # - bullets with labels
     Styles.apply("^[ \t]*\\([+-]\\) \\([!#-~ ]+?:\\) ", nil, :ls_bullet, :notes_label)
     Styles.apply("^[ \t]*\\([+-]\\) \\([!#-~ ]+?:\\)$", nil, :ls_bullet, :notes_label)
-
-    #Styles.apply("^[ \t]*\\(\\+\\)\\( \\)", nil, :ls_bullet, :variable)
 
     Styles.apply("^[ \t]*\\(x\\)\\( \\)\\(.+\\)", nil, :notes_label, :variable, :strike)
 
@@ -404,7 +407,8 @@ class Notes
     Styles.apply("\\(\(-\\)\\(.+?\\)\\(-\)\\)", nil, :diff_small, :diff_red, :diff_small)
     Styles.apply("\\(\(\\+\\)\\(.+?\\)\\(\\+\)\\)", nil, :diff_small, :diff_green, :diff_small)
 
-    Styles.apply "^ *\\(-\\) \\(@?g\\)\\(o\\)\\(o\\)\\(g\\)\\(l\\)\\(e\\)\\(/\\)", nil, :ls_bullet,
+    # google/
+    Styles.apply "^ *\\(-?\\) ?\\(@?\\)\\(g\\)\\(o\\)\\(o\\)\\(g\\)\\(l\\)\\(e\\)\\(/\\)", nil, :ls_bullet, :ls_dir,
       :notes_blue, :notes_red, :notes_yellow, :notes_blue, :notes_green, :notes_red,
       :ls_dir
 
@@ -456,7 +460,7 @@ class Notes
 
     if ! Line.blank?   # If non-blank line
 
-      if Line.matches(/^\|/) || Line.matches(/^ *[+-]/) || bullet_text != "- "    # If bullet already, or not adding bullets
+      if Line.matches(/^[>|]/) || Line.matches(/^ *[+-]/) || bullet_text != "- "    # If bullet already, or not adding bullets
 
         if Line.point == Line.left || Line.point == Line.right   # If cursor at beginning of line
           Line.to_right
@@ -584,7 +588,7 @@ class Notes
   end
 
   # Returns an instance of BlockNotes representing the block the point is currently in
-  def self.get_block regex="^|\\( \\|$\\)"
+  def self.get_block regex="^[|>]\\( \\|$\\)"
     left, after_header, right = View.block_positions regex
     NotesBlock.new(left, after_header, right)
   end

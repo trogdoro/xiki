@@ -125,7 +125,7 @@ class Ol
   end
 
   # Logs short succinct stack trace
-  def self.stack n=3, nth=1
+  def self.stack n=6, nth=1
     ls ||= caller(0)[nth..(n+nth)]
 
     self.line "stack...", ls.shift, ""

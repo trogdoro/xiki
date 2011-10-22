@@ -271,6 +271,12 @@ class Line
     View.insert txt
   end
 
+  def self.add_slash
+    Line << "/" unless Line =~ /\/$/
+    Move.to_end
+  end
+
+
   def self.init
     # Define lisp function to get list of displayed lines
     # In case something has been done to change them

@@ -313,7 +313,7 @@ class Console
       command = command =~ /\b_\b/ ? command.gsub(/\b_\b/, "\"#{file}\"") : "#{command} \"#{file}\""
 
       output = Console.run(command, :dir=>File.dirname(path), :sync=>true)
-      Tree.under(output) if options[:insert]
+      Tree.under(output, :escape=>'| ') if options[:insert]
 
       return View.message "Command ran with output: #{output.strip}."
     end

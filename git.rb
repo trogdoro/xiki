@@ -670,7 +670,7 @@ class Git
   def self.add project
     dir = self.extract_dir project
 
-    siblings = CodeTree.siblings
+    siblings = Tree.siblings
     # Error if no siblings
     unless siblings.any?
       return "- No files to add (they should be siblings of .add)!"
@@ -686,7 +686,7 @@ class Git
   def self.commit message, project
     dir = self.extract_dir project
 
-    siblings = CodeTree.siblings :include_label=>true
+    siblings = Tree.siblings :include_label=>true
 
     # Remove "untracked (ignore)"
     siblings = siblings.select{|i| i !~ /^. untracked \(ignore\)/}.map{|i| Line.without_label(:line=>i)}
@@ -710,7 +710,7 @@ class Git
   def self.checkout project#, file=nil
     dir = self.extract_dir project
 
-    siblings = CodeTree.siblings :include_label=>true
+    siblings = Tree.siblings :include_label=>true
     siblings.map!{|i| Line.without_label(:line=>i)}
 
     unless siblings.any?   # Error if no siblings
@@ -724,7 +724,7 @@ class Git
   def self.delete project
     dir = self.extract_dir project
 
-    siblings = CodeTree.siblings :include_label=>true
+    siblings = Tree.siblings :include_label=>true
     siblings.map!{|i| Line.without_label(:line=>i)}
 
     unless siblings.any?   # Error if no siblings

@@ -54,7 +54,8 @@ class Code
     Code.indent View.range_left, View.range_right
   end
 
-  def self.run   # Evaluates file, paragraph, or next x lines using el4r
+  # Evaluates file, paragraph, or next x lines using el4r
+  def self.run
     prefix = Keys.prefix
     if prefix.is_a?(Fixnum) && 0 <= prefix && prefix <= 7
       txt, left, right = View.txt_per_prefix
@@ -62,11 +63,8 @@ class Code
       case prefix
       when :u   # Load file in emacsruby
         return self.load_this_file
-      when :-   # Just run selection
-        left = View.range_left
-        right = View.range_right
       when 8   # Put into file and run in console
-        File.open("/tmp/tmp.rb", "w") { |f| f << Notes.get_block("^|").text }
+        File.open("/tmp/tmp.rb", "w") { |f| f << Notes.get_block("^[|>]").text }
         return Console.run "ruby -I. /tmp/tmp.rb", :dir=>View.dir
       when 9   # Pass whole file as ruby
         return Console.run("ruby #{View.file_name}", :buffer => "*console ruby")
@@ -77,11 +75,19 @@ class Code
         right = point_at_bol(elvar.current_prefix_arg+1)
         goto_char started
       else   # Move this into ruby - block.rb?
-        ignore, left, right = View.block_positions "^|"
+        ignore, left, right = View.block_positions "^[|>]"
       end
 
       txt = View.txt(:left=>left, :right=>right).to_s
       Effects.blink :left => left, :right => right
+    end
+
+    # If C--, define the launcher
+    if prefix == :-
+      if txt =~ /\A\s*class (\w+)/
+        clazz = $1
+        Launcher.add TextUtil.snake_case(clazz)
+      end
     end
 
     orig = Location.new
@@ -180,6 +186,15 @@ class Code
   end
 
   def self.open_related_rspec
+    if View.file =~ /\/xiki\//   # If in xiki project
+      if View.file =~ /\/spec\//   # If in spec, open corresponding file
+        View.open View.file.sub('/spec/', '/').sub(/_spec\.rb/, '.rb')
+      else   # Otherwise, open file corresponding spec
+        View.open View.file.sub(/(.+)\/(.+)/, "\\1/spec/\\2").sub(/\.rb/, '_spec.rb')
+      end
+      return
+    end
+
     if View.file =~ /\/(app|spec)\//   # If normal specs
       if View.file =~ /\/app\//   # If in file, open corresponding spec
         unless Keys.prefix_u   # Unless C-u, store method
@@ -224,14 +239,6 @@ class Code
       return
     end
 
-    if View.file =~ /\/xiki\//   # If in xiki project
-      if View.file =~ /\/spec\//   # If in spec, open corresponding file
-        View.open View.file.sub('/spec/', '/').sub(/_spec\.rb/, '.rb')
-      else   # Otherwise, open file corresponding spec
-        View.open View.file.sub(/(.+)\/(.+)/, "\\1/spec/\\2").sub(/\.rb/, '_spec.rb')
-      end
-      return
-    end
 
     View.beep
     View.message "Don't recognize this file."
@@ -470,11 +477,12 @@ class Code
     View.to orig
   end
 
-  def self.do_kill_duplicates
+  def self.kill_duplicates
     txt = View.selection :delete=>true
     l = txt.split("\n")
     orig = Location.new
     View.insert l.uniq.join("\n") + "\n"
+    View.set_mark
     orig.go
   end
 

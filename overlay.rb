@@ -147,7 +147,7 @@ class Overlay
   def before_string=(arg)
     $el.overlay_put(@overlay, BEFORE_STRING, arg)
   end
-  
+
   def after_string
     $el.overlay_get(@overlay, AFTER_STRING)
   end

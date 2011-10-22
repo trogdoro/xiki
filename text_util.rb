@@ -27,7 +27,7 @@ class TextUtil
 
     old_indent = Line.indent(txt)   # Get indent of first line
     txt.gsub!(/^#{old_indent}/, '')   # Delete current indent
-    txt
+    "#{txt.strip}\n"
   end
 
   def self.snake_case s

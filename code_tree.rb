@@ -42,8 +42,10 @@ class CodeTree
       returned.map{|l| "#{l =~ /\/$/ ? '+' : '-'} #{l}\n"}.join('')
     elsif returned.is_a? Hash
       (returned.map{|k, v| v =~ /\/$/ ? "+ #{k}: #{v}" : "- #{k}: #{v}"}.join("\n")) + "\n"
-    else returned.is_a? Fixnum
+    elsif returned.is_a? Fixnum
       "#{returned.to_s.strip}\n"
+    else
+      returned
     end
   end
 
@@ -54,6 +56,7 @@ class CodeTree
     orig_left = point
 
     returned, stdout, e = Code.eval(code)  # Eval code
+
     # If no stdout (and something was returned), print return value
     if ! stdout.nonempty? and ! returned.nil?
       stdout = self.returned_to_s returned
@@ -97,31 +100,34 @@ class CodeTree
 
       # Move what they printed over to left margin initally, in case they haven't
       stdout = TextUtil.unindent(stdout)
-      # Remove any double linebreaks at end
-      stdout.sub!(/\n\n\z/, "\n")
+      stdout.sub!(/\n\n\z/, "\n")   # Remove any double linebreaks at end
 
       stdout.gsub!(/^/, "#{indent}  ")
 
       View << stdout  # Insert output
       right = point
 
-      # Move cursor back
-      orig.go
-      # End up where script took us
-      ended_up.go
+      orig.go   # Move cursor back
+      ended_up.go   # End up where script took us
 
+      # These are deprecated - eventually pull them out
       if options[:tree_search]   # If they want to do a tree search
         goto_char left
         FileTree.select_next_file
         Tree.search(:left=>left, :right=>right, :recursive=>true)
-      elsif options[:quote_search]   # If they want to do a tree search
+        return
+      end
+      if options[:quote_search]   # If they want to do a tree search
         goto_char left
         Search.forward "|"
         Move.to_line_text_beginning
         Tree.search(:left=>left, :right=>right, :recursive_quotes=>true)
+        return
+      end
+
 
       # If script didn't move us (line or buffer), do incremental search
-      elsif !options[:no_search] && !buffer_changed && point == orig_left
+      if !options[:no_search] && !buffer_changed && point == orig_left
         # TODO No search if there aren't more than 3 lines
         goto_char left
 
@@ -129,25 +135,12 @@ class CodeTree
 
         # Determine how to search based on output!
 
-        params = {:left=>left, :right=>right}
-        original_indent = stdout[/\A */]
-        if stdout =~ /^#{original_indent}  /    # If any indenting
-          if stdout =~ /^  +\|/
-            Search.forward "^ +\\(|\\|- ##\\)", :beginning=>true
-            Move.to_line_text_beginning
-            params[:recursive_quotes] = true
-          else
-            FileTree.select_next_file
-            params[:recursive] = true
-          end
-          Tree.search params
-        else
-          Tree.search params.merge(:number_means_enter=>true)
-        end
+        Tree.search_appropriately left, right, stdout
 
       elsif options[:no_search]
         Move.to_line_text_beginning(1)
       end
+
     end
   end
 
@@ -272,7 +265,7 @@ class CodeTree
     # If last parameter was |..., make it be all the lines
     if data.first =~ /^ *\|/
       data.first.replace( self.escape(
-        self.siblings(:include_self=>true).map{|i| "#{i[/^ *\| ?(.*)/, 1]}\n"}.join('')
+        Tree.siblings(:all=>true).map{|i| "#{i[/^ *\| ?(.*)/, 1]}\n"}.join('')
         ))
     end
 
@@ -320,69 +313,12 @@ class CodeTree
     l
   end
 
-  def self.sibling_bounds
-    indent_size = Line.indent.size   # Get indent
-    indent_less = indent_size - 1
-    #     indent_less = 0 if indent_less < 0
-
-    orig = Location.new
-
-    right1 = Line.left   # Right side of lines before
-
-    # Search for line indented less - parent (to get siblings after)
-    indent_less < 0 ?
-      Search.backward("^$") :
-      Search.backward("^ \\{0,#{indent_less}\\}\\($\\|[^ \n]\\)")
-
-    Line.next
-    left1 = Line.left   # Left side of lines before
-
-    orig.go
-
-    # Search for line indented same or less (to get siblings after)
-    Line.next
-    Search.forward "^ \\{0,#{indent_size}\\}\\($\\|[^ \n]\\)"
-    Line.to_left
-    left2 = View.cursor
-    # Search for line indented less
-    indent_less < 0 ?
-      Search.forward("^$") :
-      Search.forward("^ \\{0,#{indent_less}\\}\\($\\|[^ \n]\\)")
-    right2 = Line.left   # Left side of lines before
-    orig.go
-
-    [left1, right1, left2, right2]
-  end
 
   # Returns group of lines close to current line that are indented at the same level.
   # The bounds are determined by any lines indented *less* than the current line (including
   # blank lines).  In this context, lines having only spaces are not considered blank.
   # Any lines indented *more* than the current line won't affect the bounds, but will be
   # filtered out.
-  def self.siblings options={}
-    left1, right1, left2, right2 = self.sibling_bounds
-
-    return self.siblings(:include_self=>true).join("\n").gsub(/^ *\| ?/, '') if options[:as_string]
-
-    # Combine and process siblings
-    if options[:include_self]
-      siblings = View.txt(options.merge(:left=>left1, :right=>right2))
-    else
-      siblings = View.txt(options.merge(:left=>left1, :right=>right1)) + View.txt(options.merge(:left=>left2, :right=>right2))
-    end
-
-    siblings.gsub! /^#{Line.indent} .*\n/, ''   # Remove more indented lines
-    siblings.gsub! /^ +\n/, ''   # Remove blank lines
-    siblings.gsub! /^ +/, ''   # Remove indents
-    siblings = siblings.split("\n")
-
-    unless options[:include_label]   # Optionally remove labels
-      siblings.map!{|i| Line.without_label(:line=>i)}
-    end
-
-    siblings
-  end
-
   def self.child
     next_line = Line.value 2
     # If indent is one greater, it is a child
@@ -395,7 +331,7 @@ class CodeTree
   def self.kill_siblings
     prefix = Keys.prefix :clear=>true
 
-    left1, right1, left2, right2 = self.sibling_bounds
+    left1, right1, left2, right2 = Tree.sibling_bounds
 
     if prefix == 8
       View.delete left1, right2

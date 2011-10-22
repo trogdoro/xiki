@@ -33,23 +33,19 @@ class DiffLog
         "^- #{File.dirname path}/\n  - #{File.basename path}\n"
     end
 
-    diffs = ""
+    txt = File.read @@log
+    txt = txt.sub(/\A- /, '').split(/^- /).reverse.uniq
 
-    with(:save_window_excursion) do
-      DiffLog.open
-
-      300.times do
-        break unless Search.backward match_tree
-        top = View.cursor
-        Line.next
-        Search.forward "^[^ \t\n]", :go_anyway=>true, :beginning=>true
-        diffs << "#{View.txt(top, View.cursor)}"
-        View.to top
-      end
+    if File.file? path   # File
+      regex = /^#{Regexp.escape File.dirname path}\/\n  - #{Regexp.escape File.basename path}/
+    else   # Dir
+      regex = /^#{Regexp.escape path}/
+      path = "#{path}/" if path !~ /\/$/
     end
 
-    diffs
+    txt = txt.select{|o| o =~ regex}
 
+    "- #{txt.join("- ")}"
   end
 
   # Insert old text deleted during last save
@@ -82,13 +78,15 @@ class DiffLog
     View.insert diff
   end
 
+  def self.save_internal options={}
+    return if View.file_name == "difflog.notes"
+    diff = self.saved_diff options
+    File.open(@@log, "a") { |f| f << diff } unless diff.count("\n") <= 2
+  end
+
   # Appends diff to difflog, then saves.  Map to AF.
   def self.save
-    unless View.file_name == "difflog.notes"
-      diff = self.saved_diff
-      # Write to temporary file
-      File.open(@@log, "a") { |f| f << diff } unless diff.count("\n") <= 2
-    end
+    self.save_internal
     save_buffer
 
     prefix = Keys.prefix
@@ -140,12 +138,18 @@ class DiffLog
     isearch_backward
   end
 
-
-private
   # Util function used by public functions
-  def self.saved_diff
-    $el.write_region nil, nil, @@temp_path
-    diff = Console.run "diff -w -U 0 \"#{buffer_file_name}\" \"#{@@temp_path}\"", :sync=>true
+  def self.saved_diff options={}
+
+    if options[:patha] && options[:textb]
+      patha = options[:patha]
+      File.open(@@temp_path, "w") { |f| f << options[:textb] }
+    else
+      patha = View.file
+      $el.write_region nil, nil, @@temp_path
+    end
+
+    diff = Console.run "diff -w -U 0 \"#{patha}\" \"#{@@temp_path}\"", :sync=>true
     self.format(View.path, View.file_name, diff)
   end
 end

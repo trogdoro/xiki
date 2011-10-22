@@ -20,28 +20,80 @@ class Launcher
   @@just_show = false
   # @@just_show = true
 
-  @@launchers = ActiveSupport::OrderedHash.new
-  @@launchers_procs = []
-  @@launchers_parens = {}
-  @@launchers_paths = {}
+  @@launchers ||= ActiveSupport::OrderedHash.new
+  @@launchers_procs ||= []
+  @@launchers_parens ||= {}
+  @@launchers_paths ||= {}
+
+  def self.last path, options={}
+
+    path = path.sub /^last\/?/, ''
+
+    log = IO.read(Launcher.log)
+    paths = log.split("\n")
+
+    # If nothing passed, just list all roots
+
+    if path.empty?
+      paths.map!{|o| o.sub /\/.+/, '/'}   # Cut off after path
+      return paths.reverse.uniq.join("\n")+"\n"
+    end
+
+    paths = paths.select{|o| o =~ /^- #{Notes::LABEL_REGEX}#{path}/}
+    # Use label regex - pull out into reusable place
+
+    # If root passed, show all matching
+    if options[:exclude_path]
+      paths.each{|o| o.sub! /^- #{path}\//, '- '}
+      paths = paths.select{|o| o != "- "}
+    else
+      paths = paths.map{|o| o.sub /^- #{Notes::LABEL_REGEX}/, '\\0@'}
+    end
+    paths.reverse.uniq.join("\n")+"\n"
+  end
 
   def self.log
     @@log
   end
 
-  def self.add arg, &block
+  def self.add *args, &block
+    arg = args.shift
+
     if arg.is_a? Regexp   # If regex, add
       @@launchers[arg] = block
-
-    elsif arg.is_a? Hash   # If hash, must be paren
-      (@@launchers_parens)[arg[:paren]] = block
     elsif arg.is_a? Proc   # If proc, add to procs
       @@launchers_procs << [arg, block]
-    elsif arg.is_a? String
-      @@launchers_paths[arg] = block
+    elsif arg.is_a?(String)
+      self.add_path arg, args[0], block
+    elsif arg.is_a?(Hash)
+      @@launchers_parens[arg[:paren]] = block
     else
       raise "Don't know how to launch this"
     end
+  end
+
+  def self.add_path root, hash, block
+    # If just block, just define
+    if hash.nil? && block
+      return @@launchers_paths[root] = block
+    end
+
+    # If just root, define class with that name
+    if block.nil? && (hash.nil? || hash[:class])
+      self.add root do |path|
+        Launcher.invoke((hash ? TextUtil.snake_case(hash[:class]) : root), path)
+      end
+      return
+    end
+
+    if hash[:menu]
+      self.add root do |path|
+        Launcher.climb hash[:menu], path[%r"\/(.*)"]
+      end
+      return
+    end
+
+    raise "Don't know how to deal with: #{root}, #{hash}, #{block}"
   end
 
   def self.launch_or_hide options={}
@@ -127,7 +179,7 @@ class Launcher
       # It's adding the slash, which is good
         # But add it on end if there was one on end!
 
-      return self.launch :line=>merged
+      return self.launch options.slice(:no_search).merge(:line=>merged)
     end
 
     if self.launch_by_proc   # Try procs (currently all trees)
@@ -152,23 +204,15 @@ class Launcher
 
       self.append_log line
 
-      output = block_call_safely block, line
-      if output
-        if output !~ /\A *\|/
-          Line << "/" unless Line =~ /\/$/
-        end
-        output = output.unindent if output =~ /\A[ \n]/
-        View >> output
-      end
+      self.output_and_search block, line
       return
     end
 
     # Try to auto-complete based on path-launchers
 
-    if line =~ /^(\w+)(\.\.\.)?$/
+    if line =~ /^(\w+)(\.\.\.)?\/?$/
       stem = $1
       matches = @@launchers_paths.keys.select do |possibility|
-        #       matches = (@@launchers_paths.keys + (@@launchers_classes||[])).select do |possibility|
         possibility =~ /^#{stem}/
       end
       if matches.any?
@@ -198,13 +242,63 @@ class Launcher
     $xiki_no_search = false
   end
 
-  def self.block_call_safely block, line
-    begin
-      block.call line
-    rescue Exception=>e
-      backtrace = e.backtrace[0..8].join("\n").gsub(/^/, '  ') + "\n"
-      "- error: #{e.message}\n- backtrace:\n#{backtrace}"
+  def self.output_and_search block_or_string, line=nil
+
+    buffer_orig = View.buffer
+    orig = Location.new
+    orig_left = View.cursor
+    error_happened = nil
+
+    output =
+      if block_or_string.is_a? String
+        block_or_string
+      else   # Must be a proc
+        begin
+          block_or_string.call line
+        rescue Exception=>e
+          error_happened = true
+          backtrace = e.backtrace[0..8].join("\n").gsub(/^/, '  ') + "\n"
+          "- error evaluating:\n#{Code.to_ruby(block_or_string).gsub(/^/, '  ')}\n- message: #{e.message}\n" +
+            "- backtrace:\n" +
+            e.backtrace[0..8].map{|i| "  #{i}\n"}.join('') + "  ...\n"
+        end
+      end
+
+    return if output.blank?
+
+    buffer_changed = buffer_orig != View.buffer   # Remember whether we left the buffer
+
+    ended_up = Location.new
+    orig.go   # Go back to where we were before running code
+
+    Line << "/" unless Line =~ /\/$/ if output !~ /\A *\|/   # Add slash at end if there was output
+
+    indent = Line.indent
+    Line.to_left
+    Line.next
+    left = View.cursor
+
+    # Move what they printed over to left margin initally, in case they haven't
+    output = TextUtil.unindent(output) if output =~ /\A[ \n]/
+    # Remove any double linebreaks at end
+    output.sub!(/\n\n\z/, "\n")
+    output = "#{output}\n" if output !~ /\n\z/
+
+    output.gsub!(/^/, "#{indent}  ")
+
+    View << output  # Insert output
+    right = View.cursor
+
+    orig.go   # Move cursor back
+    ended_up.go   # End up where script took us
+
+    if !error_happened && !$xiki_no_search && !buffer_changed && View.cursor == orig_left
+      Tree.search_appropriately left, right, output#, original_indent
+    else
+      Move.to_line_text_beginning(1)
     end
+
+    #       $xiki_no_search = false   # Is this handled elsewhere?
   end
 
   def self.launch_by_proc
@@ -226,9 +320,6 @@ class Launcher
   end
 
   def self.init_default_launchers
-    @@launchers = ActiveSupport::OrderedHash.new
-    @@launchers_procs = []
-
     self.add :paren=>"o" do  # - (t): Insert "Test"
       orig = Location.new
       txt = Line.without_label  # Grab line
@@ -240,17 +331,17 @@ class Launcher
 
     self.add :paren=>"th" do   # - (th): thesaurus.com
       url = Line.without_label.sub(/^\s+/, '').gsub('"', '%22').gsub(':', '%3A').gsub(' ', '%20')
-      browse_url "http://thesaurus.reference.com/browse/#{url}"
+      $el.browse_url "http://thesaurus.reference.com/browse/#{url}"
     end
 
     self.add :paren=>"twitter" do   # - (twitter): twitter search
       url = Line.without_label.sub(/^\s+/, '').gsub('"', '%22').gsub(':', '%3A').gsub(' ', '%20')
-      browse_url "http://search.twitter.com/search?q=#{url}"
+      $el.browse_url "http://search.twitter.com/search?q=#{url}"
     end
 
     self.add :paren=>"dic" do   # - (dic): dictionary.com lookup
       url = Line.without_label.sub(/^\s+/, '').gsub('"', '%22').gsub(':', '%3A').gsub(' ', '%20')
-      browse_url "http://dictionary.reference.com/browse/#{url}"
+      $el.browse_url "http://dictionary.reference.com/browse/#{url}"
     end
 
     self.add :paren=>"click" do
@@ -291,7 +382,7 @@ class Launcher
     end
 
     self.add :paren=>"jso" do   # - (js): js to run in firefox
-      Tree.under Firefox.value(CodeTree.line_or_children)
+      Tree.under Firefox.value(CodeTree.line_or_children), :escape=>'| '
     end
 
     self.add :paren=>"dom" do   # Run in browser
@@ -311,8 +402,8 @@ class Launcher
         View.open file
 
       else
-        browse_url file
-        browse_url "#{View.dir}#{file}"
+        $el.browse_url file
+        $el.browse_url "#{View.dir}#{file}"
       end
     end
 
@@ -432,11 +523,11 @@ class Launcher
       url = line[/(http|file).?:\/\/.+/]
 
       if prefix == 8
-        Tree.under RestTree.request("GET", url)
+        Tree.under RestTree.request("GET", url), :escape=>'| '
         next
       end
       url.gsub! '%', '%25'
-      prefix == :u ? browse_url(url) : Firefox.url(url)
+      prefix == :u ? $el.browse_url(url) : Firefox.url(url)
     end
 
     self.add(/^[ +-]*\$[^#*!\/]+$/) do |line|   # Bookmark
@@ -469,12 +560,18 @@ class Launcher
 
     self.add :label=>/^google$/ do |line|  # - google:
       url = Line.without_label.sub(/^\s+/, '').gsub('"', '%22').gsub(':', '%3A').gsub(' ', '%20')
-      browse_url "http://www.google.com/search?q=#{url}"
+      $el.browse_url "http://www.google.com/search?q=#{url}"
     end
 
     self.add "google" do |line|
-      url = line[/\/(.+)/, 1].sub(/^\s+/, '').gsub('"', '%22').gsub(':', '%3A').gsub(' ', '%20')
-      browse_url "http://www.google.com/search?q=#{url}"
+      line.sub! /^google\/?/, ''
+      line.sub! /\/$/, ''
+
+      if line.blank?   # If no path, pull from history
+        next Launcher.last "google", :exclude_path=>1
+      end
+      url = line.sub(/^\s+/, '').gsub('"', '%22').gsub(':', '%3A').gsub(' ', '%20')
+      $el.browse_url "http://www.google.com/search?q=#{url}"
       nil
     end
 
@@ -484,7 +581,6 @@ class Launcher
     end
 
     self.add(/^\*/) do |line|  # *... buffer
-      #return $el.insert "hey"
       name = Line.without_label.sub(/\*/, '')
       View.to_after_bar
       View.to_buffer name
@@ -569,9 +665,17 @@ class Launcher
       "- TODO: pull out from $te"
     end
 
-    # Trees
+    Launcher.add "log" do
+      log = IO.read(Launcher.log)
+      log.split("\n").map{|o| o.sub /^- #{Notes::LABEL_REGEX}/, '\\0@'}.reverse.uniq.join("\n")+"\n"
+    end
 
-    # Let trees try to handle it
+    Launcher.add "last" do |path|
+      Launcher.last path
+    end
+
+    # ...Tree classes
+
     # RestTree
     condition_proc = proc {|list| RestTree.handles? list}
     Launcher.add condition_proc do |list|
@@ -657,7 +761,8 @@ class Launcher
 
     menu =
       if bm == "8" || bm == " "
-        "- Search.launched/"
+        "- search/.launched/"
+        #         "- Search.launched/"
       elsif bm == "."
         "- Search.launched '#{View.file}'/"
       elsif bm == "3"
@@ -665,7 +770,7 @@ class Launcher
       elsif bm == ";" || bm == ":" || bm == "-"
         "- Search.launched ':'/"
       else
-        "- Search.launched '$#{bm}'/"
+        "- search/.launched/$#{bm}/"
       end
   end
 
@@ -677,26 +782,71 @@ class Launcher
   end
 
   def self.invoke clazz, path
-    camel = TextUtil.camel_case clazz
-    clazz = $el.el4r_ruby_eval(camel) rescue nil
+Ol.stack
+    # Allow class to be a .tree file as well
+
+Ol << "path: #{path.inspect}"
+Ol << "clazz: #{clazz.inspect}"
+
+    if clazz.is_a? Hash
+Ol << "use wrapper to shell out to class!"
+    end
+
+    if clazz.is_a? String
+      camel = TextUtil.camel_case clazz
+      clazz = $el.el4r_ruby_eval(camel) rescue nil
+      #       Ol << "clazz: #{clazz.inspect}"
+    elsif clazz.is_a? Class
+      camel = clazz.to_s
+    end
 
     raise "No class '#{clazz}' found in launcher" if clazz.nil?
 
     args = path.split "/"
     args.shift
 
+    # Figure out which ones are actions
+
+    # Find last .foo item
+    actions, variables = args.partition{|o|
+      o =~ /^\./
+
+      # Also use result of .menu to determine
+
+    }
+    action = actions.last || ".menu"
+
+    # Remove : from :foo lines
+
     # If no args yet, pass in empty list
     # if clazz.method("menu").arity != 1
-    args = args.map{|o| "\"#{o}\""}.join(", ")
+Ol << "args: #{args.inspect}"
+    if args[-1] =~ /^ *\|/
+Ol.line
+      args[-1].replace( CodeTree.escape(
+        Tree.siblings(:all=>true).map{|i| "#{i[/^ *\| ?(.*)/, 1]}\n"}.join('')
+        ))
+    end
+Ol << "args: #{args.inspect}!"
+    args = variables.map{|o| "\"#{o.gsub('"', '\\"')}\""}.join(", ")
+Ol << "args: #{args.inspect}"
+    # If last parameter was |..., make it be all the lines
 
-    code = "#{camel}.menu #{args}"
-    returned, out, exception = Code.eval code
-    output = returned
-    output = output.unindent if output =~ /\A[ \n]/
+    if clazz.is_a?(String) || clazz.is_a?(Class)
+      code = "#{camel}#{action} #{args}".strip
+      returned, out, exception = Code.eval code
+      output = returned
+      output = CodeTree.returned_to_s(output)   # Convert from array into string, etc.
+      output = output.unindent if output =~ /\A[ \n]/
+    elsif clazz.is_a?(Hash)
+      file = clazz[:wrap]
+    end
+
 
     if exception
+      Ol << "!"
       backtrace = exception.backtrace[0..8].join("\n").gsub(/^/, '  ') + "\n"
-      return "- error: #{exception.message}\n- backtrace:\n#{backtrace}"
+      return "- error: #{exception.message}\n- tried to run: #{code}\n- backtrace:\n#{backtrace}"
     end
 
     output
@@ -749,38 +899,56 @@ class Launcher
     $el.notes_mode
 
     View.insert "#{menu}"
-    open_line 1
+    $el.open_line 1
     Launcher.launch options
   end
+
+  def self.method_missing *args, &block
+    arg = args.shift
+Ol << "arg: #{arg.inspect}"
+Ol.stack
+    self.add arg.to_s, args[0], &block
+  end
+
+  def self.wrapper
+Ol.line
+    path = Tree.construct_path #(:list=>true)
+    path.sub /^\//, ''
+Ol << "path: #{path.inspect}"
+Ol << "pull off anything after the \.rb\/!"
+    dir, stem = File.dirname(path), File.basename(path)
+    self.wrapper_rb dir, stem
+  end
+
+  def self.wrapper_rb dir, stem
+Ol << "delegate to Launcher.invoke path, :wrap=>!"
+Ol << "pass in args!"
+
+    output = Console.run "ruby #{Bookmarks['$x']}etc/wrapper.rb #{stem}", :sync=>1, :dir=>dir
+    #     Console.run "ruby #{Bookmarks['$x']}etc/wrapper.rb pumpkin.rb", :sync=>1, :dir=>"/projects/xiki_tree_sample/"
+    Tree << output
+  end
+
+  def self.climb tree, path
+    path = "" if path == nil || path == "/"   # Must be at root if nil
+    tree = TextUtil.unindent tree
+Ol << "tree: #{tree.inspect}"
+Ol << "path: #{path.inspect}"
+    AutoMenu.child_bullets tree, path
+  end
+
+  def self.remove root
+Ol << "root: #{root.inspect}"
+    @@launchers_paths.delete root
+  end
+
+end
+
+def require_launcher path
+  require path
+  stem = path.sub(/\.rb$/, '')[/\w+$/]
+Ol << "stem: #{stem.inspect}"
+  Launcher.add stem
 end
 
 Launcher.init_default_launchers
-
-Launcher.add "log" do
-  log = IO.read(Launcher.log)
-  log.split("\n").map{|o| o.sub /^- /, '- @'}.reverse.uniq.join("\n")+"\n"
-end
-
-Launcher.add "last" do |path|
-  path = path.sub /^last\/?/, ''
-
-  log = IO.read(Launcher.log)
-  paths = log.split("\n")
-
-  # If nothing passed, just list all roots
-
-  if path.empty?
-    paths.map!{|o| o.sub /\/.+/, '/'}   # Cut off after path
-    next paths.reverse.uniq.join("\n")+"\n"
-  end
-
-  # If root passed, show all matching
-  paths = paths.select{|o| o =~ /- #{path}/}.map{|o| o.sub /^- /, '- @'}
-
-  paths.reverse.uniq.join("\n")+"\n"
-
-  # Be sure to include labels
-    # Just labels at root?
-
-
-end

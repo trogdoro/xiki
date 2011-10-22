@@ -31,7 +31,7 @@ class Svn
 
 
   def self.commit comment=""
-    puts CodeTree.siblings
+    puts Tree.siblings
   end
 
   def self.jump_to_diff
@@ -580,7 +580,7 @@ end
 #   def self.add project
 #     dir = self.extract_dir project
 
-#     siblings = CodeTree.siblings
+#     siblings = Tree.siblings
 #     # Error if no siblings
 #     unless siblings.any?
 #       return "- No files to add (they should be siblings of .add)!"
@@ -596,9 +596,9 @@ end
 #   def self.commit message, project
 #     dir = self.extract_dir project
 
-#     siblings = CodeTree.siblings :include_label=>true
+#     siblings = Tree.siblings :include_label=>true
 
-#     left1, right1, left2, right2 = CodeTree.sibling_bounds
+#     left1, right1, left2, right2 = Tree.sibling_bounds
 
 #     # Remove "untracked (ignore)"
 #     siblings = siblings.select{|i| i !~ /^. untracked \(ignore\)/}.map{|i| Line.without_label(:line=>i)}

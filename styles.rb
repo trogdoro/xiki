@@ -25,7 +25,16 @@ class Styles
       elvar.background_mode_type.to_s == 'dark'
   end
 
+  def self.exand_colors options, keys
+    keys.each do |key|
+      next if ! options[key]
+      options[key].sub! /^(.)(.)(.)$/, "\\1\\1\\2\\2\\3\\3"
+    end
+  end
+
   def self.define name, options
+
+    self.exand_colors options, [:bg, :fg]
 
     code = "(set-face-attribute (make-face '#{name.to_s.gsub("_", "-")}) nil\n"
     code << "  :background \"##{options[:bg]}\"\n" if options[:bg]
@@ -58,7 +67,6 @@ class Styles
     code << "  )"
 
     el4r_lisp_eval code
-
   end
 
   def self.apply(pattern, *styles)

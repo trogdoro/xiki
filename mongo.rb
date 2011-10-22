@@ -30,7 +30,7 @@ class Mongo
     Launcher.add(/^ *db\./) do |l|   # General db... lines
       l.strip!
       txt = self.run l
-      Tree.under "#{txt.strip}\n"
+      Tree.under "#{txt.strip}\n", :escape=>'| '
     end
 
     Launcher.add(:paren=>"mdb") do   # General db... lines
@@ -39,28 +39,28 @@ class Mongo
 
       l.strip!
       txt = self.run l
-      Tree.under "#{txt.strip}\n"
+      Tree.under "#{txt.strip}\n", :escape=>'| '
     end
 
     Launcher.add(/^ *(\w+)\.(save|update)\(/) do |l|   # Shortcut for foo.save()
       l.strip!
       l = "db.#{l}"
       txt = self.run l
-      Tree.under "done#{txt.strip}\n"
+      Tree.under "done#{txt.strip}\n", :escape=>'| '
     end
 
     Launcher.add(/^ *(\w+)\.find\(/) do |l|   # Shortcut for foo.find()
       l.strip!
       l = "db.#{l}"
       txt = self.run l
-      Tree.under "#{txt.strip}\n"
+      Tree.under "#{txt.strip}\n", :escape=>'| '
     end
 
     Launcher.add(/^ *(\w+)\.remove\(/) do |l|   # Shortcut for foo.remove()
       l.strip!
       l = "db.#{l}"
       txt = self.run l
-      Tree.under "#{txt.strip}\n"
+      Tree.under "#{txt.strip}\n", :escape=>'| '
     end
 
   end

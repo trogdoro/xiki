@@ -27,13 +27,12 @@ class Tree
     end
 
     # While narrowing down list
-
     while (ch =~ /[ "%-),.-.:<?-~]/) ||   # Be careful editing, due to ranges (_-_)
         (recursive && ch_raw == 2 || ch_raw == 6) ||
         ch == :up || ch == :down
 
       break if recursive && ch == '/'   # Slash means enter in a dir
-      if ch == ','
+      if ch == ' '
         pattern = ''
       elsif ch_raw == 2   # C-b
         while(Line.previous == 0)
@@ -67,16 +66,13 @@ class Tree
           pattern.sub!(/^[A-Z]+/, '')
         end
 
-        acronym = self.acronym_regexp(pattern)
+        regexp = pattern
+
         $el.delete_region left, right
 
-        # Replace out lines that don't match (and aren't dirs)
-        regexp = Keys.prefix == 5 ?
-          "#{acronym}" :
-          "#{acronym}|#{pattern}"
-
         regexp = "\\/$|#{regexp}" if recursive
-        regexp = "^[^|]+$|#{regexp}" if recursive_quotes
+        # Always keep if "- file" or "- /dir"
+        regexp = "^ *:\\d|^ *[+-] [a-zA-Z0-9:.\/]|#{regexp}" if recursive_quotes
 
         regexp = /#{regexp}/i
         lines_new = nil
@@ -108,7 +104,7 @@ class Tree
         if recursive
           FileTree.select_next_file
         elsif recursive_quotes
-          Search.forward "|"
+          Search.forward "|\\|#"
           Move.to_line_text_beginning
         else
           Move.to_line_text_beginning
@@ -308,22 +304,16 @@ class Tree
         return Launcher.launch
       end
 
-        # If line is a dir, do tree-like tab
-        if Line.value =~ /\/$/
+      $el.delete_region(Line.left(2), right)  # Delete other files
+      $el.delete_horizontal_space
+      $el.delete_backward_char 1
 
-          $el.delete_region(Line.left(2), right)  # Delete other files
-          $el.delete_horizontal_space
-          $el.delete_backward_char 1
+      # delete -|+ if there
+      if View.txt(View.cursor, Line.right) =~ /^[+-] /
+        $el.delete_char 2
+      end
 
-          # delete -|+ if there
-          if View.txt(View.cursor, Line.right) =~ /^[+-] /
-            $el.delete_char 2
-          end
-
-          return FileTree.dir? ?   # Open if a dir
-            Launcher.launch :
-            Line.end
-        end
+      Launcher.launch
 
     when "="   # Drill into the file
       dir = self.construct_path  # Expand out ~
@@ -449,7 +439,10 @@ class Tree
   end
 
   def self.under txt, options={}
-    escape = options[:escape] || '| '
+
+    txt = TextUtil.unindent(txt) if txt =~ /\A[ \n]/
+
+    escape = options[:escape] || ''
     txt = txt.gsub!(/^/, escape)
     txt.gsub!(/^\| $/, '|')
 
@@ -458,8 +451,10 @@ class Tree
 
     # Insert linebreak if at end of file
 
-    self.indent txt
-    self.insert_quoted_and_search(txt, options)
+    txt.gsub! /^  /, '' if options[:before] || options[:after]   # Move back to left
+
+    Launcher.output_and_search txt
+    Line.next(options[:line_found]-1) if options[:line_found] && options[:line_found] > 0
   end
 
   def self.to_parent
@@ -622,7 +617,100 @@ class Tree
 
     Line.to_words
     # Do a search
-    Tree.search(:left=>left, :right=>right) unless options[:no_search]
+
+    return if options[:no_search]
+
+    Tree.search(:left=>left, :right=>right)
+  end
+
+  def self.<< txt, options={}
+    self.under txt, options
+  end
+
+  def self.after txt
+    View.under txt, :after=>1
+  end
+
+  def self.siblings options={}
+    left1, right1, left2, right2 = self.sibling_bounds
+
+    return self.siblings(:all=>true).join("\n").gsub(/^ *\| ?/, '') if options[:as_string]
+
+    # Combine and process siblings
+    if options[:all]
+      siblings = View.txt(options.merge(:left=>left1, :right=>right2))
+    else
+      siblings = View.txt(options.merge(:left=>left1, :right=>right1)) + View.txt(options.merge(:left=>left2, :right=>right2))
+    end
+
+    siblings.gsub! /^#{Line.indent} .*\n/, ''   # Remove more indented lines
+    siblings.gsub! /^ +\n/, ''   # Remove blank lines
+    siblings.gsub! /^ +/, ''   # Remove indents
+    siblings = siblings.split("\n")
+
+    unless options[:include_label]   # Optionally remove labels
+      siblings.map!{|i| Line.without_label(:line=>i)}
+    end
+
+    siblings
+  end
+
+  def self.sibling_bounds
+    indent_size = Line.indent.size   # Get indent
+    indent_less = indent_size - 1
+
+    orig = Location.new
+
+    right1 = Line.left   # Right side of lines before
+
+    # Search for line indented less - parent (to get siblings after)
+    indent_less < 0 ?
+      Search.backward("^$") :
+      Search.backward("^ \\{0,#{indent_less}\\}\\($\\|[^ \n]\\)")
+
+    Line.next
+    left1 = Line.left   # Left side of lines before
+
+    orig.go
+
+    # Search for line indented same or less (to get siblings after)
+    Line.next
+    Search.forward "^ \\{0,#{indent_size}\\}\\($\\|[^ \n]\\)"
+    Line.to_left
+    left2 = View.cursor
+    # Search for line indented less
+    indent_less < 0 ?
+      Search.forward("^$") :
+      Search.forward("^ \\{0,#{indent_less}\\}\\($\\|[^ \n]\\)")
+    right2 = Line.left   # Left side of lines before
+    orig.go
+
+    [left1, right1, left2, right2]
+  end
+
+  def self.search_appropriately left, right, output
+    $el.goto_char left
+    Line.to_words
+
+    # Determine how to search based on output!
+
+    params = {:left=>left, :right=>right}
+
+    root_indent = output[/\A */]
+    if output =~ /^#{root_indent}  /   # If any indenting
+      if output =~ /^  +\|/
+        Search.forward "^ +\\(|\\|- ##\\)", :beginning=>true
+        Move.to_line_text_beginning
+        params[:recursive_quotes] = true
+      else
+        FileTree.select_next_file
+        params[:recursive] = true
+      end
+      Tree.search params
+    else
+      Tree.search params.merge(:number_means_enter=>true)
+    end
+
   end
 
 end

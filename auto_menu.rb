@@ -34,27 +34,32 @@ module AutoMenu
 
     # If they called menu(), print out top-level bullets
     if func == :menu
-      return puts(tree.grep(/^[+-]/).join(''))
+      return tree.grep(/^[+-]/).join('')
     end
 
     # Otherwise, print out level immediately underneath method they called
-    result = AutoMenu.child_bullets(tree, func)
+    result = AutoMenu.child_bullets(tree, func.to_s)
     # If none, throw no method error
     if result == ""
       raise NoMethodError.new("function #{func} undefined")
     end
-    puts result
+    result
   end
 
   def self.child_bullets(tree, node)
     found = nil
     result = ""
+
+    if ! (node||"").any?
+      return tree.grep(/^[+-]/).join('')
+    end
+
     # For each line
     tree.split("\n").each do |l|
       # Start outputting if found
       if ! found
-        if l =~ /^( *)[+-] \.#{node}\/?$/
-          found = $1.size  # Remember indent
+        if self.strip(l) == self.strip(node)
+          found = Line.indent(l).size  # Remember indent
         end
       else
         current_indent = l[/^ */].size
@@ -69,6 +74,10 @@ module AutoMenu
       # If found
     end
     result
+  end
+
+  def self.strip txt
+    txt[/^[ .\/+-]*(.+?)\/?$/, 1]
   end
 
 end

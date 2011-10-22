@@ -96,7 +96,7 @@ class KeyBindings
     Keys.open_last_screenshot { Files.open_last_screenshot }
     #     Keys.open_like_text { txt = View.txt; View.to_buffer "txt"; View << txt }
     #     Keys.open_log_tree { Rails.tree_from_log }
-    Keys.open_list_databases { Launcher.open('- CouchDb.databases/') }
+    Keys.open_list_databases { Launcher.open('- Couch.databases/') }
     Keys.open_list_models { Launcher.open("- Merb.models/") }
     Keys.open_list_names { Clipboard.list }
     Keys.open_list_repository { Git.open_list_repository }
@@ -180,18 +180,16 @@ class KeyBindings
       return Launcher.insert("- Console.tree/") if bm == " "
       Launcher.insert("- Console.history \"$#{bm}\"/")
     }
-    Keys.enter_list_databases { Launcher.insert('- CouchDb.databases/') }
+    Keys.enter_list_databases { Launcher.insert('- Couch.databases/') }
     Keys.enter_log_javascript { Firefox.enter_log_javascript_line }
     Keys.enter_log_stack { Code.enter_log_stack }
     Keys.enter_last_log { Launcher.insert(Keys.prefix_u ? "- log/" : "- last/") }
     #     Keys.enter_last_launched { Launcher.enter_last_launched }
     Keys.enter_log_time { Code.enter_log_time }
-    Keys.enter_last_urls { Launcher.insert "- last/urls/" }
-    #     Keys.enter_last_urls { Launcher.insert("- Launcher.urls/") }
+    Keys.enter_last_urls { Launcher.insert "- urls/" }
 
     Keys.enter_menu { Xiki.insert_menu }   # Redundant with C-enter on blank line
-    #     Keys.enter_menu { Launcher.inserts }   # Redundant with C-enter on blank line
-    Keys.enter_name { Clipboard.paste }   # paste thing saved as name
+    #     Keys.enter_name { Clipboard.paste }   # paste thing saved as name
     Keys.enter_outline { FileTree.enter_lines }   # in tree, enter methods or headings
     Keys.enter_push { Git.code_tree_diff(:enter=>true) }   # Commit to repos, push, etc
     Keys.enter_quote { FileTree.enter_quote }
@@ -200,7 +198,7 @@ class KeyBindings
     #Keys.enter_spot { Location.enter_at_spot }   # enter selected text at spot
     Keys.enter_tree { FileTree.tree(:here=>true) }
     Keys.enter_upper { View.enter_upper }
-    Keys.enter_viewing { History.enter_viewing }
+    Keys.enter_value { Clipboard.paste }
     # W
     Keys.enter_whitespace { open_line(elvar.current_prefix_arg || 1) }
     Keys.enter_yank { Clipboard.enter_yank }
@@ -284,7 +282,7 @@ class KeyBindings
         delete_non_matching_lines( Keys.input(:prompt => "Delete lines not having: ") )
       end
     }
-    Keys.do_lines_individual { Code.do_kill_duplicates }   # Uniqify, delete duplicates
+    Keys.do_lines_individual { Code.kill_duplicates }   # Uniqify, delete duplicates
     Keys.do_lines_jumble { Code.randomize_lines }   # Shuffle lines
     Keys.do_line_next { Line.move(:next) }
     Keys.do_line_previous { Line.move(:previous) }
@@ -462,7 +460,7 @@ class KeyBindings
     Keys.search_have_highest { Search.isearch_restart :top }
     Keys.search_have_javascript { Search.isearch_log_javascript }
     Keys.search_have_line { Search.have_line }   # copy line back to search start
-    Keys.search_have_name { Search.just_name }
+    #     Keys.search_have_name { Search.just_name }
     Keys.search_have_output { Search.isearch_log }
     Keys.search_have_push { Git.search_just_push }
 
@@ -472,6 +470,9 @@ class KeyBindings
     Keys.search_have_todo { Search.isearch_move_to "$t" }
     Keys.search_have_variable { Search.insert_var_at_search_start }
     Keys.search_have_within { Search.isearch_have_within }   # Grab everything except chars on edges
+
+    # AVAILABLE: search_i ?  (when nothing searched for)
+
     # I: leave unmapped - had issues using it (messes up position)
     # just_...
     define_key :isearch_mode_map, kbd("C-j"), nil
@@ -498,6 +499,7 @@ class KeyBindings
 
     Keys.search_just_yellow { Search.just_orange }
     Keys.search_kill { Search.cut }   # cut
+    # AVAILABLE: search_k (when nothing searched for)
 
     define_key :isearch_mode_map, kbd("C-l"), nil
 
@@ -512,17 +514,20 @@ class KeyBindings
     Keys.search_line_pull { Search.isearch_move_line }
     #     Keys.search_like_shell { Search.search_thesaurus }
     Keys.search_like_thesaurus { Search.search_thesaurus }
+    Keys.search_like_value { Search.just_name }
 
     Keys.search_last_urls { Launcher.open("- Launcher.urls/") }
 
     Keys.search_like_web { Search.isearch_google }   # make match be snake case
     Keys.search_like_repository { Git.search_repository }
     Keys.search_like_quote { Search.isearch_google :quote=>true }
+    Keys.search_like_xiki { View.open "$x/#{Search.stop.strip}" }
 
     Keys.search_last_launched { Search.search_last_launched }
     #     Keys.search_log { Search.search_log }
     # M: leave unmapped for stop
-    Keys.search_next { Search.isearch_next_or_name }   # Next, or name (if nothing searched for yet)
+    # AVAILABLE: search_m (when nothing searched for) - might make for weird hanging after xiki loading errors
+    Keys.search_next { Search.isearch_next }   # Next, or name (if nothing searched for yet)
     Keys.search_outline { Search.isearch_outline }   # Outline
     Keys.search_paths { Search.isearch_paths }   # Just go to previous line
     # P: leave unmapped for previous
@@ -580,7 +585,7 @@ class KeyBindings
     #     define_key(:isearch_mode_map, kbd("C-9")) { Search.isearch_or_copy("9") }
 
     define_key(:isearch_mode_map, kbd("C-=")) { $el.isearch_yank_char }   # Add one char from isearch
-    define_key(:isearch_mode_map, kbd("C--")) { Search.subtract_or_last_launched }   # Remove one char from isearch
+    define_key(:isearch_mode_map, kbd("C--")) { Search.subtract }   # Remove one char from isearch
     define_key(:isearch_mode_map, kbd("C-/")) { $el.isearch_delete_char }   # Remove last action from search results
     define_key(:isearch_mode_map, kbd("C-,")) { Search.isearch_query_replace }   # Replace all occurrences
 
@@ -614,6 +619,7 @@ class KeyBindings
 
     # Alternate key for C-. (probably easier to remember)
     Keys.set("<C-return>") { Launcher.launch_or_hide(:blink=>true) }
+    Keys.set("<M-return>") { Launcher.launch_or_hide(:blink=>true) }
 
     if locate_library "ruby-mode"
       el_require :ruby_mode

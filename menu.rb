@@ -1,5 +1,23 @@
 class Menu
+  def self.init
+    Mode.define(:deck, ".menu") do
+      Notes.mode
+    end
+  end
+end
 
+Menu.init   # Define mode
+
+
+
+
+# Below is a different use of the "Menu" class - the "Xiki" menu at the top of emacs
+
+
+
+
+
+class Menu
   def self.add_menu *name
     menu_spaces = name.join(' ').downcase
     menu_dashes = name.join('-').downcase
@@ -51,5 +69,4 @@ class Menu
   def self.menu
     "- TODO: loop through and show all - borrow autocomplete!"
   end
-
 end

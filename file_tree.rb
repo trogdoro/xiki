@@ -166,6 +166,28 @@ class FileTree
     result
   end
 
+  def self.outline_search(f, regex, indent)
+    result = []
+    current_line = Search.outline_goto_once   # If search_outline, we want to put cursor on that line when done
+    line_found, matches_count, i = nil, 0, 0
+    IO.foreach(f) do |line|
+      i+=1
+      line.gsub!(/[\r\n\c@]+/, '')
+
+      if current_line && line_found.nil?
+        line_found = matches_count if i == current_line
+      end
+
+      if regex
+        next unless line =~ regex
+      end
+      result << "#{indent}| #{line}"
+      matches_count+=1
+    end
+    Search.outline_goto_once = line_found
+    result
+  end
+
   def self.skip
     @skip || []
   end
@@ -211,7 +233,7 @@ class FileTree
         result = FileTree.grep_one_file(f, regex, indent)   # Search in file contents
 
         if result.size > 0   # Add if any files were found
-          @list << clean(f, @@indent).sub(/(^ *)/, "\\1+ ")
+          @list << clean(f, @@indent).sub(/(^ *)/, "\\1- ")
           @list += result
         end
       else
@@ -247,13 +269,22 @@ class FileTree
     Styles.define :diff_line_number, :bold => true, :size => "-2", :fg => "ccc"
     Styles.define :diff_red, :bg => "ffdddd", :fg => "cc4444"
     Styles.define :diff_green, :bg => "ddffcc", :fg => "337744"
-    Styles.define :diff_small, :fg => "dddddd", :size => "-11"
+    Styles.define :diff_small, :fg => "ddd", :size => "-11"
+
+    Styles.define :quote_heading, :fg=>"eee", :size=>"-1",
+      :face => "arial black",
+      :bold=>true,
+      :bg => "000"
+    Styles.define :quote_heading_pipe, :fg=>"666", :size=>"-1",
+      :face => "arial",
+      :bold=>true,
+      :bg => "000"
 
     if Styles.inverse
       Styles.define :diff_line_number, :bold => true, :size => "-2", :fg => "444444"
-      Styles.define :diff_red, :bg => "440000", :fg => "ee3333"
-      Styles.define :diff_green, :bg => "113300", :fg => "44dd33"
-      Styles.define :diff_small, :fg => "222222", :size => "-11"
+      Styles.define :diff_red, :bg => "400", :fg => "ee3333"
+      Styles.define :diff_green, :bg => "130", :fg => "44dd33"
+      Styles.define :diff_small, :fg => "222", :size => "-11"
     end
 
     # dir/
@@ -299,48 +330,55 @@ class FileTree
     Styles.apply("\\(~\\)\\(.+?\\)\\(~\\)", :notes_label)
     Styles.apply("https?://[a-zA-Z0-9\/.~_:-]+", :notes_link)   # blue-ify url's
 
-    #   |... lines (quotes)
-    Styles.apply("^ +\\(| *\\)", nil, :ls_quote)
-    Styles.apply("^ +\\(|.*\n\\)", nil, :ls_quote)
-    Styles.apply("^ +\\(|.+?\\)([+-].*[-+])", nil, :ls_quote)   # quoted lines: beginnings of lines
-    Styles.apply("^ +|.*([-+].*[+-])\\(.+\\)$", nil, :ls_quote)  # quoted lines: ends of lines
-    Styles.apply("[+-])\\(.*?\\)([+-]", nil, :ls_quote)   # quoted lines: between diffs
-
-
     # - bullets
     Styles.apply("^[ \t]*\\([+-]\\)\\( \\)", nil, :ls_bullet, :variable)
 
     # With numbers
     Styles.apply("^ +\\(:[0-9]+\\)\\(|.*\n\\)", nil, :ls_quote_line_number, :ls_quote)
-    # |+... diffs
-    Styles.apply("^ +\\(:[0-9]+\\)$", nil, :ls_quote)
-    Styles.apply("^ +\\(|\\+.*\\)", nil, :diff_green)   # whole lines
-    Styles.apply("^ +\\(|\-.*\\)", nil, :diff_red)
-    Styles.apply("^ +\\(|@@ .*\n\\)", nil, :diff_line_number)
 
     # Path-like lines and parts of lines (make gray)
 
     # Remove later?
     Styles.apply("^[ +-]*\\([^|\n]+/\\)$", nil, :ls_dir)  # slash at end
 
-    Styles.apply("^[ +-]*\\([.@a-zA-Z0-9 ]+\/\\)", nil, :ls_dir)  # one word, slash
-    Styles.apply("^[ +-]*\\([.@a-zA-Z0-9 ]+\/[.@a-zA-Z0-9 \/]+\/\\)", nil, :ls_dir)  # one word, path, slash
+    Styles.apply("^[ +-]*\\([@a-zA-Z0-9_,? ().:-]+\/\\)", nil, :ls_dir)  # one word, slash
+    Styles.apply("^[ +-]*\\([@a-zA-Z0-9_,? ().:-]+\/[a-zA-Z0-9_,? ().:\/-]+\/\\)", nil, :ls_dir)  # one word, path, slash
     #     Styles.apply("^[ +-]*\\([.@a-zA-Z0-9 ]+\/[.@a-zA-Z0-9 ]+\/\\)", nil, :ls_dir)  # one word, path, slash
 
     Styles.apply("^[ \t]*[+-] [a-zA-Z0-9_,? ().:-]+?: \\(\[.@a-zA-Z0-9 ]+\/\\)", nil, :ls_dir)   # label, one word, slash
     Styles.apply("^[ \t]*[+-] [a-zA-Z0-9_,? ().:-]+?: \\([.@a-zA-Z0-9 ]+\/[.@a-zA-Z0-9 \/]+\/\\)", nil, :ls_dir)   # label, one word, path, slash
     #     Styles.apply("^[ \t]*[+-] [a-zA-Z0-9_,? ().:-]+?: \\(\\w+\/.+\/\\)", nil, :ls_dir)   # Dirs with labels
 
+
     # Bullets
     Styles.apply("^[ \t]*[+-] [a-zA-Z0-9_,? ().:-]+?: \\(.+/\\)$", nil, :ls_dir)   # Dirs with labels
     Styles.apply("^[ +-]*\\([^|\n]+/\\)$", nil, :ls_dir)   # Dirs with bullets
 
+    Styles.apply("https?://[a-zA-Z0-9\/.~_:?&=|#-]+", :notes_link)   # Url
+
+    #   |... lines (quotes)
+    Styles.apply("^ +\\(| *\\)", nil, :ls_quote)
+    Styles.apply("^ +\\(|.*\n\\)", nil, :ls_quote)
+    Styles.apply("^ +\\(|.+?\\)([+-].*[-+])", nil, :ls_quote)   # quoted lines: beginnings of lines
+    Styles.apply("^ +|.*([-+].*[+-])\\(.+\\)$", nil, :ls_quote)   # quoted lines: ends of lines
+    Styles.apply("[+-])\\(.*?\\)([+-]", nil, :ls_quote)   # quoted lines: between diffs
+
+    Styles.apply("^ +\\(| \\)\\(>\\)\\(\n\\| .*\n\\)", nil, :ls_quote, :quote_heading_pipe, :quote_heading)
+    # | >... Headings
+
+    # |+... diffs
+    Styles.apply("^ +\\(:[0-9]+\\)$", nil, :ls_quote)
+    Styles.apply("^ +\\(|\\+.*\\)", nil, :diff_green)   # whole lines
+    Styles.apply("^ +\\(|\-.*\\)", nil, :diff_red)
+    Styles.apply("^ +\\(|@@ .*\n\\)", nil, :diff_line_number)
+
     #Styles.apply('^[ -]*\\([ a-zA-Z0-9\/_\.$-]*\\w/\\)$', nil, :ls_dir)  # Most dirs
     Styles.apply('^ *\\(//?\\)$', nil, :ls_dir)  # /
     Styles.apply('^ *\\(\./\\)$', nil, :ls_dir)  # ./
-    Styles.apply('^ *[+-] \\(##.*/\\)$', nil, :ls_search)  # ##_/
-    Styles.apply('^ *[+-] \\(\*\*.+/\\)$', nil, :ls_search)  # ##_/
 
+
+    Styles.apply('^ *[+-] \\(##.*/\\)$', nil, :ls_search)  # ##_/
+    Styles.apply('^ *[+-] \\(\*\*.+/\\)$', nil, :ls_search)  # **_/
   end
 
   def self.handles? list=nil
@@ -390,6 +428,18 @@ class FileTree
     when :u   # Just open file
       prefix_was_u = true
       Keys.clear_prefix
+    when 4   # Save ($ave) file
+      if search_string   # Save file
+        txt = Tree.siblings :all=>true
+        txt = txt.map{|o| "#{o.sub /^\| /, ''}\n"}.join('')
+
+        DiffLog.save_internal :patha=>path, :textb=>txt
+
+        File.open(path, "w") { |f| f << txt }
+
+        Tree.after "- saved!"
+        return
+      end
     when 8
       Keys.clear_prefix
       search_string ?   # If quote, enter lines under
@@ -828,7 +878,9 @@ class FileTree
     line = Line.value
     indent = Line.indent
     list = nil
-    if line =~ /^[^|\n]*(\*\*|##)/   # *foo or ## means do grep
+    if line =~ /\.rb\//   # foo.rb/
+      Launcher.wrapper
+    elsif line =~ /^[^|\n]* (\*\*|##)/   # *foo or ## means do grep
       self.grep_syntax indent
     elsif self.dir?   # foo/ is a dir (if no | before)
       self.dir
@@ -855,7 +907,7 @@ class FileTree
       "(^ *(function)| = function\\()"
       #       elisp ? "\\(^ *function\\| = function(\\)" : "(^ *(function)| = function\\()"
     elsif extension == "notes"
-      "^\\| "
+      "^[\\|>]( |$)"
       #       elisp ? "^| " : "^\\| "
     else
       "^[^ \\t\\n]"
@@ -864,7 +916,6 @@ class FileTree
   end
 
   def self.enter_lines pattern=nil, options={}
-
     # If dir, delegate to C-. (they meant to just open it)
     return Launcher.launch if self.dir?
 
@@ -886,7 +937,6 @@ class FileTree
       View.insert "- " + FileTree.filename_to_next_line(path)
       $el.open_line 1
     end
-
     line = options[:path] || Line.value
     extension = line[/\.(\w+)$/, 1]
     if pattern.nil?
@@ -902,16 +952,14 @@ class FileTree
     indent_more = options[:path] ? '' : '  '
     if path =~ /^\/\w+@/
       contents = Remote.file_contents path
-      Tree.under contents
+      Tree.under contents, :escape=>'| '
       return
     end
 
     # Adjust so it finds if we're on the line
     current_line = options[:current_line] + 1 if options[:current_line]
 
-    line_found = nil
-    matches_count = 0
-    i = 0
+    line_found, matches_count, i = nil, 0, 0
 
     IO.foreach(path) do |line|
       i+=1
@@ -923,6 +971,7 @@ class FileTree
 
       next unless line =~ pattern
       line = line == "" ? "" : " #{line}"
+      line.sub! /^ > $/, ' >'
       matches << "#{indent}#{indent_more}|#{line}\n"
 
       matches_count+=1
@@ -998,6 +1047,8 @@ class FileTree
 
   # Mapped to shortcuts that displays the trees
   def self.tree options={}
+    $xiki_no_search = false
+
     dir = Keys.bookmark_as_path(:prompt=>"file_tree in which dir? (enter bookmark): ")
     dir = "/" if dir == :slash
     if dir.nil?
@@ -1176,7 +1227,6 @@ class FileTree
     dir =~ /\/$/ ? dir : "#{dir}/"
   end
 
-  # private
   def self.grep_syntax indent
     Tree.plus_to_minus_maybe
     dir = Tree.construct_path
@@ -1193,14 +1243,9 @@ class FileTree
         files = $1
       elsif raw[-2] =~ /(.+[^\/])$/   # If prev line is file, just show matches
         contents = Regexp.new(contents, Regexp::IGNORECASE)
-        list = self.grep_one_file(Bookmarks.expand(dir), contents, "  ")
-
-        #files = "^#{$1}$"
+        list = self.outline_search(Bookmarks.expand(dir), contents, "  ")
       end
-
-      #files = $1 if Line.value(0) =~ /\*\*(.+)/
     end
-
     files.sub!(/\/$/, '') if files
     options = {:raw => true}
     options.merge!({:files => files}) if files
@@ -1210,7 +1255,6 @@ class FileTree
       list = self.grep dir, contents, options
       list.shift   # Pull off first dir, so they'll be relative
     end
-
     Line.to_next
     left = point
     tree = list.join("\n") + "\n"
@@ -1219,7 +1263,12 @@ class FileTree
     goto_char left
     if Line.matches(/^\s*$/)  # Do nothing
     elsif Line.matches(/^\s+\|/)
-      Tree.search :left => left, :right => right
+      if Search.outline_goto_once   # If we want to go back to a line
+        Line.next Search.outline_goto_once
+        Search.outline_goto_once = nil
+      end
+
+      Tree.search :left=>left, :right=>right
     elsif contents   # If we searched for something (and it wasn't just the dir)
       Move.to_quote
       Tree.search :left=>left, :right=>right, :recursive_quotes=>true
@@ -1227,7 +1276,6 @@ class FileTree
       Move.to_junior
       Tree.search :left=>left, :right=>right, :recursive=>true
     end
-
   end
 
   def self.move_dir_to_junior

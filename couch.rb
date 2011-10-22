@@ -1,7 +1,7 @@
 gem 'couchrest'
 require 'couchrest'
 
-class CouchDb
+class Couch
   @@server = 'http://localhost:5984'
 
   def self.menu name=nil
@@ -15,7 +15,7 @@ class CouchDb
 
   def self.start
     buffer = '*couchdb'
-    return if View.buffer_open? buffer
+    return View.message("*couchdb already open", :beep=>1) if View.buffer_open? buffer
 
     Console.run('sudo couchdb', :buffer=>buffer)
   end
@@ -37,14 +37,14 @@ class CouchDb
       return dbs.map{|i| "#{i}/"}
     end
 
-    %Q[
+    "
     + .docs/
     + .views/
     + .all_docs/
     + .delete/
     + .rest_tree/
     + .crud/
-    ]
+    "
   end
 
   def self.rest_tree db

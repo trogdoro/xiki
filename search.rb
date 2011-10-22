@@ -9,6 +9,7 @@ class Search
 
   extend ElMixin
   @@case_options = nil
+  @@outline_goto_once = nil
 
   @@log = File.expand_path("~/.emacs.d/search_log.notes")
 
@@ -34,8 +35,7 @@ class Search
   end
 
   def self.insert_at_spot
-    self.stop
-    match = self.match
+    match = self.stop
     Hide.show
 
     Location.to_spot
@@ -52,15 +52,28 @@ class Search
   end
 
   def self.insert_at_search_start
-    self.stop
-    match = self.match
+    match = self.stop
+
+    if match.nil?   # If nothing searched for yet, search difflog
+      loc = Keys.input(:one_char=>true, :prompt=>"Enter one char to search for corresponding string: ")
+      txt = Clipboard.hash[loc.to_s]
+
+      if txt.nil?
+        txt = self.searches.find{|o| o =~ /^#{loc}/i}
+        return View.message("Nothing to search for matching '#{loc}'.", :beep=>1) if txt.nil?
+      end
+
+      self.isearch txt, :reverse=>was_reverse
+
+      return
+    end
+
     self.to_start  # Go back to start
     insert match
   end
 
   def self.isearch_have_within
-    self.stop
-    match = self.match
+    match = self.stop
     self.to_start  # Go back to start
     insert match[/^.(.*).$/, 1]
   end
@@ -73,7 +86,7 @@ class Search
     self.to_start  # Go back to start
     Move.backward match.length if was_reverse   # If reverse, move back width of thing deleted
 
-    insert match
+    View.insert match
 
     # Save spot where it was deleted (must do after modification, for bookmark to work)
     View.cursor = deleted
@@ -82,20 +95,16 @@ class Search
 
     self.to_start  # Go back to start
     Move.forward(match.length) unless was_reverse
-
   end
 
-
   def self.insert_var_at_search_start
-    self.stop
-    match = self.match
+    match = self.stop
     self.to_start  # Go back to start
     insert "\#{#{match}}"
   end
 
   def self.insert_quote_at_search_start
-    self.stop
-    match = self.match
+    match = self.stop
     self.to_start
     insert "'#{match}'"
   end
@@ -135,7 +144,6 @@ class Search
 
     View.delete(Search.left, Search.right)
     View.insert txt
-
   end
 
   def self.copy_and_comment
@@ -155,8 +163,7 @@ class Search
 
   def self.just_increment options={}
 
-    self.stop
-    match = self.match
+    match = self.stop
 
     View.delete(Search.left, Search.right)
 
@@ -203,8 +210,7 @@ class Search
   end
 
   def self.copy
-    self.stop
-    match = self.match
+    match = self.stop
     Clipboard[0] = self.match
     set_register ?X, match
     x_select_text match
@@ -242,7 +248,7 @@ class Search
 
     # Make it do special clear if nothing found (to avoid weird isearch error)
     if match.nil?
-      if self.not_found?
+      if self.not_found? # || Search.left == View.bottom
         match = :not_found
       else
         # Done so isearch_done won't error
@@ -423,12 +429,14 @@ class Search
     Firefox.run "$('#timers').val(\"#{input}\")", :tab=>0
   end
 
-  def self.subtract_or_last_launched
+  def self.subtract
     match = self.match
 
     if match   # If currently searching
       return $el.isearch_del_char
     end
+
+    View.message "Unused!", :beep=>1
 
     self.stop
 
@@ -443,6 +451,7 @@ class Search
   end
 
   def self.launched bm=nil
+
     txt = File.read @@log
     txt = txt.sub(/\A- /, '').split(/^- /).reverse.uniq
     if bm && bm == "#"
@@ -451,11 +460,7 @@ class Search
       txt = txt.select{|o| o =~ /^    - [^#].*: /}
     elsif bm
 
-      #       if bm == "."
-      #         path = View.file
-      #       else
-        path = Bookmarks[bm]
-      #       end
+      path = Bookmarks[bm]
 
       if File.file? path   # File
         regex = /^#{Regexp.escape File.dirname path}\/\n  - #{Regexp.escape File.basename path}/
@@ -467,8 +472,8 @@ class Search
       txt = txt.select{|o| o =~ regex}
     end
 
-    result = "#{CodeTree.quote_search_option}- #{txt.join("- ")}"
-    return result
+    result = "- #{txt.join("- ")}"
+    result
 
   end
 
@@ -481,8 +486,7 @@ class Search
   end
 
   def self.isearch_find_in_buffers options={}
-    self.stop
-    match = self.match
+    match = self.stop
     self.find_in_buffers match, options
   end
 
@@ -528,8 +532,7 @@ class Search
   end
 
   def self.hide
-    self.stop
-    match = self.match
+    match = self.stop
     Hide.hide_unless /#{Regexp.quote(match)}/i
     recenter -3
     Hide.search
@@ -597,9 +600,11 @@ class Search
 
     else
       match = self.match
-      dir = Keys.bookmark_as_path(:prompt=>"Enter bookmark to look in (or comma for recently edited): ")
+      dir = Keys.bookmark_as_path(:prompt=>"Enter bookmark to look in (or space for recently edited): ")
 
-      return self.isearch_open_last_edited(match) if dir == :comma   # If key is comma, treat as last edited
+      return View.message("Use space!", :beep=>1) if dir == :comma
+
+      return self.isearch_open_last_edited(match) if dir == :space   # If key is comma, treat as last edited
 
       TextUtil.snake_case! match if match =~ /[a-z][A-Z]/   # If camel case, file is probably snake
       FileTree.grep_with_hashes dir, match, '**'   # Open buffer and search
@@ -663,11 +668,6 @@ class Search
     Clipboard.set(name, self.match)
   end
 
-  def self.isearch_start
-    self.stop
-    Line.start
-  end
-
   def self.kill_filter options={}
     # TODO: Get options[:kill_matching]=>true to delete matching
     # - and map to Keys.do_kill_matching
@@ -693,6 +693,8 @@ class Search
   end
 
   def self.not_found?
+    # Note this returns false when nothing searched for
+
     ! elvar.isearch_success
   end
 
@@ -965,7 +967,7 @@ class Search
   def self.to_left
     match = self.stop
     if match.nil?   # If nothing searched for yet
-      return Launcher.open("- Search.history/")
+      return Launcher.open("- search/.history/")
     end
 
     Line.to_left
@@ -1103,7 +1105,7 @@ class Search
     match = self.stop
 
     if match.nil?   # If nothing searched for yet
-      #       Search.outline_search
+      # Do isearch in Ol buffer
       Search.isearch_restart "$o", :restart=>true
 
     else
@@ -1119,7 +1121,8 @@ class Search
       end
 
       # If file
-      # search in just one file!
+
+      Search.outline_goto_once = Line.number
 
       dir = View.dir
       file_name = View.file_name
@@ -1140,8 +1143,7 @@ class Search
 
   def self.isearch_paths
     match = self.stop
-
-    if ! View.at_bottom && match.nil?   # If nothing searched for yet, search in git diff
+    if match.nil?   # If nothing searched for yet, search in git diff
       Launcher.open("- log/")
       return
     end
@@ -1149,17 +1151,13 @@ class Search
     Search.move_to_search_start match
   end
 
-  def self.isearch_next_or_name
+  def self.isearch_next
     was_reverse = self.was_reverse
     match = self.stop
 
     if match.nil?   # If nothing searched for yet
-      loc = Keys.input(:one_char=>true, :prompt=>"Enter one char to search for corresponding string: ")
-      txt = Clipboard.hash[loc.to_s]
-      # If there was nothing error out
-      return View.message('not found!') if txt.nil?
-
-      self.isearch txt, :reverse=>was_reverse
+      self.stop
+      self.search_last_launched
     else
       self.stop
       $el.next_line
@@ -1212,8 +1210,7 @@ class Search
       return
     end
 
-    self.stop
-    match = self.match
+    match = self.stop
     View.delete(Search.left, Search.right)
     View.insert Clipboard[0]
     Search.isearch match
@@ -1274,14 +1271,22 @@ class Search
     end
   end
 
+  def self.searches
+    elvar.search_ring.to_a
+  end
+
   def self.history txt=nil
     if txt
+      txt.sub! /^\| /, ''
       ControlTab.go
       Search.isearch txt
       return
     end
-    commands = elvar.search_ring.to_a.uniq
-    commands.map{|o| o =~ /\n/ ? o.inspect : o}
+    searches = self.searches.uniq
+    searches.map{|o| "| #{o}\n"}.join("")
   end
+
+  def self.outline_goto_once; @@outline_goto_once; end
+  def self.outline_goto_once= txt; @@outline_goto_once = txt; end
 
 end

@@ -13,8 +13,11 @@ require 'launcher'
 classes = Dir["**/*.rb"]
 classes = classes.select{|i| i !~ /xiki.rb$/}   # Remove self
 classes = classes.select{|i| i !~ /key_bindings.rb$/}   # Remove key_bindings
+
+classes = classes.select{|i| i !~ /\//}   # Remove all files in dirs
+
 classes = classes.select{|i| i !~ /tests\//}   # Remove tests
-classes = classes.select{|i| i !~ /spec\//}   # Remove tests
+classes = classes.select{|i| i !~ /\//}   # Remove tests
 classes = classes.select{|i| i !~ /__/}   # Remove __....rb files
 
 classes.map!{|i| i.sub(/\.rb$/, '')}.sort!
@@ -50,10 +53,10 @@ class Xiki
 
   def self.menu
     [
-      ".run_tests",
-      '.test Search, "should convert case correctly"',
-      '.visit_github_page',
-      '.visit_github_commits',
+      ".tests/",
+      ".all_tests/",
+      '.visit_github_page/',
+      '.visit_github_commits/',
     ]
   end
 
@@ -65,9 +68,19 @@ class Xiki
     Firefox.url "https://github.com/trogdoro/xiki/commits/master"
   end
 
-  def self.test clazz, test, quoted=nil
-    clazz = TextUtil.snake_case(clazz.name)
+  def self.tests clazz=nil, test=nil, quoted=nil
 
+    if clazz.nil?   # If no class, list all
+      return Dir.new(Bookmarks["$x/spec/"]).entries.grep(/^[^.]/) {|o| "#{o[/(.+)_spec\.rb/, 1]}/"}
+    end
+
+    if test.nil?   # If no test, list all
+      path = Bookmarks["$x/spec/#{clazz}_spec.rb"]
+      code = File.read path
+      return ['all/'] + code.scan(/^ *it "(.+)"/).map{|o| "#{o[0]}/"}
+    end
+
+    clazz = TextUtil.snake_case(clazz.name) if ! clazz.is_a? String
     # If U prefix, just jump to file
     if Keys.prefix_u :clear=>true
       View.open "$x/spec/#{clazz}_spec.rb"
@@ -78,12 +91,13 @@ class Xiki
     end
 
     if quoted.nil?   # If no quoted, run test
-      command = "rspec spec/#{clazz}_spec.rb -e \"#{test}$\""
-      result = Console.run command, :dir=>"$x", :sync=>true
 
+      command = "rspec spec/#{clazz}_spec.rb"
+      command << " -e \"#{test}\"" unless test == "all"
+
+      result = Console.run command, :dir=>"$x", :sync=>true
       return result.gsub(/^/, '| ').gsub(/ +$/, '')
     end
-
     # Quoted line, so jump to it
     file, line = Line.value.match(/\.\/(.+):(.+):/)[1..2]
     View.open "$x/#{file}"
@@ -91,7 +105,9 @@ class Xiki
     nil
   end
 
-  def self.run_tests
+  def self.all_tests
     Console.run "rspec spec", :dir=>"$x"
   end
 end
+
+Launcher.add "xiki"
