@@ -370,8 +370,8 @@ class Notes
     @@h1_styles.each do |k, v|
       l = k.to_s[/_..(.)$/, 1]
       next unless l
-      Styles.apply("^\\(| #{l}\\)\\(\n\\| .*\n\\)", nil, "#{k}_pipe".to_sym, k)
-      Styles.apply("^\\(|\\)\\( #{l} .+: \\)\\(.*\n\\)", nil, "#{k}_pipe".to_sym, "#{k}_label".to_sym, k)
+      Styles.apply("^\\([>|] #{l}\\)\\(\n\\| .*\n\\)", nil, "#{k}_pipe".to_sym, k)
+      Styles.apply("^\\([>|]\\)\\( #{l} .+: \\)\\(.*\n\\)", nil, "#{k}_pipe".to_sym, "#{k}_label".to_sym, k)
     end
 
     # ||... lines

@@ -86,9 +86,18 @@ class Launcher
       return
     end
 
-    if hash[:menu]
+    menu = hash[:menu]
+    if menu
+      # If it's a file
+      if menu =~ /\A\/.+\.menu\z/
+        self.add root do |path|
+          Launcher.climb File.read(menu), path[%r"\/(.*)"]
+        end
+        return
+      end
+
       self.add root do |path|
-        Launcher.climb hash[:menu], path[%r"\/(.*)"]
+        Launcher.climb menu, path[%r"\/(.*)"]
       end
       return
     end
@@ -782,15 +791,8 @@ class Launcher
   end
 
   def self.invoke clazz, path
-Ol.stack
+
     # Allow class to be a .tree file as well
-
-Ol << "path: #{path.inspect}"
-Ol << "clazz: #{clazz.inspect}"
-
-    if clazz.is_a? Hash
-Ol << "use wrapper to shell out to class!"
-    end
 
     if clazz.is_a? String
       camel = TextUtil.camel_case clazz
@@ -820,16 +822,12 @@ Ol << "use wrapper to shell out to class!"
 
     # If no args yet, pass in empty list
     # if clazz.method("menu").arity != 1
-Ol << "args: #{args.inspect}"
     if args[-1] =~ /^ *\|/
-Ol.line
       args[-1].replace( CodeTree.escape(
         Tree.siblings(:all=>true).map{|i| "#{i[/^ *\| ?(.*)/, 1]}\n"}.join('')
         ))
     end
-Ol << "args: #{args.inspect}!"
     args = variables.map{|o| "\"#{o.gsub('"', '\\"')}\""}.join(", ")
-Ol << "args: #{args.inspect}"
     # If last parameter was |..., make it be all the lines
 
     if clazz.is_a?(String) || clazz.is_a?(Class)
@@ -905,40 +903,29 @@ Ol << "args: #{args.inspect}"
 
   def self.method_missing *args, &block
     arg = args.shift
-Ol << "arg: #{arg.inspect}"
-Ol.stack
     self.add arg.to_s, args[0], &block
   end
 
   def self.wrapper
-Ol.line
     path = Tree.construct_path #(:list=>true)
     path.sub /^\//, ''
-Ol << "path: #{path.inspect}"
-Ol << "pull off anything after the \.rb\/!"
     dir, stem = File.dirname(path), File.basename(path)
     self.wrapper_rb dir, stem
   end
 
   def self.wrapper_rb dir, stem
-Ol << "delegate to Launcher.invoke path, :wrap=>!"
-Ol << "pass in args!"
 
     output = Console.run "ruby #{Bookmarks['$x']}etc/wrapper.rb #{stem}", :sync=>1, :dir=>dir
-    #     Console.run "ruby #{Bookmarks['$x']}etc/wrapper.rb pumpkin.rb", :sync=>1, :dir=>"/projects/xiki_tree_sample/"
     Tree << output
   end
 
   def self.climb tree, path
     path = "" if path == nil || path == "/"   # Must be at root if nil
     tree = TextUtil.unindent tree
-Ol << "tree: #{tree.inspect}"
-Ol << "path: #{path.inspect}"
     AutoMenu.child_bullets tree, path
   end
 
   def self.remove root
-Ol << "root: #{root.inspect}"
     @@launchers_paths.delete root
   end
 
@@ -947,7 +934,6 @@ end
 def require_launcher path
   require path
   stem = path.sub(/\.rb$/, '')[/\w+$/]
-Ol << "stem: #{stem.inspect}"
   Launcher.add stem
 end
 

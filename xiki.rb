@@ -62,16 +62,18 @@ class Xiki
 
   def self.visit_github_page
     Firefox.url "http://github.com/trogdoro/xiki"
+    nil
   end
 
   def self.visit_github_commits
     Firefox.url "https://github.com/trogdoro/xiki/commits/master"
+    nil
   end
 
   def self.tests clazz=nil, test=nil, quoted=nil
 
     if clazz.nil?   # If no class, list all
-      return Dir.new(Bookmarks["$x/spec/"]).entries.grep(/^[^.]/) {|o| "#{o[/(.+)_spec\.rb/, 1]}/"}
+      return [".all/"] + Dir.new(Bookmarks["$x/spec/"]).entries.grep(/^[^.]/) {|o| "#{o[/(.+)_spec\.rb/, 1]}/"}
     end
 
     if test.nil?   # If no test, list all
@@ -105,7 +107,7 @@ class Xiki
     nil
   end
 
-  def self.all_tests
+  def self.all
     Console.run "rspec spec", :dir=>"$x"
   end
 end
