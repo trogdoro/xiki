@@ -163,7 +163,7 @@ class Tree
 
     when "9"   # Show methods, or outline
       $el.delete_region(Line.left(2), right)   # Delete other files
-      FileTree.enter_lines
+      return FileTree.drill_quotes_or_enter_lines self.construct_path.sub(/\|.*/, ''), Line.=~(/^ *\|/)
 
     when "#"   # Show ##.../ search
       self.stop_and_insert left, right, pattern
@@ -439,7 +439,6 @@ class Tree
   end
 
   def self.under txt, options={}
-
     txt = TextUtil.unindent(txt) if txt =~ /\A[ \n]/
 
     escape = options[:escape] || ''
@@ -711,6 +710,122 @@ class Tree
       Tree.search params.merge(:number_means_enter=>true)
     end
 
+  end
+
+  def self.traverse tree, &block
+    branch = []
+    indent = 0
+    tree.split("\n").each do |line|
+      line_indent = line[/^ */].length / 2
+      line.strip!
+      line.sub! /^[+-] /, ''
+      branch[line_indent] = line
+      if line_indent < indent
+        branch = branch[0..line_indent]
+      end
+
+      block.call branch.dup
+      indent = line_indent
+    end
+  end
+
+
+  # Insert section from a file under it in tree
+  def self.enter_under
+    Line.beginning
+    path = Tree.construct_path  # Get path
+    path.sub!(/\|.+/, '')  # Remove file
+    path = Bookmarks.expand(path)
+
+    # Cut off indent and pipe (including following space)
+    Line.value =~ /(^ +)\| (.+)/
+    quote_indent, line = $1, $2
+
+    if line =~ /^> /   # If heading in a notes file
+      # Go through lines in file until end of section
+      matches = ""
+      found_yet = false
+      IO.foreach(path) do |l|
+        l.sub!(/[\r\n]+$/, '')
+        l.gsub!("\c@", '.')   # Replace out characters that el4r can't handle
+        # Swallow up until match
+        if !found_yet
+          found_yet = l == line
+          next
+        end
+        # Grab rest until another pipe
+        break if l =~ /^\> /
+
+        l = " #{l}" unless l.empty?
+        matches << "#{quote_indent}  |#{l}\n"
+      end
+
+      # Insert and start search
+      Tree.insert_quoted_and_search matches
+
+    else  # Otherwise, grab by indent
+
+      # Go through lines in file until we've found it
+      indent = line[/^\s*/].gsub("\t", '        ').length
+      matches = ""
+      found_yet = false
+      IO.foreach(path) do |l|
+        l.sub!(/[\r\n]+$/, '')
+        l.gsub!("\c@", '.')   # Replace out characters that el4r can't handle
+        # Swallow up until match
+        if !found_yet
+          found_yet = l == line
+          next
+        end
+        # Grab rest until not indented less
+
+        current_indent = l[/^\s*/].gsub("\t", '        ').length
+
+        break matches.<<("#{quote_indent}  |\n") if line.blank?
+
+        break if current_indent <= indent
+
+        l = " #{l}" unless l.blank?
+        matches << "#{quote_indent}  |#{l}\n"
+      end
+
+      # Insert and start search
+      Tree.insert_quoted_and_search matches
+    end
+  end
+
+  def self.routify! tree, list
+    path = list.join '/'
+
+    indent = list.length + 1
+
+    # Start out as found if no path
+
+    result, found = "", list.empty?   # Start out as found if no path
+
+    self.traverse tree do |current_list|
+      current_path = current_list.map{|o| o.sub(/^\./, '')}.join('')
+
+      if ! found
+        next if ! current_path.start_with? path
+        found = true
+        # Make path be what it is in "routing" so it has dots for actions
+        list.replace current_list.map{|o| o.sub /\/$/, ''}
+        next
+      end
+
+      # If right indent, grab
+      if current_list.length == indent
+        result << "- #{current_list[-1].sub /^\./, ''}\n"
+      elsif current_list.length < indent   # If lower indent, stop
+        break
+      end
+
+    end
+
+    # Return children of path if any
+    # Return nil to mean interpret the routified path
+    result.empty? ? nil : result
   end
 
 end

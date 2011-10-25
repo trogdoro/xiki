@@ -103,12 +103,18 @@ class Notes
 
   def self.insert_heading
     Line.start
+    orig = Line.value
 
     times = Keys.prefix_u? ? 1 : (Keys.prefix || 1)
     times.times { insert ">" }
     View.insert " " # unless times > 1
 
-    open_line(4) if Keys.prefix_u?   # If U create blank lines.
+    if Keys.prefix_u?   # If U create blank lines.
+      View.insert("\n"*4, :dont_move=>1)
+      return
+    end
+
+    View.insert("\n", :dont_move=>1) if orig =~ /^[+-] /
 
     #     # If U
     #     # # get letter from next bullet
@@ -365,7 +371,7 @@ class Notes
 
     Styles.apply("^\\([>|]\\)\\( .+?: \\)\\(.+\n\\)", nil, :notes_h1_pipe, :notes_h1_label, :notes_h1)
 
-    Styles.apply("^\\(| 20[0-9][0-9]-[0-9][0-9]-[0-9][0-9].*:\\)\\(.*\n\\)", nil, :notes_h1_agenda_pipe, :notes_h1_agenda)
+    Styles.apply("^\\([>|] 20[0-9][0-9]-[0-9][0-9]-[0-9][0-9].*:\\)\\(.*\n\\)", nil, :notes_h1_agenda_pipe, :notes_h1_agenda)
 
     @@h1_styles.each do |k, v|
       l = k.to_s[/_..(.)$/, 1]
@@ -390,7 +396,10 @@ class Notes
     #     Styles.apply("\\(~\\)\\(.+?\\)\\(~\\)", :notes_label)
 
     # - bullets with labels
-    Styles.apply("^[ \t]*\\([+-]\\) \\([!#-~ ]+?:\\) ", nil, :ls_bullet, :notes_label)
+
+    Styles.apply("^[ \t]*\\([+-]\\) \\([!#-~ ]+?[:)]\\) ", nil, :ls_bullet, :notes_label)
+    #     Styles.apply("^[ \t]*\\([+-]\\) \\([!#-~ ]+?[:>)=*]\\) ", nil, :ls_bullet, :notes_label)
+
     Styles.apply("^[ \t]*\\([+-]\\) \\([!#-~ ]+?:\\)$", nil, :ls_bullet, :notes_label)
 
     Styles.apply("^[ \t]*\\(x\\)\\( \\)\\(.+\\)", nil, :notes_label, :variable, :strike)

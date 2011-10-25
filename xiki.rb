@@ -28,9 +28,15 @@ Requirer.safe_require classes
 # key_bindings has many dependencies, require it last
 Requirer.safe_require ['key_bindings.rb']
 
-Launcher.add_class_launchers classes
-
+# Launcher.add_class_launchers classes
 class Xiki
+  @@dir = Dir.pwd   # Store current dir when xiki first launches
+  def self.dir
+    @@dir
+  end
+
+  @@dir = Dir.pwd   # Store current dir when xiki first launches
+
   def self.insert_menu
     # Implement
     Launcher.insert "- Xiki.menus/"
@@ -70,8 +76,7 @@ class Xiki
     nil
   end
 
-  def self.tests clazz=nil, test=nil, quoted=nil
-
+  def self.tests clazz=nil, test=nil, *quoted
     if clazz.nil?   # If no class, list all
       return [".all/"] + Dir.new(Bookmarks["$x/spec/"]).entries.grep(/^[^.]/) {|o| "#{o[/(.+)_spec\.rb/, 1]}/"}
     end
@@ -92,7 +97,7 @@ class Xiki
       return
     end
 
-    if quoted.nil?   # If no quoted, run test
+    if quoted.blank?   # If no quoted, run test
 
       command = "rspec spec/#{clazz}_spec.rb"
       command << " -e \"#{test}\"" unless test == "all"
@@ -100,9 +105,13 @@ class Xiki
       result = Console.run command, :dir=>"$x", :sync=>true
       return result.gsub(/^/, '| ').gsub(/ +$/, '')
     end
+
+    quoted = quoted.join "/"
+
     # Quoted line, so jump to it
-    file, line = Line.value.match(/\.\/(.+):(.+):/)[1..2]
-    View.open "$x/#{file}"
+    file, line = Line.value.match(/([\/\w.]+)?:(\d+)/)[1..2]
+    file.sub! /^\.\//, Bookmarks["$x"]
+    View.open file
     View.to_line line.to_i
     nil
   end
@@ -111,5 +120,8 @@ class Xiki
     Console.run "rspec spec", :dir=>"$x"
   end
 end
+
+Launcher.add_class_launchers classes
+Launcher.reload_menu_dirs
 
 Launcher.add "xiki"

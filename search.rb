@@ -1225,12 +1225,13 @@ class Search
   def self.move_to path, match
     Search.stop
     orig = Location.new
+    was_in_bar = View.in_bar?
 
     if path == "$t"   # If $f, grab path also
       View.layout_todo
     elsif path == "$f"   # If $f, grab path also
       match = FileTree.snippet(match)
-      match = "- #{match.sub(/^  /, '  - ')}"
+      match = ">\n- #{match.sub(/^  /, '  - ')}\n"
       View.layout_files
     else
       View.open path
@@ -1245,11 +1246,12 @@ class Search
     # Add line after if before heading
     unless match =~ /\n$/   # If there wasn't a linebreak at the end of the match
       Line.next
-      View.insert("\n", :dont_move=>true) if Line[/^\|/]
+      View.insert("\n", :dont_move=>true) if Line[/^>/]
     end
 
     View.to_highest
-    orig.go
+
+    orig.go unless path == "$t" && was_in_bar
   end
 
   def self.log

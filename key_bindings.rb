@@ -183,7 +183,7 @@ class KeyBindings
     Keys.enter_list_databases { Launcher.insert('- Couch.databases/') }
     Keys.enter_log_javascript { Firefox.enter_log_javascript_line }
     Keys.enter_log_stack { Code.enter_log_stack }
-    Keys.enter_last_log { Launcher.insert(Keys.prefix_u ? "- log/" : "- last/") }
+    Keys.enter_last_log { Launcher.insert(Keys.prefix_u ? "- last/" : "- log/") }
     #     Keys.enter_last_launched { Launcher.enter_last_launched }
     Keys.enter_log_time { Code.enter_log_time }
     Keys.enter_last_urls { Launcher.insert "- urls/" }

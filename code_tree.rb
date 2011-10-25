@@ -175,6 +175,10 @@ class CodeTree
 
     code_tree_root = nil
     index = list.size - 1
+
+    # If @..., don't bother with rest of path
+    list = [list[-1]] if list[-1][/^ *([+-] )?@/]
+
     list.reverse.each do |l|
 
       # If it has a char that wouldn't be in a file, must be code tree
@@ -183,18 +187,18 @@ class CodeTree
       # If last one was suspected as root, confirm we're not a dir (must be a file if parent is a dir)
       if code_tree_root
         if l =~ /\/$/  # Dir means it was a file that looked like code
+          # This means never interpret classes indented under foo/
           code_tree_root = nil
         else
           return index + 1  # Must be legit, so return our index
         end
       end
       # If function call, it might be the root
-      if l =~ /^[+-]? ?[A-Z][A-Za-z0-9]*\.[a-z_]/
+      if l =~ /^[+-]? ?@?[A-Z][A-Za-z0-9]*\.[a-z_]/
         code_tree_root = index
       end
       index -= 1
     end
-
     code_tree_root
   end
 
@@ -213,6 +217,9 @@ class CodeTree
 
     path.reverse.each do |l|   # Climb up path
       i += 1
+
+      l.sub! /^@/, ''   # Remove delegate, so it's respected
+
       metho_tmp = self.extract_method(l)
       clazz_tmp = self.extract_class(l)
       l.sub(/^(\s+)[+-] /, "\\1")   # Remove bullets

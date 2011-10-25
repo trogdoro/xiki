@@ -67,6 +67,8 @@ class Menu
   end
 
   def self.menu
-    "- TODO: loop through and show all - borrow autocomplete!"
+    "
+    - reload) @Launcher.reload_menu_dirs
+    "
   end
 end

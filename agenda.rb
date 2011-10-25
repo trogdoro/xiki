@@ -13,16 +13,16 @@ class Agenda
 
     # If no line, display all of them
     if line.nil?
-      return IO.read(t).grep(/^\| \d\d\d\d-\d\d-\d\d/).sort.join("").gsub(/^\| /, '- ')
+      return IO.read(t).grep(/^[>|] \d\d\d\d-\d\d-\d\d/).sort.join("").gsub(/^[>|] /, '- ')
     end
 
     line = Line.value
 
     # If line, jump to it in $t
-    find = Line.value.sub /^[ -]+/, '| '
+    find = Line.value.sub /^[ -]+/, ''
     View.open t
     View.to_top
-    Search.forward "^#{$el.regexp_quote(find)}"
+    Search.forward "^. #{$el.regexp_quote(find)}"
     Line.to_left
     View.recenter_top
     Effects.blink(:what=>:line)

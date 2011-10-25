@@ -25,7 +25,6 @@ class FileTree
   CODE_SAMPLES = %q<
     # || Lets you navigate your filesystem as a tree.
     # Do a C-. on this line:
-    /
 
     # || Overview of keys
     # - Type letters to incrementally search in filenames
@@ -275,7 +274,7 @@ class FileTree
       :face => "arial black",
       :bold=>true,
       :bg => "000"
-    Styles.define :quote_heading_pipe, :fg=>"666", :size=>"-1",
+    Styles.define :quote_heading_pipe, :fg=>"aaa", :size=>"-1",
       :face => "arial",
       :bold=>true,
       :bg => "000"
@@ -289,7 +288,7 @@ class FileTree
 
     # dir/
     Styles.define :ls_dir,
-    :fg => "888888",
+      :fg => "888888",
       :face => "verdana",
       :size => "-2",
       :bold => true
@@ -397,7 +396,7 @@ class FileTree
 
     if path.is_a?(Array)
       # Pull off search string if exists
-      search_string = path.pop[/\|(.+)/, 1] if path.last =~ /^\|/
+      search_string = path.pop[/\|(.*)/, 1] if path.last =~ /^\|/
       search_string.sub! /^[ +-]/, '' if search_string   # Should start with space or -|+
       # Discard rest of |... lines
       path = path.grep(/^[^|]/).join('')
@@ -411,11 +410,8 @@ class FileTree
     path =~ /(.+):(\d+)$/
     path, line_number = $1, $2 if $2
 
-    return Files.open_in_os(path) if Keys.prefix == 0
-
     path = Bookmarks.expand(path)
 
-    # Have os launch if 0 prefix
     return Files.open_in_os(path) if Keys.prefix == 0
 
     remote = self.is_remote?(path)
@@ -429,17 +425,7 @@ class FileTree
       prefix_was_u = true
       Keys.clear_prefix
     when 4   # Save ($ave) file
-      if search_string   # Save file
-        txt = Tree.siblings :all=>true
-        txt = txt.map{|o| "#{o.sub /^\| /, ''}\n"}.join('')
-
-        DiffLog.save_internal :patha=>path, :textb=>txt
-
-        File.open(path, "w") { |f| f << txt }
-
-        Tree.after "- saved!"
-        return
-      end
+      return self.save_quoted path
     when 8
       Keys.clear_prefix
       search_string ?   # If quote, enter lines under
@@ -448,14 +434,7 @@ class FileTree
       return
     when 9
       Keys.clear_prefix
-      search_string ?   # If quote, use path of parent
-        self.enter_lines(nil, :path=>path) :
-        self.enter_lines
-      return
-
-      # Implement: grab code after delete runs
-      #     when 9
-      #       return self.drill
+      return self.drill_quotes_or_enter_lines path, search_string
     end
 
     # If numeric prefix, jump to nth window
@@ -468,14 +447,6 @@ class FileTree
       end
       View.to_nth(Keys.prefix - 1)
 
-    else   # Otherwise, move to after bar if the bar is open
-      #View.to_after_bar
-      # Only go to bar if after bar (for example, after OE)
-
-      #       from_t = path == Bookmarks['$t']
-      #       options[:same_view] ||= path == Bookmarks['$t']
-      # Code in View.open goes out of bar
-      #       View.to_after_bar if View.in_bar? && ! from_t
     end
 
     column = View.column
@@ -533,6 +504,66 @@ class FileTree
     end
     View.column = column
 
+  end
+
+  def self.drill_quotes_or_enter_lines path, quote
+    return self.enter_lines if ! quote   # If not quote must be whole file
+    result = self.drill_quote path   # Try showing only children with children
+    return Tree.<<(result) if result.any?
+    return Tree.enter_under   # Only leafs, so show them
+  end
+
+  def self.save_quoted path
+    txt = Tree.siblings :all=>true
+
+    return if txt[0] !~ /^\|/
+
+    txt = txt.map{|o| "#{o.sub /^\| ?/, ''}\n"}.join('')
+    DiffLog.save_internal :patha=>path, :textb=>txt
+    File.open(path, "w") { |f| f << txt }
+
+    Tree.after "- saved!"
+  end
+
+  def self.drill_quote path
+    parent = Line.value
+    parent.sub! /^ *\| /, ''
+
+    found, indent, candidate, result = false, 0, nil, ""
+    IO.foreach(path) do |line|
+      line = line[/.*/]
+
+      if ! found
+        if line == parent
+          found = true
+          indent = (line[/^ */].length / 2) + 1
+        end
+        next
+      end
+
+      # Found
+
+      # Skip if blank
+      next if line.blank?
+
+      current_indent = line[/^ */].length / 2
+
+      # If indented exactly 2 under, add it
+      if current_indent == indent
+        candidate = "| #{line}\n"
+
+      # If child of candidate, append candidate if one needs appending
+      elsif current_indent == indent + 1
+        next if candidate.nil?
+        result << candidate
+        candidate = nil
+      # If indented less, stop
+      elsif current_indent < indent
+        break
+      end
+    end
+
+    result
   end
 
   # Goes through files in reverse order and deletes empty dirs
@@ -874,6 +905,7 @@ class FileTree
 
   # Expand if dir, or open if file
   def self.launch options={}
+
     #Tree.plus_to_minus_maybe
     line = Line.value
     indent = Line.indent
@@ -982,67 +1014,6 @@ class FileTree
     end
 
     Tree.insert_quoted_and_search matches, :line_found=>line_found
-  end
-
-  # Insert section from a file under it in tree
-  def self.enter_under
-    Line.beginning
-    path = Tree.construct_path  # Get path
-    path.sub!(/\|.+/, '')  # Remove file
-    path = Bookmarks.expand(path)
-
-    # Cut off indent and pipe (including following space)
-    Line.value =~ /(^ +)\| (.+)/
-    quote_indent, line = $1, $2
-
-    # If starts with pipe
-    if line =~ /^\|/
-      # Go through lines in file until end of section
-      matches = ""
-      found_yet = false
-      IO.foreach(path) do |l|
-        l.sub!(/[\r\n]+$/, '')
-        l.gsub!("\c@", '.')   # Replace out characters that el4r can't handle
-        # Swallow up until match
-        if !found_yet
-          found_yet = l == line
-          next
-        end
-        # Grab rest until another pipe
-        break if l =~ /^\| /
-
-        l = " #{l}" unless l.empty?
-        matches << "#{quote_indent}|#{l}\n"
-      end
-
-      # Insert and start search
-      Tree.insert_quoted_and_search matches
-
-    else  # Otherwise, grab by indent
-      # Go through lines in file until we've found it
-      indent = line[/^\s*/].gsub("\t", '        ').length
-      matches = ""
-      found_yet = false
-      IO.foreach(path) do |l|
-        l.sub!(/[\r\n]+$/, '')
-        l.gsub!("\c@", '.')   # Replace out characters that el4r can't handle
-        # Swallow up until match
-        if !found_yet
-          found_yet = l == line
-          next
-        end
-        #insert l[/^\s*/].gsub("\t", '').length.to_s
-        # Grab rest until not indented less
-        #Try this: Line.indent(l)
-        break if l[/^\s*/].gsub("\t", '        ').length == indent
-
-        l = " #{l}" unless l.blank?
-        matches << "#{quote_indent}|#{l}\n"
-      end
-
-      # Insert and start search
-      Tree.insert_quoted_and_search matches
-    end
   end
 
   # Mapped to shortcuts that displays the trees

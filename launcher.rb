@@ -18,7 +18,7 @@ class Launcher
   # Set this to true to just see which launcher applied.
   # Look in /tmp/output.notes
   @@just_show = false
-  # @@just_show = true
+  #   @@just_show = true
 
   @@launchers ||= ActiveSupport::OrderedHash.new
   @@launchers_procs ||= []
@@ -85,11 +85,14 @@ class Launcher
       end
       return
     end
-
     menu = hash[:menu]
     if menu
-      # If it's a file
-      if menu =~ /\A\/.+\.menu\z/
+      if menu =~ /\A\/.+\.\w+\z/   # If it's a file (1 line and has extension)
+        if menu =~ /\.rb$/
+          require_launcher menu
+          return
+        end
+
         self.add root do |path|
           Launcher.climb File.read(menu), path[%r"\/(.*)"]
         end
@@ -119,7 +122,6 @@ class Launcher
 
   # Call the appropriate launcher if we find one, passing it line
   def self.launch options={}
-
     Tree.plus_to_minus
 
     Effects.blink(:what=>:line) if options[:blink]
@@ -280,7 +282,7 @@ class Launcher
     ended_up = Location.new
     orig.go   # Go back to where we were before running code
 
-    Line << "/" unless Line =~ /\/$/ if output !~ /\A *\|/   # Add slash at end if there was output
+    Line << "/" if Line !~ /(^ *\||\/$)/ and output !~ /\A *\|/   # Add slash at end if line not a quote and there was non-quote output
 
     indent = Line.indent
     Line.to_left
@@ -629,46 +631,7 @@ class Launcher
       View.under response.body
     end
 
-    # Menus
-
-    self.add "db" do |line|
-      "
-      - @riak/
-      - @mysql/
-      - @couchdb/
-      "
-    end
-
     # Path launchers
-
-    Launcher.add "shopping" do
-      "- eggs/\n- bananas/\n- milk/\n"
-    end
-
-    Launcher.add "shapes" do |path|
-      "- circle/\n- square/\n- triangle/\n"
-    end
-
-    Launcher.add "tables" do |path|
-      args = path.split('/')[1..-1]
-      #       if path =~ /\/fields$/
-      #       return Mysql.run('homerun_dev', "desc #{table}"), :escape=>'| '
-      #       end
-      Mysql.tables(*args)
-    end
-
-    Launcher.add "rows" do |path|
-      args = path.split('/')[1..-1]
-      Mysql.tables(*args)
-    end
-
-    Launcher.add "columns" do |path|
-      args = path.split('/')[1..-1]
-      if args.size > 0
-        next Mysql.run('homerun_dev', "desc #{args[0]}").gsub!(/^/, '| ')
-      end
-      Mysql.tables(*args)
-    end
 
     Launcher.add "technologies" do
       "- TODO: pull out from $te"
@@ -807,14 +770,25 @@ class Launcher
     args = path.split "/"
     args.shift
 
+    method = clazz.method "menu" rescue raise "#{clazz} doesn't seem to have a .menu method!"
+
+    if method.arity == 0
+      output, out, exception = Code.eval "#{camel}.menu"
+      output = CodeTree.returned_to_s(output)   # Convert from array into string, etc.
+      output = output.unindent if output =~ /\A[ \n]/
+      output = Tree.routify! output, args
+      if output
+        return Tree << output
+      end
+      # Else, continue on to run it based on routified path
+    end
+
     # Figure out which ones are actions
 
     # Find last .foo item
     actions, variables = args.partition{|o|
       o =~ /^\./
-
       # Also use result of .menu to determine
-
     }
     action = actions.last || ".menu"
 
@@ -828,23 +802,15 @@ class Launcher
         ))
     end
     args = variables.map{|o| "\"#{o.gsub('"', '\\"')}\""}.join(", ")
-    # If last parameter was |..., make it be all the lines
 
-    if clazz.is_a?(String) || clazz.is_a?(Class)
-      code = "#{camel}#{action} #{args}".strip
-      returned, out, exception = Code.eval code
-      output = returned
-      output = CodeTree.returned_to_s(output)   # Convert from array into string, etc.
-      output = output.unindent if output =~ /\A[ \n]/
-    elsif clazz.is_a?(Hash)
-      file = clazz[:wrap]
-    end
-
+    code = "#{camel}#{action} #{args}".strip
+    output, out, exception = Code.eval code
+    output = CodeTree.returned_to_s(output)   # Convert from array into string, etc.
+    output = output.unindent if output =~ /\A[ \n]/
 
     if exception
-      Ol << "!"
       backtrace = exception.backtrace[0..8].join("\n").gsub(/^/, '  ') + "\n"
-      return "- error: #{exception.message}\n- tried to run: #{code}\n- backtrace:\n#{backtrace}"
+      return "- tried to run: #{code}\n- error: #{exception.message}\n- backtrace:\n#{backtrace}"
     end
 
     output
@@ -915,7 +881,7 @@ class Launcher
 
   def self.wrapper_rb dir, stem
 
-    output = Console.run "ruby #{Bookmarks['$x']}etc/wrapper.rb #{stem}", :sync=>1, :dir=>dir
+    output = Console.run "ruby #{Xiki.dir}/etc/wrapper.rb #{stem}", :sync=>1, :dir=>dir
     Tree << output
   end
 
@@ -927,6 +893,26 @@ class Launcher
 
   def self.remove root
     @@launchers_paths.delete root
+  end
+
+  def self.reload_menu_dirs
+
+    dirs = [
+      "#{Xiki.dir}/menus",
+      File.expand_path("~/xiki/menus"),
+      File.expand_path("~/menus")
+    ]
+
+    dirs.each do |dir|
+      next unless File.directory? dir
+
+      Files.in_dir(dir).each do |f|
+        path = "#{dir}/#{f}"
+        stem = f[/[^.]*/]
+        self.add stem, :menu=>path
+      end
+    end
+    "- reloaded!"
   end
 
 end

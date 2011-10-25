@@ -38,7 +38,7 @@ module AutoMenu
     end
 
     # Otherwise, print out level immediately underneath method they called
-    result = AutoMenu.child_bullets(tree, func.to_s)
+    result = AutoMenu.child_bullets_deprecated(tree, func.to_s)
     # If none, throw no method error
     if result == ""
       raise NoMethodError.new("function #{func} undefined")
@@ -47,19 +47,54 @@ module AutoMenu
   end
 
   def self.child_bullets(tree, node)
+
+    node = "" if node.nil?
+
     found = nil
     result = ""
 
-    if ! (node||"").any?
-      return tree.grep(/^[+-]/).join('')
+    node.gsub!(/^\//, '')
+    node.gsub!(/\/$/, '')
+    if ! (node).any?
+      return tree.grep(/^[^ \n]/).join('')
     end
+    node.gsub!(/[.:]/, '')
+    Tree.traverse tree do |branch|
+      path = branch.join('').gsub(/[.:]/, '')
+
+      if ! found
+        if path.start_with? node
+          found = branch.length - 1  # Remember indent
+        end
+      else
+        current_indent = branch.length - 1
+        # If found and still indented one deeper
+        if current_indent == found + 1
+          result << "- " unless branch[-1] =~ /^\|/
+          result << "#{branch[-1]}\n"  # Output
+        else  # Otherwise, stop looking for children if indent is less
+          found = nil if current_indent <= found
+        end
+      end
+
+    end
+
+    result
+  end
+
+
+  # Old version, used by code_tree
+  # TODO: remove
+  def self.child_bullets_deprecated(tree, node)
+    found = nil
+    result = ""
 
     # For each line
     tree.split("\n").each do |l|
       # Start outputting if found
       if ! found
-        if self.strip(l) == self.strip(node)
-          found = Line.indent(l).size  # Remember indent
+        if l =~ /^( *)[+-] \.#{node}\/?$/
+          found = $1.size  # Remember indent
         end
       else
         current_indent = l[/^ */].size
@@ -75,6 +110,7 @@ module AutoMenu
     end
     result
   end
+
 
   def self.strip txt
     txt[/^[ .\/+-]*(.+?)\/?$/, 1]

@@ -263,6 +263,11 @@ class Files
     File.open(path, "a") { |f| f << txt }
   end
 
+  # Returns contents of a dir.  Just a wrapper around Dir.entries that removes "." and ".."
+  def self.in_dir path
+    Dir.entries(path).select{|o| o !~ /^\.+$/}
+  end
+
 end
 
 $el.el4r_lisp_eval("(require 'recentf)")
