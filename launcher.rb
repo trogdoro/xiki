@@ -80,8 +80,11 @@ class Launcher
 
     # If just root, define class with that name
     if block.nil? && (hash.nil? || hash[:class])
+
+      clazz = hash ? hash[:class] : root
+      clazz.sub!(/(\w+)/) {TextUtil.snake_case $1} if hash
       self.add root do |path|
-        Launcher.invoke((hash ? TextUtil.snake_case(hash[:class]) : root), path)
+        Launcher.invoke(clazz, path)
       end
       return
     end
@@ -755,6 +758,12 @@ class Launcher
 
   def self.invoke clazz, path
 
+    default_method = "menu"
+    # If dot extract it as method
+    if clazz =~ /\./
+      clazz, default_method = clazz.match(/(.+)\.(.+)/)[1..2]
+    end
+
     # Allow class to be a .tree file as well
 
     if clazz.is_a? String
@@ -770,19 +779,22 @@ class Launcher
     args = path.split "/"
     args.shift
 
-    method = clazz.method "menu" rescue raise "#{clazz} doesn't seem to have a .menu method!"
+    method = clazz.method default_method rescue raise "#{clazz} doesn't seem to have a .#{default_method} method!"
 
     if method.arity == 0
-      output, out, exception = Code.eval "#{camel}.menu"
+      output, out, exception = Code.eval "#{camel}.#{default_method}"
       output = CodeTree.returned_to_s(output)   # Convert from array into string, etc.
       output = output.unindent if output =~ /\A[ \n]/
       output = Tree.routify! output, args
+
       if output
-        return Tree << output
+        if output == "- */\n"
+        else
+          return Tree << output
+        end
       end
       # Else, continue on to run it based on routified path
     end
-
     # Figure out which ones are actions
 
     # Find last .foo item
@@ -790,7 +802,7 @@ class Launcher
       o =~ /^\./
       # Also use result of .menu to determine
     }
-    action = actions.last || ".menu"
+    action = actions.last || ".#{default_method}"
 
     # Remove : from :foo lines
 

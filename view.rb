@@ -525,14 +525,14 @@ class View
       left = Line.left
       right = $el.point_at_bol(prefix+1)
     else   # Move this into ruby - block.rb?
-      ignore, left, right = View.block_positions "^|"
+      ignore, left, right = View.block_positions "^[>|]"
     end
     Effects.blink :left=>left, :right=>right
     return [View.txt(left, right), left, right]
   end
 
   # Returns bounds of block in the form [left, after_header, right].
-  def self.block_positions regex="^| "
+  def self.block_positions regex="^[>|] "
 
     orig = point
     # Go to the end of the line, so if we're at the heading we'll find it
@@ -749,6 +749,10 @@ class View
     left = 1
     left = point if Keys.prefix_u?
     $el.message how_many(Keys.input('pattern to count: a'), left, right).to_s
+  end
+
+  def self.line
+    Line.number
   end
 
   def self.line_number

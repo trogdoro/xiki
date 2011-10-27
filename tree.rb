@@ -801,18 +801,26 @@ class Tree
 
     # Start out as found if no path
 
-    result, found = "", list.empty?   # Start out as found if no path
+    result, found, routified_until = "", list.empty?, -1   # Start out as found if no path
 
     self.traverse tree do |current_list|
-      current_path = current_list.map{|o| o.sub(/^\./, '')}.join('')
-
       if ! found
-        next if ! current_path.start_with? path
-        found = true
-        # Make path be what it is in "routing" so it has dots for actions
-        list.replace current_list.map{|o| o.sub /\/$/, ''}
-        next
+
+        # Maybe add dot based on last item
+        last = current_list.length - 1
+        if last > routified_until && list.length-1 >= last
+          if current_list[last][/\.?(.+?)\/?/, 1] == list[last][/\.?(.+?)\/?/, 1]
+            routified_until += 1
+            list[last] = ".#{list[last]}" if current_list[last] =~ /^\./ && list[last] !~ /^\./
+          end
+        end
+
+        next if ! self.route_match current_list, list
+
+        next found = true
       end
+
+      # Found
 
       # If right indent, grab
       if current_list.length == indent
@@ -826,6 +834,17 @@ class Tree
     # Return children of path if any
     # Return nil to mean interpret the routified path
     result.empty? ? nil : result
+  end
+
+  def self.route_match current_list, list
+    found = true
+    list.each_with_index do |item, i|
+      current_item = current_list[i]
+      break found = false if current_item.nil?
+      next if current_item =~ /^\*\/?$/
+      break found = false if current_item.sub(/\/$/, '') != item.sub(/\/$/, '')
+    end
+    found
   end
 
 end

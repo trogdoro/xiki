@@ -8,7 +8,7 @@ class CoffeeScript
     orig = Location.new
     View.cursor = right
     Line.to_left
-    View.insert result.gsub(/^/, '  ')+"\n\n"
+    View.insert ">>\n#{result}\n\n"
     orig.go
   end
 

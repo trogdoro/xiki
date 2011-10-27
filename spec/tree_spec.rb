@@ -119,4 +119,63 @@ describe Tree, "#routify" do
     path.should == [".add", "sample"]
   end
 
+  it "adds dot when path longer than tree" do
+
+    tree = "
+      - .keys/
+      - .start/
+      ".unindent
+
+    path = ["keys", "a"]
+    Tree.routify!(tree, path).should == nil
+    path.should == [".keys", "a"]
+  end
+
+  it "returns items under star" do
+
+    tree = "
+      - .cold/
+        - */
+          - large
+          - small
+      - .hot/
+      ".unindent
+
+    target = ["cold", "lemonade"]
+    Tree.routify!(tree, target).should == "- large\n- small\n"
+    target.should == [".cold", "lemonade"]
+  end
+
+end
+
+
+# describe Tree, "#check_route_match" do
+#   it "finds exact match" do
+#     target = ["a"]
+#     Tree.check_route_match!(["a/"], target).should == true
+#     target.should == ["a"]
+#   end
+# end
+
+describe Tree, "#route_match" do
+  it "finds match of one" do
+    Tree.route_match([".hot"], [".hot/"]).should == true
+  end
+
+  it "finds sublist match" do
+    Tree.route_match([".hot", ".coffee"], [".hot/"]).should == true
+  end
+
+  it "finds match when multiple items" do
+    Tree.route_match([".hot", ".coffee"], [".hot/", ".coffee/"]).should == true
+  end
+
+  it "doens't find match when not all of target matched" do
+    Tree.route_match([".hot"], [".hot/", ".coffee/"]).should == false
+  end
+
+  it "finds match when star" do
+    Tree.route_match(["*"], [".hot/"]).should == true
+  end
+
 end

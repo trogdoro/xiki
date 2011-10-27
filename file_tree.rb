@@ -188,7 +188,7 @@ class FileTree
   end
 
   def self.skip
-    @skip || []
+    @skip || {}
   end
 
   def grep_inner path, regex, first_time=nil
@@ -270,14 +270,16 @@ class FileTree
     Styles.define :diff_green, :bg => "ddffcc", :fg => "337744"
     Styles.define :diff_small, :fg => "ddd", :size => "-11"
 
-    Styles.define :quote_heading, :fg=>"eee", :size=>"-1",
+    Styles.define :quote_heading, :fg=>"fff", :size=>"0",
       :face => "arial black",
-      :bold=>true,
-      :bg => "000"
-    Styles.define :quote_heading_pipe, :fg=>"aaa", :size=>"-1",
+      :bold=>true
+    #     Styles.define :quote_heading_pipe, :fg=>"aaa", :size=>"-1",
+    Styles.define :quote_heading_pipe, :fg=>"666", :size=>"0",
       :face => "arial",
-      :bold=>true,
-      :bg => "000"
+      :bold=>true
+    Styles.define :quote_heading_small, :fg=>"fff", :size=>"-2",
+      :face => "arial black",
+      :bold=>true
 
     if Styles.inverse
       Styles.define :diff_line_number, :bold => true, :size => "-2", :fg => "444444"
@@ -363,6 +365,7 @@ class FileTree
     Styles.apply("[+-])\\(.*?\\)([+-]", nil, :ls_quote)   # quoted lines: between diffs
 
     Styles.apply("^ +\\(| \\)\\(>\\)\\(\n\\| .*\n\\)", nil, :ls_quote, :quote_heading_pipe, :quote_heading)
+    Styles.apply("^ +\\(| \\)\\(>>\\)\\(\n\\| .*\n\\)", nil, :ls_quote, :quote_heading_pipe, :quote_heading_small)
     # | >... Headings
 
     # |+... diffs

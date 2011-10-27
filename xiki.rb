@@ -84,7 +84,7 @@ class Xiki
     if test.nil?   # If no test, list all
       path = Bookmarks["$x/spec/#{clazz}_spec.rb"]
       code = File.read path
-      return ['all/'] + code.scan(/^ *it "(.+)"/).map{|o| "#{o[0]}/"}
+      return ['all/'] + code.scan(/^ *(describe|it) .*"(.+)"/).map{|o| "#{o[1]}/".sub(/^#(.+)\/$/, ".\\1:")}
     end
 
     clazz = TextUtil.snake_case(clazz.name) if ! clazz.is_a? String

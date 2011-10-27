@@ -52,7 +52,7 @@ class Block
     Line.to_left
 
     if prefix.nil?
-      View.insert("||\n"+result.strip+"\n") unless result.blank?
+      View.insert(">>\n"+result.strip+"\n") unless result.blank?
     else
       View.insert(result.strip.gsub(/^/, '  ')+"\n") unless result.blank?
     end

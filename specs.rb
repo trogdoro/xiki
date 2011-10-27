@@ -133,13 +133,14 @@ class Specs
       #       Location.save(:insert_orig)
       View.to_highest
 
-      View.insert("\n", :dont_move=>true) unless line.empty?   # Make room if line not blank
+      View.insert("\n", :dont_move=>1) unless line.empty?   # Make room if line not blank
     end
 
+    # Add extra space if heading is after!
+    View.insert("\n", :dont_move=>1) if Line.value(2) =~ /^>/
+
     if Line.blank?   # Assume clipboard contains "it..." line
-
       snippet = Clipboard['=']
-
 
       path = snippet[/.+/]
       clazz = snippet[/(\w+)_spec\.rb/, 1]
@@ -157,7 +158,7 @@ class Specs
         # Add symbol for project if it's a specific one
         project = bm_were_in ? "#{bm_were_in.sub('$', ':')}, " : ""
         project = "" if project == ":pm, "   # :m is the default, so not required
-        View.insert "Specs.#{clazz} #{project}#{desc}"
+        View.insert "xiki/.tests/#{clazz}/#{desc.gsub "\"", ''}/"
       end
     else
 
@@ -213,26 +214,15 @@ class Specs
   def self.run_spec_in_place
     Keys.clear_prefix
     cursor = View.cursor
-    Move.to_end
 
-    Search.backward '^ *it '   # Go up to "it ..." line
     path = View.file.sub /.+\/spec\//, 'spec/'
-    test = Line.value[/(["'])(.+)\1/, 2]   # "
-    #     test.gsub! '"', "\\\\'"   # Escape single quotes
+    command = "rspec #{path}:#{View.line}"
+    result = Console.run command, :dir=>"$x", :sync=>true
+    result = result.gsub(/^/, '    # ').gsub(/ +$/, '')
 
-    bms = Projects.listing.map{|o| o[1]}
-    file_path = View.file
-    bm_were_in = bms.find{|o|
-      bm = Bookmarks[o]
-      bm.any? && file_path[bm]
-    }
-
-    bm_were_in = bm_were_in.sub(/./, '').to_sym
-
-    txt = self.run_spec path, test, :mt
     Search.forward '^  +end$'
     Move.forward
-    View.insert "#{txt.gsub(/^/, '  # ').gsub(/^  # $/, '  #')}"
+    View.insert result
 
     View.cursor = cursor
   end

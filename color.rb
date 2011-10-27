@@ -161,24 +161,24 @@ class Color
     Styles.define :color_rb_glow2, :bg => "ff9933"
 
     if Styles.inverse
-      Styles.define :color_rb_red, :bg => "550000"
+      Styles.define :color_rb_red, :bg => "500"
       Styles.define :color_rb_orange, :bg => "442500"
-      Styles.define :color_rb_yellow, :bg => "444400"
-      Styles.define :color_rb_green, :bg => "113311"
-      Styles.define :color_rb_white, :fg=>'222222', :bg=>'ffffff', :border=>['ffffff', -1]
+      Styles.define :color_rb_yellow, :bg => "440"
+      Styles.define :color_rb_green, :bg => "131"
+      Styles.define :color_rb_white, :fg=>'222', :bg=>'fff', :border=>['fff', -1]
 
-      Styles.define :color_rb_light, :bg => "444444"
+      Styles.define :color_rb_light, :bg => "333"
 
-      Styles.define :color_rb_blue, :bg => "000055"
-      Styles.define :color_rb_purple, :bg => "220033"
+      Styles.define :color_rb_blue, :bg => "005"
+      Styles.define :color_rb_purple, :bg => "203"
 
     else
       Styles.define :color_rb_red, :bg => "ffd5d5"
       Styles.define :color_rb_orange, :bg => "ffe5bb"
       Styles.define :color_rb_yellow, :bg => "f9f9aa"
       Styles.define :color_rb_green, :bg => "e0ffcc"
-      Styles.define :color_rb_light, :bg => "dddddd"
-      Styles.define :color_rb_white, :fg=>'222222', :bg=>'666666', :border=>['666666', -1]
+      Styles.define :color_rb_light, :bg => "ddd"
+      Styles.define :color_rb_white, :fg=>'222', :bg=>'666', :border=>['666', -1]
 
       Styles.define :color_rb_blue, :bg => "dde5ff"
       Styles.define :color_rb_purple, :bg => "f2ddff"

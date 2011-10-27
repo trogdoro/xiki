@@ -12,24 +12,23 @@ class Memcached
   def self.keys *args
     if args.blank?   # If nothing passed, show all keys
 
+      # Hack to get all (usually) keys
       con = Net::Telnet::new("Host"=>"127.0.0.1", "Port"=>11211, "Prompt" => /END/)
       items = con.cmd "stats items\n"
       keys = []
       items.scan(/^STAT items:(\d+):number/).each do |i|
-        cachedump = con.cmd "stats cachedump #{i[0]} 100"
+        cachedump = con.cmd "stats cachedump #{i[0]} 1000"
         cachedump.scan(/^ITEM (.+?) /).each {|i| keys << i[0]}
       end
       return keys.map{|k| "#{k}/"}
     end
 
-    value = args.reverse.find{|o| o =~ /\A---/}
-    args.pop if value
+    value = args.pop if Line =~ /^ *\|/
 
     key = args.join "/"
 
-
     if value.nil?   # If no value yet, show the value
-      return self.connection.get(key).to_yaml.gsub /^/, "| "
+      return self.connection.get(key).to_yaml.sub(/\A--- \n/, '').gsub(/^/, "| ")
     end
 
     if Keys.prefix == 0
