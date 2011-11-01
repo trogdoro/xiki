@@ -88,7 +88,7 @@ describe TextUtil, "#snake_case" do
   it "converts to snake" do
     TextUtil.snake_case("core_platform").should == "core_platform"
     TextUtil.snake_case("CorePlatform").should == "core_platform"
-    TextUtil.snake_case("/CorePlatform").should == "/core_platform"
+    TextUtil.snake_case("/CorePlatform").should == "core_platform"
     TextUtil.snake_case("core platform").should == "core_platform"
     TextUtil.snake_case("core-platform").should == "core_platform"
 
@@ -103,7 +103,7 @@ describe TextUtil, "#camel_case" do
     TextUtil.camel_case("core_platform").should == "CorePlatform"
     TextUtil.camel_case("CORE_PLATFORM").should == "CorePlatform"
     TextUtil.camel_case("CorePlatform").should == "CorePlatform"
-    TextUtil.camel_case("/CorePlatform").should == "/CorePlatform"
+    TextUtil.camel_case("/CorePlatform").should == "CorePlatform"
     TextUtil.camel_case("core platform").should == "CorePlatform"
     TextUtil.camel_case("core-platform").should == "CorePlatform"
   end

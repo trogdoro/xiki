@@ -1,7 +1,10 @@
-| Summary
+> Summary
 This file tells how to install Xiki.  See README.txt for a description of Xiki.
 
-| Steps
+> Tips
+- On the Mac, use emacs 22, as the mac emacs 23 builds seem to have a bug that slows down communication with processes, making Xiki painfully slow.
+
+> Steps
 - 1: Install EmacsRuby (el4r)
   - See: http://www.rubyist.net/~rubikitch/computer/el4r/index.en.html
     - Click on 'Download / Install / Setup' link
@@ -34,7 +37,7 @@ This file tells how to install Xiki.  See README.txt for a description of Xiki.
 - 4: Install dependant packages
   $ sudo gem install ParseTree ruby2ruby net-ssh net-sftp
 
-| Trouble-shooting
+> Trouble-shooting
 - If you get an error (and you probably will)
   - Restart emacs (or reload .emacs) and look at the log
     - Named something like: /tmp/el4r......log

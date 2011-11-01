@@ -4,8 +4,20 @@ require 'line'
 require 'core_ext'
 
 describe Line, "#without_label" do
-  it "should remove label" do
+  it "should remove old style labels" do
     Line.without_label(:line=>"- hey: you").should == "you"
+  end
+
+  it "removes bullets" do
+    Line.without_label(:line=>"- you").should == "you"
+  end
+
+  it "should remove new parethesis labels" do
+    Line.without_label(:line=>"- hey) you").should == "you"
+  end
+
+  it "should keep labels if opening paren" do
+    Line.without_label(:line=>"- (hey) you").should == "(hey) you"
   end
 end
 

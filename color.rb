@@ -161,6 +161,10 @@ class Color
     Styles.define :color_rb_glow2, :bg => "ff9933"
 
     if Styles.inverse
+      #       Styles.define :mode_line_dir, :fg=>"aaa", :size=>"0", :face=>"arial", :bold=>false
+      Styles.define :mode_line_dir, :fg=>"d93", :size=>"0", :face=>"arial", :bold=>false
+      Styles.define :mode_line_file, :fg=>"fff", :size=>"0", :face=>"arial", :bold=>false
+
       Styles.define :color_rb_red, :bg => "500"
       Styles.define :color_rb_orange, :bg => "442500"
       Styles.define :color_rb_yellow, :bg => "440"

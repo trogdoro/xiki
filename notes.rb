@@ -8,7 +8,7 @@ require 'clipboard'
 class Notes
   extend ElMixin
 
-  LABEL_REGEX = /(?:[a-zA-Z0-9 _-]+: )?/
+  LABEL_REGEX = /(?:[a-zA-Z0-9 _-]+\) )?/
 
   def self.menu
     puts "- .help_wiki_format"
@@ -114,7 +114,7 @@ class Notes
       return
     end
 
-    View.insert("\n", :dont_move=>1) if orig =~ /^[+-] /
+    View.insert("\n", :dont_move=>1) if orig != ""
 
     #     # If U
     #     # # get letter from next bullet
@@ -339,7 +339,7 @@ class Notes
 
     if Styles.inverse   # If black and white
 
-      Styles.define :notes_h2, :fg=>'cccccc', :bg=>"333333", :size=>"-1"
+      Styles.define :notes_h2, :fg=>'fff', :bg=>"333333", :size=>"-1", :bold=>false
       Styles.define :notes_h2_pipe, :fg=>'555555', :bg=>"333333", :size=>"-1"
 
       Styles.define :notes_exclamation,  # Green bold text
@@ -470,48 +470,28 @@ class Notes
   def self.bullet bullet_text="- "
     prefix = Keys.prefix :clear=>true
 
+    line = Line.value
+
     if ! Line.blank?   # If non-blank line
 
-      if Line.matches(/^[>|]/) || Line.matches(/^ *[+-]/) || bullet_text != "- "    # If bullet already, or not adding bullets
-
-        if Line.point == Line.left || Line.point == Line.right   # If cursor at beginning of line
-          Line.to_right
-          # Will move down one line
-        else   # Else, leave rest of line to be text of bullet
-          Deletes.delete_whitespace
-        end
-        View.insert "\n"
-
-      else   # If not bullet, make it a bullet
-        # Get line minus indent, and indent one deeper than previous
-        line = Line.value(1, :delete=>true).sub(/^ +/, '')
-
-        if prefix.is_a? Fixnum   # If numeric prefix, indent by n
-          View.insert((" " * prefix) + "- #{line}")
-        else
-          prev_indent = Line.value(0)[/^ */]
-          prev_indent << "  " unless prev_indent == ""
-          View.insert "#{prev_indent}- #{line}"
-        end
-
-        Move.to_column 2
-        #         Move.to_line_text_beginning
-        if prefix == :-
-          View.insert "(): "
-          Move.backward 3
-        end
-
-        return
+      if Line.point == Line.left || Line.point == Line.right   # If cursor at beginning of line
+        Line.to_right
+        # Will move down one line
+      else   # Else, leave rest of line to be text of bullet
+        Deletes.delete_whitespace
       end
+      View.insert "\n"
     end
     if prefix.is_a? Fixnum   # If numeric prefix, indent by n
       View.insert((" " * prefix) + bullet_text)
     else   # Get bullet indent of previous line
-      prev = Line.value(0)[/^( *)/]
+      prev = Line.value(0)
+      prev_indent = prev[/^( *)/]
+
       # Indent further, unless it we're doing bullets and not following bullet
-      prev << "  " unless bullet_text == "- " && ! Line.value(0)[/^ *[+-]/]
-      prev = "#{prev}#{bullet_text}"
-      View.insert prev
+      prev_indent << "  " if line != "" && (bullet_text != "- " || prev =~ /^ *[+-]/ || prev !~ /^>/)
+      prev_indent = "#{prev_indent}#{bullet_text}"
+      View.insert prev_indent
 
       if prefix == :-
         View.insert "(): "

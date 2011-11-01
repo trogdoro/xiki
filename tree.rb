@@ -329,6 +329,28 @@ class Tree
   end
 
   # Drill into a file, showing lines one indent level deeper
+  # Returns lowest item in path, or if pipe-quoted
+  # grabs siblings and turns into multi-line string.
+  def self.leaf path, options={}
+    if path =~ /(?:^\||\/\|) ?(.+)/   # If has ^| or /|, grab siblings
+      orig = $1
+      # First, make sure the current line is quoted (otherwise, .siblings will be pulling from somewhere else)
+      return orig if options[:dont_look] || Line.value !~ /^ *\|/
+
+      siblings = Tree.siblings(:quotes=>1)
+      siblings = siblings.map{|i| i.gsub(/^\| ?/, '')}.join("\n")  # :
+      siblings << "\n" if siblings =~ /\n/
+      return siblings
+    end
+
+    path.split("/")[-1]
+
+  end
+
+  def self.rootless path
+    path.sub /^\/?[^\/]+\/?/, ''
+  end
+
   def self.drill
     Line.to_left
     # Get indent between | and tabs
@@ -604,6 +626,10 @@ class Tree
     txt.gsub!(/^/, "#{indent}  ")
   end
 
+  def self.quote txt
+    txt.unindent.gsub(/^/, '| ').gsub(/^\| $/, '|').gsub(/^\| \+ @/, '+ @')
+  end
+
   def self.insert_quoted_and_search matches, options={}
     # Insert matches
     Line.next
@@ -638,6 +664,22 @@ class Tree
     # Combine and process siblings
     if options[:all]
       siblings = View.txt(options.merge(:left=>left1, :right=>right2))
+    elsif options[:quotes]
+
+      above = View.txt(options.merge(:left=>left1, :right=>right1))
+      found = true
+      above = above.split("\n").reverse.select{|o| found && o =~ /^ *\|/ or found = false}.reverse.join("\n")
+      above << "\n" if above.any?
+
+      middle = View.txt(options.merge(:left=>right1, :right=>left2))
+
+      below = View.txt(options.merge(:left=>left2, :right=>right2))
+      found = true
+      below = below.split("\n").select{|o| found && o =~ /^ *\|/ or found = false}.join("\n")
+      below << "\n" if below.any?
+
+      siblings = "#{above}#{middle}#{below}"  #.strip
+
     else
       siblings = View.txt(options.merge(:left=>left1, :right=>right1)) + View.txt(options.merge(:left=>left2, :right=>right2))
     end
@@ -712,13 +754,16 @@ class Tree
 
   end
 
-  def self.traverse tree, &block
+  def self.traverse tree, options={}, &block
     branch = []
     indent = 0
     tree.split("\n").each do |line|
       line_indent = line[/^ */].length / 2
       line.strip!
-      line.sub! /^[+-] /, ''
+      line.sub!(/^[+-] /, '')
+      #       options[:remove_comments] ?
+      #         line.sub!(/^[+-] ([^\n(]+\) )?/, '') :
+      #         line.sub!(/^[+-] /, '')
       branch[line_indent] = line
       if line_indent < indent
         branch = branch[0..line_indent]
@@ -794,41 +839,39 @@ class Tree
     end
   end
 
-  def self.routify! tree, list
-    path = list.join '/'
+  def self.routify! tree, target
 
-    indent = list.length + 1
+    indent = target.length + 1
 
     # Start out as found if no path
+    result, found, routified_until = "", target.empty?, -1   # Start out as found if no path
+    self.traverse(tree) do |current_list|
 
-    result, found, routified_until = "", list.empty?, -1   # Start out as found if no path
-
-    self.traverse tree do |current_list|
       if ! found
 
-        # Maybe add dot based on last item
-        last = current_list.length - 1
-        if last > routified_until && list.length-1 >= last
-          if current_list[last][/\.?(.+?)\/?/, 1] == list[last][/\.?(.+?)\/?/, 1]
+        # Maybe add dot based on leaf item
+
+        leaf = current_list.length - 1
+        # If not already added dot and there's item to check
+        if leaf > routified_until && target.length-1 >= leaf
+          if current_list[leaf][/^\.?(.+?)\/?$/, 1] == target[leaf][/^\.?(.+?)\/?$/, 1]
             routified_until += 1
-            list[last] = ".#{list[last]}" if current_list[last] =~ /^\./ && list[last] !~ /^\./
+            target[leaf] = ".#{target[leaf]}" if current_list[leaf] =~ /^\./ && target[leaf] !~ /^\./
           end
         end
 
-        next if ! self.route_match current_list, list
-
+        next if ! self.route_match current_list, target
         next found = true
       end
 
       # Found
-
       # If right indent, grab
       if current_list.length == indent
-        result << "- #{current_list[-1].sub /^\./, ''}\n"
+        result << "- " unless current_list[-1] =~ /^\|/
+        result << "#{current_list[-1].sub /^\./, ''}\n"
       elsif current_list.length < indent   # If lower indent, stop
         break
       end
-
     end
 
     # Return children of path if any
@@ -842,9 +885,24 @@ class Tree
       current_item = current_list[i]
       break found = false if current_item.nil?
       next if current_item =~ /^\*\/?$/
-      break found = false if current_item.sub(/\/$/, '') != item.sub(/\/$/, '')
+      break found = false if current_item.sub(/^[^\n(]+\) /, '').sub(/\/$/, '') != item.sub(/\/$/, '')
     end
     found
+  end
+
+  def self.climb tree, path
+    path = "" if path == nil || path == "/"   # Must be at root if nil
+    tree = TextUtil.unindent tree
+    AutoMenu.child_bullets tree, path
+  end
+
+  # Use instead of .leaf when you know all but the root is part of the leaf
+  # (in case there are slashes).
+  def self.rest path
+    path = self.rootless path
+    path = "|#{path}" unless path =~ /^\|/
+
+    self.leaf(path)
   end
 
 end

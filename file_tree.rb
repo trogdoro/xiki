@@ -271,12 +271,13 @@ class FileTree
     Styles.define :diff_small, :fg => "ddd", :size => "-11"
 
     Styles.define :quote_heading, :fg=>"fff", :size=>"0",
-      :face => "arial black",
+      :face=>"arial",
+      :bold=>false
+    Styles.define :quote_heading_pipe, :fg=>"4c4c4c", :size=>"0",
+      :face => "verdana",
       :bold=>true
-    #     Styles.define :quote_heading_pipe, :fg=>"aaa", :size=>"-1",
-    Styles.define :quote_heading_pipe, :fg=>"666", :size=>"0",
-      :face => "arial",
-      :bold=>true
+    Styles.define :quote_heading_bracket, :fg=>"4c4c4c", :size=>"-1",
+      :bold=>false
     Styles.define :quote_heading_small, :fg=>"fff", :size=>"-2",
       :face => "arial black",
       :bold=>true
@@ -342,12 +343,12 @@ class FileTree
     # Remove later?
     Styles.apply("^[ +-]*\\([^|\n]+/\\)$", nil, :ls_dir)  # slash at end
 
-    Styles.apply("^[ +-]*\\([@a-zA-Z0-9_,? ().:-]+\/\\)", nil, :ls_dir)  # one word, slash
+    Styles.apply("^[ +-]*\\([@a-zA-Z0-9_,? ().:-]*[^ \n]\/\\)", nil, :ls_dir)  # slash after almost anything
     Styles.apply("^[ +-]*\\([@a-zA-Z0-9_,? ().:-]+\/[a-zA-Z0-9_,? ().:\/-]+\/\\)", nil, :ls_dir)  # one word, path, slash
     #     Styles.apply("^[ +-]*\\([.@a-zA-Z0-9 ]+\/[.@a-zA-Z0-9 ]+\/\\)", nil, :ls_dir)  # one word, path, slash
 
-    Styles.apply("^[ \t]*[+-] [a-zA-Z0-9_,? ().:-]+?: \\(\[.@a-zA-Z0-9 ]+\/\\)", nil, :ls_dir)   # label, one word, slash
-    Styles.apply("^[ \t]*[+-] [a-zA-Z0-9_,? ().:-]+?: \\([.@a-zA-Z0-9 ]+\/[.@a-zA-Z0-9 \/]+\/\\)", nil, :ls_dir)   # label, one word, path, slash
+    Styles.apply("^[ \t]*[+-] [a-zA-Z0-9_,? ().:-]+?[:)] \\(\[.@a-zA-Z0-9 ]+\/\\)", nil, :ls_dir)   # label, one word, slash
+    Styles.apply("^[ \t]*[+-] [a-zA-Z0-9_,? ().:-]+?[:)] \\([.@a-zA-Z0-9 ]+\/[.@a-zA-Z0-9 \/]+\/\\)", nil, :ls_dir)   # label, one word, path, slash
     #     Styles.apply("^[ \t]*[+-] [a-zA-Z0-9_,? ().:-]+?: \\(\\w+\/.+\/\\)", nil, :ls_dir)   # Dirs with labels
 
 
@@ -355,17 +356,17 @@ class FileTree
     Styles.apply("^[ \t]*[+-] [a-zA-Z0-9_,? ().:-]+?: \\(.+/\\)$", nil, :ls_dir)   # Dirs with labels
     Styles.apply("^[ +-]*\\([^|\n]+/\\)$", nil, :ls_dir)   # Dirs with bullets
 
-    Styles.apply("https?://[a-zA-Z0-9\/.~_:?&=|#-]+", :notes_link)   # Url
+    Styles.apply('https?://[a-zA-Z0-9\/.~_:?&=|#+-]+', :notes_link)   # Url
 
     #   |... lines (quotes)
-    Styles.apply("^ +\\(| *\\)", nil, :ls_quote)
-    Styles.apply("^ +\\(|.*\n\\)", nil, :ls_quote)
-    Styles.apply("^ +\\(|.+?\\)([+-].*[-+])", nil, :ls_quote)   # quoted lines: beginnings of lines
+    Styles.apply("^ +\\(|\\)\\( *\\)", nil, :quote_heading_pipe, :ls_quote)
+    Styles.apply("^ +\\(|\\)\\(.*\n\\)", nil, :quote_heading_pipe, :ls_quote)
+    Styles.apply("^ +\\(|\\)\\(.+?\\)([+-].*[-+])", nil, :quote_heading_pipe, :ls_quote)   # quoted lines: beginnings of lines
     Styles.apply("^ +|.*([-+].*[+-])\\(.+\\)$", nil, :ls_quote)   # quoted lines: ends of lines
     Styles.apply("[+-])\\(.*?\\)([+-]", nil, :ls_quote)   # quoted lines: between diffs
 
-    Styles.apply("^ +\\(| \\)\\(>\\)\\(\n\\| .*\n\\)", nil, :ls_quote, :quote_heading_pipe, :quote_heading)
-    Styles.apply("^ +\\(| \\)\\(>>\\)\\(\n\\| .*\n\\)", nil, :ls_quote, :quote_heading_pipe, :quote_heading_small)
+    Styles.apply("^ +\\(|\\)\\( \\)\\(>\\)\\(\n\\| .*\n\\)", nil, :quote_heading_pipe, :ls_quote, :quote_heading_bracket, :quote_heading)
+    Styles.apply("^ +\\(|\\)\\( \\)\\(>>\\)\\(\n\\| .*\n\\)", nil, :quote_heading_pipe, :ls_quote, :quote_heading_bracket, :quote_heading_small)
     # | >... Headings
 
     # |+... diffs
@@ -951,6 +952,8 @@ class FileTree
   end
 
   def self.enter_lines pattern=nil, options={}
+    $xiki_no_search = false
+
     # If dir, delegate to C-. (they meant to just open it)
     return Launcher.launch if self.dir?
 
@@ -1157,7 +1160,7 @@ class FileTree
     if dir_only
       path = path =~ /\/$/ ? path : File.dirname(path)+"/"
     end
-
+    path
   end
 
   def self.do_create_dir

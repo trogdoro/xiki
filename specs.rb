@@ -1,7 +1,42 @@
 class Specs
 
+  def self.menu
+    "
+    - .load/
+      - continue/
+      - docs/
+    - .see/
+      - @xiki/tests/
+    "
+  end
+
+  def self.load choice
+    if choice == "docs"
+      return "
+        | > Summary
+        | Select continue/ to load rspec into the xiki environment.
+        |
+        | > Example
+        | Then you can use rspec methods like .should when using do_run:
+        |
+        | Launch continue/ above and then launch this line.  It will show an error
+        | saying 'got: 1...' and a stack trace.
+        |
+        + try it out) @ puts 1.should == 2
+        |
+        "
+    end
+
+    # Must be do/
+    gem "rspec"
+    require "spec"
+    return "- loaded!"
+
+  end
+
   class << self
     def method_missing(func, *args, &block)
+
       prefix = Keys.prefix
 
       bm = nil
@@ -130,7 +165,6 @@ class Specs
       Clipboard.as_line
 
       View.open "$t"
-      #       Location.save(:insert_orig)
       View.to_highest
 
       View.insert("\n", :dont_move=>1) unless line.empty?   # Make room if line not blank
@@ -158,7 +192,7 @@ class Specs
         # Add symbol for project if it's a specific one
         project = bm_were_in ? "#{bm_were_in.sub('$', ':')}, " : ""
         project = "" if project == ":pm, "   # :m is the default, so not required
-        View.insert "xiki/.tests/#{clazz}/#{desc.gsub "\"", ''}/"
+        View.insert "xiki/tests/#{clazz}/#{desc.gsub "\"", ''}/"
       end
     else
 
@@ -179,13 +213,7 @@ class Specs
     end
 
     if prefix_u
-      # Add line after if before heading
-      unless match =~ /\n$/   # If there wasn't a linebreak at the end of the match
-        Line.next
-        View.insert("\n", :dont_move=>true) if Line[/^\|/]
-      end
       Move.to_axis
-
       u_orig.go
     end
 
@@ -226,5 +254,6 @@ class Specs
 
     View.cursor = cursor
   end
-
 end
+
+Menu.rspec :menu=>"specs"

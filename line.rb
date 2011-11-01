@@ -170,14 +170,16 @@ class Line
   end
 
   def self.without_label options={}
-
     line = options[:line] || self.value
 
-    # Delete normal label
-    line = line.sub /^(\s*)[+-] [!#-~ ]+?: (.*)/, "\\1\\2"
-    # If colon at end, delete label
-    line.sub! /^(\s*)[+-] [!#-~ ]+?:$/, "\\1"
-    # If just label
+    # Delete comment (parenthesis)
+    line = line.sub /^(\s*)[+-] [^\n\(]+\) (.*)/, "\\1\\2"   # Careful of ranges
+
+    # Delete normal label (old)
+    line = line.sub /^(\s*)[+-] [!#-~ ]+?: (.*)/, "\\1\\2"   # Careful of ranges
+    # If colon at end of line, delete label
+    line.sub! /^(\s*)[+-] [!#-~ ]+?:$/, "\\1"   # Careful of ranges
+    # If just bullet
     line.sub! /^(\s*)[+-] (.+)/, "\\1\\2"
     # Remove whitespace by default
     line.sub!(/^ */, '') unless options[:leave_indent]

@@ -1,5 +1,5 @@
 class Filter
-  def self.menu filter=nil, *txt
+  def self.menu filter=nil, *target
 
     # Get parent file path!
       # If none, assume current file
@@ -8,18 +8,20 @@ class Filter
 
     if ! filter   # If nothing passed, tell them to add something
       Line.add_slash
-      return View.message "Add a something to filter by!" #, :beep=>1
+      return View.message "Add a something to filter by!"
     end
 
-    if txt.blank?   # If no line passed, show lines
-      return View.txt.grep(/#{filter}/).join("").gsub(/^/, '| ')
+    if target.blank?   # If just filter, show results
+      return View.target.grep(/#{filter}/).join("").gsub(/^/, '| ')
     end
 
-    txt = txt.join "/"
-    txt.sub! /^\| /, ''
+    # Navigated to a target
 
-    Move.to_end
-    Search.forward "^#{txt}$"
+    target = Line.value
+    target.sub! /^ *\| /, ''
+
+    View.to_highest
+    Search.forward "^#{target}$"
 
     Move.to_line_text_beginning
     nil

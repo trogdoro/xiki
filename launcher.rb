@@ -25,6 +25,10 @@ class Launcher
   @@launchers_parens ||= {}
   @@launchers_paths ||= {}
 
+  def self.launchers_paths
+    @@launchers_paths
+  end
+
   def self.last path, options={}
 
     path = path.sub /^last\/?/, ''
@@ -40,7 +44,6 @@ class Launcher
     end
 
     paths = paths.select{|o| o =~ /^- #{Notes::LABEL_REGEX}#{path}/}
-    # Use label regex - pull out into reusable place
 
     # If root passed, show all matching
     if options[:exclude_path]
@@ -77,10 +80,8 @@ class Launcher
     if hash.nil? && block
       return @@launchers_paths[root] = block
     end
-
     # If just root, define class with that name
     if block.nil? && (hash.nil? || hash[:class])
-
       clazz = hash ? hash[:class] : root
       clazz.sub!(/(\w+)/) {TextUtil.snake_case $1} if hash
       self.add root do |path|
@@ -91,19 +92,17 @@ class Launcher
     menu = hash[:menu]
     if menu
       if menu =~ /\A\/.+\.\w+\z/   # If it's a file (1 line and has extension)
-        if menu =~ /\.rb$/
-          require_launcher menu
-          return
-        end
-
+        require_menu menu
+        return
+      elsif menu =~ /\A[\w \/-]+\z/   # If it's a menu to delegate to
         self.add root do |path|
-          Launcher.climb File.read(menu), path[%r"\/(.*)"]
+          Menu["#{menu}/#{Tree.rootless path}"]
         end
         return
       end
 
-      self.add root do |path|
-        Launcher.climb menu, path[%r"\/(.*)"]
+      self.add root do |path|   # If text of the actual menu
+        Tree.climb menu, path[%r"\/(.*)"]
       end
       return
     end
@@ -142,6 +141,10 @@ class Launcher
 
     is_root = false
 
+    if line =~ /^( *)[+-] [^\n\(]+?\) (.+)/   # Split off label, if there
+      line = $1 + $2
+    end
+    # Deprecated:
     if line =~ /^( *)[+-] .+?: (.+)/   # Split off label, if there
       line = $1 + $2
     end
@@ -181,6 +184,7 @@ class Launcher
 
     # If current line is indented and not passed recursively yet, try again, passing tree
 
+    Ol << "Should we be doing this after self.try_launcher_paths line?!"
     if Line.value =~ /^ / && ! options[:line] && !is_root
       Tree.plus_to_minus
 
@@ -190,8 +194,6 @@ class Launcher
 
       merged = list.map{|o| o.sub /\/$/, ''}.join('/')
       merged << "/" if list[-1] =~ /\/$/
-      # It's adding the slash, which is good
-        # But add it on end if there was one on end!
 
       return self.launch options.slice(:no_search).merge(:line=>merged)
     end
@@ -212,19 +214,12 @@ class Launcher
 
     # See if it matches path launcher
 
-    # Grab thing to match
-    root = line[/^\w+/]
-    if block = @@launchers_paths[root]
-
-      self.append_log line
-
-      self.output_and_search block, line
-      return
-    end
+    Ol << "Try moving this up to under @@launchers.each ?!"
+    return if self.try_launcher_paths line
 
     # Try to auto-complete based on path-launchers
 
-    if line =~ /^(\w+)(\.\.\.)?\/?$/
+    if line =~ /^(\w+)(\.\.\.)?$/
       stem = $1
       matches = @@launchers_paths.keys.select do |possibility|
         possibility =~ /^#{stem}/
@@ -250,10 +245,29 @@ class Launcher
       return
     end
 
+    if line =~ /^([\w-]+)\/?$/   # If blank line, see if launcher not loaded
+      root = $1
+      [".menu", ".rb"].each do |extension|
+        file = File.expand_path "~/menus/#{root}#{extension}"
+        break require_menu(file) if File.exists? file
+      end
+
+      return if self.try_launcher_paths line
+    end
     View.beep
     Message << "No launcher matched!"
 
     $xiki_no_search = false
+  end
+
+  def self.try_launcher_paths line
+    root = line[/^\w+/]   # Grab thing to match
+    if block = @@launchers_paths[root]
+      self.append_log line
+      self.output_and_search block, line
+      return true
+    end
+    false
   end
 
   def self.output_and_search block_or_string, line=nil
@@ -273,8 +287,7 @@ class Launcher
           error_happened = true
           backtrace = e.backtrace[0..8].join("\n").gsub(/^/, '  ') + "\n"
           "- error evaluating:\n#{Code.to_ruby(block_or_string).gsub(/^/, '  ')}\n- message: #{e.message}\n" +
-            "- backtrace:\n" +
-            e.backtrace[0..8].map{|i| "  #{i}\n"}.join('') + "  ...\n"
+            "- backtrace:\n" + e.backtrace[0..8].map{|i| "  #{i}\n"}.join('') + "  ...\n"
         end
       end
 
@@ -295,6 +308,7 @@ class Launcher
     # Move what they printed over to left margin initally, in case they haven't
     output = TextUtil.unindent(output) if output =~ /\A[ \n]/
     # Remove any double linebreaks at end
+    output = CodeTree.returned_to_s output
     output.sub!(/\n\n\z/, "\n")
     output = "#{output}\n" if output !~ /\n\z/
 
@@ -315,7 +329,8 @@ class Launcher
     #       $xiki_no_search = false   # Is this handled elsewhere?
   end
 
-  def self.launch_by_proc
+  def self.launch_by_proc list=nil
+    # Should be able to remove
     list = Tree.construct_path(:list=>true)   # Get path to pass to procs, to help them decide
 
     # Try each proc
@@ -358,164 +373,6 @@ class Launcher
       $el.browse_url "http://dictionary.reference.com/browse/#{url}"
     end
 
-    self.add :paren=>"click" do
-      txt = CodeTree.line_or_children
-
-      # If starts with number like "2:edit", extract it
-      nth = txt.slice! /^\d+:/
-      nth = nth ? (nth[/\d+/].to_i - 1) : 0
-
-      Firefox.run("$('a, *[onclick]').filter(':contains(#{txt}):eq(#{nth})').click()")
-    end
-
-    self.add :paren=>"blink" do
-      txt = CodeTree.line_or_children
-
-      # If starts with number like "2:edit", extract it
-      nth = txt.slice! /^\d+:/
-      nth = nth ? (nth[/\d+/].to_i - 1) : 0
-
-      Firefox.run("$('a, *[onclick]').filter(':contains(#{txt}):eq(#{nth})').blink()")
-    end
-
-    self.add :paren=>"click last" do   # - (js): js to run in firefox
-      Firefox.run("$('a:contains(#{CodeTree.line_or_children}):last').click()")
-    end
-
-    self.add :paren=>"js" do   # - (js): js to run in firefox
-      Firefox.run(CodeTree.line_or_children.gsub('\\', '\\\\\\'))
-    end
-    self.add :paren=>"jsp" do   # - (js): js to run in firefox
-      txt = CodeTree.line_or_children.gsub('\\', '\\\\\\')
-      txt = txt.strip.sub(/;$/, '')   # Remove any semicolon at end
-      Firefox.run("p(#{txt})")
-    end
-    self.add "jsc" do |line|   # - (js): js to run in firefox
-      Firefox.run("console.log(#{line[/\/(.+)/, 1]})")
-      nil
-    end
-
-    self.add :paren=>"jso" do   # - (js): js to run in firefox
-      Tree.under Firefox.value(CodeTree.line_or_children), :escape=>'| '
-    end
-
-    self.add :paren=>"dom" do   # Run in browser
-      js = %`$.trim($("#{Line.content}").html()).replace(/^/gm, '| ');`
-      html = Firefox.run js
-      if html =~ /\$ is not defined/
-        Firefox.load_jquery
-        next View.under "- Jquery loaded, try again!"
-      end
-      html = html.sub(/\A"/, '').sub(/"\z/, '')
-      View.under "#{html.strip}\n"
-    end
-
-    self.add :paren=>"html" do   # Run in browser
-      file = Line.without_label  # Grab line
-      if Keys.prefix_u?
-        View.open file
-
-      else
-        $el.browse_url file
-        $el.browse_url "#{View.dir}#{file}"
-      end
-    end
-
-
-    self.add :paren=>"rc" do  # - (rc): Run in rails console
-
-      line = Line.without_label
-
-      # Make it go to rext if in bar
-      if View.in_bar?
-        View.to_after_bar
-      end
-      # Go to console
-      View.to_buffer "*console"
-      erase_buffer
-      end_of_buffer
-      View.insert "reload!"
-      Console.enter
-      View.insert line
-      Console.enter
-
-      Move.top
-    end
-
-    # - (r): Ruby code
-    self.add :paren=>"r" do
-      returned, stdout = Code.eval(Line.without_label)
-      message returned.to_s
-      #View.insert stdout if stdout
-    end
-
-    # - (irb): Merb console
-    self.add :paren=>"irb" do
-      out = RubyConsole.run(Line.without_label)
-      Tree.indent(out)
-      Tree.insert_quoted_and_search out  # Insert under
-    end
-
-    self.add :paren=>"ro" do  # - (ro): Ruby code in other window
-      # Make it go to rext if in bar
-      if View.in_bar?
-        View.to_after_bar
-      end
-
-      returned, stdout = Code.eval(Line.without_label)
-      message returned.to_s
-      View.insert stdout
-    end
-
-    Launcher.add :paren=>"rails" do  # - (gl): Run in rails console
-      out = RubyConsole[:rails].run(Line.without_label)
-      Tree.indent(out)
-      Tree.insert_quoted_and_search out  # Insert under
-    end
-
-
-    # - (u): Ruby code under
-    self.add :paren=>"u" do
-      returned, stdout = Code.eval(Line.without_label)
-      message returned.to_s
-
-      # Insert under
-      indent = Line.indent
-      Line.start
-      started = point
-      Line.next
-
-      # If first line is "- raw:", don't comment
-      if stdout =~ /\A- raw:/
-        stdout.sub!(/.+?\n/, '')
-        stdout.gsub!(/^/, "#{indent}  ")
-      else
-        stdout.gsub!(/^/, "#{indent}  |")
-        # Get rid of lines that are bullets
-        #stdout.gsub!(/^(  +)\|( *- .+: )/, '\\1\\2')
-      end
-
-      View.insert stdout
-      goto_char started
-    end
-
-    self.add :paren=>"line" do
-      line, path = Line.without_label.split(', ')
-
-      View.open path
-      View.to_line line
-    end
-
-
-    self.add :paren=>'elisp' do |line|   # Run lines like this: - foo (elisp): (bar)
-      Line.to_right
-      eval_last_sexp nil
-    end
-
-    self.add :paren=>'ruby' do |line|   # - (ruby)
-      message el4r_ruby_eval(line)
-    end
-
     self.add :paren=>"wp" do |line|
       url = "http://en.wikipedia.org/wiki/#{Line.without_label}"
       Keys.prefix_u ? $el.browse_url(url) : Firefox.url(url)
@@ -535,12 +392,12 @@ class Launcher
       Keys.clear_prefix
 
       url = line[/(http|file).?:\/\/.+/]
-
       if prefix == 8
         Tree.under RestTree.request("GET", url), :escape=>'| '
         next
       end
       url.gsub! '%', '%25'
+      url.gsub! '"', '%22'
       prefix == :u ? $el.browse_url(url) : Firefox.url(url)
     end
 
@@ -764,12 +621,11 @@ class Launcher
       clazz, default_method = clazz.match(/(.+)\.(.+)/)[1..2]
     end
 
-    # Allow class to be a .tree file as well
+    # Allow clazz to be a .tree file as well?
 
     if clazz.is_a? String
       camel = TextUtil.camel_case clazz
       clazz = $el.el4r_ruby_eval(camel) rescue nil
-      #       Ol << "clazz: #{clazz.inspect}"
     elsif clazz.is_a? Class
       camel = clazz.to_s
     end
@@ -782,9 +638,12 @@ class Launcher
     method = clazz.method default_method rescue raise "#{clazz} doesn't seem to have a .#{default_method} method!"
 
     if method.arity == 0
-      output, out, exception = Code.eval "#{camel}.#{default_method}"
+      code = "#{camel}.#{default_method}"
+      output, out, exception = Code.eval code
       output = CodeTree.returned_to_s(output)   # Convert from array into string, etc.
       output = output.unindent if output =~ /\A[ \n]/
+      raise "#{code} returned nil, but is supposed to return something when i takes no arguments" if output.nil?
+
       output = Tree.routify! output, args
 
       if output
@@ -804,15 +663,12 @@ class Launcher
     }
     action = actions.last || ".#{default_method}"
 
-    # Remove : from :foo lines
+    # TODO: Do we want to always group quotes, or should menus optionally internally call Tree.leaf?!"
 
-    # If no args yet, pass in empty list
-    # if clazz.method("menu").arity != 1
     if args[-1] =~ /^ *\|/
-      args[-1].replace( CodeTree.escape(
-        Tree.siblings(:all=>true).map{|i| "#{i[/^ *\| ?(.*)/, 1]}\n"}.join('')
-        ))
+      args[-1].replace(Tree.leaf args[-1])
     end
+
     args = variables.map{|o| "\"#{o.gsub('"', '\\"')}\""}.join(", ")
 
     code = "#{camel}#{action} #{args}".strip
@@ -897,12 +753,6 @@ class Launcher
     Tree << output
   end
 
-  def self.climb tree, path
-    path = "" if path == nil || path == "/"   # Must be at root if nil
-    tree = TextUtil.unindent tree
-    AutoMenu.child_bullets tree, path
-  end
-
   def self.remove root
     @@launchers_paths.delete root
   end
@@ -929,9 +779,21 @@ class Launcher
 
 end
 
-def require_launcher path
-  require path
-  stem = path.sub(/\.rb$/, '')[/\w+$/]
+def require_menu file
+  stem = file[/(\w+)\./, 1]
+
+  # As .menu
+
+  if file =~ /\.menu$/
+    Launcher.add stem do |path|
+      Tree.climb File.read(file), path[%r"\/(.*)"]
+    end
+    return
+  end
+
+  # As class, so require and add launcher
+
+  require file
   Launcher.add stem
 end
 

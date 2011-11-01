@@ -21,16 +21,90 @@ class Firefox
 
   def self.menu
     "
-    - js/
+    - .html/
+    - .js/
     - .dom/
+    - .search/
     - .tabs/
     - .reload
     - load js into a page: .include_jquery_and_utils
-    - (js): p('hi')
-    - (js): $('a').blink()
-    - (js): p($('a').length)
-    - (js): $(':text').toggle()
+    - more/
+      - js_examples/
+        - @js/p('hi')
+        - @js/$('a').blink()
+        - @js/p($('a').length)
+        - @js/$(':text').toggle()
+    - .roots/
+      - @js/
+      - @html/
+      - @dom/
+      - @ff/
+      - @append/
+      - @click/
+      - @blink/
+      - @ffo/
+      - @jso/
+      - @jsp/
+      - @jsc/
+      - examples) docs/
     "
+  end
+
+  def self.roots choice
+    # if choice == "roots"
+
+    #     | > Summary
+    #     | Double-click to try out these examples that interact
+    #     | with firefox.
+    #     |
+    #     |
+
+    %`
+    | > Running html in the browser
+    @html/<b>hello</b>
+    |
+    |
+    | > Running javascript in the browser
+    | Run some javascript:
+    @js/alert('hi')
+    |
+    | Run and insert output:
+    @jso/document.title
+    |
+    | Run and print output in floating divs:
+    @jsp/document.title
+    |
+    | Run and print output in console:
+    @jsc/document.title
+    |
+    |
+    | > Exploring and maniplating the current page
+    | Drill into the dom:
+    @dom/
+    |
+    | Search in the current page for "and":
+    @ff/and/
+    |
+    | Make all a tags blink:
+    @blink/a
+    |
+    | Simulate clicking the "sign up" link:
+    @click/
+    |
+    | Drill into the properties of the window class:
+    @ffo/window/
+    |
+    `
+  end
+
+  def self.js txt=nil
+    if txt.nil?
+      View.message "Type some javascript to run in the browser", :beep=>1
+      return Move.to_end
+    end
+    result = Firefox.run txt, :jquery=>1
+    Tree << result if result =~ /^- Added required js libs/
+    nil
   end
 
   def self.last_stack_trace
@@ -138,7 +212,7 @@ class Firefox
     # Get block contents
     txt, left, right = View.txt_per_prefix Keys.prefix
 
-    funcs = %q|
+    funcs = %q`
       function p(s) {
         if(s == null)
           s = "[blank]";
@@ -151,7 +225,7 @@ class Firefox
         d.innerHTML = '<div style="top:'+(prepend_index*13)+'px; margin-left:5px; position:absolute; font-size:10px; z-index:1002; color:#000; filter: alpha(opacity=85); -moz-opacity: .85; opacity: .85; background-color:#999;">'+s+'</div>';
 
       }
-    |
+    `
 
     # Remove comments
     txt.gsub! %r'^ *// .+', ''
@@ -164,11 +238,16 @@ class Firefox
 
   def self.run txt, options={}
     result = Firefox.mozrepl_command txt, options
-    result.sub /^"(.+)"$/, "\\1"
+    result.sub! /^"(.+)"$/, "\\1"
+
+    if options[:jquery]
+      message = self.load_jquery_maybe(result) and return message
+    end
+    result
   end
 
   def self.value txt
-    self.run(txt).sub(/^"(.+)"$/, "\\1")
+    self.run(txt).sub(/\A"/, "").sub(/"\z/, "")
   end
 
   def self.url url, options={}
@@ -203,7 +282,10 @@ class Firefox
     # Grab block
     txt, left, right = View.txt_per_prefix #:prefix=>Keys.prefix
 
-    # Write to temp file
+    self.html txt   # Write to temp file
+  end
+
+  def self.html txt
     File.open("/tmp/tmp.html", "w") { |f| f << txt }
 
     # Then load in browser (or reload)
@@ -211,6 +293,27 @@ class Firefox
       Firefox.reload :
       $el.browse_url("file:///tmp/tmp.html")
 
+  end
+
+  def self.append html
+
+    html.gsub! '"', '\\"'
+    html.gsub! "\n", ' '
+
+    code = "$('body').append(\"#{html}\")"
+    result = Firefox.run code, :jquery=>1
+    Tree << result if result =~ /^- Added required js libs/
+
+    nil
+  end
+
+  def self.css html
+
+    code = "$('head').append(\"<style>#{html}</style>\")"
+    result = Firefox.run code, :jquery=>1
+    Tree << result if result =~ /^- Added required js libs/
+
+    nil
   end
 
   def self.enter_log_javascript_line
@@ -334,6 +437,33 @@ class Firefox
     result.sub(/\A"/, '').sub(/"\z/, '')
   end
 
+  def self.search txt=nil
+    if txt.nil?
+      View.message "Enter a string to search for on the page"
+      return Move.to_end
+    end
+
+    js = %`
+      var result="", depth=-1;
+      $('*:contains(#{txt})').each(function(i, e){
+        var tag = e.tagName.toLowerCase();
+        e = $(e);
+        var current_depth = e.parents().length;   // Only climb downward
+        if(current_depth <= depth) return depth = 9999;   // Don't grab any more
+        depth = current_depth;
+        var prev_count = $(e).prevAll(tag).length;
+        result += tag;
+        if(prev_count > 0) result += ':'+(prev_count+1);
+        result += '/';
+      })
+      result;
+      `.unindent
+
+    result = Firefox.run js, :jquery=>1
+
+    result.sub "html/", "- @dom/"
+  end
+
   def self.dom *args
 
     prefix = Keys.prefix
@@ -341,7 +471,7 @@ class Firefox
     raw_args = args.to_s.sub /\/$/, ''
 
     # If last arg has linebreakes, save
-    save = args.pop if args.last =~ /\n/
+    save = args.pop if args.last =~ /^\|/
 
     args.each do |o|
       o.sub! /\/$/, ''
@@ -352,6 +482,7 @@ class Firefox
     args = args.join ' > '
 
     if save
+      save = Tree.siblings(:all=>true).map{|i| "#{i.gsub(/^\| /, '')}\n"}.join('')
       save.gsub! "\n", "\\n"
       save.gsub! '"', '\\"'
 
@@ -401,18 +532,15 @@ class Firefox
         "html::"+$("#{args}").html();
       `.unindent
 
-    kids = Firefox.run js
+    kids = Firefox.run js, :jquery=>1
+    return kids if kids =~ /^- Added required/
+
     kids = kids.sub(/\A"/, '').sub(/"\z/, '') if kids =~ /\A"/
     if kids =~ /\Ahtml::/
       kids = kids.sub(/\Ahtml::/, '').strip
       return prefix == 8 ?
         kids.gsub(/^/, '| ') :
         self.tidy(kids, raw_args)
-    end
-
-    if kids =~ /(\$ is not defined|blink is not a function)/
-      self.load_jquery
-      return "- Jquery required js libs into page, try again!"
     end
 
     kids = kids.split ','
@@ -424,7 +552,6 @@ class Firefox
       counts[k] += 1
       k.replace "#{k}:#{counts[k]}" unless k =~ /#/ || counts[k] == 1
     end
-
     kids.map{|o| "#{o}/"}
   end
 
@@ -463,7 +590,13 @@ class Firefox
 
   end
 
-  def self.load_jquery
+  def self.load_jquery_maybe txt=nil
+
+    # If text passed, check it and error if complaining about jquery missing
+    if txt && txt !~ /( (\$|p) is not defined|blink is not a function)/
+      return nil   # Text without error, so don't load
+    end
+
     self.run "
       if(! document.getElementById('jqid')){
         var s=document.createElement('script');
@@ -475,8 +608,38 @@ class Firefox
         document.getElementsByTagName('body')[0].appendChild(s);
       }
       ".unindent
+
+    return "- Added required js libs into page, try again!"
+  end
+
+  def self.object name=nil, key=nil
+
+    if name.nil? || name.empty?
+      View.message "Type the name of an object"
+      Move.to_end
+      return
+    end
+
+    if key.nil?
+
+      result = Firefox.value %`
+        var result = "";
+        for(var key in #{name}) {
+          if(! #{name}.hasOwnProperty(key)) continue;
+          result += key+"\\n";
+        }
+        `.unindent
+      return result.split("\n").sort{|a, b| a.sub(/^_+/, '').downcase <=> b.sub(/^_+/, '').downcase}.join("\n").gsub /.+/, "- \\0/"
+    end
+
+    # Key was passed
+
+    result = Firefox.value "#{name}['#{key}']"
+
   end
 end
+
+Menu.ffo :class=>'Firefox.object'
 
 Launcher.add(/^#.+/) do |line|
   Line.delete :br
@@ -484,13 +647,62 @@ Launcher.add(/^#.+/) do |line|
   Launcher.launch
 end
 
-Launcher.add "dom" do |line|
-  Firefox.dom(*line.split('/')[1..-1])
+Menu.dom do |line|
+  Firefox.dom *Menu.split(line, :rootless=>1)
 end
 
-Launcher.add "js" do |line|
-  line.sub! /^js\/?/, ''
-  Firefox.run(line)
+Menu.js do |path|
+  Firefox.js Tree.rest(path)
+end
+
+Menu.jsp do |path|
+  txt = Tree.leaf path
+  txt = txt.strip.sub(/;\z/, '')   # Remove any semicolon at end
+  code = "p(#{txt})"
+  result = Firefox.run code, :jquery=>1
+end
+
+Menu.jsc do |path|   # - (js): js to run in firefox
+  txt = Tree.leaf path
+  txt = txt.strip.sub(/;\z/, '')   # Remove any semicolon at end
+  code = "console.log(#{txt})"
+  Firefox.run code, :jquery=>1
+end
+
+Menu.blink do |path|   # - (js): js to run in firefox
+  code = "$(\"#{Tree.rest path}\").blink()"
+  result = Firefox.run code, :jquery=>1
+  Tree << result if result =~ /^- Added required js libs/
+
   nil
 end
 
+Menu.jso do |path|   # - (js): js to run in firefox
+  Firefox.run Tree.leaf(path), :jquery=>1
+end
+
+Menu.ff do |line|
+  Menu["firefox/search/#{Tree.rootless line}"]
+end
+
+Menu.click do |path|
+  nth = 0
+  txt = Tree.leaf path
+  Firefox.run("$('a, *[onclick]').filter(':contains(#{txt}):eq(#{nth})').click()", :jquery=>1)
+  nil
+end
+
+Menu.html do |path|
+  Firefox.html Tree.rest path
+  nil
+end
+
+Menu.append do |path|
+  Firefox.append Tree.rest(path)
+  nil
+end
+
+Menu.css do |path|
+  Firefox.css Tree.rest(path)
+  nil
+end

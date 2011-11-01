@@ -1,15 +1,39 @@
 class Mysql
   def self.menu
     "
-    + .tables/
-    + .dbs/
-    - .create_db 'foo'
-    - .drop_db 'foo'
+    - .tables/
+    - .dbs/
+    - .setup/
+      - .start/
+      - .create/
+      - .install/
+    - .roots/
+      - @tables/
+      - @columns/
     "
+    #     - .all/
   end
 
   def self.default_db db
     @default_db = db
+  end
+
+  def self.start
+    "- TODO!"
+  end
+
+  def self.install
+    "
+    | > Installing Mysql
+    | For now, this just has the mac / homebrew instructions.  Fork xiki on github to add docs for other platforms.
+    |
+    | > Install using homebrew
+    - double-click to install) @$ brew install mysql
+    |
+    | > More
+    | See this link for more info on installing:
+    @http://www.mysql.com/downloads/mysql/
+    "
   end
 
   def self.tables table=nil
@@ -27,7 +51,6 @@ class Mysql
   end
 
   def self.dbs db=nil, table=nil
-
     db.sub! /\/$/, '' if db
     table.sub! /\/$/, '' if table
 
@@ -53,11 +76,18 @@ class Mysql
       return Mysql.run(db, 'show tables').split[1..-1].map{|o| "#{o}/"}
     end
 
-    Mysql.run(nil, 'show databases').split[1..-1].map{|o| "#{o}/"}
+    txt = Mysql.run(nil, 'show databases')
+    if txt =~ /^ERROR.+Can't connect/
+      Ol.stack
+      return "- cc!"
+    end
+
+    txt.split[1..-1].map{|o| "#{o}/"}
   end
 
-  def self.create_db name
-    Console.run "mysqladmin -u root create #{name}", :buffer => "create #{name}"
+  def self.create name
+    "- TODO!"
+    #     Console.run "mysqladmin -u root create #{name}", :buffer => "create #{name}"
   end
 
   def self.drop_db name
@@ -72,3 +102,20 @@ end
 
 Keys.enter_list_mysql { Launcher.insert('- Mysql.dbs/') }
 
+Launcher.add "tables" do |path|
+  args = path.split('/')[1..-1]
+  Mysql.tables(*args)
+end
+
+Launcher.add "rows" do |path|
+  args = path.split('/')[1..-1]
+  Mysql.tables(*args)
+end
+
+Launcher.add "columns" do |path|
+  args = path.split('/')[1..-1]
+  if args.size > 0
+    next Mysql.run('default_dev', "desc #{args[0]}").gsub!(/^/, '| ')
+  end
+  Mysql.tables(*args)
+end

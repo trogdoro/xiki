@@ -403,7 +403,7 @@ class Search
       return
     end
 
-    match.gsub!(/([#()])/, "\\\\\\1")
+    match.gsub!(/([#()*+?^$\[\]|.])/, "\\\\\\1")
 
     # Search in bookmark
     FileTree.grep_with_hashes bm, match
@@ -1023,7 +1023,7 @@ class Search
     if match.nil?   # If nothing searched for yet
       char = Keys.input(:one_char=>true, :prompt=>"Enter one char: ")
       if char == "m"
-        Launcher.open("- $x/\n  - ## def /")
+        Launcher.open("- $x/\n  - ##\\bdef /")
       else
         View.beep
         View.message "Don't know what to do with that char."

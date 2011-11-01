@@ -63,6 +63,9 @@ class Code
       case prefix
       when :u   # Load file in emacsruby
         return self.load_this_file
+
+        # These were superceded by .txt_per_prefix apparently
+
       when 8   # Put into file and run in console
         File.open("/tmp/tmp.rb", "w") { |f| f << Notes.get_block("^[|>]").text }
         return Console.run "ruby -I. /tmp/tmp.rb", :dir=>View.dir
@@ -73,13 +76,19 @@ class Code
         started = point
         left = Line.left
         right = point_at_bol(elvar.current_prefix_arg+1)
-        goto_char started
+        $el.goto_char started
+
       else   # Move this into ruby - block.rb?
         ignore, left, right = View.block_positions "^[|>]"
       end
 
       txt = View.txt(:left=>left, :right=>right).to_s
       Effects.blink :left => left, :right => right
+    end
+
+    # Remove quoted lines if it's quoted
+    if txt =~ /\A *\|/
+      txt.gsub! /^ *\| ?/, ''
     end
 
     # If C--, define the launcher
@@ -91,7 +100,7 @@ class Code
     end
 
     orig = Location.new
-    goto_char right; after_code = Location.new  # Remember right of code
+    $el.goto_char right; after_code = Location.new  # Remember right of code
     orig.go
 
     # Eval the code
@@ -113,7 +122,7 @@ class Code
 
     if exception
       backtrace = exception.backtrace[0..8].join("\n").gsub(/^/, '  ') + "\n"
-      insert "- error: #{exception.message}\n- backtrace:\n#{backtrace}"
+      View.insert "- error: #{exception.message}\n- backtrace:\n#{backtrace}".gsub(/^/, '  ')
     end
 
     orig.go   # Move cursor back to where we started

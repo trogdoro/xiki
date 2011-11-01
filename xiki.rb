@@ -8,6 +8,8 @@ require 'requirer'
 require 'text_util'
 require 'notes'
 require 'launcher'
+require 'mode'
+require 'menu'
 
 # Get rest of files to require
 classes = Dir["**/*.rb"]
@@ -60,7 +62,6 @@ class Xiki
   def self.menu
     [
       ".tests/",
-      ".all_tests/",
       '.visit_github_page/',
       '.visit_github_commits/',
     ]
@@ -78,10 +79,12 @@ class Xiki
 
   def self.tests clazz=nil, test=nil, *quoted
     if clazz.nil?   # If no class, list all
-      return [".all/"] + Dir.new(Bookmarks["$x/spec/"]).entries.grep(/^[^.]/) {|o| "#{o[/(.+)_spec\.rb/, 1]}/"}
+      return ["all/"] + Dir["#{Xiki.dir}/spec/*_spec.rb"].entries.map{|o| "#{o[/.+\/(.+)_spec\.rb/, 1]}/"}
     end
 
     if test.nil?   # If no test, list all
+      return Console.run("rspec spec", :dir=>Xiki.dir) if clazz == "all"
+
       path = Bookmarks["$x/spec/#{clazz}_spec.rb"]
       code = File.read path
       return ['all/'] + code.scan(/^ *(describe|it) .*"(.+)"/).map{|o| "#{o[1]}/".sub(/^#(.+)\/$/, ".\\1:")}
@@ -114,10 +117,6 @@ class Xiki
     View.open file
     View.to_line line.to_i
     nil
-  end
-
-  def self.all
-    Console.run "rspec spec", :dir=>"$x"
   end
 end
 

@@ -147,12 +147,17 @@ class Move
   end
 
   def self.to_line_text_beginning down=nil
-    down ||= Keys.prefix_n
+    prefix = Keys.prefix
+
     # If prefix go down n lines first
-    Line.next down if down
+    Line.next prefix if prefix.is_a? Fixnum
 
     Line.to_left
-    skip_chars_forward "[^ \t]"
+
+    prefix == :u ?
+      $el.skip_chars_forward("[^ \t]") :
+      $el.skip_chars_forward("[^ \t|]")   # If quoted, skip quote unless :u
+
   end
 
   # Go to opposite bracket

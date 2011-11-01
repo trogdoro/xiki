@@ -23,6 +23,10 @@ class Console
   end
 
   # Run the command in a console
+  def self.[] command
+    self.run command
+  end
+
   def self.run command, options={}
 
     dir = options[:dir]
