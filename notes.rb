@@ -468,16 +468,18 @@ class Notes
   end
 
   def self.bullet bullet_text="- "
+    # TODO break out enter_junior to use different method - complicating this too much
+      # see where else .bullet | Notes.bullet is used
+
     prefix = Keys.prefix :clear=>true
 
     line = Line.value
 
     if ! Line.blank?   # If non-blank line
+      # If at beginning of line, just insert bullet
+      return View.insert "- " if View.column == 0 && bullet_text == "- " && Line !~ /^ /
 
-      if Line.point == Line.left || Line.point == Line.right   # If cursor at beginning of line
-        Line.to_right
-        # Will move down one line
-      else   # Else, leave rest of line to be text of bullet
+      if Line.point != Line.right
         Deletes.delete_whitespace
       end
       View.insert "\n"
@@ -625,8 +627,6 @@ class Notes
 
     def show_text
       @header_overlay ||= Overlay.find_or_make(left, after_header - 1)
-      @header_overlay.before_string = ''
-      @header_overlay.after_string = ''
 
       @body_overlay ||= Overlay.find_or_make(after_header, right)
       @body_overlay.invisible = false
@@ -634,9 +634,6 @@ class Notes
 
     def hide_text
       @header_overlay ||= Overlay.find_or_make(left, after_header - 1)
-
-      @header_overlay.before_string = ''
-      @header_overlay.after_string = ' (more...)'
 
       @body_overlay ||= Overlay.find_or_make(after_header, right)
       @body_overlay.invisible = true

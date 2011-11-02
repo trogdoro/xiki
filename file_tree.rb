@@ -844,7 +844,7 @@ class FileTree
     Line.to_left
     if Line[/^\|/]
       Move.to_end
-      newline
+      $el.newline
     end
     clip = Clipboard.get(0, :add_linebreak => true)
     dir = Tree.construct_path rescue nil
@@ -1470,15 +1470,30 @@ class FileTree
   end
 
   def self.to_outline
+
+    prefix = Keys.prefix :clear=>true
+    args = [View.txt, View.line] if prefix == :u
+
     current_line = Line.number
 
     paths = View.file
     View.to_buffer("*tree outline")
     View.clear;  notes_mode
-    View.insert FileTree.paths_to_tree(paths)
-    View.to_top
-    Keys.clear_prefix
-    FileTree.select_next_file
+    if paths
+      View.insert FileTree.paths_to_tree(paths)
+      View.to_top
+      FileTree.select_next_file
+    else
+      View.insert "- buffer/\n"
+      View.to_top
+    end
+
+    if prefix == :u
+      txt, line = Search.deep_outline *args
+      Tree.<< txt, :line_found=>line, :escape=>'| '
+      return
+    end
+
     FileTree.enter_lines nil, :current_line=>current_line
   end
 

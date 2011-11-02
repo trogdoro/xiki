@@ -474,8 +474,13 @@ class Tree
 
     txt.gsub! /^  /, '' if options[:before] || options[:after]   # Move back to left
 
+    $xiki_no_search = true
+
     Launcher.output_and_search txt
-    Line.next(options[:line_found]-1) if options[:line_found] && options[:line_found] > 0
+    if options[:line_found] && options[:line_found] > 0
+      Line.next(options[:line_found]-1) if options[:line_found] && options[:line_found] > 0
+      Color.colorize :l
+    end
   end
 
   def self.to_parent
@@ -638,7 +643,10 @@ class Tree
     right = $el.point
 
     $el.goto_char left
-    Line.next(options[:line_found]-1) if options[:line_found] && options[:line_found] > 0
+    if options[:line_found] && options[:line_found] > 0
+      Line.next(options[:line_found]-1)
+      Color.colorize :l
+    end
 
     Line.to_words
     # Do a search
@@ -900,7 +908,7 @@ class Tree
   # (in case there are slashes).
   def self.rest path
     path = self.rootless path
-    path = "|#{path}" unless path =~ /^\|/
+    path = "|#{path}" unless path =~ /^(\||$)/
 
     self.leaf(path)
   end

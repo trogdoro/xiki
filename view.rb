@@ -1113,6 +1113,28 @@ class View
       Time.now.strftime("%Y-%m-%d")
   end
 
+  def self.prompt message="type something here"
+    Move.to_end
+    View << "/" unless Line =~ /\/$/
+
+    View.insert message, :dont_move=>1
+    over = $el.make_overlay View.cursor, Line.right
+
+    a, b = :change_log_email, :change_log_file   # Orange and yellow
+
+    l3, l2, l1 = :default, :dired_ignored, :dired_perm_write
+
+    up = [6, 5, 4, 3, 2]
+    down = [2, 3, 4, 5, 6]
+    ([7] + up + [1] + down + [7] + up + [1] + down + [7] + up + [1] + down + [7]).each do |face|
+      $el.overlay_put over, :face, "fade#{face}".to_sym
+      $el.sit_for 0.02
+    end
+
+    View.delete View.cursor, Line.right
+    $el.delete_overlay over
+  end
+
 end
 
 def View txt

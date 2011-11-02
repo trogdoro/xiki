@@ -98,10 +98,8 @@ class Firefox
   end
 
   def self.js txt=nil
-    if txt.nil?
-      View.message "Type some javascript to run in the browser", :beep=>1
-      return Move.to_end
-    end
+    return View.prompt("Type some javascript to run in the browser") if txt.nil?
+
     result = Firefox.run txt, :jquery=>1
     Tree << result if result =~ /^- Added required js libs/
     nil
@@ -439,8 +437,7 @@ class Firefox
 
   def self.search txt=nil
     if txt.nil?
-      View.message "Enter a string to search for on the page"
-      return Move.to_end
+      return View.prompt "Enter a string to search for on the page"
     end
 
     js = %`
@@ -615,9 +612,7 @@ class Firefox
   def self.object name=nil, key=nil
 
     if name.nil? || name.empty?
-      View.message "Type the name of an object"
-      Move.to_end
-      return
+      return View.prompt "Type the name of an object in firefox"
     end
 
     if key.nil?
@@ -670,10 +665,11 @@ Menu.jsc do |path|   # - (js): js to run in firefox
 end
 
 Menu.blink do |path|   # - (js): js to run in firefox
-  code = "$(\"#{Tree.rest path}\").blink()"
+  txt = Tree.rest path
+  next View.prompt("Type a selector to blink in firefox") if txt.nil?
+  code = "$(\"#{txt}\").blink()"
   result = Firefox.run code, :jquery=>1
   Tree << result if result =~ /^- Added required js libs/
-
   nil
 end
 

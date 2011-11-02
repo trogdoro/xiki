@@ -77,41 +77,58 @@ class Xiki
     nil
   end
 
-  def self.tests clazz=nil, test=nil, *quoted
-    if clazz.nil?   # If no class, list all
+  def self.dont_search
+    $xiki_no_search = true
+  end
+
+  def self.tests clazz=nil, *test
+
+    if clazz.nil?   # If nothing, list all
       return ["all/"] + Dir["#{Xiki.dir}/spec/*_spec.rb"].entries.map{|o| "#{o[/.+\/(.+)_spec\.rb/, 1]}/"}
     end
 
-    if test.nil?   # If no test, list all
-      return Console.run("rspec spec", :dir=>Xiki.dir) if clazz == "all"
+    if test.empty?   # If just class, list all tests
+      Xiki.dont_search
+
+      if clazz == "all"
+        return Keys.prefix_u ?
+          Console.run("rspec spec", :dir=>Xiki.dir) :
+          Tree.<<(Console.run("rspec spec", :dir=>Xiki.dir, :sync=>1), :escape=>'| ')
+      end
 
       path = Bookmarks["$x/spec/#{clazz}_spec.rb"]
       code = File.read path
-      return ['all/'] + code.scan(/^ *(describe|it) .*"(.+)"/).map{|o| "#{o[1]}/".sub(/^#(.+)\/$/, ".\\1:")}
+      return "- all/\n" + code.scan(/^ *(describe|it) .*"(.+)"/).map{|o|
+        o[0] == "describe" ?
+          "- #{o[1]}/" :
+          "  - #{o[1]}/"
+      }.join("\n")
     end
 
     clazz = TextUtil.snake_case(clazz.name) if ! clazz.is_a? String
-    # If U prefix, just jump to file
-    if Keys.prefix_u :clear=>true
-      View.open "$x/spec/#{clazz}_spec.rb"
-      View.to_highest
-      Search.forward "[\"']#{test}[\"']"
-      Move.to_line_text_beginning
-      return
-    end
 
-    if quoted.blank?   # If no quoted, run test
 
+    quote = Line[/^ *\| ?(.+)/, 1]
+
+    if ! quote   # If just test
+
+      # If U prefix, just jump to file
+      if Keys.prefix_u :clear=>true
+        View.open "$x/spec/#{clazz}_spec.rb"
+        View.to_highest
+        Search.forward "[\"']#{test[-1]}[\"']"
+        Move.to_line_text_beginning
+        return
+      end
+
+      # Run it
       command = "rspec spec/#{clazz}_spec.rb"
-      command << " -e \"#{test}\"" unless test == "all"
-
+      command << " -e \"#{test.join ' '}\"" unless test == ["all"]
       result = Console.run command, :dir=>"$x", :sync=>true
       return result.gsub(/^/, '| ').gsub(/ +$/, '')
     end
 
-    quoted = quoted.join "/"
-
-    # Quoted line, so jump to it
+    # Quoted line, so jump to line number
     file, line = Line.value.match(/([\/\w.]+)?:(\d+)/)[1..2]
     file.sub! /^\.\//, Bookmarks["$x"]
     View.open file

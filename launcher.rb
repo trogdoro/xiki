@@ -102,6 +102,7 @@ class Launcher
       end
 
       self.add root do |path|   # If text of the actual menu
+        # Different from Menu[...] or .drill?
         Tree.climb menu, path[%r"\/(.*)"]
       end
       return
@@ -185,7 +186,7 @@ class Launcher
     # If current line is indented and not passed recursively yet, try again, passing tree
 
     Ol << "Should we be doing this after self.try_launcher_paths line?!"
-    if Line.value =~ /^ / && ! options[:line] && !is_root
+    if Line.value =~ /^ / && ! options[:line] && !is_root   # If indented, call .launch recursively
       Tree.plus_to_minus
 
       # merge together (spaces if no slashes) and pass that to launch
@@ -323,6 +324,7 @@ class Launcher
     if !error_happened && !$xiki_no_search && !buffer_changed && View.cursor == orig_left
       Tree.search_appropriately left, right, output#, original_indent
     else
+      #       Move.to_line_text_beginning(2)
       Move.to_line_text_beginning(1)
     end
 
@@ -669,7 +671,7 @@ class Launcher
       args[-1].replace(Tree.leaf args[-1])
     end
 
-    args = variables.map{|o| "\"#{o.gsub('"', '\\"')}\""}.join(", ")
+    args = variables.map{|o| "\"#{CodeTree.escape o}\""}.join(", ")
 
     code = "#{camel}#{action} #{args}".strip
     output, out, exception = Code.eval code

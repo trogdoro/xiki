@@ -26,8 +26,8 @@ class Color
 
     # If h, just show all colors
     case char
-    when "l"   # Mark as "map", so delete others in file first
-
+    when "l"
+      # We want there to be only one "light" line per file, so delete existing
       overlays = overlays_in(View.top, View.bottom)   # Get all overlays
       overlays.to_a.reverse.each do |o|   # Loop through and copy all
         if overlay_get(o, :face).to_s == "color-rb-light"
@@ -188,6 +188,14 @@ class Color
       Styles.define :color_rb_purple, :bg => "f2ddff"
 
     end
+
+    Styles.define :fade7, :fg => "333"
+    Styles.define :fade6, :fg => "555"
+    Styles.define :fade5, :fg => "777"
+    Styles.define :fade4, :fg => "999"
+    Styles.define :fade3, :fg => "bbb"
+    Styles.define :fade2, :fg => "ddd"
+    Styles.define :fade1, :fg => "fff"
 
   end
 

@@ -10,11 +10,6 @@ class Overlay
     @overlay = elisp_overlay
   end
 
-  # create elisp overlay and wrap it in a ruby object
-  def self.make(left, right)
-    Overlay.new($el.make_overlay(left, right))
-  end
-
   # returns all overlays that contain at least one character between left and right
   # empty overlays are included
   def self.between(left, right)
@@ -76,8 +71,6 @@ class Overlay
     o
   end
 
-
-
   # returns the buffer that overlay belongs to. It returns nil if overlay has been deleted.
   def buffer
     $el.overlay_buffer @overlay
@@ -115,56 +108,28 @@ class Overlay
     @overlay
   end
 
-  # overlay properties
-  # for more, see http://www.gnu.org/software/emacs/elisp/html_node/Overlay-Properties.html#Overlay-Properties
-  PRIORITY                         = :priority
-  WINDOW                           = :window
-  CATEGORY                         = :category
-  FACE                             = :face
-  INVISIBLE                        = :invisible
-  BEFORE_STRING                    = :before_string
-  AFTER_STRING                     = :after_string
-  ISEARCH_OPEN_INVISIBLE_TEMPORARY = :isearch_open_invisible_temporary
-  EVAPORATE                        = :evaporate
-
   # method missing candidate.  name space with 'set' or 'propset'
   def invisible
-    $el.overlay_get(@overlay, INVISIBLE)
+    $el.overlay_get(@overlay, :invisible)
   end
 
   def invisible=(arg)
     if arg
-      $el.overlay_put(@overlay, INVISIBLE, true)
+      $el.overlay_put(@overlay, :invisible, true)
     else
-      $el.overlay_put(@overlay, INVISIBLE, nil)
+      $el.overlay_put(@overlay, :invisible, nil)
     end
   end
 
-  def before_string
-    $el.overlay_get(@overlay, BEFORE_STRING)
-  end
-
-  def before_string=(arg)
-    $el.overlay_put(@overlay, BEFORE_STRING, arg)
-  end
-
-  def after_string
-    $el.overlay_get(@overlay, AFTER_STRING)
-  end
-
-  def after_string=(arg)
-    $el.overlay_put(@overlay, AFTER_STRING, arg)
-  end
-
   def isearch_open_invisible_temporary
-    $el.overlay_get(@overlay, ISEARCH_OPEN_INVISIBLE_TEMPORARY)
+    $el.overlay_get(@overlay, :isearch_open_invisible_temporary)
   end
 
   def isearch_open_invisible_temporary=(arg)
     if arg
-      $el.overlay_put(@overlay, ISEARCH_OPEN_INVISIBLE_TEMPORARY, true)
+      $el.overlay_put(@overlay, :isearch_open_invisible_temporary, true)
     else
-      $el.overlay_put(@overlay, ISEARCH_OPEN_INVISIBLE_TEMPORARY, nil)
+      $el.overlay_put(@overlay, :isearch_open_invisible_temporary, nil)
     end
   end
 

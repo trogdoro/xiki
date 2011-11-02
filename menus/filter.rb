@@ -7,12 +7,11 @@ class Filter
     # For now, just assume it's the current file
 
     if ! filter   # If nothing passed, tell them to add something
-      Line.add_slash
-      return View.message "Add a something to filter by!"
+      return View.prompt "Type something to filter by"
     end
 
     if target.blank?   # If just filter, show results
-      return View.target.grep(/#{filter}/).join("").gsub(/^/, '| ')
+      return View.txt.grep(/#{filter}/).join("").gsub(/^/, '| ')
     end
 
     # Navigated to a target

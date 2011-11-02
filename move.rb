@@ -148,9 +148,10 @@ class Move
 
   def self.to_line_text_beginning down=nil
     prefix = Keys.prefix
+    down ||= prefix
 
     # If prefix go down n lines first
-    Line.next prefix if prefix.is_a? Fixnum
+    Line.next down if down.is_a? Fixnum
 
     Line.to_left
 

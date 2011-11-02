@@ -1035,11 +1035,6 @@ class Search
     View.message "use 'pull'" + "!" * 600
   end
 
-  def self.change_case
-    # Prompt user to get char
-    char = View.prompt(", lower, camel, snake")
-  end
-
   def self.isearch_restart path, options={}
     term = self.stop
 
@@ -1291,4 +1286,71 @@ class Search
   def self.outline_goto_once; @@outline_goto_once; end
   def self.outline_goto_once= txt; @@outline_goto_once = txt; end
 
+  def self.deep_outline txt, line
+
+    txt = txt.split "\n"
+    target_i = line
+
+    # Start with current line
+
+    i, children, matched_above = target_i-1, false, 1
+    result = [txt[i]]
+    target_indent = txt[i][/^ */].length / 2
+
+    # Go through each line above
+
+    while (i -= 1) >= 0
+      # Grab lines with incrementally lower indent, but only if they have lines under!
+
+      line = txt[i]
+      next if line.empty?
+      indent = line[/^ */].length / 2
+
+      if indent > target_indent   # If lower, skip, remembering children
+        children = true
+      elsif indent == target_indent   # If same, only grab if there were children
+        if children
+          matched_above += 1
+          result.unshift txt[i]
+        end
+        children = false
+      else   # Indented less
+        matched_above += 1
+        result.unshift txt[i]
+        children = false
+        target_indent = indent
+      end
+    end
+
+
+    i, candidate = target_i-1, nil
+    target_indent = txt[i][/^ */].length / 2
+
+    # Go through each line below
+
+    while (i += 1) < txt.length
+      # Grab lins with incrementally lower indent, but only if they have lines under!
+
+      line = txt[i]
+      next if line.empty?
+      indent = line[/^ */].length / 2
+
+      if indent > target_indent   # If lower, add candidate if any
+        if candidate
+          result << candidate
+          candidate = nil
+        end
+
+      elsif indent == target_indent   # If same, only grab if there were children
+        candidate = txt[i]
+      else   # Indented less
+        target_indent = indent
+        candidate = txt[i]
+      end
+
+    end
+
+    [result.join("\n")+"\n", matched_above]
+
+  end
 end

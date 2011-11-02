@@ -9,9 +9,7 @@ class Headings
 
     # If no target, tell them to enter one
     if target.nil?
-      Move.to_end
-      View.message "Type something to search for in todo.notes headings."
-      return nil
+      return View.prompt "Type a heading to search for"
     end
 
     # If no line, search for headings
