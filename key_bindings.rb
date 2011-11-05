@@ -170,7 +170,7 @@ class KeyBindings
 
     Keys.enter_insert_wikipedia { View.insert("- (wp): ") }
     Keys.enter_in_todo { FileTree.enter_snippet }   # enter tree quote of region in $T
-    Keys.enter_junior { Notes.bullet("") }
+    Keys.enter_junior { Notes.enter_junior }
     Keys.enter_key { Keys.insert_code }
     #Keys.EK { Clipboard.paste }   # Enter Clipboard: paste
     #     Keys.enter_list_buckets 
@@ -201,7 +201,6 @@ class KeyBindings
     Keys.enter_value { Clipboard.paste }
     # W
     Keys.enter_whitespace { open_line(elvar.current_prefix_arg || 1) }
-    Keys.enter_yank { Clipboard.enter_yank }
     # X
     # Y
     # Z
@@ -251,7 +250,6 @@ class KeyBindings
     Keys.do_compare_saved { DiffLog.compare_with_saved }
 
     Keys.do_copy_to { FileTree.copy_to }
-
     Keys.do_compare_views { ediff_buffers( window_buffer(nth(0, window_list)), window_buffer(nth(1, window_list))) }   # compare buffers in first two views
     Keys.do_clean_whitespace { View.gsub!(/ +$/, "") }   # Deletes trailing whitespace
     Keys.DC1 { Clipboard.diff_1_and_2 }   # Compare contents of clipboards "1" and "2"
@@ -317,7 +315,7 @@ class KeyBindings
     #    Keys.DS { elvar.current_prefix_arg ? johns_thing : Search.grep }   # Do Search: do grep search
     Keys.do_tree { FileTree.tree(:recursive=>true) }   # draw filesystem tree for current dir or bookmark
     #     Keys.do_under { FileTree.kill_under }   # kill tree children (lines indented more)
-    Keys.do_up { Launcher.do_last_launch }
+    Keys.do_upper { Launcher.do_last_launch }
     #Keys.display_up { message Tree.construct_path( :indented => true ) }   # Display ancestors (by indent level)
     Keys.do_version { Git.code_tree_diff_unadded }   # Compare with repos (with what hasn't been added yet)
     Keys.do_whitespace { Deletes.delete_whitespace }   # delete blank lines
@@ -523,7 +521,8 @@ class KeyBindings
     Keys.search_like_quote { Search.isearch_google :quote=>true }
     Keys.search_like_xiki { View.open "$x/#{Search.stop.strip}" }
 
-    Keys.search_last_launched { Search.search_last_launched }
+    # Use search_navigated instead
+    #     Keys.search_last_launched { Search.search_last_launched }
     #     Keys.search_log { Search.search_log }
     # M: leave unmapped for stop
     # AVAILABLE: search_m (when nothing searched for) - might make for weird hanging after xiki loading errors

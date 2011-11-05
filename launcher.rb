@@ -13,6 +13,12 @@ class Launcher
     "*console app",
     ]
 
+  MENU_DIRS = [
+    "#{Xiki.dir}/menus",
+    File.expand_path("~/xiki/menus"),
+    File.expand_path("~/menus"),
+    ]
+
   @@log = File.expand_path("~/.emacs.d/path_log.notes")
 
   # Set this to true to just see which launcher applied.
@@ -145,10 +151,6 @@ class Launcher
     if line =~ /^( *)[+-] [^\n\(]+?\) (.+)/   # Split off label, if there
       line = $1 + $2
     end
-    # Deprecated:
-    if line =~ /^( *)[+-] .+?: (.+)/   # Split off label, if there
-      line = $1 + $2
-    end
     if line =~ /^( *)[+-] (.+)/   # Split off bullet, if there
       line = $1 + $2
     end
@@ -220,7 +222,7 @@ class Launcher
 
     # Try to auto-complete based on path-launchers
 
-    if line =~ /^(\w+)(\.\.\.)?$/
+    if line =~ /^(\w*)(\.\.\.)?\/?$/
       stem = $1
       matches = @@launchers_paths.keys.select do |possibility|
         possibility =~ /^#{stem}/
@@ -233,7 +235,7 @@ class Launcher
         end
         Line.sub! /\b$/, "..."
 
-        View >> matches.map{|o| "#{o}"}.join("\n")
+        View >> matches.sort.map{|o| "#{o}"}.join("\n")
         return
       end
     end
@@ -264,14 +266,29 @@ class Launcher
   def self.try_launcher_paths line
     root = line[/^\w+/]   # Grab thing to match
     if block = @@launchers_paths[root]
+
+      # If C-u C-u, just jump to the implementation
+      if Keys.prefix == :uu
+        # Take best guess, by looking through dirs for root
+
+        ([Xiki.dir]+Launcher::MENU_DIRS).reverse.each do |dir|
+          next unless File.directory? dir
+          file = Dir["#{dir}/#{root}.*"]
+          next unless file.any?
+          break View.open file[0]
+        end
+
+        return true
+      end
       self.append_log line
-      self.output_and_search block, line
+      self.output_and_search block, :line=>line
       return true
     end
     false
   end
 
-  def self.output_and_search block_or_string, line=nil
+  def self.output_and_search block_or_string, options={}
+    line=options[:line]
 
     buffer_orig = View.buffer
     orig = Location.new
@@ -299,7 +316,10 @@ class Launcher
     ended_up = Location.new
     orig.go   # Go back to where we were before running code
 
-    Line << "/" if Line !~ /(^ *\||\/$)/ and output !~ /\A *\|/   # Add slash at end if line not a quote and there was non-quote output
+    # Add slash to end of line if not suppressed, and line isn't a quote
+    if ! options[:no_slash] && Line !~ /(^ *\||\/$)/
+      Line << "/"
+    end
 
     indent = Line.indent
     Line.to_left
@@ -315,20 +335,31 @@ class Launcher
 
     output.gsub!(/^/, "#{indent}  ")
 
+
     View << output  # Insert output
     right = View.cursor
 
     orig.go   # Move cursor back
     ended_up.go   # End up where script took us
 
-    if !error_happened && !$xiki_no_search && !buffer_changed && View.cursor == orig_left
-      Tree.search_appropriately left, right, output#, original_indent
-    else
-      #       Move.to_line_text_beginning(2)
-      Move.to_line_text_beginning(1)
+    moved = View.cursor != orig_left
+
+    # Move to :line_found if any
+    if options[:line_found] && options[:line_found] > 0
+      Line.next(options[:line_found])
+      Color.colorize :l
     end
 
-    #       $xiki_no_search = false   # Is this handled elsewhere?
+    if !error_happened && !$xiki_no_search && !buffer_changed && !moved
+Ol.line
+      Tree.search_appropriately left, right, output, options
+    elsif ! options[:line_found]
+Ol.stack
+Ol.line
+# return
+      Move.to_line_text_beginning 1
+    end
+    nil
   end
 
   def self.launch_by_proc list=nil
@@ -563,7 +594,9 @@ class Launcher
       View.clear buffer
     end
 
-    if Keys.prefix_u :clear=>true
+    prefix = Keys.prefix :clear=>true
+
+    if prefix ==:u
       View.to_nth orig
     else
       Move.to_window 1
@@ -642,20 +675,19 @@ class Launcher
     if method.arity == 0
       code = "#{camel}.#{default_method}"
       output, out, exception = Code.eval code
+      return CodeTree.draw_exception exception, code if exception
+
       output = CodeTree.returned_to_s(output)   # Convert from array into string, etc.
       output = output.unindent if output =~ /\A[ \n]/
       raise "#{code} returned nil, but is supposed to return something when i takes no arguments" if output.nil?
 
       output = Tree.routify! output, args
 
-      if output
-        if output == "- */\n"
-        else
-          return Tree << output
-        end
-      end
+      return Tree << output if output && output != "- */\n"
+
       # Else, continue on to run it based on routified path
     end
+
     # Figure out which ones are actions
 
     # Find last .foo item
@@ -678,10 +710,7 @@ class Launcher
     output = CodeTree.returned_to_s(output)   # Convert from array into string, etc.
     output = output.unindent if output =~ /\A[ \n]/
 
-    if exception
-      backtrace = exception.backtrace[0..8].join("\n").gsub(/^/, '  ') + "\n"
-      return "- tried to run: #{code}\n- error: #{exception.message}\n- backtrace:\n#{backtrace}"
-    end
+    return CodeTree.draw_exception exception, code if exception
 
     output
   end
@@ -761,13 +790,7 @@ class Launcher
 
   def self.reload_menu_dirs
 
-    dirs = [
-      "#{Xiki.dir}/menus",
-      File.expand_path("~/xiki/menus"),
-      File.expand_path("~/menus")
-    ]
-
-    dirs.each do |dir|
+    MENU_DIRS.each do |dir|
       next unless File.directory? dir
 
       Files.in_dir(dir).each do |f|

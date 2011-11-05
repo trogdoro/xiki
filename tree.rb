@@ -1,6 +1,7 @@
 class Tree
   def self.search options={}
-    return if $xiki_no_search
+    return $xiki_no_search=false if $xiki_no_search
+    #     return if $xiki_no_search
 
     recursive = options[:recursive]
     recursive_quotes = options[:recursive_quotes]
@@ -461,6 +462,7 @@ class Tree
   end
 
   def self.under txt, options={}
+
     txt = TextUtil.unindent(txt) if txt =~ /\A[ \n]/
 
     escape = options[:escape] || ''
@@ -474,13 +476,8 @@ class Tree
 
     txt.gsub! /^  /, '' if options[:before] || options[:after]   # Move back to left
 
-    $xiki_no_search = true
-
-    Launcher.output_and_search txt
-    if options[:line_found] && options[:line_found] > 0
-      Line.next(options[:line_found]-1) if options[:line_found] && options[:line_found] > 0
-      Color.colorize :l
-    end
+    Launcher.output_and_search txt, options
+    nil
   end
 
   def self.to_parent
@@ -737,8 +734,8 @@ class Tree
     [left1, right1, left2, right2]
   end
 
-  def self.search_appropriately left, right, output
-    $el.goto_char left
+  def self.search_appropriately left, right, output, options={}
+    View.cursor = left unless options[:line_found]
     Line.to_words
 
     # Determine how to search based on output!
@@ -768,10 +765,7 @@ class Tree
     tree.split("\n").each do |line|
       line_indent = line[/^ */].length / 2
       line.strip!
-      line.sub!(/^[+-] /, '')
-      #       options[:remove_comments] ?
-      #         line.sub!(/^[+-] ([^\n(]+\) )?/, '') :
-      #         line.sub!(/^[+-] /, '')
+
       branch[line_indent] = line
       if line_indent < indent
         branch = branch[0..line_indent]
@@ -859,12 +853,14 @@ class Tree
 
         # Maybe add dot based on leaf item
 
-        leaf = current_list.length - 1
+        leaf_i = current_list.length - 1
+        leaf = current_list[leaf_i].sub /^[+-] /, ''
+
         # If not already added dot and there's item to check
-        if leaf > routified_until && target.length-1 >= leaf
-          if current_list[leaf][/^\.?(.+?)\/?$/, 1] == target[leaf][/^\.?(.+?)\/?$/, 1]
+        if leaf_i > routified_until && target.length-1 >= leaf_i
+          if leaf[/^\.?(.+?)\/?$/, 1] == target[leaf_i][/^\.?(.+?)\/?$/, 1]
             routified_until += 1
-            target[leaf] = ".#{target[leaf]}" if current_list[leaf] =~ /^\./ && target[leaf] !~ /^\./
+            target[leaf_i] = ".#{target[leaf_i]}" if leaf =~ /^\./ && target[leaf_i] !~ /^\./
           end
         end
 
@@ -875,8 +871,7 @@ class Tree
       # Found
       # If right indent, grab
       if current_list.length == indent
-        result << "- " unless current_list[-1] =~ /^\|/
-        result << "#{current_list[-1].sub /^\./, ''}\n"
+        result << "#{current_list[-1].sub /^([+-] )?\./, "\\1"}\n"
       elsif current_list.length < indent   # If lower indent, stop
         break
       end
@@ -884,7 +879,7 @@ class Tree
 
     # Return children of path if any
     # Return nil to mean interpret the routified path
-    result.empty? ? nil : result
+    result.empty? ? nil : result.gsub(/^- /, '+ ')
   end
 
   def self.route_match current_list, list
@@ -892,8 +887,8 @@ class Tree
     list.each_with_index do |item, i|
       current_item = current_list[i]
       break found = false if current_item.nil?
-      next if current_item =~ /^\*\/?$/
-      break found = false if current_item.sub(/^[^\n(]+\) /, '').sub(/\/$/, '') != item.sub(/\/$/, '')
+      next if current_item =~ /^([+-] )?\*\/?$/
+      break found = false if current_item.sub(/^[^\n(]+\) /, '').sub(/\/$/, '').sub(/^[+-] /, '') != item.sub(/\/$/, '')
     end
     found
   end

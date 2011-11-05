@@ -49,6 +49,17 @@ class CodeTree
     end
   end
 
+  def self.draw_exception exception, code
+    message = exception.message
+
+    # If it was in the format of tree output, just show it
+    message_without_first_part = message.sub(/.+: /, '')
+    return message_without_first_part if exception.is_a?(RuntimeError) && message_without_first_part =~ /\A[|+-] /
+
+    backtrace = exception.backtrace[0..8].join("\n").gsub(/^/, '  ') + "\n"
+    return "- tried to run: #{code}\n- error: #{message}\n- backtrace:\n#{backtrace}"
+  end
+
   def self.run code, options={}
     b = View.buffer
 
@@ -64,16 +75,7 @@ class CodeTree
       message(returned.to_s) if returned and (!returned.is_a?(String) or returned.size < 500)
     end
 
-    if e
-      returned = ''
-      if e.is_a?(ScriptError)
-        stdout = "- #{e.message.sub(/.+: /, '')}!\n"
-      else
-        stdout = "#{stdout}- error evaluating: #{code}\n- message: #{e.message}\n" +
-          "- backtrace:\n" +
-          e.backtrace[0..8].map{|i| "  #{i}\n"}.join('') + "  ...\n"
-      end
-    end
+    stdout = self.draw_exception(e, code) if e
 
     buffer_changed = b != View.buffer   # Remember whether we left the buffer
     # Insert output if there was any

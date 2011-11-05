@@ -17,7 +17,7 @@ describe Tree, "#traverse" do
     Tree.traverse tree do |array|
       paths << array
     end
-    paths.should == [["a/"], ["a/", "b/"], ["c/"]]
+    paths.should == [["- a/"], ["- a/", "- b/"], ["- c/"]]
   end
 
   it "handles two-level dropoff and no dropoff" do
@@ -33,7 +33,21 @@ describe Tree, "#traverse" do
     Tree.traverse tree do |array|
       paths << array
     end
-    paths.should == [["a/"], ["a/", "aa/"], ["a/", "aa2/"], ["a/", "aa2/", "aaa/"], ["c/"]]
+    paths.should == [["- a/"], ["- a/", "- aa/"], ["- a/", "- aa2/"], ["- a/", "- aa2/", "- aaa/"], ["- c/"]]
+  end
+
+  it "leaves in comments" do
+    paths = []
+    tree = "
+      - hey) a/
+        - you) b/
+      - c/
+      ".unindent
+
+    Tree.traverse tree do |array|
+      paths << array
+    end
+    paths.should == [["- hey) a/"], ["- hey) a/", "- you) b/"], ["- c/"]]
   end
 
   #   it "removes comments when :remove_comments" do
@@ -60,7 +74,7 @@ describe Tree, "#routify" do
       - b/
       ".unindent
 
-    Tree.routify!(tree, []).should == "- a/\n- b/\n"
+    Tree.routify!(tree, []).should == "+ a/\n+ b/\n"
   end
 
   it "returns children when one deep" do
@@ -70,7 +84,7 @@ describe Tree, "#routify" do
         - aa2/
       - b/
       ".unindent
-    Tree.routify!(tree, ['a/']).should == "- aa/\n- aa2/\n"
+    Tree.routify!(tree, ['a/']).should == "+ aa/\n+ aa2/\n"
     #     Tree.routify!(tree, "a/").should == "- aa/\n- aa2/\n"
   end
 
@@ -83,7 +97,7 @@ describe Tree, "#routify" do
       ".unindent
 
     path = ["a"]
-    Tree.routify!(tree, path).should == "- aa/\n- aa2/\n"
+    Tree.routify!(tree, path).should == "+ aa/\n+ aa2/\n"
     path.should == [".a"]
   end
 
@@ -95,7 +109,7 @@ describe Tree, "#routify" do
       ".unindent
 
     list = ["a"]
-    Tree.routify!(tree, list).should == "- aa/\n- aa2/\n"
+    Tree.routify!(tree, list).should == "+ aa/\n+ aa2/\n"
     list.should == ["a"]
   end
 
@@ -146,7 +160,7 @@ describe Tree, "#routify" do
       ".unindent
 
     target = ["cold", "lemonade"]
-    Tree.routify!(tree, target).should == "- large\n- small\n"
+    Tree.routify!(tree, target).should == "+ large\n+ small\n"
     target.should == [".cold", "lemonade"]
   end
 
@@ -163,12 +177,32 @@ describe Tree, "#routify" do
     target.should == [".roots", "docs"]
   end
 
+  it "shouldn't modify initial tree" do
+    tree = "
+      hi
+      there
+      ".unindent
+
+    orig = tree.dup
+
+    target = ["roots", "docs"]
+    Tree.routify!(tree, target).should == nil
+    target.should == ["roots", "docs"]
+
+    tree.should == orig
+
+  end
+
 end
 
 
 describe Tree, "#route_match" do
   it "finds match of one" do
     Tree.route_match([".hot"], [".hot/"]).should == true
+  end
+
+  it "finds match when bullets" do
+    Tree.route_match(["- .hot"], [".hot/"]).should == true
   end
 
   it "finds sublist match" do

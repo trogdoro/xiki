@@ -467,15 +467,28 @@ class Notes
     Move.backward 2
   end
 
-  def self.bullet bullet_text="- "
-    # TODO break out enter_junior to use different method - complicating this too much
-      # see where else .bullet | Notes.bullet is used
+  def self.enter_junior
+    cursor = View.cursor
+    indent = Line.indent
+    if Line.left == cursor || Line.right == cursor   # If beginning or end, leave current line alone
+      Move.to_end
+    else   # In middle of line
+      Deletes.delete_whitespace
+    end
 
+    View << "\n  #{indent}"
+  end
+
+  def self.bullet bullet_text="- "
     prefix = Keys.prefix :clear=>true
 
     line = Line.value
 
     if ! Line.blank?   # If non-blank line
+      Move.to_end if Line =~ /^ / && View.column <= Line.indent.length   # If just entered a bullet, go to end first
+
+      Move.to_end if Line =~ /^[+-] / && View.column <= 2   # If just entered a bullet, go to end first
+
       # If at beginning of line, just insert bullet
       return View.insert "- " if View.column == 0 && bullet_text == "- " && Line !~ /^ /
 
@@ -484,6 +497,7 @@ class Notes
       end
       View.insert "\n"
     end
+
     if prefix.is_a? Fixnum   # If numeric prefix, indent by n
       View.insert((" " * prefix) + bullet_text)
     else   # Get bullet indent of previous line

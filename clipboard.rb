@@ -7,7 +7,21 @@ class Clipboard
 
   # Stores things user copies
   @@hash = {}
-  @@entered_as_quote = {}
+  @@hash_by_first_letter = {}
+
+  def self.menu
+    "
+    - .log/
+    "
+  end
+
+  def self.log
+    result = ""
+    @@hash_by_first_letter.keys.sort.each do |k|
+      result << "| #{@@hash_by_first_letter[k]}\n"
+    end
+    result.empty? ? "- Nothing was copied yet!" : result
+  end
 
   def self.copy loc=nil, txt=nil
     # Use string if user types it quickly
@@ -44,10 +58,18 @@ class Clipboard
     # Use string if user types it quickly
     loc ||= Keys.input(:one_char => true, :prompt => "Enter one char: ") || 0
 
-    set_mark_command nil
+    $el.set_mark_command nil
+
+    loc = loc.to_s
+    txt = @@hash[loc] || @@hash_by_first_letter[loc]   # If nothing, try to grab by first letter
+
+    # If nothing, try to grab from what's been searched
+    txt ||= Search.searches.find{|o| o =~ /^#{loc}/i}
+
+    return View.message("Nothing to search for matching '#{loc}'.", :beep=>1) if txt.nil?
 
     (elvar.current_prefix_arg || 1).times do   # Get from corresponding register
-      insert @@hash[loc.to_s]
+      View << txt
     end
   end
 
@@ -75,6 +97,10 @@ class Clipboard
 
   def self.hash
     @@hash
+  end
+
+  def self.hash_by_first_letter
+    @@hash_by_first_letter
   end
 
   def self.list
@@ -200,7 +226,7 @@ class Clipboard
     Clipboard.set "0", txt
     View.to right
     View.mark left
-    Clipboard.save_for_yank txt
+    Clipboard.save_by_first_letter txt
   end
 
   def self.as_object
@@ -224,7 +250,7 @@ class Clipboard
     Clipboard.set("0", line)
     Effects.blink :left=>left, :right=>right
     $el.set_mark(right)
-    Clipboard.save_for_yank line   # Store for retrieval with enter_yank
+    Clipboard.save_by_first_letter line   # Store for retrieval with enter_yank
   end
 
   def self.enter_replacement
@@ -236,7 +262,6 @@ class Clipboard
     View.delete orig, point
     View.insert Clipboard['0']
   end
-
 
   def self.as_clipboard
     prefix = Keys.prefix :clear=>true
@@ -271,26 +296,20 @@ class Clipboard
     end
 
     Clipboard.copy("0")
-    Clipboard.save_for_yank View.selection   # Store for retrieval with enter_yank
+    Clipboard.save_by_first_letter View.selection   # Store for retrieval with enter_yank
   end
 
-  def self.save_for_yank txt
+  def self.save_by_first_letter txt
     key = txt[/[a-z]/i]
     return unless key
-    @@entered_as_quote[key.downcase] = txt
+    @@hash_by_first_letter[key.downcase] = txt
   end
 
   def self.enter_yank
     ch = Keys.input :one_char => true
-    value = @@entered_as_quote[ch]
+    value = @@hash_by_first_letter[ch]
     return unless value
     View.insert value
-  end
-
-  def self.to_yank
-    ch = Keys.input :one_char => true
-    value = @@entered_as_quote[ch]
-    Search.to $el.regexp_quote(value)
   end
 
 end

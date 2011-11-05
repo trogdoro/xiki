@@ -21,6 +21,113 @@ class Keys
       - puts Keys.input(:one_char => true)
   ]
 
+  def self.menu
+    '
+    - .history/
+    - docs/
+      | > Summary
+      | Xiki attempts to make it easy to define your own key shortcuts.  And it
+      | has quite a few key shortcuts predefined.
+      |
+      | With all xiki keyboard shorcuts, you "type the acronym".
+      | By the key shortcut "layout_create" it is meant that you type Control-l
+      | then Control-c.  (Control-l for "layout" and Control-c for "create".)
+      |
+      | Thus commands have mnemonics that clues you into the keyboard shortcut and
+      | there\'s no need to separately remember a command and it\'s shortcut (a
+      | challenging part of most keyboard shortcut schemes having a large number of
+      | shortcuts, which xiki attempts to avoid).
+      |
+      | Doesn\'t sound like standard emacs shortcuts?  Here\'s an explanation about
+      | how xiki deals with existing emacs shortcuts.
+      |
+      + emacs_shortcuts/
+        | TODO add stuff about how C-a turns into C-a C-a, etc.
+        | Mention how this lets a large number of key shortcuts without interfering
+        | with emacs shortcuts.
+        | But an admitted downside is it affects 6 existing emacs shortcuts
+        | and makes you type them twice.
+        | In practice the annoyance caused by this isn\'t as bad as it initially may seem
+        | Consider using to_axis instead of C-a C-a and to_end instead of C-e C-e.
+      |
+      | > Six categories
+      | As you can see by looking at the "Xiki" menu in the menu bar, there are
+      | six main categories of key shortcuts:
+      |
+      | to: jumping to specific points
+      | open: open things
+      | layout: subdivisions of windows
+      |
+      | as: remembering things
+      | enter: inserting things
+      | do: executing things
+      |
+      | For example, the key shortcut "to_highest" means you type Control-t then
+      | Control-h.  As the mnemonic suggests, it jumps to the highest point in the
+      | file (the top).
+      |
+      |
+      | > Examples
+      | Here are some of the most commonly used shortcuts in each category.
+      | (Double-click a category to see them.)
+      |
+      - to/
+        | to_highest: Jump to top of file
+        | to_lowest: Jump to bottom of file
+        | to_axis: Jump to beginning of line
+        | to_end: Jump to end of line
+      - open/
+        | open_bookmark: view a bookmark
+        | open_tree: view a tree of a directory
+        | open_current: shows currently open files
+        | open_edited: shows recently edited files
+        | open_open_history: shows recently viewed files
+        | open_menu: opens view that lets you type a menu (type "-" to see all)
+      - layout/
+        | layout_create: Create a new view
+        | layout_hide: Hide this view
+        | layout_next: Go to next view
+        | layout_previous: Go to previous view
+        | layout_kill: Close the current file
+      - as/
+        | as_clipboard: Copy (after doing Control-space on the other side)
+        | as_kill: Cut (after doing Control-space on the other side)
+        | as_bookmark: remember this file as a bookmark
+      - enter/
+        | enter_clipboard: Paste
+      - do/
+        | do_tree: view an expanded tree of a directory
+      |
+      - miscellaneous/
+        | Control-tab: cycles through files
+      |
+      | For all keyboard shortcuts, see where they\'re key_bindings.rb, where they\'re
+      | defined:
+      - @$xiki/key_bindings.rb
+      |
+      |
+      | > Keyboard shortcuts while searching
+      | The seventh category, "search" has special behavior.  See:
+      - @search/docs/
+      |
+    - api/
+      | > Summary
+      | Ways to use the Keys class, to define keyboard shortcuts etc.  Remember that with
+      | xiki shortcuts you "type the acronym" (the first letter in each word) while holding
+      | down the control key.
+      |
+      | > Define keyboard shortcuts
+      | Defines the key Control-e Control-y
+      Keys.enter_yay { View << "yay" }
+      |
+      | Also defines the key Control-e Control-y
+      Keys.EY { View << "yay again" }
+      |
+    '
+  end
+
+
+
   # Handles Keys.to_foo etc.
 
   def self.method_missing(meth, *args, &block)
@@ -366,7 +473,7 @@ class Keys
 
     # Store in hash by first letter for use by enter_yank
 
-    Clipboard.save_for_yank inserted   # Store for retrieval with enter_yank
+    Clipboard.save_by_first_letter inserted   # Store for retrieval with enter_yank
 
   end
 
@@ -532,10 +639,6 @@ class Keys
 
   def self.before_last
     $el.el4r_lisp_eval("(elt (recent-keys) (- (length (recent-keys)) 2))").to_s
-  end
-
-  def self.menu
-    ['.history']
   end
 
   def self.history

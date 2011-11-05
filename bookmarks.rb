@@ -5,13 +5,41 @@ require 'yaml'
 class Bookmarks
   extend ElMixin
 
-  CODE_SAMPLES = %q<
-    # Get path for bookmark
-    p Bookmarks["$t"]  # Bookmark name is 't'
-
-    # Expand bookmark shortcut in a path
-    p Bookmarks["$tm/hi.txt"]
-  >
+  def self.menu
+    '
+    - .tree/
+    - .list/
+    - .file/
+      - @~/.emacs.bmk
+    - .elisp/
+      | > Save unsaved bookmarks to ~/.emacs.bmk
+      | (bookmark-save)
+      |
+      | > Delete a bookmark
+      | (bookmark-delete "foo")
+    - docs/
+      | > Summary
+      | Xiki uses standard emacs bookmarks, while adding several keyboard shortcuts
+      | and the ability to bookmark buffers in addition to just files.
+      |
+      | > Shortcuts
+      | All of these prompt for a bookmark name:
+      |
+      | as_bookmark: bookmark the current file
+      | open_bookmark: jumps to bookmark file
+      | open_point: jumps to bookmark file and cursor position
+      |
+    - api/
+      | > Summary
+      | Some of the common ways to use the Bookmarks class programatically.
+      |
+      | > Get path for a bookmark
+      @p Bookmarks["$t"]
+      |
+      | > Expand bookmark in a path
+      @p Bookmarks["$tm/hi.txt"]
+    '
+  end
 
   def self.save arg=nil
     in_a_file_tree = FileTree.handles? rescue nil
@@ -181,11 +209,24 @@ class Bookmarks
 
       bm_orig = bm
       # Expand bookmark
-      bm = bookmark_get_filename(bm)
+      if ["x", "xiki"].member? bm
+        bm = Xiki.dir
+      else
+        bm = bookmark_get_filename(bm)
+      end
+
+      if bm.nil?
+        bm =
+          if bm_orig == "t"
+            "#{File.expand_path("~")}/todo.notes"
+          elsif bm_orig == "f"
+            "#{File.expand_path("~")}/files.notes"
+          end
+      end
 
       # If a slash, cut off filename if there is one (only dir is wanted)
       if slash != ""
-        bm.sub!(/[^\\\/]+$/, "")
+        bm = bm.sub(/[^\\\/]+$/, "")
       end
 
       path = "#{bm}#{rest}"
@@ -247,15 +288,9 @@ class Bookmarks
     File.read(self.expand(name))
   end
 
-  def self.menu
-    puts "
-      + .tree/
-      + .list/
-      "
-  end
-
   def self.list path=nil
 
+    result = ""
     if ! path   # Print all bookmarks
       all = elvar.bookmark_alist.collect { |bm|
         item = bm.to_a
@@ -263,15 +298,16 @@ class Bookmarks
       }
       all.each do |l|
         n, p = l
-        puts "- #{n}: #{p.sub(/\/$/,'')}"
+        result << "- #{n}: #{p.sub(/\/$/,'')}\n"
         #         puts "- #{n.ljust(7)} #{p.sub(/\/$/,'')}"
         #puts "- #{n}: #{p}"
       end
-      return
+      return result
     end
 
     # Open single path
     View.open path[/ ([~\/].+)/, 1]
+    nil
   end
 
   def self.tree
@@ -292,7 +328,7 @@ class Bookmarks
       path
     }
 
-    puts CodeTree.tree_search_option + FileTree.paths_to_tree(paths)
+    FileTree.paths_to_tree(paths)
   end
 end
 

@@ -526,7 +526,7 @@ class FileTree
     DiffLog.save_internal :patha=>path, :textb=>txt
     File.open(path, "w") { |f| f << txt }
 
-    Tree.after "- saved!"
+    View.success "- Saved!"
   end
 
   def self.drill_quote path
@@ -1026,7 +1026,7 @@ class FileTree
   def self.tree options={}
     $xiki_no_search = false
 
-    dir = Keys.bookmark_as_path(:prompt=>"file_tree in which dir? (enter bookmark): ")
+    dir = Keys.bookmark_as_path(:prompt=>"Enter bookmark to show tree of: ")
     dir = "/" if dir == :slash
     if dir.nil?
       beep

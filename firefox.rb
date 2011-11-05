@@ -132,17 +132,6 @@ class Firefox
     end
   end
 
-  # Called internally by others
-  def self.exec txt
-    begin
-      con = Net::Telnet::new("Host" => "localhost", "Port" => 9997)
-      con.cmd txt
-    rescue
-      View.message "JSSH appears to be down!"
-      ""
-    end
-  end
-
   def self.click
     link = Keys.input(:prompt=>'Substring of link to click on: ')
 

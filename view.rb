@@ -31,25 +31,58 @@ class View
   include ElMixin
   extend ElMixin
 
-  CODE_SAMPLES = %q<
-    # Moving
-    - to top: View.to_top
-    - to bottom: View.to_bottom
-
-    # Getting positions
-    - top: p View.top
-
-    # Path / filename
-    - whole path: p View.file
-    - filename only: p View.file_name
-    - path minus filename: p View.path
-
-    # Select a buffer (going to it if already open)
-    - handles views correctly: View.to_buffer("foo")
-
-    # Misc
-    - wrap lines: View.wrap
-  >
+  def self.menu
+    "
+    | > Docs
+    | Here are some useful methods in the View class.
+    |
+    | > Text
+    | Return all the text.
+    @p View.txt
+    |
+    | Return text in a range.
+    @p View.txt 1, 5
+    |
+    | Return where the cursor is.
+    @p View.cursor
+    |
+    |
+    | > Files and dirs
+    | Returns file name.
+    @p View.name
+    |
+    | Returns file with whole path.
+    @p View.file
+    |
+    | Returns dir of file.
+    @p View.dir
+    |
+    |
+    | > Messages
+    | Prompt user to type at end af line
+    @View.prompt/
+    @View.prompt 'Type something, dude/'/
+    |
+    | Show success message
+    @View.success
+    @View.success 'Saved'
+    @View.success :color=>:rainbow
+    |
+    | Inserts into the view.
+    View << 'Hello'
+    |
+    | Shows message at bottom.
+    @View.message 'Hi there'
+    |
+    | Makes a noise.
+    @View.beep
+    |
+    |
+    | > Also see
+    - line/
+    |
+    "
+  end
 
   # Stores things user copies
   @@hash = {}
@@ -515,7 +548,9 @@ class View
   # - 3 means 3 lines, etc.
   # - no prefix means the notes block
   # - etc
-  def self.txt_per_prefix prefix=Keys.prefix
+  def self.txt_per_prefix prefix=nil, options={}
+    prefix ||= Keys.prefix
+
     prefix = prefix.abs if prefix.is_a?(Fixnum)
 
     case prefix
@@ -527,8 +562,10 @@ class View
     else   # Move this into ruby - block.rb?
       ignore, left, right = View.block_positions "^[>|]"
     end
-    Effects.blink :left=>left, :right=>right
-    return [View.txt(left, right), left, right]
+
+    Effects.blink(:left=>left, :right=>right) if options[:blink]
+    txt = options[:just_positions] ? nil : View.txt(left, right)
+    return [txt, left, right]
   end
 
   # Returns bounds of block in the form [left, after_header, right].
@@ -600,6 +637,7 @@ class View
   end
 
   def self.dir force_slash=nil
+    # TODO: merge with .path?
     result = File.expand_path(elvar.default_directory)
 
     if force_slash
@@ -629,6 +667,7 @@ class View
   end
 
   def self.path options={}
+    # TODO: merge with .dir?
     elvar.default_directory
   end
 
@@ -1113,28 +1152,33 @@ class View
       Time.now.strftime("%Y-%m-%d")
   end
 
-  def self.prompt message="type something here"
+  def self.prompt message="Type something here", options={}
     Move.to_end
     View << "/" unless Line =~ /\/$/
 
-    View.insert message, :dont_move=>1
-    over = $el.make_overlay View.cursor, Line.right
+    self.insert message, :dont_move=>1
 
-    a, b = :change_log_email, :change_log_file   # Orange and yellow
-
-    l3, l2, l1 = :default, :dired_ignored, :dired_perm_write
-
-    up = [6, 5, 4, 3, 2]
-    down = [2, 3, 4, 5, 6]
-    ([7] + up + [1] + down + [7] + up + [1] + down + [7] + up + [1] + down + [7]).each do |face|
-      $el.overlay_put over, :face, "fade#{face}".to_sym
-      $el.sit_for 0.02
-    end
-
-    View.delete View.cursor, Line.right
-    $el.delete_overlay over
+    left, right = self.cursor, Line.right
+    Effects.glow left, right, :reverse=>1
+    self.delete left, right
   end
 
+  def self.success message="- Success!", options={}
+    orig = self.cursor
+    indent = Line.indent
+
+    Line.next
+    self.insert "#{indent}  #{message}\n", :dont_move=>1
+    left, right = Line.left, Line.right
+    self.cursor = orig
+
+    Effects.glow left, right, {:reverse=>1, :times=>2}.merge(options)
+
+    self.delete left, right+1
+
+    self.cursor = orig
+    nil
+  end
 end
 
 def View txt

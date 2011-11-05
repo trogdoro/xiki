@@ -123,6 +123,7 @@ class Line
   # Moves down, going to first column
   def self.next times=nil
     forward_line times
+    nil
   end
 
   # Moves up, going to first column
@@ -131,6 +132,7 @@ class Line
       -times :
       -1
     forward_line times
+    nil
   end
 
   def self.beginning
@@ -277,7 +279,6 @@ class Line
     Line << "/" unless Line =~ /\/$/
     Move.to_end
   end
-
 
   def self.init
     # Define lisp function to get list of displayed lines

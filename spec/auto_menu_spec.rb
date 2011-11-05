@@ -32,7 +32,7 @@ describe AutoMenu, "#child_bullets" do
     AutoMenu.child_bullets(@tree, nil).should == "- .aa\n- .bb/\n- cc/\n- dd/\n- ee/\n- .ff\n"
   end
 
-  it "finds children" do
+  it "finds two children" do
     AutoMenu.child_bullets(@tree, "/cc/").should == "- .cc1/\n- .cc2\n"
   end
 

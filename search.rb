@@ -14,7 +14,45 @@ class Search
   @@log = File.expand_path("~/.emacs.d/search_log.notes")
 
   def self.menu
-    ['.log']
+    '
+    - .history/
+    - .log/
+    - docs/
+      | > Summary
+      | Some interesting keys to type while searching.
+      | Note you start a search by typing Control-s.
+      |
+      | > What do we mean by "search_bookmark" etc.?
+      | With all xiki keyboard shorcuts, you "type the acronym".
+      | By the key shortcut "search_bookmark" we mean typing Control-s and then
+      | Control-c.
+      |
+      | Of course, typing Control-s to search lets you type characters
+      | to search for, so in some cases typing a search string in between makes
+      | sense.  So, search_clipboard actually means you would type Control-s then
+      | some characters to search for then Control-c to copy to the clipboard.
+      |
+      | > Examples
+      - examples/
+        | search_copy: Copy found to clipboard
+        | search_bookmark: Search text of files in a dir
+        | search_all: Show all previous searches
+        | search_value: Insert found where search began
+        | search_delete: Delete found
+        | search_diffs (without searching): Search in diffs
+        | search_todo: Search in $t bookmark
+        | search_files: Search in $f bookmark
+        | search_paths: Search history of menus
+      - miscellaneous/
+        | search_search: Re-do the last search
+        | search_word: Suck the next word in
+        | search_yank: Suck the rest of the line in
+        | search_usurp: Suck the next expression in
+      |
+      | For more details about Xiki keyboard shortcuts, see:
+      - @keys/docs/
+      |
+    '
   end
 
   def self.case_options
@@ -56,12 +94,11 @@ class Search
 
     if match.nil?   # If nothing searched for yet, search difflog
       loc = Keys.input(:one_char=>true, :prompt=>"Enter one char to search for corresponding string: ")
-      txt = Clipboard.hash[loc.to_s]
+      loc = loc.to_s
+      txt = Clipboard.hash[loc.to_s] || Clipboard.hash_by_first_letter[loc.to_s]
 
-      if txt.nil?
-        txt = self.searches.find{|o| o =~ /^#{loc}/i}
-        return View.message("Nothing to search for matching '#{loc}'.", :beep=>1) if txt.nil?
-      end
+      txt ||= self.searches.find{|o| o =~ /^#{loc}/i}
+      return View.message("Nothing to search for matching '#{loc}'.", :beep=>1) if txt.nil?
 
       self.isearch txt, :reverse=>was_reverse
 
@@ -214,7 +251,7 @@ class Search
     Clipboard[0] = self.match
     set_register ?X, match
     x_select_text match
-    Clipboard.save_for_yank match   # Store for retrieval with enter_yank
+    Clipboard.save_by_first_letter match   # Store for retrieval with enter_yank
   end
 
   def self.cut
@@ -1137,11 +1174,11 @@ class Search
   end
 
   def self.isearch_paths
+    was_reverse = self.was_reverse
     match = self.stop
-    if match.nil?   # If nothing searched for yet, search in git diff
-      Launcher.open("- log/")
-      return
-    end
+
+    return Line.previous if match.nil? && was_reverse   # Odd case, user might do this if at end of file
+    return Launcher.open("- log/") if match.nil?
 
     Search.move_to_search_start match
   end

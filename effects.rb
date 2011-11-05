@@ -9,6 +9,74 @@ class Effects
     - whole file: Effects.blink :what => :all
   ]
 
+  def self.menu
+    "
+    | > Summary
+    | Make text do things that look cool.
+    | Try these out by double-clicking on them.
+    |
+    | > Some methods in View that use effects
+    @View.prompt
+    @View.success
+    @View.success :color=>:rainbow
+    @View.success 'Saved!'
+    |
+    | > Glow
+    @Effects.glow
+    @Effects.glow :color=>:orange
+    @Effects.glow :color=>:green
+    @Effects.glow :color=>:blue
+    @Effects.glow :color=>:rainbow
+    @Effects.glow :color=>:fat_rainbow
+    |
+    | > Blink
+    | Using a longer time since the blink happens anyway
+    |
+    @Effects.blink :time=>1
+    "
+  end
+
+  def self.glow *args
+    if args[0].is_a? Fixnum
+      left, right = args.shift, args.shift
+    else
+      ignore, left, right = View.block_positions "^[|>]"
+    end
+
+    options = args[0] || {}
+
+    times = options[:times] || 3
+
+    over = $el.make_overlay left, right
+
+    faces = if options[:color] == :orange
+        ['change-log-function', 'change-log-function', 'change-log-file', 'change-log-file', 'change-log-date', 'change-log-date', 'change-log-date']
+      elsif options[:color] == :green
+        ['dired-mark', 'dired-mark', 'widget-documentation', 'widget-documentation', 'widget-documentation', 'bookmark-menu-heading', 'bookmark-menu-heading']
+      elsif options[:color] == :blue
+        ['dired-mark', 'dired-mark', 'escape-glyph', 'escape-glyph', 'dired-symlink', 'dired-symlink', 'dired-symlink']
+      elsif options[:color] == :rainbow
+        ['blue', 'red', 'orange', 'orange', 'green', 'green', 'yellow']
+      elsif options[:color] == :fat_rainbow
+        ['notes-yellow', 'notes-yellow', 'notes-green', 'notes-green', 'notes-blue', 'notes-red', 'notes-red']
+      else
+        ['fade1', 'fade2', 'fade3', 'fade4', 'fade5', 'fade6', 'fade7']
+      end
+
+    up = [6, 5, 4, 3, 2]
+    down = [2, 3, 4, 5, 6]
+
+    sequence = options[:reverse] ?
+      ([7] + (up + [1] + down + [7]) * times) :
+      ([1] + (down + [7] + up + [1]) * times)
+    sequence.each do |i|
+      $el.overlay_put over, :face, (faces[i-1] || faces[0])
+      $el.sit_for 0.02
+    end
+
+    $el.delete_overlay over
+  end
+
   # Sample usages:
   def self.blink options={}
     what = options[:what]
@@ -29,7 +97,7 @@ class Effects
     left = options[:left] if options[:left]
     right = options[:right] if options[:right]
 
-    time = 0.04
+    time = options[:time] || 0.04
     over2 = make_overlay(left, right)
     overlay_put over2, :face, :color_rb_glow2
     sit_for time
@@ -38,10 +106,19 @@ class Effects
 
   # Define font
   def self.define_styles
-    Styles.define :color_rb_glow1,
-      :bg => "fec"
-    Styles.define :color_rb_glow2,
-      :bg => "f90"
+    Styles.define :color_rb_glow1, :bg => "fec"
+    Styles.define :color_rb_glow2, :bg => "f90"
+
+    Styles.define :red, :fg => "f00"
+    Styles.define :orange, :fg => "f80"
+    Styles.define :yellow, :fg => "ff0"
+    Styles.define :green, :fg => "0f0"
+    Styles.define :blue, :fg => "00f"
+    Styles.define :indigo, :fg => "408"
+    Styles.define :violet, :fg => "82e"
+
+    Styles.define :purple, :fg => "808"
+    Styles.define :cyan, :fg => "f0f"
   end
 
 end

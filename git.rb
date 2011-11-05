@@ -248,7 +248,6 @@ class Git
     prefix = Keys.prefix :clear=>true
 
     if prefix == :u
-
       orig_path = "/tmp/#{View.file_name}__orig"
 
       # Get relative path
@@ -339,7 +338,7 @@ class Git
       :dir=>dir
       ).sub(".git\n", '')
     dir = View.dir if dir == ""   # Empty actually means it found it
-    dir
+    FileTree.add_slash_maybe dir
   end
 
   def self.determine_dir dir
@@ -463,7 +462,8 @@ class Git
       last += (target_line - target_boundary)
     end
 
-    View.under(result, :line_found=>last)
+    last = nil if last <= 0
+    Tree.<< result, :line_found=>last, :no_slash=>1
     nil
   end
 

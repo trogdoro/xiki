@@ -133,7 +133,7 @@ class Remote
 
   def self.split_root root   # Splits name@server:port/path
     root = root.dup   # Append / at end if no / exists
-    root << '/' unless root =~ /\/$/
+    root << "/" unless root =~ /\/$/
 
     user, server_port, path = root.match(/^(.+?)@(.+?)(\/.*?)\/?$/)[1..3]
 

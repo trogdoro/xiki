@@ -23,7 +23,6 @@ class Color
   def self.colorize char=nil
     char ||= Keys.input(:one_char => true, :prompt => 'Enter first letter of color: ')
     char = char.to_s
-
     # If h, just show all colors
     case char
     when "l"
@@ -81,16 +80,23 @@ class Color
 
       Clipboard['0'] = res
 
-    when "h"
-      Hide.hide_unless_block { |l, bol, eol|
-        # Whether current line contains an overlay of this color
-        overlays_in(bol, eol).to_a.find{ |o|
-          overlay_get(o, :face).to_s =~ /^color-rb-/
-        }
-      }
-      recenter(-3)
-      Hide.search
-      return
+    when "h"   # Hilight
+      ignore, left, right = View.txt_per_prefix nil, :just_positions=>1
+
+      Keys.prefix_u ?
+        Effects.glow(Line.left, Line.right, :color=>:rainbow) :
+        Effects.glow(left, right)
+
+      #     when "h"   # Hide
+      #       Hide.hide_unless_block { |l, bol, eol|
+      #         # Whether current line contains an overlay of this color
+      #         overlays_in(bol, eol).to_a.find{ |o|
+      #           overlay_get(o, :face).to_s =~ /^color-rb-/
+      #         }
+      #       }
+      #       recenter(-3)
+      #       Hide.search
+      #       return
     when "n"   # to next marker
       #       Keys.prefix_times do
       pos = next_overlay_change(View.cursor)
@@ -156,9 +162,6 @@ class Color
   end
 
   def self.define_styles   # For Keys.layout_kolor_light, etc.
-
-    Styles.define :color_rb_glow1, :bg => "ffcc99"
-    Styles.define :color_rb_glow2, :bg => "ff9933"
 
     if Styles.inverse
       #       Styles.define :mode_line_dir, :fg=>"aaa", :size=>"0", :face=>"arial", :bold=>false

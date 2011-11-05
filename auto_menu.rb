@@ -60,7 +60,7 @@ module AutoMenu
     end
     node.gsub!(/[.:]/, '')
     Tree.traverse tree do |branch|
-      path = branch.join('').gsub(/[.:]/, '')
+      path = branch.map{|o| o.sub /^[+-] /, ''}.join('').gsub(/[.:]/, '')
 
       if ! found
         if path.start_with? node
@@ -70,7 +70,6 @@ module AutoMenu
         current_indent = branch.length - 1
         # If found and still indented one deeper
         if current_indent == found + 1
-          result << "- " unless branch[-1] =~ /^\|/
           result << "#{branch[-1]}\n"  # Output
         else  # Otherwise, stop looking for children if indent is less
           found = nil if current_indent <= found

@@ -1,6 +1,15 @@
 XIKI_ROOT = File.dirname(__FILE__)
 Dir.chdir(XIKI_ROOT)
 
+# Used by a lot of classes
+class Xiki
+  @@dir = "#{Dir.pwd}/"   # Store current dir when xiki first launches
+
+  def self.dir
+    @@dir
+  end
+end
+
 # Require some of the core files
 require 'rubygems'
 require 'ol'
@@ -13,14 +22,14 @@ require 'menu'
 
 # Get rest of files to require
 classes = Dir["**/*.rb"]
-classes = classes.select{|i| i !~ /xiki.rb$/}   # Remove self
-classes = classes.select{|i| i !~ /key_bindings.rb$/}   # Remove key_bindings
-
-classes = classes.select{|i| i !~ /\//}   # Remove all files in dirs
-
-classes = classes.select{|i| i !~ /tests\//}   # Remove tests
-classes = classes.select{|i| i !~ /\//}   # Remove tests
-classes = classes.select{|i| i !~ /__/}   # Remove __....rb files
+classes = classes.select{|i|
+  i !~ /xiki.rb$/ &&   # Remove self
+  i !~ /key_bindings.rb$/ &&   # Remove key_bindings
+  i !~ /\// &&   # Remove all files in dirs
+  i !~ /tests\// &&   # Remove tests
+  i !~ /\// &&   # Remove tests
+  i !~ /__/   # Remove __....rb files
+}
 
 classes.map!{|i| i.sub(/\.rb$/, '')}.sort!
 
@@ -32,12 +41,14 @@ Requirer.safe_require ['key_bindings.rb']
 
 # Launcher.add_class_launchers classes
 class Xiki
-  @@dir = Dir.pwd   # Store current dir when xiki first launches
-  def self.dir
-    @@dir
+  def self.menu
+    "
+    - .tests/
+    - .github/
+      - commits/
+      - files/
+    "
   end
-
-  @@dir = Dir.pwd   # Store current dir when xiki first launches
 
   def self.insert_menu
     # Implement
@@ -59,21 +70,11 @@ class Xiki
     CodeTree.menu
   end
 
-  def self.menu
-    [
-      ".tests/",
-      '.visit_github_page/',
-      '.visit_github_commits/',
-    ]
-  end
-
-  def self.visit_github_page
-    Firefox.url "http://github.com/trogdoro/xiki"
-    nil
-  end
-
-  def self.visit_github_commits
-    Firefox.url "https://github.com/trogdoro/xiki/commits/master"
+  def self.github page
+    Firefox.url case page
+      when 'files'; "http://github.com/trogdoro/xiki"
+      when 'commits'; "https://github.com/trogdoro/xiki/commits/master"
+      end
     nil
   end
 

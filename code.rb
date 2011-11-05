@@ -58,7 +58,7 @@ class Code
   def self.run
     prefix = Keys.prefix
     if prefix.is_a?(Fixnum) && 0 <= prefix && prefix <= 7
-      txt, left, right = View.txt_per_prefix
+      txt, left, right = View.txt_per_prefix nil, :blink=>true
     else
       case prefix
       when :u   # Load file in emacsruby
