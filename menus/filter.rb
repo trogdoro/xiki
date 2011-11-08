@@ -11,7 +11,7 @@ class Filter
     end
 
     if target.blank?   # If just filter, show results
-      return View.txt.grep(/#{filter}/).join("").gsub(/^/, '| ')
+      return View.txt.grep(/#{filter}/i).join("").gsub(/^/, '| ')
     end
 
     # Navigated to a target

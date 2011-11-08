@@ -78,16 +78,12 @@ class DiffLog
     View.insert diff
   end
 
-  def self.save_internal options={}
-    return if View.file_name == "difflog.notes"
-    diff = self.saved_diff options
-    File.open(@@log, "a") { |f| f << diff } unless diff.count("\n") <= 2
-  end
-
-  # Appends diff to difflog, then saves.  Map to AF.
+  # Appends diff to difflog, then saves.  Mapped to as_file.
   def self.save
-    self.save_internal
-    save_buffer
+    return if View.file_name == "difflog.notes"
+    self.save_diffs
+
+    $el.save_buffer
 
     prefix = Keys.prefix
     if prefix == :u
@@ -99,7 +95,9 @@ class DiffLog
     end
   end
 
-  def self.format path, file, raw
+  def self.format raw
+    path, file = raw.match(/--- (.+\/)(.+?)\t/)[1..2]
+
     # Delete paths at top
     raw.sub!(/.+\n.+\n/, '')
 
@@ -121,12 +119,12 @@ class DiffLog
   end
 
   def self.compare_with_saved
-    diff = self.saved_diff
+    diff = self.save_diffs :dont_save=>1
     View.to_buffer("*diff with saved*")
     View.clear
-    notes_mode
+    $el.notes_mode
 
-    insert diff.count("\n") > 2 ?
+    View.insert diff.count("\n") > 2 ?
       diff :
       "| Alert\n- ~No Differences~\n"
   end
@@ -139,8 +137,7 @@ class DiffLog
   end
 
   # Util function used by public functions
-  def self.saved_diff options={}
-
+  def self.save_diffs options={}
     if options[:patha] && options[:textb]
       patha = options[:patha]
       File.open(@@temp_path, "w") { |f| f << options[:textb] }
@@ -148,8 +145,14 @@ class DiffLog
       patha = View.file
       $el.write_region nil, nil, @@temp_path
     end
+    diff = Console.sync "diff -w -U 0 \"#{patha}\" \"#{@@temp_path}\""
 
-    diff = Console.run "diff -w -U 0 \"#{patha}\" \"#{@@temp_path}\"", :sync=>true
-    self.format(View.path, View.file_name, diff)
+    return if diff.empty? || diff =~ /: No such file or directory\n/   # Fail quietly if file didn't exist
+
+    diff = self.format diff
+
+    return diff if options[:dont_save]
+
+    File.open(@@log, "a") { |f| f << diff } unless diff.count("\n") <= 2
   end
 end

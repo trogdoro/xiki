@@ -56,11 +56,10 @@ class Xiki
   end
 
   def self.open_menu
-    input = Keys.input(:timed => true, :prompt => "start typing a menu that might exist: ")
+    input = Keys.input(:timed => true, :prompt => "Start typing a menu that might exist (- for all): ")
     View.to_buffer "menu"
     Notes.mode
     View.kill_all
-    #     input = Keys.input(:timed => true, :prompt => "start typing a word you think there might be a menu for: ")
     View << "#{input}\n"
     View.to_highest
     Launcher.launch

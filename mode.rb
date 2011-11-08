@@ -7,6 +7,12 @@
 #
 class Mode
 
+  def self.menu
+    "
+    - Put something here.
+    "
+  end
+
   # Easy way to define a mode
   def self.define name, extension, &block
 

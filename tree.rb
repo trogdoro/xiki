@@ -570,16 +570,8 @@ class Tree
 
   def self.is_root? path
     # It's the root if it matches a pattern, or is at left margin
-    result = self.matches_root_pattern?(path) || path !~ /^ /
+    result = FileTree.matches_root_pattern?(path) || path !~ /^ /
     result ? true : false
-  end
-
-  def self.matches_root_pattern? path
-    without_label = Line.without_label :line=>path#, :leave_indent=>true
-    (without_label =~ /^\/[^\n,]*$/ ||
-    without_label =~ /^~\// ||
-    without_label =~ /^\.+\// ||
-    without_label =~ /^\$[\w-]*\/?$/)
   end
 
   def self.clean_path path

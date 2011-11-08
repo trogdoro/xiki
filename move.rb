@@ -159,6 +159,7 @@ class Move
       $el.skip_chars_forward("[^ \t]") :
       $el.skip_chars_forward("[^ \t|]")   # If quoted, skip quote unless :u
 
+    nil
   end
 
   # Go to opposite bracket
@@ -253,8 +254,8 @@ class Move
     Line.to_left
   end
 
-  def self.to_end
-    n = Keys.prefix_n   # Check for numeric prefix
+  def self.to_end n=nil
+    n ||= Keys.prefix_n   # Check for numeric prefix
     Line.next(n) if n.is_a? Fixnum   # If there, move down
     Line.to_right
   end

@@ -655,7 +655,7 @@ end
 
 Menu.blink do |path|   # - (js): js to run in firefox
   txt = Tree.rest path
-  next View.prompt("Type a selector to blink in firefox") if txt.nil?
+  next View.prompt("Type a selector to blink in firefox", :times=>5) if txt.nil?
   code = "$(\"#{txt}\").blink()"
   result = Firefox.run code, :jquery=>1
   Tree << result if result =~ /^- Added required js libs/

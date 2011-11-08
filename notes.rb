@@ -67,7 +67,7 @@ class Notes
   end
 
   def self.move_block up=false
-    header_regex = "^[>|]\\( \\|$\\)"
+    header_regex = "^>\\( \\|$\\)"
 
     times = Keys.prefix_times
 
@@ -361,23 +361,23 @@ class Notes
     # Don't format quotes (it overrides the following formatting)
     Styles.clear
 
-    # |... lines (headings)
-    Styles.apply("^\\([>|]\\)\\(.*\n\\)", nil, :notes_h1_pipe, :notes_h1)
+    # >... lines (headings)
+    Styles.apply("^\\(>\\)\\(.*\n\\)", nil, :notes_h1_pipe, :notes_h1)
 
     Styles.apply("^\\(> \\)\\(.*\n\\)", nil, :notes_h1_pipe, :notes_h1)
     Styles.apply("^\\(>> \\)\\(.*\n\\)", nil, :notes_h2_pipe, :notes_h2)
     Styles.apply("^\\(= \\)\\(.*\n\\)", nil, :notes_h1_pipe, :notes_h1)
     Styles.apply("^\\(== \\)\\(.*\n\\)", nil, :notes_h2_pipe, :notes_h2)
 
-    Styles.apply("^\\([>|]\\)\\( .+?: \\)\\(.+\n\\)", nil, :notes_h1_pipe, :notes_h1_label, :notes_h1)
+    Styles.apply("^\\(>\\)\\( .+?: \\)\\(.+\n\\)", nil, :notes_h1_pipe, :notes_h1_label, :notes_h1)
 
-    Styles.apply("^\\([>|] 20[0-9][0-9]-[0-9][0-9]-[0-9][0-9].*:\\)\\(.*\n\\)", nil, :notes_h1_agenda_pipe, :notes_h1_agenda)
+    Styles.apply("^\\(> 20[0-9][0-9]-[0-9][0-9]-[0-9][0-9].*:\\)\\(.*\n\\)", nil, :notes_h1_agenda_pipe, :notes_h1_agenda)
 
     @@h1_styles.each do |k, v|
       l = k.to_s[/_..(.)$/, 1]
       next unless l
-      Styles.apply("^\\([>|] #{l}\\)\\(\n\\| .*\n\\)", nil, "#{k}_pipe".to_sym, k)
-      Styles.apply("^\\([>|]\\)\\( #{l} .+: \\)\\(.*\n\\)", nil, "#{k}_pipe".to_sym, "#{k}_label".to_sym, k)
+      Styles.apply("^\\(> #{l}\\)\\(\n\\| .*\n\\)", nil, "#{k}_pipe".to_sym, k)
+      Styles.apply("^\\(>\\)\\( #{l} .+: \\)\\(.*\n\\)", nil, "#{k}_pipe".to_sym, "#{k}_label".to_sym, k)
     end
 
     # ||... lines

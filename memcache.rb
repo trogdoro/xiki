@@ -51,7 +51,7 @@ class Memcache
       return "
         | > Not running
         | Memcached doesn't appear to be running.
-        - start it) @memcached/start/"
+        - start it) @memcache/start/"
     end
     nil
   end

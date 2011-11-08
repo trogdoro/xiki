@@ -32,6 +32,7 @@ class KeyBindings
     #Keys.as_indented { Clipboard.as_indented }
     # J
     Keys.as_kill { Clipboard.cut(0); Location.as_spot('killed') }   # cut) **
+    Keys.as_home_menu { Menu.as_home_menu }
     Keys.as_line { Clipboard.as_line }
     Keys.as_macro { Macros.record }   # start recording macro *
     Keys.as_name { Clipboard.copy }   # copies using key (prompted for)
@@ -88,7 +89,6 @@ class KeyBindings
     Keys.open_list_faces { list_faces_display }
     Keys.open_lisp_info { info("elisp") }   # Open manual
 
-    Keys.open_repository_list { Git.show_log_one_file }   # Show git diffs o 1 file
     Keys.open_log_list { Launcher.open(Keys.prefix_u ? "- last/" : "- log/") }   # Show git diffs o 1 file
     #     Keys.open_log_list { Git.show_log_one_file }   # Show git diffs o 1 file
 
@@ -107,9 +107,8 @@ class KeyBindings
     # O: defined above - mapped to what C-o does by default
     Keys.open_point { Bookmarks.go(nil, :point => true) }
     Keys.open_quick { Bookmarks.go :q }   # like OB but uses different temporary namespace
-    Keys.open_rake_outline { Launcher.open("- Rake.menu/") }
-    Keys.open_region_path { find_file buffer_substring(region_beginning, region_end) }
     Keys.open_related_test { Code.open_related_rspec }
+    Keys.open_repository_list { Git.show_log_one_file }   # Show git diffs o 1 file
     # S
     Keys.open_search { Search.outline_search }   # hide search via outline *
     Keys.open_tree { FileTree.tree }   # draw a tree, prompting for bookmark tag *

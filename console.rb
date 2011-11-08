@@ -27,6 +27,10 @@ class Console
     self.run command
   end
 
+  def self.sync command
+    self.run command, :sync=>1
+  end
+
   def self.run command, options={}
 
     dir = options[:dir]

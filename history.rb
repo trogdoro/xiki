@@ -234,7 +234,7 @@ class History
 
     backup = Dir["#{Bookmarks['$bak']}#{View.file_name}*"].last
     diff = Console.run "diff -w -U 0 \"#{backup}\" \"#{buffer_file_name}\"", :sync=>true
-    diff = DiffLog.format(View.path, View.file_name, diff)
+    diff = DiffLog.format diff
 
     View.to_buffer("*diff with saved*")
     View.clear
@@ -245,7 +245,6 @@ class History
       "| Alert\n- ~No Differences~\n"
 
   end
-
 
 end
 History.setup_editedhistory

@@ -15,7 +15,6 @@ class Launcher
 
   MENU_DIRS = [
     "#{Xiki.dir}/menus",
-    File.expand_path("~/xiki/menus"),
     File.expand_path("~/menus"),
     ]
 
@@ -133,6 +132,8 @@ class Launcher
   def self.launch options={}
     Tree.plus_to_minus
 
+    Line.sub! /^-$/, '...'   # Expand "." to auto-complete all paths
+
     Effects.blink(:what=>:line) if options[:blink]
     line = options[:line] || Line.value   # Get paren from line
 
@@ -240,7 +241,9 @@ class Launcher
       end
     end
 
-    if line =~ /^\w+\.\.\.\/(\w+)$/
+    # If child of "..." autocomplete line
+
+    if line =~ /^\w*\.\.\.\/(\w+)$/
       Tree.to_parent
       Tree.kill_under
       Line.sub! /([ @+-]*).+/, "\\1#{$1}"
@@ -351,12 +354,8 @@ class Launcher
     end
 
     if !error_happened && !$xiki_no_search && !buffer_changed && !moved
-Ol.line
       Tree.search_appropriately left, right, output, options
     elsif ! options[:line_found]
-Ol.stack
-Ol.line
-# return
       Move.to_line_text_beginning 1
     end
     nil

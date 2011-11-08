@@ -3,6 +3,8 @@ class Menu
   def self.menu
     '
     - reload) @Launcher.reload_menu_dirs
+    - dirs/
+      - user defined menus) ~/menus/
     - docs/
       - .how_to_use/
       - .how_to_create/
@@ -21,14 +23,16 @@ class Menu
       | How to use the Menu class to define menus.
       |
       | > With a string
-      | Menu.fish :menu=>"- tuna/\n- salmon/\n- blowfish\n"
+      @Menu.fish :menu=>"- tuna/\n- salmon/\n- blowfish/"
       |
-      | Be sure to put this code where it gets executed or run it by typing
-      | do_run (C-d C-r).
+      | Try it out by double-clicking on it, then double-clicking on the menu
+      | to see what happens:
+      |
+      @fish/
       |
       |
       | > Delegating to an existing menu
-      | Menu.sandwitches :menu=>"food/sammiches"
+      @Menu.sandwitches :menu=>"food/sammiches"
       |
       |
       | > Using a block
@@ -278,6 +282,30 @@ class Menu
     menus.reverse.each do |tuple|
       add_menu tuple[0], tuple[1]
     end
+  end
+
+  def self.as_home_menu
+    orig = View.cursor
+
+    Move.to_end   # In case we're at root of tree (search would make it go elsewhere)
+    Search.backward("^[^ \n]")   # Start at root
+    root, left = Line.value, View.cursor
+    root = TextUtil.snake_case(root).sub(/^_+/, '')
+    ignore, right = View.paragraph :bounds=>true, :start_here=>true
+    # Go until end of paragraph (simple for now)
+    txt = View.txt left, right
+    txt.sub! /.+\n/, ''
+    txt.gsub! /^  /, ''
+
+    path = File.expand_path "~/menus/#{root}.menu"
+
+    file_existed = File.exists? path
+    File.open(path, "w") { |f| f << txt }
+
+    View.cursor = orig
+
+    View.success "- #{file_existed ? 'Updated' : 'Created'} the \"#{root}/\" menu", :times=>4
+    nil
   end
 
 end

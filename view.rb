@@ -560,7 +560,7 @@ class View
       left = Line.left
       right = $el.point_at_bol(prefix+1)
     else   # Move this into ruby - block.rb?
-      ignore, left, right = View.block_positions "^[>|]"
+      ignore, left, right = View.block_positions "^>"
     end
 
     Effects.blink(:left=>left, :right=>right) if options[:blink]
@@ -569,7 +569,7 @@ class View
   end
 
   # Returns bounds of block in the form [left, after_header, right].
-  def self.block_positions regex="^[>|] "
+  def self.block_positions regex="^> "
 
     orig = point
     # Go to the end of the line, so if we're at the heading we'll find it
@@ -1159,22 +1159,26 @@ class View
     self.insert message, :dont_move=>1
 
     left, right = self.cursor, Line.right
-    Effects.glow left, right, :reverse=>1
+    Effects.glow left, right, {:reverse=>1}.merge(options)
     self.delete left, right
   end
 
-  def self.success message="- Success!", options={}
+  def self.success message=nil, options={}
+    message ||= "- Success!"
+
     orig = self.cursor
     indent = Line.indent
 
     Line.next
-    self.insert "#{indent}  #{message}\n", :dont_move=>1
-    left, right = Line.left, Line.right
+    message = "#{message.strip}\n"
+    message.gsub! /^/, "#{indent}  "
+    self.insert message, :dont_move=>1
+    left, right = Line.left, Line.left+message.length
     self.cursor = orig
 
     Effects.glow left, right, {:reverse=>1, :times=>2}.merge(options)
 
-    self.delete left, right+1
+    self.delete left, right
 
     self.cursor = orig
     nil

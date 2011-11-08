@@ -353,6 +353,7 @@ class FileTree
 
 
     # Bullets
+    Styles.apply("^[ \t]*[+-] [^(\n]+?) \\(.+/\\)$", nil, :ls_dir)   # Dirs with labels
     Styles.apply("^[ \t]*[+-] [a-zA-Z0-9_,? ().:-]+?: \\(.+/\\)$", nil, :ls_dir)   # Dirs with labels
     Styles.apply("^[ +-]*\\([^|\n]+/\\)$", nil, :ls_dir)   # Dirs with bullets
 
@@ -386,7 +387,7 @@ class FileTree
 
   def self.handles? list=nil
     list ||= Tree.construct_path(:list => true)   # Use current line by default
-    Tree.matches_root_pattern?(list.first)
+    FileTree.matches_root_pattern?(list.first)
   end
 
   # Open the line in the tree that the cursor is on.  This is probably
@@ -523,7 +524,7 @@ class FileTree
     return if txt[0] !~ /^\|/
 
     txt = txt.map{|o| "#{o.sub /^\| ?/, ''}\n"}.join('')
-    DiffLog.save_internal :patha=>path, :textb=>txt
+    DiffLog.save_diffs :patha=>path, :textb=>txt
     File.open(path, "w") { |f| f << txt }
 
     View.success "- Saved!"
@@ -1302,13 +1303,14 @@ class FileTree
       return View.message "You need to be in a file tree to delete."
     end
 
-    dest_path = Tree.construct_path
+    dest_path_raw = Tree.construct_path
+    dest_path = File.expand_path dest_path_raw
 
     executable = dest_path =~ /\/$/ ? "rmdir" : "rm"
 
     command = "#{executable} \"#{dest_path}\""
 
-    answer = Keys.input :one_char=>true, :prompt=>"Are you sure you want to delete #{dest_path} ?"   #"
+    answer = Keys.input :one_char=>true, :prompt=>"Are you sure you want to delete #{dest_path_raw} ?"   #"
 
     return unless answer =~ /y/i
 
@@ -1500,6 +1502,14 @@ class FileTree
   def self.skip_dirs dir, skip_these
     dir = Bookmarks[dir].sub /\/$/, ''
     (@skip ||= {})[dir] = skip_these
+  end
+
+  def self.matches_root_pattern? path
+    without_label = Line.without_label :line=>path   #, :leave_indent=>true
+    (without_label =~ /^\/[^\n,]*$/ ||
+    without_label =~ /^~\// ||
+    without_label =~ /^\.\.?\// ||
+    without_label =~ /^\$[\w-]*\/?$/)
   end
 
 end
