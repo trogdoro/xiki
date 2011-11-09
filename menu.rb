@@ -300,11 +300,19 @@ class Menu
     path = File.expand_path "~/menus/#{root}.menu"
 
     file_existed = File.exists? path
+
+    if file_existed
+      treeb = File.read path
+      txt = Tree.restore txt, treeb
+
+      DiffLog.save_diffs :patha=>path, :textb=>txt
+    end
+
     File.open(path, "w") { |f| f << txt }
 
     View.cursor = orig
 
-    View.success "- #{file_existed ? 'Updated' : 'Created'} the \"#{root}/\" menu", :times=>4
+    View.success "- #{file_existed ? 'Updated' : 'Created'} menu: #{root}/", :times=>3
     nil
   end
 

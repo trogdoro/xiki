@@ -360,21 +360,21 @@ class FileTree
     Styles.apply('https?://[a-zA-Z0-9\/.~_:?&=|#+-]+', :notes_link)   # Url
 
     #   |... lines (quotes)
-    Styles.apply("^ +\\(|\\)\\( *\\)", nil, :quote_heading_pipe, :ls_quote)
-    Styles.apply("^ +\\(|\\)\\(.*\n\\)", nil, :quote_heading_pipe, :ls_quote)
-    Styles.apply("^ +\\(|\\)\\(.+?\\)([+-].*[-+])", nil, :quote_heading_pipe, :ls_quote)   # quoted lines: beginnings of lines
-    Styles.apply("^ +|.*([-+].*[+-])\\(.+\\)$", nil, :ls_quote)   # quoted lines: ends of lines
+    Styles.apply("^ *\\(|\\)\\( *\\)", nil, :quote_heading_pipe, :ls_quote)
+    Styles.apply("^ *\\(|\\)\\(.*\n\\)", nil, :quote_heading_pipe, :ls_quote)
+    Styles.apply("^ *\\(|\\)\\(.+?\\)([+-].*[-+])", nil, :quote_heading_pipe, :ls_quote)   # quoted lines: beginnings of lines
+    Styles.apply("^ *|.*([-+].*[+-])\\(.+\\)$", nil, :ls_quote)   # quoted lines: ends of lines
     Styles.apply("[+-])\\(.*?\\)([+-]", nil, :ls_quote)   # quoted lines: between diffs
 
-    Styles.apply("^ +\\(|\\)\\( \\)\\(>\\)\\(\n\\| .*\n\\)", nil, :quote_heading_pipe, :ls_quote, :quote_heading_bracket, :quote_heading)
-    Styles.apply("^ +\\(|\\)\\( \\)\\(>>\\)\\(\n\\| .*\n\\)", nil, :quote_heading_pipe, :ls_quote, :quote_heading_bracket, :quote_heading_small)
+    Styles.apply("^ *\\(|\\)\\( \\)\\(>\\)\\(\n\\| .*\n\\)", nil, :quote_heading_pipe, :ls_quote, :quote_heading_bracket, :quote_heading)
+    Styles.apply("^ *\\(|\\)\\( \\)\\(>>\\)\\(\n\\| .*\n\\)", nil, :quote_heading_pipe, :ls_quote, :quote_heading_bracket, :quote_heading_small)
     # | >... Headings
 
     # |+... diffs
     Styles.apply("^ +\\(:[0-9]+\\)$", nil, :ls_quote)
-    Styles.apply("^ +\\(|\\+.*\\)", nil, :diff_green)   # whole lines
-    Styles.apply("^ +\\(|\-.*\\)", nil, :diff_red)
-    Styles.apply("^ +\\(|@@ .*\n\\)", nil, :diff_line_number)
+    Styles.apply("^ *\\(|\\+.*\\)", nil, :diff_green)   # whole lines
+    Styles.apply("^ *\\(|\-.*\\)", nil, :diff_red)
+    Styles.apply("^ *\\(|@@ .*\n\\)", nil, :diff_line_number)
 
     #Styles.apply('^[ -]*\\([ a-zA-Z0-9\/_\.$-]*\\w/\\)$', nil, :ls_dir)  # Most dirs
     Styles.apply('^ *\\(//?\\)$', nil, :ls_dir)  # /
@@ -991,7 +991,7 @@ class FileTree
     indent_more = options[:path] ? '' : '  '
     if path =~ /^\/\w+@/
       contents = Remote.file_contents path
-      Tree.under contents, :escape=>'| '
+      Tree.under contents, :escape=>'| ', :no_slash=>1
       return
     end
 
@@ -1068,7 +1068,8 @@ class FileTree
       self.remote_files_in_dir(dir)
     else
       all = Dir.glob("#{dir}*", File::FNM_DOTMATCH).
-        select {|i| i !~ /\/\.(\.*|svn|git)$/}.sort
+        select {|i| i !~ /\/\.(\.*|svn|git)$/}.
+        select {|i| i !~ /\/\.#/}.sort
 
       if options[:date_sort]
         all = all.sort{|a,b| File.mtime(b) <=> File.mtime(a)}
@@ -1321,9 +1322,9 @@ class FileTree
       return
     end
 
+    Tree.kill_under
     Line.delete
     Move.to_line_text_beginning
-
   end
 
   def self.copy_to_latest_screenshot dest_path, dest_dir

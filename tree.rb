@@ -1,3 +1,5 @@
+require 'tree_cursor'
+
 class Tree
   def self.search options={}
     return $xiki_no_search=false if $xiki_no_search
@@ -900,4 +902,22 @@ class Tree
     self.leaf(path)
   end
 
+
+  # Copy children from treeb to treea, but only for branches in treea where children were removed.
+  def self.restore treea, treeb
+
+    treea, treeb = TreeCursor.new(treea), TreeCursor.new(treeb)
+
+    # For each leaf in A
+    treea.each do
+      next unless treea.at_leaf?   # We only care about leafs
+
+      treeb.select treea.line   # Find branch in B
+      next if treeb.at_leaf?   # Skip if no children children
+
+      treea << treeb.under   # Grab them and move into A
+    end
+
+    treea.txt
+  end
 end

@@ -20,7 +20,7 @@ class Ol
     end
 
     # If n seconds passed since last call
-    heading = self.pause_since_last?(time) ? "\n|\n" : nil
+    heading = self.pause_since_last?(time) ? "\n>\n" : nil
 
     if l.is_a?(Array)   # If an array of lines was passed
       result = ""

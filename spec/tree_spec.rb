@@ -1,7 +1,7 @@
 $:.unshift "spec/"
 require 'el_mixin'
-require 'tree'
 require 'ol'
+require 'tree'
 require 'core_ext'
 
 describe Tree, "#traverse" do
@@ -328,6 +328,29 @@ describe Tree, "#clear_empty_dirs!" do
     result.should =~ /trunk/
     result.should =~ /you/
     result.should_not =~ /hey/
+  end
+end
+
+
+describe Tree, "#restore" do
+
+  it "copies missing children when removed" do
+    treea = "
+      - m/
+      - n/
+      ".unindent
+    treeb = "
+      - m/
+        - mm/
+        - mm2/
+      ".unindent
+
+    Tree.restore(treea, treeb).should == "
+      - m/
+        - mm/
+        - mm2/
+      - n/
+      ".unindent
   end
 
 end
