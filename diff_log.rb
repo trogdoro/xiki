@@ -120,13 +120,15 @@ class DiffLog
 
   def self.compare_with_saved
     diff = self.save_diffs :dont_save=>1
+    diff = "" if diff.nil?
+
     View.to_buffer("*diff with saved*")
     View.clear
     $el.notes_mode
 
     View.insert diff.count("\n") > 2 ?
       diff :
-      "| Alert\n- ~No Differences~\n"
+      "> Note\n- No Differences!\n"
   end
 
   def self.enter_from_difflog

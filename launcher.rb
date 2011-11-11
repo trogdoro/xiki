@@ -72,7 +72,7 @@ class Launcher
     elsif arg.is_a? Proc   # If proc, add to procs
       @@launchers_procs << [arg, block]
     elsif arg.is_a?(String)
-      self.add_path arg, args[0], block
+      self.add_menu arg, args[0], block
     elsif arg.is_a?(Hash)
       @@launchers_parens[arg[:paren]] = block
     else
@@ -80,7 +80,7 @@ class Launcher
     end
   end
 
-  def self.add_path root, hash, block
+  def self.add_menu root, hash, block
     # If just block, just define
     if hash.nil? && block
       return @@launchers_paths[root] = block
@@ -188,7 +188,7 @@ class Launcher
 
     # If current line is indented and not passed recursively yet, try again, passing tree
 
-    Ol << "Should we be doing this after self.try_launcher_paths line?!"
+    Ol << "Should we be doing this after self.try_path_launchers line?!"
     if Line.value =~ /^ / && ! options[:line] && !is_root   # If indented, call .launch recursively
       Tree.plus_to_minus
 
@@ -219,9 +219,9 @@ class Launcher
     # See if it matches path launcher
 
     Ol << "Try moving this up to under @@launchers.each ?!"
-    return if self.try_launcher_paths line
+    return if self.try_path_launchers line
 
-    # Try to auto-complete based on path-launchers
+    # Try to auto-complete based on menu-launchers
 
     if line =~ /^(\w*)(\.\.\.)?\/?$/
       stem = $1
@@ -251,14 +251,21 @@ class Launcher
       return
     end
 
-    if line =~ /^([\w-]+)\/?$/   # If blank line, see if launcher not loaded
+    if line =~ /^([\w-]+)\/?$/   # If just root line, see if launcher not loaded
       root = $1
-      [".menu", ".rb"].each do |extension|
-        file = File.expand_path "~/menus/#{root}#{extension}"
-        break require_menu(file) if File.exists? file
+
+      matches = Dir[File.expand_path("~/menus/#{root}*")]
+
+      if matches.any?
+        matches.sort.each do |file|
+          iroot = file[/\/(\w+)\./, 1]
+          next if @@launchers_paths[root]   # Skip if already loaded
+          require_menu(file)  # if File.exists? file
+        end
+        return self.launch# options.slice(:no_search).merge(:line=>merged)
       end
 
-      return if self.try_launcher_paths line
+      return if self.try_path_launchers line
     end
     View.beep
     Message << "No launcher matched!"
@@ -266,10 +273,9 @@ class Launcher
     $xiki_no_search = false
   end
 
-  def self.try_launcher_paths line
+  def self.try_path_launchers line
     root = line[/^\w+/]   # Grab thing to match
     if block = @@launchers_paths[root]
-
       # If C-u C-u, just jump to the implementation
       if Keys.prefix == :uu
         # Take best guess, by looking through dirs for root

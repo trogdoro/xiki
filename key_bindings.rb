@@ -89,7 +89,7 @@ class KeyBindings
     Keys.open_list_faces { list_faces_display }
     Keys.open_lisp_info { info("elisp") }   # Open manual
 
-    Keys.open_log_list { Launcher.open(Keys.prefix_u ? "- last/" : "- log/") }   # Show git diffs o 1 file
+    #     Keys.open_log_list { Launcher.open(Keys.prefix_u ? "- last/" : "- log/") }   # Show git diffs o 1 file
     #     Keys.open_log_list { Git.show_log_one_file }   # Show git diffs o 1 file
 
     Keys.open_log_push { Git.show_log }   # Show git diffs for a bookmark
@@ -459,7 +459,7 @@ class KeyBindings
     Keys.search_have_line { Search.have_line }   # copy line back to search start
     #     Keys.search_have_name { Search.just_name }
     Keys.search_have_output { Search.isearch_log }
-    Keys.search_have_push { Git.search_just_push }
+    Keys.search_have_push { Git.search_just_push }   # When search match
 
     #     Keys.search_have_rspec { Specs.insert_in_todo }
     Keys.search_have_spot { Search.insert_at_spot }
@@ -516,7 +516,7 @@ class KeyBindings
     Keys.search_last_urls { Launcher.open("- Launcher.urls/") }
 
     Keys.search_like_web { Search.isearch_google }   # make match be snake case
-    Keys.search_like_repository { Git.search_repository }
+    Keys.search_like_repository { Git.search_repository }   # When not searching
     Keys.search_like_quote { Search.isearch_google :quote=>true }
     Keys.search_like_xiki { View.open "$x/#{Search.stop.strip}" }
 
@@ -594,6 +594,11 @@ class KeyBindings
 
     define_key(:isearch_mode_map, kbd("C-8")) { History.open_current :all => true, :prompt_for_bookmark => true }
 
+    # Safe mapping of C-m to Search.isearch_m (works when el4r is down)
+    el4r_lisp_eval(%`(defun isearch-m () (interactive)
+      (if (eq (process-status el4r-process) 'run) (el4r-ruby-eval "Search.isearch_m") (isearch-exit)))
+      `.unindent)
+    define_key :isearch_mode_map, kbd("C-m"), :isearch_m   # Hide: hide non-matching
 
   end
 

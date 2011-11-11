@@ -312,6 +312,8 @@ class Menu
 
     View.cursor = orig
 
+    require_menu path
+
     View.success "- #{file_existed ? 'Updated' : 'Created'} menu: #{root}/", :times=>3
     nil
   end

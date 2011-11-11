@@ -1178,7 +1178,7 @@ class Search
     match = self.stop
 
     return Line.previous if match.nil? && was_reverse   # Odd case, user might do this if at end of file
-    return Launcher.open("- log/") if match.nil?
+    return Git.search_repository if match.nil?
 
     Search.move_to_search_start match
   end
@@ -1388,6 +1388,13 @@ class Search
     end
 
     [result.join("\n")+"\n", matched_above]
+  end
 
+  def self.isearch_m
+    match = self.stop
+
+    return if match   # If there was a match, just stop
+
+    Launcher.open("- log/") if match.nil?
   end
 end

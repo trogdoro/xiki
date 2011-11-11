@@ -56,6 +56,9 @@ class Xiki
   end
 
   def self.open_menu
+
+    return Launcher.open("- last/") if Keys.prefix_u
+
     input = Keys.input(:timed => true, :prompt => "Start typing a menu that might exist (- for all): ")
     View.to_buffer "menu"
     Notes.mode
