@@ -124,6 +124,26 @@ describe Search, "#deep_outline" do
   #     options[3][1].call("HeyYou").should == 'hey_you'
   #   end
 
+  it "ignores Ol lines" do
+    tree = "
+      daf jam
+        aa
+          aaa
+      Ol.line
+        bb
+      Ol.line
+        cc
+          ccc
+      ".unindent
+
+    Search.deep_outline(tree, 5)[0].should == "
+      daf jam
+        aa
+        bb
+        cc
+      ".unindent
+  end
+
 end
 
 

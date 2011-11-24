@@ -31,22 +31,19 @@ class KeyBindings
     # H
     #Keys.as_indented { Clipboard.as_indented }
     # J
+    Keys.as_job { Macros.record }   # start recording macro *
     Keys.as_kill { Clipboard.cut(0); Location.as_spot('killed') }   # cut) **
-    Keys.as_home_menu { Menu.as_home_menu }
     Keys.as_line { Clipboard.as_line }
-    Keys.as_macro { Macros.record }   # start recording macro *
+    Keys.as_menu { Menu.as_menu }
     Keys.as_name { Clipboard.copy }   # copies using key (prompted for)
     Keys.as_object { Clipboard.as_thing }   # copy object / symbol at point
-    #     Keys.as_object { Clipboard.as_object }   # copy object / symbol at point
     Keys.as_paragraph { Clipboard.copy_paragraph }   # copy paragraph
     Keys.as_quick { Bookmarks.save :q }   # like AB but uses different temporary namespace
     Keys.as_rest { Clipboard.copy_paragraph(:rest => true) }
     Keys.as_spot { Location.as_spot }   # remember point in file *
     Keys.as_todo { Search.move_to "$t", View.selection }  # copy sexp at point
-    #Keys.as_update_remote { FileTree.save_remote }
     Keys.as_version { History.backup_file }   # creates backup
     Keys.as_window { View.save }   # remember window configuration as name
-    #     Keys.as_xtract { Clipboard.cut("0") }   # cut **
     # Y
     # Z
     #Keys.A0 { Clipboard.copy("0") }   # As 0: copy as key "0"
@@ -190,6 +187,7 @@ class KeyBindings
     Keys.enter_menu { Xiki.insert_menu }   # Redundant with C-enter on blank line
     #     Keys.enter_name { Clipboard.paste }   # paste thing saved as name
     Keys.enter_outline { FileTree.enter_lines }   # in tree, enter methods or headings
+
     Keys.enter_push { Git.code_tree_diff(:enter=>true) }   # Commit to repos, push, etc
     Keys.enter_quote { FileTree.enter_quote }
     Keys.enter_row { View.insert_line }
@@ -226,16 +224,14 @@ class KeyBindings
     Keys.do_as_launched { Launcher.do_as_launched }
     Keys.do_as_php { Php.run }
     #     Keys.do_as_python { Python.run }
-    Keys.do_as_snakecase { Clipboard.do_as_snake_case }   # Change word to snake case (like_that)
+    Keys.do_add_space { Code.add_space }
     Keys.do_as_test { Code.do_as_rspec }
-    Keys.do_as_uppercase { Clipboard.do_as_upper_case }   # change word to camel case (LikeThat)
     Keys.do_as_wrap { Block.do_as_wrap }
     Keys.do_as_xul { Firefox.do_as_xul }
     Keys.do_backward { backward_kill_word(Keys.prefix || 1) }   # delete word backward
     Keys.do_code_align { Code.do_code_align }
     Keys.do_click_back { Firefox.back }   # compare with last AV version
     Keys.do_create_directory { FileTree.do_create_dir }
-    #     Keys.do_compare_file { Git.diff_one_file }   # compare current file with subversion
     Keys.do_click_hyperlink { Firefox.click }   # compare with last AV version
     Keys.do_code_indent { Code.indent }
     Keys.do_compare_last { History.diff_with_backup }   # compare with last AV version
@@ -258,8 +254,9 @@ class KeyBindings
     # H
     # G: leave unmapped for escape
     Keys.do_indent { Code.indent_to }
-    Keys.do_junior { FileTree.move_dir_to_junior }   # Move a dir to next line, and indent
-    Keys.do_kill_all { View.kill_all }   # kill all text in buffer
+    Keys.do_job { Macros.run }   # do last macro *
+    Keys.do_kill_all { Effects.blink :what=>:all; View.kill_all }   # kill all text in buffer
+    Keys.do_kill_branch { Tree.collapse }
     Keys.do_kill_file { FileTree.delete_file }
     Keys.do_kill_nonmatching { Search.kill_filter }
     Keys.do_kill_paragraph { View.kill_paragraph }   # kill all text in buffer
@@ -270,7 +267,6 @@ class KeyBindings
     Keys.do_load_browser { Firefox.reload }
     Keys.do_last_command { Console.do_last_command }
     Keys.do_line_duplicate { Line.duplicate_line }
-    #     Keys.do_load_emacs { App.load_emacs }   # *
     Keys.do_load_file { Files.do_load_file }   # U prefix will auto-update / auto-refresh to relflect changes
     Keys.do_lines_having {   # delete lines matching a regex
       unless elvar.current_prefix_arg
@@ -279,8 +275,8 @@ class KeyBindings
         delete_non_matching_lines( Keys.input(:prompt => "Delete lines not having: ") )
       end
     }
-    Keys.do_lines_individual { Code.kill_duplicates }   # Uniqify, delete duplicates
     Keys.do_lines_jumble { Code.randomize_lines }   # Shuffle lines
+    Keys.do_linebreaks_linux { set_buffer_file_coding_system :unix }
     Keys.do_line_next { Line.move(:next) }
     Keys.do_line_previous { Line.move(:previous) }
     Keys.do_lines_reverse { reverse_region(region_beginning, region_end) }
@@ -292,9 +288,9 @@ class KeyBindings
       elvar.sort_fold_case = old
     }
 
-    Keys.do_linebreaks_unix { set_buffer_file_coding_system :unix }
+    Keys.do_lines_unique { Code.kill_duplicates }   # Uniqify, delete duplicates
     Keys.do_linebreaks_windows { set_buffer_file_coding_system :dos }
-    Keys.do_macro { Macros.run }   # do last macro *
+    Keys.do_menu { View.success "make Keys.do_menu do what?" }
     Keys.do_name_buffer { Buffers.rename }
     Keys.do_notes_colors { Notes.apply_styles }
     Keys.do_number_enter { Incrementer.enter }
@@ -358,10 +354,10 @@ class KeyBindings
     # K
     Keys.to_lowest { View.to_bottom }   # move to end *
     #Keys.to_line { Move.to_line }   # move to line number *
-    Keys.to_matching { Move.to_other_bracket }   # to matching bracket, etc
+    Keys.to_menu { Menu.open_related_file }   # to matching bracket, etc
+    #     Keys.to_matching { Move.to_other_bracket }   # to matching bracket, etc
     Keys.to_next { Move.to_next_paragraph }   # to next paragraph *
     Keys.to_outline { FileTree.to_outline }   # *
-    #     Keys.to_outline { History.open_current :outline=>true }   # *
     Keys.to_previous { Move.to_previous_paragraph }   # to beginning of previous paragraph *
     Keys.to_quote { Move.to_quote }   # move to next ...|... quote
     Keys.to_row { Move.to_line }   # go to nth line, relative to top of window
@@ -371,9 +367,7 @@ class KeyBindings
     Keys.to_visible { View.to_relative }   # go to nth line, relative to top of window
     Keys.to_words { Move.to_line_text_beginning }   # move to start of words on line *
     # X
-    #     Keys.to_yank { Clipboard.to_yank }
     # Z
-    #Keys.T0 { Location.go("$_0") }   # To 0
     Keys.T1 { View.to_line_with_prefix(1) };  Keys.T2 { View.to_line_with_prefix(2) }
     Keys.T3 { View.to_line_with_prefix(3) };  Keys.T4 { View.to_line_with_prefix(4) }
     Keys.T5 { View.to_line_with_prefix(5) };  Keys.T6 { View.to_line_with_prefix(6) }
@@ -393,7 +387,7 @@ class KeyBindings
     Keys.layout_balance { 3.times { View.balance } }   # balance windows *
     Keys.layout_create { View.create }   # open new view **
 
-    Keys.layout_dimensions { View.dimensions }
+    Keys.layout_dimensions { View.dimensions; View.scroll_bars; View.visibility("f") }
 
     Keys.layout_expand { View.enlarge }   # *
     # F
@@ -443,7 +437,10 @@ class KeyBindings
     Keys.search_axis { Search.to_left }
     Keys.search_bookmark { Search.bookmark }
     # B: leave unmapped for back
+
+    #     Keys.search_clipboard { View << 'fu' }   # Clipboard (copy)
     Keys.search_clipboard { Search.isearch_clipboard }   # Clipboard (copy)
+
     Keys.search_delete { Search.isearch_delete }   # Delete
     Keys.search_enter { Search.enter }   # Enter: insert clipboard, replacing match
     Keys.search_frontward { Search.go_to_end }   # Forward
@@ -481,7 +478,8 @@ class KeyBindings
     Keys.search_just_edits { Search.just_edits }   # Search in diff of edits to this file
     Keys.search_just_files { Search.isearch_restart "$f" }   # isearch for this string in $f
     Keys.search_just_have { Search.just_select }   # select match
-    Keys.search_just_mark { Search.just_marker }
+    Keys.search_just_menu { Search.just_menu }
+    #     Keys.search_just_mark { Search.just_marker }   # Make another key shortcut to colorize search match??
     #     Keys.search_just_macro { Search.just_macro }
     Keys.search_just_next { Search.isearch_restart :next }
     Keys.search_just_output { Search.isearch_restart "$o" }
@@ -507,17 +505,18 @@ class KeyBindings
     }   # make match be camel case
     Keys.search_like_data { Search.isearch_restart "$d" }
     Keys.search_like_file { Search.isearch_open }
-    Keys.search_like_output { Search.isearch_log :string=>1  }
+    Keys.search_like_menu { Launcher.search_like_menu }
+    Keys.search_like_output { Search.isearch_log :string=>1 }
     Keys.search_line_pull { Search.isearch_move_line }
     #     Keys.search_like_shell { Search.search_thesaurus }
-    Keys.search_like_thesaurus { Search.search_thesaurus }
-    Keys.search_like_value { Search.just_name }
 
-    Keys.search_last_urls { Launcher.open("- Launcher.urls/") }
 
-    Keys.search_like_web { Search.isearch_google }   # make match be snake case
-    Keys.search_like_repository { Git.search_repository }   # When not searching
     Keys.search_like_quote { Search.isearch_google :quote=>true }
+    Keys.search_like_repository { Git.search_repository }   # When not searching
+    Keys.search_like_thesaurus { Search.search_thesaurus }
+    Keys.search_last_urls { Launcher.open("- Launcher.urls/") }
+    Keys.search_like_value { Search.just_name }
+    Keys.search_like_web { Search.isearch_google }   # make match be snake case
     Keys.search_like_xiki { View.open "$x/#{Search.stop.strip}" }
 
     # Use search_navigated instead
@@ -604,11 +603,7 @@ class KeyBindings
 
   def self.misc
 
-    $el.define_key :global_map, kbd("C-S-v"), :scroll_down
-    $el.define_key :global_map, kbd("M-c"), :kill_ring_save
-    $el.define_key :global_map, kbd("M-v"), :yank
-    #     $el.define_key :global_map, kbd("M-x"), :kill_region
-    #     $el.global_set_key kbd("M-x") { Clipboard.cut(0); Location.as_spot("killed") }
+    define_key :global_map, kbd("C-S-v"), :scroll_down
 
     # Control-Shift combinations
     Keys.set("C-S-c") { Clipboard.copy("0") }

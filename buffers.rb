@@ -64,7 +64,7 @@ class Buffers
 
       file = $el.buffer_file_name(b)
       #       file = $el.buffer_file_name(b) || "*#{View.name}"
-      Ol << "show buffers too - wasn't as simple as just removing, because of filename indenting!"
+      # Show buffers too - wasn't as simple as just removing, because of filename indenting!
 
       next unless file
       next if file =~ /_ol.notes/
@@ -86,7 +86,7 @@ class Buffers
       while(true)
         break unless $el.search_forward(string, nil, true)
         unless found_yet
-          found << "- #{file.sub(/(.+)\//, "\\1\/\n  - ")}\n"
+          found << "- @#{file.sub(/(.+)\//, "\\1\/\n  - ")}\n"
 
           found_yet = true
         end
@@ -100,11 +100,12 @@ class Buffers
 
     # If nothing found, just insert message
     if found.size == 0
-      return puts("| Note\n- ~Nothing found~\n")
+      Tree << "- nothing found!\n"
+      Search.isearch string, :reverse=>1
+      return
     end
-    puts found
-    #View.insert found
-    View.to_top
+
+    Tree << found
     # $el.highlight_regexp string, :ls_quote_highlight
   end
 
@@ -128,6 +129,10 @@ class Buffers
 
   def self.name buffer
     $el.buffer_name(buffer)
+  end
+
+  def self.delete name
+    $el.kill_buffer name
   end
 
 end

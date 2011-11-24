@@ -138,7 +138,7 @@ class History
     View.to_buffer("*tree of unsaved buffers")
     View.clear;  notes_mode
     if (modified.size == 0)
-      return insert("| Note\n- ~No Buffers Unsaved~\n")
+      return insert("> Note\n- No Buffers Unsaved!\n")
     end
     View.insert FileTree.paths_to_tree(modified)
     View.to_top

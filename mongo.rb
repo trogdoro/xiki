@@ -33,15 +33,6 @@ class Mongo
       Tree.under "#{txt.strip}\n", :escape=>'| '
     end
 
-    Launcher.add(:paren=>"mdb") do   # General db... lines
-
-      l = Line.without_label
-
-      l.strip!
-      txt = self.run l
-      Tree.under "#{txt.strip}\n", :escape=>'| '
-    end
-
     Launcher.add(/^(\w+)\.(save|update)\(/) do |l|   # Shortcut for foo.save()
       l.strip!
       l = "db.#{l}"

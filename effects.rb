@@ -4,35 +4,28 @@ require 'styles'
 class Effects
   extend ElMixin
 
-  CODE_SAMPLES = %q[
-    # Blink
-    - whole file: Effects.blink :what => :all
-  ]
-
   def self.menu
     "
-    | > Summary
+    > Summary
     | Make text do things that look cool.
     | Try these out by double-clicking on them.
     |
-    | > Some methods in View that use effects
-    @View.prompt
-    @View.success
-    @View.success :color=>:rainbow
-    @View.success 'Saved!'
-    |
-    | > Glow
-    @Effects.glow
-    @Effects.glow :color=>:orange
-    @Effects.glow :color=>:green
-    @Effects.glow :color=>:blue
-    @Effects.glow :color=>:rainbow
-    @Effects.glow :color=>:fat_rainbow
-    |
-    | > Blink
-    | Using a longer time since the blink happens anyway
-    |
-    @Effects.blink :time=>1
+    - Glow/
+      @Effects.glow
+      @Effects.glow :color=>:fire
+      @Effects.glow :color=>:water
+      @Effects.glow :color=>:forest
+      @Effects.glow :color=>:rainbow
+      @Effects.glow :color=>:fat_rainbow
+    - Blink/
+      | Makes line blink orange. Using a longer time since the blink happens
+      | anyway.
+      |
+      @Effects.blink :time=>1
+    - Some View methods that use effects/
+      @View.prompt
+      @View.success
+      @View.success 'Saved!'
     "
   end
 
@@ -49,12 +42,12 @@ class Effects
 
     over = $el.make_overlay left, right
 
-    faces = if options[:color] == :orange
+    faces = if options[:color] == :fire
         ['change-log-function', 'change-log-function', 'change-log-file', 'change-log-file', 'change-log-date', 'change-log-date', 'change-log-date']
-      elsif options[:color] == :green
+      elsif options[:color] == :forest
         ['dired-mark', 'dired-mark', 'widget-documentation', 'widget-documentation', 'widget-documentation', 'bookmark-menu-heading', 'bookmark-menu-heading']
-      elsif options[:color] == :blue
-        ['dired-mark', 'dired-mark', 'escape-glyph', 'escape-glyph', 'dired-symlink', 'dired-symlink', 'dired-symlink']
+      elsif options[:color] == :water
+        ['font-lock-constant-face', 'font-lock-constant-face', 'escape-glyph', 'escape-glyph', 'font-lock-builtin-face', 'font-lock-builtin-face', 'font-lock-builtin-face']
       elsif options[:color] == :rainbow
         ['blue', 'red', 'orange', 'orange', 'green', 'green', 'yellow']
       elsif options[:color] == :fat_rainbow

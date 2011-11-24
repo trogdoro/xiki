@@ -190,7 +190,6 @@ describe Tree, "#routify" do
     target.should == ["roots", "docs"]
 
     tree.should == orig
-
   end
 
 end
@@ -220,6 +219,11 @@ describe Tree, "#route_match" do
   it "finds match when star" do
     Tree.route_match(["*"], [".hot/"]).should == true
   end
+
+  # Leave this in to implement later?
+  #   it "finds match when two items on same line" do
+  #     Tree.route_match(["- .push/master/"], ["push", "master"]).should == true
+  #   end
 
 end
 
@@ -254,7 +258,7 @@ describe Tree, "#leaf" do
     Tree.leaf("| bb / hey").should == "aa\nbb / hey\n"
   end
 
-  it "uses line from path when slash pipe and not on the | line" do
+  it "uses line from path when slash pipe and not on the pipe line" do
     Line.should_receive(:value).and_return "- red herring"
     Tree.leaf("aa/|b/b").should == "b/b"
   end
@@ -270,7 +274,7 @@ describe Tree, "#quote" do
       + @menu/docs/how_to_use/
       "
     after = "
-      | > Using menus
+      > Using menus
       | All menus can be used the same way.
       |
       | For more details, see:
@@ -353,4 +357,119 @@ describe Tree, "#restore" do
       ".unindent
   end
 
+  #   def test_paths_to_tree
+  #     paths = %w[
+  #       /projects/foo/a.txt
+  #       /projects/foo/b.txt
+  #       /other/c.txt
+  #       ]
+
+  #     tree =
+  #       "|- /other/
+  #        |  + c.txt
+  #        |- /projects/
+  #        |  - foo/
+  #        |    + a.txt
+  #        |    + b.txt
+  #        |".gsub(/^ *\|/, '')
+
+  #     # TODO: uncomment
+  #     #assert_equal tree, FileTree.paths_to_tree(paths)
+  #   end
+
 end
+
+
+
+describe Tree, "#climb" do
+  it "includes empty lines" do
+    result = Tree.climb "Hey\n\nyou\n", ""
+    result.should == "
+      Hey
+      |
+      you
+      ".unindent
+  end
+end
+
+
+# TODO 2011-11-11: turn these into specs!
+
+
+
+# describe Tree, "#acronym_regexp" do
+#   it "makes regex's that work" do
+# ...
+
+#   def test_acronym_regexp
+#     str = Tree.acronym_regexp("mr")
+#     #puts str
+#     re = Regexp.new(str)
+#     assert "  mar_roon.txt" =~ re
+#     assert "  mar.rb" =~ re
+#     assert ! ("  mar,rb" =~ re)
+#     assert ! ("  mar_xu_rb" =~ re)
+#   end
+
+#   def test_search_dir_names
+#     tree =
+#      "  - /docs/
+#           emacs/
+#             elisp.notes
+#             todo/
+#               files.notes
+#         /projects/
+#           app/
+#             controllers/
+#               pages.rb
+#               pages2.rb
+#             helpers/
+#               pages_helper.rb
+#       ".gsub(/^      /, '').split("\n")
+
+#     after =
+#       "  /docs/
+#           emacs/
+#             todo/
+#               files.notes
+#         /projects/
+#           app/
+#             controllers/
+#             helpers/
+#       ".gsub(/^      /, '').split("\n")
+
+#     # TODO
+#     #assert_equal after, Tree.search_dir_names(tree, /todo/)
+#   end
+
+#   def test_search_dir_names_no_indent
+#     tree =
+#       "/docs/
+#         elisp.notes
+#       ".gsub(/^      /, '').split("\n")
+
+#     after =
+#       "/docs/
+#       ".gsub(/^      /, '').split("\n")
+
+#     assert_equal after, Tree.search_dir_names(tree, /todo/)
+#   end
+
+#   def test_clean_path
+#     assert_equal '/bla/', Tree.clean_path("- hey: /bla/")
+#     assert_equal 'bla/', Tree.clean_path("- hey: bla/")
+#     assert_equal '/bla/', Tree.clean_path("- /bla/")
+#     assert_equal 'bla/', Tree.clean_path("+ bla/")
+#   end
+
+#   def test_is_root?
+#     assert_equal true, Tree.is_root?("at left")
+#     assert_equal true, Tree.is_root?("  - /hey")
+#     assert_equal true, Tree.is_root?("  /hey")
+#     assert_equal true, Tree.is_root?("  ./hey")
+#     assert_equal false, Tree.is_root?("  .you")
+#     assert_equal true, Tree.is_root?("  $tr/")
+#     assert_equal true, Tree.is_root?("  $tr/##abc/")
+#     #     assert_equal false, Tree.is_root?("  $tr")
+#   end
+

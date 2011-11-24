@@ -59,7 +59,10 @@ class Memcache
   def self.keys *args
 
     begin
-      if args.blank?   # If nothing passed, show all keys
+
+      # If nothing passed, show all keys
+
+      if args.blank?
 
         # Hack to get all (usually) keys
         con = Net::Telnet::new("Host"=>"127.0.0.1", "Port"=>11211, "Prompt" => /END/)
@@ -91,10 +94,11 @@ class Memcache
 
       if Keys.prefix == 0
         self.connection.delete key
-        return "- deleted!"
+        View.success "- Deleted!"
+        return
       end
 
-      value = YAML::load value
+      value = YAML::load Xiki.branch
       self.connection.set key, value
 
       View.success "- Saved!"

@@ -10,6 +10,6 @@ class App
 
     command = "open \"/Applications/#{name}.app\""
     Console.sync command
-
+    nil
   end
 end

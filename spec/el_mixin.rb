@@ -1,7 +1,6 @@
 class Elvar
   def method_missing(func, *args, &block)
     # Do nothing
-    print "B"
   end
 end
 
@@ -11,6 +10,5 @@ module ElMixin
   end
   def method_missing(func, *args, &block)
     # Do nothing
-    print "B"
   end
 end

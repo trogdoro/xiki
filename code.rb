@@ -7,10 +7,14 @@ require 'parse_tree_extensions'
 class Code
   extend ElMixin
 
-  CODE_SAMPLES = %q<
-    # Eval code
-    - get output and stdout: p Code.eval("puts 'printed'; 1 + 2")
-  >
+  def self.menu
+    %`
+    > Eval code
+    | Get return value and stdout
+    |
+    p Code.eval("puts 'printed'; 1 + 2")
+    `
+  end
 
   def self.location_from_proc id
     path = id.to_s
@@ -67,7 +71,7 @@ class Code
         # These were superceded by .txt_per_prefix apparently
 
       when 8   # Put into file and run in console
-        File.open("/tmp/tmp.rb", "w") { |f| f << Notes.get_block("^[|>]").text }
+        File.open("/tmp/tmp.rb", "w") { |f| f << Notes.get_block("^>").text }
         return Console.run "ruby -I. /tmp/tmp.rb", :dir=>View.dir
       when 9   # Pass whole file as ruby
         return Console.run("ruby #{View.file_name}", :buffer => "*console ruby")
@@ -79,7 +83,7 @@ class Code
         $el.goto_char started
 
       else   # Move this into ruby - block.rb?
-        ignore, left, right = View.block_positions "^[|>]"
+        ignore, left, right = View.block_positions "^>"
       end
 
       txt = View.txt(:left=>left, :right=>right).to_s
@@ -117,7 +121,7 @@ class Code
     if prefix
       insert(out.gsub /^/, '  ') unless out.blank?
     else
-      insert("||\n#{out}") unless out.blank?
+      insert(">>\n#{out}") unless out.blank?
     end
 
     if exception
@@ -181,7 +185,7 @@ class Code
     exception = nil
     begin   # Run code
       # Good place to debug
-      returned = el4r_ruby_eval(code)
+      returned = $el.el4r_ruby_eval(code)
     rescue Exception => e
       exception = e
     end
@@ -578,6 +582,8 @@ class Code
 
   def self.ol_launch
 
+    prefix = Keys.prefix :clear=>1
+
     # Get path from end
     path = View.name[/\/.+/]
 
@@ -592,6 +598,11 @@ class Code
 
     View.open path
     View.to_line line.to_i
+
+    if prefix == 0
+      View.layout_output
+      Line.next
+    end
   end
 
   def self.enter_log_line
@@ -636,7 +647,7 @@ class Code
   end
 
   def self.do_list_ancestors
-    path = Tree.construct_path(:list=>true)[0..-1]
+    path = Tree.construct_path(:list=>1, :ignore_ol=>1)[0..-1]
     result = ""
     path.each_with_index { |o, i|
       result << "#{'  ' * i}#{o}\n"
@@ -649,5 +660,22 @@ class Code
 
     View.message result
   end
+
+  def self.add_space
+
+    left, right = View.range
+    right = Line.right if left == right
+
+    scroll = View.scroll_position
+
+    View.cursor = right
+    View << "\n\n\n\n\n\n"
+    View.cursor = left
+    View << "\n\n\n\n\n\n"
+
+    View.scroll_position = scroll
+
+  end
+
 end
 

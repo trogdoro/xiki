@@ -4,13 +4,6 @@ require 'ol'
 class CodeTree
   extend ElMixin
 
-  CODE_SAMPLES = "
-    # Menus for all CodeTree classes
-    The menus serve as User Interfaces for the classes.
-
-    - show menus: CodeTree.menu
-  "
-
   def self.menus; @menus; end
 
   def self.add_menu item
@@ -140,7 +133,7 @@ class CodeTree
         Tree.search_appropriately left, right, stdout
 
       elsif options[:no_search]
-        Move.to_line_text_beginning(1)
+        Move.to_line_text_beginning :down=>1
       end
 
     end

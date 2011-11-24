@@ -94,6 +94,45 @@ class View
   end
 
   # Make current window larger.  Take into account that there might be other vertical windows
+  def self.height= chars
+    $el.set_frame_parameter nil, :height, chars
+  end
+
+  def self.width= chars
+    $el.set_frame_parameter nil, :width, chars
+  end
+
+  def self.height options={}
+    return $el.frame_parameter(nil, :height) if options.empty?
+    return unless options.is_a?(Hash)
+
+    if options[:add]
+      self.height = self.height + 1
+    end
+
+    nil
+  end
+
+  def self.width options={}
+    return $el.frame_parameter(nil, :width) if options.empty?
+    return unless options.is_a?(Hash)
+
+    if options[:add]
+      self.width = self.width + 1
+    end
+
+    nil
+  end
+
+  def self.screen_width options={}
+    $el.x_display_pixel_width
+  end
+
+  def self.screen_height options={}
+    $el.x_display_pixel_height
+  end
+
+
   def self.enlarge height=nil
     default_height = 3
     small = Keys.prefix || height || default_height
@@ -381,10 +420,9 @@ class View
     end
   end
 
-  def self.hide_others
-    if elvar.current_prefix_arg or self.in_bar?
-      delete_other_windows
-      return
+  def self.hide_others options={}
+    if elvar.current_prefix_arg || self.in_bar? || options[:all]
+      return $el.delete_other_windows
     end
     ws = self.windows_in_my_column
     selected = selected_window
@@ -724,8 +762,8 @@ class View
     Move.backward txt.size if options[:dont_move]
   end
 
-  def self.<< txt
-    self.insert txt
+  def self.<< txt, options={}
+    self.insert txt, options
   end
 
   def self.unindent txt
@@ -826,22 +864,22 @@ class View
     buffer_substring(point-1, point)
   end
 
-  def self.visibility
+  def self.visibility key=nil
     # I.e. transparency / opacity
-    c = Keys.input(:one_char => true, :prompt => 'Layout Visibility: [f]ull, [h]igh, [m]edium, [l]ow   [s]tylized, [p]lain')
-    case c.to_sym
+    key ||= Keys.input(:one_char => true, :prompt => 'Layout Visibility: [f]ull, [h]igh, [m]edium, [l]ow   [s]tylized, [p]lain')
+    case key.to_sym
     when :f
-      el4r_lisp_eval "(set-frame-parameter nil 'alpha '(100 85))"
+      el4r_lisp_eval "(set-frame-parameter nil 'alpha '(100 85))"   # full visibility
     when :h
-      el4r_lisp_eval "(set-frame-parameter nil 'alpha '(95 80))"
+      el4r_lisp_eval "(set-frame-parameter nil 'alpha '(90 75))"   # high visibility
     when :m
-      el4r_lisp_eval "(set-frame-parameter nil 'alpha '(65 50))"
+      el4r_lisp_eval "(set-frame-parameter nil 'alpha '(70 55))"   # medium visibility
     when :l
-      el4r_lisp_eval "(set-frame-parameter nil 'alpha '(20 30))"
+      el4r_lisp_eval "(set-frame-parameter nil 'alpha '(40 30))"   # low visibility
     when :s
-      $el.font_lock_mode true
+      $el.font_lock_mode true   # stylized text
     when :p
-      $el.font_lock_mode nil
+      $el.font_lock_mode nil   # plain text with no styling
     end
   end
 
@@ -875,10 +913,15 @@ class View
     self.add_dimension_option 'large', proc {View.dimensions_set(145, 58, 46, 22)}
     self.add_dimension_option 'medium', proc {
       View.dimensions_set(145, 50)
-      }
+    }
 
-    self.add_dimension_option 'tiny', proc {
-      View.dimensions_set(43, 19, 600, 0)
+    self.add_dimension_option 'prompt', proc {
+      left = (View.screen_width / 2) - 117
+      View.dimensions_set 30, 2, left, 41
+    }
+    self.add_dimension_option 'center', proc {
+      left = (View.screen_width / 2) - 187
+      View.dimensions_set 46, 15, left, 41
     }
     self.add_dimension_option 'small', proc {
       View.dimensions_set(89, 24, 9, 137)
@@ -908,7 +951,6 @@ class View
   end
 
   def self.kill_all
-    Effects.blink :what=>:all
     $el.erase_buffer
   end
 
@@ -932,14 +974,16 @@ class View
   end
 
   # Show dimension options, and invoke corresponding proc
-  def self.dimensions
+  def self.dimensions key=nil
     # TODO: use View.input :options=>@@dimension_options
-    message = @@dimension_options.map{|i|
-      "[#{i.first[/./]}]#{i.first[/.(.+)/,1]}"}.
-      join(', ')
-    c = Keys.input(:one_char=>true, :prompt=>"dimensions: #{message}")
-    option = @@dimension_options.find{|i| i.first =~ /^#{c}/}
-    return View.message("Option not #{c} found") if option.nil?
+    if key.nil?
+      message = @@dimension_options.map{|i|
+        "[#{i.first[/./]}]#{i.first[/.(.+)/,1]}"}.
+        join(', ')
+      key = Keys.input(:one_char=>true, :prompt=>"dimensions: #{message}")
+    end
+    option = @@dimension_options.find{|i| i.first =~ /^#{key}/}
+    return View.message("Option not #{key} found") if option.nil?
     option[1].call
   end
 
@@ -1120,6 +1164,10 @@ class View
     View.insert line
   end
 
+  def self.scroll_bars off=nil
+    $el.toggle_scroll_bar off ? 0 : 1
+  end
+
   def self.scroll_position
     $el.line_number_at_pos(point) - $el.line_number_at_pos(window_start)
   end
@@ -1153,14 +1201,43 @@ class View
   end
 
   def self.prompt message="Type something here", options={}
-    Move.to_end
-    View << "/" unless Line =~ /\/$/
+    ControlLock.disable
 
-    self.insert message, :dont_move=>1
+    if ! Line.blank?
+      Move.to_end
+      View << "/" unless Line =~ /\/$/
+    end
+
+    self.insert(message, :dont_move=>1)
 
     left, right = self.cursor, Line.right
     Effects.glow left, right, {:reverse=>1}.merge(options)
     self.delete left, right
+
+
+    return unless options[:timed]
+
+    View.<< message, :dont_move=>1
+
+    $el.elvar.inhibit_quit = true
+
+    # Wait for first, then loop until pause
+    c = $el.read_char("")
+    key = Keys.to_letter c
+    View.delete View.cursor, Line.right   # Delete temporary message
+    View << key
+
+    while(c = $el.read_char("", nil, 0.35))
+      key = Keys.to_letter c
+      if c == 7   # C-g?
+        Cursor.restore :before_input
+        $el.elvar.inhibit_quit = nil
+        $el.keyboard_quit
+      end
+      View << key
+    end
+    $el.elvar.inhibit_quit = nil
+
   end
 
   def self.success message=nil, options={}

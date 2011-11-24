@@ -120,13 +120,18 @@ class Files
     puts CodeTree.tree_search_option + FileTree.paths_to_tree(paths)
   end
 
-  def self.edited_flat
+  def self.edited_flat  # *path
+
     paths = edited_array[0..300]
-    paths.map!{|i| i.sub(/(.+\/)(.+)/, "- \\1\n  - \\2")}
+    paths.map!{|i| i.sub(/(.+\/)(.+)/, "- @\\1\n  - \\2")}
     paths.join("\n")
   end
 
-  def self.history_flat
+  def self.history_flat *path
+    # If path passed, just jump to it
+    path = path.join ''
+    return View.open path if path.present?
+
     paths = history_array#[0..400]
     paths.map!{|i| i.sub(/(.+\/)(.+)/, "- \\1\n  - \\2")}
     CodeTree.tree_search_option + paths.join("\n")

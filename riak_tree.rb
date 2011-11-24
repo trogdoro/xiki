@@ -194,16 +194,6 @@ Keys.enter_list_buckets do
   Launcher.insert '- buckets/'
 end
 
-Launcher.add(:paren=>'r') do
-  line = Line.without_label
-  Tree.under Riak.get_hash(line).to_yaml.sub(/^--- \n/, ''), :escape=>'| '
-end
-
-Launcher.add(:paren=>'rr') do   # Get raw json version
-  line = Line.without_label
-  Tree.under Riak.get_hash(line, :raw=>true), :escape=>'| '
-end
-
 Launcher.add("riak") do |path|
   "
   - @buckets/

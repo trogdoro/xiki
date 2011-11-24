@@ -1,22 +1,5 @@
 module AutoMenu
 
-  CODE_SAMPLES = %q<
-    # Let the Foo CodeTree class define multi-level menus with one method
-    class Foo
-      extend AutoMenu
-
-      def self.auto_menu item=nil
-        "
-        + .reminders
-        + .backup
-          + .backup_code()
-        "
-      end
-
-    - This will now return relevant substrings from Foo.auto_menu
-      - Foo.menu
-  >
-
   def method_missing(func, *args, &block)
     # Exit if no auto_menu()
     unless self.respond_to?(:auto_menu)
@@ -38,7 +21,7 @@ module AutoMenu
     end
 
     # Otherwise, print out level immediately underneath method they called
-    result = AutoMenu.child_bullets_deprecated(tree, func.to_s)
+    result = AutoMenu.child_menus_deprecated(tree, func.to_s)
     # If none, throw no method error
     if result == ""
       raise NoMethodError.new("function #{func} undefined")
@@ -46,7 +29,7 @@ module AutoMenu
     result
   end
 
-  def self.child_bullets(tree, node)
+  def self.child_menus(tree, node)
 
     node = "" if node.nil?
 
@@ -56,7 +39,7 @@ module AutoMenu
     node.gsub!(/^\//, '')
     node.gsub!(/\/$/, '')
     if ! (node).any?
-      return tree.grep(/^[^ \n]/).join('')
+      return tree.grep(/^[^ ]/).join('')
     end
     node.gsub!(/[.:]/, '')
     Tree.traverse tree do |branch|
@@ -81,10 +64,9 @@ module AutoMenu
     result
   end
 
-
   # Old version, used by code_tree
   # TODO: remove
-  def self.child_bullets_deprecated(tree, node)
+  def self.child_menus_deprecated(tree, node)
     found = nil
     result = ""
 
@@ -109,7 +91,6 @@ module AutoMenu
     end
     result
   end
-
 
   def self.strip txt
     txt[/^[ .\/+-]*(.+?)\/?$/, 1]

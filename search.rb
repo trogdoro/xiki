@@ -155,6 +155,7 @@ class Search
 
   def self.isearch_delete
     match = self.stop
+
     # If nothing searched for, go to spot of last delete
     if match.nil?   # If nothing searched for yet, search difflog
       DiffLog.open
@@ -246,9 +247,8 @@ class Search
     Search.isearch match, :reverse=>true
   end
 
-  def self.copy
-    match = self.stop
-    Clipboard[0] = self.match
+  def self.copy match
+    Clipboard[0] = match
     set_register ?X, match
     x_select_text match
     Clipboard.save_by_first_letter match   # Store for retrieval with enter_yank
@@ -280,17 +280,20 @@ class Search
   end
 
   # Clears the isearch, allowing for inserting, or whatever else
-  def self.stop
-    match = self.match
+  def self.stop options={}
+
+    left, right = self.left, self.right
+
+    txt = self.match(left, right)# if options[:match]
 
     # Make it do special clear if nothing found (to avoid weird isearch error)
-    if match.nil?
-      if self.not_found? # || Search.left == View.bottom
-        match = :not_found
-      else
+    if txt.nil?
+      if elvar.isearch_success # || Search.left == View.bottom
         # Done so isearch_done won't error
         isearch_resume "[^`]", true, nil, true, "", true
         View.message ""
+      else
+        txt = :not_found
       end
     end
 
@@ -299,7 +302,18 @@ class Search
     $el.isearch_clean_overlays
     $el.isearch_done
 
-    match
+    txt == :not_found ? Search.searches[0] : txt
+  end
+
+  def self.match left=nil, right=nil
+    left ||= self.left
+    right ||= self.right
+
+    return nil if left == 0# || self.nil?
+    result = buffer_substring(left, right)
+
+    return nil if result == ""
+    result
   end
 
   def self.to_start
@@ -338,7 +352,8 @@ class Search
   end
 
   def self.isearch_query_replace after=nil
-    match = self.stop
+    match = self.stop#
+    # Ol << "match: #{match.inspect}"
     was_upper = match =~ /[A-Z]/
 
     match.downcase!
@@ -476,9 +491,7 @@ class Search
     View.message "Unused!", :beep=>1
 
     self.stop
-
     self.search_last_launched
-
   end
 
   def self.search_last_launched
@@ -511,7 +524,6 @@ class Search
 
     result = "- #{txt.join("- ")}"
     result
-
   end
 
   def self.left
@@ -552,9 +564,7 @@ class Search
       Line.next 2
       Line.to_words
     end
-
   end
-
 
   def self.just_marker
     match = self.stop
@@ -636,7 +646,7 @@ class Search
       Search.isearch_restart "$t", :restart=>true
 
     else
-      match = self.match
+      #       match = self.match
       dir = Keys.bookmark_as_path(:prompt=>"Enter bookmark to look in (or space for recently edited): ")
 
       return View.message("Use space!", :beep=>1) if dir == :comma
@@ -692,11 +702,13 @@ class Search
   end
 
   def self.isearch_or_copy name
-    if self.match.nil?   # If nothing searched for yet
-      self.isearch Clipboard[name], :reverse=>self.was_reverse
+    match = self.stop
+
+    if match.nil?   # If nothing searched for yet
+      self.isearch Clipboard[name].downcase, :reverse=>self.was_reverse
     else   # Else, if nothing searched for
       self.stop
-      Clipboard[name] = self.match
+      Clipboard[name] = match
     end
   end
 
@@ -721,19 +733,11 @@ class Search
     self.to_start  # Go back to start
   end
 
-  def self.match
-    left = self.left
-    return nil if left == 0# || self.nil?
-    result = buffer_substring(left, self.right)
-    return nil if result == ""
-    result
-  end
+  #   def self.not_found?
+  #     # Note this returns false when nothing searched for
 
-  def self.not_found?
-    # Note this returns false when nothing searched for
-
-    ! elvar.isearch_success
-  end
+  #     ! elvar.isearch_success
+  #   end
 
   def self.forward search, options={}
     View.to_highest if options[:from_top]
@@ -874,8 +878,7 @@ class Search
   end
 
   def self.isearch_log_javascript
-    match = self.match
-    self.stop
+    match = self.stop
     self.to_start
     View.insert "p(\"#{match}: \" + #{match});"
   end
@@ -971,9 +974,9 @@ class Search
   end
 
   def self.isearch_just_surround_with_char left, right=nil
-    term = self.match
+
     right ||= left
-    self.stop
+    term = self.stop
 
     if term == ""
       View.insert "()"
@@ -981,7 +984,7 @@ class Search
       return
     end
 
-    View.to(Search.right)
+    View.to(Search.left + term.length)
     View.insert right
     View.to(Search.left)
     View.insert left
@@ -1008,6 +1011,13 @@ class Search
     end
 
     Line.to_left
+  end
+
+  def self.just_menu
+    match = self.stop
+    View.open "$ml"
+    View.to_bottom
+    Search.isearch match, :reverse=>true
   end
 
   def self.isearch_just_case
@@ -1073,7 +1083,8 @@ class Search
   end
 
   def self.isearch_restart path, options={}
-    term = self.stop
+    self.stop
+    term = Search.searches[0]
 
     if path == "$t"   # If $t, open bar
       View.layout_todo
@@ -1186,11 +1197,11 @@ class Search
   def self.isearch_next
     was_reverse = self.was_reverse
     match = self.stop
-
-    if match.nil?   # If nothing searched for yet
+    if match.nil? && Keys.before_last == "19"   # If nothing searched for yet
       self.stop
       self.search_last_launched
     else
+
       self.stop
       $el.next_line
     end
@@ -1201,11 +1212,12 @@ class Search
   end
 
   def self.isearch_clipboard
-    match = self.stop
-    if match.nil?   # If nothing searched for yet
+    txt = Search.stop
+
+    if txt.nil?   # If nothing searched for yet
       Console.search_last_commands
     else
-      self.copy
+      self.copy txt
       Location.as_spot('clipboard')
     end
   end
@@ -1249,7 +1261,7 @@ class Search
   end
 
   def self.isearch_move_to path
-    match = self.match
+    match = self.stop
     match = Line.value if match.nil?   # Use line if nothing searched for
     self.move_to path, match
   end
@@ -1312,7 +1324,10 @@ class Search
   def self.history txt=nil
     if txt
       txt.sub! /^\| /, ''
-      ControlTab.go
+
+      # Go back to where we came from, if we're in special search buffer
+      ControlTab.go if View.buffer_name == "*CodeTree - search/history/"
+
       Search.isearch txt
       return
     end
@@ -1324,7 +1339,6 @@ class Search
   def self.outline_goto_once= txt; @@outline_goto_once = txt; end
 
   def self.deep_outline txt, line
-
     txt = txt.split "\n"
     target_i = line
 
@@ -1352,6 +1366,9 @@ class Search
         end
         children = false
       else   # Indented less
+
+        next if indent == 0 && line =~ /^#? ?Ol\b/   # Skip if ^Ol... line
+
         matched_above += 1
         result.unshift txt[i]
         children = false
@@ -1381,6 +1398,9 @@ class Search
       elsif indent == target_indent   # If same, only grab if there were children
         candidate = txt[i]
       else   # Indented less
+
+        next if indent == 0 && line =~ /^#? ?Ol\b/   # Skip if ^Ol... line
+
         target_indent = indent
         candidate = txt[i]
       end

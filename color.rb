@@ -5,12 +5,15 @@ require 'styles'
 class Color
   extend ElMixin
 
-  CODE_SAMPLES = %q<
-    # Make current line be a color
-    - red: Color.colorize :r
-    - blue: Color.colorize :b
-    - yellow: Color.colorize :y
-  >
+  def self.menu
+    "
+    > Make current line be red, yellow, or blue
+    @Color.colorize :r
+    @Color.colorize :y
+    @Color.colorize :b
+    "
+  end
+
 
   @@colors = {
     "r"=>:color_rb_red, "y"=>:color_rb_yellow,
@@ -163,10 +166,14 @@ class Color
 
   def self.define_styles   # For Keys.layout_kolor_light, etc.
 
+    # Orange path in mode line
+    Styles.define :mode_line_dir, :fg=>"d93", :size=>"0", :face=>"arial", :bold=>false   # Brighter
+    # Blue path in mode line
+    #     Styles.define :mode_line_dir, :fg=>"7ce", :size=>"0", :face=>"arial", :bold=>false
+
+    Styles.define :mode_line_file, :fg=>"fff", :size=>"0", :face=>"arial", :bold=>false
+
     if Styles.inverse
-      #       Styles.define :mode_line_dir, :fg=>"aaa", :size=>"0", :face=>"arial", :bold=>false
-      Styles.define :mode_line_dir, :fg=>"d93", :size=>"0", :face=>"arial", :bold=>false
-      Styles.define :mode_line_file, :fg=>"fff", :size=>"0", :face=>"arial", :bold=>false
 
       Styles.define :color_rb_red, :bg => "500"
       Styles.define :color_rb_orange, :bg => "442500"
@@ -174,7 +181,7 @@ class Color
       Styles.define :color_rb_green, :bg => "131"
       Styles.define :color_rb_white, :fg=>'222', :bg=>'fff', :border=>['fff', -1]
 
-      Styles.define :color_rb_light, :bg => "333"
+      Styles.define :color_rb_light, :bg => "2b2b2b"
 
       Styles.define :color_rb_blue, :bg => "005"
       Styles.define :color_rb_purple, :bg => "203"

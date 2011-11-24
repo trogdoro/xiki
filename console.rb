@@ -3,19 +3,20 @@ require 'open3'
 class Console
   extend ElMixin
 
-  CODE_SAMPLES = %q[
-    # Run OS commands
-    - in console (asynchronously): Console.run("ls", :dir => "/tmp")
-    - Synchronously: Console.run("ls", :dir => "/etc", :sync => true)
-  ]
-
   @@log = File.expand_path("~/.emacs.d/console_log.notes")
 
   def self.menu
-    "- commands you've run: .log
-     - commands in buffers: .tree
-     ".unindent
-    #      - currently open: .list
+    %`
+    - commands you've run) .log
+    - commands in buffers) .tree
+    |
+    > Run OS commands
+    | In console (asynchronously)
+    @Console.run "ls", :dir=>"/tmp"
+    |
+    | Inline (synchronously)
+    @Console.run "ls", :dir=>"/etc", :sync=>true
+    `
   end
 
   def self.log
@@ -24,7 +25,7 @@ class Console
 
   # Run the command in a console
   def self.[] command
-    self.run command
+    self.run command, :sync=>1
   end
 
   def self.sync command
@@ -256,7 +257,7 @@ class Console
       output = Console.run command, :dir=>dir, :sync=>true
       output.sub!(/\A\z/, "\n")   # Add linebreak if blank
 
-      Keys.prefix == 1 ? output.gsub!(/^/, '|') : output.gsub!(/^/, '| ')
+      Keys.prefix == 1 ? output.gsub!(/^/, '|') : output.gsub!(/^/, '| ').gsub!(/^\| +$/, '|')
 
       # Expose "!" and "- label: !" lines as commands
       output.gsub!(/^\| !/, '!')

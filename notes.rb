@@ -257,7 +257,7 @@ class Notes
     else
       # Colors of headings
       @@h1_styles = {
-        :notes_h1 =>"9999bb",
+        :notes_h1 =>"666666",
         :notes_h1r=>"bb6666",   # | r This will be red
         :notes_h1o=>"bb8833",   # | o This will be orange
         :notes_h1y=>"bbbb33",
@@ -283,16 +283,6 @@ class Notes
     Styles.define :notes_h1_agenda_pipe, :face => 'arial', :size => h1_size, :fg => '88cc88', :bg => '336633', :bold =>  true
     Styles.define :notes_h1_agenda, :face => 'arial', :size => h1_size, :fg => 'ffffff', :bg => '336633', :bold => true
 
-    # ||...
-    Styles.define :notes_h2,
-      :face => 'arial', :size => "-1",
-      :fg => '8888bb', :bg => "e0e0f2",
-      :bold =>  true
-    Styles.define :notes_h2_pipe,
-      :face => 'arial', :size => "-1",
-      :fg => 'bbbbdd', :bg => "e0e0f2",
-      :bold =>  true
-
     # |||...
     Styles.define :notes_h3,
       :face => 'arial', :size => "-1",
@@ -312,11 +302,17 @@ class Notes
       :fg => '224'
 
 
+    if Styles.inverse   # If black and white
+      label_color = "e70"
+    else
+      label_color = "f70"
+    end
+
     # Labels, emphasis
     Styles.define :notes_label,
-      :face => 'arial black', :size => "0",  # Mac
-      #:face => 'courier', :size => "0",  # Mac
-      :fg => "ee7700", :bold => true
+      :face=>'arial black', :size=>"0",  # Mac
+      #:face=>'courier', :size=>"0",  # Mac
+      :fg=>label_color, :bold=>true
 
     Styles.define :notes_bullet_parens,
       :face => 'arial', :size => "-2",
@@ -337,23 +333,23 @@ class Notes
     Styles.define :notes_yellow, :fg=>"CC0", :face=>'arial black', :size=>"0", :bold=>true
     Styles.define :notes_green, :fg=>"3C3", :face=>'arial black', :size=>"0", :bold=>true
 
-    if Styles.inverse   # If black and white
 
-      Styles.define :notes_h2, :fg=>'fff', :bg=>"333333", :size=>"-1", :bold=>false
-      Styles.define :notes_h2_pipe, :fg=>'555555', :bg=>"333333", :size=>"-1"
-
-      Styles.define :notes_exclamation,  # Green bold text
-        :face => 'arial black', :size => "0",
-        :fg => "66bb22", :bold => true
-
+    if Styles.inverse   # If black bg
+      # >>...
+      Styles.define :notes_h2, :face=>'arial', :size=>"-1", :fg=>'fff', :bg=>"333", :bold=>false
+      Styles.define :notes_h2_pipe, :face=>'arial', :size=>"-1", :fg=>'555555', :bg=>"333333", :bold=> true
     else
-
-      Styles.define :notes_exclamation,  # Green bold text
-        :face => 'arial black', :size => "0",
-        :fg => "77cc44", :bold => true
+      Styles.define :notes_h2, :face=>'arial', :size=>"-1", :fg=>'fff', :bg=>"999", :bold=>true
+      Styles.define :notes_h2_pipe, :face=>'arial', :size=>"-1", :fg=>'bbb', :bg=>"999", :bold=>true
     end
 
-    Styles.define :notes_link, :fg => "9ce"
+    notes_exclamation_color = Styles.inverse ? "7c4" : "5a0"
+
+    Styles.define :notes_exclamation,  # Green bold text
+      :face=>'arial black', :size=>"0",
+      :fg=>notes_exclamation_color, :bold=>true
+
+    Styles.define :notes_link, :fg=>(Styles.inverse ? "9ce" : "08f")
 
   end
 
@@ -380,34 +376,28 @@ class Notes
       Styles.apply("^\\(>\\)\\( #{l} .+: \\)\\(.*\n\\)", nil, "#{k}_pipe".to_sym, "#{k}_label".to_sym, k)
     end
 
-    # ||... lines
+    # >>... lines
     Styles.apply("^\\(>>\\)\\(.*\n\\)", nil, :notes_h2_pipe, :notes_h2)
     Styles.apply("^\\(>> .+?: \\)\\(.+\n\\)", nil, :notes_h2_pipe, :notes_h2)
     # Delete
-    Styles.apply("^\\(||\\)\\(.*\n\\)", nil, :notes_h2_pipe, :notes_h2)
-    Styles.apply("^\\(|| .+?: \\)\\(.+\n\\)", nil, :notes_h2_pipe, :notes_h2)
+    Styles.apply("^\\(>> .+?: \\)\\(.+\n\\)", nil, :notes_h2_pipe, :notes_h2)
 
-    # |||... lines
-    Styles.apply("^\\(|||\\)\\(.*\n\\)", nil, :notes_h3_pipe, :notes_h3)
+    # >>>... lines
     Styles.apply("^\\(>>>\\)\\(.*\n\\)", nil, :notes_h3_pipe, :notes_h3)
 
-    # ||||... lines
-    Styles.apply("^\\(||||\\)\\(.*\n\\)", nil, :notes_h4_pipe, :notes_h4)
+    # >>>... lines
     Styles.apply("^\\(>>>>\\)\\(.*\n\\)", nil, :notes_h4_pipe, :notes_h4)
 
-    #     # ~emphasis~ strings
-    #     Styles.apply("\\(~\\)\\(.+?\\)\\(~\\)", :notes_label)
-
-    # - bullets with labels
-
-    Styles.apply("^[ \t]*\\([+-]\\) \\([!#-~ ]+?[:)]\\) ", nil, :ls_bullet, :notes_label)
-    #     Styles.apply("^[ \t]*\\([+-]\\) \\([!#-~ ]+?[:>)=*]\\) ", nil, :ls_bullet, :notes_label)
+    # - bullets with labels and comments
+    Styles.apply("^[ \t]*\\([+-]\\) \\([^\n(]+?)\\) ", nil, :ls_bullet, :notes_label)   # - hey) you
+    Styles.apply("^[ \t]*\\([+-]\\) \\([!#-~ ]+?:\\) ", nil, :ls_bullet, :notes_label)   # - hey: you
 
     Styles.apply("^[ \t]*\\([+-]\\) \\([!#-~ ]+?:\\)$", nil, :ls_bullet, :notes_label)
 
     Styles.apply("^[ \t]*\\(x\\)\\( \\)\\(.+\\)", nil, :notes_label, :variable, :strike)
 
     Styles.apply("^\\([ \t]*\\)\\([+-]\\) \\(.+?:\\) +\\(|.*\n\\)", nil, :default, :ls_bullet, :notes_label, :ls_quote)
+    Styles.apply("^\\([ \t]*\\)\\([+-]\\) \\([^\n(]+?)\\) +\\(|.*\n\\)", nil, :default, :ls_bullet, :notes_label, :ls_quote)
 
     Styles.apply("^ +\\(!.*\n\\)", nil, :ls_quote)   # ^!... for commands
 
@@ -447,6 +437,7 @@ class Notes
 
       FileTree.apply_styles
       Notes.apply_styles
+      FileTree.apply_styles_at_end
       use_local_map elvar.notes_mode_map
     }
     el4r_lisp_eval %q<
@@ -481,6 +472,8 @@ class Notes
 
   def self.bullet bullet_text="- "
     prefix = Keys.prefix :clear=>true
+
+    return Tree.collapse if prefix == :u
 
     line = Line.value
 
@@ -518,7 +511,6 @@ class Notes
     return if bullet_text == ""   # Don't indent rest if not using bullets (enter_junior)
 
     next_line = Line.value(2)
-    return if prefix == :u || next_line.empty?  # Don't indent rest if no next line
     return if next_line !~ /^ /   # Don't indent rest of lines if at left margin
     return if Line.matches /^[ -]*$/   # Exit if new bullet was blank
 
@@ -596,7 +588,8 @@ class Notes
   end
 
   # Returns an instance of BlockNotes representing the block the point is currently in
-  def self.get_block regex="^[|>]\\( \\|$\\)"
+  #   def self.get_block regex="^[|>]\\( \\|$\\)"
+  def self.get_block regex="^>\\( \\|$\\)"
     left, after_header, right = View.block_positions regex
     NotesBlock.new(left, after_header, right)
   end
@@ -660,7 +653,7 @@ class Notes
       filename = 'archive.' + $el.file_name_nondirectory(buffer_file_name)
       timestamp = "--- archived on #{Time.now.strftime('%Y-%m-%d at %H:%M')} --- \n"
       append_to_file timestamp, nil, filename
-      append_to_file content, nil, filename 
+      append_to_file content, nil, filename
     end
   end
 
@@ -677,6 +670,7 @@ class Notes
     end
 
     View.insert "#{indent}- do!"
+    Move.backward
     return
 
   end
@@ -685,7 +679,6 @@ end
 Notes.define_styles
 Notes.init
 Notes.keys  # Define local keys
-
 
 # TODO - how to turn these on conditionally?
   # What's the best approach for presentations?

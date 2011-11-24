@@ -42,17 +42,92 @@ Requirer.safe_require ['key_bindings.rb']
 # Launcher.add_class_launchers classes
 class Xiki
   def self.menu
-    "
+    %`
     - .tests/
     - .github/
       - commits/
       - files/
-    "
+    - .setup/
+      - install command/
+        | Double-click on these lines to add the executable 'xiki' command to
+        | your path:
+        |
+        @ $ chmod 755 #{Xiki.dir}etc/xiki
+        @ $ sudo ln -s #{Xiki.dir}etc/xiki /usr/local/bin/xiki
+        |
+        | Then you can type 'xiki' on a command line outside of emacs as a
+        | shortcut to opening xiki and opening menus, like so:
+        |
+        |   $ xiki computer
+        |
+      - .install icon/
+        | Double-click on this line to make .xiki files have the xiki 'shark'
+        | icon:
+        |
+        - install/
+        |
+        | When you right-click on a .xiki file and select "Open With" and
+        | choose emacs, the files will be assigned the xiki shark icon.
+        |
+    - api/
+      > Summary
+      Here are some functions that will always be available to menu classes,
+      even external ones.
+      |
+      | Put pipes at beginning of lines (except bullets etc)
+      |   p Xiki.quote "hey\\nyou"
+      |
+      | Return current chunk of the tree as text, unquoting, including siblings:
+      |   p Xiki.branch
+      |
+      | Return path to tree's root including current line, will be a list with 1
+      | path unless nested.
+      |   p Xiki.trunk
+      |
+      Here are some functions that will always be available toxxxxxxxxxxxxxxxxxx
+    `
+  end
+
+  def self.install_icon arg
+
+    emacs_dir = "/Applications/Emacs.app"
+
+    return "- Couldn't find #{emacs_dir}!" if ! File.exists?("#{emacs_dir}")
+
+    plist_path = "#{emacs_dir}/Contents/Info.plist"
+
+    plist = File.read "#{emacs_dir}/Contents/Info.plist"
+
+    # TODO
+    # "Back up plist file - where - xiki root?!
+    # "Tell them where it was backed up!
+    # "Show diffs of change that was made!
+
+    return "- This file wasn't in the format we expected: #{plist_path}" if plist !~ %r"^\t<key>CFBundleDocumentTypes</key>\n\t<array>\n"
+
+    # TODO
+    # .plist
+      # if change was already made, say so
+
+    # TODO
+    # icon
+      # copy over
+        # cp "#{Xiki.dir}etc/shark.icns"
+
+
+    "- finish implementing!"
+  end
+
+  def self.path options={}
+    Tree.construct_path options
   end
 
   def self.insert_menu
-    # Implement
-    Launcher.insert "- Xiki.menus/"
+    return Launcher.insert "- Xiki.menus/" if Keys.prefix_u
+
+    input = Keys.input(:timed => true, :prompt => "Start typing a menu that might exist (- for all): ")
+    View << "#{input}"
+    Launcher.launch
   end
 
   def self.open_menu
@@ -138,7 +213,45 @@ class Xiki
     View.to_line line.to_i
     nil
   end
+
+  def self.trunk
+    Tree.construct_path(:all=>1).split("/@")
+  end
+
+  def self.branch
+    Tree.branch
+  end
+
+  def self.quote txt
+    Tree.quote txt
+  end
+
+  # Other .init mode defined below
+  def self.init
+    Mode.define(:xiki, ".xiki") do
+
+      orig = View.name
+      name = orig[/(.+?)\./, 1]
+
+      View.to_buffer "#{name}"
+      View.hide_others :all=>1
+
+      Buffers.delete orig
+
+      View.kill_all
+
+      Notes.mode
+
+      View.dimensions("c")
+      $menu_resize = true
+      View.<< "- #{name}/\n", :dont_move=>1
+      Launcher.launch
+
+    end
+  end
 end
+
+Xiki.init   # Define mode
 
 Launcher.add_class_launchers classes
 Launcher.reload_menu_dirs

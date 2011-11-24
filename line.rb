@@ -256,17 +256,21 @@ class Line
   end
 
   def self.sub! from, to
+    orig = Location.new
     value = Line.value
     value.sub! from, to
     self.delete :leave
     self.insert value
+    orig.go
   end
 
   def self.gsub! from, to
+    orig = Location.new
     value = Line.value
     value.gsub! from, to
     self.delete :leave
     self.insert value
+    orig.go
   end
 
   def self.<< txt

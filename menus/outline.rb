@@ -16,6 +16,7 @@ class Outline
     View.to_highest
     result = Search.forward "^#{target}$"
 
+    View.recenter_top
     Move.to_line_text_beginning
     nil
 

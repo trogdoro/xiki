@@ -1,35 +1,42 @@
 class Ruby
   def self.menu
-    puts "
-      + .list_classes/
-      - .re_index_fast_ri
-      "
-
+    "
+    - .classes/
+    - .re_index_fast_ri/
+    "
   end
 
-  def self.list_classes clazz=nil, method=nil
+  def self.classes clazz=nil, method=nil
 
-    unless clazz   # Show list of classes
+    result = ""
+
+    # If no params, show list of classes
+
+    if clazz.nil?
       ObjectSpace.each_object(Class) do |c|
-        puts c
+        result << "- #{c}/\n"
       end
-      return
+      return result
     end
 
-    unless method   # Show list of methods
-      puts Kernel.const_get(clazz).instance_methods(false).sort.
-        collect {|i| "##{i}" }
-      puts Kernel.const_get(clazz).methods(false).sort.
-        collect {|i| "::#{i}" }
-      return
+    # If just class, show methods
+
+    if method.nil?
+      result << Kernel.const_get(clazz).instance_methods(false).sort.
+        collect {|i| "- #{i}/" }.join("\n")
+      result << Kernel.const_get(clazz).methods(false).sort.
+        collect {|i| "- ::#{i}/" }.join("\n")
+      return result
     end
 
-    # Lookup method doc
-    puts `qri #{clazz}#{method}`.gsub(/\C-[.+?m/, '')
+    # If method passed, lookup method's doc
+
+    method = "##{method}" unless method =~ /^::/
+    command = "qri #{clazz}#{method}"
+    Console[command].gsub(/\C-[.+?m/, '').gsub(/^/, '| ').gsub(/^\| +$/, '|')
   end
 
   def self.re_index_fast_ri
     Console.run "fastri-server -b"
   end
-
 end

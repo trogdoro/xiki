@@ -1,4 +1,5 @@
 require 'tree_cursor'
+require 'auto_menu'
 
 class Tree
   def self.search options={}
@@ -9,7 +10,7 @@ class Tree
     recursive_quotes = options[:recursive_quotes]
     left, right = options[:left], options[:right]
     if ! left
-      ignore, left, right = View.block_positions "^|"
+      ignore, left, right = View.block_positions "^>"
     end
 
     # No search if there aren't more than 3 lines
@@ -22,7 +23,7 @@ class Tree
 
     pattern = ""
     lines = $el.buffer_substring(left, right).split "\n"
-    $el.message "Show files matching: "
+    $el.message "filter... "
 
     ch, ch_raw = Keys.char
     if ch.nil?
@@ -30,11 +31,10 @@ class Tree
     end
 
     # While narrowing down list
-    while (ch =~ /[ "%-),.-.:<?-~]/) ||   # Be careful editing, due to ranges (_-_)
+    while (ch =~ /[ "%-),.\/:<?-~]/) ||   # Be careful editing, due to ranges (_-_)
         (recursive && ch_raw == 2 || ch_raw == 6) ||
         ch == :up || ch == :down
 
-      break if recursive && ch == '/'   # Slash means enter in a dir
       if ch == ' '
         pattern = ''
       elsif ch_raw == 2   # C-b
@@ -114,13 +114,14 @@ class Tree
         end
 
       end
-      $el.message "Show files matching: #{pattern}#{error}"
+      $el.message "filter... #{pattern}#{error}"
       ch, ch_raw = Keys.char
       if ch.nil?
         return Cursor.restore(:before_file_tree)
       end
 
     end
+
     # Exiting, so restore cursor
     Cursor.restore :before_file_tree
 
@@ -131,8 +132,6 @@ class Tree
       $el.shell_command("open #{file}")
     when "\C-a"
       Line.to_left
-    when "\C-e"
-      Line.to_right
     when "\C-j"
       ch = Keys.input :one_char => true
       if ch == 't'   # just_time
@@ -478,7 +477,7 @@ class Tree
 
     txt.gsub! /^  /, '' if options[:before] || options[:after]   # Move back to left
 
-    Launcher.output_and_search txt, options
+    self.output_and_search txt, options
     nil
   end
 
@@ -495,7 +494,7 @@ class Tree
     times.times do
       indent = Line.value[/^  ( *)/, 1]
       $el.search_backward_regexp "^#{indent}[^\t \n]"
-      Move.to_line_text_beginning
+      Move.to_line_text_beginning :quote=>1
     end
   end
 
@@ -522,20 +521,30 @@ class Tree
       path = []
       orig = $el.point
 
-      # Do until we're at a root dir
+      # Do until we're at a root
       line = Line.value
-      while(! self.is_root?(line) )
-        break unless line =~ /^ /  # If at left margin, assume it's the parent
-        Line.value =~ /^  ( *)(.+)/
+      clean = self.clean_path line
+      while(line =~ /^ / && (options[:all] || clean !~ /^@/))
+        line =~ /^  ( *)(.+)/
         spaces, item = $1, $2
-        item = self.clean_path item unless options[:raw]
+        item = clean unless options[:raw]
         path.unshift item  # Add item to list
         $el.search_backward_regexp "^#{spaces}[^\t \n]"
+
+        # If ignoring Ol lines, keep searching until not on one
+        if options[:ignore_ol]
+          while Line =~ /^[# ]*Ol\b/
+            $el.search_backward_regexp "^#{spaces}[^\t \n]"
+          end
+        end
+
         line = Line.value
+        clean = self.clean_path line
       end
       # Add root of tree
       root = Line.value.sub(/^ +/, '')
       root = self.clean_path(root) unless options[:raw]
+      root.slice! /^@/
       path.unshift root
 
       $el.goto_char orig
@@ -549,6 +558,19 @@ class Tree
     rescue Exception=>e
       raise ".construct_path couldn't construct the path - is this a well-formed tree\?: #{e}"
     end
+  end
+
+  def self.is_root? path
+    # It's the root if it's not at the left margin
+    result = path !~ /^ /
+    result ? true : false
+  end
+
+  def self.clean_path path
+    path = Line.without_label :line=>path#, :leave_indent=>true
+    path.sub!(/^([^|\n-]*)##.+/, "\\1")  # Ignore "##"
+    path.sub!(/^([^|\n-]*)\*\*.+/, "\\1")  # Ignore "**"
+    path
   end
 
   def self.toggle_plus_and_minus
@@ -568,19 +590,6 @@ class Tree
       orig.go
       nil
     end
-  end
-
-  def self.is_root? path
-    # It's the root if it matches a pattern, or is at left margin
-    result = FileTree.matches_root_pattern?(path) || path !~ /^ /
-    result ? true : false
-  end
-
-  def self.clean_path path
-    path.replace Line.without_label(:line=>path, :leave_indent=>true)
-    path.sub!(/^([^|\n-]*)##.+/, "\\1")  # Ignore "##"
-    path.sub!(/^([^|\n-]*)\*\*.+/, "\\1")  # Ignore "\*\*"
-    path
   end
 
   def self.acronym_regexp search
@@ -623,7 +632,7 @@ class Tree
   end
 
   def self.quote txt
-    txt.unindent.gsub(/^/, '| ').gsub(/^\| $/, '|').gsub(/^\| \+ @/, '+ @')
+    TextUtil.unindent(txt).gsub(/^([^|@> +-])/, "| \\1").gsub(/^\| $/, '|')
   end
 
   def self.insert_quoted_and_search matches, options={}
@@ -757,6 +766,7 @@ class Tree
     branch = []
     indent = 0
     tree.split("\n").each do |line|
+      # Ol << "line: #{line.inspect}"
       line_indent = line[/^ */].length / 2
       line.strip!
 
@@ -836,11 +846,14 @@ class Tree
   end
 
   def self.routify! tree, target
+    tree = tree.unindent if tree =~ /\A[ \n]/
 
     indent = target.length + 1
 
     # Start out as found if no path
     result, found, routified_until = "", target.empty?, -1   # Start out as found if no path
+
+    # For now, they must be on separate lines
     self.traverse(tree) do |current_list|
 
       if ! found
@@ -865,7 +878,10 @@ class Tree
       # Found
       # If right indent, grab
       if current_list.length == indent
-        result << "#{current_list[-1].sub /^([+-] )?\./, "\\1"}\n"
+        line = current_list[-1].sub /^([+-] )?\./, "\\1"
+
+        line = "|" if line=~ /^$/
+        result << "#{line}\n"
       elsif current_list.length < indent   # If lower indent, stop
         break
       end
@@ -877,6 +893,7 @@ class Tree
   end
 
   def self.route_match current_list, list
+
     found = true
     list.each_with_index do |item, i|
       current_item = current_list[i]
@@ -890,7 +907,10 @@ class Tree
   def self.climb tree, path
     path = "" if path == nil || path == "/"   # Must be at root if nil
     tree = TextUtil.unindent tree
-    AutoMenu.child_bullets tree, path
+    txt = AutoMenu.child_menus tree, path
+
+    txt.sub! /^$/, '|'
+    txt
   end
 
   # Use instead of .leaf when you know all but the root is part of the leaf
@@ -920,4 +940,107 @@ class Tree
 
     treea.txt
   end
+
+  def self.collapse
+    # If at root or end of line, go to next
+    Line.next if Line !~ /^ / || View.cursor == Line.right
+    Move.to_end -1
+    left = View.cursor
+    $el.skip_chars_forward(" \n+-")
+    View.delete left, View.cursor
+
+    Move.to_end
+    left, right = View.paragraph :bounds=>true, :start_here=>true
+
+    $el.indent_rigidly View.cursor, right, -2
+  end
+
+  def self.branch
+    txt = Tree.siblings(:all=>1).join("\n")+"\n"
+    txt.gsub! /^\| ?/, ''
+    txt
+  end
+
+  def self.output_and_search block_or_string, options={}
+    line=options[:line]
+
+    buffer_orig = View.buffer
+    orig = Location.new
+    orig_left = View.cursor
+    error_happened = nil
+
+    output =
+      if block_or_string.is_a? String
+        block_or_string
+      else   # Must be a proc
+        begin
+          block_or_string.call line
+        rescue Exception=>e
+          error_happened = true
+          backtrace = e.backtrace[0..8].join("\n").gsub(/^/, '  ') + "\n"
+          "- error evaluating:\n#{Code.to_ruby(block_or_string).gsub(/^/, '  ')}\n- message: #{e.message}\n" +
+            "- backtrace:\n" + e.backtrace[0..8].map{|i| "  #{i}\n"}.join('') + "  ...\n"
+        end
+      end
+
+    return if output.blank?
+
+    buffer_changed = buffer_orig != View.buffer   # Remember whether we left the buffer
+
+    ended_up = Location.new
+    orig.go   # Go back to where we were before running code
+
+    # Move what they printed over to left margin initally, in case they haven't
+    output = TextUtil.unindent(output) if output =~ /\A[ \n]/
+    # Remove any double linebreaks at end
+    output = CodeTree.returned_to_s output
+    output.sub!(/\n\n\z/, "\n")
+    output = "#{output}\n" if output !~ /\n\z/
+
+    if $menu_resize
+      height = output.count("\n") + 5
+      height = 60 if height > 60
+      View.height = height
+      $menu_resize = false
+    end
+
+    if options[:just_return]
+      return output
+    end
+
+    # Add slash to end of line if not suppressed, and line isn't a quote
+    if !options[:no_slash] && Line !~ /(^ *\||\/$)/
+      Line << "/"
+    end
+
+    indent = Line.indent
+    Line.to_left
+    Line.next
+    left = View.cursor
+
+    output.gsub!(/^/, "#{indent}  ")
+
+
+    View << output  # Insert output
+    right = View.cursor
+
+    orig.go   # Move cursor back  <-- why doing this?
+    ended_up.go   # End up where script took us
+
+    moved = View.cursor != orig_left
+
+    # Move to :line_found if any
+    if options[:line_found] && options[:line_found] > 0
+      Line.next(options[:line_found])
+      Color.colorize :l
+    end
+
+    if !error_happened && !$xiki_no_search && !buffer_changed && !moved
+      Tree.search_appropriately left, right, output, options
+    elsif ! options[:line_found]
+      Move.to_line_text_beginning :down=>1
+    end
+    nil
+  end
+
 end

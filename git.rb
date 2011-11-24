@@ -83,11 +83,6 @@ class Git
   # class Repository
   #   extend ElMixin
 
-  CODE_SAMPLES = %q<
-    # Show options for the repository
-    - Show options: Git.menu
-  >
-
   @@git_diff_options = ' -U2 '
   #@@git_diff_options = ' -U2 -w '   # -w caused a git segfault :/
 
@@ -566,12 +561,41 @@ class Git
   end
 
   def self.code_tree_diff options={}
+
     dir = Keys.bookmark_as_path :prompt=>"Enter a bookmark to git diff in: "
     branch = self.branch_name dir
 
     prefix = Keys.prefix :clear=>true
     expand = prefix == :uu ? "" : ", :expand"
 
+    # If C-u, use new gitt menu
+    if prefix == :u
+
+      menu = "
+        - #{dir}
+          - @gitt/
+        ".unindent
+
+      if prefix != 8
+        menu << "
+          - push/#{branch}/
+          - diff/
+          ".unindent.gsub(/^/, "    ")
+      end
+      menu.strip!
+
+      if options[:enter]
+        View.insert(menu)
+        Launcher.launch
+      else
+        View.bar if prefix == 9
+        Launcher.open(menu)
+      end
+      return
+    end
+
+
+    # TODO: Deprecated, so delete:
     menu = "
       - Git.menu/
         - project - #{dir}

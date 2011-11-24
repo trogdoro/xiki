@@ -247,16 +247,10 @@ class Merb
   end
 
   def self.init
-    Launcher.add :paren=>"l4" do
-      url = "http://localhost:4000/#{Line.without_label}"
-      Keys.prefix_u ? $el.browse_url(url) : Firefox.url(url)
-    end
-
     # Jump to controller from line in merb log
     Launcher.add(/^.* ~ Routed to: \{/) do |line|
       Merb.launch_merb_log_line line
     end
-
   end
 end
 

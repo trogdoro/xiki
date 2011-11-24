@@ -22,52 +22,76 @@ class Keys
   ]
 
   def self.menu
-    '
+    %`
     - .history/
     - docs/
-      | > Summary
-      | Xiki attempts to make it easy to define your own key shortcuts.  And it
-      | has quite a few key shortcuts predefined.
+      > Summary
+      | Xiki has keyboard shortcuts predefined for doing all kinds of things.
+      | Each keyboard shortcut has a mnemonic. Check out the "Keys" menu bar
+      | menu for a quick look at them.
       |
-      | With all xiki keyboard shorcuts, you "type the acronym".
-      | By the key shortcut "layout_create" it is meant that you type Control-l
-      | then Control-c.  (Control-l for "layout" and Control-c for "create".)
+      | And Xiki lets you define your own keyboard shortcuts.  This line makes
+      | Control-e Control-n insert "Steve".
       |
-      | Thus commands have mnemonics that clues you into the keyboard shortcut and
-      | there\'s no need to separately remember a command and it\'s shortcut (a
-      | challenging part of most keyboard shortcut schemes having a large number of
-      | shortcuts, which xiki attempts to avoid).
+      |   Keys.EN { View << "Steve" }
       |
-      | Doesn\'t sound like standard emacs shortcuts?  Here\'s an explanation about
-      | how xiki deals with existing emacs shortcuts.
+      | For more about defining your own keyboard shortcuts see:
+      - @keys/api/
       |
-      + emacs_shortcuts/
+      > Xiki's "type the acronym" approach
+      | Each xiki keyboard shortcut has a mnemonic that helps you
+      | simultaneously remember what it does and how to type it.
+      |
+      | For example, given this mnemonic:
+      |
+      |   layout_create
+      |
+      | you type:
+      |
+      |   Control-l Control-c  (l for "layout" and c for "create")
+      |
+      > Reasons for this appoarch
+      - More possible shortcuts/
+        | The approach of having single character key shortcuts (e.g. Control-a)
+        | works nicely for apps that have a small number of shortcuts. But it
+        | becomes less elegant when more shortcuts are used (Ctrl-a, Alt-a,
+        | Ctrl-Shift-a).
+        |
+        | The "type the acronym" approach with just the Control
+        | key allows for very a large number of key shortcuts that are less
+        | prone to get confused with one another.
+        |
+      - Less to remember/
+        | A mnemonic clues you into what the keyboard shortcut does and how to type it,
+        | so it's all you need to remember. There's no need to separately remember a keyboard shortcut and what it does (a
+        | challenging part of most keyboard shortcut schemes having a large number of
+        | shortcuts, which xiki attempts to avoid).
+        |
+        | Doesn't sound like standard emacs shortcuts?  Here's an explanation about
+        | how xiki deals with existing emacs shortcuts.
+        |
+      - emacs_shortcuts/
         | TODO add stuff about how C-a turns into C-a C-a, etc.
         | Mention how this lets a large number of key shortcuts without interfering
         | with emacs shortcuts.
         | But an admitted downside is it affects 6 existing emacs shortcuts
         | and makes you type them twice.
-        | In practice the annoyance caused by this isn\'t as bad as it initially may seem
+        | In practice the annoyance caused by this isn't as bad as it initially may seem
         | Consider using to_axis instead of C-a C-a and to_end instead of C-e C-e.
       |
-      | > Six categories
-      | As you can see by looking at the "Xiki" menu in the menu bar, there are
-      | six main categories of key shortcuts:
+      > Six categories
+      | As you can see by looking at the "Keys" menu in the menu bar, there are
+      | six main categories of key shortcuts.
       |
-      | to: jumping to specific points
-      | open: open things
-      | layout: subdivisions of windows
+      - Descriptions of each category/
+        |   to: jumping to specific points
+        |   open: open things
+        |   layout: subdivisions of windows
+        |   as: remembering things
+        |   enter: inserting things
+        |   do: executing things
       |
-      | as: remembering things
-      | enter: inserting things
-      | do: executing things
-      |
-      | For example, the key shortcut "to_highest" means you type Control-t then
-      | Control-h.  As the mnemonic suggests, it jumps to the highest point in the
-      | file (the top).
-      |
-      |
-      | > Examples
+      > Examples
       | Here are some of the most commonly used shortcuts in each category.
       | (Double-click a category to see them.)
       |
@@ -101,31 +125,53 @@ class Keys
       - miscellaneous/
         | Control-tab: cycles through files
       |
-      | For all keyboard shortcuts, see where they\'re key_bindings.rb, where they\'re
+      | For all keyboard shortcuts, see where they're key_bindings.rb, where they're
       | defined:
       - @$xiki/key_bindings.rb
       |
       |
-      | > Keyboard shortcuts while searching
+      > Keyboard shortcuts while searching
       | The seventh category, "search" has special behavior.  See:
       - @search/docs/
       |
-    - api/
-      | > Summary
-      | Ways to use the Keys class, to define keyboard shortcuts etc.  Remember that with
-      | xiki shortcuts you "type the acronym" (the first letter in each word) while holding
-      | down the control key.
-      |
-      | > Define keyboard shortcuts
-      | Defines the key Control-e Control-y
-      Keys.enter_yay { View << "yay" }
-      |
-      | Also defines the key Control-e Control-y
-      Keys.EY { View << "yay again" }
-      |
-    '
+    - .api/
+    `
   end
 
+  def self.api
+    '
+    > Summary
+    | Ways to use the Keys class, to define keyboard shortcuts etc.  Remember
+    | that with xiki shortcuts you hold down the control key and "type the
+    | acronym" (the first letter in each word) while holding down the control
+    | key.
+    |
+    > Define keyboard shortcuts
+    | Defines the key Control-e Control-y
+    |
+    |   Keys.enter_name { View << "Steve" }
+    |
+    | Defines the key Control-e Control-y (with no mnemonic)
+    |
+    |   Keys.EN { View << "Steve again" }
+    |
+    > Where to put them
+    | You can put keyboard shortcuts into any file that gets required by xiki.
+    | For example, you could create a file like this:
+    |
+    - @~/xiki/lib/
+      - keys.rb
+        | # My shortcuts
+        | Keys.enter_name { View << "Steve" }
+        | Keys.enter_yay { View << "Yay" }
+    |
+    | Then you could require this file when xiki loads by adding this line:
+    |
+    - @~/.el4r/
+      - init.rb
+        | require "~/xiki/lib/keys"
+    '
+  end
 
 
   # Handles Keys.to_foo etc.
@@ -232,6 +278,7 @@ class Keys
     }
     l.join " "
   end
+
   def self.set *args, &block
     # Keys is always first arg
     keys = args.shift
@@ -284,18 +331,17 @@ class Keys
     end
 
     # If simple un-timed input, just get string and return it
-    unless options[:timed] or options[:optional]
+    unless options[:timed] || options[:optional]
       Cursor.restore :before_input
       c = $el.read_string(prompt, options[:initial_input])
       return c
-
     end
 
     keys = ""
 
     $el.elvar.inhibit_quit = true
-
     c = nil
+
     # If not optional, wait for input initially
     unless options[:optional]
       c = $el.read_char(prompt)
@@ -588,7 +634,7 @@ class Keys
 
   def self.add_menu_items
     @@key_queue.reverse.each do |i|
-      Menu.add_item ['Xiki', i[0]], i[1], "#{i[0].downcase}-#{i[1].downcase.gsub(' ', '-')}"
+      Menu.add_item [Menu::ROOT_MENU, i[0]], i[1], "#{i[0].downcase}-#{i[1].downcase.gsub(' ', '-')}"
     end
     @@key_queue = []
   end
@@ -637,13 +683,16 @@ class Keys
     TextUtil.camel_case(txt).gsub(/[a-z]/, '')
   end
 
+  def self.last
+    $el.el4r_lisp_eval("(elt (recent-keys) (- (length (recent-keys)) 1))").to_s
+  end
+
   def self.before_last
     $el.el4r_lisp_eval("(elt (recent-keys) (- (length (recent-keys)) 2))").to_s
   end
 
   def self.history
     $el.view_lossage
-    nil
+    View.success "- Showed recently-typed keys in other view!", :times=>4
   end
-
 end

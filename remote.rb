@@ -18,7 +18,7 @@ class Remote
     @@default_dirs.each do |d|
       out << "- /#{d}/\n"
     end
-    out << "- /user@foo.com/tmp/\n"
+    out << "- @/user@foo.com/tmp/\n"
     out
   end
 

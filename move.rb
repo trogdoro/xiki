@@ -146,7 +146,8 @@ class Move
     move_to_column n# - 1
   end
 
-  def self.to_line_text_beginning down=nil
+  def self.to_line_text_beginning options={}
+    down = options[:down]
     prefix = Keys.prefix
     down ||= prefix
 
@@ -155,7 +156,7 @@ class Move
 
     Line.to_left
 
-    prefix == :u ?
+    prefix == :u || options[:quote]?
       $el.skip_chars_forward("[^ \t]") :
       $el.skip_chars_forward("[^ \t|]")   # If quoted, skip quote unless :u
 

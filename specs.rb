@@ -3,7 +3,7 @@ class Specs
   def self.menu
     "
     - .load/
-      - continue/
+      - do/
       - docs/
     - .see/
       - @xiki/tests/
@@ -14,12 +14,12 @@ class Specs
     if choice == "docs"
       return "
         | > Summary
-        | Select continue/ to load rspec into the xiki environment.
+        | Select do/ to load rspec into the xiki environment.
         |
         | > Example
         | Then you can use rspec methods like .should when using do_run:
         |
-        | Launch continue/ above and then launch this line.  It will show an error
+        | Launch do/ above and then launch this line.  It will show an error
         | saying 'got: 1...' and a stack trace.
         |
         + try it out) @ puts 1.should == 2

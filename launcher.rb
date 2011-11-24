@@ -30,15 +30,35 @@ class Launcher
   @@launchers_parens ||= {}
   @@launchers_paths ||= {}
 
-  def self.launchers_paths
+  def self.menus
     @@launchers_paths
+  end
+
+  def self.menu
+    %`
+    - docs/
+      > Summary
+      Launcher is the class that handles "launching" things (double-clicking on a
+      line, or typing Ctrl-enter).
+      |
+      > See
+      @launcher/api/
+      |
+    - api/
+      > Summary
+      A few methods on the Launcher class.
+      |
+      > invoke
+      @ p Launcher.invoke 'Computer', 'computer/ip/'
+      |
+    `
   end
 
   def self.last path, options={}
 
     path = path.sub /^last\/?/, ''
 
-    log = IO.read(Launcher.log)
+    log = IO.read(self.log_file)
     paths = log.split("\n")
 
     # If nothing passed, just list all roots
@@ -60,12 +80,20 @@ class Launcher
     paths.reverse.uniq.join("\n")+"\n"
   end
 
-  def self.log
+  def self.log options={}
+    log = IO.read(self.log_file)
+    result = log.split("\n")
+    result = result.map{|o| o.sub /^- #{Notes::LABEL_REGEX}/, '\\0@'} if options[:at]
+    result.reverse.uniq.join("\n")+"\n"
+  end
+
+  def self.log_file
     @@log
   end
 
   def self.add *args, &block
     arg = args.shift
+    raise "Launcher.add called with no args and no block" if args == [nil] && block.nil?
 
     if arg.is_a? Regexp   # If regex, add
       @@launchers[arg] = block
@@ -73,16 +101,13 @@ class Launcher
       @@launchers_procs << [arg, block]
     elsif arg.is_a?(String)
       self.add_menu arg, args[0], block
-    elsif arg.is_a?(Hash)
-      @@launchers_parens[arg[:paren]] = block
     else
       raise "Don't know how to launch this"
     end
   end
 
   def self.add_menu root, hash, block
-    # If just block, just define
-    if hash.nil? && block
+    if hash.nil? && block   # If just block, just define
       return @@launchers_paths[root] = block
     end
     # If just root, define class with that name
@@ -90,7 +115,8 @@ class Launcher
       clazz = hash ? hash[:class] : root
       clazz.sub!(/(\w+)/) {TextUtil.snake_case $1} if hash
       self.add root do |path|
-        Launcher.invoke(clazz, path)
+        # Make class me camel case, and change Launcher.invoke to Menu.call
+        Launcher.invoke clazz, path
       end
       return
     end
@@ -101,7 +127,7 @@ class Launcher
         return
       elsif menu =~ /\A[\w \/-]+\z/   # If it's a menu to delegate to
         self.add root do |path|
-          Menu["#{menu}/#{Tree.rootless path}"]
+          Menu.call menu, Tree.rootless(path)
         end
         return
       end
@@ -133,12 +159,14 @@ class Launcher
     Tree.plus_to_minus
 
     Line.sub! /^-$/, '...'   # Expand "." to auto-complete all paths
+    Line.sub! /^\.$/, './'   # Expand "." to auto-complete all paths
+    Line.sub! /^~$/, '~/'   # Expand "." to auto-complete all paths
 
+    # Maybe don't blink when in $__small_menu_box!"
     Effects.blink(:what=>:line) if options[:blink]
     line = options[:line] || Line.value   # Get paren from line
 
     label = Line.label(line)
-    paren = label[/\((.+)\)/, 1] if label
 
     # Special hooks for specific files and modes
     return if self.file_and_mode_hooks
@@ -160,15 +188,6 @@ class Launcher
       line = $1
     end
 
-    if paren && @@launchers_parens[paren]   # If try each potential paren match
-      if @@just_show
-        Ol << paren
-      else
-        @@launchers_parens[paren].call
-      end
-      return $xiki_no_search = false
-    end
-
     @@launchers.each do |regex, block|   # Try each potential regex match
       # If we found a match, launch it
       if line =~ regex
@@ -188,7 +207,6 @@ class Launcher
 
     # If current line is indented and not passed recursively yet, try again, passing tree
 
-    Ol << "Should we be doing this after self.try_path_launchers line?!"
     if Line.value =~ /^ / && ! options[:line] && !is_root   # If indented, call .launch recursively
       Tree.plus_to_minus
 
@@ -198,7 +216,6 @@ class Launcher
 
       merged = list.map{|o| o.sub /\/$/, ''}.join('/')
       merged << "/" if list[-1] =~ /\/$/
-
       return self.launch options.slice(:no_search).merge(:line=>merged)
     end
 
@@ -218,15 +235,18 @@ class Launcher
 
     # See if it matches path launcher
 
-    Ol << "Try moving this up to under @@launchers.each ?!"
-    return if self.try_path_launchers line
+    return if self.try_menu_launchers line
 
     # Try to auto-complete based on menu-launchers
 
-    if line =~ /^(\w*)(\.\.\.)?\/?$/
-      stem = $1
+    if line =~ /^([\w -]*)(\.\.\.)?\/?$/
+
+      # TODO just check for exact match in dir, and load it if no launcher yet!
+
+      root = $1
+      root.gsub!(/[ -]/, '_') if root
       matches = @@launchers_paths.keys.select do |possibility|
-        possibility =~ /^#{stem}/
+        possibility =~ /^#{root}/
       end
       if matches.any?
         if matches.length == 1
@@ -243,7 +263,7 @@ class Launcher
 
     # If child of "..." autocomplete line
 
-    if line =~ /^\w*\.\.\.\/(\w+)$/
+    if line =~ /^[\w -]*\.\.\.\/(\w+)$/
       Tree.to_parent
       Tree.kill_under
       Line.sub! /([ @+-]*).+/, "\\1#{$1}"
@@ -251,134 +271,84 @@ class Launcher
       return
     end
 
-    if line =~ /^([\w-]+)\/?$/   # If just root line, see if launcher not loaded
+    # If just root line, load any unloaded launchers this completes and relaunch
+
+    if line =~ /^([\w -]+)\/?$/
       root = $1
+      root.gsub!(/[ -]/, '_') if root
 
-      matches = Dir[File.expand_path("~/menus/#{root}*")]
+      ["~/menus", Bookmarks["$x/menus"]].each do |dir|
 
-      if matches.any?
-        matches.sort.each do |file|
-          iroot = file[/\/(\w+)\./, 1]
-          next if @@launchers_paths[root]   # Skip if already loaded
-          require_menu(file)  # if File.exists? file
+        matches = Dir[File.expand_path("#{dir}/#{root}*")]
+        Ol << "matches: #{matches.inspect}"
+
+        if matches.any?
+          matches.sort.each do |file|
+            iroot = file[/\/(\w+)\./, 1]
+            next if @@launchers_paths[root]   # Skip if already loaded
+            require_menu(file)  # if File.exists? file
+          end
+          return self.launch   # options.slice(:no_search).merge(:line=>merged)
         end
-        return self.launch# options.slice(:no_search).merge(:line=>merged)
-      end
 
-      return if self.try_path_launchers line
+      end
     end
-    View.beep
-    Message << "No launcher matched!"
+
+    if root = line[/^[\w -]+/]
+      Xiki.dont_search
+
+      # Maybe make the following print out optionally, via a 'help_last' block?
+      Tree << "
+        | There's no \"#{root}\" menu yet. Create it?
+        |
+        | You can just start making the menu.
+        + @get me started/
+        |
+        | Or, use a template to create a menu file or class directly.
+        + @menu/setup/create/
+        "
+    else
+      View.success "- No launcher matched!"
+    end
 
     $xiki_no_search = false
   end
 
-  def self.try_path_launchers line
-    root = line[/^\w+/]   # Grab thing to match
+  def self.try_menu_launchers line
+    root = line[/^[\w -]+/]   # Grab thing to match
+    root.gsub!(/[ -]/, '_') if root
     if block = @@launchers_paths[root]
-      # If C-u C-u, just jump to the implementation
-      if Keys.prefix == :uu
-        # Take best guess, by looking through dirs for root
 
-        ([Xiki.dir]+Launcher::MENU_DIRS).reverse.each do |dir|
-          next unless File.directory? dir
-          file = Dir["#{dir}/#{root}.*"]
-          next unless file.any?
-          break View.open file[0]
-        end
+      trunk = Xiki.trunk
 
-        return true
-      end
       self.append_log line
-      self.output_and_search block, :line=>line
+      if trunk.size > 1 && FileTree.matches_root_pattern?(trunk[-2])
+        orig_pwd = Dir.pwd
+        Dir.chdir trunk[-2]
+      end
+
+      begin
+        Tree.output_and_search block, :line=>line  #, :dir=>file_path
+      ensure
+        Dir.chdir orig_pwd if file_path
+      end
+
       return true
     end
     false
   end
 
-  def self.output_and_search block_or_string, options={}
-    line=options[:line]
-
-    buffer_orig = View.buffer
-    orig = Location.new
-    orig_left = View.cursor
-    error_happened = nil
-
-    output =
-      if block_or_string.is_a? String
-        block_or_string
-      else   # Must be a proc
-        begin
-          block_or_string.call line
-        rescue Exception=>e
-          error_happened = true
-          backtrace = e.backtrace[0..8].join("\n").gsub(/^/, '  ') + "\n"
-          "- error evaluating:\n#{Code.to_ruby(block_or_string).gsub(/^/, '  ')}\n- message: #{e.message}\n" +
-            "- backtrace:\n" + e.backtrace[0..8].map{|i| "  #{i}\n"}.join('') + "  ...\n"
-        end
-      end
-
-    return if output.blank?
-
-    buffer_changed = buffer_orig != View.buffer   # Remember whether we left the buffer
-
-    ended_up = Location.new
-    orig.go   # Go back to where we were before running code
-
-    # Add slash to end of line if not suppressed, and line isn't a quote
-    if ! options[:no_slash] && Line !~ /(^ *\||\/$)/
-      Line << "/"
-    end
-
-    indent = Line.indent
-    Line.to_left
-    Line.next
-    left = View.cursor
-
-    # Move what they printed over to left margin initally, in case they haven't
-    output = TextUtil.unindent(output) if output =~ /\A[ \n]/
-    # Remove any double linebreaks at end
-    output = CodeTree.returned_to_s output
-    output.sub!(/\n\n\z/, "\n")
-    output = "#{output}\n" if output !~ /\n\z/
-
-    output.gsub!(/^/, "#{indent}  ")
-
-
-    View << output  # Insert output
-    right = View.cursor
-
-    orig.go   # Move cursor back
-    ended_up.go   # End up where script took us
-
-    moved = View.cursor != orig_left
-
-    # Move to :line_found if any
-    if options[:line_found] && options[:line_found] > 0
-      Line.next(options[:line_found])
-      Color.colorize :l
-    end
-
-    if !error_happened && !$xiki_no_search && !buffer_changed && !moved
-      Tree.search_appropriately left, right, output, options
-    elsif ! options[:line_found]
-      Move.to_line_text_beginning 1
-    end
-    nil
-  end
-
   def self.launch_by_proc list=nil
-    # Should be able to remove
     list = Tree.construct_path(:list=>true)   # Get path to pass to procs, to help them decide
 
     # Try each proc
     @@launchers_procs.each do |launcher|   # For each potential match
       condition_proc, block = launcher
-      if condition_proc.call list   # If we found a match, launch it
-        if @@just_show   # Run it
+      if found = condition_proc.call(list)   # If we found a match, launch it
+        if @@just_show
           Ol << condition_proc.to_ruby
         else
-          block.call list
+          block.call list[found..-1]
         end
         return true
       end
@@ -387,35 +357,14 @@ class Launcher
   end
 
   def self.init_default_launchers
-    self.add :paren=>"o" do  # - (t): Insert "Test"
-      orig = Location.new
-      txt = Line.without_label  # Grab line
-      View.to_after_bar  # Insert after bar
-      View.insert txt
-      command_execute "\C-m"
-      orig.go
-    end
 
-    self.add :paren=>"th" do   # - (th): thesaurus.com
-      url = Line.without_label.sub(/^\s+/, '').gsub('"', '%22').gsub(':', '%3A').gsub(' ', '%20')
-      $el.browse_url "http://thesaurus.reference.com/browse/#{url}"
-    end
+    self.add /^h$/ do   # $ run command in shell
+      log = self.log.strip
+      Line.sub! /.+/, log
 
-    self.add :paren=>"twitter" do   # - (twitter): twitter search
-      url = Line.without_label.sub(/^\s+/, '').gsub('"', '%22').gsub(':', '%3A').gsub(' ', '%20')
-      $el.browse_url "http://search.twitter.com/search?q=#{url}"
+      left, right = View.paragraph :bounds=>true
+      Tree.search :left=>left, :right=>left+log.length+1
     end
-
-    self.add :paren=>"dic" do   # - (dic): dictionary.com lookup
-      url = Line.without_label.sub(/^\s+/, '').gsub('"', '%22').gsub(':', '%3A').gsub(' ', '%20')
-      $el.browse_url "http://dictionary.reference.com/browse/#{url}"
-    end
-
-    self.add :paren=>"wp" do |line|
-      url = "http://en.wikipedia.org/wiki/#{Line.without_label}"
-      Keys.prefix_u ? $el.browse_url(url) : Firefox.url(url)
-    end
-
 
     self.add /^ *\$ / do   # $ run command in shell
       Console.launch_dollar
@@ -467,11 +416,6 @@ class Launcher
       FileTree.launch
     end
 
-    self.add :label=>/^google$/ do |line|  # - google:
-      url = Line.without_label.sub(/^\s+/, '').gsub('"', '%22').gsub(':', '%3A').gsub(' ', '%20')
-      $el.browse_url "http://www.google.com/search?q=#{url}"
-    end
-
     self.add "google" do |line|
       line.sub! /^google\/?/, ''
       line.sub! /\/$/, ''
@@ -495,10 +439,7 @@ class Launcher
       View.to_buffer name
     end
 
-    #     self.add(/^ *[$\/][^:\n]+!/) do |l|   # /dir!shell command inline
-    #       Console.launch :sync=>true
-    #     end
-    self.add(/^ *!/) do |l|   # !shell command inline
+    self.add(/^ *!/) do |l|   # ! shell command inline
       Console.launch :sync=>true
     end
 
@@ -519,8 +460,7 @@ class Launcher
     end
 
     # Xiki protocol to server
-    self.add(/^[a-z-]{2,}\.[a-z-]{2,4}(\/|$)/) do |line|  # **.../: Tree grep in dir
-      #       line.sub(/\/$/, '')
+    self.add(/^[a-z-]{2,}\.(com|net|org|loc|in|edu|gov|uk)(\/|$)/) do |line|  # **.../: Tree grep in dir
       Line << "/" unless Line =~ /\/$/
       url = "http://#{line}"
       url.sub! /\.\w+/, "\\0/xiki"
@@ -536,8 +476,7 @@ class Launcher
     end
 
     Launcher.add "log" do
-      log = IO.read(Launcher.log)
-      log.split("\n").map{|o| o.sub /^- #{Notes::LABEL_REGEX}/, '\\0@'}.reverse.uniq.join("\n")+"\n"
+      Launcher.log :at=>1
     end
 
     Launcher.add "last" do |path|
@@ -555,7 +494,7 @@ class Launcher
     # FileTree
     condition_proc = proc {|list| FileTree.handles? list}
     Launcher.add condition_proc do |list|
-      FileTree.launch :path=>list
+      FileTree.launch list
     end
 
     # CodeTree
@@ -664,36 +603,78 @@ class Launcher
     # Allow clazz to be a .tree file as well?
 
     if clazz.is_a? String
+      # Require it to be camel case (because .invoke will be Menu.call "Class"
+      # if lower case, will assume Menu.call "path"
       camel = TextUtil.camel_case clazz
       clazz = $el.el4r_ruby_eval(camel) rescue nil
     elsif clazz.is_a? Class
       camel = clazz.to_s
     end
 
+    snake = TextUtil.snake_case camel
+
     raise "No class '#{clazz}' found in launcher" if clazz.nil?
+
+    # reload 'path_to_class'
+    Menu.load_if_changed File.expand_path("~/menus/#{snake}.rb")
 
     args = path.split "/"
     args.shift
 
-    method = clazz.method default_method rescue raise "#{clazz} doesn't seem to have a .#{default_method} method!"
+    txt = nil
 
-    if method.arity == 0
+    # Maybe call .menu with no args to actionize and get child menus
+
+    method = clazz.method(default_method) rescue nil
+    if method && method.arity == 0
       code = "#{camel}.#{default_method}"
-      output, out, exception = Code.eval code
+      returned, out, exception = Code.eval code
       return CodeTree.draw_exception exception, code if exception
-
-      output = CodeTree.returned_to_s(output)   # Convert from array into string, etc.
-      output = output.unindent if output =~ /\A[ \n]/
-      raise "#{code} returned nil, but is supposed to return something when i takes no arguments" if output.nil?
-
-      output = Tree.routify! output, args
-
-      return Tree << output if output && output != "- */\n"
-
-      # Else, continue on to run it based on routified path
+      return nil if returned.nil?
+      txt = CodeTree.returned_to_s returned   # Convert from array into string, etc.
     end
 
+    # Maybe use .menu file
+
+    if txt.nil?
+      if File.exists?((filename = File.expand_path("~/menus/#{snake}.menu")) || (filename = File.expand_path("#{Xiki.dir}/menus/#{snake}.menu")))
+        # Test getting .menu files from ~ and $x ?
+        txt = File.read filename
+      end
+    end
+
+    # Error if no menu method or file
+    raise "#{clazz} doesn't seem to have a .#{default_method} method, and there's no #{TextUtil.snake_case camel}.menu file in ~/menus!" if method.nil? && txt.nil?
+
+
+    # Maybe use .route method to just actionify path (if .menu existed with args)
+    #     if txt.nil?
+    #       # They didn't want .menu to be arbitrarily invokeable, but if self.route, try that
+    #       route_method = clazz.method('route') rescue nil
+    #       if route_method && route_method.arity == 0
+    #         code = "#{camel}.route"
+    #         returned, out, exception = Code.eval code
+    #         return CodeTree.draw_exception exception, code if exception
+    #         raise "- We invoked #{camel}.menu with no args, but it didn't return anything." if returned.nil?
+    #         txt = CodeTree.returned_to_s returned   # Convert from array into string, etc.
+    # Ol << "txt from .route: #{txt.inspect}"
+    #       end
+    #     end
+
+    # If got routable menu text, use it to routify
+
+    if txt
+      txt = txt.unindent if txt =~ /\A[ \n]/
+      raise "#{code} returned nil, but is supposed to return something when it takes no arguments" if txt.nil?
+
+      txt = Tree.routify! txt, args
+      return txt if txt && txt != "- */\n"
+
+    end   # Else, continue on to run it based on routified path
+
     # Figure out which ones are actions
+
+    # TODO Maybe extract this out into another method, so trees can call it internally
 
     # Find last .foo item
     actions, variables = args.partition{|o|
@@ -701,23 +682,27 @@ class Launcher
       # Also use result of .menu to determine
     }
     action = actions.last || ".#{default_method}"
+    action.gsub! /[ -]/, '_'
 
     # TODO: Do we want to always group quotes, or should menus optionally internally call Tree.leaf?!"
 
-    if args[-1] =~ /^ *\|/
-      args[-1].replace(Tree.leaf args[-1])
-    end
+    # Decided to let users call Xiki.leaves
+    #     if args[-1] =~ /^ *\|/
+    #       args[-1].replace(Tree.leaf args[-1])
+    #     end
 
     args = variables.map{|o| "\"#{CodeTree.escape o}\""}.join(", ")
 
     code = "#{camel}#{action} #{args}".strip
-    output, out, exception = Code.eval code
-    output = CodeTree.returned_to_s(output)   # Convert from array into string, etc.
-    output = output.unindent if output =~ /\A[ \n]/
+    txt, out, exception = Code.eval code
+    txt = CodeTree.returned_to_s(txt)   # Convert from array into string, etc.
+    txt = txt.unindent if txt =~ /\A[ \n]/
 
     return CodeTree.draw_exception exception, code if exception
 
-    output
+    txt = Tree.quote(txt) if txt
+
+    txt
   end
 
   def self.add_class_launchers classes
@@ -729,7 +714,7 @@ class Launcher
       #       method = clazz.method(:menu) rescue nil
       #       next if method.nil?
 
-      Launcher.add clazz do |path|
+      self.add clazz do |path|
         Launcher.invoke clazz, path
       end
     end
@@ -765,14 +750,43 @@ class Launcher
 
     View.clear
     $el.notes_mode
+    View.wrap :off
 
-    View.insert "#{menu}"
+    txt = menu
+
+    if txt.blank?
+      return View.insert("\n", :dont_move=>1)
+    end
+
+    dir = options[:dir] and txt = "- #{dir.sub /\/$/, ''}/\n  - #{txt}"
+
+    View << txt
+
     $el.open_line 1
+
+    if options[:choices]
+      View.to_highest
+      Tree.search
+      return
+    end
+
     Launcher.launch options
   end
 
   def self.method_missing *args, &block
+
     arg = args.shift
+
+    if block.nil?
+      if args == []   # Trying to call menu with no args
+        return Menu.call arg.to_s
+      end
+      if args.length == 1 && args[0].is_a?(String)   # Trying to call menu with args / path?
+        return
+      end
+    end
+
+    raise "Menu.#{arg} called with no block and no args" if args == [] && block.nil?
     self.add arg.to_s, args[0], &block
   end
 
@@ -799,6 +813,7 @@ class Launcher
       next unless File.directory? dir
 
       Files.in_dir(dir).each do |f|
+        next if f =~ /^\./   # Skip ^. files
         path = "#{dir}/#{f}"
         stem = f[/[^.]*/]
         self.add stem, :menu=>path
@@ -807,6 +822,24 @@ class Launcher
     "- reloaded!"
   end
 
+  def self.search_like_menu
+
+    txt = Search.stop
+    return if txt.nil?
+
+    menu = Keys.input :timed => true, :prompt => "Enter menu to pass '#{txt}' to: "
+
+    matches = Launcher.menus.keys.select do |possibility|
+      possibility =~ /^#{menu}/
+    end
+
+    if matches.length == 1
+      return Launcher.open("- #{matches[0]}/#{txt}")
+    end
+
+    Launcher.open(matches.map{|o| "- #{o}/#{txt}\n"}.join(''), :choices=>1)
+
+  end
 end
 
 def require_menu file
@@ -816,14 +849,22 @@ def require_menu file
 
   if file =~ /\.menu$/
     Launcher.add stem do |path|
-      Tree.climb File.read(file), path[%r"\/(.*)"]
+
+      exists = File.exists? file
+      if ! exists
+        View.success "- Xiki couldn't find: #{file}", :times=>5
+        next
+      end
+
+      Tree.climb File.read(file), Tree.rootless(path)
     end
     return
   end
 
   # As class, so require and add launcher
 
-  require file
+  Menu.load_if_changed file
+
   Launcher.add stem
 end
 

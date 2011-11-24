@@ -1,0 +1,22 @@
+#!/usr/bin/ruby
+
+#
+# > Summary
+# This is aliased to /usr/local/bin/xiki so it can be called from the command
+# line to open a xiki menu in a shrunk-down window.
+#
+# To create the alias, see:
+# @xiki/setup/install command/
+#
+
+# require "/projects/xiki/xiki_git/ol"
+
+`open "/Applications/emacs.app"`   # Bring emacs to front
+
+menu = ARGV.join(' ')
+
+ruby = %`Menu.external \\"#{menu}\\"`
+ruby << %`, :dir=>\\"#{Dir.pwd}\\"` if menu =~ /^@/
+
+command = %`emacsclient -n -e '(el4r-ruby-eval "#{ruby}")'`
+`#{command}`
