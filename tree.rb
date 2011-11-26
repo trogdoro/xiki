@@ -544,7 +544,7 @@ class Tree
       # Add root of tree
       root = Line.value.sub(/^ +/, '')
       root = self.clean_path(root) unless options[:raw]
-      root.slice! /^@/
+      root.slice! /^@ ?/
       path.unshift root
 
       $el.goto_char orig
@@ -907,10 +907,7 @@ class Tree
   def self.climb tree, path
     path = "" if path == nil || path == "/"   # Must be at root if nil
     tree = TextUtil.unindent tree
-    txt = AutoMenu.child_menus tree, path
-
-    txt.sub! /^$/, '|'
-    txt
+    AutoMenu.child_menus tree, path
   end
 
   # Use instead of .leaf when you know all but the root is part of the leaf
@@ -997,6 +994,8 @@ class Tree
     output.sub!(/\n\n\z/, "\n")
     output = "#{output}\n" if output !~ /\n\z/
 
+Ol << "output: #{output.inspect}"
+
     if $menu_resize
       height = output.count("\n") + 5
       height = 60 if height > 60
@@ -1005,6 +1004,7 @@ class Tree
     end
 
     if options[:just_return]
+Ol.line
       return output
     end
 
@@ -1040,7 +1040,9 @@ class Tree
     elsif ! options[:line_found]
       Move.to_line_text_beginning :down=>1
     end
-    nil
+
+    output
+    #     nil
   end
 
 end

@@ -290,9 +290,9 @@ class KeyBindings
 
     Keys.do_lines_unique { Code.kill_duplicates }   # Uniqify, delete duplicates
     Keys.do_linebreaks_windows { set_buffer_file_coding_system :dos }
-    Keys.do_menu { View.success "make Keys.do_menu do what?" }
+    Keys.do_menu { View.glow "- TODO: make Keys.do_menu do something?" }
     Keys.do_name_buffer { Buffers.rename }
-    Keys.do_notes_colors { Notes.apply_styles }
+    Keys.do_notes_colors { FileTree.apply_styles; Notes.apply_styles; FileTree.apply_styles_at_end }
     Keys.do_number_enter { Incrementer.enter }
     Keys.do_name_files { FileTree.rename_file }
     Keys.do_number_increment { Incrementer.increment }
@@ -351,11 +351,9 @@ class KeyBindings
     Keys.to_highest { View.to_highest }   # to beginning of file **
     Keys.to_indent { Move.to_indent }
     Keys.to_junior { Move.to_junior }
-    # K
+    Keys.to_kind { Move.to_other_bracket }   # to matching bracket, etc
     Keys.to_lowest { View.to_bottom }   # move to end *
-    #Keys.to_line { Move.to_line }   # move to line number *
     Keys.to_menu { Menu.open_related_file }   # to matching bracket, etc
-    #     Keys.to_matching { Move.to_other_bracket }   # to matching bracket, etc
     Keys.to_next { Move.to_next_paragraph }   # to next paragraph *
     Keys.to_outline { FileTree.to_outline }   # *
     Keys.to_previous { Move.to_previous_paragraph }   # to beginning of previous paragraph *

@@ -230,7 +230,7 @@ class Move
       View.to_relative
     end
 
-    times.times do
+    (times||1).times do
       Line.next if Line.matches(/^ *\|/)
       re_search_forward "^ +|"
       backward_char

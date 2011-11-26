@@ -1,7 +1,7 @@
-$:.unshift "spec/"
-require 'el_mixin'
-require 'keys'
-require 'ol'
+# $:.unshift "spec/"
+# require 'el_mixin'
+# require 'keys'
+# require 'ol'
 
 # describe Keys, "#input" do
 #   before(:each) do

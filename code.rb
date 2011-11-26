@@ -59,9 +59,13 @@ class Code
   end
 
   # Evaluates file, paragraph, or next x lines using el4r
-  def self.run
+  def self.run options={}
+
     prefix = Keys.prefix
-    if prefix.is_a?(Fixnum) && 0 <= prefix && prefix <= 7
+    if options[:left]
+      left, right = options[:left], options[:right]
+      txt = View.txt left, right
+    elsif prefix.is_a?(Fixnum) && 0 <= prefix && prefix <= 7
       txt, left, right = View.txt_per_prefix nil, :blink=>true
     else
       case prefix
@@ -108,9 +112,13 @@ class Code
     orig.go
 
     # Eval the code
-    returned, out, exception = self.eval(txt)
+    returned, out, exception = self.eval txt
     begin
-      message returned.to_s if returned.to_s.size < 50
+      if returned.any?
+        returned = returned.to_s[0..49]
+        returned << "..." if returned.length == 50
+        Message << returned
+      end
     rescue
     end
     ended_up = Location.new

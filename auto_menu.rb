@@ -39,7 +39,7 @@ module AutoMenu
     node.gsub!(/^\//, '')
     node.gsub!(/\/$/, '')
     if ! (node).any?
-      return tree.grep(/^[^ ]/).join('')
+      return tree.grep(/^[^ ]/).join('').gsub(/^$/, '|')
     end
     node.gsub!(/[.:]/, '')
     Tree.traverse tree do |branch|
@@ -60,8 +60,7 @@ module AutoMenu
       end
 
     end
-
-    result
+    result.empty? ? "" : result.gsub(/^$/, '|')
   end
 
   # Old version, used by code_tree

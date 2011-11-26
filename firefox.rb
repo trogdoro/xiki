@@ -110,6 +110,7 @@ class Firefox
   end
 
   def self.reload
+    # Why is this here?
     Code.open_log_view if Keys.prefix_u && View.buffer_visible?('*output - tail of #{Ol.file_path}')
     prefix = Keys.prefix_n :clear=>true
     if prefix   # If numeric prefix, go to that tab

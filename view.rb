@@ -33,54 +33,58 @@ class View
 
   def self.menu
     "
-    | > Docs
-    | Here are some useful methods in the View class.
-    |
-    | > Text
-    | Return all the text.
-    @p View.txt
-    |
-    | Return text in a range.
-    @p View.txt 1, 5
-    |
-    | Return where the cursor is.
-    @p View.cursor
-    |
-    |
-    | > Files and dirs
-    | Returns file name.
-    @p View.name
-    |
-    | Returns file with whole path.
-    @p View.file
-    |
-    | Returns dir of file.
-    @p View.dir
-    |
-    |
-    | > Messages
-    | Prompt user to type at end af line
-    @View.prompt/
-    @View.prompt 'Type something, dude/'/
-    |
-    | Show success message
-    @View.success
-    @View.success 'Saved'
-    @View.success :color=>:rainbow
-    |
-    | Inserts into the view.
-    View << 'Hello'
-    |
-    | Shows message at bottom.
-    @View.message 'Hi there'
-    |
-    | Makes a noise.
-    @View.beep
-    |
-    |
-    | > Also see
-    - line/
-    |
+    - docs/
+      | The View class is the catch-all class for dealing with editing text.
+      | It has methods for inserting text and grabbing text, and quite a few
+      | other things.
+    - api/
+      > Text
+      | Inserts into the view.
+      @ View << 'Hello'
+      |
+      | Return all the text.
+      @ p View.txt
+      |
+      | Return text in a range.
+      @ p View.txt 1, 5
+      |
+      | Return where the cursor is.
+      @ p View.cursor
+      |
+      | Returns the line number the cursor is on.
+      @ p View.line
+      |
+      |
+      > Files and dirs
+      | Returns file name.
+      @ p View.name
+      |
+      | Returns file with whole path.
+      @ p View.file
+      |
+      | Returns dir of file.
+      @ p View.dir
+      |
+      |
+      > Messages
+      | Shows temporary message inline.
+      @ View.glow
+      @ View.glow 'Saved'
+      |
+      | Shows message at bottom.
+      @ View.message 'Hi there'
+      |
+      | Prompt user to type at end af line.
+      @ View.prompt
+      @ View.prompt 'Type something, dude'
+      |
+      | Makes a noise.
+      @ View.beep
+      |
+      |
+      > Also see
+      - line/
+      |
     "
   end
 
@@ -418,6 +422,7 @@ class View
       delete_window
       previous_multiframe_window if View.left_edge != left || middle || last
     end
+    nil
   end
 
   def self.hide_others options={}
@@ -961,16 +966,25 @@ class View
   end
 
   def self.expand_path path
-    # Expand .
-    path = path.gsub /^\.\//, View.dir.sub(/\/$/, '')+'/'
+Ol << "path: #{path.inspect}"
+    path = "#{View.dir}/#{path}" if path !~ /^[\/~]/
+    #     path = "#{View.dir}/#{path}" if path =~ /^\.\.?(\/|$)/
+    #     path = File.expand_path("#{View.dir}/#{path}") if path =~ /^\.+(\/|$)/
+
+    #     path = path.gsub /^\.\/?/, View.dir.sub(/\/$/, '')+'/'
+    #     path = path.gsub /^\.\/?/, View.dir.sub(/\/$/, '')+'/'
+    #     path = path.gsub /^\.\//, View.dir.sub(/\/$/, '')+'/'
+    #     path = path.gsub /^\.\//, View.dir.sub(/\/$/, '')+'/'
 
     # Expand ~
-    slash = path =~ /\/$/   # Check whether / at end
+    #     slash = path =~ /\/$/   # Check whether / at end
+
+    # Expand . and ..
     path = File.expand_path path
-    if slash && path !~ /\/$/   # Put / back at end, if it was there (and not there now)
-      path = "#{path}/"
-    end
-    path
+    #     if slash && path !~ /\/$/   # Put / back at end, if it was there (and not there now)
+    #       path = "#{path}/"
+    #     end
+    path =~ /\/$/ ? path : "#{path}/"
   end
 
   # Show dimension options, and invoke corresponding proc
@@ -1237,10 +1251,9 @@ class View
       View << key
     end
     $el.elvar.inhibit_quit = nil
-
   end
 
-  def self.success message=nil, options={}
+  def self.glow message=nil, options={}
     message ||= "- Success!"
 
     orig = self.cursor

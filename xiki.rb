@@ -20,25 +20,6 @@ require 'launcher'
 require 'mode'
 require 'menu'
 
-# Get rest of files to require
-classes = Dir["**/*.rb"]
-classes = classes.select{|i|
-  i !~ /xiki.rb$/ &&   # Remove self
-  i !~ /key_bindings.rb$/ &&   # Remove key_bindings
-  i !~ /\// &&   # Remove all files in dirs
-  i !~ /tests\// &&   # Remove tests
-  i !~ /\// &&   # Remove tests
-  i !~ /__/   # Remove __....rb files
-}
-
-classes.map!{|i| i.sub(/\.rb$/, '')}.sort!
-
-# Require classes
-Requirer.safe_require classes
-
-# key_bindings has many dependencies, require it last
-Requirer.safe_require ['key_bindings.rb']
-
 # Launcher.add_class_launchers classes
 class Xiki
   def self.menu
@@ -228,6 +209,33 @@ class Xiki
 
   # Other .init mode defined below
   def self.init
+
+    # Get rest of files to require
+    classes = Dir["**/*.rb"]
+    classes = classes.select{|i|
+      i !~ /xiki.rb$/ &&   # Remove self
+      i !~ /key_bindings.rb$/ &&   # Remove key_bindings
+      i !~ /\// &&   # Remove all files in dirs
+      i !~ /tests\// &&   # Remove tests
+      i !~ /\// &&   # Remove tests
+      i !~ /__/   # Remove __....rb files
+    }
+
+    classes.map!{|i| i.sub(/\.rb$/, '')}.sort!
+
+    # Require classes
+    Requirer.safe_require classes
+
+    # key_bindings has many dependencies, require it last
+    Requirer.safe_require ['key_bindings.rb']
+
+    Launcher.add_class_launchers classes
+    Launcher.reload_menu_dirs
+
+    Launcher.add "xiki"
+
+    # Pull out into .define_mode
+
     Mode.define(:xiki, ".xiki") do
 
       orig = View.name
@@ -250,10 +258,3 @@ class Xiki
     end
   end
 end
-
-Xiki.init   # Define mode
-
-Launcher.add_class_launchers classes
-Launcher.reload_menu_dirs
-
-Launcher.add "xiki"

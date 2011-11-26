@@ -84,10 +84,12 @@ class Location
   # Goes to location, with whatever information we have.  Note that if
   # file is already shown, we just move to its window.
   def go options={}
-    if @file
-      View.open(@file, options)
-    else
-      View.to_buffer(@buffer)
+    if ! options[:assume_file]
+      if @file
+        View.open(@file, options)
+      else
+        View.to_buffer(@buffer)
+      end
     end
 
     goto_line @line if @line

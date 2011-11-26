@@ -3,6 +3,11 @@ class Ruby
     "
     - .classes/
     - .re_index_fast_ri/
+    - .menu/
+    - .docs/
+      | Evaluate the ruby code on the following lines, until a '> ...' heading.
+      @eval
+    - @eval/
     "
   end
 

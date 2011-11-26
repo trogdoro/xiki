@@ -3,7 +3,6 @@ require 'net/ssh'
 require 'net/sftp'
 require 'timeout'
 require 'ol'
-require 'keys'
 
 class Remote
   extend ElMixin

@@ -14,9 +14,9 @@ class Notes
     puts "- .help_wiki_format"
   end
 
-  def self.block regex="^| "
+  def self.block regex="^> "
     left, after_header, right = View.block_positions regex
-    buffer_substring(after_header, right)
+    View.txt after_header, right
   end
 
   def self.expand_block up=false
@@ -327,7 +327,7 @@ class Notes
       :fg => "66f",
       :bold => true, :underline => true
 
-    Styles.define :notes_g, :fg=>"00B", :face=>'arial black', :size=>"0", :bold=>true
+    Styles.define :notes_g, :fg=>"6cf", :face=>'arial black', :size=>"0", :bold=>true
     Styles.define :notes_blue, :fg=>"69f", :face=>'arial black', :size=>"0", :bold=>true
     Styles.define :notes_red, :fg=>"c55", :face=>'arial black', :size=>"0", :bold=>true
     Styles.define :notes_yellow, :fg=>"CC0", :face=>'arial black', :size=>"0", :bold=>true
@@ -672,6 +672,62 @@ class Notes
     View.insert "#{indent}- do!"
     Move.backward
     return
+  end
+
+  def self.drill file, heading=nil, content=nil
+
+    had_bookmark = file =~ /^\$/
+    file = Bookmarks[file]
+
+    # If bookmark wasn't found, complain
+    if had_bookmark && file =~ /^\$/
+      return "| Set the bookmark first. Then you'll be able to use this menu to\n| browse the file. The file should have '> ...' headings.\n|\n@ #{file}\n"
+    end
+
+    # If docs/, output message
+
+    if heading == "docs"
+      message = "
+        > Summary
+        | Convenient way for browsing the headings in this file:
+        |
+        - @ #{file}
+        ".unindent
+      return message
+    end
+
+    txt = File.read file
+
+    # If just file passed, show outline
+
+    if ! heading
+      txt = txt.grep /^\>( .+)/
+      return "| This file has no '>...' headings:\n@ #{file}" if txt.empty?
+      return txt.join('').gsub /^> /, '| '
+    end
+
+    # If just heading passed, show outline
+
+    if ! content
+
+      # If heading passed, show text in the block
+
+      heading.sub! /^\| /, '> '
+      txt.sub! /.*#{Regexp.escape heading}/m, ''
+      txt.sub! /^>( |$).*/m, ''   # Delete until heading
+      txt.strip!
+      return txt.gsub! /^/, '| '
+    end
+
+    # If content passed, navigate to heading
+    View.open file
+    View.to_highest
+    Search.forward "^#{Regexp.escape heading.sub(/^\| /, '> ')}"
+    View.recenter_top
+    Search.forward "^#{$el.regexp_quote content.sub(/^\| /, '')}"
+    Color.colorize :l
+    Move.to_axis
+    nil
 
   end
 end

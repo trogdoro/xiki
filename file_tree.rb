@@ -287,8 +287,8 @@ class FileTree
       Styles.define :quote_heading_small, :fg=>"fff", :size=>"-2", :face => "arial black", :bold=>true
 
       Styles.define :diff_line_number, :bold => true, :size => "-2", :fg => "444444"
-      Styles.define :diff_red, :bg => "400", :fg => "ee3333"
-      Styles.define :diff_green, :bg => "130", :fg => "44dd33"
+      Styles.define :diff_red, :bg => "400", :fg => "ee3333", :size => "-1"
+      Styles.define :diff_green, :bg => "130", :fg => "44dd33", :size => "-1"
       Styles.define :diff_small, :fg => "222", :size => "-11"
 
       # dir/
@@ -358,6 +358,10 @@ class FileTree
 
     # Remove later?
     Styles.apply("^[ +-]*\\([^|\n]+/\\)$", nil, :ls_dir)  # slash at end
+
+    # @ ... lines
+    Styles.apply("^[ +-]*\\(@ \\)", nil, :ls_dir)  # slash after almost anything
+    Styles.apply("^[ +-]*[^)\n]+) \\(@ \\)", nil, :ls_dir)  # slash after almost anything
 
     Styles.apply("^[ +-]*\\([@a-zA-Z0-9_,? ().:-]*[^ \n]\/\\)", nil, :ls_dir)  # slash after almost anything
     Styles.apply("^[ +-]*\\([@a-zA-Z0-9_,? ().:-]+\/[@a-zA-Z0-9_,? ().:\/-]+\/\\)", nil, :ls_dir)  # one word, path, slash
@@ -560,7 +564,7 @@ class FileTree
     DiffLog.save_diffs :patha=>path, :textb=>txt
     File.open(path, "w") { |f| f << txt }
 
-    View.success "- Saved!"
+    View.glow "- Saved!"
   end
 
   def self.drill_quote path
@@ -749,6 +753,7 @@ class FileTree
 
   # Recursively display dir in tree   # Insert dir contents at point (usually in existing tree)
   def self.dir options={}
+Ol << "options: #{options.inspect}"
     return Files.open_in_os(Tree.construct_path) if Keys.prefix == 0
 
     Tree.plus_to_minus_maybe
@@ -789,11 +794,14 @@ class FileTree
   end
 
   def self.dir_one_level options={}
+Ol << "options: #{options.inspect}"
     Line.to_left
     line = Line.value
     indent = line[/^ */] + "  "  # Get indent
 
+Ol << "Tree.construct_path: #{Tree.construct_path.inspect}"
     dir = Bookmarks.expand(Tree.construct_path)
+Ol << "dir: #{dir.inspect}"
 
     remote = self.is_remote?(dir)
     unless remote
@@ -806,17 +814,18 @@ class FileTree
       end
     end
 
+Ol.line
     dirs, files = self.files_in_dir(dir, options)   # Get dirs and files in it
 
     if files.empty? && dirs.empty?
       # If doesn't exist, show message
       if ! File.exists? dir
         return Tree << "
-          | Directory doesn't exist.  Create it?
+          | Directory '#{dir}' doesn't exist.  Create it?
           - @dir/create/
           "
       end
-      return View.success "- Directory exists, but is empty"
+      return View.glow "- Directory exists, but is empty", :times=>4
     end
 
     # Change path to proper indent
@@ -954,6 +963,7 @@ class FileTree
 
   # Expand if dir, or open if file
   def self.launch options={}
+Ol << "options: #{options.inspect}"
 
     #Tree.plus_to_minus_maybe
     line = Line.value
@@ -964,8 +974,10 @@ class FileTree
     elsif line =~ /^[^|\n]* (\*\*|##)/   # *foo or ## means do grep
       self.grep_syntax indent
     elsif self.dir?   # foo/ is a dir (if no | before)
+Ol.line
       self.dir
     else
+Ol.line
       self.open
     end
   end
@@ -1076,14 +1088,14 @@ class FileTree
 
     if path =~ /\/menus\/(.+)\.rb$/   # "
       name = $1
-      View.success "- File doesn't exist, start with this...", :times=>4
+      View.glow "- File doesn't exist, start with this...", :times=>4
       Xiki.dont_search
       txt = File.read "#{Xiki.dir}/etc/templates/menu_template.rb"
       txt.gsub!(/\{\{(.+?)\}\}/) { eval $1 }   # Expand {{these}}
       return Tree.<< txt, :escape=>"| ", :no_slash=>1
 
     elsif path =~ /^#{File.expand_path("~/menus")}\/(.+)\.menu$/   # "
-      View.success "- File doesn't exist, start with this...", :times=>4
+      View.glow "- File doesn't exist, start with this...", :times=>4
       Xiki.dont_search
       txt = File.read "#{Xiki.dir}/etc/templates/menu_template.menu"
       return Tree.<< txt, :escape=>"| ", :no_slash=>1
@@ -1094,14 +1106,14 @@ class FileTree
     [File.expand_path("~/xiki/templates/"), Bookmarks["$x/etc/templates"]].each do |dir|
       file = "#{dir}/template.#{extension}"
       next unless File.exists? file
-      View.success "- File doesn't exist, start with this...", :times=>4
+      View.glow "- File doesn't exist, start with this...", :times=>4
       txt = File.read file
       txt.gsub!(/\{\{(.+?)\}\}/) { eval $1 }   # Expand {{these}}
       return Tree.<< txt, :escape=>"| ", :no_slash=>1
     end
 
     # If no templates matched
-    View.success "- File doesn't exist"
+    View.glow "- File doesn't exist"
     Tree.<< "|", :no_slash=>1
     Move.to_end
     View << ' '
@@ -1149,9 +1161,14 @@ class FileTree
 
   # Returns the files in the dir
   def self.files_in_dir dir, options={}
+Ol.stack
+Ol << "dir: #{dir.inspect}"
     if self.is_remote?(dir)
       self.remote_files_in_dir(dir)
     else
+Ol << "exp dir: #{File.expand_path dir}"
+Ol << "View.dir: #{View.dir.inspect}"
+
       all = Dir.glob("#{dir}*", File::FNM_DOTMATCH).
         select {|i| i !~ /\/\.(\.*|svn|git)$/}.   # Exclude some dirs (exclude entensions here too?)
         select {|i| i !~ /\/\.#/}.sort
@@ -1277,7 +1294,7 @@ class FileTree
       path = Xiki.trunk.last   # Grab from wiki tree
     end
 
-    View.success "- copied: #{path}", :times=>2
+    View.glow "- copied: #{path}", :times=>2
     return Clipboard["0"] = path
   end
 
@@ -1401,7 +1418,7 @@ class FileTree
     executable = dest_path =~ /\/$/ ? "rmdir" : "rm"
     command = "#{executable} \"#{dest_path}\""
 
-    View.success "- Are you sure?"
+    View.glow "- Are you sure?"
     answer = Keys.input :one_char=>true, :prompt=>"Are you sure you want to delete #{dest_path_raw} ?"   #"
 
     return unless answer =~ /y/i

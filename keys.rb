@@ -1,6 +1,7 @@
 require 'pause_means_space'
 require 'line'
 require 'text_util'
+require 'launcher'
 
 # Methods for defining keyboard shortcuts
 class Keys
@@ -214,29 +215,31 @@ class Keys
       meth = self.words_to_letters meth
     end
 
-    # Translate to 'C-t C-f' etc
-    keys_raw = self.translate_keys meth
+    keys_raw = self.translate_keys meth   # Translate to 'C-t C-f' etc
 
-    # Translate to actual control keys
-    keys = $el.kbd keys_raw
-    # Default to global keymap
-    map = :global_map
+    keys = $el.kbd keys_raw   # Translate to actual control keys
+
+    map = :global_map   # Default to global keymap
 
     # Use keymap if symbol passed as 1st arg
     map = args.shift if args[0] and args[0].class == Symbol
-
     # If they just passed a string, use it as code
     if args and (args.size == 1) and !block
       self.map_to_eval keys_raw, args[0]
       return
     end
 
+    #     # Add menus for key shortcuts - seems kind of pointless in retrospect
+    #     if map == :global_map && meth_orig =~ /^[a-z]/
+    #       Launcher.add(meth.downcase, &block)
+    #       Launcher.add(meth_orig, &block)   # if meth_orig =~ /^[a-z]/
+    #     end
+
     # Define key
     begin
       $el.define_key map, keys, &block
       "- key was defined: #{keys_raw}"
     rescue Exception => e
-
       return if map != :global_map || meth !~ /([A-Z])([A-Z]?)./   # Only global map and 2 control keys
       message = e.message
       prefix = message[/"Key sequence .+? starts with non-prefix key (.+?)"/, 1]
@@ -245,7 +248,6 @@ class Keys
       prefix = $el.kbd(prefix)
 
       begin   # If it appears to be a prefix key (already defined)
-
         $el.global_unset_key(prefix)
         $el.define_key map, keys, &block
 
@@ -280,6 +282,7 @@ class Keys
   end
 
   def self.set *args, &block
+
     # Keys is always first arg
     keys = args.shift
     if args.size > 0   # If 2nd arg, use it
@@ -693,6 +696,6 @@ class Keys
 
   def self.history
     $el.view_lossage
-    View.success "- Showed recently-typed keys in other view!", :times=>4
+    View.glow "- Showed recently-typed keys in other view!", :times=>4
   end
 end

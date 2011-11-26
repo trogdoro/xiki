@@ -204,7 +204,7 @@ class Bookmarks
     end
 
     # If $xxx found
-    if path =~ /\$([._a-zA-Z0-9-]+)([\\\/]?)(.*)/
+    if path =~ /^\$([._a-zA-Z0-9-]+)([\\\/]?)(.*)/
       bm, slash, rest = $1, $2, $3
 
       bm_orig = bm
@@ -223,6 +223,7 @@ class Bookmarks
             "#{File.expand_path("~")}/files.notes"
           end
       end
+      return path if bm.nil?
 
       # If a slash, cut off filename if there is one (only dir is wanted)
       if slash != ""
@@ -231,6 +232,7 @@ class Bookmarks
 
       path = "#{bm}#{rest}"
       # Expand ~/ if it has it
+
       path = View.expand_path(path)  if path =~ /^~/
 
       path
@@ -239,10 +241,8 @@ class Bookmarks
       # Expand ~/ if it has it
       View.expand_path(path)
 
-    elsif options[:absolute] || path =~ /^\.\//  # If relative path, expand
+    elsif options[:absolute] || path =~ /^\.+(\/|$)/  # If relative path, expand
       View.expand_path(path)
-    elsif path !~ /\//   # If path doesn't contain a slash, make relative to current dir
-      "#{View.dir}/#{path}"
     else
       path
     end

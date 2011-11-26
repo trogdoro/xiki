@@ -1,5 +1,6 @@
 require 'effects'
 require 'ruby_console'
+require 'xiki'
 gem 'httparty'; require 'httparty'
 gem 'activesupport'; require 'active_support/ordered_hash'
 
@@ -28,10 +29,14 @@ class Launcher
   @@launchers ||= ActiveSupport::OrderedHash.new
   @@launchers_procs ||= []
   @@launchers_parens ||= {}
-  @@launchers_paths ||= {}
+  @@menus ||= [{}, {}]
 
   def self.menus
-    @@launchers_paths
+    @@menus
+  end
+
+  def self.menu_keys
+    (@@menus[0].keys + @@menus[1].keys).uniq.sort #.select do |possibility|
   end
 
   def self.menu
@@ -93,6 +98,7 @@ class Launcher
 
   def self.add *args, &block
     arg = args.shift
+
     raise "Launcher.add called with no args and no block" if args == [nil] && block.nil?
 
     if arg.is_a? Regexp   # If regex, add
@@ -108,8 +114,11 @@ class Launcher
 
   def self.add_menu root, hash, block
     if hash.nil? && block   # If just block, just define
-      return @@launchers_paths[root] = block
+      return @@menus[1][root] = block
+    elsif hash.is_a?(Hash) && hash[:menu_file] && block   # If just block, just define
+      return @@menus[0][root] = block
     end
+
     # If just root, define class with that name
     if block.nil? && (hash.nil? || hash[:class])
       clazz = hash ? hash[:class] : root
@@ -134,7 +143,7 @@ class Launcher
 
       self.add root do |path|   # If text of the actual menu
         # Different from Menu[...] or .drill?
-        Tree.climb menu, path[%r"\/(.*)"]
+        Tree.climb menu, Tree.rootless(path)
       end
       return
     end
@@ -158,7 +167,7 @@ class Launcher
   def self.launch options={}
     Tree.plus_to_minus
 
-    Line.sub! /^-$/, '...'   # Expand "." to auto-complete all paths
+    Line.sub! /^[@*-]$/, '...'   # Expand "." to auto-complete all paths
     Line.sub! /^\.$/, './'   # Expand "." to auto-complete all paths
     Line.sub! /^~$/, '~/'   # Expand "." to auto-complete all paths
 
@@ -183,7 +192,7 @@ class Launcher
     if line =~ /^( *)[+-] (.+)/   # Split off bullet, if there
       line = $1 + $2
     end
-    if line =~ /^ *@(.+)/   # Split off @ and indent if @ exists
+    if line =~ /^ *@ ?(.+)/   # Split off @ and indent if @ exists
       is_root = true
       line = $1
     end
@@ -210,10 +219,11 @@ class Launcher
     if Line.value =~ /^ / && ! options[:line] && !is_root   # If indented, call .launch recursively
       Tree.plus_to_minus
 
+      # Use Xiki.branch here? (breaks up by @'s)
+
       # merge together (spaces if no slashes) and pass that to launch
       list = Tree.construct_path(:list=>true)   # Get path to pass to procs, to help them decide
       found = list.index{|o| o =~ /^@/} and list = list[found..-1]   # Remove before @... node if any
-
       merged = list.map{|o| o.sub /\/$/, ''}.join('/')
       merged << "/" if list[-1] =~ /\/$/
       return self.launch options.slice(:no_search).merge(:line=>merged)
@@ -245,7 +255,7 @@ class Launcher
 
       root = $1
       root.gsub!(/[ -]/, '_') if root
-      matches = @@launchers_paths.keys.select do |possibility|
+      matches = self.menu_keys.select do |possibility|
         possibility =~ /^#{root}/
       end
       if matches.any?
@@ -285,7 +295,7 @@ class Launcher
         if matches.any?
           matches.sort.each do |file|
             iroot = file[/\/(\w+)\./, 1]
-            next if @@launchers_paths[root]   # Skip if already loaded
+            next if @@menus[0][root] || @@menus[1][root]   # Skip if already loaded
             require_menu(file)  # if File.exists? file
           end
           return self.launch   # options.slice(:no_search).merge(:line=>merged)
@@ -296,7 +306,6 @@ class Launcher
 
     if root = line[/^[\w -]+/]
       Xiki.dont_search
-
       # Maybe make the following print out optionally, via a 'help_last' block?
       Tree << "
         | There's no \"#{root}\" menu yet. Create it?
@@ -308,7 +317,7 @@ class Launcher
         + @menu/setup/create/
         "
     else
-      View.success "- No launcher matched!"
+      View.glow "- No launcher matched!"
     end
 
     $xiki_no_search = false
@@ -317,25 +326,50 @@ class Launcher
   def self.try_menu_launchers line
     root = line[/^[\w -]+/]   # Grab thing to match
     root.gsub!(/[ -]/, '_') if root
-    if block = @@launchers_paths[root]
 
-      trunk = Xiki.trunk
+    block_dot_menu = @@menus[0][root]
+    block_other = @@menus[1][root]
 
-      self.append_log line
-      if trunk.size > 1 && FileTree.matches_root_pattern?(trunk[-2])
-        orig_pwd = Dir.pwd
-        Dir.chdir trunk[-2]
+    return false if block_dot_menu.nil? && block_other.nil?
+
+    self.append_log line
+    trunk = Xiki.trunk
+
+    if trunk.size > 1 && FileTree.matches_root_pattern?(trunk[-2])
+      orig_pwd = Dir.pwd
+      Dir.chdir trunk[-2] rescue nil
+    end
+
+    # If there was a menu, call it
+
+    out = nil
+    if block_dot_menu
+      begin
+        out = Tree.output_and_search block_dot_menu, :line=>line  #, :dir=>file_path
+      ensure
+        Dir.chdir orig_pwd if file_path
       end
 
+      # If .menu file matched but had no output, and no other block to delegate to, say we handled it so it will stop looking
+      if ! out && ! block_other
+        View.glow "- This menu has no child items!"
+        return true
+      end
+
+      return true if out   # If there was no output, continue on and try class
+    end
+
+    if block_other
       begin
-        Tree.output_and_search block, :line=>line  #, :dir=>file_path
+        Tree.output_and_search block_other, :line=>line  #, :dir=>file_path
       ensure
         Dir.chdir orig_pwd if file_path
       end
 
       return true
     end
-    false
+
+    false   # No match, keep looking
   end
 
   def self.launch_by_proc list=nil
@@ -469,11 +503,7 @@ class Launcher
       View.under response.body
     end
 
-    # Path launchers
-
-    Launcher.add "technologies" do
-      "- TODO: pull out from $te"
-    end
+    # Menu launchers
 
     Launcher.add "log" do
       Launcher.log :at=>1
@@ -593,7 +623,6 @@ class Launcher
   end
 
   def self.invoke clazz, path
-
     default_method = "menu"
     # If dot extract it as method
     if clazz =~ /\./
@@ -803,17 +832,13 @@ class Launcher
     Tree << output
   end
 
-  def self.remove root
-    @@launchers_paths.delete root
-  end
-
   def self.reload_menu_dirs
 
     MENU_DIRS.each do |dir|
       next unless File.directory? dir
 
       Files.in_dir(dir).each do |f|
-        next if f =~ /^\./   # Skip ^. files
+        next if f !~ /^[a-z]/   # Skip ^. files
         path = "#{dir}/#{f}"
         stem = f[/[^.]*/]
         self.add stem, :menu=>path
@@ -829,7 +854,7 @@ class Launcher
 
     menu = Keys.input :timed => true, :prompt => "Enter menu to pass '#{txt}' to: "
 
-    matches = Launcher.menus.keys.select do |possibility|
+    matches = Launcher.menu_keys.select do |possibility|
       possibility =~ /^#{menu}/
     end
 
@@ -838,7 +863,6 @@ class Launcher
     end
 
     Launcher.open(matches.map{|o| "- #{o}/#{txt}\n"}.join(''), :choices=>1)
-
   end
 end
 
@@ -848,14 +872,8 @@ def require_menu file
   # As .menu
 
   if file =~ /\.menu$/
-    Launcher.add stem do |path|
-
-      exists = File.exists? file
-      if ! exists
-        View.success "- Xiki couldn't find: #{file}", :times=>5
-        next
-      end
-
+    Launcher.add stem, :menu_file=>1 do |path|
+      next View.glow("- Xiki couldn't find: #{file}", :times=>6) if ! File.exists?(file)
       Tree.climb File.read(file), Tree.rootless(path)
     end
     return

@@ -137,6 +137,7 @@ class Line
 
   def self.beginning
     forward_line 0
+    nil
   end
 
   def self.to_left
@@ -261,7 +262,7 @@ class Line
     value.sub! from, to
     self.delete :leave
     self.insert value
-    orig.go
+    orig.go :assume_file=>1
   end
 
   def self.gsub! from, to
@@ -270,7 +271,7 @@ class Line
     value.gsub! from, to
     self.delete :leave
     self.insert value
-    orig.go
+    orig.go :assume_file=>1
   end
 
   def self.<< txt

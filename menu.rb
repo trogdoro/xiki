@@ -300,7 +300,7 @@ class Menu
 
   def self.reload_menus
     Launcher.reload_menu_dirs
-    View.success
+    View.glow
     nil
   end
 
@@ -317,7 +317,8 @@ class Menu
   end
 
   def self.call root, rest=nil
-    block = Launcher.menus[root]
+    menus = Launcher.menus
+    block = menus[0][root] || menus[1][root]
     return if block.nil?
     Tree.output_and_search block, :line=>"#{root}/#{rest}", :just_return=>1
   end
@@ -344,6 +345,8 @@ class Menu
   def self.open_related_file
     # Take best guess, by looking through dirs for root
     trunk = Xiki.trunk
+
+    return View.glow("- Doesn't seem to be a menu: #{trunk[0]}") if trunk[0] !~ /^[a-z]/i
 
     root = trunk[-1][/^[\w _-]+/]
     root.gsub!(/[ -]/, '_') if root
@@ -383,8 +386,8 @@ class Menu
       View.dimensions("c")
       Launcher.open menu, options
     end
-
   end
+
 end
 
 Menu.init   # Define mode
@@ -451,6 +454,8 @@ class Menu
     Move.to_end   # In case we're at root of tree (search would make it go elsewhere)
     Search.backward("^[^ \n]")   # Start at root
     root, left = Line.value, View.cursor
+    root = Line.without_label(:line=>root)
+
     root = TextUtil.snake_case(root).sub(/^_+/, '')
     ignore, right = View.paragraph :bounds=>true, :start_here=>true
     # Go until end of paragraph (simple for now)
@@ -461,6 +466,8 @@ class Menu
 
     # Remove help text if still there
     txt.sub!(/.+\n.+\n/, '') if txt =~ /\AModify this sample menu/
+
+    return Tree << "| You must supply something to put under the '#{root}' menu.\n| First, add some lines here, such as these:\n- line/\n- another line/\n" if txt.empty?
 
     path = File.expand_path "~/menus/#{root}.menu"
 
@@ -479,7 +486,7 @@ class Menu
 
     require_menu path
 
-    View.success "- #{file_existed ? 'Updated' : 'Created'} ~/menus/#{root}.menu", :times=>4
+    View.glow "- #{file_existed ? 'Updated' : 'Created'} ~/menus/#{root}.menu", :times=>4
     nil
   end
 

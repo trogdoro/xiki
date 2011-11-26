@@ -31,6 +31,8 @@ This file tells how to install Xiki.  See README.txt for a description of Xiki.
       - init.rb
         | $LOAD_PATH.unshift "/projects/xiki"
         | require 'xiki'
+        | Xiki.init
+        |
         | KeyBindings.keys   # Use default key bindings
         | Styles.use_xiki_color_scheme   # Use xiki's color scheme
 
@@ -38,6 +40,8 @@ This file tells how to install Xiki.  See README.txt for a description of Xiki.
   $ sudo gem install ParseTree ruby2ruby net-ssh net-sftp
 
 > Trouble-shooting
+The install is a bit rough at the moment...
+
 - If you get an error (and you probably will)
   - Restart emacs (or reload .emacs) and look at the log
     - Named something like: /tmp/el4r......log
@@ -52,3 +56,6 @@ This file tells how to install Xiki.  See README.txt for a description of Xiki.
 
 - If you get a "can't find header dir for ruby" error
   $ sudo apt-get install ruby1.8-dev
+
+>> Google group
+Feel free to join the google group and email install questions.

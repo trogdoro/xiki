@@ -14,7 +14,7 @@ class Mac
 
   def self.define_keys
     self.keys
-    View.success "- defined Command-C, Command-V, Command-Q, etc."
+    View.glow "- defined Command-C, Command-V, Command-Q, etc."
   end
 
   def self.keys

@@ -1,7 +1,7 @@
 class GetMeStarted
   def self.menu *args
 
-    View.success "- Adding a few sample items...", :times=>3
+    View.glow "- Adding a few sample items...", :times=>3
 
     Tree.to_parent
     Tree.kill_under
