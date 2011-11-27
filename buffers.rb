@@ -2,28 +2,22 @@ class Buffers
 
   def self.menu buffer=nil
     "
-    - .tree 20/
     - .current/
+    - .tree 20/
     - .search 'foo'/
     "
   end
-
-
 
   def self.current buffer=nil
     if buffer == nil  # If no buffer passed in, show list
       case Keys.prefix :clear=>true
       when nil:  return list.select{ |b| $el.buffer_file_name(b) }.map{ |b| $el.buffer_name(b) }
       when 0:  return list.select{ |b| ! $el.buffer_file_name(b) }.map{ |b| $el.buffer_name(b) }[1..-1]
-        # <<<<<<< Updated upstream
-        #       when 1:  return list.select{ |b| ! $el.buffer_file_name(b) && $el.buffer_name(b) =~ /!$/ }.map{ |b| $el.buffer_name(b) }
-        #       when 1:  return names_array
       when 1:  return list.select{ |b| $el.buffer_file_name(b) }.map{ |b| $el.buffer_name(b) }[1..-1]
       when 3:  return list.select{ |b| ! $el.buffer_file_name(b) && $el.buffer_name(b) =~ /^#/ }.map{ |b| $el.buffer_name(b) }
       when 4:  return list.select{ |b| ! $el.buffer_file_name(b) && $el.buffer_name(b) =~ /^\*console / }.map{ |b| $el.buffer_name(b) }
       when 8:  return list.map{ |b| $el.buffer_name(b) }
       when :u:  return list.select{ |b| ! $el.buffer_file_name(b) && $el.buffer_name(b) =~ /!$/ }.map{ |b| $el.buffer_name(b) }
-        #       else  #Launcher.open("- Files.edited #{Keys.prefix}/")
       end
       return
     end

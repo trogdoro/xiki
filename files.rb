@@ -96,11 +96,20 @@ class Files
   end
 
   def self.menu
-    puts "
-      + .edited 20/
-      + .history 20/
-      + .visiting 20/
-      "
+    "
+    - @current/
+    - @edited/
+    - .history/
+    - docs/
+      | Show files currently open
+      - @current/
+      |
+      | Show files recently edited
+      - @edited/
+      |
+      | Show files recently open
+      - @files/history/
+    "
   end
 
   def self.edited_array
@@ -120,28 +129,17 @@ class Files
     puts CodeTree.tree_search_option + FileTree.paths_to_tree(paths)
   end
 
-  def self.edited_flat  # *path
-
-    paths = edited_array[0..300]
+  def self.history # *path
+    paths = history_array#[0..400]
     paths.map!{|i| i.sub(/(.+\/)(.+)/, "- @\\1\n  - \\2")}
     paths.join("\n")
-  end
-
-  def self.history_flat *path
-    # If path passed, just jump to it
-    path = path.join ''
-    return View.open path if path.present?
-
-    paths = history_array#[0..400]
-    paths.map!{|i| i.sub(/(.+\/)(.+)/, "- \\1\n  - \\2")}
-    CodeTree.tree_search_option + paths.join("\n")
   end
 
   def self.history_array
     elvar.recentf_list.to_a
   end
 
-  def self.history times=nil
+  def self.history_tree times=nil
     times ||= History.prefix_times
     puts CodeTree.tree_search_option + FileTree.paths_to_tree(history_array[0..(times-1)])
   end
@@ -165,20 +163,21 @@ class Files
   end
 
   def self.open_edited
-    case Keys.prefix
-    when nil:  Keys.prefix = nil; Launcher.open("- Files.edited_flat/")
-    when 0:  Launcher.open("- Files.edited/")
-    when :u:  Launcher.open("- Files.edited 7/")
-    else  Launcher.open("- Files.edited #{Keys.prefix}/")
-    end
+    Launcher.open("- edited/")
+    #     case Keys.prefix
+    #     when nil:  Keys.prefix = nil; Launcher.open("- Files.edited_flat/")
+    #     when 0:  Launcher.open("- Files.edited/")
+    #     when :u:  Launcher.open("- Files.edited 7/")
+    #     else  Launcher.open("- Files.edited #{Keys.prefix}/")
+    #     end
   end
 
   def self.open_history
     case Keys.prefix
-    when nil:  Keys.prefix = nil; Launcher.open("- Files.history_flat/")
-    when 0:  Launcher.open("- Files.history/")
-    when :u:  Launcher.open("- Files.history 7/")
-    else  Launcher.open("- Files.history #{Keys.prefix}/")
+    when nil:  Keys.prefix = nil; Launcher.open("- Files.history/")
+    when 0:  Launcher.open("- Files.history_tree/")
+    when :u:  Launcher.open("- Files.history_tree 7/")
+    else  Launcher.open("- Files.history_tree #{Keys.prefix}/")
     end
   end
 

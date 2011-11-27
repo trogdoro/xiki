@@ -1,4 +1,12 @@
 class Javascript
+
+  def self.menu
+    "
+    | See
+    @js/
+    "
+  end
+
   def self.run
 
     Block.do_as_something do |txt|

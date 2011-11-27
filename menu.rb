@@ -346,7 +346,7 @@ class Menu
     # Take best guess, by looking through dirs for root
     trunk = Xiki.trunk
 
-    return View.glow("- Doesn't seem to be a menu: #{trunk[0]}") if trunk[0] !~ /^[a-z]/i
+    return View.glow("- Doesn't seem to be a menu: #{trunk[-1]}") if trunk[-1] !~ /^[a-z]/i
 
     root = trunk[-1][/^[\w _-]+/]
     root.gsub!(/[ -]/, '_') if root

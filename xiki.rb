@@ -196,7 +196,7 @@ class Xiki
   end
 
   def self.trunk
-    Tree.construct_path(:all=>1).split("/@")
+    Tree.construct_path(:all=>1).split(/\/@ ?/)
   end
 
   def self.branch

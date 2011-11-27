@@ -622,7 +622,8 @@ class Launcher
     Search.append_log "#{View.dir}/", txt
   end
 
-  def self.invoke clazz, path
+  def self.invoke clazz, path, options={}
+
     default_method = "menu"
     # If dot extract it as method
     if clazz =~ /\./
@@ -647,48 +648,27 @@ class Launcher
     # reload 'path_to_class'
     Menu.load_if_changed File.expand_path("~/menus/#{snake}.rb")
 
-    args = path.split "/"
-    args.shift
+    args = path.is_a?(Array) ?
+      path :
+      path.split("/")[1..-1]
 
-    txt = nil
+    txt = options[:tree]
 
     # Maybe call .menu with no args to actionize and get child menus
 
-    method = clazz.method(default_method) rescue nil
-    if method && method.arity == 0
-      code = "#{camel}.#{default_method}"
-      returned, out, exception = Code.eval code
-      return CodeTree.draw_exception exception, code if exception
-      return nil if returned.nil?
-      txt = CodeTree.returned_to_s returned   # Convert from array into string, etc.
-    end
-
-    # Maybe use .menu file
-
     if txt.nil?
-      if File.exists?((filename = File.expand_path("~/menus/#{snake}.menu")) || (filename = File.expand_path("#{Xiki.dir}/menus/#{snake}.menu")))
-        # Test getting .menu files from ~ and $x ?
-        txt = File.read filename
+      method = clazz.method(default_method) rescue nil
+      if method && method.arity == 0
+        code = "#{camel}.#{default_method}"
+        returned, out, exception = Code.eval code
+        return CodeTree.draw_exception exception, code if exception
+        return nil if returned.nil?
+        txt = CodeTree.returned_to_s returned   # Convert from array into string, etc.
       end
     end
 
     # Error if no menu method or file
-    raise "#{clazz} doesn't seem to have a .#{default_method} method, and there's no #{TextUtil.snake_case camel}.menu file in ~/menus!" if method.nil? && txt.nil?
-
-
-    # Maybe use .route method to just actionify path (if .menu existed with args)
-    #     if txt.nil?
-    #       # They didn't want .menu to be arbitrarily invokeable, but if self.route, try that
-    #       route_method = clazz.method('route') rescue nil
-    #       if route_method && route_method.arity == 0
-    #         code = "#{camel}.route"
-    #         returned, out, exception = Code.eval code
-    #         return CodeTree.draw_exception exception, code if exception
-    #         raise "- We invoked #{camel}.menu with no args, but it didn't return anything." if returned.nil?
-    #         txt = CodeTree.returned_to_s returned   # Convert from array into string, etc.
-    # Ol << "txt from .route: #{txt.inspect}"
-    #       end
-    #     end
+    raise "#{clazz} doesn't seem to have a .#{default_method} method!" if method.nil? && txt.nil?
 
     # If got routable menu text, use it to routify
 
@@ -769,7 +749,7 @@ class Launcher
   end
 
   def self.open menu, options={}
-    View.bar if Keys.prefix == 1
+    View.to_after_bar
 
     dir = View.dir
 

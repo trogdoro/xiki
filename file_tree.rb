@@ -363,8 +363,8 @@ class FileTree
     Styles.apply("^[ +-]*\\(@ \\)", nil, :ls_dir)  # slash after almost anything
     Styles.apply("^[ +-]*[^)\n]+) \\(@ \\)", nil, :ls_dir)  # slash after almost anything
 
-    Styles.apply("^[ +-]*\\([@a-zA-Z0-9_,? ().:-]*[^ \n]\/\\)", nil, :ls_dir)  # slash after almost anything
-    Styles.apply("^[ +-]*\\([@a-zA-Z0-9_,? ().:-]+\/[@a-zA-Z0-9_,? ().:\/-]+\/\\)", nil, :ls_dir)  # one word, path, slash
+    Styles.apply("^[ +-]*\\([@$a-zA-Z0-9_,? ().:-]*[^ \n]\/\\)", nil, :ls_dir)  # slash after almost anything
+    Styles.apply("^[ +-]*\\([@$a-zA-Z0-9_,? ().:-]+\/[@a-zA-Z0-9_,? ().:\/-]+\/\\)", nil, :ls_dir)  # one word, path, slash
 
     Styles.apply("^[ \t]*[+-] [a-zA-Z0-9_,? ().:-]+?[:)] \\(\[.@a-zA-Z0-9 ]+\/\\)", nil, :ls_dir)   # label, one word, slash
     Styles.apply("^[ \t]*[+-] [a-zA-Z0-9_,? ().:-]+?[:)] \\([.@a-zA-Z0-9 ]+\/[.@a-zA-Z0-9 \/]+\/\\)", nil, :ls_dir)   # label, one word, path, slash
@@ -822,7 +822,7 @@ Ol.line
       if ! File.exists? dir
         return Tree << "
           | Directory '#{dir}' doesn't exist.  Create it?
-          - @dir/create/
+          - @mkdir/
           "
       end
       return View.glow "- Directory exists, but is empty", :times=>4
@@ -1271,12 +1271,7 @@ Ol << "View.dir: #{View.dir.inspect}"
 
     path = self.tree_path_or_this_file :dir_only
 
-    $el.make_directory path
-
-    # Construct path
-    # Prompt for name
-    #Keys.input
-    # Create dir (using path and name)
+    `mkdir -p "#{path}"`
   end
 
   # Indent txt to be one level lower than current line

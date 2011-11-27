@@ -28,8 +28,8 @@ class Console
     self.run command, :sync=>1
   end
 
-  def self.sync command
-    self.run command, :sync=>1
+  def self.sync command, options={}
+    self.run command, options.merge(:sync=>1)
   end
 
   def self.run command, options={}

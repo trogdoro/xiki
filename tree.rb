@@ -994,8 +994,6 @@ class Tree
     output.sub!(/\n\n\z/, "\n")
     output = "#{output}\n" if output !~ /\n\z/
 
-Ol << "output: #{output.inspect}"
-
     if $menu_resize
       height = output.count("\n") + 5
       height = 60 if height > 60

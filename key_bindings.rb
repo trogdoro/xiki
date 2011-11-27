@@ -68,12 +68,12 @@ class KeyBindings
     Keys.open_a_shell { Console.open }
     Keys.open_as_tail { Files.open_tail }
     Keys.open_bookmark { Bookmarks.go }
-    Keys.open_current { Launcher.open("- Buffers.current/") }   # open buffer list **
+    Keys.open_current { Launcher.open("- current/") }   # open buffer list **
     Keys.open_diffs { DiffLog.open }   # shows diffs of what you've edited *
     Keys.open_edited { Files.open_edited }   # show recently edited files *
     Keys.open_file { Files.open }
     # G: leave unmapped for escape
-    Keys.open_history { Files.open_history }   # show recently viewed files
+    Keys.open_history { Launcher.open("- files/history/") }   # show recently viewed files
     Keys.open_in_bar { View.open_in_bar }
     Keys.open_in_right { View.open_in_right }
     Keys.open_in_os { Files.open_in_os }
