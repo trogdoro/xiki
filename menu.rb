@@ -5,115 +5,183 @@ class Menu
     - history/
       - @log/
       - @last/
+    - .create/
+      - here/
+      - class/
     - .setup/
-      - .create/
-        > Summary
-        | To create a menu you can either create a .menu file in ~/menus, or a
-        | class with a menu method.
-        |
-        - .menu_file/
-        - .class_file/
-        |
       - @~/menus/
       - .reload_menus/
-    - docs/
+    - .docs/
       - .how_to_use/
       - .how_to_create/
       - .keys/
         > Summary
-        Helpful keyboard shortcuts when using menus.
+        | Helpful keyboard shortcuts when using menus.
         |
-        > Jump to file that implements menu
-        unique_unique_. (Control-u Control-u Control-enter)
+        | - as+menu
+        |   - Save changes to menu (or create new one)
+        | - to+menu
+        |   - Jump to file that implements menu
         |
-        > To reload a menu class (a .rb file) after you change it
-        unique_do_run
-        |
-    - api/
+    - .api/
       > Summary
-      How to use ruby code to define menus.
+      | How to use ruby code to define menus.
       |
-      If you want to create a very simple menu you can do so without code,
-      by just putting the menu in a file such as ~/menu/foo.menu. See:
+      | You can create sophisticated menus backed by classes, or by using other
+      | simple means:
+      - .classes/
+        - .Simple class/
+        - .menu with method/
+        - .menu with two methods/
+      - other/
+        - With a string/
+          |
+          |   Menu.fish :menu=>"- salmon/\n- tuna/\n  - yellow fin/"
+          |
+          Try it out by typing 1 do_ruby (C-1 Ctrl-d Ctrl-r) while on it, then
+          double-clicking on this menu to see what happens:
+          |
+          @fish/
+          |
+        - Delegating to an existing menu/
+          |
+          |   Menu.critters :menu=>"foo/animals"
+          |
+          @critters/
+          |
+        - Using a block/
+          |
+          |   Menu.foo do
+          |     "hey/"
+          |   end
+          |
+          The block can optionally take a |path| param to handle multiple levels
+          of nesting.
+          |
+          |   Menu.foo do |path|
+          |     "hey/#{path}"
+          |   end
+          |
+        - Extract menu text from somewhere/
+          | Tree.climb just expects text that is in the form of a menu (lines with
+          | 2-space indenting for nesting). So, the text can be pulled from
+          | anywhere, such as a part of a larger file:
+          |
+          | Menu.lawn do |path|
+          |   menu = Notes.read_block("/tmp/garage.notes", "> Lawn")
+          |   Tree.climb menu, Tree.rootless(path)
+          | end
+          |
       |
-      - @menu/docs/how_to_create/
+      | If you want to create a very simple menu you can do so without code,
+      | by just putting the menu in a file such as ~/menu/foo.menu. See:
       |
-      > Create your own menus
-      - With a string/
-        |
-        |   Menu.fish :menu=>"- salmon/\n- tuna/\n  - yellow fin/"
-        |
-        Try it out by typing 1 do_ruby (C-1 Ctrl-d Ctrl-r) while on it, then
-        double-clicking on this menu to see what happens:
-        |
-        @fish/
-        |
-      - Delegating to an existing menu/
-        |
-        |   Menu.critters :menu=>"foo/animals"
-        |
-        @critters/
-        |
-      - Using a block/
-        |
-        |   Menu.foo do
-        |     "hey/"
-        |   end
-        |
-        The block can optionally take a |path| param to handle multiple levels
-        of nesting.
-        |
-        |   Menu.foo do |path|
-        |     "hey/#{path}"
-        |   end
-        |
-      - .make_classes_in_menu_dir/
-      |
-      | TODO: finish restructuring this
-      |
+      < docs/how_to_create/
+
+
     '
   end
 
-  def self.menu_file
+  def self.create *args
+    type = args[0]
+
+    return self.create_here if type == "here"
+    return self.create_class if type == "class"
+    return self.create_more(*args.drop(1)) if type == "more"
+
+    "- unknown option #{type} passed to .create!"
+  end
+
+  def self.create_here
+
+    # TODO: Handle various use cases
+      # "menu/create/here/" at left margin
+      # "@menu/create/here/" nested
+      # "menu/create/\n  here/" at left margin
+      # "@menu/create/\n  here/" nested
+
+    trunk = Xiki.trunk
+    if wrapper = trunk[-2]   # If @menu/create/here is nested
+      menu = Tree.root wrapper
+    else   # If put it under a fake menu
+      # TODO: Go to left margin and remove menu...
+
+      Tree.to_root
+
+      Tree.kill_under
+      menu = "foo"
+      Line.sub! /([ +-]*).*/, "\\1#{menu}/"
+      # Insert it wherever we are
+    end
     Xiki.dont_search
 
+    name_text = menu == "foo" ?
+      "and change '#{menu}' to something" :
+      "to go under the '#{menu}' menu"
+
+    snake = TextUtil.snake_case menu
+
+    Tree << "
+      | Supply a few items here. Then do as+menu (type Ctrl-a Ctrl-m) to create
+      | the '#{menu}' menu. Or, just create '~/menus/#{snake}.menu' yourself.
+      - example item/
+        - another/
+      - and another/
+      "
+
+    nil
+
+  end
+
+  def self.create_class
+    trunk = Xiki.trunk
+    if wrapper = trunk[-2]
+      # Just do in-line
+      menu = TextUtil.snake_case Tree.root(wrapper)
+    else
+      menu = 'foo'
+    end
+
+    Xiki.dont_search
+
+    Tree << %`
+      | Update this sample class to your liking. Then do as+update (type
+      | Ctrl-a, Ctrl-u) to create the '#{menu}' menu.
+      - @~/menus/
+        - #{menu}.rb
+          | class #{TextUtil.camel_case(menu)}
+          |   def self.menu *args
+          |     "- return something based on the \#{args.inspect} params"
+          |   end
+          | end
+      - more examples) @menu/api/classes/
+      `
+    nil
+  end
+
+
+  def self.simple_class *args
+    root = 'foo'
+    trunk = Xiki.trunk
+    root = TextUtil.snake_case(trunk[-2][/^[\w -]+/]) if trunk.length > 1   # If nested path (due to @), grab root of parent
+
     %`
-    > 1) Create a menu file in ~/menus
-    | Update this example to your liking, then create the file.
-    | Do the $_return keyboard shortcut (Ctrl-4, Ctrl-return) while
-    | on one of the quoted lines below to create it.
-    |
     - @~/menus/
-      - animals.menu
-        | - dogs/
-        |   - labs/
-        | - cats/
-        |   - siamese/
-    |
-    > 2) Try it out
-    | Now, you can type "animals" (or whatever you named it) on a blank line
-    | and double-click (or Ctrl-enter) to use it.  Or, try double-clicking
-    | on it here:
-    |
-    + @animals/
-    |
+      - #{root}.rb
+        | class #{TextUtil.camel_case(root)}
+        |   def self.menu *args
+        |     "- return something based on the \#{args.inspect} params"
+        |   end
+        | end
     `
   end
 
-  def self.class_file
-    Xiki.dont_search
-
-    root = 'desserts'
+  def self.menu_with_method *args
+    root = 'foo'
     trunk = Xiki.trunk
-
-    # If nested path (due to @), grab root of parent
-    root = TextUtil.snake_case(trunk[-2][/^[\w -]+/]) if trunk.length > 1
+    root = TextUtil.snake_case(trunk[-2][/^[\w -]+/]) if trunk.length > 1   # If nested path (due to @), grab root of parent
 
     %`
-    > 1. Create a class in ~/menus
-    | Update the below class to your liking. Then do $+return (meaning type
-    | Ctrl-4, Ctrl-return) with you cursor on the example to create it.
-    |
     - @~/menus/
       - #{root}.rb
         | class #{TextUtil.camel_case(root)}
@@ -129,33 +197,18 @@ class Menu
         |     "- apple/"
         |   end
         | end
-    |
-    > 2. Try it out
-    | Now, you can type "#{root}" (or whatever you named it) on a blank line
-    | and double-click (or Ctrl-enter) to use it.  Or, try double-clicking
-    | on it here:
-    |
-    + @#{root}/
-    |
     `
   end
 
+  def self.menu_with_two_methods *args
+    root = 'foo'
+    trunk = Xiki.trunk
+    root = TextUtil.snake_case(trunk[-2][/^[\w -]+/]) if trunk.length > 1   # If nested path (due to @), grab root of parent
 
-
-  def self.make_classes_in_menu_dir *args
     %`
-    > Using .rb files
-    Or, you can make the menu be backed by a class, like this:
-    |
-    TODO: make 2 examples
-    |   - simple one
-    |   - more complex one (use the below)
-    |     - collapsed by default
-    |
-    >> 1: make a file that looks something like this
     - @~/menus/
-      - foo.rb
-        | class Foo
+      - #{root}.rb
+        | class #{TextUtil.camel_case(root)}
         |   def self.menu
         |     "
         |     - sammiches/
@@ -176,30 +229,6 @@ class Menu
         |   end
         | end
         |
-    |
-    TODO: move this to how_to_use/?
-    |   - Or, do we need to leave the "Notice it doesn't show the dots" part here?
-    |     - maybe move just some of it
-    |
-    >> 2: type "foo" on an empty line
-    foo
-    |
-    >> 3: double-click on items to drill in
-    | foo/
-    |   - sammiches/
-    |     - ham/
-    |       - buy/
-    |         - buying ham sammiches
-    |
-    ...or...
-    |
-    | foo/
-    |   - checkout/
-    |     - credit/
-    |       - checking out as credit...
-    |
-    Notice it doesn't show the dots in the trees to the user (to make it look simpler).  But it still knows the dots mean to call methods.  It routes to methods and passes params appropriately.
-    |
     `
   end
 
@@ -208,8 +237,8 @@ class Menu
     > Summary
     | How to use Xiki menus.  Note this refers to the wiki-style menus, not the menu bar.
     |
-    | All menus can be used the same way.  Just type something and
-    | double-click on it (or type control-enter).
+    | All menus can be used the same way.  Just type something and double-click
+    | on it (or type Ctrl-enter while the cursor is on the line).
     |
     - example/
       | 1: type "foo" on a line (the "@" isn't necessary when the line isn't indented)
@@ -249,58 +278,45 @@ class Menu
   end
 
   def self.how_to_create *args
-    %q`
-    > Summary
-    | How to make your own menus in Xiki.  Note this refers to the wiki-style
-    | menus, not the menu bar.
-    |
-    > Using xiki menus
-    | All xiki menus can be used the same way.  Just type something and
-    | double-click on it (or type control-enter).
-    |
-    | For more details, see:
-    - @menu/docs/how_to_use/
-    |
-    |
-    | Ways of creating your own menus:
-    |
-    > Creating .menu files
-    | You can make menus without code, by just put "whatever.menu" files in the
-    | "menu/" dir in your home dir.
-    |
-    | For example you could create a "foo.menu" file with the contents
-    | "- sammiches/..." etc:
-    |
-    - ~/menus/
-      - foo.menu
-        | - sammiches/
-        |   - ham/
-        |   - tofu/
-        | - dranks/
-        |   - foty/
-    |
-    | This makes a foo/ menu that you can expand.  Even though these menus
-    | don't run code themselves, they can delegate to other menus or run code,
-    | like:
-    |
-    - ~/menus/
-      - foo.menu
-        | - @mymenu/
-        | - @MyClass.my_method
-    |
-    | To make menus dynamic, you can add lines like "- @mysql/start/" or
-    | "- @Mysql.stop/" in menus like the above ones (to delegate to existing
-    | dynamic menus or methods).
-    |
-    |
-    @menu/api/
-    |
-    `
+    txt = %q`
+      > Summary
+      | How to make your own menus in Xiki.  Note this refers to wiki-style
+      | menus (such as this one), not the menu bar.
+      |
+      - Creating .menu files/
+        | You can make menus without code, by just put "whatever.menu" files in the
+        | "menu/" dir in your home dir.
+        |
+        | For example you could create a "foo.menu" file with the contents
+        | "- sammiches/..." etc:
+        |
+        - TODO: get these to expand out somehow! - maybe pass another arg to Tree.climb below? - probably bad idea
+        - ~/menus/
+          - foo.menu
+            | - sammiches/
+            |   - ham/
+            |   - tofu/
+            | - dranks/
+            |   - foty/
+        |
+      - Delegating/
+        | This makes a foo/ menu that you can expand.  Even though these menus
+        | don't run code themselves, they can delegate to other menus or run code,
+        | like:
+        |
+        - ~/menus/
+          - foo.menu
+            | - @mymenu/
+            | - @MyClass.my_method
+        |
+      `
+
+    Tree.climb(txt, args.join('/'))
   end
 
   def self.reload_menus
     Launcher.reload_menu_dirs
-    View.glow
+    View.flash
     nil
   end
 
@@ -346,7 +362,9 @@ class Menu
     # Take best guess, by looking through dirs for root
     trunk = Xiki.trunk
 
-    return View.glow("- Doesn't seem to be a menu: #{trunk[-1]}") if trunk[-1] !~ /^[a-z]/i
+    return View.<<("- You weren't on a menu\n  | To jump to a menu's implementation, put your cursor on it\n  | (or type it on a blank line) and then do as+menu (ctrl-a ctrl-m)\n  | Or, look in one of these dirs:\n  - ~/menus/\n  - $xiki/menus/") if trunk[-1].blank?
+
+    return View.flash("- Doesn't seem to be a menu: #{trunk[-1]}", :times=>4) if trunk[-1] !~ /^[a-z]/i
 
     root = trunk[-1][/^[\w _-]+/]
     root.gsub!(/[ -]/, '_') if root
@@ -358,11 +376,17 @@ class Menu
       return View.open file[0]
     end
 
-    Tree.<< "
-      | No \"#{root}\" menu or class file found in these dirs:
-      - @~/menus/
-      - @$x/menus/
-      ", :no_slash=>1
+    message = "
+      - No menu found:
+        | No \"#{root}\" menu or class file found in these dirs:
+        @ ~/menus/
+        @ $x/menus/
+        ".unindent
+
+    proc = Launcher.menus[1][root]
+    message << "  |\n  > Here's what it does:\n  | #{proc.to_ruby}" if proc
+
+    Tree.<< message, :no_slash=>1
   end
 
   def self.external menu, options={}
@@ -379,10 +403,13 @@ class Menu
       Launcher.open ""
       View.message ""
       View.prompt "Type anything", :timed=>1, :times=>2 #, :color=>:rainbow
+
+      View.hide_others :all=>1
       View.dimensions("c")
       $menu_resize = true
       Launcher.launch
     else
+      View.hide_others :all=>1
       View.dimensions("c")
       Launcher.open menu, options
     end
@@ -457,15 +484,22 @@ class Menu
     root = Line.without_label(:line=>root)
 
     root = TextUtil.snake_case(root).sub(/^_+/, '')
+
+    if Line.value(2) =~ /^ +\| Supply a few items here/   # If sample text, remove
+      View.delete Line.left(2), Line.left(3)
+      View.flash "- Removing instructions...", :times=>2
+      View.delete Line.left(2), Line.left(4)
+      orig = nil
+    end
+
     ignore, right = View.paragraph :bounds=>true, :start_here=>true
+
     # Go until end of paragraph (simple for now)
     Effects.blink :left=>left, :right=>right
     txt = View.txt left, right
     txt.sub! /.+\n/, ''
     txt.gsub! /^  /, ''
-
-    # Remove help text if still there
-    txt.sub!(/.+\n.+\n/, '') if txt =~ /\AModify this sample menu/
+    txt.gsub! /^\|$/, ''
 
     return Tree << "| You must supply something to put under the '#{root}' menu.\n| First, add some lines here, such as these:\n- line/\n- another line/\n" if txt.empty?
 
@@ -482,11 +516,11 @@ class Menu
 
     File.open(path, "w") { |f| f << txt }
 
-    View.cursor = orig
+    View.cursor = orig if orig
 
     require_menu path
 
-    View.glow "- #{file_existed ? 'Updated' : 'Created'} ~/menus/#{root}.menu", :times=>4
+    View.flash "- #{file_existed ? 'Updated' : 'Created'} ~/menus/#{root}.menu", :times=>4
     nil
   end
 
@@ -508,4 +542,57 @@ class Menu
     load file
     @@loaded_already[file] = recent
   end
+
+  def self.collapser_launcher
+
+    line = Line.value
+    arrows = line[/<+/].length
+    arrows -= 1 if arrows > 1   # Make "<<" go back just 1, etc.
+
+    #     line.sub! /(^ +)= /, "\\1< "   # Temporarily get "=" to work too
+    line = Line.without_label :line=>line
+
+    skip = line.empty? && arrows - 1
+
+    Line.sub! /^(  +)<+ .+/, "\\1- "   # Delete after bullet to prepare for loop
+
+    arrows.times do |i|
+
+      # If no items left on current line, jump to parent and delete
+      if Line =~ /^[ +-]+$/
+        Tree.to_parent
+        Tree.kill_under
+        Move.to_end
+      end
+
+      unless i == skip   # Remove last item, or after bullet if no items
+        Line.sub!(/\/[^\/]+\/$/, '/') || Line.sub!(/^([ +-]*).*/, "\\1")
+      end
+    end
+
+
+    if Line.indent.blank?
+      line.sub! /^@/, ''
+    end
+
+    Line << line unless skip
+    Launcher.launch
+
+  end
+
+  def self.replacer_launcher
+    Line.sub! /^( +)<+= /, "\\1+ "
+
+    # Run in place, then move higher
+
+    Launcher.launch
+
+    output = Tree.siblings(:everything=>1)
+    Tree.to_parent
+    Tree.to_parent
+    Tree.kill_under :no_plus=>1
+    Tree << output
+
+  end
+
 end

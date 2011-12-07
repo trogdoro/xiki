@@ -340,25 +340,6 @@ class Git
     self.git_path(dir)# || Bookmarks['$tr']
   end
 
-  def self.open_list_repository
-    # Figure out which dir
-    dir = Keys.prefix_u? ? Bookmarks['$tr'] : self.determine_dir(View.dir)
-
-    View.to_buffer "*git status"
-    View.clear
-    View.dir = dir
-    FileTree.apply_styles
-    use_local_map elvar.notes_mode_map
-
-    tree = self.status_tree_internal dir
-    View.insert "- Git.status_tree/\n#{tree.gsub(/^/, '  ')}"
-
-    View.to_top
-    Move.to_junior
-    Tree.search :recursive => true
-
-  end
-
   # Called by code tree directly
   def self.status_tree project
     dir = self.extract_dir project
@@ -474,15 +455,14 @@ class Git
       hash = Git.status_to_hash(Git.status_internal(txt))
 
       untracked = hash[:untracked].map{|i| i[1]}
-      untracked.map!{|i| "+ untracked#{is_unadded ? '' : ' (ignore)'}: #{i}\n"}
+      untracked.map!{|i| "+ untracked) #{i}\n"}
 
-      option = is_unadded ? "- .add\n" : "- .commit \"message\"\n"
+      option = is_unadded ? "- .add\n" : "- .commit/\n"
       if expand   # If showing diffs right away
         txt = Git.diff_internal "git diff --patience --relative #{self.git_diff_options}#{is_unadded ? '' : ' HEAD'}", dir
 
         if txt =~ /^fatal: ambiguous argument 'HEAD': unknown revision/
-          txt = "- Warning: Couldn't diff because no revisions exist yet in repository\n" +
-            "  - Try using: .diff/ (without :expand)\n"
+          txt = self.status_hash_to_bullets hash, is_unadded
         else
           unless txt.empty?
             self.clean! txt
@@ -491,28 +471,25 @@ class Git
           end
         end
       else   # If just showing list of files
-        if is_unadded   # If unadded, simply use unadded
-          txt = hash[:unadded].map{|i| "+ #{i[1]}\n"}.join('')
-        else   # If added, use added + unadded - dups
-          txt = (hash[:unadded].map{|i| "+ #{i[1]}\n"} +
-            hash[:added].map{|i| "+ #{i[1]}\n"}).sort.uniq.join('')
-        end
+        txt = self.status_hash_to_bullets hash, is_unadded
       end
 
       # Add labels back
       if is_unadded   # If unadded, add labels from added (if they exist there)
-        hash[:added].each {|i| txt.sub! /^([+-]) #{i[1]}$/, "\\1 #{i[0]}: #{i[1]}"}
+        hash[:added].each {|i| txt.sub! /^([+-]) #{i[1]}$/, "\\1 #{i[0]}) #{i[1]}"}
       else   # If added, add your label also unadded (or special)
         unadded = hash[:unadded].map{|i| i[1]}
         hash[:added].each do |i|
           # Only add label if file is also unadded, or if label isn't 'modified'
           next unless unadded.member?(i[1]) or i[0] != 'modified'
-          txt.sub! /^([+-]) #{i[1]}$/, "\\1 #{i[0]}: #{i[1]}"
+          txt.sub! /^([+-]) #{i[1]}$/, "\\1 #{i[0]}) #{i[1]}"
         end
       end
+
       txt << untracked.join("")
-      txt = "- Warning: nothing to show" if ! txt.any?
-      return option + txt + "- .add\n- .delete\n- revert: .checkout\n"
+
+      txt = "| There were no differences. Try modifying a file first.\n" if ! txt.any?
+      return option + txt + "- .add/\n- .delete/\n- .revert/\n"
     end
 
     if line.nil?   # If no line passed, re-do diff for 1 file
@@ -534,6 +511,17 @@ class Git
     self.jump_to_file_in_tree dir
     nil
   end
+
+  def self.status_hash_to_bullets hash, is_unadded
+    if is_unadded   # If unadded, simply use unadded
+      return hash[:unadded].map{|i| "+ #{i[1]}\n"}.join('')
+    end
+
+    txt = (hash[:unadded].map{|i| "+ #{i[1]}\n"} +
+      hash[:added].map{|i| "+ #{i[1]}\n"}).sort.uniq.join('')
+
+  end
+
 
   def self.format_diff_command command, project, line=nil
     dir = self.extract_dir project
@@ -569,7 +557,7 @@ class Git
     expand = prefix == :uu ? "" : ", :expand"
 
     # If C-u, use new gitt menu
-    if prefix == :u
+    if prefix != :u
 
       menu = "
         - #{dir}
@@ -691,6 +679,10 @@ class Git
 
   end
 
+  def self.remove_options siblings
+    siblings.select{|o| o !~ /^\.(commit|delete|revert|add)\/$/ && o !~ /^\|/ }
+  end
+
   def self.add project
     dir = self.extract_dir project
 
@@ -700,46 +692,34 @@ class Git
       return "- No files to add (they should be siblings of .add)!"
     end
 
-    if self.git?(dir)
-      Console.run("git add #{siblings.join(' ')}", :dir=>dir)
-    else
-      Console.run("svn add #{siblings.join(' ')}", :dir=>dir)
-    end
+    siblings = self.remove_options siblings
+    Console.run("git add #{siblings.join(' ')}", :dir=>dir)
   end
 
   def self.commit message, project
     dir = self.extract_dir project
 
     siblings = Tree.siblings :include_label=>true
-
     # Remove "untracked (ignore)"
     siblings = siblings.select{|i| i !~ /^. untracked \(ignore\)/}.map{|i| Line.without_label(:line=>i)}
-
-    if message == 'message'   # Error if left default commit message
-      return "- Error: You must change 'message' to be your commit message." if message == "message"
-    end
+    siblings = self.remove_options siblings
 
     unless siblings.any?   # Error if no siblings
-      return "- Error: No files to commit\n" +
-             "- They should be siblings of .commit, and already be added!"
+      return ".flash - You didn't provide any files to commit (on lines next to this menu, with no blank lines)"
     end
 
-    if self.git?(dir)
-      Console.run "git commit -m \"#{message}\" #{siblings.join(' ')}", :dir=>dir#, :no_enter=>true
-    else
-      Console.run "svn ci -m \"#{message}\" #{siblings.join(' ')}", :dir=>dir
-    end
+    Console.run "git commit -m \"#{message}\" #{siblings.join(' ')}", :dir=>dir#, :no_enter=>true
   end
 
-  def self.checkout project#, file=nil
+  def self.revert project#, file=nil
     dir = self.extract_dir project
 
     siblings = Tree.siblings :include_label=>true
     siblings.map!{|i| Line.without_label(:line=>i)}
 
     unless siblings.any?   # Error if no siblings
-      return "- Error: No files to checkout\n" +
-             "- They should be siblings of .checkout!"
+      return "- Error: No files to revert\n" +
+             "- They should be siblings of .revert!"
     end
 
     Console.run "git checkout #{siblings.join(' ')}", :dir=>dir #, :no_enter=>true
@@ -834,10 +814,7 @@ class Git
 
   def self.search_repository
     Git.code_tree_diff
-    View.to_highest
-    Search.isearch nil
   end
-
 
 end
 

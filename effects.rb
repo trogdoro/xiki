@@ -24,8 +24,8 @@ class Effects
       @Effects.blink :time=>1
     - Some View methods that use effects/
       @View.prompt
-      @View.glow
-      @View.glow 'Saved!'
+      @View.flash
+      @View.flash 'Saved!'
     "
   end
 

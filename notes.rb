@@ -49,7 +49,7 @@ class Notes
   end
 
   def self.to_block up=false
-    heading_regex = "^[>|=]\\( \\|$\\)"
+    heading_regex = "^[>=]\\( \\|$\\)"
     if up
       (Keys.prefix || 1).times do
         Line.to_left
@@ -286,11 +286,11 @@ class Notes
     # |||...
     Styles.define :notes_h3,
       :face => 'arial', :size => "-1",
-      :fg => '99e',#, :bg => "9999cc",
+      :fg => '999',#, :bg => "9999cc",
       :bold =>  true
     Styles.define :notes_h3_pipe,
       :face => 'arial', :size => "-1",
-      :fg => '224'
+      :fg => '333'
 
     # ||||...
     Styles.define :notes_h4,
@@ -389,20 +389,20 @@ class Notes
     Styles.apply("^\\(>>>>\\)\\(.*\n\\)", nil, :notes_h4_pipe, :notes_h4)
 
     # - bullets with labels and comments
-    Styles.apply("^[ \t]*\\([+-]\\) \\([^\n(]+?)\\) ", nil, :ls_bullet, :notes_label)   # - hey) you
-    Styles.apply("^[ \t]*\\([+-]\\) \\([!#-~ ]+?:\\) ", nil, :ls_bullet, :notes_label)   # - hey: you
+    Styles.apply("^[ \t]*\\([<+-]<*\\) \\([^\n(]+?)\\) ", nil, :ls_bullet, :notes_label)   # - hey) you
+    Styles.apply("^[ \t]*\\([<+-]\\) \\([!#-~ ]+?:\\) ", nil, :ls_bullet, :notes_label)   # - hey: you
 
-    Styles.apply("^[ \t]*\\([+-]\\) \\([!#-~ ]+?:\\)$", nil, :ls_bullet, :notes_label)
+    Styles.apply("^[ \t]*\\([<+=-]<*\\) \\([!#-~ ]+?[:)]\\)$", nil, :ls_bullet, :notes_label)   # - hey)
 
     Styles.apply("^[ \t]*\\(x\\)\\( \\)\\(.+\\)", nil, :notes_label, :variable, :strike)
 
-    Styles.apply("^\\([ \t]*\\)\\([+-]\\) \\(.+?:\\) +\\(|.*\n\\)", nil, :default, :ls_bullet, :notes_label, :ls_quote)
-    Styles.apply("^\\([ \t]*\\)\\([+-]\\) \\([^\n(]+?)\\) +\\(|.*\n\\)", nil, :default, :ls_bullet, :notes_label, :ls_quote)
+    Styles.apply("^\\([ \t]*\\)\\([<+-]\\) \\(.+?:\\) +\\(|.*\n\\)", nil, :default, :ls_bullet, :notes_label, :ls_quote)
+    Styles.apply("^\\([ \t]*\\)\\([<+-]\\) \\([^\n(]+?)\\) +\\(|.*\n\\)", nil, :default, :ls_bullet, :notes_label, :ls_quote)
 
     Styles.apply("^ +\\(!.*\n\\)", nil, :ls_quote)   # ^!... for commands
 
     # exclamation! / todo
-    Styles.apply("^[ \t]*\\([+-]\\) \\(.+!\\)$", nil, :ls_bullet, :notes_exclamation)
+    Styles.apply("^[ \t]*\\([<+-]\\) \\(.+!\\)$", nil, :ls_bullet, :notes_exclamation)
     Styles.apply("^ +\\(!\\+.*\n\\)", nil, :diff_green)   # Whole lines
     Styles.apply("^ +\\(!-.*\n\\)", nil, :diff_red)
 
@@ -460,35 +460,45 @@ class Notes
 
   def self.enter_junior
     cursor = View.cursor
-    indent = Line.indent
+    line = Line.value
+    indent = Line.indent line
+    pipe = line =~ /^ *\|/ ? "| " : ""
     if Line.left == cursor || Line.right == cursor   # If beginning or end, leave current line alone
       Move.to_end
     else   # In middle of line
       Deletes.delete_whitespace
     end
 
-    View << "\n  #{indent}"
+    return View.<< "\n#{line[/^[ |]*/]}  " if pipe
+    View << "\n#{indent}#{pipe}  "
   end
 
   def self.bullet bullet_text="- "
     prefix = Keys.prefix :clear=>true
 
-    return Tree.collapse if prefix == :u
+    return Tree.collapse if prefix == :-
 
     line = Line.value
+    indent = Line.indent indent
 
-    if ! Line.blank?   # If non-blank line
-      Move.to_end if Line =~ /^ / && View.column <= Line.indent.length   # If just entered a bullet, go to end first
+    if line.present?   # If non-blank line
+      Move.to_end if line =~ /^ / && View.column <= indent.length   # If just entered a bullet, go to end first
 
-      Move.to_end if Line =~ /^[+-] / && View.column <= 2   # If just entered a bullet, go to end first
+      Move.to_end if line =~ /^[+-] / && View.column <= 2   # If just entered a bullet, go to end first
 
       # If at beginning of line, just insert bullet
-      return View.insert "- " if View.column == 0 && bullet_text == "- " && Line !~ /^ /
+      return View.insert "- " if View.column == 0 && bullet_text == "- " && line !~ /^ /
 
       if Line.point != Line.right
         Deletes.delete_whitespace
       end
       View.insert "\n"
+
+      # Do simple case if quoted
+      return View.<<("#{line[/^[ |]*/]}  - ") if line =~ /^ *\|/
+
+      # Do simple case if on heading
+      return View.<<("- ") if line =~ /^>/
     end
 
     if prefix.is_a? Fixnum   # If numeric prefix, indent by n
@@ -582,7 +592,7 @@ class Notes
 
       else   # If -, kill under
         Tree.kill_under
-        Move.to_line_text_beginning
+        Line.to_beginning
       end
     end
   end
@@ -674,7 +684,11 @@ class Notes
     return
   end
 
-  def self.drill file, heading=nil, content=nil
+  def self.drill file, heading=nil, *content
+
+    prefix = Keys.prefix :clear=>true
+
+    content = content.any? ? content.join('/') : nil
 
     had_bookmark = file =~ /^\$/
     file = Bookmarks[file]
@@ -684,7 +698,7 @@ class Notes
       return "| Set the bookmark first. Then you'll be able to use this menu to\n| browse the file. The file should have '> ...' headings.\n|\n@ #{file}\n"
     end
 
-    # If docs/, output message
+    # If docs/, output docs string
 
     if heading == "docs"
       message = "
@@ -698,7 +712,7 @@ class Notes
 
     txt = File.read file
 
-    # If just file passed, show outline
+    # If just file passed, headings
 
     if ! heading
       txt = txt.grep /^\>( .+)/
@@ -706,29 +720,62 @@ class Notes
       return txt.join('').gsub /^> /, '| '
     end
 
-    # If just heading passed, show outline
+    # If just heading passed, show text under heading
+
+    heading.sub!(/^\| /, '> ')
+    escaped_heading = Regexp.escape heading
 
     if ! content
-
-      # If heading passed, show text in the block
-
-      heading.sub! /^\| /, '> '
-      txt.sub! /.*#{Regexp.escape heading}/m, ''
-      txt.sub! /^>( |$).*/m, ''   # Delete until heading
-      txt.strip!
-      return txt.gsub! /^/, '| '
+      txt = self.extract_block txt, heading
+      return txt.gsub(/^/, '| ').gsub(/^\| $/, '|')
     end
 
-    # If content passed, navigate to heading
+    # If content passed
+
+    # If C-4, grab text and save it to file / update
+    if prefix == 4
+      # Update difflog
+
+      # Grab before and after
+      index = txt.index /^#{escaped_heading}$/
+      index += heading.length
+
+      before = txt[0..index]
+
+      after = txt[index..-1].sub(/.*?^>( |$)/m, ">\\1")
+
+      content = Tree.siblings :string=>1
+
+      txt = "#{before}#{content}#{after}"
+
+      # return
+      File.open(file, "w") { |f| f << txt }
+
+      # Revert file if it's open?
+
+      View.flash "- Saved!"
+      return
+    end
+
+    # Just navigate to heading
+
     View.open file
     View.to_highest
-    Search.forward "^#{Regexp.escape heading.sub(/^\| /, '> ')}"
+    Search.forward "^#{$el.regexp_quote heading}$"
     View.recenter_top
     Search.forward "^#{$el.regexp_quote content.sub(/^\| /, '')}"
-    Color.colorize :l
     Move.to_axis
     nil
+  end
 
+  def self.extract_block txt, heading
+    txt = txt.sub /.*^#{Regexp.escape heading}\n/m, ''   # Delete before block
+    txt.sub! /^>( |$).*/m, ''   # Delete after block
+    txt  # = txt.gsub(/^.?/, "|\\1")   # Escape with pipes
+  end
+
+  def self.read_block file, heading
+    self.extract_block File.read(file), heading
   end
 end
 

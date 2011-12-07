@@ -4,10 +4,6 @@ require 'line'
 require 'core_ext'
 
 describe Line, "#without_label" do
-  it "should remove old style labels" do
-    Line.without_label(:line=>"- hey: you").should == "you"
-  end
-
   it "removes bullets" do
     Line.without_label(:line=>"- you").should == "you"
   end
@@ -19,6 +15,23 @@ describe Line, "#without_label" do
   it "should keep labels if opening paren" do
     Line.without_label(:line=>"- (hey) you").should == "(hey) you"
   end
+
+  it "should respect collapse bullets" do
+    Line.without_label(:line=>"< hey) you").should == "you"
+  end
+
+  it "should respect multiple collapse bullets" do
+    Line.without_label(:line=>"<< hey) you").should == "you"
+  end
+
+  it "should respect multiple collapses and only label" do
+    Line.without_label(:line=>"<< hey)").should == ""
+  end
+
+  it "should leave old style labels" do
+    Line.without_label(:line=>"- hey: you").should == "hey: you"
+  end
+
 end
 
 # class LineTest < Test::Unit::TestCase

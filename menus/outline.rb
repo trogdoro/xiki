@@ -17,7 +17,7 @@ class Outline
     result = Search.forward "^#{target}$"
 
     View.recenter_top
-    Move.to_line_text_beginning
+    Line.to_beginning
     nil
 
   end

@@ -686,8 +686,8 @@ class Keys
     TextUtil.camel_case(txt).gsub(/[a-z]/, '')
   end
 
-  def self.last
-    $el.el4r_lisp_eval("(elt (recent-keys) (- (length (recent-keys)) 1))").to_s
+  def self.last nth=1
+    $el.el4r_lisp_eval("(elt (recent-keys) (- (length (recent-keys)) #{nth}))").to_s
   end
 
   def self.before_last
@@ -696,6 +696,23 @@ class Keys
 
   def self.history
     $el.view_lossage
-    View.glow "- Showed recently-typed keys in other view!", :times=>4
+    View.flash "- Showed recently-typed keys in other view!", :times=>4
   end
+
+  def self.isearch_prefix shortcut_length=2
+    # TODO Make search.stop set Keys.prefix (call .isearch_prefix)
+      # Keys.prefix = self.isearch_prefix
+    # and don't call .isearch_prefix
+
+    # What about shortcut_length though?  Would we get weird results for search_foo_foo shortcuts? - just try it for now
+
+    # Return it if character before key shortcut was C-u or C-0 - C-9...
+    char = Keys.last(shortcut_length+1).to_i
+    return :u if char == 21
+    return :- if char == 67108909
+    return (char - 67108912) if char >= 67108912 && char <= 67108921
+
+    nil
+  end
+
 end

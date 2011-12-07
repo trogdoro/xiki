@@ -220,6 +220,11 @@ describe Tree, "#route_match" do
     Tree.route_match(["*"], [".hot/"]).should == true
   end
 
+  it "recognizes when different case" do
+    Tree.route_match(["- A/"], ["a"]).should == true
+  end
+
+
   # Leave this in to implement later?
   #   it "finds match when two items on same line" do
   #     Tree.route_match(["- .push/master/"], ["push", "master"]).should == true
@@ -382,6 +387,15 @@ end
 
 
 describe Tree, "#climb" do
+
+  it "shows shallowest items when blank path" do
+    Tree.climb("- a/\n- b/\n", "").should == "- a/\n- b/\n"
+  end
+
+  it "shows childern of 1 deep" do
+    Tree.climb("- a/\n  - aa/\n  - ab/\n- b/\n", "a").should == "- aa/\n- ab/\n"
+  end
+
   it "includes empty lines" do
     result = Tree.climb "Hey\n\nyou\n", ""
     result.should == "

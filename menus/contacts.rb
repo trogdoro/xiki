@@ -1,5 +1,5 @@
 class Contacts
-  def self.menu heading=nil
-    Notes.drill '$c', heading
+  def self.menu *args
+    Notes.drill '$c', *args
   end
 end

@@ -31,23 +31,32 @@ class CodeTree
   end
 
   def self.returned_to_s returned
-    if returned.is_a? Array   # Join and bulletize
+
+    if returned.is_a? String   # Join and bulletize
+      returned
+    elsif returned.is_a? Array   # Join and bulletize
       returned.map{|l| "#{l =~ /\/$/ ? '+' : '-'} #{l}\n"}.join('')
     elsif returned.is_a? Hash
       (returned.map{|k, v| v =~ /\/$/ ? "+ #{k}: #{v}" : "- #{k}: #{v}"}.join("\n")) + "\n"
-    elsif returned.is_a? Fixnum
-      "#{returned.to_s.strip}\n"
     else
-      returned
+      returned.to_s.strip
     end
   end
 
   def self.draw_exception exception, code
     message = exception.message
 
-    # If it was in the format of tree output, just show it
-    message_without_first_part = message.sub(/.+: /, '')
-    return message_without_first_part if exception.is_a?(RuntimeError) && message_without_first_part =~ /\A[|+-] /
+    if exception.is_a?(RuntimeError)
+
+      # If it was in the format of tree output, just show it
+
+      # Some messages start with "path:line:...: " at beginning again
+
+      message.sub!(/.+: /, '') if message =~ /in `/
+
+      return message if message =~ /\A[|+-] /   # /^- /
+      return View.flash($1) if(message =~ /^\.flash (.+)/)
+    end
 
     backtrace = exception.backtrace[0..8].join("\n").gsub(/^/, '  ') + "\n"
     return "- tried to run: #{code}\n- error: #{message}\n- backtrace:\n#{backtrace}"
@@ -60,7 +69,6 @@ class CodeTree
     orig_left = point
 
     returned, stdout, e = Code.eval(code)  # Eval code
-
     # If no stdout (and something was returned), print return value
     if ! stdout.nonempty? and ! returned.nil?
       stdout = self.returned_to_s returned
@@ -115,7 +123,7 @@ class CodeTree
       if options[:quote_search]   # If they want to do a tree search
         goto_char left
         Search.forward "|"
-        Move.to_line_text_beginning
+        Line.to_beginning
         Tree.search(:left=>left, :right=>right, :recursive_quotes=>true)
         return
       end
@@ -133,7 +141,7 @@ class CodeTree
         Tree.search_appropriately left, right, stdout
 
       elsif options[:no_search]
-        Move.to_line_text_beginning :down=>1
+        Line.to_beginning :down=>1
       end
 
     end

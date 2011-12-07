@@ -1,6 +1,13 @@
 class Wikipedia
 
   def self.menu name=nil
+    "
+    > See
+    - @go/wp/
+    "
+  end
+
+  def self.wp name=nil
     if name.nil?
       # TODO: how to deal with fact that history will have wp and wikipedia? - pass in list:
       # Maybe get the actual root pass it (wikipedia or wp)
@@ -23,4 +30,4 @@ class Wikipedia
 
 end
 
-Menu.wp :menu=>"wikipedia"
+Menu.wp :menu=>"Wikipedia.wp"

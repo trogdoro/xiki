@@ -9,6 +9,8 @@ class DiffLog
 
   # Open file having difflog
   def self.open
+    View.to_after_bar if View.in_bar?
+
     # If open, just switch to it and revert
     if View.buffer_open?("difflog.notes")
       View.to_buffer("difflog.notes")

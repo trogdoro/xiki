@@ -49,9 +49,9 @@ class Console
       dir.gsub!(/\/\/+/, '/')
 
       # If file, but not dir, try backing up to the dir
-      if File.exists?(dir) && ! File.directory?(dir)
-        dir.sub!(/[^\/]+$/, '')
-      end
+      raise "- Directory doesn't exist!" if ! File.exists? dir
+
+      dir.sub!(/[^\/]+$/, '') if ! File.directory?(dir)
 
       # If dir exists, continue
       if File.directory?(dir)
@@ -253,6 +253,8 @@ class Console
     dir ||= $1 unless $1.empty?
     command = $2
 
+    return Tree.<<("- Directory doesn't exist) #{dir}") if dir && ! File.exists?(dir)
+
     if options[:sync]
       output = Console.run command, :dir=>dir, :sync=>true
       output.sub!(/\A\z/, "\n")   # Add linebreak if blank
@@ -422,7 +424,7 @@ class Console
         $el.set_buffer b
         next if $el.elvar.major_mode.to_s != 'shell-mode'
 
-        next if name == "*output - tail of /tmp/output_ol.notes"
+        next if name == "*ol"
 
         txt << "- #{name}/\n"
         self.commands.reverse.each do |h|

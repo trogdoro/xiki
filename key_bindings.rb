@@ -25,12 +25,10 @@ class KeyBindings
     Keys.as_bookmark { Bookmarks.save }   # remember bookmark
     Keys.as_clipboard { Clipboard.as_clipboard }   # **
     Keys.as_directory { FileTree.copy_path }   # copy dir to clipboard from tree
-    # D
     Keys.as_everything { Clipboard.copy_everything }
     Keys.as_file { DiffLog.save }   # save (or, with prefix, save as) **
     # H
-    #Keys.as_indented { Clipboard.as_indented }
-    # J
+    # I
     Keys.as_job { Macros.record }   # start recording macro *
     Keys.as_kill { Clipboard.cut(0); Location.as_spot('killed') }   # cut) **
     Keys.as_line { Clipboard.as_line }
@@ -42,7 +40,14 @@ class KeyBindings
     Keys.as_rest { Clipboard.copy_paragraph(:rest => true) }
     Keys.as_spot { Location.as_spot }   # remember point in file *
     Keys.as_todo { Search.move_to "$t", View.selection }  # copy sexp at point
+    Keys.as_update { Launcher.as_update }  # copy sexp at point
+    # U
+
+    # TODO: make this be as_variable?
+    # like:     Keys.as_name { Clipboard.copy }   # copies using key (prompted for)
     Keys.as_version { History.backup_file }   # creates backup
+    # Think of another key for backing it up?
+
     Keys.as_window { View.save }   # remember window configuration as name
     # Y
     # Z
@@ -94,10 +99,10 @@ class KeyBindings
     #     Keys.open_like_text { txt = View.txt; View.to_buffer "txt"; View << txt }
     #     Keys.open_log_tree { Rails.tree_from_log }
     Keys.open_list_databases { Launcher.open('- Couch.databases/') }
-    Keys.open_list_models { Launcher.open("- Merb.models/") }
+    #     Keys.open_list_models { Launcher.open("- Merb.models/") }
     Keys.open_list_names { Clipboard.list }
-    Keys.open_list_repository { Git.open_list_repository }
-    Keys.open_link_top { Links.open_first }   # open first hyperlink on page
+    Keys.open_list_ruby { Launcher.open("- technologies/ruby/") }
+    Keys.open_list_technologies { Launcher.open("- technologies/") }   # open first hyperlink on page
     Keys.open_last_urls { Launcher.open "- last/urls/" }
     Keys.open_menu { Xiki.open_menu }   # Open all menus and show them **
     Keys.open_not_saved { History.open_unsaved }
@@ -105,6 +110,7 @@ class KeyBindings
     Keys.open_point { Bookmarks.go(nil, :point => true) }
     Keys.open_quick { Bookmarks.go :q }   # like OB but uses different temporary namespace
     Keys.open_related_test { Code.open_related_rspec }
+    Keys.open_related_file { Code.open_related_file }
     Keys.open_repository_list { Git.show_log_one_file }   # Show git diffs o 1 file
     # S
     Keys.open_search { Search.outline_search }   # hide search via outline *
@@ -132,19 +138,7 @@ class KeyBindings
     #   - ideas: embed, emit, entry
     #     Keys.EAB { Code.enter_as_backslash }   # Enter As Bash: enter with \ at eol's
     Keys.EE { Line.to_right }   # EE - end of line (E's default) **
-    Keys.enter_as_added { Numbers.enter_as_added }   # Add dollars or numbers in clipboard
-    #     Keys.enter_as_camelcase { View.insert TextUtil.camel_case(Clipboard.get(0)) }
-    #     Keys.enter_as_debug { Code.enter_as_debug }
-    Keys.enter_as_execute { Console.do_as_execute(:insert=>true) }   # change word to camel case (LikeThat)
-    Keys.enter_as_dom { Launcher.insert('- Firefox.dom/') }   # change word to camel case (LikeThat)
-    Keys.enter_as_filename { insert Clipboard.get(".") }
-    Keys.enter_as_hyphenated { insert TextUtil.hyphen_case(Clipboard.get(0)) }
-    Keys.enter_as_jquery { Javascript.enter_as_jquery }
-    Keys.enter_as_snake { insert TextUtil.snake_case(Clipboard.get(0)) }
-    #     Keys.enter_as_search { FileTree.enter_as_search }
-    Keys.enter_as_test { Specs.enter_as_rspec }
-    Keys.enter_as_url { Firefox.enter_as_url }
-    Keys.enter_as_variable { insert "\#{#{Clipboard.get(0)}}" }
+    Keys.enter_all { Launcher.enter_all }
     Keys.enter_bullet { Notes.bullet }
     Keys.enter_clipboard { Clipboard.paste("0") }   # paste **
     Keys.enter_difflog { DiffLog.enter_from_difflog }   # Save point and go to difflog to search
@@ -181,12 +175,13 @@ class KeyBindings
     Keys.enter_log_stack { Code.enter_log_stack }
     Keys.enter_last_log { Launcher.insert(Keys.prefix_u ? "- last/" : "- log/") }
     #     Keys.enter_last_launched { Launcher.enter_last_launched }
-    Keys.enter_log_time { Code.enter_log_time }
-    Keys.enter_last_urls { Launcher.insert "- urls/" }
+    Keys.enter_like_test { Specs.enter_as_rspec }
+    #     Keys.enter_log_time { Code.enter_log_time }
+    Keys.enter_like_url { Firefox.enter_as_url }
+    Keys.enter_like_variable { insert "\#{#{Clipboard.get(0)}}" }
 
     Keys.enter_menu { Xiki.insert_menu }   # Redundant with C-enter on blank line
-    #     Keys.enter_name { Clipboard.paste }   # paste thing saved as name
-    Keys.enter_outline { FileTree.enter_lines }   # in tree, enter methods or headings
+    Keys.enter_outline { Launcher.enter_outline }   # in tree, enter methods or headings
 
     Keys.enter_push { Git.code_tree_diff(:enter=>true) }   # Commit to repos, push, etc
     Keys.enter_quote { FileTree.enter_quote }
@@ -207,7 +202,6 @@ class KeyBindings
     Keys.E3 { Clipboard.paste(3) }
     Keys.E4 { Clipboard.paste(4) };   Keys.E5 { Clipboard.paste(5) };   Keys.E6 { Clipboard.paste(6) }
     Keys.E7 { Clipboard.paste(7) };   Keys.E7 { Clipboard.paste(8) };   Keys.E7 { Clipboard.paste(9) }
-    Keys.E8 { FileTree.enter_lines /.*/ }   # Like enter_outline, but inserts all
   end
 
   def self.do_keys
@@ -290,7 +284,7 @@ class KeyBindings
 
     Keys.do_lines_unique { Code.kill_duplicates }   # Uniqify, delete duplicates
     Keys.do_linebreaks_windows { set_buffer_file_coding_system :dos }
-    Keys.do_menu { View.glow "- TODO: make Keys.do_menu do something?" }
+    Keys.do_menu { View.flash "- TODO: make Keys.do_menu do something?" }
     Keys.do_name_buffer { Buffers.rename }
     Keys.do_notes_colors { FileTree.apply_styles; Notes.apply_styles; FileTree.apply_styles_at_end }
     Keys.do_number_enter { Incrementer.enter }
@@ -363,7 +357,7 @@ class KeyBindings
     # T: defined above - mapped to what C-t does by default
     Keys.to_up { Tree.to_parent }   # to parent (last line indented less)
     Keys.to_visible { View.to_relative }   # go to nth line, relative to top of window
-    Keys.to_words { Move.to_line_text_beginning }   # move to start of words on line *
+    Keys.to_words { Line.to_beginning }   # move to start of words on line *
     # X
     # Z
     Keys.T1 { View.to_line_with_prefix(1) };  Keys.T2 { View.to_line_with_prefix(2) }
@@ -469,7 +463,7 @@ class KeyBindings
     # just_...
     define_key :isearch_mode_map, kbd("C-j"), nil
     Keys.search_just_adjust { Search.isearch_just_adjust }
-    Keys.search_just_bold { Search.isearch_just_surround_with_char('<b>', '</b>') }
+    Keys.search_just_bookmark { Search.just_bookmark }
     Keys.search_just_case { Search.isearch_just_case }   # make match be camel case
     #     Keys.search_just_case { Search.isearch_just_case }   # make match be camel case
     Keys.search_just_difflog { Search.jump_to_difflog }   # find last string in difflog

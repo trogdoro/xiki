@@ -22,7 +22,7 @@ class Filter
     View.to_highest
     Search.forward "^#{target}$"
 
-    Move.to_line_text_beginning
+    Line.to_beginning
     nil
 
   end

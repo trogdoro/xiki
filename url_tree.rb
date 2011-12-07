@@ -1,6 +1,6 @@
 class UrlTree
   def self.handles? list
-    list.first =~ /^http:\/\//
+    list.first =~ /^http:\/\// ? 1 : nil
   end
 
   def self.launch options={}

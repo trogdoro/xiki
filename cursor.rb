@@ -30,33 +30,42 @@ class Cursor
   end
 
   def self.bar
-    $el.el4r_lisp_eval "(customize-set-variable 'cursor-type '(bar . 3))"
+    $el.el4r_lisp_eval "(customize-set-variable 'cursor-type '(bar . 2))"
+    nil
   end
   def self.box
     $el.customize_set_variable :cursor_type, :box
+    nil
   end
   def self.underscore
     $el.el4r_lisp_eval "(customize-set-variable 'cursor-type '(hbar . 3))"
+    nil
   end
   def self.hollow
     $el.customize_set_variable :cursor_type, :hollow
+    nil
   end
 
   def self.color color
     $el.set_face_background :cursor, color
+    nil
   end
 
   def self.blue
     $el.set_face_background :cursor, "#0099ff"
+    nil
   end
   def self.red
     $el.set_face_background :cursor, "#ff3300"
+    nil
   end
   def self.green
     $el.set_face_background :cursor, "#33bb00"
+    nil
   end
   def self.black
     $el.set_face_background :cursor, "#000000"
+    nil
   end
 
   def self.red_bar

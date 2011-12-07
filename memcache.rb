@@ -16,7 +16,7 @@ class Memcache
   def self.start
     buffer = "*memcached"
     if View.buffer_open? buffer   # If already open
-      View.glow "- '*memcached' is already open!", :times=>4
+      View.flash "- '*memcached' is already open!", :times=>4
       return self.server
     end
     Console.run('memcached -vv -p 11211 -m 64', :buffer=>buffer)
@@ -94,14 +94,14 @@ class Memcache
 
       if Keys.prefix == 0
         self.connection.delete key
-        View.glow "- Deleted!"
+        View.flash "- Deleted!"
         return
       end
 
       value = YAML::load Xiki.branch
       self.connection.set key, value
 
-      View.glow "- Saved!"
+      View.flash "- Saved!"
 
     rescue Exception=>e
       return "- Not found!\n| sample value" if e.message == "Memcached::NotFound"

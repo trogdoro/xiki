@@ -1,5 +1,7 @@
 class Technologies
-  def self.menu topic=nil, heading=nil, content=nil
+  def self.menu topic=nil, heading=nil, *content
+
+    content = content.any? ? content.join("/") : nil
 
     # If no topic, just show all dirs
 

@@ -60,4 +60,13 @@ class Block
     orig.go
   end
 
+  def self.>> txt
+    orig = Location.new
+    ignore, left, right = View.block_positions "^>"
+    View.cursor = right
+
+    View.insert(">>\n#{txt.strip}\n") unless txt.blank?
+    orig.go
+  end
+
 end

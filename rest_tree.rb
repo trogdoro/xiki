@@ -42,13 +42,14 @@ class RestTree
     result.gsub! /^/, "| "
     result.gsub! /^\| ( *[-+] )/, "\\1"
 
-    Tree.under result, :escape=>''
+    Tree.<< result, :escape=>'', :no_slash=>1
 
+    nil
   end
 
   # Tell Launcher whether we're in a rest tree
   def self.handles? list
-    list.any? {|i| i =~ /^ *(GET|PUT|POST|DELETE)/}
+    list.index{|i| i =~ /^(GET|PUT|POST|DELETE)/}
   end
 
   # Pull out root
@@ -90,10 +91,6 @@ class RestTree
 
   end
 
-  #   def handle_error(req, res)
-  #     e = RuntimeError.new("#{res.code}:#{res.message}\nMETHOD:#{req.method}\nURI:#{req.path}\n#{res.body}")
-  #     raise e
-  #   end
 end
 
 
@@ -107,5 +104,5 @@ Launcher.add(/^.*(- )?GET \/.+/) do
   result = RestTree.request "GET", url
 
   result = result.grep(/#{regex}/i).join
-  Tree.under result#, :escape=>''
+  Tree.under result, :no_slash=>1
 end

@@ -1,9 +1,12 @@
+# Is just a menu now, since it's all delegation
+
+
 class Computer
 
   def self.menu
     "
-    - @processes/
     - .ip/
+    - @processes/
     "
   end
 
@@ -13,7 +16,7 @@ class Computer
 
     return "| #{inet[0][/[\d.]+/]}\n- apparently you\'re not connected to the internet?!" if inet.length < 2
 
-    inet[1][/[\d.]+/]
+    "| #{inet[1][/[\d.]+/]}"
   end
 
 end

@@ -17,6 +17,7 @@ class Search
     '
     - .history/
     - .log/
+    - .launched/
     - docs/
       | > Summary
       | Some interesting keys to type while searching.
@@ -190,13 +191,13 @@ class Search
     Code.comment Line.left, Line.right
     self.to_start  # Go back to start
     insert "#{line}"
-    Move.to_line_text_beginning
+    Line.to_beginning
   end
 
   def self.isearch_just_comment
     self.stop
     Code.comment Line.left, Line.right
-    Move.to_line_text_beginning
+    Line.to_beginning
   end
 
   def self.just_increment options={}
@@ -379,23 +380,25 @@ class Search
     cm_grep("./", read_from_minibuffer("Grep for pattern: "))
   end
 
-  def self.tree_grep
+  def self.tree_grep # prefix=nil
+
+    prefix = Keys.isearch_prefix
     path = Keys.bookmark_as_path :include_file=>1   # Get path (from bookmark)
+
+    # If C-u, just jump to bookmark and search from the top
+    if prefix == :u
+      View.open path
+      View.to_highest
+      Search.isearch
+      return
+    end
 
     if path == :space   # If space, search in buffers
       self.find_in_buffers Keys.input(:prompt=>"Search all open files for: ")
       return
     end
 
-    input = case Keys.prefix
-      when :u;  Clipboard.get
-      when 1;  Clipboard.get("1")
-      when 2;  Clipboard.get("2")
-      when 3;  Clipboard.get("3")
-      when 5;  "^ *(class|module) .*#{Regexp.escape(Keys.input(:prompt=>'Class/module to search for: '))}"
-      when 6;  "^ *def .*#{Regexp.escape(Keys.input(:prompt=>'Method to search for: '))}"
-      else;  Keys.input(:prompt=>"Text to search for: ")
-      end
+    input = Keys.input(:prompt=>"Text to search for: ")
 
     input.gsub! "#", "\\#"
 
@@ -439,6 +442,7 @@ class Search
   end
 
   def self.search_in_bookmark match
+
     bm = Keys.bookmark_as_path :include_file=>1
 
     if bm == :slash   # If space, go back to root and search
@@ -1021,11 +1025,13 @@ class Search
   end
 
   def self.isearch_just_case
-    self.stop
-    txt = self.match
-    lam = Keys.input(:prompt=>'convert to which case?: ', :choices=>TextUtil.case_choices)
+    txt = self.stop
+
+    return Search.isearch(Clipboard[0]) if txt.nil?
+
+    choice = Keys.input(:prompt=>'convert to which case?: ', :choices=>TextUtil.case_choices)
     View.delete(Search.left, Search.right)
-    View.insert lam[txt]
+    View.insert choice[txt]
   end
 
   def self.isearch_have_case
@@ -1187,7 +1193,6 @@ class Search
   def self.isearch_paths
     was_reverse = self.was_reverse
     match = self.stop
-
     return Line.previous if match.nil? && was_reverse   # Odd case, user might do this if at end of file
     return Git.search_repository if match.nil?
 
@@ -1295,7 +1300,8 @@ class Search
 
     View.to_highest
 
-    orig.go unless path == "$t" && was_in_bar
+    return if path == "$t" && (was_in_bar && ! orig.buffer == "todo.notes")
+    orig.go
   end
 
   def self.log
@@ -1417,4 +1423,13 @@ class Search
 
     Launcher.open("- log/") if match.nil?
   end
+
+  def self.just_bookmark
+    match = self.stop
+    path = Keys.bookmark_as_path :include_file=>1   # Get path (from bookmark)
+    View.open path
+    View.to_highest
+    Search.isearch match
+  end
+
 end

@@ -94,7 +94,7 @@ class Specs
         else
           Search.forward "^ *it ['\"]#{$el.regexp_quote(test)}['\"]"
         end
-        Move.to_line_text_beginning
+        Line.to_beginning
         return
       end
 

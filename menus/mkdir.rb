@@ -11,11 +11,13 @@ class Mkdir
       |
       " if trunk.length <= 1
 
-    return View.glow("- Dir already exists!") if File.exists?(trunk[-2])
+    closest_file_path = Tree.closest_dir
 
-    `mkdir -p "#{trunk[-2]}"`
+    return View.flash("- Already exists: #{closest_file_path}") if File.exists?(closest_file_path)
 
-    return View.glow "- Created!"
+    `mkdir -p "#{closest_file_path}"`
+
+    return View.flash "- Created: #{closest_file_path}", :times=>3
   end
 
 end

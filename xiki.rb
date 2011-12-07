@@ -106,7 +106,7 @@ class Xiki
   def self.insert_menu
     return Launcher.insert "- Xiki.menus/" if Keys.prefix_u
 
-    input = Keys.input(:timed => true, :prompt => "Start typing a menu that might exist (- for all): ")
+    input = Keys.input(:timed => true, :prompt => "Start typing a menu that might exist (* for all): ")
     View << "#{input}"
     Launcher.launch
   end
@@ -115,7 +115,7 @@ class Xiki
 
     return Launcher.open("- last/") if Keys.prefix_u
 
-    input = Keys.input(:timed => true, :prompt => "Start typing a menu that might exist (- for all): ")
+    input = Keys.input(:timed => true, :prompt => "Start typing a menu that might exist (* for all): ")
     View.to_buffer "menu"
     Notes.mode
     View.kill_all
@@ -176,7 +176,7 @@ class Xiki
         View.open "$x/spec/#{clazz}_spec.rb"
         View.to_highest
         Search.forward "[\"']#{test[-1]}[\"']"
-        Move.to_line_text_beginning
+        Line.to_beginning
         return
       end
 

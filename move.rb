@@ -48,48 +48,6 @@ class Move
     end
   end
 
-  #   def self.to_indent
-  #     indent = Keys.prefix
-
-  #     # If ending, to matching (reversing if U)
-  #     if Line.matches(/^ *(end|\]|\}|\))$/)
-  #       return Keys.prefix_u? ? self.to_same_indent : self.to_same_indent(:up)
-  #     elsif Keys.prefix_u?   # If U, go up
-  #       return self.to_same_indent(:up)
-  #     elsif indent == nil   # If no numeric prefix, go down to arg
-  #       return self.to_same_indent
-  #     end
-
-  #     # If numeric prefix, go to last one of same
-  #     spaces = " " * indent.abs
-  #     orig = Line.number
-  #     # If negative, go backwards
-  #     indent >= 0 ? re_search_forward(/^#{spaces}[a-zA-Z<>{}|\/+-]/) : re_search_backward(/^#{spaces}[a-zA-Z<>{}-]/)
-  #     # If still there, move forward and do again
-  #     if Line.number == orig
-  #       Line.next
-  #       indent >= 0 ? re_search_forward(/^#{spaces}[a-zA-Z<>{}|\/+-]/) : re_search_backward(/^#{spaces}[a-zA-Z<>{}-]/)
-  #     end
-  #     move_to_column(indent.abs)
-  #   end
-
-  #   # Move down to the next line that is indented to the column in which 
-  #   # the cursor currontly is.
-  #   def self.to_same_indent up=false
-  #     indent = Line.indent.size
-
-  #     if up
-  #       Line.to_left
-  #       Search.backward "^ \\{#{indent}\\}[^ \n]"
-  #     else
-  #       Line.next
-  #       Search.forward "^ \\{#{indent}\\}[^ \n]"
-  #     end
-
-  #     Move.to_line_text_beginning
-
-  #   end
-
   def self.to_next_paragraph
     pref = Keys.prefix || 1
     if Keys.prefix_u?  # If C-u, just go to end
@@ -144,23 +102,6 @@ class Move
   def self.to_column n=nil
     n = n || elvar.current_prefix_arg || Keys.input(:prompt => "Enter number of column to go to: ").to_i
     move_to_column n# - 1
-  end
-
-  def self.to_line_text_beginning options={}
-    down = options[:down]
-    prefix = Keys.prefix
-    down ||= prefix
-
-    # If prefix go down n lines first
-    Line.next down if down.is_a? Fixnum
-
-    Line.to_left
-
-    prefix == :u || options[:quote]?
-      $el.skip_chars_forward("[^ \t]") :
-      $el.skip_chars_forward("[^ \t|]")   # If quoted, skip quote unless :u
-
-    nil
   end
 
   # Go to opposite bracket

@@ -4,15 +4,19 @@ class Location
   extend ElMixin
   include ElMixin
 
-  @sample_usage = "
-    orig = Location.new   # Save where we are
-    Line.next 4;  View.open '/tmp'   # Go Somewhere else
-    orig.go   # Go back to where we were
-  "
+  def self.menu
+    %`
+    - examples/
+      | orig = Location.new   # Save where we are
+      | Line.next 4;  View.open '/tmp'   # Go Somewhere else
+      | orig.go   # Go back to where we were
+    `
+  end
 
   attr_accessor :line
   attr_accessor :file
   attr_accessor :column
+  attr_accessor :buffer
 
   @@spots = {}
 

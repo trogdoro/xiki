@@ -148,10 +148,10 @@ class FileTree
   end
 
   def self.grep_with_hashes path, regex, prepend='##'
-
     Search.append_log path, "- #{prepend}#{regex}/"
 
-    View.to_buffer "*tree grep";  View.dir = Files.dir_of(path)
+    View.to_buffer "*tree grep"
+    View.dir = Files.dir_of(path)
     View.clear; notes_mode
 
     if File.directory?(path)
@@ -349,7 +349,8 @@ class FileTree
     Styles.apply("https?://[a-zA-Z0-9\/.~_:-]+", :notes_link)   # blue-ify url's
 
     # - bullets
-    Styles.apply("^[ \t]*\\([+-]\\)\\( \\)", nil, :ls_bullet, :variable)
+    Styles.apply("^[ \t]*\\([+=-]\\)\\( \\)", nil, :ls_bullet, :variable)
+    Styles.apply("^[ \t]*\\(<+=?\\)\\( \\)", nil, :ls_bullet, :variable)
 
     # With numbers
     Styles.apply("^ +\\(:[0-9]+\\)\\(|.*\n\\)", nil, :ls_quote_line_number, :ls_quote)
@@ -357,25 +358,26 @@ class FileTree
     # Path-like lines and parts of lines (make gray)
 
     # Remove later?
-    Styles.apply("^[ +-]*\\([^|\n]+/\\)$", nil, :ls_dir)  # slash at end
+    Styles.apply("^[ <+=-]*\\([^|\n]+/\\)$", nil, :ls_dir)  # slash at end
 
     # @ ... lines
-    Styles.apply("^[ +-]*\\(@ \\)", nil, :ls_dir)  # slash after almost anything
-    Styles.apply("^[ +-]*[^)\n]+) \\(@ \\)", nil, :ls_dir)  # slash after almost anything
+    Styles.apply("^[ <+-]*\\(@ \\)", nil, :ls_dir)  # @ ...
+    Styles.apply("^[ <+-]*[^)\n]+) \\(@ \\)", nil, :ls_dir)  # - label) @ ...
 
-    Styles.apply("^[ +-]*\\([@$a-zA-Z0-9_,? ().:-]*[^ \n]\/\\)", nil, :ls_dir)  # slash after almost anything
-    Styles.apply("^[ +-]*\\([@$a-zA-Z0-9_,? ().:-]+\/[@a-zA-Z0-9_,? ().:\/-]+\/\\)", nil, :ls_dir)  # one word, path, slash
+    Styles.apply("^[ <+-]*\\([@~$a-zA-Z0-9_,? ().:-]*[^ \n]\/\\)", nil, :ls_dir)  # slash after almost anything
+    Styles.apply("^[ <+-]*\\([@~$a-zA-Z0-9_,? ().:<-]+\/[@a-zA-Z0-9_,? ().:\/<-]+\/\\)", nil, :ls_dir)  # one word, path, slash
 
-    Styles.apply("^[ \t]*[+-] [a-zA-Z0-9_,? ().:-]+?[:)] \\(\[.@a-zA-Z0-9 ]+\/\\)", nil, :ls_dir)   # label, one word, slash
-    Styles.apply("^[ \t]*[+-] [a-zA-Z0-9_,? ().:-]+?[:)] \\([.@a-zA-Z0-9 ]+\/[.@a-zA-Z0-9 \/]+\/\\)", nil, :ls_dir)   # label, one word, path, slash
-
+    Styles.apply("^[ \t]*[<+-] [a-zA-Z0-9_,? ().:-]+?[:)] \\(\[.@a-zA-Z0-9 ]+\/\\)", nil, :ls_dir)   # label, one word, slash
+    Styles.apply("^[ \t]*[<+-] [a-zA-Z0-9_,? ().:-]+?[:)] \\([.@a-zA-Z0-9 ]+\/[.@a-zA-Z0-9 \/]+\/\\)", nil, :ls_dir)   # label, one word, path, slash
 
     # Bullets
-    Styles.apply("^[ \t]*[+-] [^(\n]+?) \\(.+/\\)$", nil, :ls_dir)   # Dirs with labels
-    Styles.apply("^[ \t]*[+-] [a-zA-Z0-9_,? ().:-]+?: \\(.+/\\)$", nil, :ls_dir)   # Dirs with labels
-    Styles.apply("^[ +-]*\\([^|\n]+/\\)$", nil, :ls_dir)   # Dirs with bullets
+    Styles.apply("^[ \t]*[+-] [^(\n]+?) \\(.+/\\)$", nil, :ls_dir)   # - hey) /what/
+    Styles.apply("^[ \t]*[+-] [a-zA-Z0-9_,? ().:-]+?: \\(.+/\\)$", nil, :ls_dir)   # - hey: /what/
 
-    Styles.apply('https?://[a-zA-Z0-9\/.~_:?&=|#+-]+', :notes_link)   # Url
+    # Put this one back?
+    #     Styles.apply("^[ +-]*\\([^|\n]+/\\)$", nil, :ls_dir)   # Dirs with bullets
+
+    Styles.apply('https?://[a-zA-Z0-9\/.~_:?%&=|#+!-]+', :notes_link)   # Url
 
     #   |... lines (quotes)
     Styles.apply("^ *\\(|\\)\\( *\\)", nil, :quote_heading_pipe, :ls_quote)
@@ -556,15 +558,15 @@ class FileTree
   end
 
   def self.save_quoted path
-    txt = Tree.siblings :all=>true
+    txt = Tree.siblings :quotes=>1
 
-    return if txt[0] !~ /^\|/
+    return View.flash("- All siblings should be quoted - make more flexible") if txt[0] !~ /^\|/
 
     txt = txt.map{|o| "#{o.sub /^\| ?/, ''}\n"}.join('')
     DiffLog.save_diffs :patha=>path, :textb=>txt
     File.open(path, "w") { |f| f << txt }
 
-    View.glow "- Saved!"
+    View.flash "- Saved!"
   end
 
   def self.drill_quote path
@@ -705,7 +707,7 @@ class FileTree
       end
       # Go to next line if comment
       Line.next if Line.next_matches(/^ *\|/)
-      Move.to_line_text_beginning
+      Line.to_beginning
       self.open :ignore_prefix=>true
       return
     end
@@ -794,14 +796,11 @@ Ol << "options: #{options.inspect}"
   end
 
   def self.dir_one_level options={}
-Ol << "options: #{options.inspect}"
     Line.to_left
     line = Line.value
     indent = line[/^ */] + "  "  # Get indent
 
-Ol << "Tree.construct_path: #{Tree.construct_path.inspect}"
     dir = Bookmarks.expand(Tree.construct_path)
-Ol << "dir: #{dir.inspect}"
 
     remote = self.is_remote?(dir)
     unless remote
@@ -814,7 +813,6 @@ Ol << "dir: #{dir.inspect}"
       end
     end
 
-Ol.line
     dirs, files = self.files_in_dir(dir, options)   # Get dirs and files in it
 
     if files.empty? && dirs.empty?
@@ -825,7 +823,7 @@ Ol.line
           - @mkdir/
           "
       end
-      return View.glow "- Directory exists, but is empty", :times=>4
+      return View.flash "- Directory is empty", :times=>4
     end
 
     # Change path to proper indent
@@ -846,7 +844,7 @@ Ol.line
     right = point
     goto_char left
 
-    Move.to_line_text_beginning
+    Line.to_beginning
 
     Tree.search(:left=>left, :right=>right, :always_search=>true)   # Kick off hidesearch (deleting)
 
@@ -963,7 +961,6 @@ Ol.line
 
   # Expand if dir, or open if file
   def self.launch options={}
-Ol << "options: #{options.inspect}"
 
     #Tree.plus_to_minus_maybe
     line = Line.value
@@ -974,10 +971,8 @@ Ol << "options: #{options.inspect}"
     elsif line =~ /^[^|\n]* (\*\*|##)/   # *foo or ## means do grep
       self.grep_syntax indent
     elsif self.dir?   # foo/ is a dir (if no | before)
-Ol.line
       self.dir
     else
-Ol.line
       self.open
     end
   end
@@ -1088,14 +1083,14 @@ Ol.line
 
     if path =~ /\/menus\/(.+)\.rb$/   # "
       name = $1
-      View.glow "- File doesn't exist, start with this...", :times=>4
+      View.flash "- File doesn't exist, start with this...", :times=>4
       Xiki.dont_search
       txt = File.read "#{Xiki.dir}/etc/templates/menu_template.rb"
       txt.gsub!(/\{\{(.+?)\}\}/) { eval $1 }   # Expand {{these}}
       return Tree.<< txt, :escape=>"| ", :no_slash=>1
 
     elsif path =~ /^#{File.expand_path("~/menus")}\/(.+)\.menu$/   # "
-      View.glow "- File doesn't exist, start with this...", :times=>4
+      View.flash "- File doesn't exist, start with this...", :times=>4
       Xiki.dont_search
       txt = File.read "#{Xiki.dir}/etc/templates/menu_template.menu"
       return Tree.<< txt, :escape=>"| ", :no_slash=>1
@@ -1106,14 +1101,14 @@ Ol.line
     [File.expand_path("~/xiki/templates/"), Bookmarks["$x/etc/templates"]].each do |dir|
       file = "#{dir}/template.#{extension}"
       next unless File.exists? file
-      View.glow "- File doesn't exist, start with this...", :times=>4
+      View.flash "- File doesn't exist, start with this...", :times=>4
       txt = File.read file
       txt.gsub!(/\{\{(.+?)\}\}/) { eval $1 }   # Expand {{these}}
       return Tree.<< txt, :escape=>"| ", :no_slash=>1
     end
 
     # If no templates matched
-    View.glow "- File doesn't exist"
+    View.flash "- File doesn't exist"
     Tree.<< "|", :no_slash=>1
     Move.to_end
     View << ' '
@@ -1272,6 +1267,7 @@ Ol << "View.dir: #{View.dir.inspect}"
     path = self.tree_path_or_this_file :dir_only
 
     `mkdir -p "#{path}"`
+    View.flash "- Created: #{path}"
   end
 
   # Indent txt to be one level lower than current line
@@ -1289,7 +1285,7 @@ Ol << "View.dir: #{View.dir.inspect}"
       path = Xiki.trunk.last   # Grab from wiki tree
     end
 
-    View.glow "- copied: #{path}", :times=>2
+    View.flash "- copied: #{path}", :times=>2
     return Clipboard["0"] = path
   end
 
@@ -1400,23 +1396,26 @@ Ol << "View.dir: #{View.dir.inspect}"
 
   def self.delete_file
 
-    in_file_beind_deleted = Line !~ /^[ +-]/
+    in_file_beind_deleted = Line !~ /^[ +-]/ || Keys.prefix_u
 
     # If not on tree, must want to delete this file
     if in_file_beind_deleted
-      dest_path_raw = View.file
+      dest_path = View.file
     else
-      dest_path_raw = Tree.construct_path
+      dest_path = Tree.construct_path
     end
 
-    dest_path = File.expand_path dest_path_raw
-    executable = dest_path =~ /\/$/ ? "rmdir" : "rm"
-    command = "#{executable} \"#{dest_path}\""
+    dest_path = File.expand_path dest_path
 
-    View.glow "- Are you sure?"
-    answer = Keys.input :one_char=>true, :prompt=>"Are you sure you want to delete #{dest_path_raw} ?"   #"
+    return View.flash("- File doesn't exist: #{dest_path}", :times=>5) if ! File.exists?(dest_path)
+
+    View.flash "- Are you sure?"
+    answer = Keys.input :one_char=>true, :prompt=>"Are you sure you want to delete #{dest_path} ?"   #"
 
     return unless answer =~ /y/i
+
+    executable = File.directory?(dest_path) ? "rm -r" : "rm"
+    command = "#{executable} \"#{dest_path}\""
 
     result = Console.run command, :sync=>true
     if (result||"").any?
@@ -1432,7 +1431,7 @@ Ol << "View.dir: #{View.dir.inspect}"
 
     Tree.kill_under
     Line.delete
-    Move.to_line_text_beginning
+    Line.to_beginning
   end
 
   def self.copy_to_latest_screenshot dest_path, dest_dir
@@ -1522,7 +1521,7 @@ Ol << "View.dir: #{View.dir.inspect}"
       View.insert "#{indent}+ #{dest_stem}\n", :dont_move=>true
       Line.previous if prefix == 1
     end
-    Move.to_line_text_beginning
+    Line.to_beginning
   end
 
   def self.rename_file

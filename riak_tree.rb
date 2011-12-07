@@ -36,7 +36,7 @@ module Riak
       end
 
       # Save text if txt passed
-      txt = Tree.siblings :as_string=>true
+      txt = Tree.siblings :string=>true
 
       data = YAML::load(txt)
 
@@ -106,7 +106,7 @@ module Riak
   def self.get path, txt=nil
 
     if txt
-      txt = Tree.siblings :as_string=>true
+      txt = Tree.siblings :string=>true
       self.put path, YAML::load(txt)
       return "- saved!"
     end

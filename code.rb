@@ -108,7 +108,8 @@ class Code
     end
 
     orig = Location.new
-    $el.goto_char right; after_code = Location.new  # Remember right of code
+    $el.goto_char right
+    after_code = Location.new  # Remember right of code
     orig.go
 
     # Eval the code
@@ -127,9 +128,9 @@ class Code
     after_code.go
 
     if prefix
-      insert(out.gsub /^/, '  ') unless out.blank?
+      View.insert(out.gsub /^/, '  ') unless out.blank?
     else
-      insert(">>\n#{out}") unless out.blank?
+      View.insert(">>\n#{out}") unless out.blank?
     end
 
     if exception
@@ -198,7 +199,6 @@ class Code
       exception = e
     end
     stdout = $stdout.string;  $stdout = orig_stdout  # Restore stdout output
-
     [returned, stdout, exception]
   end
 
@@ -232,7 +232,7 @@ class Code
           Keys.clear_prefix
           View.to_highest
           Search.forward "^ *describe .+##{method}[^_a-zA-Z0-9]", :beginning=>true
-          Move.to_line_text_beginning
+          Line.to_beginning
           View.recenter_top
         end
 
@@ -252,7 +252,7 @@ class Code
           Keys.clear_prefix
           View.to_highest
           Search.forward "^ *def \\(self\\.\\)?#{method}[^_a-zA-Z0-9]", :beginning=>true
-          Move.to_line_text_beginning
+          Line.to_beginning
           View.recenter_top
         end
 
@@ -546,7 +546,8 @@ class Code
     orig = View.current if prefix == :u
 
     file = Ol.file_path
-    buffer = "*output - tail of #{file}"
+
+    buffer = "*ol"
 
     # If already open, just go to it
     if View.buffer_visible?(buffer)
@@ -588,31 +589,6 @@ class Code
     return if self.clear_and_go_back orig
   end
 
-  def self.ol_launch
-
-    prefix = Keys.prefix :clear=>1
-
-    # Get path from end
-    path = View.name[/\/.+/]
-
-    # TODO: get total_lines - current_line
-    distance_to_end = Line.number(View.bottom) - Line.number
-
-    # Go to log.lines and get n from end
-    arr = IO.readlines("#{path}.lines")
-    line = arr[- distance_to_end]
-
-    path, line = line.split(':')
-
-    View.open path
-    View.to_line line.to_i
-
-    if prefix == 0
-      View.layout_output
-      Line.next
-    end
-  end
-
   def self.enter_log_line
     $el.open_line(1) unless Line.blank?
     if Keys.prefix_u?
@@ -647,7 +623,7 @@ class Code
     if location   # Go back to starting point
       View.clear
 
-      View.clear "*output - tail of /tmp/ds_ol.notes"
+      View.clear "*ol"
       View.to_window location
       return true   # Indicate to exit method
     end
@@ -682,6 +658,16 @@ class Code
     View << "\n\n\n\n\n\n"
 
     View.scroll_position = scroll
+
+  end
+
+  def self.open_related_file
+    file = View.file
+
+    return View.open(file.sub /\.menu$/, '.rb') if file =~ /\/menus\/\w+\.menu$/
+    return View.open(file.sub /\.rb$/, '.menu') if file =~ /\/menus\/\w+\.rb$/
+
+    View.flash "No matching file known."
 
   end
 

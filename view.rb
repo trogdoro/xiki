@@ -68,8 +68,8 @@ class View
       |
       > Messages
       | Shows temporary message inline.
-      @ View.glow
-      @ View.glow 'Saved'
+      @ View.flash
+      @ View.flash 'Saved'
       |
       | Shows message at bottom.
       @ View.message 'Hi there'
@@ -691,7 +691,7 @@ class View
   end
 
   def self.dir= to
-    elvar.default_directory = File.expand_path(to)
+    elvar.default_directory = File.expand_path(to)+"/"
   end
 
   def self.file
@@ -761,10 +761,12 @@ class View
       $el.elvar.coding_system_for_read = 'utf-8'.to_sym
       $el.insert_file_contents "/tmp/tmp.txt"
       $el.elvar.coding_system_for_read = orig
+
+      Move.forward txt.size unless options[:dont_move]   # .insert_file_contents leaves cursor at beginning
     else
       $el.insert txt
+      Move.backward txt.size if options[:dont_move]
     end
-    Move.backward txt.size if options[:dont_move]
   end
 
   def self.<< txt, options={}
@@ -966,25 +968,17 @@ class View
   end
 
   def self.expand_path path
-Ol << "path: #{path.inspect}"
     path = "#{View.dir}/#{path}" if path !~ /^[\/~]/
-    #     path = "#{View.dir}/#{path}" if path =~ /^\.\.?(\/|$)/
-    #     path = File.expand_path("#{View.dir}/#{path}") if path =~ /^\.+(\/|$)/
-
-    #     path = path.gsub /^\.\/?/, View.dir.sub(/\/$/, '')+'/'
-    #     path = path.gsub /^\.\/?/, View.dir.sub(/\/$/, '')+'/'
-    #     path = path.gsub /^\.\//, View.dir.sub(/\/$/, '')+'/'
-    #     path = path.gsub /^\.\//, View.dir.sub(/\/$/, '')+'/'
 
     # Expand ~
-    #     slash = path =~ /\/$/   # Check whether / at end
 
+    had_slash = path =~ /\/$/   # Check whether / at end
     # Expand . and ..
     path = File.expand_path path
-    #     if slash && path !~ /\/$/   # Put / back at end, if it was there (and not there now)
-    #       path = "#{path}/"
-    #     end
-    path =~ /\/$/ ? path : "#{path}/"
+
+    path = "#{path}/" if had_slash && path !~ /\/$/   # Put / back at end, if it was there (and not there now)
+
+    path
   end
 
   # Show dimension options, and invoke corresponding proc
@@ -1128,11 +1122,41 @@ Ol << "path: #{path.inspect}"
     Effects.blink(:what=>:line)
   end
 
-  def self.layout_output # nth=nil
-    Code.open_log_view
-    Effects.blink(:what=>:line)
-  end
+  def self.layout_output
+    # If current line has Ol., grab line and path
 
+    prefix = Keys.prefix
+
+    found = prefix != :u && Line =~ /^ *Ol\b/ && OlHelper.source_to_output(View.file, Line.number)
+
+    orig = nil
+    if prefix == :-
+      return View.flash("- Not found!") if ! found
+      orig = Location.new
+    end
+
+    Code.open_log_view
+
+    if found
+      if found >= (Line.number(View.bottom) - 1)   # If too far back to be shown
+        found = nil
+        View.flash("- Not found!")
+      else
+        View.to_bottom
+        Line.previous(found+1)
+      end
+    end
+
+    Effects.blink(:what=>:line)
+    if found
+      Color.colorize :l
+    end
+
+    if orig
+      return orig.go
+    end
+
+  end
 
   def self.split options={}
     options[:horizontally] ?
@@ -1253,7 +1277,7 @@ Ol << "path: #{path.inspect}"
     $el.elvar.inhibit_quit = nil
   end
 
-  def self.glow message=nil, options={}
+  def self.flash message=nil, options={}
     message ||= "- Success!"
 
     orig = self.cursor

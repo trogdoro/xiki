@@ -5,11 +5,11 @@ require 'effects'
 
 class Agenda
 
-  def self.menu line=nil
+  def self.menu *lines
     t = Bookmarks['$t']
 
     # If no line, display all of them
-    if line.nil?
+    if lines.empty?
       return IO.read(t).grep(/^> \d\d\d\d-\d\d-\d\d/).sort.reverse.join("").gsub(/^> /, '- ')
     end
 

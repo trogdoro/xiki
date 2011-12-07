@@ -100,8 +100,16 @@ class Firefox
   def self.js txt=nil
     return View.prompt("Type some javascript to run in the browser") if txt.nil?
 
-    result = Firefox.run txt, :jquery=>1
-    Tree << result if result =~ /^- Added required js libs/
+    Firefox.run txt, :jquery=>1
+    nil
+  end
+
+  def self.coffee txt=nil
+    return View.prompt("Type some coffeescript to run in the browser") if txt.nil?
+
+    txt = CoffeeScript.run_internal txt
+
+    Firefox.run txt, :jquery=>1
     nil
   end
 
@@ -111,7 +119,7 @@ class Firefox
 
   def self.reload
     # Why is this here?
-    Code.open_log_view if Keys.prefix_u && View.buffer_visible?('*output - tail of #{Ol.file_path}')
+    Code.open_log_view if Keys.prefix_u && View.buffer_visible?('*ol')
     prefix = Keys.prefix_n :clear=>true
     if prefix   # If numeric prefix, go to that tab
       tab = prefix - 1
@@ -226,10 +234,11 @@ class Firefox
 
   def self.run txt, options={}
     result = Firefox.mozrepl_command txt, options
-    result.sub! /^"(.+)"$/, "\\1"
+    result.sub! /^"(.+)"$/m, "\\1"   # Remove quotes
 
     if options[:jquery]
-      message = self.load_jquery_maybe(result) and return message
+      message = self.load_jquery_maybe(result)
+      return message if message
     end
     result
   end
@@ -242,7 +251,6 @@ class Firefox
     return $el.browse_url(url) if options[:new]
 
     # Try to find it in a tab
-
 
     js = %`
       var browsers = gBrowser.browsers;
@@ -274,6 +282,16 @@ class Firefox
   end
 
   def self.html txt
+
+    # When C-8, delegate to .dom to show whole body
+    return Tree.<< Firefox.dom(:prefix=>8) if Keys.prefix == 8
+    return Tree.<< Firefox.dom(:prefix=>9) if Keys.prefix == 9
+
+    return "
+      | Enter something here to show it in the browser.
+      | Or, do enter+all to show the html of the current page.
+      " if txt.nil?
+
     File.open("/tmp/tmp.html", "w") { |f| f << txt }
 
     # Then load in browser (or reload)
@@ -281,25 +299,32 @@ class Firefox
       Firefox.reload :
       $el.browse_url("file:///tmp/tmp.html")
 
+    nil
   end
 
-  def self.append html
+  def self.append html=nil
+    if html.nil?
+      View.prompt("Add something to append")
+      return "| "
+    end
 
     html.gsub! '"', '\\"'
     html.gsub! "\n", ' '
 
     code = "$('body').append(\"#{html}\")"
     result = Firefox.run code, :jquery=>1
-    Tree << result if result =~ /^- Added required js libs/
-
     nil
+  end
+
+  def self.jso txt=nil
+    return View.prompt("Add some js to output its result") if txt.nil?
+    Firefox.run Tree.leaf(txt), :jquery=>1
   end
 
   def self.css html
 
     code = "$('head').append(\"<style>#{html}</style>\")"
-    result = Firefox.run code, :jquery=>1
-    Tree << result if result =~ /^- Added required js libs/
+    Firefox.run code, :jquery=>1
 
     nil
   end
@@ -338,7 +363,7 @@ class Firefox
 
     Firefox.run "
       var s=document.createElement('script');
-      s.setAttribute('src', 'http://jquery.com/src/jquery-latest.js');
+      s.setAttribute('src', 'http://code.jquery.com/jquery-latest.js');
       document.getElementsByTagName('body')[0].appendChild(s);
 
       var s=document.createElement('script');
@@ -384,6 +409,7 @@ class Firefox
       s.puts("#{repl}.enter(window.gBrowser.getBrowserAtIndex(#{options[:tab]}).contentDocument)\n;")
       mozrepl_read s
     elsif options[:browser]   # Run js at browser outer level
+      # Do nothing to change context
     else   # Run js in page
       s.puts("#{repl}.enter(content.wrappedJSObject)\n;")
       mozrepl_read s
@@ -398,6 +424,11 @@ class Firefox
   def self.log
     View.open "/Users/craig/.emacs.d/url_log.notes"
   end
+
+  def self.xul txt
+    Firefox.mozrepl_command txt, :browser=>true
+  end
+
 
   def self.do_as_xul
     Block.do_as_something do |txt|
@@ -451,9 +482,11 @@ class Firefox
     result.sub "html/", "- @dom/"
   end
 
-  def self.dom *args
+  def self.dom *args#, options={}
 
-    prefix = Keys.prefix
+    options = args[-1].is_a?(Hash) ? args.pop : {}
+
+    prefix = options[:prefix] || Keys.prefix
 
     raw_args = args.to_s.sub /\/$/, ''
 
@@ -520,7 +553,6 @@ class Firefox
       `.unindent
 
     kids = Firefox.run js, :jquery=>1
-    return kids if kids =~ /^- Added required/
 
     kids = kids.sub(/\A"/, '').sub(/"\z/, '') if kids =~ /\A"/
     if kids =~ /\Ahtml::/
@@ -577,8 +609,7 @@ class Firefox
 
   end
 
-  def self.load_jquery_maybe txt=nil
-
+  def self.load_jquery_maybe txt=nil #, options={}
     # If text passed, check it and error if complaining about jquery missing
     if txt && txt !~ /( (\$|p) is not defined|blink is not a function)/
       return nil   # Text without error, so don't load
@@ -587,7 +618,7 @@ class Firefox
     self.run "
       if(! document.getElementById('jqid')){
         var s=document.createElement('script');
-        s.setAttribute('src', 'http://jquery.com/src/jquery-latest.js'); s.setAttribute('id', 'jqid');
+        s.setAttribute('src', 'http://code.jquery.com/jquery-latest.js'); s.setAttribute('id', 'jqid');
         document.getElementsByTagName('body')[0].appendChild(s);
 
         var s=document.createElement('script');
@@ -596,7 +627,7 @@ class Firefox
       }
       ".unindent
 
-    return "- Added required js libs into page, try again!"
+    raise ".flash - Added required js libs into page, try again!"
   end
 
   def self.object name=nil, key=nil
@@ -622,6 +653,15 @@ class Firefox
     result = Firefox.value "#{name}['#{key}']"
 
   end
+
+  def self.blink txt
+    next View.prompt("Type a selector to blink in firefox", :times=>5) if txt.nil?
+    code = "$(\"#{txt}\").blink()"
+    Firefox.run code, :jquery=>1
+    nil
+  end
+
+
 end
 
 Menu.ffo :class=>'Firefox.object'
@@ -640,6 +680,10 @@ Menu.js do |path|
   Firefox.js Tree.rest(path)
 end
 
+Menu.coffee do |path|
+  Firefox.coffee Tree.rest(path)
+end
+
 Menu.jsp do |path|
   txt = Tree.leaf path
   txt = txt.strip.sub(/;\z/, '')   # Remove any semicolon at end
@@ -652,19 +696,21 @@ Menu.jsc do |path|   # - (js): js to run in firefox
   txt = txt.strip.sub(/;\z/, '')   # Remove any semicolon at end
   code = "console.log(#{txt})"
   Firefox.run code, :jquery=>1
-end
-
-Menu.blink do |path|   # - (js): js to run in firefox
-  txt = Tree.rest path
-  next View.prompt("Type a selector to blink in firefox", :times=>5) if txt.nil?
-  code = "$(\"#{txt}\").blink()"
-  result = Firefox.run code, :jquery=>1
-  Tree << result if result =~ /^- Added required js libs/
   nil
 end
 
+Menu.blink do |path|
+  Firefox.blink Tree.rest(path)
+  nil
+end
+
+
 Menu.jso do |path|   # - (js): js to run in firefox
-  Firefox.run Tree.leaf(path), :jquery=>1
+  Firefox.jso Tree.rest(path)
+end
+
+Menu.xul do |path|   # - (js): js to run in firefox
+  Firefox.xul Tree.leaf(path)
 end
 
 Menu.ff do |line|
@@ -680,12 +726,10 @@ end
 
 Menu.html do |path|
   Firefox.html Tree.rest path
-  nil
 end
 
 Menu.append do |path|
   Firefox.append Tree.rest(path)
-  nil
 end
 
 Menu.css do |path|

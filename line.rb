@@ -165,6 +165,24 @@ class Line
     skip_chars_forward "[^ \t]"
   end
 
+  def self.to_beginning options={}
+    down = options[:down]
+    prefix = Keys.prefix
+    down ||= prefix
+
+    # If prefix go down n lines first
+    Line.next down if down.is_a? Fixnum
+
+    Line.to_left
+
+    prefix == :u || options[:quote]?
+      $el.skip_chars_forward("[^ \t]") :
+      $el.skip_chars_forward("[^ \t|]")   # If quoted, skip quote unless :u
+
+    nil
+  end
+
+
   def self.label line=nil
     line ||= self.value
     # Space or blank can follow colon
@@ -176,14 +194,12 @@ class Line
     line = options[:line] || self.value
 
     # Delete comment (parenthesis)
-    line = line.sub /^(\s*)[+-] [^\n\(]+\) (.*)/, "\\1\\2"   # Careful of ranges
+    line = line.sub /^(\s*)(?:[+-]|<+) [^\n\(]+\) (.*)/, "\\1\\2"
 
-    # Delete normal label (old)
-    line = line.sub /^(\s*)[+-] [!#-~ ]+?: (.*)/, "\\1\\2"   # Careful of ranges
-    # If colon at end of line, delete label
-    line.sub! /^(\s*)[+-] [!#-~ ]+?:$/, "\\1"   # Careful of ranges
+    # If paren at end of line, delete label
+    line.sub! /^(\s*)(?:[+-]|<+) [^\n\(]+?\)$/, "\\1"
     # If just bullet
-    line.sub! /^(\s*)[+-] (.+)/, "\\1\\2"
+    line.sub! /^(\s*)(?:[+-]|<+) (.+)/, "\\1\\2"
     # Remove whitespace by default
     line.sub!(/^ */, '') unless options[:leave_indent]
 
@@ -259,19 +275,21 @@ class Line
   def self.sub! from, to
     orig = Location.new
     value = Line.value
-    value.sub! from, to
+    return unless value.sub! from, to
     self.delete :leave
     self.insert value
     orig.go :assume_file=>1
+    value
   end
 
   def self.gsub! from, to
     orig = Location.new
     value = Line.value
-    value.gsub! from, to
+    return unless value.gsub! from, to
     self.delete :leave
     self.insert value
     orig.go :assume_file=>1
+    value
   end
 
   def self.<< txt

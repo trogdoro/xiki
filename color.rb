@@ -71,7 +71,7 @@ class Color
       View.insert res
       Keys.clear_prefix
       View.to_line 3
-      Move.to_line_text_beginning
+      Line.to_beginning
 
       Tree.search :left=> Line.left, :number_means_enter=>true
 

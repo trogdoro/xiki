@@ -242,7 +242,7 @@ class Merb
     # Jump to method
     View.to_highest
     Search.forward "^\\s-+def #{action}[^a-z_]"
-    Move.to_line_text_beginning
+    Line.to_beginning
 
   end
 

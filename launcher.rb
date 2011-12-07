@@ -8,7 +8,7 @@ class Launcher
   extend ElMixin
 
   CLEAR_CONSOLES = [
-    "*output - tail of /tmp/output_ol.notes",
+    "*ol",
     "*output - tail of /tmp/ds_ol.notes",
     "*visits - tail of /tmp/visit_log.notes",
     "*console app",
@@ -86,10 +86,9 @@ class Launcher
   end
 
   def self.log options={}
-    log = IO.read(self.log_file)
-    result = log.split("\n")
+    result = IO.readlines self.log_file
     result = result.map{|o| o.sub /^- #{Notes::LABEL_REGEX}/, '\\0@'} if options[:at]
-    result.reverse.uniq.join("\n")+"\n"
+    result.reverse.uniq.join
   end
 
   def self.log_file
@@ -308,16 +307,13 @@ class Launcher
       Xiki.dont_search
       # Maybe make the following print out optionally, via a 'help_last' block?
       Tree << "
-        | There's no \"#{root}\" menu yet. Create it?
-        |
-        | You can just start making the menu.
-        + @get me started/
-        |
-        | Or, use a template to create a menu file or class directly.
-        + @menu/setup/create/
+        | There's no \"#{root}\" menu yet. Create it? You can start by adding items
+        | right here, or you can create a class.
+        <= @menu/create/here/
+        <= @menu/create/class/
         "
     else
-      View.glow "- No launcher matched!"
+      View.flash "- No launcher matched!"
     end
 
     $xiki_no_search = false
@@ -335,9 +331,23 @@ class Launcher
     self.append_log line
     trunk = Xiki.trunk
 
-    if trunk.size > 1 && FileTree.matches_root_pattern?(trunk[-2])
-      orig_pwd = Dir.pwd
-      Dir.chdir trunk[-2] rescue nil
+    orig_pwd = nil
+    if trunk.size > 1 && closest_dir = Tree.closest_dir
+
+      # TODO: we're only doing trunk[-2] - should we find the closest file path?? - Tree.closest_dir
+
+      orig_pwd = Dir.pwd   # Where ruby pwd was before
+
+      begin
+        Dir.chdir closest_dir
+      rescue
+        if root == "mkdir"
+          Dir.chdir "/tmp/"
+        else
+          Tree.<<("| Directory '#{closest_dir}' doesn't exist. Create it?\n- @mkdir/")
+          return true
+        end
+      end
     end
 
     # If there was a menu, call it
@@ -347,12 +357,12 @@ class Launcher
       begin
         out = Tree.output_and_search block_dot_menu, :line=>line  #, :dir=>file_path
       ensure
-        Dir.chdir orig_pwd if file_path
+        Dir.chdir orig_pwd if orig_pwd
       end
 
       # If .menu file matched but had no output, and no other block to delegate to, say we handled it so it will stop looking
       if ! out && ! block_other
-        View.glow "- This menu has no child items!"
+        View.flash "- Menu does nothing!"
         return true
       end
 
@@ -363,7 +373,7 @@ class Launcher
       begin
         Tree.output_and_search block_other, :line=>line  #, :dir=>file_path
       ensure
-        Dir.chdir orig_pwd if file_path
+        Dir.chdir orig_pwd if orig_pwd
       end
 
       return true
@@ -503,6 +513,14 @@ class Launcher
       View.under response.body
     end
 
+    Launcher.add /^  +<+ .+/ do
+      Menu.collapser_launcher
+    end
+
+    Launcher.add /^  +<+= .+/ do
+      Menu.replacer_launcher
+    end
+
     # Menu launchers
 
     Launcher.add "log" do
@@ -538,8 +556,6 @@ class Launcher
     Launcher.add condition_proc do |list|
       UrlTree.launch :path=>list
     end
-
-
   end
 
   def self.file_and_mode_hooks
@@ -553,8 +569,8 @@ class Launcher
       end
       return true
     end
-    if View.name =~ /_ol\.notes$/   # If in an ol output log file
-      Code.ol_launch
+    if View.name =~ /^\*ol/   # If in an ol output log file
+      OlHelper.launch
       Effects.blink(:what=>:line)
       return true
     end
@@ -623,7 +639,6 @@ class Launcher
   end
 
   def self.invoke clazz, path, options={}
-
     default_method = "menu"
     # If dot extract it as method
     if clazz =~ /\./
@@ -652,9 +667,27 @@ class Launcher
       path :
       path.split("/")[1..-1]
 
-    txt = options[:tree]
+    # Maybe call .menu_before
+
+    method = clazz.method("menu_before") rescue nil
+    if method
+      code = "#{camel}.menu_before *#{args.inspect}"
+      returned, out, exception = Code.eval code
+
+      return CodeTree.draw_exception exception, code if exception
+      if returned != nil   # Only a nil returned means don't call .menu
+        return if ! returned.is_a?(String)
+
+        returned = returned.unindent if returned =~ /\A[ \n]/
+        return returned
+      end
+
+    end
+
 
     # Maybe call .menu with no args to actionize and get child menus
+
+    txt = options[:tree]
 
     if txt.nil?
       method = clazz.method(default_method) rescue nil
@@ -678,8 +711,8 @@ class Launcher
 
       txt = Tree.routify! txt, args
       return txt if txt && txt != "- */\n"
-
     end   # Else, continue on to run it based on routified path
+
 
     # Figure out which ones are actions
 
@@ -702,14 +735,11 @@ class Launcher
 
     args = variables.map{|o| "\"#{CodeTree.escape o}\""}.join(", ")
 
-    code = "#{camel}#{action} #{args}".strip
+    code = "#{camel}#{action.downcase} #{args}".strip
     txt, out, exception = Code.eval code
     txt = CodeTree.returned_to_s(txt)   # Convert from array into string, etc.
     txt = txt.unindent if txt =~ /\A[ \n]/
-
     return CodeTree.draw_exception exception, code if exception
-
-    txt = Tree.quote(txt) if txt
 
     txt
   end
@@ -749,7 +779,7 @@ class Launcher
   end
 
   def self.open menu, options={}
-    View.to_after_bar
+    View.to_after_bar if View.in_bar?
 
     dir = View.dir
 
@@ -828,7 +858,6 @@ class Launcher
   end
 
   def self.search_like_menu
-
     txt = Search.stop
     return if txt.nil?
 
@@ -844,6 +873,26 @@ class Launcher
 
     Launcher.open(matches.map{|o| "- #{o}/#{txt}\n"}.join(''), :choices=>1)
   end
+
+  def self.as_update
+    Keys.prefix = 4
+    Launcher.launch
+  end
+
+  def self.enter_all
+    return FileTree.enter_lines(/.*/) if Line.blank?
+
+    Keys.prefix = 8
+    Launcher.launch
+  end
+
+  def self.enter_outline
+    return FileTree.enter_lines if Line.blank?
+
+    Keys.prefix = 9
+    Launcher.launch
+  end
+
 end
 
 def require_menu file
@@ -853,7 +902,7 @@ def require_menu file
 
   if file =~ /\.menu$/
     Launcher.add stem, :menu_file=>1 do |path|
-      next View.glow("- Xiki couldn't find: #{file}", :times=>6) if ! File.exists?(file)
+      next View.flash("- Xiki couldn't find: #{file}", :times=>5) if ! File.exists?(file)
       Tree.climb File.read(file), Tree.rootless(path)
     end
     return
