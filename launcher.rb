@@ -289,7 +289,6 @@ class Launcher
       ["~/menus", Bookmarks["$x/menus"]].each do |dir|
 
         matches = Dir[File.expand_path("#{dir}/#{root}*")]
-        Ol << "matches: #{matches.inspect}"
 
         if matches.any?
           matches.sort.each do |file|

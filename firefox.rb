@@ -514,8 +514,6 @@ class Firefox
 
       if args =~ /(.+) > (.+)/
         parent, child = $1, $2.sub!(/:.+/, '')
-        Ol << "parent: #{parent.inspect}"
-        Ol << "child: #{child.inspect}"
         js << %`
           else
             $(\"#{parent}\").append(\"<#{child}>#{save}</#{child}>\");

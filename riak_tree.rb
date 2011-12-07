@@ -145,17 +145,13 @@ module Riak
   end
 
   def self.put path, options={}
-    Ol << "path: #{path.inspect}"
     # If no body passed in, wrap necessary stuff around it
     if options[:body].nil?
-      Ol.line
       options = {
         :body=>options.to_json,
         :headers=>{'Content-Type'=>'application/json'},
       }
     end
-    Ol << "#{RIAK_URL}/riak/#{path}"
-    Ol << "options: #{options.inspect}"
 
     HTTParty.put("#{RIAK_URL}/riak/#{path}", options)
     nil

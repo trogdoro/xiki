@@ -78,7 +78,6 @@ class Mysql
 
     txt = Mysql.run(nil, 'show databases')
     if txt =~ /^ERROR.+Can't connect/
-      Ol.stack
       return "- cc!"
     end
 

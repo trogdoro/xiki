@@ -354,7 +354,6 @@ class Search
 
   def self.isearch_query_replace after=nil
     match = self.stop#
-    # Ol << "match: #{match.inspect}"
     was_upper = match =~ /[A-Z]/
 
     match.downcase!
@@ -691,7 +690,6 @@ class Search
       View.open found
       if method  # If method, go to it
         Move.top
-        # Ol.line
         Search.forward "^ +def \\(self\\.\\)?#{method}[^_a-zA-Z0-9]", :beginning=>true
         Move.to_axis
         recenter 0

@@ -657,7 +657,7 @@ class FileTree
       View.to_buffer "*tree #{name}"
       View.clear
       View.dir = Bookmarks.dir_only dir
-      self.apply_styles
+      Notes.mode
       use_local_map elvar.notes_mode_map
     end
 
@@ -755,7 +755,6 @@ class FileTree
 
   # Recursively display dir in tree   # Insert dir contents at point (usually in existing tree)
   def self.dir options={}
-Ol << "options: #{options.inspect}"
     return Files.open_in_os(Tree.construct_path) if Keys.prefix == 0
 
     Tree.plus_to_minus_maybe
@@ -1156,13 +1155,9 @@ Ol << "options: #{options.inspect}"
 
   # Returns the files in the dir
   def self.files_in_dir dir, options={}
-Ol.stack
-Ol << "dir: #{dir.inspect}"
     if self.is_remote?(dir)
       self.remote_files_in_dir(dir)
     else
-Ol << "exp dir: #{File.expand_path dir}"
-Ol << "View.dir: #{View.dir.inspect}"
 
       all = Dir.glob("#{dir}*", File::FNM_DOTMATCH).
         select {|i| i !~ /\/\.(\.*|svn|git)$/}.   # Exclude some dirs (exclude entensions here too?)

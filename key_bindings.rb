@@ -94,7 +94,7 @@ class KeyBindings
     #     Keys.open_log_list { Launcher.open(Keys.prefix_u ? "- last/" : "- log/") }   # Show git diffs o 1 file
     #     Keys.open_log_list { Git.show_log_one_file }   # Show git diffs o 1 file
 
-    Keys.open_log_push { Git.show_log }   # Show git diffs for a bookmark
+    Keys.open_log_push { Gito.show_log }   # Show git diffs for a bookmark
     Keys.open_last_screenshot { Files.open_last_screenshot }
     #     Keys.open_like_text { txt = View.txt; View.to_buffer "txt"; View << txt }
     #     Keys.open_log_tree { Rails.tree_from_log }
@@ -111,7 +111,7 @@ class KeyBindings
     Keys.open_quick { Bookmarks.go :q }   # like OB but uses different temporary namespace
     Keys.open_related_test { Code.open_related_rspec }
     Keys.open_related_file { Code.open_related_file }
-    Keys.open_repository_list { Git.show_log_one_file }   # Show git diffs o 1 file
+    Keys.open_repository_list { Gito.show_log_one_file }   # Show git diffs o 1 file
     # S
     Keys.open_search { Search.outline_search }   # hide search via outline *
     Keys.open_tree { FileTree.tree }   # draw a tree, prompting for bookmark tag *
@@ -183,7 +183,7 @@ class KeyBindings
     Keys.enter_menu { Xiki.insert_menu }   # Redundant with C-enter on blank line
     Keys.enter_outline { Launcher.enter_outline }   # in tree, enter methods or headings
 
-    Keys.enter_push { Git.code_tree_diff(:enter=>true) }   # Commit to repos, push, etc
+    Keys.enter_push { Gito.code_tree_diff(:enter=>true) }   # Commit to repos, push, etc
     Keys.enter_quote { FileTree.enter_quote }
     Keys.enter_row { View.insert_line }
     Keys.enter_search { Search.enter_search }
@@ -234,7 +234,7 @@ class KeyBindings
     Keys.do_colors_off { $el.font_lock_mode }   # toggles
     Keys.do_clean_quotes { Files.do_clean_quotes }   # Fix special chars
 
-    Keys.do_compare_repository { Git.diff_one_file }
+    Keys.do_compare_repository { Gito.diff_one_file }
 
     Keys.do_compare_saved { DiffLog.compare_with_saved }
 
@@ -293,7 +293,7 @@ class KeyBindings
     Keys.do_next_paragraph { Code.do_next_paragraph }   # Move line to start of next paragraph
     Keys.do_number_start { Incrementer.start }
     Keys.do_outline { History.open_current :outline=>true, :prompt_for_bookmark=>true }
-    Keys.do_push { Git.code_tree_diff }   # Commit to repos, push, etc
+    Keys.do_push { Gito.code_tree_diff }   # Commit to repos, push, etc
     Keys.do_query { Search.query_replace }   # do query replace *
     Keys.do_run { Code.run }   # run code as ruby *
     Keys.do_search {
@@ -306,7 +306,7 @@ class KeyBindings
     #     Keys.do_under { FileTree.kill_under }   # kill tree children (lines indented more)
     Keys.do_upper { Launcher.do_last_launch }
     #Keys.display_up { message Tree.construct_path( :indented => true ) }   # Display ancestors (by indent level)
-    Keys.do_version { Git.code_tree_diff_unadded }   # Compare with repos (with what hasn't been added yet)
+    Keys.do_version { Gito.code_tree_diff_unadded }   # Compare with repos (with what hasn't been added yet)
     Keys.do_whitespace { Deletes.delete_whitespace }   # delete blank lines
     # X
     Keys.do_you { delete_char elvar.current_prefix_arg || 1 }   # Delete character
@@ -448,7 +448,7 @@ class KeyBindings
     Keys.search_have_line { Search.have_line }   # copy line back to search start
     #     Keys.search_have_name { Search.just_name }
     Keys.search_have_output { Search.isearch_log }
-    Keys.search_have_push { Git.search_just_push }   # When search match
+    Keys.search_have_push { Gito.search_just_push }   # When search match
 
     #     Keys.search_have_rspec { Specs.insert_in_todo }
     Keys.search_have_spot { Search.insert_at_spot }
@@ -504,7 +504,7 @@ class KeyBindings
 
 
     Keys.search_like_quote { Search.isearch_google :quote=>true }
-    Keys.search_like_repository { Git.search_repository }   # When not searching
+    Keys.search_like_repository { Gito.search_repository }   # When not searching
     Keys.search_like_thesaurus { Search.search_thesaurus }
     Keys.search_last_urls { Launcher.open("- Launcher.urls/") }
     Keys.search_like_value { Search.just_name }
