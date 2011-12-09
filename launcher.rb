@@ -422,7 +422,7 @@ class Launcher
       Keys.clear_prefix
 
       url = line[/(http|file).?:\/\/.+/]
-      if prefix == 8
+      if prefix == "all"
         Tree.under RestTree.request("GET", url), :escape=>'| '
         next
       end
@@ -520,6 +520,16 @@ class Launcher
       Menu.replacer_launcher
     end
 
+    Launcher.add /^[a-z]+\+[a-z+]+\/?$/ do |path|
+      Tree << %`
+        | If you were told to "type #{path}", it is meant that you should
+        | "type the acronym" while holding down control. This means Meaning
+        | you should type:
+        |
+        |   #{Keys.human_readable(path)}
+        `
+    end
+
     # Menu launchers
 
     Launcher.add "log" do
@@ -603,6 +613,7 @@ class Launcher
     View.to_nth orig
   end
 
+  # Used any more? - should be replaced by menu log - delete this
   def self.urls
     txt = File.read File.expand_path("~/.emacs.d/url_log.notes")
     txt = txt.split("\n").reverse.uniq.join("\n")
@@ -639,7 +650,7 @@ class Launcher
 
   def self.invoke clazz, path, options={}
     default_method = "menu"
-    # If dot extract it as method
+    # If dot, extract it as method
     if clazz =~ /\./
       clazz, default_method = clazz.match(/(.+)\.(.+)/)[1..2]
     end
@@ -727,16 +738,17 @@ class Launcher
 
     # TODO: Do we want to always group quotes, or should menus optionally internally call Tree.leaf?!"
 
-    # Decided to let users call Xiki.leaves
-    #     if args[-1] =~ /^ *\|/
-    #       args[-1].replace(Tree.leaf args[-1])
-    #     end
+    # Make multi-line strings available to method
+    self.set_env_vars args
 
     args = variables.map{|o| "\"#{CodeTree.escape o}\""}.join(", ")
 
     code = "#{camel}#{action.downcase} #{args}".strip
     txt, out, exception = Code.eval code
     txt = CodeTree.returned_to_s(txt)   # Convert from array into string, etc.
+
+    self.unset_env_vars
+
     txt = txt.unindent if txt =~ /\A[ \n]/
     return CodeTree.draw_exception exception, code if exception
 
@@ -874,24 +886,49 @@ class Launcher
   end
 
   def self.as_update
-    Keys.prefix = 4
+    Keys.prefix = "save"
+    Launcher.launch
+  end
+
+  def self.as_destroy
+    Keys.prefix = "destroy"
     Launcher.launch
   end
 
   def self.enter_all
     return FileTree.enter_lines(/.*/) if Line.blank?
 
-    Keys.prefix = 8
+    Keys.prefix = "all"
     Launcher.launch
   end
 
   def self.enter_outline
     return FileTree.enter_lines if Line.blank?
 
-    Keys.prefix = 9
+    Keys.prefix = "outline"
     Launcher.launch
   end
 
+  def self.set_env_vars args
+
+    ENV['prefix'] = Keys.prefix.to_s
+
+    if args[-1] !~ /^ *\|/
+      return ENV['txt'] = args[-1]
+    end
+
+    # Quoted lines
+
+    txt = Tree.leaf(args[-1])
+
+    ENV['txt'] = txt.length > 1_000_000 ? "*too long to put into env var*" : txt
+    # Put into file instead?
+  end
+
+  def self.unset_env_vars
+    ENV['prefix'] = nil
+    ENV['txt'] = nil
+  end
 end
 
 def require_menu file

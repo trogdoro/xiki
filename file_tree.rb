@@ -466,28 +466,28 @@ class FileTree
     when :u   # Just open file
       prefix_was_u = true
       Keys.clear_prefix
-    when 4   # Save ($ave) file
+    when "save"   # Save ($ave) file
       return self.save_quoted path
-    when 8
+    when "all"
       Keys.clear_prefix
       search_string ?   # If quote, enter lines under
         Tree.enter_under :
         self.enter_lines(//)   # If file, enter all lines
       return
-    when 9
+    when "outline"
       Keys.clear_prefix
       return self.drill_quotes_or_enter_lines path, search_string
     end
 
     # If numeric prefix, jump to nth window
-    if (! options[:ignore_prefix]) and Keys.prefix and Keys.prefix != 7
+    if (! options[:ignore_prefix]) and Keys.prefix_n and Keys.prefix != 7
 
       # If number larger than number of windows, open new one first
-      if Keys.prefix > View.list.size
+      if Keys.prefix_n > View.list.size
         View.to_nth(View.list.size - 1)
         View.create
       end
-      View.to_nth(Keys.prefix - 1)
+      View.to_nth(Keys.prefix_n - 1)
 
     end
 
@@ -759,7 +759,8 @@ class FileTree
 
     Tree.plus_to_minus_maybe
     Line.to_left
-    if Keys.prefix == 8
+    prefix = Keys.prefix
+    if prefix == 8 || prefix == "all"
       self.dir_recursive
     else
       self.dir_one_level options
@@ -1405,7 +1406,7 @@ class FileTree
     return View.flash("- File doesn't exist: #{dest_path}", :times=>5) if ! File.exists?(dest_path)
 
     View.flash "- Are you sure?"
-    answer = Keys.input :one_char=>true, :prompt=>"Are you sure you want to delete #{dest_path} ?"   #"
+    answer = Keys.input :chars=>1, :prompt=>"Are you sure you want to delete #{dest_path} ?"   #"
 
     return unless answer =~ /y/i
 

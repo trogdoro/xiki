@@ -32,10 +32,9 @@ class Tree
     end
 
     # While narrowing down list
-    while (ch =~ /[ "%-),.\/:<?-~]/) ||   # Be careful editing, due to ranges (_-_)
+    while (ch =~ /[ "%-),.\/:<?A-~]/) ||   # Be careful editing, due to ranges (_-_)
         (recursive && ch_raw == 2 || ch_raw == 6) ||
         ch == :up || ch == :down
-
       if ch == ' '
         pattern = ''
       elsif ch_raw == 2   # C-b
@@ -137,7 +136,7 @@ class Tree
     when "\C-a"
       Line.to_left
     when "\C-j"
-      ch = Keys.input :one_char => true
+      ch = Keys.input :chars=>1
       if ch == 't'   # just_time
         self.to_parent
         self.kill_under
@@ -192,6 +191,10 @@ class Tree
     when "-"   # Insert '!' for command
       self.stop_and_insert left, right, pattern
       View.insert self.indent("- ", 0)
+
+    when "@"   # Insert '!' for command
+      self.stop_and_insert left, right, pattern
+      View.insert self.indent("@", 0)
 
     when "+"   # Create dir
       self.stop_and_insert left, right, pattern, :dont_disable_control_lock=>true
@@ -1087,6 +1090,11 @@ class Tree
     return nil if dir.nil?
 
     File.expand_path dir
+  end
+
+  # Tree.slashless("hey/you/").should == "hey/you"
+  def self.slashless txt
+    txt.sub /\/$/, ''
   end
 
 end

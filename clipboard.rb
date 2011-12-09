@@ -25,7 +25,7 @@ class Clipboard
 
   def self.copy loc=nil, txt=nil
     # Use string if user types it quickly
-    loc ||= Keys.input(:one_char=>true, :prompt=>"Enter one char (to store this as): ") || "0"
+    loc ||= Keys.input(:chars=>1, :prompt=>"Enter one char (to store this as): ") || "0"
 
     unless txt
       left, right = View.range
@@ -56,7 +56,7 @@ class Clipboard
 
   def self.paste loc=nil
     # Use string if user types it quickly
-    loc ||= Keys.input(:one_char => true, :prompt => "Enter one char: ") || 0
+    loc ||= Keys.input(:chars=>1, :prompt => "Enter one char: ") || 0
 
     $el.set_mark_command nil
 
@@ -306,7 +306,7 @@ class Clipboard
   end
 
   def self.enter_yank
-    ch = Keys.input :one_char => true
+    ch = Keys.input :chars=>1
     value = @@hash_by_first_letter[ch]
     return unless value
     View.insert value

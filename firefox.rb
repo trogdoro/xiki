@@ -101,7 +101,7 @@ class Firefox
     return View.prompt("Type some javascript to run in the browser") if txt.nil?
 
     Firefox.run txt, :jquery=>1
-    nil
+    ".flash - ran in browser!"
   end
 
   def self.coffee txt=nil
@@ -110,7 +110,7 @@ class Firefox
     txt = CoffeeScript.run_internal txt
 
     Firefox.run txt, :jquery=>1
-    nil
+    ".flash - ran in browser!"
   end
 
   def self.last_stack_trace
@@ -284,8 +284,8 @@ class Firefox
   def self.html txt
 
     # When C-8, delegate to .dom to show whole body
-    return Tree.<< Firefox.dom(:prefix=>8) if Keys.prefix == 8
-    return Tree.<< Firefox.dom(:prefix=>9) if Keys.prefix == 9
+    return Tree.<< Firefox.dom(:prefix=>"all") if Keys.prefix == "all"
+    return Tree.<< Firefox.dom(:prefix=>"outline") if Keys.prefix == "outline"
 
     return "
       | Enter something here to show it in the browser.
@@ -421,6 +421,8 @@ class Firefox
     txt.strip
   end
 
+
+  # TODO Not used any more?
   def self.log
     View.open "/Users/craig/.emacs.d/url_log.notes"
   end
@@ -532,7 +534,7 @@ class Firefox
       Firefox.run "$(\"#{args}\").blink()"
       return
     end
-    if prefix != 8 && prefix != 9
+    if prefix != "all" && prefix != "outline"
       js << %`
         $("#{args}").blink().children().each(function(n, e){
           var tag = e.nodeName.toLowerCase();
@@ -555,7 +557,7 @@ class Firefox
     kids = kids.sub(/\A"/, '').sub(/"\z/, '') if kids =~ /\A"/
     if kids =~ /\Ahtml::/
       kids = kids.sub(/\Ahtml::/, '').strip
-      return prefix == 8 ?
+      return prefix == "all" ?
         kids.gsub(/^/, '| ') :
         self.tidy(kids, raw_args)
     end

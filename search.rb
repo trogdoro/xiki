@@ -94,7 +94,7 @@ class Search
     match = self.stop
 
     if match.nil?   # If nothing searched for yet, search difflog
-      loc = Keys.input(:one_char=>true, :prompt=>"Enter one char to search for corresponding string: ")
+      loc = Keys.input(:chars=>1, :prompt=>"Enter one char to search for corresponding string: ")
       loc = loc.to_s
       txt = Clipboard.hash[loc.to_s] || Clipboard.hash_by_first_letter[loc.to_s]
 
@@ -996,7 +996,7 @@ class Search
   # Copy match as name (like Keys.as_name)
   def self.just_name
     term = self.stop
-    loc ||= Keys.input(:one_char=>true, :prompt=>"Enter one char (to store this as): ") || "0"
+    loc ||= Keys.input(:chars=>1, :prompt=>"Enter one char (to store this as): ") || "0"
     Clipboard.copy loc, term
     Effects.blink :left=>left, :right=>right
   end
@@ -1051,7 +1051,7 @@ class Search
     match = self.stop
 
     if match.nil?   # If nothing searched for yet
-      char = Keys.input(:one_char=>true, :prompt=>"Enter one char: ")
+      char = Keys.input(:chars=>1, :prompt=>"Enter one char: ")
       if char == "m"
         Launcher.open("- $a/\n  - ## def /")
       elsif char == "f"
@@ -1072,7 +1072,7 @@ class Search
     match = self.stop
 
     if match.nil?   # If nothing searched for yet
-      char = Keys.input(:one_char=>true, :prompt=>"Enter one char: ")
+      char = Keys.input(:chars=>1, :prompt=>"Enter one char: ")
       if char == "m"
         Launcher.open("- $x/\n  - ##\\bdef /")
       else

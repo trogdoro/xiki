@@ -33,6 +33,7 @@ class View
 
   def self.menu
     "
+    - .flashes/
     - docs/
       | The View class is the catch-all class for dealing with editing text.
       | It has methods for inserting text and grabbing text, and quite a few
@@ -873,7 +874,7 @@ class View
 
   def self.visibility key=nil
     # I.e. transparency / opacity
-    key ||= Keys.input(:one_char => true, :prompt => 'Layout Visibility: [f]ull, [h]igh, [m]edium, [l]ow   [s]tylized, [p]lain')
+    key ||= Keys.input(:chars=>1, :prompt => 'Layout Visibility: [f]ull, [h]igh, [m]edium, [l]ow   [s]tylized, [p]lain')
     case key.to_sym
     when :f
       el4r_lisp_eval "(set-frame-parameter nil 'alpha '(100 85))"   # full visibility
@@ -988,7 +989,7 @@ class View
       message = @@dimension_options.map{|i|
         "[#{i.first[/./]}]#{i.first[/.(.+)/,1]}"}.
         join(', ')
-      key = Keys.input(:one_char=>true, :prompt=>"dimensions: #{message}")
+      key = Keys.input(:chars=>1, :prompt=>"dimensions: #{message}")
     end
     option = @@dimension_options.find{|i| i.first =~ /^#{key}/}
     return View.message("Option not #{key} found") if option.nil?
@@ -1059,7 +1060,7 @@ class View
   def self.shift
     times = Keys.prefix_times;  Keys.clear_prefix
 
-    choice = Keys.input :one_char => true, :prompt => "Move this view to: (n)ext, (p)revious"
+    choice = Keys.input :chars=>1, :prompt=>"Move this view to: (n)ext, (p)revious"
     Effects.blink
     times.times do
 
@@ -1278,6 +1279,9 @@ class View
   end
 
   def self.flash message=nil, options={}
+
+    File.open("/tmp/flashes.log", "a") { |f| f << "#{message}\n" } if message
+
     message ||= "- Success!"
 
     orig = self.cursor
@@ -1297,6 +1301,12 @@ class View
     self.cursor = orig
     nil
   end
+
+  def self.flashes
+    txt = IO.readlines File.expand_path("/tmp/flashes.log") rescue return "- No messages flashed yet!"
+    txt = txt.reverse.uniq.join
+  end
+
 end
 
 def View txt

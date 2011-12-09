@@ -145,7 +145,7 @@ class Files
   end
 
   def self.open_just
-    key = Keys.input(:prompt => "Open just currently open files of type (enter a letter): ", :one_char => true)
+    key = Keys.input(:prompt => "Open just currently open files of type (enter a letter): ", :chars=>1)
     dir = @@dir_hash[key]
     return message("No dir matching '#{key}' found.  See Files\#@@dir_hash") unless dir
     if Keys.prefix_u?
@@ -157,7 +157,7 @@ class Files
   end
 
   def self.open_last
-    key = Keys.input(:prompt => "Open just currently open files of type (enter a letter): ", :one_char => true)
+    key = Keys.input(:prompt => "Open just currently open files of type (enter a letter): ", :chars=>1)
     dir = @@dir_hash[key]
     View.open Files.edited_array.grep((Regexp.new(Regexp.escape(dir)))).first
   end

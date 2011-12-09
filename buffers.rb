@@ -16,7 +16,7 @@ class Buffers
       when 1:  return list.select{ |b| $el.buffer_file_name(b) }.map{ |b| $el.buffer_name(b) }[1..-1]
       when 3:  return list.select{ |b| ! $el.buffer_file_name(b) && $el.buffer_name(b) =~ /^#/ }.map{ |b| $el.buffer_name(b) }
       when 4:  return list.select{ |b| ! $el.buffer_file_name(b) && $el.buffer_name(b) =~ /^\*console / }.map{ |b| $el.buffer_name(b) }
-      when 8:  return list.map{ |b| $el.buffer_name(b) }
+      when 8, "all":  return list.map{ |b| $el.buffer_name(b) }
       when :u:  return list.select{ |b| ! $el.buffer_file_name(b) && $el.buffer_name(b) =~ /!$/ }.map{ |b| $el.buffer_name(b) }
       end
       return

@@ -580,7 +580,7 @@ class Gito
         View.insert(menu)
         Launcher.launch
       else
-        View.bar if prefix == 9
+        View.bar if prefix == "outline"
         Launcher.open(menu)
       end
       return
@@ -605,7 +605,7 @@ class Gito
       View.insert(menu)
       Launcher.launch
     else
-      View.bar if prefix == 9
+      View.bar if prefix == "outline"
       Launcher.open(menu)
     end
   end

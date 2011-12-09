@@ -24,7 +24,7 @@ class Color
   }
 
   def self.colorize char=nil
-    char ||= Keys.input(:one_char => true, :prompt => 'Enter first letter of color: ')
+    char ||= Keys.input(:chars=>1, :prompt => 'Enter first letter of color: ')
     char = char.to_s
     # If h, just show all colors
     case char

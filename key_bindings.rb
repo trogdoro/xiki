@@ -88,12 +88,14 @@ class KeyBindings
     Keys.open_list_appointments { View.bar; Launcher.open("- Agenda.menu/") }
     Keys.open_list_bookmarks { Launcher.open("- Bookmarks.list/") }
     #     Keys.open_last_error { Code.show_el4r_error }
-    Keys.open_list_faces { list_faces_display }
+    Keys.open_list_flashes { Launcher.open "- view/flashes/" }
+    #     Keys.open_list_faces { list_faces_display }
     Keys.open_lisp_info { info("elisp") }   # Open manual
 
     #     Keys.open_log_list { Launcher.open(Keys.prefix_u ? "- last/" : "- log/") }   # Show git diffs o 1 file
     #     Keys.open_log_list { Git.show_log_one_file }   # Show git diffs o 1 file
 
+    #     Keys.open_list_styles { list_faces_display }
     Keys.open_log_push { Gito.show_log }   # Show git diffs for a bookmark
     Keys.open_last_screenshot { Files.open_last_screenshot }
     #     Keys.open_like_text { txt = View.txt; View.to_buffer "txt"; View << txt }
@@ -252,6 +254,7 @@ class KeyBindings
     Keys.do_kill_all { Effects.blink :what=>:all; View.kill_all }   # kill all text in buffer
     Keys.do_kill_branch { Tree.collapse }
     Keys.do_kill_file { FileTree.delete_file }
+    Keys.do_kill_it { Launcher.as_destroy }  # Delete menu or file or whatever (just passes "0") prefix
     Keys.do_kill_nonmatching { Search.kill_filter }
     Keys.do_kill_paragraph { View.kill_paragraph }   # kill all text in buffer
     Keys.do_kill_rest { CodeTree.kill_rest }   # kill adjacent lines at same indent as this one

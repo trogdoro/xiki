@@ -1,33 +1,32 @@
 class Specs
 
   def self.menu
-    "
+    '
     - .load/
-      - do/
+      | Loads rspec (including the .should method) into the xiki environment:
+      - continue/
       - docs/
     - .see/
       - @xiki/tests/
-    "
+    '
   end
 
   def self.load choice
     if choice == "docs"
       return "
-        | > Summary
-        | Select do/ to load rspec into the xiki environment.
+        | > Point
+        | The point is so you can use rspec methods like .should when using
+        | do+run, as an easy transition to creating a spec:
         |
-        | > Example
-        | Then you can use rspec methods like .should when using do_run:
-        |
-        | Launch do/ above and then launch this line.  It will show an error
-        | saying 'got: 1...' and a stack trace.
+        | Launch continue/ above and then launch this line.  This servers as
+        | a sort of mini test you can create inline.
         |
         + try it out) @ puts 1.should == 2
         |
         "
     end
 
-    # Must be do/
+    # Must be "continue/"
     gem "rspec"
     require "spec"
     return "- loaded!"

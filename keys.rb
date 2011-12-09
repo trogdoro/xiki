@@ -8,20 +8,6 @@ class Keys
 
   @@key_queue =[]  # For defining menus (must be done in reverse)
 
-  CODE_SAMPLES = %q[
-    # Map C-c C-a
-    Keys.CA { View.insert "foo" }
-
-    # Map M-x (in shell mode)
-    Keys._X(:shell_mode_map) { View.insert "foooo" }
-
-    # Get user input
-    - A String
-      - puts Keys.input(:prompt => "Name: ")
-    - Just one char
-      - puts Keys.input(:one_char => true)
-  ]
-
   def self.menu
     %`
     - .history/
@@ -136,6 +122,17 @@ class Keys
       - @search/docs/
       |
     - .api/
+      > Map C-c C-a
+      | Keys.CA { View.insert "foo" }
+      |
+      > Map M-x (in shell mode)
+      | Keys._X(:shell_mode_map) { View.insert "foooo" }
+      |
+      > Get user input
+      | - A String
+      |   - puts Keys.input(:prompt => "Name: ")
+      | - Just one char
+      |   - puts Keys.input :chars=>1
     `
   end
 
@@ -295,7 +292,7 @@ class Keys
   # Gets input from user.
   # Sample usages:
   #   - Terminated by enter:  Keys.input
-  #   - Just one char:  Keys.input(:one_char => true)
+  #   - Just one char:  Keys.input(:char => true)
   #   - One char if control:  Keys.input(:control => true)
   #   - Terminated by pause:  Keys.input(:timed => true)
   #   - Terminated by pause:  Keys.input(:optional => true)
@@ -326,7 +323,7 @@ class Keys
       Cursor.restore :before_input
       return c
     end
-    if options[:one_char]
+    if options[:chars]
       char = $el.char_to_string(
         self.remove_control($el.read_char(prompt))).to_s
       Cursor.restore :before_input
@@ -380,7 +377,7 @@ class Keys
     prompt << options[:choices].map{|i|
       "[#{i.first[/./]}]#{i.first[/.(.+)/,1]}"}.
       join(', ')
-    c = Keys.input :one_char=>true, :prompt=>prompt
+    c = Keys.input :chars=>1, :prompt=>prompt
     options[:choices].find{|i| i.first =~ /^#{c}/}[1]
   end
 
@@ -715,4 +712,8 @@ class Keys
     nil
   end
 
+  def self.human_readable txt
+    txt.split(/[^a-z]/i).map{|o| "Control-#{o[/./].upcase}"}.join(" ")
+  end
 end
+

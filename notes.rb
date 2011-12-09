@@ -687,7 +687,6 @@ class Notes
   def self.drill file, heading=nil, *content
 
     prefix = Keys.prefix :clear=>true
-
     content = content.any? ? content.join('/') : nil
 
     had_bookmark = file =~ /^\$/
@@ -733,7 +732,7 @@ class Notes
     # If content passed
 
     # If C-4, grab text and save it to file / update
-    if prefix == 4
+    if prefix == "save"
       # Update difflog
 
       # Grab before and after
