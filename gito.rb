@@ -172,7 +172,7 @@ class Gito
       search = "-S'#{search}'" unless search.empty?
       txt = Console.run "git log -#{limit} --pretty=oneline #{search} #{file}", :sync=>true, :dir=>dir
       txt.gsub! ':', '-'
-      txt.gsub! /(.+?) (.+)/, "\\2: \\1"
+      txt.gsub! /(.+?) (.+)/, "\\2) \\1"
       txt.gsub! /^- /, ''
       return txt.gsub!(/^/, '+ ')
       #return "- TODO: show all revs"
@@ -542,6 +542,7 @@ class Gito
 
   def self.push dest, project
     dir = self.extract_dir project
+
     Console.run "git push origin #{dest}", :dir=>dir
     nil
   end

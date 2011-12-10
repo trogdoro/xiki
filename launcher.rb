@@ -401,7 +401,7 @@ class Launcher
 
   def self.init_default_launchers
 
-    self.add /^h$/ do   # $ run command in shell
+    self.add /^h$/ do   # experiment - ^h to insert history - keep this?
       log = self.log.strip
       Line.sub! /.+/, log
 
@@ -409,7 +409,7 @@ class Launcher
       Tree.search :left=>left, :right=>left+log.length+1
     end
 
-    self.add /^ *\$ / do   # $ run command in shell
+    self.add /^ *% / do   # $ run command in shell
       Console.launch_dollar
     end
 
@@ -431,7 +431,7 @@ class Launcher
       prefix == :u ? $el.browse_url(url) : Firefox.url(url)
     end
 
-    self.add(/^[ +-]*\$[^#*!\/]+$/) do |line|   # Bookmark
+    self.add(/^[ +-]*\$[^ #*!\/]+$/) do |line|   # Bookmark
       View.open Line.without_indent(line)
     end
 
@@ -482,7 +482,7 @@ class Launcher
       View.to_buffer name
     end
 
-    self.add(/^ *!/) do |l|   # ! shell command inline
+    self.add(/^ *\$ /) do |l|   # $ shell command inline
       Console.launch :sync=>true
     end
 
@@ -778,7 +778,6 @@ class Launcher
     path = "#{path}/" if path !~ /\//   # Append slash if just root without path
 
     return if path =~ /^(log|last)(\/|$)/
-
     path = "- #{path}"
     File.open(@@log, "a") { |f| f << "#{path}\n" } rescue nil
   end
@@ -920,7 +919,6 @@ class Launcher
     # Quoted lines
 
     txt = Tree.leaf(args[-1])
-
     ENV['txt'] = txt.length > 1_000_000 ? "*too long to put into env var*" : txt
     # Put into file instead?
   end

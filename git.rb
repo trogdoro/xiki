@@ -14,7 +14,8 @@ class Git
 
     # Handle routing of .push manually, since routing requires linebreaks
     if args[0] == "push"
-      return self.push branch, *args[1..-1]
+      self.push branch, *args[1..-1]
+      return false   # Don't continue
     end
 
     nil
@@ -86,7 +87,7 @@ class Git
     # If no branch, use default
     return "- #{default_branch}/" if branch.nil?
 
-    "- IMPLEMENT doing actual push: #{branch}"
+    Gito.push branch, "project - #{Dir.pwd}"
   end
 
   def self.branch_name dir=nil
@@ -120,6 +121,10 @@ class Git
     return View.prompt "Enter a commit message" if message.nil?
 
     Gito.commit message, "project - #{Dir.pwd}"
+  end
+
+  def self.show_log_one_file
+    Gito.show_log_one_file
   end
 
 end

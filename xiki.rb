@@ -133,7 +133,7 @@ class Xiki
       when 'files'; "http://github.com/trogdoro/xiki"
       when 'commits'; "https://github.com/trogdoro/xiki/commits/master"
       end
-    nil
+    ".flash - Opened in browser!"
   end
 
   def self.dont_search

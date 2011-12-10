@@ -390,11 +390,11 @@ class Notes
 
     # - bullets with labels and comments
     Styles.apply("^[ \t]*\\([<+-]<*\\) \\([^\n(]+?)\\) ", nil, :ls_bullet, :notes_label)   # - hey) you
-    Styles.apply("^[ \t]*\\([<+-]\\) \\([!#-~ ]+?:\\) ", nil, :ls_bullet, :notes_label)   # - hey: you
+    Styles.apply("^[ \t]*\\([<+-]\\) \\([^/:\n]+:\\) ", nil, :ls_bullet, :notes_label)   # - hey: you
 
-    Styles.apply("^[ \t]*\\([<+=-]<*\\) \\([!#-~ ]+?[:)]\\)$", nil, :ls_bullet, :notes_label)   # - hey)
+    Styles.apply("^[ \t]*\\([<+=-]<*\\) \\([^(\n]+[:)]\\)$", nil, :ls_bullet, :notes_label)   # - hey)
 
-    Styles.apply("^[ \t]*\\(x\\)\\( \\)\\(.+\\)", nil, :notes_label, :variable, :strike)
+    #     Styles.apply("^[ \t]*\\(x\\)\\( \\)\\(.+\\)", nil, :notes_label, :variable, :strike)
 
     Styles.apply("^\\([ \t]*\\)\\([<+-]\\) \\(.+?:\\) +\\(|.*\n\\)", nil, :default, :ls_bullet, :notes_label, :ls_quote)
     Styles.apply("^\\([ \t]*\\)\\([<+-]\\) \\([^\n(]+?)\\) +\\(|.*\n\\)", nil, :default, :ls_bullet, :notes_label, :ls_quote)

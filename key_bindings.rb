@@ -93,7 +93,7 @@ class KeyBindings
     Keys.open_lisp_info { info("elisp") }   # Open manual
 
     #     Keys.open_log_list { Launcher.open(Keys.prefix_u ? "- last/" : "- log/") }   # Show git diffs o 1 file
-    #     Keys.open_log_list { Git.show_log_one_file }   # Show git diffs o 1 file
+    Keys.open_log_list { Git.show_log_one_file }   # Show git diffs o 1 file
 
     #     Keys.open_list_styles { list_faces_display }
     Keys.open_log_push { Gito.show_log }   # Show git diffs for a bookmark

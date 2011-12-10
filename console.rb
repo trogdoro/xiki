@@ -214,12 +214,12 @@ class Console
     path[0] = Bookmarks[path[0]] if path[0] =~ /^(\.\/|\$[\w-])/   # Expand out bookmark or ./, if there
     if path.first =~ /^\//   # If has dir (possibly remote)
       line = path.join('')
-      dir, command = line.match(/(.+?)\$ (.*)/)[1..2]
-      self.append_log "#{command}", dir, '$ '
+      dir, command = line.match(/(.+?)% (.*)/)[1..2]
+      self.append_log "#{command}", dir, '% '
       Console.to_shell_buffer dir, :cd_and_wait=>true
     else   # Otherwise, if by itself
-      command = Line.without_label.match(/.*?\$ (.+)/)[1]
-      self.append_log "#{command}", dir, '$ '
+      command = Line.without_label.match(/.*?\% (.+)/)[1]
+      self.append_log "#{command}", dir, '% '
       Console.to_shell_buffer   # Go to shell if one is visible, and starts with "*console"
     end
 
@@ -234,7 +234,7 @@ class Console
   def self.launch options={}
     line = Line.without_label :leave_indent=>true
     # If indented, check whether file tree, extracting if yes
-    if line =~ /^\s+!/
+    if line =~ /^\s+\$/
       orig = View.cursor
       path = Tree.construct_path(:list=>true)
       if path[0] =~ /@/   # If there's a @, it's remote
@@ -242,14 +242,14 @@ class Console
         return Remote.command path
       end
       if FileTree.handles?(path)
-        while(path.last =~ /^!/) do   # Remove all !foo lines from path
+        while(path.last =~ /^\$/) do   # Remove all !foo lines from path
           path.pop
         end
         dir = path.join('')
       end
       View.to orig
     end
-    line =~ / *(.*?)!+ ?(.+)/
+    line =~ / *(.*?)\$+ ?(.+)/
     dir ||= $1 unless $1.empty?
     command = $2
 
@@ -262,8 +262,8 @@ class Console
       Keys.prefix == 1 ? output.gsub!(/^/, '|') : output.gsub!(/^/, '| ').gsub!(/^\| +$/, '|')
 
       # Expose "!" and "- label: !" lines as commands
-      output.gsub!(/^\| !/, '!')
-      output.gsub!(/^\| (- [\w ,-]+: !)/, "\\1")
+      output.gsub!(/^\| \$/, '$')
+      output.gsub!(/^\| (- [\w ,-]+: \$)/, "\\1")
 
       Tree.indent(output)
       Tree.insert_quoted_and_search output
@@ -272,7 +272,7 @@ class Console
       Console.run command, :dir=>dir  #, :buffer=>"*console #{dir}"
     end
 
-    self.append_log command, dir, '! '
+    self.append_log command, dir, '$ '
 
   end
 
@@ -383,7 +383,7 @@ class Console
     dir = View.dir
     history = Console.commands
     history.uniq! unless Keys.prefix_u
-    history = history.join("\n").gsub(/^/, '$ ')
+    history = history.join("\n").gsub(/^/, '% ')
     View.create :u if ! View.list_names.member?("*shell history")
     View.to_buffer "*shell history"
     View.kill_all

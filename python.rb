@@ -1,4 +1,10 @@
 class Python
+  def self.menu *args
+    txt = ENV['txt']
+
+    self.run_internal txt
+  end
+
   def self.run
     # Get block contents
     txt, left, right = View.txt_per_prefix #:prefix=>Keys.prefix

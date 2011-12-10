@@ -32,7 +32,7 @@ class Tree
     end
 
     # While narrowing down list
-    while (ch =~ /[ "%-),.\/:<?A-~]/) ||   # Be careful editing, due to ranges (_-_)
+    while (ch =~ /[ -"&-),.\/:<?A-~]/) ||   # Be careful editing, due to ranges (_-_)
         (recursive && ch_raw == 2 || ch_raw == 6) ||
         ch == :up || ch == :down
       if ch == ' '
@@ -184,15 +184,15 @@ class Tree
       self.stop_and_insert left, right, pattern
       View.insert self.indent("$ ", 0)
 
-    when "!"   # Insert '!' for command
+    when "%"   # Insert '!' for command
       self.stop_and_insert left, right, pattern
-      View.insert self.indent("! ", 0)
+      View.insert self.indent("% ", 0)
 
-    when "-"   # Insert '!' for command
+    when "-"   # Insert '-' for bullet
       self.stop_and_insert left, right, pattern
       View.insert self.indent("- ", 0)
 
-    when "@"   # Insert '!' for command
+    when "@"   # Insert '@' for menus
       self.stop_and_insert left, right, pattern
       View.insert self.indent("@", 0)
 

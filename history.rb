@@ -18,7 +18,7 @@ class History
     if options[:paths]
       paths = options[:paths]
     elsif options[:prompt_for_bookmark]
-      bm = Keys.input(:timed => true, :prompt => "Enter bookmark to show outline for: ")
+      bm = Keys.input(:timed => true, :prompt => "Enter bookmark to show content for: ")
       path = Bookmarks.expand(bm, :just_bookmark => true)
       path = File.expand_path(path)
 

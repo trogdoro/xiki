@@ -322,8 +322,11 @@ class Firefox
   end
 
   def self.css html
+    txt = Tree.leaf(html)
 
-    code = "$('head').append(\"<style>#{html}</style>\")"
+    txt.gsub!("\n", '\n')
+    txt.gsub!('"', '\"')
+    code = "$('head').append(\"<style>#{txt}</style>\")"
     Firefox.run code, :jquery=>1
 
     nil
@@ -656,11 +659,10 @@ class Firefox
 
   def self.blink txt
     next View.prompt("Type a selector to blink in firefox", :times=>5) if txt.nil?
-    code = "$(\"#{txt}\").blink()"
-    Firefox.run code, :jquery=>1
+    code = "$(\"#{Tree.slashless txt}\").blink()"
+    txt = Firefox.run code, :jquery=>1
     nil
   end
-
 
 end
 

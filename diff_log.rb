@@ -92,7 +92,6 @@ class DiffLog
       sleep(0.3)
       Firefox.reload
     elsif prefix == 9
-      sleep(0.3)
       Launcher.do_last_launch
     end
   end
