@@ -322,11 +322,6 @@ class Launcher
     root = line[/^[\w -]+/]   # Grab thing to match
     root.gsub!(/[ -]/, '_') if root
 
-    block_dot_menu = @@menus[0][root]
-    block_other = @@menus[1][root]
-
-    return false if block_dot_menu.nil? && block_other.nil?
-
     self.append_log line
     trunk = Xiki.trunk
 
@@ -352,7 +347,7 @@ class Launcher
     # If there was a menu, call it
 
     out = nil
-    if block_dot_menu
+    if block_dot_menu = @@menus[0][root]
       begin
         out = Tree.output_and_search block_dot_menu, :line=>line  #, :dir=>file_path
       ensure
@@ -360,15 +355,23 @@ class Launcher
       end
 
       # If .menu file matched but had no output, and no other block to delegate to, say we handled it so it will stop looking
-      if ! out && ! block_other
-        View.flash "- Menu does nothing!"
-        return true
+
+      if ! out
+        require_menu File.expand_path("~/menus/#{root}.rb"), :ok_if_not_found=>1
+        if ! @@menus[1][root]
+          Tree << "
+            | This menu item does nothing yet.  You can update the .menu file to
+            | give it children or create a class to give it dynamic behavior:
+            <= @menu/create/class/
+            "
+          return true
+        end
       end
 
-      return true if out   # If there was no output, continue on and try class
+      return true if out   # Output means we handled it, otherwise continue on and try class
     end
 
-    if block_other
+    if block_other = @@menus[1][root]   # If class menu
       begin
         Tree.output_and_search block_other, :line=>line  #, :dir=>file_path
       ensure
@@ -409,7 +412,7 @@ class Launcher
       Tree.search :left=>left, :right=>left+log.length+1
     end
 
-    self.add /^ *% / do   # $ run command in shell
+    self.add /^ *%( |$)/ do   # $ run command in shell
       Console.launch_dollar
     end
 
@@ -680,12 +683,16 @@ class Launcher
     # Maybe call .menu_before
 
     method = clazz.method("menu_before") rescue nil
+    self.set_env_vars args
     if method
       code = "#{camel}.menu_before *#{args.inspect}"
       returned, out, exception = Code.eval code
 
       return CodeTree.draw_exception exception, code if exception
       if returned != nil   # Only a nil returned means don't call .menu
+
+        # TODO: call .unset_env_vars before this and other below places we return
+
         return if ! returned.is_a?(String)
 
         returned = returned.unindent if returned =~ /\A[ \n]/
@@ -735,11 +742,6 @@ class Launcher
     }
     action = actions.last || ".#{default_method}"
     action.gsub! /[ -]/, '_'
-
-    # TODO: Do we want to always group quotes, or should menus optionally internally call Tree.leaf?!"
-
-    # Make multi-line strings available to method
-    self.set_env_vars args
 
     args = variables.map{|o| "\"#{CodeTree.escape o}\""}.join(", ")
 
@@ -929,7 +931,11 @@ class Launcher
   end
 end
 
-def require_menu file
+def require_menu file, options={}
+  if ! options[:ok_if_not_found]
+    raise "File Not Found" if !File.exists?(file)
+  end
+
   stem = file[/(\w+)\./, 1]
 
   # As .menu
@@ -944,9 +950,10 @@ def require_menu file
 
   # As class, so require and add launcher
 
-  Menu.load_if_changed file
+  result = Menu.load_if_changed file
+  return if result == :not_found
 
-  Launcher.add stem
+  Launcher.add stem if ! Launcher.menus[1][stem]
 end
 
 Launcher.init_default_launchers

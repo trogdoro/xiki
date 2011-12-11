@@ -19,7 +19,14 @@ class Image
     `
   end
 
-  def self.<< file
-    $el.insert_image $el.create_image(file)
+  def self.>> file
+    Move.to_end
+    Notes.enter_junior
+    self.<< file
+    Move.backward
+  end
+
+  def self.<< file, txt=" "
+    $el.insert_image $el.create_image(file), txt
   end
 end

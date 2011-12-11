@@ -167,7 +167,7 @@ class Line
 
   def self.to_beginning options={}
     down = options[:down]
-    prefix = Keys.prefix
+    prefix = options[:prefix] || Keys.prefix
     down ||= prefix
 
     # If prefix go down n lines first

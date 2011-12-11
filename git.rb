@@ -32,17 +32,12 @@ class Git
       - .create/
       - .make sample files/
     - .docs/
-    "
-  end
-
-  def self.docs
-    "
-    > How to use
-    | Put the @git menu under a path that has or will have a git repo, like
-    | so:
-    |
-    | - /tmp/my_project/
-    |   - @git/
+      > How to use
+      | Put the @git menu under a path that has or will have a git repo, like
+      | so:
+      |
+      | - /tmp/my_project/
+      |   - @git/
     "
   end
 

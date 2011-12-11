@@ -218,16 +218,16 @@ class Console
       self.append_log "#{command}", dir, '% '
       Console.to_shell_buffer dir, :cd_and_wait=>true
     else   # Otherwise, if by itself
-      command = Line.without_label.match(/.*?\% (.+)/)[1]
-      self.append_log "#{command}", dir, '% '
+      command = Line.without_label.match(/.*?\% ?(.*)/)[1]
+      self.append_log("#{command}", dir, '% ') if command.present?
       Console.to_shell_buffer   # Go to shell if one is visible, and starts with "*console"
     end
+    return if command.empty?
 
     View.insert command
     Console.enter
 
     orig.go unless orig_view == View.index
-
   end
 
   # Mapped to !! or ! in Launcher

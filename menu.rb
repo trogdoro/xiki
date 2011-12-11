@@ -30,7 +30,7 @@ class Menu
       | You can create sophisticated menus backed by classes, or by using other
       | simple means:
       - .classes/
-        - .Simple class/
+        - .simple class/
         - .menu with method/
         - .menu with two methods/
       - other/
@@ -146,7 +146,7 @@ class Menu
 
     Tree << %`
       | Update this sample class to your liking. Then do as+update (type
-      | Ctrl-a, Ctrl-u) to create the '#{menu}' menu.
+      | Ctrl-a, Ctrl-u) to create the '#{menu}' class file.
       - @~/menus/
         - #{menu}.rb
           | class #{TextUtil.camel_case(menu)}
@@ -486,9 +486,11 @@ class Menu
     root = TextUtil.snake_case(root).sub(/^_+/, '')
 
     if Line.value(2) =~ /^ +\| Supply a few items here/   # If sample text, remove
-      View.delete Line.left(2), Line.left(3)
-      View.flash "- Removing instructions...", :times=>2
-      View.delete Line.left(2), Line.left(4)
+      Line.next
+      while Line.=~(/^ +\| /)
+        Line.delete
+      end
+      Line.previous
       orig = nil
     end
 
@@ -527,7 +529,7 @@ class Menu
   @@loaded_already = {}
 
   def self.load_if_changed file
-    return unless File.exists? file
+    return :not_found if ! File.exists?(file)
     previous = @@loaded_already[file]
     recent = File.mtime(file)
 
