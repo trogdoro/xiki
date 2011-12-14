@@ -330,6 +330,18 @@ class Bookmarks
 
     FileTree.paths_to_tree(paths)
   end
+
+  def self.open_quick
+Ol.line
+    bookmark = Keys.input :chars=>1, :prompt=>"Enter a quick bookmark to jump to:"
+Ol << "bookmark: #{bookmark.inspect}"
+    Bookmarks.go("q#{bookmark}")
+Ol.line
+    if bookmark == "p"
+      $el.use_local_map elvar.deck_mode_map
+    end
+  end
+
 end
 
 $el.el4r_lisp_eval("(require 'bookmark)")

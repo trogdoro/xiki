@@ -63,13 +63,13 @@ class Menu
           |   end
           |
         - Extract menu text from somewhere/
-          | Tree.climb just expects text that is in the form of a menu (lines with
+          | Tree.children just expects text that is in the form of a menu (lines with
           | 2-space indenting for nesting). So, the text can be pulled from
           | anywhere, such as a part of a larger file:
           |
           | Menu.lawn do |path|
           |   menu = Notes.read_block("/tmp/garage.notes", "> Lawn")
-          |   Tree.climb menu, Tree.rootless(path)
+          |   Tree.children menu, Tree.rootless(path)
           | end
           |
       |
@@ -290,7 +290,7 @@ class Menu
         | For example you could create a "foo.menu" file with the contents
         | "- sammiches/..." etc:
         |
-        - TODO: get these to expand out somehow! - maybe pass another arg to Tree.climb below? - probably bad idea
+        - TODO: get these to expand out somehow! - maybe pass another arg to Tree.children below? - probably bad idea
         - ~/menus/
           - foo.menu
             | - sammiches/
@@ -311,7 +311,7 @@ class Menu
         |
       `
 
-    Tree.climb(txt, args.join('/'))
+    Tree.children(txt, args.join('/'))
   end
 
   def self.reload_menus

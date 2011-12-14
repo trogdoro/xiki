@@ -92,8 +92,7 @@ class Gito
 
   def self.tag to, from=nil
     unless self.url
-      puts "Error: Git.url isn't set!"
-      return
+      return "Error: Git.url isn't set!"
     end
     from ||= "trunk"
     command = "svn -m \"Tag: Create #{from} tag\" cp #{Gito.url}/#{from} #{Gito.url}/#{to}"
@@ -136,7 +135,7 @@ class Gito
 
     branch = self.branch_name dir
     # If project, show options
-    puts %Q[
+    %Q[
       + .create/
       + .diff_unadded/
       + .diff_unadded :expand/
@@ -191,7 +190,7 @@ class Gito
     nil
   end
 
-  def self.log search, project, rev=nil, file=nil, line=nil
+  def self.log search, project, rev=nil, file=nil, *line
     dir = self.extract_dir project
 
     if search == :expand
@@ -202,27 +201,27 @@ class Gito
       search = "-S'#{search}'" unless search.empty?
       txt = Console.run "git log -1000 --pretty=oneline #{search}", :sync=>true, :dir=>dir
       txt.gsub! ':', '-'
-      txt.gsub! /(.+?) (.+)/, "\\2: \\1"
+      txt.gsub! /(.+?) (.+)/, "\\2) \\1/"
       txt.gsub! /^- /, ''
       return txt.gsub!(/^/, '+ ')
     end
-
     if file.nil?   # If no file, show files for rev
       # Rev passed, so show all diffs
       txt = Gito.diff_internal "git show --pretty=oneline --name-status #{rev}", dir
-      txt.sub! /^.+\n/, ''
-      txt.gsub! /^([A-Z])\t/, "\\1: "
-      txt.gsub! /^M: /, ''
+      txt.sub! /^.+\n/, ''   # Remove 1st line?
+      txt.gsub! /^([A-Z])\t/, "\\1) "
+      txt.gsub! /^M\) /, ''
       return txt.split("\n").sort.map{|l| "+ #{l}\n"}.join('')
     end
-
-    if line.nil?   # If no line but file passed, show diff
+    if line.empty?   # If no line but file passed, show diff
       txt = Gito.diff_internal "git show #{@@git_diff_options} --pretty=oneline #{rev} #{file}", dir
       txt.sub!(/.+?@@/m, '@@')
       txt.gsub! /^/, '|'
-      puts txt
-      return
+      ENV['noslash'] = "1"
+      return txt
     end
+
+    # Line was passed
 
     # Line passed, so jump to file
     project.sub! /^project - /, ''
@@ -344,7 +343,7 @@ class Gito
   def self.status_tree project
     dir = self.extract_dir project
     dir = Bookmarks.expand(dir)
-    puts CodeTree.tree_search_option + self.status_tree_internal(dir)
+    CodeTree.tree_search_option + self.status_tree_internal(dir)
   end
 
   def self.status_tree_internal dir
@@ -622,29 +621,7 @@ class Gito
     end
   end
 
-  def self.svn_diff_unadded dir, file
-    children = CodeTree.children || []
-
-    if file   # If file passed, just open it
-      View.open("#{dir}/#{file}")
-      return
-    end
-
-    if children.nonempty?   # If children, add them
-      children = children.map{|c| c.sub(/^ +[+-] /, '')}.join(" ")
-      txt = Console.run("svn add #{children}", :dir => dir)
-
-      return
-    end
-
-    # If no children, show ones to be added
-    txt = Console.run("svn status", :dir => dir, :sync => true)
-    return txt.scan(/^\? +(.+)/)
-
-  end
-
   def self.svn_diff expand, dir, file, line, children
-
     if file.nil?   # If launching .commit directly (no file)
 
       if expand

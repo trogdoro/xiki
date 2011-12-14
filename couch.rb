@@ -4,18 +4,17 @@ require 'couchrest'
 class Couch
   @@server = 'http://localhost:5984'
 
-  def self.menu name=nil
-    if name.nil?   # If no name passed
-      return (["- .start\n"] +
-        (View.buffer_open?("*couchdb") ? ["  - buffer: **couchdb\n"] : []) +
-        ["- .admin_url\n", "+ .databases/\n"]).join('')
-    end
-
+  def self.menu # name=nil
+    "
+    - .start/
+    - .admin url/
+    - .databases/
+    "
   end
 
   def self.start
     buffer = '*couchdb'
-    return View.message("*couchdb already open", :beep=>1) if View.buffer_open? buffer
+    return ".flash - *couchdb already open!" if View.buffer_open? buffer
 
     Console.run('sudo couchdb', :buffer=>buffer)
   end
@@ -111,10 +110,11 @@ class Couch
     # If no doc, output doc
     if doc.nil?
       record = RestTree.request 'GET', "#{@@server}/#{db}/#{id}", nil
-      return record.gsub("\\n", "\n").gsub(/^/, '|')
+      return Tree.quote record.gsub("\\n", "\n") # .gsub(/^/, '| ')
     end
 
     # Doc passed, so save it
+    doc = ENV['txt'].dup
 
     # If a record is found, add rev
     record = RestTree.request 'GET', "#{@@server}/#{db}/#{id}", nil

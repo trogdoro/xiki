@@ -1,5 +1,3 @@
-require 'auto_menu'
-
 class Projects
 
   @@projects ||= {'default'=>'$tr'}

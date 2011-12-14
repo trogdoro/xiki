@@ -150,7 +150,7 @@ class CodeTree
   def self.menu
     l = []
     ObjectSpace.each_object(Class) do |c|
-      next unless c.respond_to?(:menu) || c.respond_to?(:auto_menu)
+      next unless c.respond_to?(:menu)
       l << c.to_s
     end
     l.map! {|c| c.sub(/^#.+::/, '')}
@@ -324,20 +324,6 @@ class CodeTree
   end
 
 
-  # Returns group of lines close to current line that are indented at the same level.
-  # The bounds are determined by any lines indented *less* than the current line (including
-  # blank lines).  In this context, lines having only spaces are not considered blank.
-  # Any lines indented *more* than the current line won't affect the bounds, but will be
-  # filtered out.
-  def self.child
-    next_line = Line.value 2
-    # If indent is one greater, it is a child
-    if Line.indent.size + 2 == Line.indent(next_line).size
-      return Line.without_label(:line=>next_line)
-    end
-    nil
-  end
-
   def self.kill_siblings
     prefix = Keys.prefix :clear=>true
 
@@ -375,53 +361,6 @@ class CodeTree
 
     # Optionally delete before
     View.delete(left1, right1) if prefix == :u
-
-  end
-
-  def self.children?
-    # Whether next line is more indented
-    Line.indent(Line.value(2)).size >
-      Line.indent.size
-  end
-
-  def self.children options={}
-    child = self.child
-    return nil if child.nil?  # Return if no child
-
-    indent = Line.indent(Line.value(2)).size
-    children = options[:as_hash] ? {} : []
-    i = 2
-
-    # Add each child indented the same or more
-    while(Line.indent(Line.value(i)).size >= indent)
-      child = Line.value(i)
-      if options[:as_hash]
-        match = child.match(/ *([\w -]+): (.+)/)
-        if match
-          k, v = match[1..2]
-          children[k] = v
-        else
-          i += 1
-          next
-        end
-
-      else
-        children << child
-      end
-
-      i += 1
-    end
-
-    children
-  end
-
-  def self.line_or_children
-    # Return line, if there is one
-    line = Line.without_label
-    return line unless line == ""
-
-    # If line is empy, return children
-    CodeTree.children.join("\n")
   end
 
   def self.tree_search_option

@@ -1,11 +1,10 @@
 class Irc
-  extend AutoMenu
 
-  def self.auto_menu
-    puts "
-      - .logon
-      - room (o): /j merb
-      - identify (o): /m nickserv IDENTIFY #{self.pw}
+  def self.menu
+    "
+    - .logon
+    - room (o): /j merb
+    - identify (o): /m nickserv IDENTIFY #{self.pw}
     "
   end
 

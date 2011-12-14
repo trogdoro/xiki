@@ -1,0 +1,2 @@
+class RelinquishException < RuntimeError
+end

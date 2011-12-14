@@ -19,17 +19,17 @@ class Notes
     View.txt after_header, right
   end
 
-  def self.expand_block up=false
+  def self.narrow_block up=false
     # If nothing hidden, hide all but current
     if point_min == 1 && (buffer_size + 1 == point_max)
-      left, after_header, right = View.block_positions "^| "
+      left, after_header, right = View.block_positions "^>\\( \\|$\\)"
       narrow_to_region left, right
       return
     end
     # Otherwise, expand all, go to next heading, hide all but current
     widen
     Notes.to_block
-    left, after_header, right = View.block_positions "^| "
+    left, after_header, right = View.block_positions "^>\\( \\|$\\)"
     narrow_to_region left, right
   end
 
@@ -186,7 +186,7 @@ class Notes
     Keys.custom_back(:notes_mode_map) { Notes.move_block true }   # Move block up to before next block
     Keys.custom_clipboard(:notes_mode_map) { Notes.copy_block }   # block -> clipboard
     Keys.custom_delete(:notes_mode_map) { Notes.cut_block(true) }   # block -> clear
-    Keys.custom_expand(:notes_mode_map) { Notes.expand_block }   # Show just block
+    Keys.custom_expand(:notes_mode_map) { Notes.narrow_block }   # Show just block
     Keys.custom_forward(:notes_mode_map) { Notes.move_block }   # Move block down to after next block
     Keys.custom_heading(:notes_mode_map) { Notes.insert_heading }   # Insert |... etc. heading
     Keys.custom_item(:notes_mode_map) { Agenda.quick_add_line }
@@ -389,15 +389,16 @@ class Notes
     Styles.apply("^\\(>>>>\\)\\(.*\n\\)", nil, :notes_h4_pipe, :notes_h4)
 
     # - bullets with labels and comments
-    Styles.apply("^[ \t]*\\([<+-]<*\\) \\([^\n(]+?)\\) ", nil, :ls_bullet, :notes_label)   # - hey) you
     Styles.apply("^[ \t]*\\([<+-]\\) \\([^/:\n]+:\\) ", nil, :ls_bullet, :notes_label)   # - hey: you
+    Styles.apply("^[ \t]*\\([<+-]<*\\) \\([^(\n]+?)\\) ", nil, :ls_bullet, :notes_label)   # - hey) you
 
-    Styles.apply("^[ \t]*\\([<+=-]<*\\) \\([^(\n]+[:)]\\)$", nil, :ls_bullet, :notes_label)   # - hey)
+    Styles.apply("^[ \t]*\\([<+=-]<*\\) \\([^(\n]+)\\)$", nil, :ls_bullet, :notes_label)   # - hey)
+    Styles.apply("^[ \t]*\\([<+=-]<*\\) \\(.+:\\)$", nil, :ls_bullet, :notes_label)   # - hey)
 
     #     Styles.apply("^[ \t]*\\(x\\)\\( \\)\\(.+\\)", nil, :notes_label, :variable, :strike)
 
     Styles.apply("^\\([ \t]*\\)\\([<+-]\\) \\(.+?:\\) +\\(|.*\n\\)", nil, :default, :ls_bullet, :notes_label, :ls_quote)
-    Styles.apply("^\\([ \t]*\\)\\([<+-]\\) \\([^\n(]+?)\\) +\\(|.*\n\\)", nil, :default, :ls_bullet, :notes_label, :ls_quote)
+    Styles.apply("^\\([ \t]*\\)\\([<+-]\\) \\([^(\n]+?)\\) +\\(|.*\n\\)", nil, :default, :ls_bullet, :notes_label, :ls_quote)
 
     Styles.apply("^ +\\(!.*\n\\)", nil, :ls_quote)   # ^!... for commands
 
@@ -413,6 +414,10 @@ class Notes
     Styles.apply "^ *\\(-?\\) ?\\(@?\\)\\(g\\)\\(o\\)\\(o\\)\\(g\\)\\(l\\)\\(e\\)\\(/\\)", nil, :ls_bullet, :ls_dir,
       :notes_blue, :notes_red, :notes_yellow, :notes_blue, :notes_green, :notes_red,
       :ls_dir
+
+    Styles.apply "^hint/.+", :fade6
+
+    Styles.apply "^ *\\(@ ?[%$]\\) ", nil, :change_log_list   # Colorize shell prompts
 
   end
 
@@ -581,7 +586,7 @@ class Notes
     # If starts with plus or minus, and on plus or minus, launch
     if Line.matches(/^\s*[+-]/) and View.char =~ /[+-]/
       plus_or_minus = Tree.toggle_plus_and_minus
-      if ! CodeTree.children?
+      if ! Tree.children?
         #plus_or_minus == '+'   # If +, expand (launch
 
         if FileTree.dir? or ! FileTree.handles?   # If on a dir or code_tree

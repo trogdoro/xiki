@@ -72,7 +72,7 @@ describe Ol, "#line" do
 
   it "writes line to log with label like - class.method (line):" do
     Ol.should_receive(:pause_since_last?).and_return false
-    Ol.should_receive(:write_to_file).with('/tmp/ds_ol.notes', "- Accounts.check (24): hi\n")
+    Ol.should_receive(:write_to_file).with('/tmp/ds_ol.notes', "- Accounts.check 24) hi\n")
     Ol.should_receive(:write_to_file_lines).with("/tmp/ds_ol.notes", "/projects/moo/moo.merb/app/controllers/accounts.rb:24\n")
 
     Ol.line "hi", @line, "", "ds"#, @@last_log
@@ -87,7 +87,7 @@ describe Ol, "#log" do
 
   it "writes lines to log when stack is passed in" do
     Ol.should_receive(:pause_since_last?).and_return false
-    Ol.should_receive(:write_to_file).with('/tmp/ds_ol.notes', "- Cache.get (77):\n  - User.exists? (28):\n    - Accounts.check_availability (248): hi\n")
+    Ol.should_receive(:write_to_file).with('/tmp/ds_ol.notes', "- Cache.get 77)\n  - User.exists? 28)\n    - Accounts.check_availability 248) hi\n")
     Ol.should_receive(:write_to_file_lines).with("/tmp/ds_ol.notes", "/projects/moo/moo.merb/app/models/cache.rb:77\n/projects/moo/moo.merb/app/models/user.rb:28\n/projects/moo/moo.merb/app/controllers/accounts.rb:248\n")
 
     Ol.log "hi", @stack[0..2], "ds"#, @@last_log

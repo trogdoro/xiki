@@ -142,7 +142,7 @@ class Launcher
 
       self.add root do |path|   # If text of the actual menu
         # Different from Menu[...] or .drill?
-        Tree.climb menu, Tree.rootless(path)
+        Tree.children menu, Tree.rootless(path)
       end
       return
     end
@@ -152,7 +152,7 @@ class Launcher
 
   def self.launch_or_hide options={}
     # If no prefixes and children exist, delete under
-    if ! Keys.prefix and ! Line.blank? and CodeTree.children? # and ! Line.matches(/^ *\|/)
+    if ! Keys.prefix and ! Line.blank? and Tree.children?
       Tree.minus_to_plus
       Tree.kill_under
       return
@@ -206,7 +206,13 @@ class Launcher
         if @@just_show
           Ol << "- regex: #{regex.to_s}\n- group: #{group}"
         else
-          block.call line
+
+          begin
+            block.call line
+          rescue RelinquishException
+            next   # They didn't want to handle it, keep going
+          end
+
         end
         $xiki_no_search = false
         return true
@@ -412,8 +418,12 @@ class Launcher
       Tree.search :left=>left, :right=>left+log.length+1
     end
 
-    self.add /^ *%( |$)/ do   # $ run command in shell
-      Console.launch_dollar
+    self.add(/^ *\$ /) do |l|   # $ shell command inline (sync)
+      Console.launch :sync=>true
+    end
+
+    self.add /^ *%( |$)/ do   # $ shell command (async)
+      Console.launch_async
     end
 
     self.add(/^ *[+-]? *(http|file).?:\/\/.+/) do   # url
@@ -474,7 +484,7 @@ class Launcher
       nil
     end
 
-    self.add(/^ *$/) do |line|  # Empty line: insert CodeTree menu
+    self.add(/^ *$/) do |line|  # Empty line
       View.beep
       View.message "There was nothing on this line to launch."
     end
@@ -483,10 +493,6 @@ class Launcher
       name = Line.without_label.sub(/\*/, '')
       View.to_after_bar
       View.to_buffer name
-    end
-
-    self.add(/^ *\$ /) do |l|   # $ shell command inline
-      Console.launch :sync=>true
     end
 
     self.add(/^[^\|@:]+[\/\w\-]+\.\w+:\d+/) do |line|  # Stack traces, etc
@@ -631,7 +637,7 @@ class Launcher
 
     menu =
       if bm == "8" || bm == " "
-        "- search/.launched/"
+        "- search/launched/"
         #         "- Search.launched/"
       elsif bm == "."
         "- Search.launched '#{View.file}'/"
@@ -640,7 +646,7 @@ class Launcher
       elsif bm == ";" || bm == ":" || bm == "-"
         "- Search.launched ':'/"
       else
-        "- search/.launched/$#{bm}/"
+        "- search/launched/$#{bm}/"
       end
   end
 
@@ -727,7 +733,15 @@ class Launcher
       raise "#{code} returned nil, but is supposed to return something when it takes no arguments" if txt.nil?
 
       txt = Tree.routify! txt, args
-      return txt if txt && txt != "- */\n"
+      if txt && txt != "- */\n"
+
+        # TODO Call .menu_after!"
+        # Pass in output of menu as either...
+          # ENV['output']
+          # 1st parameter: .menu_after output, *args
+
+        return txt
+      end
     end   # Else, continue on to run it based on routified path
 
 
@@ -744,6 +758,13 @@ class Launcher
     action.gsub! /[ -]/, '_'
 
     args = variables.map{|o| "\"#{CodeTree.escape o}\""}.join(", ")
+
+    # TODO: use adapter here, so we can call .js file?
+
+
+    # TODO .menu_after: Check for arity - if mismatch, don't call, but go straight to .menu_after!
+    # We could probably not worry about this for now?
+
 
     code = "#{camel}#{action.downcase} #{args}".strip
     txt, out, exception = Code.eval code
@@ -943,7 +964,7 @@ def require_menu file, options={}
   if file =~ /\.menu$/
     Launcher.add stem, :menu_file=>1 do |path|
       next View.flash("- Xiki couldn't find: #{file}", :times=>5) if ! File.exists?(file)
-      Tree.climb File.read(file), Tree.rootless(path)
+      Tree.children File.read(file), Tree.rootless(path)
     end
     return
   end

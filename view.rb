@@ -600,10 +600,10 @@ class View
     case prefix
     when 0   # Do paragraph
       left, right = View.paragraph(:bounds=>true)
-    when 1..6
+    when 1..6   # Should probably catch all numeric prefix?
       left = Line.left
       right = $el.point_at_bol(prefix+1)
-    else   # Move this into ruby - block.rb?
+    else   # Should this be only if no prefix?
       ignore, left, right = View.block_positions "^>"
     end
 

@@ -110,7 +110,7 @@ class KeyBindings
     Keys.open_not_saved { History.open_unsaved }
     # O: defined above - mapped to what C-o does by default
     Keys.open_point { Bookmarks.go(nil, :point => true) }
-    Keys.open_quick { Bookmarks.go :q }   # like OB but uses different temporary namespace
+    Keys.open_quick { Bookmarks.open_quick }   # like OB but uses different temporary namespace
     Keys.open_related_test { Code.open_related_rspec }
     Keys.open_related_file { Code.open_related_file }
     Keys.open_repository_list { Gito.show_log_one_file }   # Show git diffs o 1 file

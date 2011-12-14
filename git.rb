@@ -28,6 +28,7 @@ class Git
     "
     - .push/#{branch}/
     - .diff/
+    - .log/
     - .setup/
       - .create/
       - .make sample files/
@@ -105,7 +106,11 @@ class Git
 
     Gito.diff :expand, "project - #{Dir.pwd}", path, quote
     nil
+  end
 
+  def self.log *args
+    search = ""   # Don't handle this for now
+    Gito.log search, "project - #{Dir.pwd}", *args
   end
 
   def self.add
@@ -123,3 +128,24 @@ class Git
   end
 
 end
+
+
+# Old git menu
+# - Gito.menu/
+#   - project - /projects/xiki/xiki_git/
+#     + .create/
+#     + .diff_unadded/
+#     + .diff_unadded :expand/
+#     + .diff/
+#     + .diff :expand/
+#     + .push "master"
+#     + .pull
+#     + .log ""/
+#     + .log :expand/
+#     + .log_by_file/
+#     + .status/
+#     + .status_tree/
+#     + .branches/
+#     + .stash/
+#     - .files/
+#     - .format_diff_command "git diff 2b58e1e3b59ff8b5a6c5baf355501c0771b53097 code.rb"/

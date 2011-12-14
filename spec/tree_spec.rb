@@ -386,26 +386,6 @@ end
 
 
 
-describe Tree, "#climb" do
-
-  it "shows shallowest items when blank path" do
-    Tree.climb("- a/\n- b/\n", "").should == "- a/\n- b/\n"
-  end
-
-  it "shows childern of 1 deep" do
-    Tree.climb("- a/\n  - aa/\n  - ab/\n- b/\n", "a").should == "- aa/\n- ab/\n"
-  end
-
-  it "includes empty lines" do
-    result = Tree.climb "Hey\n\nyou\n", ""
-    result.should == "
-      Hey
-      |
-      you
-      ".unindent
-  end
-end
-
 
 # TODO 2011-11-11: turn these into specs!
 
@@ -487,3 +467,93 @@ end
 #     #     assert_equal false, Tree.is_root?("  $tr")
 #   end
 
+
+describe Tree, "#children" do
+
+  it "shows shallowest items when blank path" do
+    Tree.children("- a/\n- b/\n", "").should == "- a/\n- b/\n"
+  end
+
+  it "shows childern of 1 deep" do
+    Tree.children("- a/\n  - aa/\n  - ab/\n- b/\n", "a").should == "- aa/\n- ab/\n"
+  end
+
+  it "includes empty lines" do
+    result = Tree.children "Hey\n\nyou\n", ""
+    result.should == "
+      Hey
+      |
+      you
+      ".unindent
+  end
+end
+
+describe Tree, "#children_old" do
+
+  before(:all) do
+    @tree = "
+       - .aa
+       - .bb/
+         - .bb1/
+           - bb11
+         - .bb2
+       - cc/
+         - .cc1/
+         - .cc2
+       - dd/
+         | > Heading
+         | Underneath.
+       - ee/
+         - ee2/
+           | > Heading
+           | Underneath.
+       - .ff
+       ".unindent
+  end
+
+  # TODO put more thought into how to mock this
+  # No idea how it worked when it was in AutoMenu
+
+  before(:each) do
+    Tree.should_receive(:child).and_return "foo"
+    #     Line.should_receive(:indent).and_return "  "
+    Line.should_receive(:value).with(2).and_return "  hey"
+  end
+
+  #   it "finds children of root" do
+  #     Tree.children(@tree, nil).should == "- .aa\n- .bb/\n- cc/\n- dd/\n- ee/\n- .ff\n"
+  #   end
+
+  #   it "finds two children" do
+  #     Tree.children(@tree, "/cc/").should == "- .cc1/\n- .cc2\n"
+  #   end
+
+  #   it "finds children 2 levels in" do
+  #     Tree.children(@tree, "bb/bb1").should == "- bb11\n"
+  #   end
+
+  #   it "finds children that have children" do
+  #     Tree.children(@tree, "bb").should == "- .bb1/\n- .bb2\n"
+  #   end
+
+  #   it "finds children when no period" do
+  #     Tree.children(@tree, "cc").should == "- .cc1/\n- .cc2\n"
+  #   end
+
+  #   it "finds nothing when no children" do
+  #     Tree.children(@tree, "aa").should == ""
+  #   end
+
+  #   it "finds nothing when no match" do
+  #     Tree.children(@tree, "xx").should == ""
+  #   end
+
+  #   it "shows quoted children" do
+  #     Tree.children(@tree, "/dd/").should == "| > Heading\n| Underneath.\n"
+  #   end
+
+  #   it "shows quoted children 2 levels in" do
+  #     Tree.children(@tree, "/ee/ee2/").should == "| > Heading\n| Underneath.\n"
+  #   end
+
+end

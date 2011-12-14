@@ -12,6 +12,7 @@ class Ol
   end
 
   def self.log txt, l=nil, name=nil, time=nil
+
     path = name ? "/tmp/#{name}_ol.notes" : self.file_path
 
     if l.nil?   # If just txt, delegate to line
@@ -98,12 +99,12 @@ class Ol
     else
       display = l.sub(/_html_haml'$/, '')
       display.sub!(/.+(.{18})/, "\\1...")
-      self.log "#{indent}- #{display}:#{txt}", l, name, time
+      self.log "#{indent}- #{display})#{txt}", l, name, time
     end
   end
 
   def self.extract_label h
-    "- #{h[:clazz]}.#{h[:method]} (#{h[:line]}):"
+    "- #{h[:clazz]}.#{h[:method]} #{h[:line]})"
   end
 
 

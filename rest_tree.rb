@@ -31,7 +31,7 @@ class RestTree
   def self.launch options={}
 
     Tree.plus_to_minus_maybe
-    verb, url, body = self.launch_inner options[:path], CodeTree.children
+    verb, url, body = self.launch_inner options[:path], Tree.children
     url = "http://#{url}" unless url =~ %r"http://"
 
     result = self.request verb, url, body

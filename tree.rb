@@ -1,5 +1,4 @@
 require 'tree_cursor'
-require 'auto_menu'
 
 class Tree
   def self.search options={}
@@ -693,6 +692,11 @@ class Tree
     View.under txt, :after=>1
   end
 
+  # Returns group of lines close to current line that are indented at the same level.
+  # The bounds are determined by any lines indented *less* than the current line (including
+  # blank lines).  In this context, lines having only spaces are not considered blank.
+  # Any lines indented *more* than the current line won't affect the bounds, but will be
+  # filtered out.
   def self.siblings options={}
     left1, right1, left2, right2 = self.sibling_bounds
 
@@ -815,7 +819,6 @@ class Tree
     end
   end
 
-
   # Insert section from a file under it in tree
   def self.enter_under
     Line.beginning
@@ -892,14 +895,14 @@ class Tree
 
     # For each possibly-matching path in routable tree
 
-    self.traverse(tree) do |current_list|
+    self.traverse(tree) do |branch|
 
       if ! found
 
         # Maybe add dot based on leaf item
 
-        leaf_i = current_list.length - 1
-        leaf = current_list[leaf_i].sub /^[+-] /, ''
+        leaf_i = branch.length - 1
+        leaf = branch[leaf_i].sub /^[+-] /, ''
 
         # If not already added dot and there's item to check
         if leaf_i > routified_until && target.length-1 >= leaf_i
@@ -912,18 +915,18 @@ class Tree
           end
         end
 
-        next if ! self.route_match current_list, target
+        next if ! self.route_match branch, target
         next found = true
       end
 
       # Found
       # If right indent, grab
-      if current_list.length == indent
-        line = current_list[-1].sub /^([+-] )?\./, "\\1"
+      if branch.length == indent
+        line = branch[-1].sub /^([+-] )?\./, "\\1"
 
         line = "|" if line=~ /^$/
         result << "#{line}\n"
-      elsif current_list.length < indent   # If lower indent, stop
+      elsif branch.length < indent   # If lower indent, stop
         break
       end
     end
@@ -943,13 +946,6 @@ class Tree
       break found = false if current_item.sub(/^[^\n(]+\) /, '').sub(/\/$/, '').sub(/^[+-] /, '').downcase != item.sub(/\/$/, '').downcase
     end
     found
-  end
-
-  def self.climb tree, path
-    path = path.join("/") if path.is_a? Array
-    path = "" if path == nil || path == "/"   # Must be at root if nil
-    tree = TextUtil.unindent tree
-    AutoMenu.child_menus tree, path
   end
 
   # Use instead of .leaf when you know all but the root is part of the leaf
@@ -1000,6 +996,10 @@ class Tree
     txt
   end
 
+  def self.unset_env_vars
+    ENV['noslash'] = nil
+  end
+
   def self.output_and_search block_or_string, options={}
     line=options[:line]
 
@@ -1007,6 +1007,8 @@ class Tree
     orig = Location.new
     orig_left = View.cursor
     error_happened = nil
+
+    self.unset_env_vars
 
     output =
       if block_or_string.is_a? String
@@ -1053,7 +1055,7 @@ class Tree
     end
 
     # Add slash to end of line if not suppressed, and line isn't a quote
-    if !options[:no_slash] && Line !~ /(^ *\||\/$)/
+    if !options[:no_slash] && ! ENV['noslash'] && Line !~ /(^ *\||\/$)/
       Line << "/"
     end
     indent = Line.indent
@@ -1095,6 +1097,95 @@ class Tree
   # Tree.slashless("hey/you/").should == "hey/you"
   def self.slashless txt
     txt.sub /\/$/, ''
+  end
+
+  def self.children tree=nil, path=nil
+
+    return self.children_at_cursor(tree) if tree.nil? || tree.is_a?(Hash)  # tree is actually options
+
+    path = path.join("/") if path.is_a? Array
+    path = "" if path == nil || path == "/"   # Must be at root if nil
+    tree = TextUtil.unindent tree
+
+    path = "" if path.nil?
+
+    found = nil
+    result = ""
+
+    path.gsub!(/^\//, '')
+    path.gsub!(/\/$/, '')
+    if ! (path).any?
+      return tree.grep(/^[^ ]/).join('').gsub(/^$/, '|')
+    end
+    path.gsub!(/[.:]/, '')
+    self.traverse tree do |branch|
+      current_path = branch.map{|o| o.sub /^[+-] /, ''}.join('').gsub(/[.:]/, '')
+
+      if ! found
+        if current_path.start_with? path
+          found = branch.length - 1  # Remember indent
+        end
+      else
+        current_indent = branch.length - 1
+        # If found and still indented one deeper
+        if current_indent == found + 1
+          result << "#{branch[-1]}\n"  # Output
+        else  # Otherwise, stop looking for children if indent is less
+          found = nil if current_indent <= found
+        end
+      end
+
+    end
+    result.empty? ? "" : result.gsub(/^$/, '|')
+  end
+
+  def self.children_at_cursor options={}
+    options ||= {}
+    child = self.child
+    return nil if child.nil?   # Return if no child
+
+    indent = Line.indent(Line.value(2)).size
+
+    # :as_hash isn't used anywhere
+    children = options[:as_hash] ? {} : []
+    i = 2
+
+    # Add each child indented the same or more
+    while(Line.indent(Line.value(i)).size >= indent)
+      child = Line.value(i)
+      if options[:as_hash]
+        match = child.match(/ *([\w -]+): (.+)/)
+        if match
+          k, v = match[1..2]
+          children[k] = v
+        else
+          i += 1
+          next
+        end
+
+      else
+        children << child
+      end
+
+      i += 1
+    end
+
+    children
+  end
+
+  def self.children?
+    # Whether next line is more indented
+    Line.indent(Line.value(2)).size >
+      Line.indent.size
+  end
+
+  def self.child
+    next_line = Line.value 2
+    # If indent is one greater, it is a child
+    if Line.indent.size + 2 == Line.indent(next_line).size
+      return Line.without_label(:line=>next_line)
+    end
+    nil
   end
 
 end

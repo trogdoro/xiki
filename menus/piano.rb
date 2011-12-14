@@ -26,7 +26,7 @@ class Piano
     '='=>SnareDrum2, '-'=>SnareDrum1,
     "'"=>ClosedHiHat, '"'=>OpenHiHat,
     '`'=>RideCymbal1, '^'=>CrashCymbal1, '*'=>CrashCymbal2, '<'=>Cowbell,
-    '('=>MidTom1,  '|'=>MidTom2,  ')'=>LowTom2,
+    '('=>MidTom1,  '_'=>MidTom2,  ')'=>LowTom2,
     }
 
   def self.menu
@@ -46,6 +46,7 @@ class Piano
         - .chords/
         - .two parts/
         - .three parts/
+        - .sharps/
         - .drums/
         - .unofficial xiki theme song/
     "
@@ -74,6 +75,16 @@ class Piano
       | ABCDEFGabcdefghijklmnopqrstuv
       |   B C D E F G a b c d e f g h
       |     B   C   D   E   F   G   a
+    "
+  end
+
+  def self.sharps
+    "
+    @piano/
+      | ce ecbca    Gb baGbG G G a
+      |             #    # # # #
+      |  C E C A C L B E B N B L H
+      |                    #
     "
   end
 
@@ -109,7 +120,7 @@ class Piano
     # Assume it's a string of music
 
     txt = ENV['txt']
-    lines = txt.split("\n")
+    lines = txt.split("\n").reverse
     lines = lines.map{|o| o.split(//)}
 
     # TODO: Instead, start at where cursor is
@@ -121,9 +132,11 @@ class Piano
     before_notes = Line.value[/.+(\/|\| ?)/]
     View.column = before_notes.length
 
-    (0..lines[0].length-1).each do |i|
+    (0..lines[-1].length-1).each do |i|
+      sharp = false
       lines.each do |line|
-        self.note line[i], :no_sit=>1
+        self.note line[i], :no_sit=>1, :sharp=>sharp
+        sharp = line[i] == "#"
       end
       Move.forward unless View.cursor == Line.right
       $el.sit_for 0.15
@@ -143,14 +156,14 @@ class Piano
   end
 
   def self.note letter='a', options={}
-    return if letter.nil?
+    return if letter.nil? || letter == "#"
 
     channel, volume = 1, 126
     if letter.is_a? Fixnum
       number = letter
     elsif letter =~ /^[a-zA-Z]$/
       number = @@map[letter]
-    elsif letter.length == 1 && letter.count("@#='\"`^*<(|)-") == 1
+    elsif letter.length == 1 && letter.count("@#='\"`^*<(_)-") == 1
       channel = 10
       number = @@map[letter]
       volume = 65 unless letter.count("@#=-") == 1
@@ -162,6 +175,8 @@ class Piano
     else
       raise "- Note #{letter.inspect} not recognized!"
     end
+
+    number += 1 if options[:sharp]
 
     @@midi.driver.note_on(number, channel, volume) unless number == 0
 
