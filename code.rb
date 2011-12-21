@@ -79,13 +79,6 @@ class Code
         return Console.run "ruby -I. /tmp/tmp.rb", :dir=>View.dir
       when 9   # Pass whole file as ruby
         return Console.run("ruby #{View.file_name}", :buffer => "*console ruby")
-
-      when 1..6   # If prefix of 1-6
-        started = point
-        left = Line.left
-        right = point_at_bol(elvar.current_prefix_arg+1)
-        $el.goto_char started
-
       else   # Move this into ruby - block.rb?
         ignore, left, right = View.block_positions "^>"
       end
@@ -143,7 +136,7 @@ class Code
   end
 
   def self.run_in_rails_console
-    left, after_header, right = View.block_positions "^|"
+    left, after_header, right = View.block_positions "^>"
     block = buffer_substring after_header, right
 
     View.to_after_bar if View.in_bar?

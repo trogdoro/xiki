@@ -417,7 +417,9 @@ class Notes
 
     Styles.apply "^hint/.+", :fade6
 
-    Styles.apply "^ *\\(@ ?[%$]\\) ", nil, :change_log_list   # Colorize shell prompts
+    Styles.apply "^ *@? ?\\([%$]\\) ", nil, :change_log_list   # Colorize shell prompts
+
+    Styles.apply "^[ +-]*keyless/\\(.+\\)", nil, :keyless
 
   end
 

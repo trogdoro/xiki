@@ -333,7 +333,7 @@ class Bookmarks
 
   def self.open_quick
 Ol.line
-    bookmark = Keys.input :chars=>1, :prompt=>"Enter a quick bookmark to jump to:"
+    bookmark = Keys.input :timed=>1, :prompt=>"Enter a quick bookmark to jump to:"
 Ol << "bookmark: #{bookmark.inspect}"
     Bookmarks.go("q#{bookmark}")
 Ol.line

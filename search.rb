@@ -91,16 +91,17 @@ class Search
   end
 
   def self.insert_at_search_start
+    was_reverse = self.was_reverse
     match = self.stop
 
     if match.nil?   # If nothing searched for yet, search difflog
       loc = Keys.input(:chars=>1, :prompt=>"Enter one char to search for corresponding string: ")
       loc = loc.to_s
-      txt = Clipboard.hash[loc.to_s] || Clipboard.hash_by_first_letter[loc.to_s]
 
-      txt ||= self.searches.find{|o| o =~ /^#{loc}/i}
+      txt = self.searches.find{|o| o =~ /^#{loc}/i}
+      txt ||= Clipboard.hash[loc.to_s] || Clipboard.hash_by_first_letter[loc.to_s]
+
       return View.message("Nothing to search for matching '#{loc}'.", :beep=>1) if txt.nil?
-
       self.isearch txt, :reverse=>was_reverse
 
       return
@@ -525,16 +526,16 @@ class Search
       txt = txt.select{|o| o =~ regex}
     end
 
-    result = "- #{txt.join("- ")}"
+    result = "- @#{txt.join("- @")}"
     result
   end
 
   def self.left
-    match_beginning(0)
+    $el.match_beginning 0
   end
 
   def self.right
-    match_end(0)
+    $el.match_end 0
   end
 
   def self.isearch_find_in_buffers options={}
@@ -704,10 +705,11 @@ class Search
   end
 
   def self.isearch_or_copy name
+    was_reverse = self.was_reverse
     match = self.stop
 
     if match.nil?   # If nothing searched for yet
-      self.isearch Clipboard[name].downcase, :reverse=>self.was_reverse
+      self.isearch Clipboard[name].downcase, :reverse=>was_reverse
     else   # Else, if nothing searched for
       self.stop
       Clipboard[name] = match
@@ -1023,9 +1025,10 @@ class Search
   end
 
   def self.isearch_just_case
+    was_reverse = self.was_reverse
     txt = self.stop
 
-    return Search.isearch(Clipboard[0]) if txt.nil?
+    return Search.isearch(Clipboard[0], :reverse=>was_reverse) if txt.nil?
 
     choice = Keys.input(:prompt=>'convert to which case?: ', :choices=>TextUtil.case_choices)
     View.delete(Search.left, Search.right)

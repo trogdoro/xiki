@@ -6,6 +6,6 @@ class AddressBook
       return names.split(', ').sort.uniq.map{|o| "#{o}/"}
     end
 
-    '| address info'
+    '| todo!'
   end
 end

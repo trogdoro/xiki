@@ -50,93 +50,81 @@ describe Tree, "#traverse" do
     paths.should == [["- hey) a/"], ["- hey) a/", "- you) b/"], ["- c/"]]
   end
 
-  #   it "removes comments when :remove_comments" do
-  #     paths = []
-  #     tree = "
-  #       - yack) a/
-  #         - blab) b/
-  #       - c/
-  #       ".unindent
+  it "removes bullets" do
+    paths = []
+    tree = "
+      - a/
+        + b/
+      ".unindent
 
-  #     Tree.traverse(tree, :remove_comments=>1) do |array|
-  #       paths << array
-  #     end
-  #     paths.should == [["a/"], ["a/", "b/"], ["c/"]]
-  #   end
+    Tree.traverse tree, :no_bullets=>1 do |array|
+      paths << array
+    end
+    paths.should == [["a/"], ["a/", "b/"]]
+  end
 end
 
-describe Tree, "#routify" do
-  it "returns children when no path" do
-    tree = "
-      - a/
-        - aa/
-        - aa2/
-      - b/
-      ".unindent
 
-    Tree.routify!(tree, []).should == "+ a/\n+ b/\n"
-  end
 
-  it "returns children when one deep" do
-    tree = "
-      - a/
-        - aa/
-        - aa2/
-      - b/
-      ".unindent
-    Tree.routify!(tree, ['a/']).should == "+ aa/\n+ aa2/\n"
-    #     Tree.routify!(tree, "a/").should == "- aa/\n- aa2/\n"
-  end
+describe Tree, "#dotify" do
 
   it "adds dot to path when dot in tree" do
     tree = "
       - .a/
         - aa/
-        - aa2/
       - b/
       ".unindent
 
     path = ["a"]
-    Tree.routify!(tree, path).should == "+ aa/\n+ aa2/\n"
+    Tree.dotify! tree, path
     path.should == [".a"]
   end
 
-  it "doesn't include dot in output" do
+  it "adds dot one level deep" do
     tree = "
-      - a/
-        - .aa/
-        - .aa2/
+      - sample/
+        - .delete/
       ".unindent
 
-    list = ["a"]
-    Tree.routify!(tree, list).should == "+ aa/\n+ aa2/\n"
-    list.should == ["a"]
+    path = ["sample", "delete"]
+    Tree.dotify!(tree, path)
+    path.should == ["sample", ".delete"]
   end
 
-  it "returns nil when no children" do
+  it "adds dots at multiple levels" do
     tree = "
-      - nice/
-        - white
+      - .sample/
+        - .delete/
+      ".unindent
+
+    path = ["sample", "delete"]
+    Tree.dotify!(tree, path)
+    path.should == [".sample", ".delete"]
+  end
+
+
+  it "adds dot when same name as other leaf" do
+    tree = "
       - .delete/
-      - .add/
         - sample/
-      ".unindent
-
-    path = ["delete"]
-    Tree.routify!(tree, path).should == nil
-    path.should == [".delete"]
-  end
-
-  it "passes param from .menu to action from .menu" do
-    tree = "
-      - .delete/
       - .add/
         - sample/
       ".unindent
 
     path = ["add", "sample"]
-    Tree.routify!(tree, path).should == nil
+    Tree.dotify!(tree, path)
     path.should == [".add", "sample"]
+  end
+
+  it "doesn't add dot when already there" do
+    tree = "
+      - .a/
+      - b/
+      ".unindent
+
+    path = [".a"]
+    Tree.dotify! tree, path
+    path.should == [".a"]
   end
 
   it "adds dot when path longer than tree" do
@@ -146,35 +134,8 @@ describe Tree, "#routify" do
       ".unindent
 
     path = ["keys", "a"]
-    Tree.routify!(tree, path).should == nil
+    Tree.dotify!(tree, path)
     path.should == [".keys", "a"]
-  end
-
-  it "returns items under star" do
-    tree = "
-      - .cold/
-        - */
-          - large
-          - small
-      - .hot/
-      ".unindent
-
-    target = ["cold", "lemonade"]
-    Tree.routify!(tree, target).should == "+ large\n+ small\n"
-    target.should == [".cold", "lemonade"]
-  end
-
-  it "finds item when comment" do
-    tree = "
-      - .js/
-      - .roots/
-        - @jsc/
-        - examples) docs/
-      ".unindent
-
-    target = ["roots", "docs"]
-    Tree.routify!(tree, target).should == nil
-    target.should == [".roots", "docs"]
   end
 
   it "shouldn't modify initial tree" do
@@ -186,49 +147,11 @@ describe Tree, "#routify" do
     orig = tree.dup
 
     target = ["roots", "docs"]
-    Tree.routify!(tree, target).should == nil
+    Tree.dotify!(tree, target)
     target.should == ["roots", "docs"]
 
     tree.should == orig
   end
-
-end
-
-
-describe Tree, "#route_match" do
-  it "finds match of one" do
-    Tree.route_match([".hot"], [".hot/"]).should == true
-  end
-
-  it "finds match when bullets" do
-    Tree.route_match(["- .hot"], [".hot/"]).should == true
-  end
-
-  it "finds sublist match" do
-    Tree.route_match([".hot", ".coffee"], [".hot/"]).should == true
-  end
-
-  it "finds match when multiple items" do
-    Tree.route_match([".hot", ".coffee"], [".hot/", ".coffee/"]).should == true
-  end
-
-  it "doesn't find match when not all of target matched" do
-    Tree.route_match([".hot"], [".hot/", ".coffee/"]).should == false
-  end
-
-  it "finds match when star" do
-    Tree.route_match(["*"], [".hot/"]).should == true
-  end
-
-  it "recognizes when different case" do
-    Tree.route_match(["- A/"], ["a"]).should == true
-  end
-
-
-  # Leave this in to implement later?
-  #   it "finds match when two items on same line" do
-  #     Tree.route_match(["- .push/master/"], ["push", "master"]).should == true
-  #   end
 
 end
 
@@ -468,14 +391,35 @@ end
 #   end
 
 
+# describe Tree, "#children" do
+
+#   it "shows shallowest items when blank path" do
+#     Tree.children("- a/\n- b/\n", "").should == "- a/\n- b/\n"
+#   end
+
+#   it "shows childern of 1 deep" do
+#     Tree.children("- a/\n  - aa/\n  - ab/\n- b/\n", "a").should == "- aa/\n- ab/\n"
+#   end
+
+#   it "includes empty lines" do
+#     result = Tree.children "Hey\n\nyou\n", ""
+#     result.should == "
+#       Hey
+#       |
+#       you
+#       ".unindent
+#   end
+# end
+
+
 describe Tree, "#children" do
 
   it "shows shallowest items when blank path" do
-    Tree.children("- a/\n- b/\n", "").should == "- a/\n- b/\n"
+    Tree.children("- a/\n- .b/\n", "").should == "+ a/\n+ b/\n"
   end
 
   it "shows childern of 1 deep" do
-    Tree.children("- a/\n  - aa/\n  - ab/\n- b/\n", "a").should == "- aa/\n- ab/\n"
+    Tree.children("- a/\n  - aa/\n  - ab/\n- b/\n", "a").should == "+ aa/\n+ ab/\n"
   end
 
   it "includes empty lines" do
@@ -486,6 +430,11 @@ describe Tree, "#children" do
       you
       ".unindent
   end
+
+  it "works with dots" do
+    Tree.children("- .a/\n- b/\n", "").should == "+ a/\n+ b/\n"
+  end
+
 end
 
 describe Tree, "#children_old" do
@@ -555,5 +504,58 @@ describe Tree, "#children_old" do
   #   it "shows quoted children 2 levels in" do
   #     Tree.children(@tree, "/ee/ee2/").should == "| > Heading\n| Underneath.\n"
   #   end
+
+end
+
+
+describe Tree, "#target_match" do
+
+  it "matches when blanks" do
+    Tree.target_match("", "a").should == :longer
+    Tree.target_match("a", "").should == :shorter
+    Tree.target_match("", "").should == :same
+  end
+
+  it "matches when no dots" do
+    Tree.target_match("a", "a").should == :same
+    Tree.target_match("a/", "a/").should == :same
+    Tree.target_match("aa/bb", "aa/bb").should == :same
+  end
+
+  it "matches when both dots" do
+    Tree.target_match(".a", ".a").should == :same
+    Tree.target_match(".a/", ".a/").should == :same
+    Tree.target_match(".aa/.bb", ".aa/.bb").should == :same
+  end
+
+  it "matches when tree has dot" do
+    Tree.target_match(".a", "a").should == :same
+    Tree.target_match(".aa/bb", "aa/bb").should == :same
+  end
+
+  it "doesn't match when path has dot" do
+    Tree.target_match("a", ".a").should == nil
+    Tree.target_match("aa/bb", ".aa/bb").should == nil
+  end
+
+  it "doesn't match when ends with substring" do
+    Tree.target_match("aa", "a").should == nil
+  end
+
+  it "matches when target is longer" do
+    Tree.target_match("a/b", "a/b/c").should == :longer
+  end
+
+  it "recognizes longer when path has dot" do
+    Tree.target_match(".sample/", "sample/delete").should == :longer
+  end
+
+  it "matches when target is shorter" do
+    Tree.target_match("a/b", "a").should == :shorter
+  end
+
+  it "recognizes same when one has path" do
+    Tree.target_match("a/", "a").should == :same
+  end
 
 end

@@ -18,7 +18,11 @@ class Mac
   end
 
   def self.keys
-    Keys._N { View.to_buffer "untitled"; $el.rename_uniquely }
+    Keys._N do
+      View.to_buffer "untitled"
+      $el.rename_uniquely
+      Notes.mode
+    end
 
     Keys._Q { $el.save_buffers_kill_emacs }   # Command-Q to quit
     Keys._C {
@@ -34,6 +38,8 @@ class Mac
       Effects.blink :left=>left, :right=>right
       $el.kill_region left, right
     }   # Command-V
+
+    Keys._S { DiffLog.save }   # save (or, with prefix, save as) **
 
     $el.define_key :global_map, $el.kbd("M-X"), :execute_extended_command
   end

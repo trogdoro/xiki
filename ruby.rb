@@ -13,20 +13,22 @@ class Ruby
 
   def self.classes clazz=nil, method=nil
 
-    result = ""
-
     # If no params, show list of classes
 
     if clazz.nil?
+      result = []
       ObjectSpace.each_object(Class) do |c|
-        result << "- #{c}/\n"
+        name = c.to_s
+        next if name =~ /^#/
+        result << "- #{name}/\n"
       end
-      return result
+      return result.sort.join
     end
 
     # If just class, show methods
 
     if method.nil?
+      result = ""
       result << Kernel.const_get(clazz).instance_methods(false).sort.
         collect {|i| "- #{i}/" }.join("\n")
       result << Kernel.const_get(clazz).methods(false).sort.

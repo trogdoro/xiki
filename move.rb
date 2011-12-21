@@ -11,7 +11,7 @@ class Move
     line = Line.value
 
     if prefix.is_a? Fixnum   # If U, reverse
-      column = prefix   # If numeric, make that be the indent
+      indent = prefix   # If numeric, make that be the indent
     else
       direction_down = ! direction_down if line =~ /^ *(end|\]|\}|\))$/   # If end of block, reverse direction
 
@@ -21,27 +21,28 @@ class Move
       end
     end
 
-    column ||= Line.indent(line).size
-
-    #     column *= 2
+    column = View.column
+    indent ||= Line.indent(line).size
 
     # If negative, reverse direction and amke positive
-    if column < 0
+    if indent < 0
       direction_down = false
-      column = 0 - column
+      indent = 0 - indent
     end
 
     orig = Location.new
     # Search for matching in right direction
     if direction_down == false
       Line.to_left
-      success = Search.backward "^ \\{#{column}\\}[^ \t\n]"
-      Move.to_column column
+      success = Search.backward "^ \\{#{indent}\\}[^ \t\n]"
     else
       Line.next
-      success = Search.forward "^ \\{#{column}\\}[^ \t\n]"
-      Move.to_column column
+      success = Search.forward "^ \\{#{indent}\\}[^ \t\n]"
     end
+
+    Move.to_column prefix.is_a?(Fixnum) ? indent : column
+
+
     unless success
       View.beep
       orig.go
@@ -66,7 +67,6 @@ class Move
     pref.times do
       skip_chars_backward "\n "
       re_search_backward "\n[ \t]*\\(\n+[ \t]*\\)+", nil, 1
-  #    search_backward_regexp "\n\n+"
     end
     skip_chars_forward "\n "
     beginning_of_line

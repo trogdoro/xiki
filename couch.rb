@@ -25,13 +25,12 @@ class Couch
   end
 
   def self.databases db=nil
-
     if db.nil?   # If no db yet, list all
       txt = Net::HTTP.get(URI.parse("#{@@server}/_all_dbs"))
       dbs = JSON[txt]
 
       # Unless C-u, only show _development dbs
-      dbs = dbs.select{|o| o =~ /_development$/} unless Keys.prefix == :u
+      #       dbs = dbs.select{|o| o =~ /_development$/} unless Keys.prefix == :u
 
       return dbs.map{|i| "#{i}/"}
     end
@@ -101,25 +100,44 @@ class Couch
     # If no id, show all id's
     if id.nil?
       all = RestTree.request 'GET', "#{@@server}/#{db}/_all_docs", nil
+
+      if all =~ /no_db_file/
+        return "| DB not found, create it?\n- .create/"
+      end
+
       rows = JSON[all]['rows']
+
+      return "
+        | No records in db.  Create some?
+        a/name: aye
+        b/name: bee
+        " if rows.empty?
+
       return rows.map{|i| "#{i['id']}/"}
     end
 
     self.escape_slashes id
 
-    # If no doc, output doc
+    # If just id, show doc
+
     if doc.nil?
+
       record = RestTree.request 'GET', "#{@@server}/#{db}/#{id}", nil
-      return Tree.quote record.gsub("\\n", "\n") # .gsub(/^/, '| ')
+      record = JSON[record]
+      record = record.to_yaml
+      record.sub! /.+\n/, ''
+      return record.gsub("\\n", "\n").gsub(/^/, '| ').gsub(/^\| $/, '|')
     end
 
     # Doc passed, so save it
+
     doc = ENV['txt'].dup
 
     # If a record is found, add rev
     record = RestTree.request 'GET', "#{@@server}/#{db}/#{id}", nil
     if record !~ /404 /
       rev = JSON[record]['_rev']
+
       # Insert rev after first {, or replace if there already
       if doc =~ /"_rev":"\d+"/
         doc.sub! /("_rev":")\d+(")/, "\\1#{rev}\\2"
@@ -127,9 +145,12 @@ class Couch
         doc.sub! /\{/, "{\"_rev\":\"#{rev}\", "
       end
     end
+
+    doc = YAML::load doc
+    doc = doc.to_json
     # Update it
     res = RestTree.request 'PUT', "#{@@server}/#{db}/#{id}", doc
-    "|#{res}"
+    ".flash - Updated!"
   end
 
   def self.views db
@@ -146,6 +167,11 @@ class Couch
     puts "y Cdb.#{db}"
     puts "y Cdb.all :#{db}#, :key=>''"
     puts "- descending: y Cdb.all :#{db}, :skip=>1, :descending=>true"
+  end
+
+  def self.create db
+    RestTree.request 'PUT', "#{@@server}/#{db}", nil
+    ".flash - created!"
   end
 
   def self.crud db

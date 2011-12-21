@@ -25,9 +25,10 @@ class Wikipedia
     end
 
     Firefox.url "http://en.wikipedia.org/wiki/#{TextUtil.title_case name}"
-    nil
+    ".flash - opened in browser!"
   end
-
 end
 
-Menu.wp :menu=>"Wikipedia.wp"
+Menu.wp {|path|
+  Wikipedia.wp Tree.rootless(path)
+}

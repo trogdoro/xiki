@@ -272,6 +272,8 @@ class Firefox
     result = self.run js, :browser=>true
 
     self.run "window.location = '#{url}'" if result != "true"
+
+    nil
   end
 
   def self.do_as_html

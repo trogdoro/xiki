@@ -475,6 +475,8 @@ class Tree
 
   def self.under txt, options={}
 
+    return if txt.nil?
+
     txt = TextUtil.unindent(txt) if txt =~ /\A[ \n]/
 
     escape = options[:escape] || ''
@@ -561,6 +563,8 @@ class Tree
       root = self.clean_path(root) unless options[:raw]
       root.slice! /^@ ?/
       path.unshift root
+
+      path.map!{|o| o =~ /\/$/ ? o : "#{o}/"} if options[:slashes]
 
       $el.goto_char orig
       if options[:indented]
@@ -814,7 +818,22 @@ class Tree
         branch = branch[0..line_indent]
       end
 
-      block.call branch.dup
+
+      branch_dup = branch.dup
+
+      if options[:no_bullets]
+        branch_dup.map!{|o| o.sub /^[+-] /, ''}
+      end
+
+      if options[:flattened]
+        flattened = branch_dup.dup
+        flattened.map!{|o| o.sub /^[+-] /, ''} if ! options[:no_bullets]   # Might have side-effects if done twice
+        flattened = flattened.join('')#.gsub(/[.:]/, '')   # Why were :'s removed??
+        block.call branch_dup, flattened
+      else
+        block.call branch_dup
+      end
+
       indent = line_indent
     end
   end
@@ -883,70 +902,63 @@ class Tree
     end
   end
 
-  def self.routify! tree, target
-    tree = tree.unindent if tree =~ /\A[ \n]/
 
-    indent = target.length + 1
 
-    # Start out as found if no path
-    result, found, routified_until = "", target.empty?, -1   # Start out as found if no path
+  def self.dotify! tree, target
+    target_flat = target.join "/"
 
-    # For now, they must be on separate lines
+    self.traverse(tree, :flattened=>1, :no_bullets=>1) do |branch, path|
 
-    # For each possibly-matching path in routable tree
+      match = self.target_match path, target_flat
 
-    self.traverse(tree) do |branch|
+      if match == :same || match == :longer
+        indent = branch.length - 1
 
-      if ! found
-
-        # Maybe add dot based on leaf item
-
-        leaf_i = branch.length - 1
-        leaf = branch[leaf_i].sub /^[+-] /, ''
-
-        # If not already added dot and there's item to check
-        if leaf_i > routified_until && target.length-1 >= leaf_i
-          leaf_clean = leaf[/^\.?(.*?)\/?$/, 1].downcase
-          target_clean = target[leaf_i][/^\.?(.+?)\/?$/, 1]
-          target_clean.downcase! if target_clean
-          if leaf_clean == target_clean
-            routified_until += 1
-            target[leaf_i] = ".#{target[leaf_i]}" if leaf =~ /^\./ && target[leaf_i] !~ /^\./
-          end
+        # If last item in path has period and target doesn't
+        if branch[indent] =~ /^\./ && target[indent] !~ /^\./
+          # Add period to nth item in target
+          target[indent].sub! /^/, '.'
         end
-
-        next if ! self.route_match branch, target
-        next found = true
-      end
-
-      # Found
-      # If right indent, grab
-      if branch.length == indent
-        line = branch[-1].sub /^([+-] )?\./, "\\1"
-
-        line = "|" if line=~ /^$/
-        result << "#{line}\n"
-      elsif branch.length < indent   # If lower indent, stop
-        break
       end
     end
 
-    # Return children of path if any
-    # Return nil to mean interpret the routified path
-    result.empty? ? nil : result.gsub(/^- /, '+ ')
+    # Optimization
+      # If last path wasn't match and indent is lower than last path, we won't match
+
   end
 
-  def self.route_match current_list, list
 
-    found = true
-    list.each_with_index do |item, i|
-      current_item = current_list[i]
-      break found = false if current_item.nil?
-      next if current_item =~ /^([+-] )?\*\/?$/
-      break found = false if current_item.sub(/^[^\n(]+\) /, '').sub(/\/$/, '').sub(/^[+-] /, '').downcase != item.sub(/\/$/, '').downcase
+  def self.target_match path, target
+
+    pi, ti = 0, 0
+
+    while true
+      pathi, targeti = path[pi], target[ti]
+
+      if pathi.nil? || targeti.nil?
+        return :same if pathi.nil? && targeti.nil?   # Handles a, a and a/, a/
+        return :same if pathi.nil? && target[ti+1].nil? && targeti.chr == "/"   # Handles a, a/
+        return :same if targeti.nil? && path[pi+1].nil? && pathi.chr == "/"   # Handles a/, a
+
+        return :shorter if pathi && (pathi.chr == "/" || path[pi-1].chr == "/" || pi == 0)
+        return :longer if targeti && (targeti.chr == "/" || target[ti-1].chr == "/" || ti == 0)
+        return nil   # At end of one, but no match
+      end
+
+      # If chars equal, increment
+      if pathi == targeti
+        pi += 1
+        next ti += 1
+      elsif pathi.chr == "." && (path[pi-1].chr == "/" || pi == 0) && (target[ti-1].chr == "/" || ti == 0)
+        next pi += 1
+      end
+
+      break   # Not found
     end
-    found
+
+    nil
   end
+
 
   # Use instead of .leaf when you know all but the root is part of the leaf
   # (in case there are slashes).
@@ -1099,44 +1111,48 @@ class Tree
     txt.sub /\/$/, ''
   end
 
-  def self.children tree=nil, path=nil
+
+  def self.children tree=nil, target=nil
 
     return self.children_at_cursor(tree) if tree.nil? || tree.is_a?(Hash)  # tree is actually options
 
-    path = path.join("/") if path.is_a? Array
-    path = "" if path == nil || path == "/"   # Must be at root if nil
+    target = target.join("/") if target.is_a? Array
+    target = "" if target == nil || target == "/"   # Must be at root if nil
     tree = TextUtil.unindent tree
 
-    path = "" if path.nil?
+    target = "" if target.nil?
+    target.sub!(/^\//, '')
+    target.sub!(/\/$/, '')
 
     found = nil
     result = ""
 
-    path.gsub!(/^\//, '')
-    path.gsub!(/\/$/, '')
-    if ! (path).any?
-      return tree.grep(/^[^ ]/).join('').gsub(/^$/, '|')
-    end
-    path.gsub!(/[.:]/, '')
-    self.traverse tree do |branch|
-      current_path = branch.map{|o| o.sub /^[+-] /, ''}.join('').gsub(/[.:]/, '')
+    found = -1 if target.empty?
+
+
+    self.traverse tree, :flattened=>1 do |branch, path|
 
       if ! found
-        if current_path.start_with? path
+        target_match = Tree.target_match path, target
+
+        if target_match == :shorter || target_match == :same
           found = branch.length - 1  # Remember indent
         end
       else
         current_indent = branch.length - 1
         # If found and still indented one deeper
         if current_indent == found + 1
-          result << "#{branch[-1]}\n"  # Output
+          item = branch[-1]
+          item.sub!(/^- /, '+ ') if item =~ /\/$/
+          item.sub!(/^([+-] )?\./, "\\1")
+          result << "#{item}\n"  # Output
         else  # Otherwise, stop looking for children if indent is less
           found = nil if current_indent <= found
         end
       end
 
     end
-    result.empty? ? "" : result.gsub(/^$/, '|')
+    result.empty? ? nil : result.gsub(/^$/, '|')
   end
 
   def self.children_at_cursor options={}

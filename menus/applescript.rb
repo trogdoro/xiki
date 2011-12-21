@@ -1,14 +1,46 @@
 class Applescript
-  def self.menu *command
 
-    # If no arg, prompt to type something
+  #   def self.menu *command
+  def self.menu
+    %`
+    > Pass in applescript
+    | tell application "iTunes" to playpause
+    - .api/
+      | Run applescript
+      @ Applescript.run 'tell application "iTunes" to playpause'
+      |
+      | Shortcut to wrap "tell" in block
+      @ Applescript.run "iTunes", "playpause"
+    - .docs/
+      > Examples
+      | Applescript.run "iTunes", "playpause"
+    `
+  end
 
-    return View.prompt "Type something to run in applescript" if command.empty?
+  def self.menu_after output, *command
 
-    command = command.join('/')
-    command = Xiki.branch if command =~ /^\|/
-    $el.do_applescript command
+    return output if output   # If menu handled it, just return
 
-    nil
+    command = ENV['txt']
+    result = self.run command
+
+    ".flash - ran it!"
+  end
+
+  def self.run txt, command=nil
+
+    # If 2nd arg passed, treat first as app
+    if command.present?
+
+      txt = "
+        tell application \"#{txt}\"
+          #{command}
+        end tell
+        ".unindent
+
+      return $el.do_applescript txt
+    end
+
+    $el.do_applescript txt
   end
 end

@@ -1,6 +1,6 @@
 require 'effects'
 require 'ruby_console'
-require 'xiki'
+# require 'xiki'
 gem 'httparty'; require 'httparty'
 gem 'activesupport'; require 'active_support/ordered_hash'
 
@@ -269,21 +269,12 @@ class Launcher
           Launcher.launch
           return
         end
+
         Line.sub! /\b$/, "..."
 
-        View >> matches.sort.map{|o| "#{o}"}.join("\n")
+        View >> matches.sort.map{|o| "<< #{o}/"}.join("\n")
         return
       end
-    end
-
-    # If child of "..." autocomplete line
-
-    if line =~ /^[\w -]*\.\.\.\/(\w+)$/
-      Tree.to_parent
-      Tree.kill_under
-      Line.sub! /([ @+-]*).+/, "\\1#{$1}"
-      Launcher.launch
-      return
     end
 
     # If just root line, load any unloaded launchers this completes and relaunch
@@ -521,6 +512,14 @@ class Launcher
       View.under response.body
     end
 
+    Launcher.add /^class (\w+)\/def self.menu\/(.+)/ do |path|
+      clazz, path = path.match(/^class (\w+)\/def self.menu\/(.+)/)[1..2]
+
+      path = "#{TextUtil.snake_case clazz}/#{path}".gsub("/.", '/')
+
+      Tree << Menu[path]
+    end
+
     Launcher.add /^  +<+ .+/ do
       Menu.collapser_launcher
     end
@@ -664,8 +663,6 @@ class Launcher
       clazz, default_method = clazz.match(/(.+)\.(.+)/)[1..2]
     end
 
-    # Allow clazz to be a .tree file as well?
-
     if clazz.is_a? String
       # Require it to be camel case (because .invoke will be Menu.call "Class"
       # if lower case, will assume Menu.call "path"
@@ -695,11 +692,9 @@ class Launcher
       returned, out, exception = Code.eval code
 
       return CodeTree.draw_exception exception, code if exception
-      if returned != nil   # Only a nil returned means don't call .menu
+      if returned
 
         # TODO: call .unset_env_vars before this and other below places we return
-
-        return if ! returned.is_a?(String)
 
         returned = returned.unindent if returned =~ /\A[ \n]/
         return returned
@@ -707,18 +702,18 @@ class Launcher
 
     end
 
+    menu_arity = nil
+    txt = options[:tree]
 
     # Maybe call .menu with no args to actionize and get child menus
-
-    txt = options[:tree]
 
     if txt.nil?
       method = clazz.method(default_method) rescue nil
       if method && method.arity == 0
+        menu_arity = 0
         code = "#{camel}.#{default_method}"
         returned, out, exception = Code.eval code
         return CodeTree.draw_exception exception, code if exception
-        return nil if returned.nil?
         txt = CodeTree.returned_to_s returned   # Convert from array into string, etc.
       end
     end
@@ -726,47 +721,60 @@ class Launcher
     # Error if no menu method or file
     raise "#{clazz} doesn't seem to have a .#{default_method} method!" if method.nil? && txt.nil?
 
-    # If got routable menu text, use it to routify
+    # If got routable menu text, use it to route (get children or dotify)
 
     if txt
       txt = txt.unindent if txt =~ /\A[ \n]/
       raise "#{code} returned nil, but is supposed to return something when it takes no arguments" if txt.nil?
 
-      txt = Tree.routify! txt, args
-      if txt && txt != "- */\n"
+      tree = txt
 
-        # TODO Call .menu_after!"
+      txt = Tree.children tree, args
+
+      if txt && txt != "- */\n"
         # Pass in output of menu as either...
           # ENV['output']
           # 1st parameter: .menu_after output, *args
-
-        return txt
+        return self.invoke_menu_after clazz, txt, args
       end
-    end   # Else, continue on to run it based on routified path
 
+      # Copy dots onto args, so last dotted one will be used as action
+
+      Ol << "args: #{args.inspect}"
+      Tree.dotify! tree, args
+      Ol << "args: #{args.inspect}"
+
+    end
+    # Else, continue on to run it based on routified path
+
+
+
+
+    # TODO: Maybe extract this out into .dotified_to_ruby ?
 
     # Figure out which ones are actions
 
-    # TODO Maybe extract this out into another method, so trees can call it internally
-
-    # Find last .foo item
-    actions, variables = args.partition{|o|
-      o =~ /^\./
-      # Also use result of .menu to determine
-    }
+    # Last .dotted one is the action, and non-dotted are variables to pass
+    actions, variables = args.partition{|o| o =~ /^\./ }
     action = actions.last || ".#{default_method}"
     action.gsub! /[ -]/, '_'
+
+    if action == ".menu" && txt == nil && menu_arity == 0
+      return self.invoke_menu_after clazz, txt, args
+    end
 
     args = variables.map{|o| "\"#{CodeTree.escape o}\""}.join(", ")
 
     # TODO: use adapter here, so we can call .js file?
 
-
     # TODO .menu_after: Check for arity - if mismatch, don't call, but go straight to .menu_after!
     # We could probably not worry about this for now?
 
-
     code = "#{camel}#{action.downcase} #{args}".strip
+
+
+
+
     txt, out, exception = Code.eval code
     txt = CodeTree.returned_to_s(txt)   # Convert from array into string, etc.
 
@@ -775,7 +783,32 @@ class Launcher
     txt = txt.unindent if txt =~ /\A[ \n]/
     return CodeTree.draw_exception exception, code if exception
 
+    txt = self.invoke_menu_after clazz, txt, args
+
+    self.unset_env_vars
+
     txt
+  end
+
+  def self.invoke_menu_after clazz, txt, args
+    camel = clazz.to_s
+    method = clazz.method("menu_after") rescue nil
+    return txt if method.nil?
+
+    code = "#{camel}.menu_after #{txt.inspect}, *#{args.inspect}"
+    returned, out, exception = Code.eval code
+
+    return CodeTree.draw_exception exception, code if exception
+    if returned
+
+      # TODO: call .unset_env_vars before this and other below places we return
+
+      returned = returned.unindent if returned =~ /\A[ \n]/
+      return returned
+    end
+
+    txt   # Otherwise, just return output!"
+
   end
 
   def self.add_class_launchers classes

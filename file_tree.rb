@@ -282,7 +282,7 @@ class FileTree
     if Styles.inverse
       Styles.define :quote_heading, :fg=>"fff", :size=>"0", :face=>"arial", :bold=>false
       Styles.define :quote_heading2, :fg=>"fff", :size=>"-2", :face=>"arial", :bold=>false
-      Styles.define :quote_heading_pipe, :fg=>"444", :size=>"0", :face => "verdana", :bold=>true
+      Styles.define :quote_heading_pipe, :fg=>"333", :size=>"0", :face => "verdana", :bold=>true
       Styles.define :quote_heading_bracket, :fg=>"4c4c4c", :size=>"-2", :face => "Monaco", :bold=>true
       Styles.define :quote_heading_small, :fg=>"fff", :size=>"-2", :face => "arial black", :bold=>true
 

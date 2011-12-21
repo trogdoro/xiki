@@ -151,7 +151,7 @@ class Menu
         - #{menu}.rb
           | class #{TextUtil.camel_case(menu)}
           |   def self.menu *args
-          |     "- return something based on the \#{args.inspect} params"
+          |     "- Customize me in '~/menus/#{menu}.rb'!  We were passed \#{args.inspect}."
           |   end
           | end
       - more examples) @menu/api/classes/
@@ -170,7 +170,7 @@ class Menu
       - #{root}.rb
         | class #{TextUtil.camel_case(root)}
         |   def self.menu *args
-        |     "- return something based on the \#{args.inspect} params"
+        |     "- Customize me in '~/menus/#{menu}.rb'!  We were passed \#{args.inspect}."
         |   end
         | end
     `

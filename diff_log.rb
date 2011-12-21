@@ -47,7 +47,7 @@ class DiffLog
 
     txt = txt.select{|o| o =~ regex}
 
-    "- #{txt.join("- ")}"
+    "- @#{txt.join("- @")}"
   end
 
   # Insert old text deleted during last save

@@ -140,8 +140,14 @@ class Xiki
     $xiki_no_search = true
   end
 
-  def self.tests clazz=nil, *test
+  def self.quote_spec txt
+    txt.
+      gsub(/^/, '| ').
+      gsub(/ +$/, '').
+      gsub(/^\|        +([+-])/, "|\\1")
+  end
 
+  def self.tests clazz=nil, *test
     if clazz.nil?   # If nothing, list all
       return ["all/"] + Dir["#{Xiki.dir}/spec/*_spec.rb"].entries.map{|o| "#{o[/.+\/(.+)_spec\.rb/, 1]}/"}
     end
@@ -150,9 +156,10 @@ class Xiki
       Xiki.dont_search
 
       if clazz == "all"
-        return Keys.prefix_u ?
+        return self.quote_spec( Keys.prefix_u ?
           Console.run("rspec spec", :dir=>Xiki.dir) :
-          Tree.<<(Console.run("rspec spec", :dir=>Xiki.dir, :sync=>1), :escape=>'| ')
+          Console.run("rspec spec", :dir=>Xiki.dir, :sync=>1)
+          )
       end
 
       path = Bookmarks["$x/spec/#{clazz}_spec.rb"]
@@ -184,7 +191,7 @@ class Xiki
       command = "rspec spec/#{clazz}_spec.rb"
       command << " -e \"#{test.join ' '}\"" unless test == ["all"]
       result = Console.run command, :dir=>"$x", :sync=>true
-      return result.gsub(/^/, '| ').gsub(/ +$/, '')
+      return self.quote_spec result
     end
 
     # Quoted line, so jump to line number
@@ -196,7 +203,7 @@ class Xiki
   end
 
   def self.trunk
-    Tree.construct_path(:all=>1).split(/\/@ ?/)
+    Tree.construct_path(:all=>1, :slashes=>1).split(/\/@ ?/)
   end
 
   def self.branch
