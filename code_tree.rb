@@ -59,6 +59,13 @@ class CodeTree
     end
 
     backtrace = exception.backtrace[0..8].join("\n").gsub(/^/, '  ') + "\n"
+
+    # If path in message, move it to the stack trace
+    if message =~ /(.+\d:in `.+'): (.+)/
+      path, message = $1, $2
+      backtrace = "  #{path}\n#{backtrace}"
+    end
+
     return "- tried to run: #{code}\n- error: #{message}\n- backtrace:\n#{backtrace}"
   end
 

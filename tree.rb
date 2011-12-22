@@ -806,8 +806,7 @@ class Tree
   end
 
   def self.traverse tree, options={}, &block
-    branch = []
-    indent = 0
+    branch, indent = [], 0
     tree.split("\n").each do |line|
       # Ol << "line: #{line.inspect}"
       line_indent = line[/^ */].length / 2
@@ -1120,7 +1119,6 @@ class Tree
     target = "" if target == nil || target == "/"   # Must be at root if nil
     tree = TextUtil.unindent tree
 
-    target = "" if target.nil?
     target.sub!(/^\//, '')
     target.sub!(/\/$/, '')
 
@@ -1128,7 +1126,6 @@ class Tree
     result = ""
 
     found = -1 if target.empty?
-
 
     self.traverse tree, :flattened=>1 do |branch, path|
 
@@ -1184,6 +1181,10 @@ class Tree
       end
 
       i += 1
+    end
+
+    if options[:string]
+      return children.join("\n")+"\n"
     end
 
     children

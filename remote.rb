@@ -10,20 +10,19 @@ class Remote
   @@temp_dir = "/tmp/remote_rb"
 
   @@connections = {}
-  @@default_dirs ||= []
 
   def self.menu
-    out = ""
-    @@default_dirs.each do |d|
-      out << "- /#{d}/\n"
-    end
-    out << "- @/user@foo.com/tmp/\n"
-    out
+    "
+    - docs/
+      > Summary
+      | Lets you browse files and run commands on remote servers.
+      |
+      > Wiki Syntax
+      @ /user@foo.com/tmp/
+      |
+    - see) @servers/
+    "
   end
-
-  # default_dirs attr
-  def self.default_dirs= to;  @@default_dirs = to;  end
-  def self.default_dirs;  @@default_dirs;  end
 
   # Called when dir or file is launched
   def self.file_contents whole_path
@@ -91,12 +90,14 @@ class Remote
 
   def self.command root #, *path_append
 
-    the_command = root.last[/! ?(.+)/, 1]
+    the_command = root[-1][/\$ ?(.+)/, 1]
+
     # Pull off command
-    while(root.last =~ /^!/) do   # Remove all !foo lines from root
+    while(root.last =~ /^\$/) do   # Remove all !foo lines from root
       root.pop
     end
     root = root.join('')
+
     connection = self.connection root
 
     user, server, port, path = self.split_root(root)
@@ -108,7 +109,7 @@ class Remote
       #       out = connection.exec!("cd \"#{path}\"; #{the_command}")
       out ||= ""
 
-      Tree.under out, :escape=>'| '
+      Tree.under out, :escape=>'| ', :no_slash=>1
     end
   end
 

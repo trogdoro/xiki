@@ -102,6 +102,7 @@ class KeyBindings
     #     Keys.open_log_tree { Rails.tree_from_log }
     Keys.open_list_databases { Launcher.open('- Couch.databases/') }
     #     Keys.open_list_models { Launcher.open("- Merb.models/") }
+    Keys.open_list_javascript { Launcher.open("- technologies/javascript/") }
     Keys.open_list_names { Clipboard.list }
     Keys.open_list_ruby { Launcher.open("- technologies/ruby/") }
     Keys.open_list_technologies { Launcher.open("- technologies/") }   # open first hyperlink on page

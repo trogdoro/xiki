@@ -391,27 +391,6 @@ end
 #   end
 
 
-# describe Tree, "#children" do
-
-#   it "shows shallowest items when blank path" do
-#     Tree.children("- a/\n- b/\n", "").should == "- a/\n- b/\n"
-#   end
-
-#   it "shows childern of 1 deep" do
-#     Tree.children("- a/\n  - aa/\n  - ab/\n- b/\n", "a").should == "- aa/\n- ab/\n"
-#   end
-
-#   it "includes empty lines" do
-#     result = Tree.children "Hey\n\nyou\n", ""
-#     result.should == "
-#       Hey
-#       |
-#       you
-#       ".unindent
-#   end
-# end
-
-
 describe Tree, "#children" do
 
   it "shows shallowest items when blank path" do

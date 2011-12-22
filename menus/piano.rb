@@ -212,7 +212,7 @@ class Piano
     # Don't interfere if menu did something
     return menu_output if menu_output
 
-    #     # If just number, intercept
+    # If just number, intercept
     if args.length == 1 && args[0] =~ /^\d+$/
       self.note args[0].to_i
       return false

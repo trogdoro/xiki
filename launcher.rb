@@ -211,6 +211,9 @@ class Launcher
             block.call line
           rescue RelinquishException
             next   # They didn't want to handle it, keep going
+          rescue Exception=>e
+
+            Tree << CodeTree.draw_exception(e, block.to_ruby)
           end
 
         end
@@ -504,12 +507,11 @@ class Launcher
 
     # Xiki protocol to server
     self.add(/^[a-z-]{2,}\.(com|net|org|loc|in|edu|gov|uk)(\/|$)/) do |line|  # **.../: Tree grep in dir
-      Line << "/" unless Line =~ /\/$/
-      url = "http://#{line}"
-      url.sub! /\.\w+/, "\\0/xiki"
-      url.gsub! ' ', '+'
-      response = HTTParty.get(url)
-      View.under response.body
+      self.web_menu line
+    end
+
+    self.add(/^localhost:?\d*(\/|$)/) do |line|  # **.../: Tree grep in dir
+      self.web_menu line
     end
 
     Launcher.add /^class (\w+)\/def self.menu\/(.+)/ do |path|
@@ -968,15 +970,34 @@ class Launcher
 
     ENV['prefix'] = Keys.prefix.to_s
 
-    if args[-1] !~ /^ *\|/
+    # Might have been split based on "/"
+
+    # If any has ^|, then make sure current line has slash
+
+    quoted = args.find{|o| o =~ /^\| /}
+
+    if ! quoted
       return ENV['txt'] = args[-1]
     end
 
     # Quoted lines
 
-    txt = Tree.leaf(args[-1])
+    txt = Tree.leaf("|")   # Cheat to make it grab quoted
     ENV['txt'] = txt.length > 1_000_000 ? "*too long to put into env var*" : txt
-    # Put into file instead?
+  end
+
+  def self.web_menu line
+    Line << "/" unless Line =~ /\/$/
+    url = "http://#{line}"
+    url.sub! /\.\w+/, "\\0/xiki"
+    url.gsub! ' ', '+'
+
+    begin
+      response = HTTParty.get(url)
+      Tree << response.body
+    rescue Exception=>e
+      Tree << "- couldn't connect!"
+    end
   end
 
   def self.unset_env_vars
