@@ -193,6 +193,18 @@ describe Tree, "#leaf" do
 end
 
 describe Tree, "#quote" do
+  it "quotes normal lines" do
+    Tree.quote("hey\nyou\n").should == "| hey\n| you\n".unindent
+  end
+
+  it "quotes blank lines" do
+    Tree.quote("hey\n\nyou\n").should == "| hey\n|\n| you\n".unindent
+  end
+
+  it "quotes when indented" do
+    Tree.quote("hey\n  you\n").should == "| hey\n|   you\n".unindent
+  end
+
   it "leaves menus unquoted" do
     before = "
       > Using menus
@@ -201,16 +213,17 @@ describe Tree, "#quote" do
       For more details, see:
       + @menu/docs/how_to_use/
       "
-    after = "
+    Tree.quote(before).should == "
       > Using menus
       | All menus can be used the same way.
       |
       | For more details, see:
       + @menu/docs/how_to_use/
       ".unindent
-    Tree.quote(before).should == after
   end
+
 end
+
 
 describe Tree, "#clear_empty_dirs!" do
   it "removes one empty dir" do

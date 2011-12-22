@@ -14,8 +14,7 @@ class Git
 
     # Handle routing of .push manually, since routing requires linebreaks
     if args[0] == "push"
-      self.push branch, *args[1..-1]
-      return false   # Don't continue
+      return self.push branch, *args[1..-1]
     end
 
     nil
@@ -81,9 +80,12 @@ class Git
 
   def self.push default_branch, branch=nil
     # If no branch, use default
-    return "- #{default_branch}/" if branch.nil?
+    if branch.nil?
+      return "- #{default_branch}/"
+    end
 
     Gito.push branch, "project - #{Dir.pwd}"
+    ".flash - done!"
   end
 
   def self.branch_name dir=nil

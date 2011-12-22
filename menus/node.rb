@@ -22,7 +22,8 @@ class Node
     return self.block if args == ['block']
 
     txt = Tree.leaf args[0]
-    result = self.run txt
+    result = Tree.quote self.run(txt)
+
     result
   end
 
@@ -57,7 +58,7 @@ class Node
     Buffers.delete "node" if View.buffer_open? "node"
 
     Console.run "node controller.js", :dir=>"/tmp/", :buffer=>"node"
-    $el.sit_for 0.1
+    $el.sit_for 0.2
     Firefox.url "http://localhost:8161"
     ".flash - showing in browser!"
   end
@@ -76,7 +77,7 @@ class Node
     file = "/tmp/nodejs.js"
     txt = "function puts (txt){ return console.log(txt) }\n\n#{txt}"
     File.open(file, "w") { |f| f << txt }
-    Tree.quote Console["node #{file}"]
+    Console["node #{file}"]
   end
 
 end

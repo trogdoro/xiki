@@ -21,33 +21,46 @@ class Serve
         "
     end
 
-    File.open("/tmp/tmp.menu", "w") { |f| f << children }
 
-    code = self.wrap_controller "/tmp/tmp.menu"
+    if children.blank?
+      file = File.expand_path "~/menus/#{trunk[0]}.menu"
+    else
+      file = "/tmp/tmp.menu"
+      File.open(file, "w") { |f| f << children }
+    end
+
+    code = self.wrap_controller file
     Node.run_controller code
 
     ".flash - showing in browser!"
   end
 
   def self.wrap_controller file
-    "
+    %`
     var http = require('http');
     var xiki = require('#{Xiki.dir}etc/js/xiki.js');
     var fs = require('fs');
     http.createServer(function (req, res) {
 
-    res.writeHead(200, {'Content-Type': 'text/plain'});
+      console.log('processing request');
+      tree = fs.readFileSync(#{file.inspect}, 'utf8');
 
-    tree = fs.readFileSync(#{file.inspect}, 'utf8');
-    console.log(tree);
 
-    items = xiki.children(tree, req.url);
-    console.log(items);
-    res.end(items);
+      if(req.headers['user-agent'] && ! req.headers['x-requested-with']){
+
+        res.writeHead(200, {'Content-Type': 'text/html'});
+        res.end(xiki.render_mobile());
+
+      }else{
+        res.writeHead(200, {'Content-Type': 'text/plain'});
+        items = xiki.children(tree, req.url);
+        res.end(items);
+      }
+
 
     }).listen(8161, '127.0.0.1');
     console.log('Server running at http://127.0.0.1:8161/');
-    ".unindent
+    `.unindent
   end
 
 end

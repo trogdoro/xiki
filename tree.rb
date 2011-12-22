@@ -664,7 +664,7 @@ class Tree
   end
 
   def self.quote txt
-    TextUtil.unindent(txt).gsub(/^([^|@> +-])/, "| \\1").gsub(/^\| $/, '|')
+    TextUtil.unindent(txt).gsub(/^([^|@>+-])/, "| \\1").gsub(/^\| $/, '|')
   end
 
   def self.insert_quoted_and_search matches, options={}
