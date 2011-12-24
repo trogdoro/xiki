@@ -38,22 +38,34 @@ class Serve
   def self.wrap_controller file
     %`
     var http = require('http');
-    var xiki = require('#{Xiki.dir}etc/js/xiki.js');
+    var Xiki = require('#{Xiki.dir}etc/js/xiki.js');
     var fs = require('fs');
-    http.createServer(function (req, res) {
+    http.createServer(function(req, res) {
 
-      console.log('processing request');
+      url = decodeURI(req.url);
+      console.log('processing request: ' + url);
+
+
+      // If requesting js, just return it
+      if(url.match(/^\\/js\\//)){
+        res.writeHead(200, {'Content-Type': 'application/x-javascript'});
+        var js = fs.readFileSync('#{Xiki.dir}etc/js/'+url.replace(/.+\\//, ''), 'utf8');
+        res.end(js);
+        return;
+      }
+
       tree = fs.readFileSync(#{file.inspect}, 'utf8');
-
 
       if(req.headers['user-agent'] && ! req.headers['x-requested-with']){
 
         res.writeHead(200, {'Content-Type': 'text/html'});
-        res.end(xiki.render_mobile());
+        res.end(Xiki.render_mobile_ajax());
 
       }else{
         res.writeHead(200, {'Content-Type': 'text/plain'});
-        items = xiki.children(tree, req.url);
+        console.log("tree:", tree);
+        items = Xiki.children(tree, url);
+        console.log("items:", items);
         res.end(items);
       }
 

@@ -369,11 +369,11 @@ class Firefox
     Firefox.run "
       var s=document.createElement('script');
       s.setAttribute('src', 'http://code.jquery.com/jquery-latest.js');
-      document.getElementsByTagName('body')[0].appendChild(s);
+      document.getElementsByTagName('head')[0].appendChild(s);
 
       var s=document.createElement('script');
       s.setAttribute('src', 'http://xiki.org/javascripts/util.js');
-      document.getElementsByTagName('body')[0].appendChild(s);
+      document.getElementsByTagName('head')[0].appendChild(s);
       ".unindent
 
     nil
@@ -624,11 +624,11 @@ class Firefox
       if(! document.getElementById('jqid')){
         var s=document.createElement('script');
         s.setAttribute('src', 'http://code.jquery.com/jquery-latest.js'); s.setAttribute('id', 'jqid');
-        document.getElementsByTagName('body')[0].appendChild(s);
+        document.getElementsByTagName('head')[0].appendChild(s);
 
         var s=document.createElement('script');
         s.setAttribute('src', 'http://xiki.org/javascripts/util.js');
-        document.getElementsByTagName('body')[0].appendChild(s);
+        document.getElementsByTagName('head')[0].appendChild(s);
       }
       ".unindent
 

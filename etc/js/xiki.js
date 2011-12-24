@@ -1,4 +1,10 @@
+Xiki = {};
+if(typeof(exports) == "undefined"){
+  exports = Xiki;
+}
+
 exports.children = function(tree, target) {
+  console.log("target:", target);
 
   target = target.replace(/^\//, '');
   target = target.replace(/\/$/, '');
@@ -92,96 +98,162 @@ exports.traverse = function(tree, callback) {
   }
 }
 
-exports.render_mobile = function(tree, target) {
+exports.unindent = function(txt) {
+
+  txt = txt.replace(/^\n/, '');   // Delete initial blank line if there
+
+  // If 1st line has no indent and 2nd line has indent (at least 3 spaces)
+  if(!txt.match(/^ /) && txt.match(/^.+\n(   +)/)){
+    txt = txt.replace(/^\n/, '');   // Delete initial blank line if there
+    var indent = txt.match(/^.+\n(   +)/)[1];
+    return txt.replace(new RegExp("^"+indent, "gm"), '');
+  }
+
+  var old_indent = txt.match(/^ */);   // Get indent of first line
+  txt = txt.replace(new RegExp("^"+old_indent, "gm"), '');   // Delete current indent
+  txt = txt.replace(/\n+$/g, '');
+
+  return txt;
+}
+
+exports.header_html = function(title) {
+
+  return '<div data-role="header">\n\
+    <h1>'+title+'</h1>\n\
+    <a data-rel="back" href="#" data-icon="arrow-l" class="ui-btn-left">Back</a>\n\
+    <a href="#home" data-icon="home" class="ui-btn-right">Home</a>\n\
+  </div>';
+
+}
+
+exports.render_mobile_standalone = function(tree, target) {
+  return '\
+    <div data-role="page">\n\
+      '+exports.header_html("Menu")+'\n\
+      <div data-role="content">\n\
+      </div>\n\
+    </div>\n\
+    '
+}
+
+exports.render_mobile_ajax = function(tree, target) {
 
   return '\
     <html>\n\
       <head>\n\
         <meta name="viewport" content="width=device-width, initial-scale=1">\n\
-        <link rel="stylesheet" href="http://code.jquery.com/mobile/1.0rc1/jquery.mobile-1.0rc1.min.css" />\n\
+        <link rel="stylesheet" href="http://code.jquery.com/mobile/1.0/jquery.mobile-1.0.min.css" />\n\
+        <script src="/js/xiki.js"></script>\n\
         <script src="http://code.jquery.com/jquery-1.6.4.min.js"></script>\n\
-        <script src="http://code.jquery.com/mobile/1.0rc1/jquery.mobile-1.0rc1.min.js"></script>\n\
+        <script src="http://code.jquery.com/mobile/1.0/jquery.mobile-1.0.min.js"></script>\n\
       </head>\n\
-    \n\
       <body>\n\
         <div data-role="page">\n\
-          <div data-role="header">\n\
-            <h1>Menu</h1>\n\
-            <a rel="external" href="index.html" data-icon="arrow-l" class="ui-btn-left">Back</a>\n\
-            <a rel="external" href="index.html" data-icon="home" class="ui-btn-right">Home</a>\n\
-          </div>\n\
+          '+exports.header_html("Menu")+'\n\
           <div data-role="content">\n\
-            <ul data-role="listview" data-theme="g">\n\
-              <li><a rel="external" href="cars.html"></a></li>\n\
-              <!--\n\
-              <li><a rel="external" href="boats.html">Boats</a></li>\n\
-              <li><a rel="planes" href="#" onclick="alert(\'hi\')">Planes</a></li>\n\
-                -->\n\
-            </ul>\n\
           </div>\n\
         </div>\n\
+      \n\
+        <script>\n\
+          $(function(){\n\
+            Xiki.ajax_setup();\n\
+          })\n\
+        </script>\n\
       </body>\n\
-    \n\
-      <script>\n\
-        path = "";\n\
-    \n\
-        function back(e) {\n\
-          path = path.replace(/(.*)\\/.*/, "$1");\n\
-          // console.log(path);\n\
-          fetch(path);\n\
-          return false;\n\
-        }\n\
-    \n\
-        function home(e) {\n\
-          path = "";\n\
-          fetch(path);\n\
-          return false;\n\
-        }\n\
-    \n\
-        function go(e) {\n\
-          // console.log(e.target);\n\
-          var item = $(e.target).html().toLowerCase()\n\
-          // console.log(item);\n\
-          path += "/"+item;\n\
-          fetch(path);\n\
-          return false;\n\
-        }\n\
-    \n\
-        function fetch(path) {\n\
-          console.log(123)\n\
-          $.get(path, {}, function(txt){\n\
-            $("li:first").siblings().remove();\n\
-    \n\
-            $.each(txt.split("\\n"), function(i, t){\n\
-              if(! t) return;\n\
-              var item = t.match(/\\w.+/)[0];\n\
-              item = item.replace(/\\/$/, "");\n\
-              item = item.replace(/\\b\\w/g, function(m){return m.toUpperCase()});\n\
-              // console.log(item);\n\
-              // If not first, clone\n\
-              if(i > 0){\n\
-                $("ul").append($("li:eq(0)").clone());\n\
-              }\n\
-              var li = $("li:last");\n\
-              li.find("a").html(item);\n\
-            })\n\
-            $(".ui-btn-active").removeClass("ui-btn-active");\n\
-            var title = path.replace(/.*\\//, "");\n\
-            if(! title) title = "Menu";\n\
-            title = title.replace(/\\b\\w/g, function(m){return m.toUpperCase()});\n\
-            $(".ui-title").html(title);\n\
-          });\n\
-        }\n\
-    \n\
-        $(function(){\n\
-        fetch("");\n\
-          $("li a").live("click", go);\n\
-          $(".ui-btn-left").live("click", back);\n\
-          $(".ui-btn-right").live("click", home);\n\
-        });\n\
-      </script>\n\
-    \n\
-    <html>\n\
+    </html>\n\
     '
+}
 
+exports.ajax_setup = function() {
+
+  $.get("/", {}, function(txt){
+    var html = Xiki.children_to_html(txt);
+
+    $("div[data-role=content]").html(html).trigger("create");
+  });
+
+
+  $(document).bind("pagebeforechange", function(e, data) {Xiki.navigate_ajax(e, data)});
+}
+
+exports.navigate_ajax = function(e, data) {
+
+  if(typeof data.toPage != "string") return;
+
+  var hash_orig = data.toPage.replace(/.+?(#|$)/, '');
+  var hash = hash_orig.replace(/,/g, '/');
+
+  $.get("/"+hash, {}, function(txt){
+    Xiki.navigate(e, data, txt)
+  });
+}
+
+exports.navigate = function(e, data, children) {
+
+  if(typeof data.toPage != "string") return;
+
+  var hash_orig = data.toPage.replace(/.+?(#|$)/, '');
+  var hash = hash_orig.replace(/,/g, '/');
+  label = hash.replace(/.+\//, '');
+  label = label.replace(/\b\w/g, function(m){return m.toUpperCase()});
+
+  var options = data.options;
+
+  if(hash_orig == "home"){
+    hash_orig = hash = "";
+    label = "Menu";
+    options.reverse = true;
+  }
+
+  var html = Xiki.children_to_html(children, hash_orig);
+
+  // TODO: remove page if back button?
+
+  options.dataUrl = "#"+hash;
+
+  // Add new page to the dom!
+
+  var page_html = '<div id="'+hash+'" data-role="page">\
+  '+exports.header_html(label)+'\n\
+  <div data-role="content">'+html+'</div></div>';
+
+  $("body").append(page_html);
+  var page = $("div[data-role=page]:last");
+
+  $.mobile.changePage(page, options);
+
+  e.preventDefault();
+}
+
+exports.children_to_html = function(txt, parent) {
+
+  var html = "";
+
+  // If it starts with bullet, treat them all as li
+  if(txt.match(/^[+-] /)){
+    html += '<ul data-role="listview" data-inset="true">';
+
+    $.each(txt.split("\n"), function(i, item){
+      if(! item) return;
+      item = item.replace(/^[+-] /, "")
+      item = item.replace(/\/$/, "");
+      upper = item.replace(/\b\w/g, function(m){return m.toUpperCase()});
+
+      var href = item;
+      if(parent) href = parent+","+href;
+
+      html += '<li><a href="#'+href+'">'+upper+'</a></li>';
+    })
+    html += "</ul>"
+  }else{
+    html += '<div style="margin:20px;">'
+    txt = txt.replace(/^\| ?/gm, "");
+    txt = txt.replace(/^> (.+)/gm, '<div style="font-weight:bold; margin-bottom:5px; font-size:20px">$1</div>');
+    txt = txt.replace(/$/gm, "<br>");
+    txt = txt.replace(/div><br>$/gm, "div>");
+    html += txt;
+    html += "</div>"
+  }
+
+  return html;
 }
