@@ -7,15 +7,22 @@ class Console
 
   def self.menu
     %`
-    - commands you've run) .log
-    - commands in buffers) .tree
-    |
-    > Run OS commands
-    | In console (asynchronously)
-    @Console.run "ls", :dir=>"/tmp"
-    |
-    | Inline (synchronously)
-    @Console.run "ls", :dir=>"/etc", :sync=>true
+    - log/
+    - tree/
+    - docs/
+      | Commands you've run recently:
+      << log/
+      |
+      | Commands from currently open consoles:
+      << tree/
+    - api/
+      | In console (asynchronously)
+      @ Console.run "ls"
+      @ Console.run "ls", :dir=>"/tmp"
+      |
+      | Inline (synchronously)
+      @ Console.sync "ls"
+      @ Console.sync "ls", :dir=>"/etc"
     `
   end
 
@@ -49,7 +56,7 @@ class Console
       dir.gsub!(/\/\/+/, '/')
 
       # If file, but not dir, try backing up to the dir
-      raise "- Directory doesn't exist!" if ! File.exists? dir
+      raise "- Directory '#{dir}' doesn't exist!" if ! File.exists? dir
 
       dir.sub!(/[^\/]+$/, '') if ! File.directory?(dir)
 
@@ -102,7 +109,7 @@ class Console
     View.handle_bar
     dir ||= elvar.default_directory
     dir = File.expand_path(dir)+"/"
-    View.to_buffer generate_new_buffer("*console #{dir}")
+    View.to_buffer generate_new_buffer("shell")
     raise "dir '#{dir}' doesn't exist" unless File.directory?(dir)
     elvar.default_directory = dir
     $el.shell current_buffer
@@ -131,9 +138,44 @@ class Console
       return true if View.mode == :shell_mode
       pattern = /^\*console/
     end
+
     return true if View.name =~ pattern   # If already there, do nothing
 
-    # Try to find an existing dir
+
+
+    if ! dir
+
+      # Try to find visible shell buffer in same dir and with prompt
+
+      View.list.each do |w|
+        $el.set_buffer window_buffer(w)
+        next if View.mode != :shell_mode || ! Console.prompt?
+        next if View.cursor != View.bottom
+        View.to_window(w)
+        return true
+      end
+    end
+
+    if dir && dir !~ /@/   # If local dir
+
+      # TODO Make sure there's no ssh or cd in history!
+      View.list.each do |w|
+        $el.set_buffer window_buffer(w)
+        next if View.mode != :shell_mode || ! Console.prompt?
+        next if Tree.slashless(dir) != Tree.slashless(View.dir)
+        next if View.cursor != View.bottom
+
+        View.to_window(w)
+        return true
+      end
+
+    # TODO: implement similar finding a dir for remote
+      # else
+
+    end
+
+    # Deprecated:
+    # Try to find visible shell buffer with matching name
     View.list.each do |w|
       next if buffer_name(window_buffer(w)) !~ pattern
       View.to_window(w)
@@ -164,11 +206,11 @@ class Console
         View.to_upper
         return View.to_buffer(found)
       end
-
     end
 
-    # Wasn't found in visible, so don't create it if so instructed
-    return false   if options[:no_create]
+    # Wasn't found among visible, so create new buffer
+
+    return false   if options[:no_create]   # Don't create it if option says not to
 
     if dir =~ /@/   # If there's a @, it's remote
       View.handle_bar
@@ -206,23 +248,35 @@ class Console
     View.to_nth orig
   end
 
-  def self.launch_dollar options={}
+  def self.launch_async options={}
+
     orig = Location.new
     orig_view = View.index
     path = Tree.construct_path(:list=>true)
 
     path[0] = Bookmarks[path[0]] if path[0] =~ /^(\.\/|\$[\w-])/   # Expand out bookmark or ./, if there
-    if path.first =~ /^\//   # If has dir (possibly remote)
+    if path[0] =~ /^\//   # If has dir (local or remote)
       line = path.join('')
-      dir, command = line.match(/(.+?)% (.*)/)[1..2]
+      dir, command = line.match(/(.+?)[%&] (.*)/)[1..2]
       self.append_log "#{command}", dir, '% '
+
+      return Iterm.run("cd #{dir}\n#{command}", :activate=>1) if Keys.prefix_uu
+      return Iterm.run("cd #{dir}\n#{command}") if Keys.prefix_u || options[:iterm]
+
       Console.to_shell_buffer dir, :cd_and_wait=>true
-    else   # Otherwise, if by itself
-      command = Line.without_label.match(/.*?\% ?(.*)/)[1]
+    else   # Otherwise, if by itself - meaning on own line?
+      command = Line.without_label.match(/.*?[%&] ?(.*)/)[1]
       self.append_log("#{command}", dir, '% ') if command.present?
-      Console.to_shell_buffer   # Go to shell if one is visible, and starts with "*console"
+
+      return Iterm.run("#{command}", :activate=>1) if Keys.prefix_uu
+      return Iterm.run("#{command}", :activate=>1) if Keys.prefix_u && options[:iterm]
+      return Iterm.run("#{command}") if Keys.prefix_u || options[:iterm]
+
+      self.to_shell_buffer   # Go to shell if one is visible
     end
     return if command.empty?
+
+    View.to_bottom
 
     View.insert command
     Console.enter
@@ -230,8 +284,25 @@ class Console
     orig.go unless orig_view == View.index
   end
 
-  # Mapped to !! or ! in Launcher
+  # Synchronous - mapped to $ launcher
   def self.launch options={}
+
+    trunk = Xiki.trunk
+    # if not under file
+    # raise RelinquishException.new
+
+    # Run in current dir if no parent or @$
+    if trunk[-1] =~ /^\$ /
+      # TODO Run in current dir?
+      # return
+    end
+
+    # There's a dir in our chunk, so relinquish control if not fire tree
+
+    # Handle if
+      # no parent in our chunk
+      # parent in our chunk is file tree
+
     line = Line.without_label :leave_indent=>true
     # If indented, check whether file tree, extracting if yes
     if line =~ /^\s+\$/
@@ -249,7 +320,7 @@ class Console
       end
       View.to orig
     end
-    line =~ / *(.*?)\$+ ?(.+)/
+    line =~ / *@? ?(.*?)\$+ ?(.+)/
     dir ||= $1 unless $1.empty?
     command = $2
 
@@ -258,14 +329,14 @@ class Console
     if options[:sync]
       output = Console.run command, :dir=>dir, :sync=>true
       output.sub!(/\A\z/, "\n")   # Add linebreak if blank
-
       Keys.prefix == 1 ? output.gsub!(/^/, '|') : output.gsub!(/^/, '| ').gsub!(/^\| +$/, '|')
 
       # Expose "!" and "- label: !" lines as commands
       output.gsub!(/^\| \$/, '$')
       output.gsub!(/^\| (- [\w ,-]+: \$)/, "\\1")
-
+      output.sub! /\n*\z/, "\n"   # Guarantee exactly 1 linebreak at end
       Tree.indent(output)
+
       Tree.insert_quoted_and_search output
     else
       View.handle_bar
@@ -340,8 +411,12 @@ class Console
 
   # Whether buffer ends with shell prompt "...$ "
   def self.prompt?
-    txt = View.txt(:left=>(View.bottom-5), :right=>View.bottom)
-    txt =~ /\$ \z/
+    right = View.bottom
+    left = right - 10
+    left = 1 if left < 1
+    txt = View.txt left, right
+
+    txt =~ /[>#%$] \z/
   end
 
   def self.history bm
@@ -368,7 +443,7 @@ class Console
     #     View.to_bottom
     #     Search.isearch nil, :reverse=>true
 
-    return CodeTree.tree_search_option+"- #{dir}\n"+result.reverse.uniq.join("\n")+"\n"
+    return CodeTree.tree_search_option+"@ #{dir}\n"+result.reverse.uniq.join("\n")+"\n"
 
   end
 
@@ -395,7 +470,6 @@ class Console
   end
 
   def self.search_last_commands
-
     bm = Keys.input(:timed => true, :prompt => "bookmark to show commands for (space for currently open): ")
     return Launcher.open("- Console.tree/") if bm == " "
     if bm == "8"
@@ -407,7 +481,6 @@ class Console
   end
 
   def self.tree console=nil, command=nil
-
     if console
       View.to_buffer console.sub /\/$/, ''
       return
@@ -420,7 +493,6 @@ class Console
       Buffers.list.each do |b|
         next if $el.buffer_file_name b
         name = $el.buffer_name b
-        next if name !~ /^\*/
         $el.set_buffer b
         next if $el.elvar.major_mode.to_s != 'shell-mode'
 

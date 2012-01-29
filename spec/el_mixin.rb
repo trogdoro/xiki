@@ -4,6 +4,8 @@ class Elvar
   end
 end
 
+$el = Elvar.new
+
 module ElMixin
   def elvar
     Elvar.new
@@ -12,3 +14,5 @@ module ElMixin
     # Do nothing
   end
 end
+
+

@@ -172,14 +172,14 @@ class Hide
 
     #    @@already_hidden = {}
     # Delete hidden overlays
-    el4r_lisp_eval %q[
+    $el.el4r_lisp_eval %`
       (dolist (over (overlays-in (point-min) (point-max) ))
-        (when 
+        (when
           (overlay-get over 'invisible)
           (delete-overlay over)
         )
       )
-    ]
+    `
     self.reset
     @@visible = []
   end

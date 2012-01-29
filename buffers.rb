@@ -8,11 +8,12 @@ class Buffers
     "
   end
 
-  def self.current buffer=nil
-    if buffer == nil  # If no buffer passed in, show list
+  def self.current *name
+    if name.blank?  # If no buffer passed in, show list
       case Keys.prefix :clear=>true
-      when nil:  return list.select{ |b| $el.buffer_file_name(b) }.map{ |b| $el.buffer_name(b) }
-      when 0:  return list.select{ |b| ! $el.buffer_file_name(b) }.map{ |b| $el.buffer_name(b) }[1..-1]
+      when nil:  return list.select{ |b| $el.buffer_file_name(b) }.map{ |b| "| #{$el.buffer_name(b)}\n" }.join('')
+      when 0:  return list.select{ |b| ! $el.buffer_file_name(b) }.map{ |b| "| #{$el.buffer_name(b)}\n" }[1..-1].join('')
+        #       when 0:  return list.select{ |b| ! $el.buffer_file_name(b) }.map{ |b| $el.buffer_name(b) }[1..-1]
       when 1:  return list.select{ |b| $el.buffer_file_name(b) }.map{ |b| $el.buffer_name(b) }[1..-1]
       when 3:  return list.select{ |b| ! $el.buffer_file_name(b) && $el.buffer_name(b) =~ /^#/ }.map{ |b| $el.buffer_name(b) }
       when 4:  return list.select{ |b| ! $el.buffer_file_name(b) && $el.buffer_name(b) =~ /^\*console / }.map{ |b| $el.buffer_name(b) }
@@ -22,9 +23,15 @@ class Buffers
       return
     end
 
+    # If a buffer name passed, get whole line and escape it
+
+    name = Line.without_indent
+
+    name.sub! /^\| /, ''
+
     # Switch to buffer
     View.to_after_bar if View.in_bar?
-    View.to_buffer(buffer)
+    View.to_buffer(name)
   end
 
   def self.names_array

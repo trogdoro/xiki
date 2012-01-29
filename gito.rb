@@ -114,8 +114,6 @@ class Gito
     if project.nil?
       result = []
 
-      result += (Projects.listing.map{|k, v| "#{k} - #{v}/"}.sort)
-
       # If current dir is in a repos, add it
       current_dir_repos = self.git_path
       result << FileTree.add_slash_maybe("current dir - #{current_dir_repos ? current_dir_repos : View.dir}")
@@ -217,7 +215,7 @@ class Gito
       txt = Gito.diff_internal "git show #{@@git_diff_options} --pretty=oneline #{rev} #{file}", dir
       txt.sub!(/.+?@@/m, '@@')
       txt.gsub! /^/, '|'
-      ENV['noslash'] = "1"
+      ENV['no_slash'] = "1"
       return txt
     end
 

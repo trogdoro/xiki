@@ -62,11 +62,12 @@ class Code
   def self.run options={}
 
     prefix = Keys.prefix
+
     if options[:left]
       left, right = options[:left], options[:right]
       txt = View.txt left, right
     elsif prefix.is_a?(Fixnum) && 0 <= prefix && prefix <= 7
-      txt, left, right = View.txt_per_prefix nil, :blink=>true
+      txt, left, right = View.txt_per_prefix nil, :blink=>1, :remove_heading=>1
     else
       case prefix
       when :u   # Load file in emacsruby
@@ -661,6 +662,66 @@ class Code
     return View.open(file.sub /\.rb$/, '.menu') if file =~ /\/menus\/\w+\.rb$/
 
     View.flash "No matching file known."
+
+  end
+
+
+  # Can be used by menus with dsl's that need to parse strings like:
+  #   "bb(hi(xx)) aa(11)"
+  #
+  # Usage:
+  #   h = {}
+  #   Code.parse_functions "a(hi(xx)) b(11)c(a)", h
+  #   Code.parse_functions "z(1)", h
+  #   p h
+  #     => {0=>["a(hi(xx))", "z(1)"], 11=>["b(11)"], 17=>["c(a)"]}
+  def self.parse_functions txt, initial_hash={}
+    s = StringScanner.new(txt)
+
+    i = 0
+
+    # Loop until none left
+    while(! s.eos?)
+      item = ""
+
+      i += s.scan(/ */).length
+      break if s.eos?
+
+      item << s.scan(/\w+/)
+
+      chunk = s.scan(/[(]/)
+      raise "There was supposed to be a paren at index #{i + item.length} of #{txt.inspect}" if chunk != "("
+      item << chunk
+      paren_depth = 1
+
+      # Scan until found closing parens
+      while(chunk && paren_depth > 0)
+        chunk = s.scan(/.*?[()]/)
+        item << chunk
+        paren_depth += item[/\($/] ? 1 : -1   # Adjust depth based on char at end
+      end
+
+      initial_hash[i] ||= []
+      initial_hash[i] << item
+
+      i += item.length
+    end
+    initial_hash
+  end
+
+  def self.enter_whitespace
+
+    prefix = Keys.prefix :clear=>1
+
+    if prefix == :u
+      column = View.column
+      Move.to_axis; View << "\n"
+      Move.to_end; View >> "\n"
+      View.column = column
+      return
+    end
+
+    $el.open_line(prefix || 1)
 
   end
 

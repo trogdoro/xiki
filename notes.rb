@@ -19,17 +19,20 @@ class Notes
     View.txt after_header, right
   end
 
-  def self.narrow_block up=false
+  def self.narrow_block options={}
+
+    delimiter = options[:delimiter] || ">"
+
     # If nothing hidden, hide all but current
     if point_min == 1 && (buffer_size + 1 == point_max)
-      left, after_header, right = View.block_positions "^>\\( \\|$\\)"
+      left, after_header, right = View.block_positions "^#{delimiter}\\( \\|$\\)"
       narrow_to_region left, right
       return
     end
     # Otherwise, expand all, go to next heading, hide all but current
     widen
     Notes.to_block
-    left, after_header, right = View.block_positions "^>\\( \\|$\\)"
+    left, after_header, right = View.block_positions "^#{delimiter}\\( \\|$\\)"
     narrow_to_region left, right
   end
 
@@ -242,7 +245,7 @@ class Notes
     # Colors of "| ..." headings
     if Styles.inverse   # If black bg
       @@h1_styles = {
-        :notes_h1 =>"555555",
+        :notes_h1 =>"333333",
         :notes_h1r=>"661111",   # | r This will be red
         :notes_h1o=>"884411",   # | o This will be orange
         :notes_h1y=>"887711",
@@ -257,7 +260,7 @@ class Notes
     else
       # Colors of headings
       @@h1_styles = {
-        :notes_h1 =>"666666",
+        :notes_h1 =>"aaaaaa",
         :notes_h1r=>"bb6666",   # | r This will be red
         :notes_h1o=>"bb8833",   # | o This will be orange
         :notes_h1y=>"bbbb33",
@@ -349,7 +352,9 @@ class Notes
       :face=>'arial black', :size=>"0",
       :fg=>notes_exclamation_color, :bold=>true
 
-    Styles.define :notes_link, :fg=>(Styles.inverse ? "9ce" : "08f")
+    Styles.notes_link :fg=>(Styles.inverse ? "9ce" : "08f")
+
+    Styles.shell_prompt :fg=>'#888', :bold=>1
 
   end
 
@@ -417,7 +422,7 @@ class Notes
 
     Styles.apply "^hint/.+", :fade6
 
-    Styles.apply "^ *@? ?\\([%$]\\) ", nil, :change_log_list   # Colorize shell prompts
+    Styles.apply "^ *@? ?\\([%$&]\\) ", nil, :shell_prompt   # Colorize shell prompts
 
     Styles.apply "^[ +-]*keyless/\\(.+\\)", nil, :keyless
 
@@ -431,6 +436,7 @@ class Notes
     end
 
     defun(:notes_mouse_double_click, :interactive => "e") do |e|
+      next Launcher.insert "h" if Line =~ /^$/   # If blank line, launch history
       Launcher.launch_or_hide(:blink=>true)
     end
 

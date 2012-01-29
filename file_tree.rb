@@ -307,7 +307,7 @@ class FileTree
       Styles.define :diff_small, :fg => "ddd", :size => "-11"
 
       # dir/
-      Styles.define :ls_dir, :fg => "444", :face => "verdana", :size => "-2", :bold => true
+      Styles.define :ls_dir, :fg => "777", :face => "verdana", :size => "-2", :bold => true
 
     end
 
@@ -364,8 +364,8 @@ class FileTree
     Styles.apply("^[ <+-]*\\(@ \\)", nil, :ls_dir)  # @ ...
     Styles.apply("^[ <+-]*[^)\n]+) \\(@ \\)", nil, :ls_dir)  # - label) @ ...
 
-    Styles.apply("^[ <+-]*\\([@~$a-zA-Z0-9_,? ().:-]*[^ \n]\/\\)", nil, :ls_dir)  # slash after almost anything
-    Styles.apply("^[ <+-]*\\([@~$a-zA-Z0-9_,? ().:<-]+\/[@a-zA-Z0-9_,? ().:\/<-]+\/\\)", nil, :ls_dir)  # one word, path, slash
+    Styles.apply("^[ <+-]*\\([@~$#a-zA-Z0-9_,? ().:-]*[^ \n]\/\\)", nil, :ls_dir)  # slash after almost anything
+    Styles.apply("^[ <+-]*\\([@~$a-zA-Z0-9_,? ().:<-]+\/[@\#'$a-zA-Z0-9_,? ().:\/<-]+\/\\)", nil, :ls_dir)  # one word, path, slash
 
     Styles.apply("^[ \t]*[<+-] [a-zA-Z0-9_,? ().:-]+?[:)] \\(\[.@a-zA-Z0-9 ]+\/\\)", nil, :ls_dir)   # label, one word, slash
     Styles.apply("^[ \t]*[<+-] [a-zA-Z0-9_,? ().:-]+?[:)] \\([.@a-zA-Z0-9 ]+\/[.@a-zA-Z0-9 \/]+\/\\)", nil, :ls_dir)   # label, one word, path, slash
@@ -377,7 +377,7 @@ class FileTree
     # Put this one back?
     #     Styles.apply("^[ +-]*\\([^|\n]+/\\)$", nil, :ls_dir)   # Dirs with bullets
 
-    Styles.apply('https?://[a-zA-Z0-9\/.~_:?%&=|#+!-]+', :notes_link)   # Url
+    Styles.apply('https?://[a-zA-Z0-9\/.~_:?%&=|+!-#-]+', :notes_link)   # Url
 
     #   |... lines (quotes)
     Styles.apply("^ *\\(|\\)\\( *\\)", nil, :quote_heading_pipe, :ls_quote)
@@ -416,7 +416,7 @@ class FileTree
   def self.handles? list=nil
     list ||= Tree.construct_path(:list=>true)   # Use current line by default
 
-    return 0 if matches_root_pattern?(Line.without_label :line=>list.first)
+    return 0 if self.matches_root_pattern?(Line.without_label :line=>list.first)
     nil
   end
 
@@ -516,6 +516,8 @@ class FileTree
       goto_line line_number.to_i
       Effects.blink(:what=>:line)
     elsif search_string   # Else, search for |... string if it passed
+      Hide.reveal if View.hidden?
+
       Move.top
       # Search for exact line match
       found = Search.forward "^#{regexp_quote(search_string)}$"
@@ -966,8 +968,9 @@ class FileTree
     line = Line.value
     indent = Line.indent
     list = nil
-    if line =~ /\.rb\//   # foo.rb/
-      Launcher.wrapper
+    path = Tree.construct_path  # Get path
+    if path =~ /\.(rb|js|coffee|py)\//   # run files followed by slash as menus
+      Launcher.wrapper path
     elsif line =~ /^[^|\n]* (\*\*|##)/   # *foo or ## means do grep
       self.grep_syntax indent
     elsif self.dir?   # foo/ is a dir (if no | before)
@@ -1420,10 +1423,7 @@ class FileTree
       return
     end
 
-    if in_file_beind_deleted
-      $el.kill_this_buffer
-      return
-    end
+    return View.kill if in_file_beind_deleted
 
     Tree.kill_under
     Line.delete
@@ -1583,16 +1583,22 @@ class FileTree
 
     current_line = Line.number
 
-    paths = View.file
+    path = View.file
     View.to_buffer("*tree outline")
     View.clear;  notes_mode
-    if paths
-      View.insert FileTree.paths_to_tree(paths)
+    if path
+      dir, file = path.match(/(.+\/)(.+)/)[1..2]
+      txt = "- #{dir}\n  - #{file}\n"
+      View.insert txt
       View.to_top
       FileTree.select_next_file
     else
       View.insert "- buffer/\n"
       View.to_top
+    end
+
+    if prefix == 8
+      return Launcher.enter_all
     end
 
     if prefix == :u

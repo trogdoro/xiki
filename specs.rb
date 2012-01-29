@@ -185,7 +185,8 @@ class Specs
         View.insert TextUtil.title_case(Clipboard.get(0))
       else
 
-        bms = Projects.listing.map{|o| o[1]}
+        # TODO: pull from projects.menu
+        #         bms = Projects.listing.map{|o| o[1]}
         bm_were_in = bms.find{|o| path[Bookmarks[o]]}
 
         # Add symbol for project if it's a specific one

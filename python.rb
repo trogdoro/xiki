@@ -1,18 +1,25 @@
 class Python
-  def self.menu *args
-    txt = ENV['txt']
-
-    self.run_internal txt
+  def self.menu
+    "
+    > Pass python code to run
+    | print('hey')
+    "
   end
 
-  def self.run
+  def self.menu_after txt, *args
+    # Do nothing if .menu created output
+    return nil if txt
+
+    txt = ENV['txt']
+    return nil if txt.nil?
+
+    txt = Python.run_internal txt
+    txt
+  end
+
+  def self.run_block
     # Get block contents
     txt, left, right = View.txt_per_prefix #:prefix=>Keys.prefix
-
-    #     txt << "
-    #       function p(txt) {
-    #         print(txt);
-    #       }";
 
     result = self.run_internal txt
     # Insert result at end of block
@@ -29,10 +36,4 @@ class Python
     # Call js
     Console.run "python /tmp/tmp.py", :sync=>true
   end
-
-  #   def self.launch
-  #     line = Line.without_label
-  #     result = self.run_internal line
-  #     FileTree.under result, :escape=>''
-  #   end
 end

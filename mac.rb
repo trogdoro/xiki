@@ -3,12 +3,17 @@ class Mac
 
   def self.menu
     %`
-    | Define standard mac shortcuts
-    - .define_keys/
-    - important dirs/
-      - @/Users/
-      - @/Applications/
-      - @/Applications/Utilities/
+    - Enable mac keyboard shortcuts/
+      | Enable macintosh-like keyboard shortcuts, like command-c
+      @ Mac.define_keys
+    - Important dirs/
+      @/Users/
+      @/Applications/
+      @/Applications/Utilities/
+      @ ~/Library/Fonts/
+    - api/
+      | Define standard mac shortcuts
+      @ Mac.define_keys
     `
   end
 
@@ -22,6 +27,7 @@ class Mac
       View.to_buffer "untitled"
       $el.rename_uniquely
       Notes.mode
+      View.>> "\n"
     end
 
     Keys._Q { $el.save_buffers_kill_emacs }   # Command-Q to quit

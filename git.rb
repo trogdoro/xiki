@@ -4,6 +4,9 @@ class Git
     trunk = Xiki.trunk
 
     # If not nested, show docs
+    # TODO: restore this
+    #     return Menu['git/docs'] if trunk.size < 2
+
     return self.docs if trunk.size < 2
 
     branch = self.branch_name
@@ -32,13 +35,19 @@ class Git
       - .create/
       - .make sample files/
     - .docs/
-      > How to use
-      | Put the @git menu under a path that has or will have a git repo, like
-      | so:
-      |
-      | - /tmp/my_project/
-      |   - @git/
     "
+  end
+
+  def self.docs
+    "
+    > How to use
+    | Put the @git menu under a path that has or will have a git repo, like
+    | so:
+    |
+    | - /tmp/my_project/
+    |   - @git/
+    "
+
   end
 
   def self.create

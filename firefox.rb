@@ -8,36 +8,23 @@ require 'nokogiri-pretty'
 
 require "rexml/document"
 
-=begin
-  Usage:
-    p Firefox.value "window.title"
-      "The Title"
-    Firefox.run "alert('hey')"
-=end
-
 class Firefox
 
   @@log_unique_token = "aa"
 
   def self.menu
-    "
-    - .html/
-    - .js/
-    - .dom/
-    - .search/
+    %`
+    @html/
+    @js/
+    @dom/
+    - .navigate/
+      - .reload/
+      - .back/
+      - .forward/
     - .tabs/
-    - .reload
-    - load js into a page: .include_jquery_and_utils
-    - more/
-      - js_examples/
-        - @js/p('hi')
-        - @js/$('a').blink()
-        - @js/p($('a').length)
-        - @js/$(':text').toggle()
+    - .search/
+    - load js into a page) .include_jquery_and_utils
     - .roots/
-      - @js/
-      - @html/
-      - @dom/
       - @ff/
       - @append/
       - @click/
@@ -46,59 +33,55 @@ class Firefox
       - @jso/
       - @jsp/
       - @jsc/
-      - examples) docs/
-    "
-  end
-
-  def self.roots choice
-    # if choice == "roots"
-
-    #     | > Summary
-    #     | Double-click to try out these examples that interact
-    #     | with firefox.
-    #     |
-    #     |
-
-    %`
-    | > Running html in the browser
-    @html/<b>hello</b>
-    |
-    |
-    | > Running javascript in the browser
-    | Run some javascript:
-    @js/alert('hi')
-    |
-    | Run and insert output:
-    @jso/document.title
-    |
-    | Run and print output in floating divs:
-    @jsp/document.title
-    |
-    | Run and print output in console:
-    @jsc/document.title
-    |
-    |
-    | > Exploring and maniplating the current page
-    | Drill into the dom:
-    @dom/
-    |
-    | Search in the current page for "and":
-    @ff/and/
-    |
-    | Make all a tags blink:
-    @blink/a
-    |
-    | Simulate clicking the "sign up" link:
-    @click/
-    |
-    | Drill into the properties of the window class:
-    @ffo/window/
-    |
+    - api/
+      | p Firefox.value "window.title"
+      |   "The Title"
+      | Firefox.run "alert('hey')"
+    - docs/
+      > Js examples
+      @js/p('hi')
+      @js/$('a').blink()
+      @js/p($('a').length)
+      @js/$(':text').toggle()
+      |
+      > Running html in the browser
+      @html/<b>hello</b>
+      |
+      |
+      > Running javascript in the browser
+      | Run some javascript:
+      @js/alert('hi')
+      |
+      | Run and insert output:
+      @jso/document.title
+      |
+      | Run and print output in floating divs:
+      @jsp/document.title
+      |
+      | Run and print output in console:
+      @jsc/document.title
+      |
+      |
+      > Exploring and maniplating the current page
+      | Drill into the dom:
+      @dom/
+      |
+      | Search in the current page for "and":
+      @ff/and/
+      |
+      | Make all a tags blink:
+      @blink/a
+      |
+      | Simulate clicking the "sign up" link:
+      @click/
+      |
+      | Drill into the properties of the window class:
+      @ffo/window/
     `
   end
 
   def self.js txt=nil
-    return View.prompt("Type some javascript to run in the browser") if txt.nil?
+    return "| Type some javascript here (to run in Firefox)." if ! txt
 
     Firefox.run txt, :jquery=>1
     ".flash - ran in browser!"
@@ -156,6 +139,10 @@ class Firefox
 
   def self.back
     Firefox.run "history.back()"
+  end
+
+  def self.forward
+    Firefox.run "history.forward()"
   end
 
   #     # Copied from here (and modified):
@@ -283,7 +270,9 @@ class Firefox
     self.html txt   # Write to temp file
   end
 
-  def self.html txt
+  def self.html txt=nil
+
+    return "| Provide some html here." if ! txt
 
     # When C-8, delegate to .dom to show whole body
     return Tree.<< Firefox.dom(:prefix=>"all") if Keys.prefix == "all"
@@ -391,7 +380,7 @@ class Firefox
 
   def self.mozrepl_read s
     begin
-      timeout(4) do
+      timeout(6) do
         r = ''
         loop do
           r << s.readchar.chr
@@ -616,6 +605,7 @@ class Firefox
 
   def self.load_jquery_maybe txt=nil #, options={}
     # If text passed, check it and error if complaining about jquery missing
+
     if txt && txt !~ /( (\$|p) is not defined|blink is not a function)/
       return nil   # Text without error, so don't load
     end
@@ -660,12 +650,11 @@ class Firefox
   end
 
   def self.blink txt
-    next View.prompt("Type a selector to blink in firefox", :times=>5) if txt.nil?
+    return View.prompt("Type a selector to blink in firefox", :times=>5) if txt.nil?
     code = "$(\"#{Tree.slashless txt}\").blink()"
     txt = Firefox.run code, :jquery=>1
     nil
   end
-
 end
 
 Menu.ffo :class=>'Firefox.object'
@@ -681,6 +670,7 @@ Menu.dom do |line|
 end
 
 Menu.js do |path|
+  Applescript.run("Firefox", "activate") if Keys.prefix_u
   Firefox.js Tree.rest(path)
 end
 

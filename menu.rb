@@ -151,14 +151,13 @@ class Menu
         - #{menu}.rb
           | class #{TextUtil.camel_case(menu)}
           |   def self.menu *args
-          |     "- Customize me in '~/menus/#{menu}.rb'!  We were passed \#{args.inspect}."
+          |     "- Args passed in: \#{args.inspect}\\n- Customize me in) @ ~/menus/#{menu}.rb"
           |   end
           | end
       - more examples) @menu/api/classes/
       `
     nil
   end
-
 
   def self.simple_class *args
     root = 'foo'
@@ -170,7 +169,7 @@ class Menu
       - #{root}.rb
         | class #{TextUtil.camel_case(root)}
         |   def self.menu *args
-        |     "- Customize me in '~/menus/#{menu}.rb'!  We were passed \#{args.inspect}."
+        |     "- Args passed in: \#{args.inspect}\n- Customize me in) @ ~/menus/#{menu}.rb"
         |   end
         | end
     `
@@ -341,6 +340,7 @@ class Menu
 
   def self.method_missing *args, &block
     Launcher.method_missing *args, &block
+    "- defined!"
   end
 
   def self.split path, options={}
@@ -364,9 +364,10 @@ class Menu
 
     return View.<<("- You weren't on a menu\n  | To jump to a menu's implementation, put your cursor on it\n  | (or type it on a blank line) and then do as+menu (ctrl-a ctrl-m)\n  | Or, look in one of these dirs:\n  - ~/menus/\n  - $xiki/menus/") if trunk[-1].blank?
 
-    return View.flash("- Doesn't seem to be a menu: #{trunk[-1]}", :times=>4) if trunk[-1] !~ /^[a-z]/i
+    root = trunk[0][/^[\w _-]+/]
 
-    root = trunk[-1][/^[\w _-]+/]
+    root = trunk[-1][/^[\w _-]+/] if Keys.prefix_u
+
     root.gsub!(/[ -]/, '_') if root
 
     ([Xiki.dir]+Launcher::MENU_DIRS).reverse.each do |dir|
@@ -391,26 +392,28 @@ class Menu
 
   def self.external menu, options={}
 
-    View.scroll_bars :off
-    View.visibility("h")
+    View.scroll_bars = false
+
+    Window.opacity("full")
     View.message ""
 
     View.wrap :off
 
     # IF nothing passed, must want to do tiny search box
     if menu.empty?
-      View.dimensions("p")   # Shrink it to 1 line
+      Window.dimensions "presets", "prompt"
       Launcher.open ""
       View.message ""
       View.prompt "Type anything", :timed=>1, :times=>2 #, :color=>:rainbow
 
       View.hide_others :all=>1
-      View.dimensions("c")
+      Window.dimensions "presets", "center"
+
       $menu_resize = true
       Launcher.launch
     else
       View.hide_others :all=>1
-      View.dimensions("c")
+      Window.dimensions "presets", "center"
       Launcher.open menu, options
     end
   end

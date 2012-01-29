@@ -1,31 +1,32 @@
 class Iterm
-  def self.menu *command
+  def self.menu *args
 
     # If no arg, prompt to type something
 
-    return View.prompt "Type something to run in iTerm" if command.empty?
+    return View.prompt "Type something to run in iTerm" if args.empty?
 
-    command = command.join('/')
+    txt = args.join('/')
 
-    return self.run("activate") if command == "start"
-    return self.run("quit") if command == "quit"
+    return self.command("activate") if txt == "start"
+    return self.command("quit") if txt == "quit"
 
-    self.run :command=>command.sub(/^\| /, '')
+    self.run txt.sub(/^\| /, '')
   end
 
-  def self.run action
-    if action.is_a? String
-      $el.do_applescript %`
-        #{action} application "iTerm"
-        `
-      return nil
-    end
+  def self.command txt
+    $el.do_applescript %`
+      #{txt} application "iTerm"
+      `
+    return nil
+  end
 
+  def self.run txt, options={}
     $el.do_applescript %`
       tell application "iTerm"
+        #{options[:activate] ? 'activate' : ''}
         tell the first terminal
           tell the last session
-            write text "#{action[:command]}"
+            write text "#{txt}"
           end tell
         end tell
       end tell

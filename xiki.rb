@@ -144,7 +144,7 @@ class Xiki
     txt.
       gsub(/^/, '| ').
       gsub(/ +$/, '').
-      gsub(/^\|        +([+-])/, "|\\1")
+      gsub(/^\|        +([+-])/) {|o| "|#{$1 == '-' ? '+' : '-'}"}
   end
 
   def self.tests clazz=nil, *test
@@ -257,7 +257,7 @@ class Xiki
 
       Notes.mode
 
-      View.dimensions("c")
+      Window.dimensions "presets", "center"
       $menu_resize = true
       View.<< "- #{name}/\n", :dont_move=>1
       Launcher.launch

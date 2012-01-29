@@ -20,7 +20,7 @@ class Remote
       > Wiki Syntax
       @ /user@foo.com/tmp/
       |
-    - see) @servers/
+    << see) @servers/
     "
   end
 

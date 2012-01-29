@@ -205,22 +205,25 @@ describe Tree, "#quote" do
     Tree.quote("hey\n  you\n").should == "| hey\n|   you\n".unindent
   end
 
-  it "leaves menus unquoted" do
-    before = "
-      > Using menus
-      All menus can be used the same way.
+  #   it "leaves menus unquoted" do
 
-      For more details, see:
-      + @menu/docs/how_to_use/
-      "
-    Tree.quote(before).should == "
-      > Using menus
-      | All menus can be used the same way.
-      |
-      | For more details, see:
-      + @menu/docs/how_to_use/
-      ".unindent
-  end
+  # TODO Where am I using Tree.quote?
+
+  #     before = "
+  #       > Using menus
+  #       All menus can be used the same way.
+
+  #       For more details, see:
+  #       + @menu/docs/how_to_use/
+  #       "
+  #     Tree.quote(before).should == "
+  #       > Using menus
+  #       | All menus can be used the same way.
+  #       |
+  #       | For more details, see:
+  #       + @menu/docs/how_to_use/
+  #       ".unindent
+  #   end
 
 end
 
@@ -427,6 +430,27 @@ describe Tree, "#children" do
     Tree.children("- .a/\n- b/\n", "").should == "+ a/\n+ b/\n"
   end
 
+  it "returns nil if child is star" do
+    Tree.children("- a/\n  - */\n", "a").should == nil
+  end
+
+  it "matches when star" do
+    Tree.children("- a/\n  - */\n    - aaa/\n", "a/z").should == "+ aaa/\n"
+  end
+
+  it "includes all sub-items of items with at sign" do
+    Tree.children("- @a/\n  - .b/\n    - c/\n", "").should == "+ @a/\n  + b/\n    + c/\n"
+    Tree.children("- a/\n  - @b/\n    - c/\n      - d/\n", "a").should == "+ @b/\n  + c/\n    + d/\n"
+  end
+
+  #   it "doesn't include items under item with at sign" do
+  #     Tree.children("docs/\n  @red/\n  - herr/\n", "docs").should == "@red/\n"
+  #   end
+
+  it "includes all sub-items when :include_subitems option" do
+    Tree.children("- a\n  - b\n", "", :include_subitems=>1).should == "- a\n  - b\n"
+  end
+
 end
 
 describe Tree, "#children_old" do
@@ -548,6 +572,10 @@ describe Tree, "#target_match" do
 
   it "recognizes same when one has path" do
     Tree.target_match("a/", "a").should == :same
+  end
+
+  it "recognizes match when star" do
+    Tree.target_match("a/*/aa/", "a/zzzz").should == :shorter
   end
 
 end

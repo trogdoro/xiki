@@ -1,26 +1,21 @@
 class Projects
-
-  @@projects ||= {'default'=>'$tr'}
-
   def self.menu
-    [@@projects.map {|k,v| "#{k}: #{v}/"}, '.edit/'].flatten.sort.map{|l| "#{l}"}
+    "
+    - This will never be called, because of projects.menu...
+      - Think again of ways for .menu and .rb to work together creating menus
+    - api/
+    "
   end
 
-  def self.edit
-    puts "
-      - To edit the listing of projects, add a line like this:
-        ~/.el4r/
-          init.rb
-            | Projects.listing = {:blog=>'$tr', :xiki=>'/projects/xiki', :another=>'/projects/another'}
-        - The strings correspond to paths or bookmarks
-      "
+  def self.current
+    # If parent is dir, return it, else return first project
+    dir = FileTree.handles?(Xiki.trunk[-2]) ? "#{Dir.pwd}/" : self.default_project
   end
 
-  def self.listing= the_listing
-    @@projects = the_listing
-  end
+  def self.default_project
+    txt = File.read(File.expand_path "~/menus/projects.menu") rescue nil
+    return nil if ! txt
 
-  def self.listing
-    @@projects
+    Line.without_label(:line=>txt[/.+/])
   end
 end

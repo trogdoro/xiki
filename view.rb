@@ -33,6 +33,7 @@ class View
 
   def self.menu
     "
+    - @window/
     - .flashes/
     - docs/
       | The View class is the catch-all class for dealing with editing text.
@@ -92,7 +93,8 @@ class View
   # Stores things user copies
   @@hash = {}
 
-  # Get windows that are the same width as me
+
+
   def self.windows_in_my_column
     my_left = left_edge
     window_list(nil, nil, frame_first_window).to_a.select { |w| left_edge(w) == my_left }
@@ -403,6 +405,11 @@ class View
     end
   end
 
+  # Returns true if anything is hidden
+  def self.hidden?
+    $el.point_min != 1 || $el.point_max != $el.buffer_size+1
+  end
+
   def self.hide
     Keys.prefix_times.times do
       left = View.left_edge
@@ -551,6 +558,11 @@ class View
     self.edges(view)[0]
   end
 
+  def self.top_edge view=nil
+    view ||= selected_window  # Default to current view
+    self.edges(view)[1]
+  end
+
   # Switches to a buffer
   def self.to_buffer name, options={}
     # If we're here already, do nothing
@@ -568,6 +580,7 @@ class View
   end
 
   def self.txt options={}, right=nil
+
     # If 2nd arg is there, we were passed right,left
     if right
       left = options
@@ -609,6 +622,12 @@ class View
 
     Effects.blink(:left=>left, :right=>right) if options[:blink]
     txt = options[:just_positions] ? nil : View.txt(left, right)
+
+    if options[:remove_heading] && txt =~ /^>/
+      txt.sub! /.+\n/, ''
+      # left won't be fixed, but who cares, for now
+    end
+
     return [txt, left, right]
   end
 
@@ -860,6 +879,14 @@ class View
   end
 
 
+  def self.visible_line_number
+    Line.number - Line.number($el.window_start) + 1
+  end
+  def self.visible_line_number= num
+    line = Line.number($el.window_start) + num - 1
+    View.line = line
+  end
+
   def self.delete left, right
     $el.delete_region left, right
   end
@@ -872,23 +899,13 @@ class View
     buffer_substring(point-1, point)
   end
 
-  def self.visibility key=nil
-    # I.e. transparency / opacity
-    key ||= Keys.input(:chars=>1, :prompt => 'Layout Visibility: [f]ull, [h]igh, [m]edium, [l]ow   [s]tylized, [p]lain')
-    case key.to_sym
-    when :f
-      el4r_lisp_eval "(set-frame-parameter nil 'alpha '(100 85))"   # full visibility
-    when :h
-      el4r_lisp_eval "(set-frame-parameter nil 'alpha '(90 75))"   # high visibility
-    when :m
-      el4r_lisp_eval "(set-frame-parameter nil 'alpha '(70 55))"   # medium visibility
-    when :l
-      el4r_lisp_eval "(set-frame-parameter nil 'alpha '(40 30))"   # low visibility
-    when :s
-      $el.font_lock_mode true   # stylized text
-    when :p
-      $el.font_lock_mode nil   # plain text with no styling
-    end
+
+  def self.scroll_bars= on
+    $el.toggle_scroll_bar on ? 1 : 0
+  end
+
+  def self.scroll_bars
+    $el.frame_parameter(nil, :vertical_scroll_bars) ? true : nil
   end
 
   def self.name
@@ -917,24 +934,6 @@ class View
 
   def self.init
     @@dimension_options ||= []   # Set to empty if not set yet
-    self.add_dimension_option 'full', proc {View.dimensions_full}
-    self.add_dimension_option 'large', proc {View.dimensions_set(145, 58, 46, 22)}
-    self.add_dimension_option 'medium', proc {
-      View.dimensions_set(145, 50)
-    }
-
-    self.add_dimension_option 'prompt', proc {
-      left = (View.screen_width / 2) - 117
-      View.dimensions_set 30, 2, left, 41
-    }
-    self.add_dimension_option 'center', proc {
-      left = (View.screen_width / 2) - 187
-      View.dimensions_set 46, 15, left, 41
-    }
-    self.add_dimension_option 'small', proc {
-      View.dimensions_set(89, 24, 9, 137)
-    }
-
     $el.winner_mode 1 rescue nil
   end
 
@@ -956,6 +955,11 @@ class View
 
   def self.url txt
     $el.browse_url txt
+  end
+
+  def self.kill
+    $el.kill_this_buffer
+    nil
   end
 
   def self.kill_all
@@ -980,20 +984,6 @@ class View
     path = "#{path}/" if had_slash && path !~ /\/$/   # Put / back at end, if it was there (and not there now)
 
     path
-  end
-
-  # Show dimension options, and invoke corresponding proc
-  def self.dimensions key=nil
-    # TODO: use View.input :options=>@@dimension_options
-    if key.nil?
-      message = @@dimension_options.map{|i|
-        "[#{i.first[/./]}]#{i.first[/.(.+)/,1]}"}.
-        join(', ')
-      key = Keys.input(:chars=>1, :prompt=>"dimensions: #{message}")
-    end
-    option = @@dimension_options.find{|i| i.first =~ /^#{key}/}
-    return View.message("Option not #{key} found") if option.nil?
-    option[1].call
   end
 
   def self.dimensions_set size_x, size_y, position_x=nil, position_y=nil
@@ -1047,14 +1037,6 @@ class View
     end
 
     View.insert "\n#{indent_txt}"
-
-  end
-
-  # Make another option show up for View.dimensions
-  def self.add_dimension_option name, the_proc
-    # Delete if there already
-    @@dimension_options.delete_if{|i| i.first == name}
-    @@dimension_options << [name, the_proc]
   end
 
   def self.shift
@@ -1203,10 +1185,6 @@ class View
     View.insert line
   end
 
-  def self.scroll_bars off=nil
-    $el.toggle_scroll_bar off ? 0 : 1
-  end
-
   def self.scroll_position
     $el.line_number_at_pos(point) - $el.line_number_at_pos(window_start)
   end
@@ -1230,12 +1208,12 @@ class View
   end
 
   def self.>> txt
-    View.under txt
+    View.<< txt, :dont_move=>1
   end
 
   def self.enter_date
     insert elvar.current_prefix_arg ?
-      Time.now.strftime("%Y-%m-%d %I:%M%p").sub(' 0', ' ') :
+      Time.now.strftime("%Y-%m-%d %I:%M:%S%p").sub(' 0', ' ').downcase :
       Time.now.strftime("%Y-%m-%d")
   end
 
@@ -1287,8 +1265,11 @@ class View
     orig = self.cursor
     indent = Line.indent
 
-    Line.next
-    message = "#{message.strip}\n"
+    blank_line = Line[/^$/]
+
+    Line.next unless blank_line
+    message = "#{message.strip}"
+    message << "\n" unless blank_line
     message.gsub! /^/, "#{indent}  "
     self.insert message, :dont_move=>1
     left, right = Line.left, Line.left+message.length

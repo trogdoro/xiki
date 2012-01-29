@@ -1,6 +1,23 @@
 require 'tree_cursor'
 
 class Tree
+  def self.menu
+    "
+    - api/
+      > Show siblings
+      @ p Tree.siblings
+      |
+      | Include all siblings (current line is usually ommited), just
+      | siblings before, or just siblings after:
+      @ p Tree.siblings :all=>1
+      @ p Tree.siblings :after=>1
+      @ p Tree.siblings :before=>1
+      |
+      > Get dir (or file) menu is nested under (or error if we're not)
+      @ p Tree.dir
+    "
+  end
+
   def self.search options={}
     return $xiki_no_search=false if $xiki_no_search
     #     return if $xiki_no_search
@@ -74,7 +91,7 @@ class Tree
 
         regexp = "\\/$|#{regexp}" if recursive
         # Always keep if "- file" or "- /dir"
-        regexp = "^ *:\\d|^ *[+-] [a-zA-Z0-9:.\/]|#{regexp}" if recursive_quotes
+        regexp = "^ *:\\d|^ *[+-] [a-zA-Z0-9@:.\/]|#{regexp}" if recursive_quotes
 
         regexp = /#{regexp}/i
         lines_new = nil
@@ -132,8 +149,8 @@ class Tree
     when "0"
       file = self.construct_path   # Expand out ~
       $el.shell_command("open #{file}")
-    when "\C-a"
-      Line.to_left
+      #     when "\C-a"
+      #       Line.to_left
     when "\C-j"
       ch = Keys.input :chars=>1
       if ch == 't'   # just_time
@@ -149,7 +166,12 @@ class Tree
         self.kill_under
         FileTree.dir
       end
-    when :control_return, :return, "\C-m", :control_period, :right   # If C-., go in but don't collapse siblings
+    when :return   # If return, just stop (like isearch)
+      # Do nothing
+
+
+      #     when :control_return, :return, "\C-m", :control_period, :right   # If C-., go in but don't collapse siblings
+    when :control_return, "\C-m", :control_period, :right   # If C-., go in but don't collapse siblings
       Keys.clear_prefix
       Launcher.launch
     when "\t"   # If tab, hide siblings and go in
@@ -164,10 +186,6 @@ class Tree
     when :control_slash   # Collapse tree and exit
       self.to_parent
       self.kill_under
-
-    when "9"   # Show methods, or outline
-      $el.delete_region(Line.left(2), right)   # Delete other files
-      return FileTree.drill_quotes_or_enter_lines self.construct_path.sub(/\|.*/, ''), Line.=~(/^ *\|/)
 
     when "#"   # Show ##.../ search
       self.stop_and_insert left, right, pattern
@@ -213,7 +231,7 @@ class Tree
       View.create
       Launcher.launch
 
-    when "8"
+    when "\C-a"   # Also C-a
       # If a quote, insert lines indented lower
       if Line.matches(/\|/)
         CodeTree.kill_siblings
@@ -226,7 +244,10 @@ class Tree
         FileTree.enter_lines(//)  # Insert all lines
       end
 
-    when "1".."7"
+    when "\C-o"   # When 9 or C-o, show methods, or outline
+      $el.delete_region(Line.left(2), right)   # Delete other files
+      return FileTree.drill_quotes_or_enter_lines self.construct_path.sub(/\|.*/, ''), Line.=~(/^ *\|/)
+    when "1".."9"
       if ch == "7" and ! View.bar?   # Open in bar
         $el.delete_region(Line.left(2), right)  # Delete other files
         View.bar
@@ -250,7 +271,6 @@ class Tree
           file_count += 1 unless is_dir
           # If dir or nth, keep
           filtered << l if (is_dir or (file_count == n))
-          #p l
         end
 
         # Remove dirs with nothing under them
@@ -291,6 +311,14 @@ class Tree
       $el.isearch_backward
 
     when ";"   # If semicolon, append selected dir to parent dir
+
+      # Don't kill siblings if "<<" or "<=" line
+
+      if Line.txt =~ /^<+=? /
+        Keys.clear_prefix
+        Launcher.launch
+        return
+      end
 
       # If CodeTree search
       if CodeTree.handles?
@@ -727,6 +755,10 @@ class Tree
 
       siblings = "#{above}#{middle}#{below}"  #.strip
 
+    elsif options[:before]
+      siblings = View.txt(options.merge(:left=>left1, :right=>right1))
+    elsif options[:after]
+      siblings = View.txt(options.merge(:left=>left2, :right=>right2))
     else
       siblings = View.txt(options.merge(:left=>left1, :right=>right1)) + View.txt(options.merge(:left=>left2, :right=>right2))
     end
@@ -930,7 +962,6 @@ class Tree
 
 
   def self.target_match path, target
-
     pi, ti = 0, 0
 
     while true
@@ -950,8 +981,16 @@ class Tree
       if pathi == targeti
         pi += 1
         next ti += 1
+
+      # If path has /. or . at beginning, increment path
       elsif pathi.chr == "." && (path[pi-1].chr == "/" || pi == 0) && (target[ti-1].chr == "/" || ti == 0)
         next pi += 1
+
+      # If path has /*/ or /* at end, increment path and increment target to next / or end
+      elsif pathi.chr == "*" && path[pi-1].chr == "/" && (path[pi+1].nil? || path[pi+1].chr == "/")
+        pi += 1
+        ti = target.index("/", ti+1) || target.length
+        next
       end
 
       break   # Not found
@@ -1010,7 +1049,7 @@ class Tree
   end
 
   def self.unset_env_vars
-    ENV['noslash'] = nil
+    ENV['no_slash'] = nil
   end
 
   def self.output_and_search block_or_string, options={}
@@ -1057,7 +1096,7 @@ class Tree
     output = "#{output}\n" if output !~ /\n\z/
 
     if $menu_resize
-      height = output.count("\n") + 5
+      height = output.count("\n") + 12
       height = 60 if height > 60
       View.height = height
       $menu_resize = false
@@ -1068,7 +1107,8 @@ class Tree
     end
 
     # Add slash to end of line if not suppressed, and line isn't a quote
-    if !options[:no_slash] && ! ENV['noslash'] && Line !~ /(^ *\||\/$)/
+    line=options[:line]
+    if !options[:no_slash] && ! ENV['no_slash'] && Line !~ /(^ *\||\/$)/
       Line << "/"
     end
     indent = Line.indent
@@ -1113,9 +1153,11 @@ class Tree
   end
 
 
-  def self.children tree=nil, target=nil
+  def self.children tree=nil, target=nil, options={}
 
-    return self.children_at_cursor(tree) if tree.nil? || tree.is_a?(Hash)  # tree is actually options
+    include_subitems = options[:include_subitems]   # Include sub-items for all children
+
+    return self.children_at_cursor(tree) if tree.nil? || tree.is_a?(Hash)   # tree is actually options
 
     target = target.join("/") if target.is_a? Array
     target = "" if target == nil || target == "/"   # Must be at root if nil
@@ -1129,24 +1171,44 @@ class Tree
 
     found = -1 if target.empty?
 
+    @@under_preexpand = false   # Will include sub-items of only some children
+
     self.traverse tree, :flattened=>1 do |branch, path|
 
       if ! found
         target_match = Tree.target_match path, target
+        next unless target_match == :shorter || target_match == :same
+        found = branch.length - 1   # Found, remember indent
 
-        if target_match == :shorter || target_match == :same
-          found = branch.length - 1  # Remember indent
-        end
       else
         current_indent = branch.length - 1
         # If found and still indented one deeper
-        if current_indent == found + 1
+        #         if current_indent == found + 1
+        one_deeper = current_indent == found + 1
+
+        if one_deeper || ((include_subitems || @@under_preexpand) && current_indent > found)
+
           item = branch[-1]
           item.sub!(/^- /, '+ ') if item =~ /\/$/
           item.sub!(/^([+-] )?\./, "\\1")
+          next if item =~ /^[+-] \*\/$/   # Skip asterixes
+
+          # If @@under_preexpand, add on indent
+          if include_subitems || @@under_preexpand
+            item = "#{'  ' * (branch.length - found - 2)}#{item}"
+          end
+
+          @@under_preexpand = false if one_deeper
+
+          # Pre-expand if @... or doesn't end in slash
+          @@under_preexpand = true if one_deeper && (item =~ /^([+-] )?@/ || item !~ /\/$/)
+
           result << "#{item}\n"  # Output
         else  # Otherwise, stop looking for children if indent is less
-          found = nil if current_indent <= found
+          next if current_indent > found
+          # No longer beneath found item
+          found = nil
+          @@under_preexpand = false
         end
       end
 
@@ -1205,6 +1267,20 @@ class Tree
       return Line.without_label(:line=>next_line)
     end
     nil
+  end
+
+  def self.dir options={}
+    dir = Xiki.trunk[-2]
+
+    if ! FileTree.handles?(dir)
+
+      return nil if options[:silent]
+
+      guessed_menu = caller(0)[1][/.+\/(.+)\.rb/, 1]
+      raise "| This menu must be nested under a #{options[:file] ? 'file' : 'dir'}, like this:\n|\n| - /tmp/#{options[:file] ? 'file.txt' : ''}\n|   @#{guessed_menu}"
+    end
+
+    Bookmarks[dir]
   end
 
 end

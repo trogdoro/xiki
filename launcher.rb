@@ -73,12 +73,15 @@ class Launcher
       return paths.reverse.uniq.join("\n")+"\n"
     end
 
-    paths = paths.select{|o| o =~ /^- #{Notes::LABEL_REGEX}#{path}/}
+    # Root passed, so show all matches
 
-    # If root passed, show all matching
+    paths = paths.select{|o| o =~ /^- #{Notes::LABEL_REGEX}#{path}\//}
+
+    bullet = options[:quoted] ? "|" : "-"
+
     if options[:exclude_path]
-      paths.each{|o| o.sub! /^- #{path}\//, '- '}
-      paths = paths.select{|o| o != "- "}
+      paths.each{|o| o.sub! /^- #{path}\//, "#{bullet} "}
+      paths = paths.select{|o| o != "#{bullet} "}
     else
       paths = paths.map{|o| o.sub /^- #{Notes::LABEL_REGEX}/, '\\0@'}
     end
@@ -88,7 +91,7 @@ class Launcher
   def self.log options={}
     result = IO.readlines self.log_file
     result = result.map{|o| o.sub /^- #{Notes::LABEL_REGEX}/, '\\0@'} if options[:at]
-    result.reverse.uniq.join
+    result.reverse.uniq.map{|o| o.sub /^- /, '<< '}.join
   end
 
   def self.log_file
@@ -199,7 +202,6 @@ class Launcher
     @@launchers.each do |regex, block|   # Try each potential regex match
       # If we found a match, launch it
       if line =~ regex
-
         group = $1
 
         # Run it
@@ -212,8 +214,7 @@ class Launcher
           rescue RelinquishException
             next   # They didn't want to handle it, keep going
           rescue Exception=>e
-
-            Tree << CodeTree.draw_exception(e, block.to_ruby)
+            Tree.<< CodeTree.draw_exception(e, block.to_ruby), :no_slash=>ENV['no_slash']
           end
 
         end
@@ -256,9 +257,7 @@ class Launcher
     return if self.try_menu_launchers line
 
     # Try to auto-complete based on menu-launchers
-
     if line =~ /^([\w -]*)(\.\.\.)?\/?$/
-
       # TODO just check for exact match in dir, and load it if no launcher yet!
 
       root = $1
@@ -275,7 +274,7 @@ class Launcher
 
         Line.sub! /\b$/, "..."
 
-        View >> matches.sort.map{|o| "<< #{o}/"}.join("\n")
+        View.under matches.sort.map{|o| "<< #{o.sub '_', ' '}/"}.join("\n")
         return
       end
     end
@@ -332,20 +331,23 @@ class Launcher
 
       orig_pwd = Dir.pwd   # Where ruby pwd was before
 
-      begin
+      if root == "mkdir"
+        Dir.chdir "/tmp/"
+      elsif File.directory?(closest_dir) || is_file = File.file?(closest_dir)   # If dir path
+        closest_dir = File.dirname closest_dir if is_file
+
         Dir.chdir closest_dir
-      rescue
-        if root == "mkdir"
-          Dir.chdir "/tmp/"
-        else
-          Tree.<<("| Directory '#{closest_dir}' doesn't exist. Create it?\n- @mkdir/")
-          return true
-        end
+
+        # If file, make path only have dir
+        # remove file
+
+      else   # If doesn't exist
+        Tree << "| Directory '#{closest_dir}' doesn't exist. Create it?\n- @mkdir/"
+        return true
       end
     end
 
     # If there was a menu, call it
-
     out = nil
     if block_dot_menu = @@menus[0][root]
       begin
@@ -373,6 +375,7 @@ class Launcher
 
     if block_other = @@menus[1][root]   # If class menu
       begin
+
         Tree.output_and_search block_other, :line=>line  #, :dir=>file_path
       ensure
         Dir.chdir orig_pwd if orig_pwd
@@ -404,33 +407,42 @@ class Launcher
 
   def self.init_default_launchers
 
-    self.add /^h$/ do   # experiment - ^h to insert history - keep this?
-      log = self.log.strip
-      Line.sub! /.+/, log
-
-      left, right = View.paragraph :bounds=>true
-      Tree.search :left=>left, :right=>left+log.length+1
-    end
-
     self.add(/^ *\$ /) do |l|   # $ shell command inline (sync)
       Console.launch :sync=>true
     end
 
-    self.add /^ *%( |$)/ do   # $ shell command (async)
+    self.add /^ *%( |$)/ do   # % shell command (async)
       Console.launch_async
     end
 
-    self.add(/^ *[+-]? *(http|file).?:\/\/.+/) do   # url
-      line = Line.content
+    self.add /^ *&( |$)/ do   # % shell command in iterm
+      Console.launch_async :iterm=>1
+    end
 
-      Launcher.append_log "- urls/#{line}"
+    # %\n  | multiline\n  | commands
+    Launcher.add /^\%\// do   # For % with nested quoted lines
+      path = Tree.construct_path :list=>1
+
+      next if path[-1] !~ /^\| /
+
+      txt = Tree.siblings :string=>1
+
+      orig = Location.new
+      Console.to_shell_buffer
+      View.to_bottom
+      Console.enter txt
+      orig.go
+    end
+
+    self.add(/^ *[+-]? *(http|file).?:\/\/.+/) do |path|
+      Launcher.append_log "- urls/#{path}"
 
       prefix = Keys.prefix
       Keys.clear_prefix
 
-      url = line[/(http|file).?:\/\/.+/]
+      url = path[/(http|file).?:\/\/.+/]
       if prefix == "all"
-        Tree.under RestTree.request("GET", url), :escape=>'| '
+        Tree.under RestTree.request("GET", url), :escape=>'| ', :no_slash=>1
         next
       end
       url.gsub! '%', '%25'
@@ -469,12 +481,13 @@ class Launcher
     self.add "google" do |line|
       line.sub! /^google\/?/, ''
       line.sub! /\/$/, ''
+      line.sub! /^\| /, ''
 
       if line.blank?   # If no path, pull from history
-        next Launcher.last "google", :exclude_path=>1
+        next Launcher.last "google", :exclude_path=>1, :quoted=>1
       end
-      url = line.sub(/^\s+/, '').gsub('"', '%22').gsub(':', '%3A').gsub(' ', '%20')
-      $el.browse_url "http://www.google.com/search?q=#{url}"
+      txt = line.sub(/^\s+/, '').gsub('"', '%22').gsub(':', '%3A').gsub(' ', '%20')
+      $el.browse_url "http://www.google.com/search?q=#{txt}"
       nil
     end
 
@@ -651,7 +664,6 @@ class Launcher
       end
   end
 
-
   def self.do_as_launched
     txt = "- #{View.file_name}\n    | #{Line.value}"
     txt.sub!("| ", "- #{Keys.input(:prompt => "enter label: ")}: | ") if Keys.prefix_u
@@ -682,12 +694,12 @@ class Launcher
     Menu.load_if_changed File.expand_path("~/menus/#{snake}.rb")
 
     args = path.is_a?(Array) ?
-      path :
-      path.split("/")[1..-1]
+      path : Menu.split(path, :rootless=>1)
 
     # Maybe call .menu_before
 
     method = clazz.method("menu_before") rescue nil
+
     self.set_env_vars args
     if method
       code = "#{camel}.menu_before *#{args.inspect}"
@@ -742,14 +754,10 @@ class Launcher
 
       # Copy dots onto args, so last dotted one will be used as action
 
-      Ol << "args: #{args.inspect}"
       Tree.dotify! tree, args
-      Ol << "args: #{args.inspect}"
 
     end
     # Else, continue on to run it based on routified path
-
-
 
 
     # TODO: Maybe extract this out into .dotified_to_ruby ?
@@ -774,12 +782,8 @@ class Launcher
 
     code = "#{camel}#{action.downcase} #{args}".strip
 
-
-
-
     txt, out, exception = Code.eval code
     txt = CodeTree.returned_to_s(txt)   # Convert from array into string, etc.
-
     self.unset_env_vars
 
     txt = txt.unindent if txt =~ /\A[ \n]/
@@ -847,13 +851,16 @@ class Launcher
   end
 
   def self.open menu, options={}
-    View.to_after_bar if View.in_bar?
+    $el.sit_for 0.3 if options[:delay]   # Delay slightly, (avoid flicking screen when they type command quickly)
+
+    View.to_after_bar if View.in_bar? && !options[:bar_is_fine]
 
     dir = View.dir
 
     # For buffer name, handle multi-line strings
-    buffer = "*CodeTree " + menu.sub(/.+\n[ -]*/m, '').gsub(/[.,]/, '')
-    View.to_buffer(buffer, :dir=>dir)
+    buffer = menu.sub(/.+\n[ -]*/m, '').gsub(/[.,]/, '')
+    buffer = "@" + buffer.sub(/^[+-] /, '')
+    View.to_buffer buffer, :dir=>dir
 
     View.clear
     $el.notes_mode
@@ -897,16 +904,50 @@ class Launcher
     self.add arg.to_s, args[0], &block
   end
 
-  def self.wrapper
-    path = Tree.construct_path #(:list=>true)
-    path.sub /^\//, ''
-    dir, stem = File.dirname(path), File.basename(path)
-    self.wrapper_rb dir, stem
+  def self.wrapper path
+
+    # TODO: load all the adapters and construct the "rb|js" part of the regex
+    dir, file, extension, path = path.match(/(.+\/)(\w+)\.(rb|js|coffee|py)\/(.*)/)[1..4]
+
+    # TODO: instead, call Launcher.invoke JsAdapter(dir, path), path
+    case extension
+    when "rb"
+      self.wrapper_rb dir, file, path
+    when "js"
+      self.wrapper_js dir, file, path
+    when "coffee"
+      self.wrapper_coffee dir, file, path
+    when "py"
+      self.wrapper_py dir, file, path
+    end
+
   end
 
-  def self.wrapper_rb dir, stem
+  def self.wrapper_rb dir, file, path
+    output = Console.run "ruby #{Xiki.dir}/etc/wrappers/wrapper.rb #{file}.rb \"#{path}\"", :sync=>1, :dir=>dir
+    output = Tree.children output, path
+    Tree << output
+  end
 
-    output = Console.run "ruby #{Xiki.dir}/etc/wrapper.rb #{stem}", :sync=>1, :dir=>dir
+  def self.wrapper_js dir, file, path
+    output = Console.run "node #{Xiki.dir}etc/wrappers/wrapper.js \"#{dir}#{file}.js\" \"#{path}\"", :sync=>1, :dir=>dir
+    output = Tree.children output, path
+    Tree << output
+  end
+
+  def self.wrapper_coffee dir, file, path
+    txt = CoffeeScript.to_js("#{dir}#{file}.coffee")
+    tmp_file = "/tmp/tmp.js"
+    File.open(tmp_file, "w") { |f| f << txt }
+
+    output = Console.run "node #{Xiki.dir}etc/wrappers/wrapper.js \"#{tmp_file}\" \"#{path}\"", :sync=>1, :dir=>dir
+    output = Tree.children output, path
+    Tree << output
+  end
+
+  def self.wrapper_py dir, file, path
+    output = Console.run "python #{Xiki.dir}etc/wrappers/wrapper.py \"#{dir}#{file}.py\" \"#{path}\"", :sync=>1, :dir=>dir
+    output = Tree.children output, path
     Tree << output
   end
 
@@ -967,14 +1008,13 @@ class Launcher
   end
 
   def self.set_env_vars args
-
     ENV['prefix'] = Keys.prefix.to_s
 
     # Might have been split based on "/"
 
     # If any has ^|, then make sure current line has slash
 
-    quoted = args.find{|o| o =~ /^\| /}
+    quoted = args.find{|o| o =~ /^\|( |$)/}
 
     if ! quoted
       return ENV['txt'] = args[-1]

@@ -88,6 +88,10 @@ class Line
     txt.sub(/^\s+/, "")
   end
 
+  def self.txt
+    self.without_indent
+  end
+
   def self.bounds
     [point_at_bol, point_at_eol]
   end
@@ -296,6 +300,11 @@ class Line
     Keys.clear_prefix
     Move.to_end
     View.insert txt
+  end
+
+  def self.< txt
+    self.delete :leave
+    self.insert txt
   end
 
   def self.add_slash

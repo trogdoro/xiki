@@ -1,9 +1,11 @@
 class CoffeeScript
-  def self.run
+
+  # Called by keyboard shortcut
+  def self.run_block
     # Get block contents
     txt, left, right = View.txt_per_prefix #:prefix=>Keys.prefix
 
-    result = self.run_internal txt
+    result = self.to_js txt
     # Insert result at end of block
     orig = Location.new
     View.cursor = right
@@ -12,14 +14,22 @@ class CoffeeScript
     orig.go
   end
 
-  def self.run_internal txt
-    # Write to temp file
-    File.open("/tmp/tmp.coffee", "w") { |f| f << txt }
+  def self.to_js txt
+
+    path = "/tmp/tmp.coffee"
+
+    # If txt is file path, us it
+    if txt !~ /\n/ && txt =~ /\.coffee$/
+      path = txt
+    else
+      File.open(path, "w") { |f| f << txt }   # Write to temp file
+    end
+
     # Call js
-    result = Console.run "coffee -pc /tmp/tmp.coffee", :sync=>true
+    result = Console.run "coffee -pc \"#{path}\"", :sync=>true
     result.split("\n")[1..-2].join("\n")
   end
 
 end
 
-Keys.do_as_coffee { CoffeeScript.run }
+Keys.do_as_coffee { CoffeeScript.run_block }

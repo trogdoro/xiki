@@ -10,14 +10,19 @@ class Piano
   include MIDIator::Drums
 
   @@midi = nil
-  @@bpm = 120
+  @@velocity = 120
+  @@tempo = 120
   @@probability = 100
-  @@variation = 0
+  @@melodic = 0
+  @@melodic_accumulator = []
+  @@climb = 0
   @@pentatonic = false
-  @@randomness = 100
-  @@key = 0
+  @@variation = 0
+  @@consistency = 0
+  @@mode = 0
   @@octave = 0
   @@program = 1
+  @@repeat = 1
   @@names = ['Acoustic Grand Piano', 'Bright Acoustic Piano', 'Electric Grand Piano', 'Honky-tonk Piano', 'Electric Piano 1', 'Electric Piano 2', 'Harpsichord', 'Clavinet', 'Celesta', 'Glockenspiel', 'Music Box', 'Vibraphone', 'Marimba', 'Xylophone', 'Tubular Bells', 'Dulcimer', 'Drawbar Organ', 'Percussive Organ', 'Rock Organ', 'Church Organ', 'Reed Organ', 'Accordion', 'Harmonica', 'Tango Accordion', 'Acoustic Guitar (nylon)', 'Acoustic Guitar (steel)', 'Electric Guitar (jazz)', 'Electric Guitar (clean)', 'Electric Guitar (muted)', 'Overdriven Guitar', 'Distortion Guitar', 'Guitar harmonics', 'Acoustic Bass', 'Electric Bass (finger)', 'Electric Bass (pick)', 'Fretless Bass', 'Slap Bass 1', 'Slap Bass 2', 'Synth Bass 1', 'Synth Bass 2', 'Violin', 'Viola', 'Cello', 'Contrabass', 'Tremolo Strings', 'Pizzicato Strings', 'Orchestral Harp', 'Timpani', 'String Ensemble 1', 'String Ensemble 2', 'Synth Strings 1', 'Synth Strings 2', 'Choir Aahs', 'Voice Oohs', 'Synth Choir', 'Orchestra Hit', 'Trumpet', 'Trombone', 'Tuba', 'Muted Trumpet', 'French Horn', 'Brass Section', 'Synth Brass 1', 'Synth Brass 2', 'Soprano Sax', 'Alto Sax', 'Tenor Sax', 'Baritone Sax', 'Oboe', 'English Horn', 'Bassoon', 'Clarinet', 'Piccolo', 'Flute', 'Recorder', 'Pan Flute', 'Blown Bottle', 'Shakuhachi', 'Whistle', 'Ocarina', 'Lead 1 (square)', 'Lead 2 (sawtooth)', 'Lead 3 (calliope)', 'Lead 4 (chiff)', 'Lead 5 (charang)', 'Lead 6 (voice)', 'Lead 7 (fifths)', 'Lead 8 (bass + lead)', 'Pad 1 (new age)', 'Pad 2 (warm)', 'Pad 3 (polysynth)', 'Pad 4 (choir)', 'Pad 5 (bowed)', 'Pad 6 (metallic)', 'Pad 7 (halo)', 'Pad 8 (sweep)', 'FX 1 (rain)', 'FX 2 (soundtrack)', 'FX 3 (crystal)', 'FX 4 (atmosphere)', 'FX 5 (brightness)', 'FX 6 (goblins)', 'FX 7 (echoes)', 'FX 8 (sci-fi)', 'Sitar', 'Banjo', 'Shamisen', 'Koto', 'Kalimba', 'Bag pipe', 'Fiddle', 'Shanai', 'Tinkle Bell', 'Agogo', 'Steel Drums', 'Woodblock', 'Taiko Drum', 'Melodic Tom', 'Synth Drum', 'Reverse Cymbal', 'Guitar Fret Noise', 'Breath Noise', 'Seashore', 'Bird Tweet', 'Telephone Ring', 'Helicopter', 'Applause', 'Gunshot']
 
   @@map = {
@@ -25,16 +30,16 @@ class Piano
     '='=>SnareDrum2, '-'=>SnareDrum1,
     "'"=>ClosedHiHat, '"'=>OpenHiHat,
     '^'=>RideCymbal1, '`'=>CrashCymbal1, '*'=>CrashCymbal2, '<'=>Cowbell,
-    '('=>MidTom1,  '_'=>MidTom2,  ')'=>LowTom2,
+    '['=>MidTom1,  '_'=>MidTom2,  ']'=>LowTom2,
     }
 
   def self.menu
 
     %`
     > Pass in notes
-    | cde edc d  c
+    | g cdefg c c
     - .setup/
-      - .key/
+      - .mode/
         - lydian) 4
         - ionian - major) 3
         - mixolydian) 2
@@ -46,12 +51,7 @@ class Piano
       - .pentatonic/
         - off
         - on
-      - .variation/
-        - 0
-        - 1
-        - 2
-        - 3
-      - .bpm/
+      - .tempo/
         - 60
         - 120
         - 240
@@ -102,23 +102,45 @@ class Piano
           - Woodblock/
           - Taiko Drum/
         - all/
+      - .velocity/
+        - 126
+        - 96
+        - 64
+        - 32
+      - .repeat/
+        - 1
+        - 2
+        - 4
+        - 8
+      - .variation/
+        - 0
+        - 1
+        - 2
+        - 3
+      - .consistency/
+        - 0%
+        - 25%
+        - 50%
+        - 75%
+      - .melodic/
+        - 1
+        - 0
+      - .climb/
+        - 1
+        - -1
+        - 0
       - .probability/
         - 100%
         - 75%
         - 50%
-      - .randomness/
-        - 100%
-        - 50%
-        - 25%
       - .reset/
-    - .generate/
+    - .random notes/
     - .api/
       | Play some notes
       @ Piano.song "abc"
     - .docs/
       > Single notes
       - @piano/a/
-      - @piano/b/
       - @piano/55/
       |
       > Multiple notes
@@ -127,17 +149,86 @@ class Piano
       |
       > Multiple parts
       - .examples/
-        - .chords/
-        - .two parts/
-        - .three parts/
-        - .sharps/
-        - .drums/
-        - .unofficial xiki theme song/
+        - basics/
+          - chords/
+            @piano/
+              | A A A B A
+              | C C D D C
+              | E F F F E
+          - two parts/
+            @piano/
+              | CGcCGc C GaCGa  CGcCGc C GaCGa
+              | cde edc d  c   c de e
+          - three parts/
+            @piano/
+              | ABCDEFGabcdefghijklmnopqrstuv
+              |   B C D E F G a b c d e f g h
+              |     B   C   D   E   F   G   a
+          - sharps/
+            @piano/
+              |             #    # # # #
+              | ce ecbca    Gb baGbG G G a
+              |                    #
+              |  C E C A C L B E B N B L H
+          - drums/
+            @piano/
+              | ' ' ' ' ' '*  '
+              | =@@= @@@=@@= @@@
+          - unofficial xiki theme song/
+            @piano/
+              |                 xiki is so great
+              | P Q P Q P Q P Q P Q P Q P Q P Q
+              | < < < < < < < < < < < < < < < <
+              | @ = @@= @ = @@= @ = @@= @ = @@=
+        - generation/
+          - variation/
+            @piano/
+              | reset()
+              | variation()
+              | aaaaaaaa
+          - probability/
+            @piano/
+              | reset()
+              | variation()
+              | probability(50)
+              | aaaaaaaaaaaa
+          - melodic/
+            @piano/
+              | reset()
+              | variation(1)
+              | melodic()
+              | aaaaaaaaaaaa
+          - climb/
+            @piano/
+              | reset()
+              | variation(1)
+              | melodic()
+              | climb()
+              | aaaaaaaaaaaa
+          - consistency/
+            @piano/
+              | reset()
+              | variation()
+              | consistency(80)
+              | aaaaaaaaaaaa
+          - all together/
+            @piano/
+              | reset()
+              | repeat(8)
+              | tempo(60)
+              | mode(rand 100)
+              | variation()
+              | melodic()
+              | consistency(25)
+              | probability(85)
+              | aaaaaaaa
+              | AAAAAAAA
+              | H   H
       |
-      > Keys
-      keys/
+      > Modes
+      modes/
         | For reference, here are the whole and half steps for the options under
-        | the "key" menu.  By default the A scale is used.
+        | the "mode" menu.  By default the A scale is used.
         |
         | - O o o oo o oO: lydian
         | - O o oo o o oO: ionian (major)
@@ -153,59 +244,6 @@ class Piano
     @@names
   end
 
-  def self.chords
-    "
-    @piano/
-      | A A A B A
-      | C C D D C
-      | E F F F E
-    "
-  end
-
-  def self.two_parts
-    "
-    @piano/
-      | CGcCGc C GaCGa  CGcCGc C GaCGa
-      | cde edc d  c   c de e
-    "
-  end
-
-  def self.three_parts
-    "
-    @piano/
-      | ABCDEFGabcdefghijklmnopqrstuv
-      |   B C D E F G a b c d e f g h
-      |     B   C   D   E   F   G   a
-    "
-  end
-
-  def self.sharps
-    "
-    @piano/
-      |             #    # # # #
-      | ce ecbca    Gb baGbG G G a
-      |                    #
-      |  C E C A C L B E B N B L H
-    "
-  end
-
-  def self.drums
-    "
-    @piano/
-      | ' ' ' ' ' ' * '
-      | @  @=  @ _ )=
-    "
-  end
-
-  def self.unofficial_xiki_theme_song
-    "
-    @piano/
-      |                 xiki is so great
-      | P Q P Q P Q P Q P Q P Q P Q P Q
-      | < < < < < < < < < < < < < < < <
-      | @ = @@= @ = @@= @ = @@= @ = @@=
-    "
-  end
 
   def self.menu_after menu_output, *args
 
@@ -220,31 +258,66 @@ class Piano
 
     txt = ENV['txt']
     self.song txt, :move=>1
+    #     @@repeat = 1
 
     nil
   end
 
   def self.song txt, options={}
+    @@lines = txt.split("\n")#.reverse
 
-    lines = txt.split("\n")#.reverse
+    self.extract_functions
 
-    # Start at where cursor is
-    View.column = Line.value[/.+(\/|\| ?)/].length if options[:move]
+    # If only config, just run first ones
+    #     if @@lines.empty?
+    #       return self.run_functions @@functions_by_index[0], :include_all
+    #     end
+    self.run_functions @@functions_by_index[0], :include_all
 
-    longest = lines.inject(0){|acc, e| e.length > acc ? e.length : acc}
+    repeat = (@@functions_by_index[0]||[]).find{|o| o =~ /^rep(eat)?\(/}
+    @@repeat = (repeat[/\d+/]||"4").to_i if repeat
 
-    longest.times do |i|
+    @@repeat.times do
 
-      sharp = false
-      lines.each do |line|
-        char = line[i] ? line[i].chr : nil
-        self.note char, :no_sit=>1, :sharp=>sharp
-        sharp = char == "#"
+      # Start at where cursor is
+      View.column = Line.value[/.+(\/|\| ?)/].length if options[:move]
+
+      longest = @@lines.inject(0){|acc, e| e.length > acc ? e.length : acc}
+
+      longest.times do |i|
+
+        self.run_functions @@functions_by_index[i] # unless i == 0
+
+        sharp = false
+        @@lines.each_with_index do |line, track|
+          char = line[i] ? line[i].chr : nil
+          self.note char, :no_sit=>1, :sharp=>sharp, :track=>track
+          sharp = char == "#"
+        end
+        Move.forward if options[:move] && View.cursor != Line.right
+        self.pause
       end
-      Move.forward if options[:move] && View.cursor != Line.right
-      self.pause
     end
+
     nil
+  end
+
+  def self.run_functions list, include_all=nil
+    @@in_run_functions = true
+    (list||[]).each do |item|
+      next if !include_all && item =~ /^rep(eat)?\(/
+      eval("Piano.#{item}")
+    end
+    @@in_run_functions = false
+  end
+
+  def self.extract_functions
+    lines, @@lines = @@lines.partition{|i| i =~ /\(/}
+
+    @@functions_by_index = {}
+    lines.each do |line|
+      Code.parse_functions line, @@functions_by_index
+    end
   end
 
   def self.clear channel=1
@@ -255,8 +328,9 @@ class Piano
     self.note letter
   end
 
-  def self.letter_to_number letter #, adjustment=0
-    adjustment =@@key
+  def self.letter_to_number letter, options={}
+
+    adjustment =@@mode
 
     letter.next! if @@pentatonic && (letter == "b" || letter == "e")
 
@@ -270,7 +344,7 @@ class Piano
     else; raise "Don't know how to convert the note #{letter} to a number."
     end
 
-    number = self.apply_variation number
+    number = self.apply_variation number, options
 
     number = number * 12/7.0
     number -= 0.01
@@ -283,12 +357,23 @@ class Piano
     number
   end
 
-  def self.apply_variation number, variation=nil
+  def self.apply_variation number, options={}
+    return number if rand(100) > (100 - @@consistency)   # Do nothing if consistency says to stop
+    random = rand(@@variation+1)
 
-    return number if rand(100) > @@randomness   # Do nothing if randomness says to stop
+    if @@climb == 0
+      random *= ((-1) ** rand(2))   # Half of the time, make it decrease note
+    end
 
-    variation ||= @@variation
-    number + rand(variation+1)
+    if @@melodic == 1
+      track = options[:track]
+      @@melodic_accumulator[track] ||= 0
+      random *= @@climb if @@climb != 0
+      @@melodic_accumulator[track] += random
+      random = @@melodic_accumulator[track]
+    end
+
+    number + random
   end
 
   def self.apply_probability number
@@ -301,7 +386,8 @@ class Piano
 
     return if letter.nil? || letter == "#"
 
-    channel, volume = 1, 126
+    channel = 1
+    velocity = @@velocity
     if letter.is_a? Fixnum
       number = letter
       # If super-low, make them audible
@@ -309,12 +395,12 @@ class Piano
     elsif letter =~ /^[0-9]$/
       number = letter[0] + 21
     elsif letter =~ /^[a-zA-Z]$/
-      number = self.letter_to_number letter # , @@key
+      number = self.letter_to_number letter, options
       number = self.apply_probability number
-    elsif letter.length == 1 && letter.count("@#='\"`^*<(_)-") == 1
+    elsif letter.length == 1 && letter.count("@#='\"`^*<[_]-") == 1
       channel = 10
       number = @@map[letter]
-      volume = 65 unless letter.count("@#=-") == 1
+      velocity = letter.count("@#=-") == 1 ? 126 : 65
     elsif letter == " "
       number = 0
     elsif letter.is_a?(String) && letter.length > 1
@@ -328,9 +414,8 @@ class Piano
 
     number += 1 if options[:sharp]
     number += (@@octave * 12)
-      #       number -= 12   # Make an octive lower
 
-    @@midi.driver.note_on(number, channel, volume) unless number == 0
+    @@midi.driver.note_on(number, channel, velocity) unless number == 0
 
     return if options[:no_sit]
 
@@ -340,7 +425,7 @@ class Piano
 
   def self.pause
 
-    pause = @@bpm * 4
+    pause = @@tempo * 4
     pause = pause / 60.0
     pause = 1 / pause
     $el.sit_for pause
@@ -433,25 +518,52 @@ class Piano
   end
 
   def self.instrument type, name=nil, options={}
-    return @@names.map{|o| "- #{o}/"}.join("\n") if name.nil?
-    index = @@names.index name
-    @@midi.program_change 1, index
+    # If 'all' show all
+    return @@names.map{|o| "- #{o}/"}.join("\n") if type == 'all' && name.nil?
+
+    # If 1 arg, assume it's the name
+    name = type if name.nil?
+
+
+    if name.is_a?(Fixnum)
+      index = name
+    else
+      name = Regexp.escape name
+      name.gsub! '\ ', ".+"
+      index = @@names.index{|o| o =~ /^#{name}$/i}
+      index ||= @@names.index{|o| o =~ /^#{name}/i}
+      index ||= @@names.index{|o| o =~ /#{name}/i}
+    end
+
+    @@midi.program_change 1, (index||0)
     return if options[:quiet]
-    Piano.note "abc"
+
+    # TODO: turn back on, but not when called from .run_functions
+      # How to detect?
+        # or, maybe just set instance variable when in .run_functions
+          # @@in_run_functions = true
+        # maybe .sub! it to have an extra parameter to suppress?
+          # instrument('Piano') -> instrument('Piano', :suppress)
+    Piano.note "abc" unless @@in_run_functions
   end
 
   def self.reset
     self.connect
 
-    @@bpm = 120
+    @@velocity = 126
+    @@tempo = 120
     @@probability = 100
 
     @@variation = 0
+    @@melodic = 0
+    @@melodic_accumulator = []
+    @@climb = 0
     @@pentatonic = false
-    @@randomness = 100
-    @@key = 0
+    @@consistency = 0
+    @@mode = 0
     @@octave = 0
     @@program = 1
+    @@repeat = 1
 
     ".flash - success!"
   end
@@ -463,28 +575,47 @@ class Piano
     @@midi.program_change 10, 26
   end
 
-  def self.bpm txt;  @@bpm = txt.to_i;  ".flash - updated!";  end
-  def self.probability txt;  @@probability = txt.sub('%', '').to_i;  ".flash - updated!";  end
-  def self.variation txt;  @@variation = txt.to_i;  ".flash - updated!";  end
-  def self.pentatonic txt;  @@pentatonic = txt == "on";  ".flash - updated!";  end
-  def self.randomness txt;  @@randomness = txt.sub('%', '').to_i;  ".flash - updated!";  end
-  def self.octave txt;  @@octave = txt.to_i;  ".flash - updated!";  end
+  def self.velocity txt="126";  @@velocity = txt.to_i;  ".flash - updated!";  end
+  def self.tempo txt="120";  @@tempo = txt.to_i;  ".flash - updated!";  end
+  def self.probability txt="50";  @@probability = txt.to_s.sub('%', '').to_i;  ".flash - updated!";  end
+  def self.variation txt="3";  @@variation = txt.to_i;  ".flash - updated!";  end
+  def self.melodic txt="1";  @@melodic = txt.to_i;  ".flash - updated!";  end
+  def self.climb txt="1";  @@climb = txt.to_i;  ".flash - updated!";  end
+  def self.pentatonic txt="1";  Ol.<<(txt); @@pentatonic = [true, "on", 1].member?(txt);  ".flash - updated!";  end
+  def self.consistency txt="50";  @@consistency = txt.to_s.sub('%', '').to_i;  ".flash - updated!";  end
+  def self.octave txt="0";  @@octave = txt.to_i;  ".flash - updated!";  end
+  def self.repeat txt="4"; @@repeat = txt.to_i;  ".flash - updated!";  end
 
-  def self.key txt=nil
-    return @@key if txt.nil?
+  def self.mode txt=nil
+    return @@mode if txt.nil?
 
-    if txt == "random"
-      random = (-2..4).to_a[rand 7]
-      @@key = random
+    if txt.to_s == "random"
+      random = (-2..9).to_a[rand 7]
+      @@mode = random
       return ".flash - updated to #{random}!"
     end
 
-    @@key = txt.to_i
+    @@mode = txt.to_i
     ".flash - updated!"
   end
 
-  def self.generate range=nil, notes=nil
+  class << self
+    alias :tem :tempo
+    alias :pro :probability
+    alias :mel :melodic
+    alias :cli :climb
+    alias :vel :velocity
+    alias :pen :pentatonic
+    alias :res :reset
+    alias :rep :repeat
+    alias :var :variation
+    alias :con :consistency
+    alias :oct :octave
+    alias :mod :mode
+    alias :ins :instrument
+  end
 
+  def self.random_notes range=nil, notes=nil
     if range.nil?
       return "- a..g/"
     end

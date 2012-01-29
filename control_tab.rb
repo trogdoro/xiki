@@ -54,10 +54,18 @@ class ControlTab
         #         @@consider_test = lambda{|b| buffer_name(b) =~ /\.(css|sass)/}
       when 3   # ...css
         @@consider_test = lambda{|b| buffer_name(b) =~ /^#/}
-      when 4   # Consoles
-        @@consider_test = lambda{|b| buffer_name(b) =~ /^(\*console|\*merb) /i}
-      when 5   # haml.html files
+      when 4   # haml.html files
         @@consider_test = lambda{|b| buffer_file_name(b) =~ /\.html/}
+      when 5   # Consoles
+        @@consider_test = lambda{|b|
+          next if $el.buffer_file_name b
+          $el.set_buffer b
+          next if $el.elvar.major_mode.to_s != 'shell-mode'
+          name = $el.buffer_name b
+          next if name == "*ol"
+          true
+        }
+        #         @@consider_test = lambda{|b| buffer_name(b) =~ /^(\*console|\*merb) /i}
       when 6   # Ruby files only
         @@consider_test = lambda{|b| buffer_file_name(b) =~ /\.rb$/}
       when 68   # controller

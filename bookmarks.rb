@@ -298,7 +298,7 @@ class Bookmarks
       }
       all.each do |l|
         n, p = l
-        result << "- #{n}: #{p.sub(/\/$/,'')}\n"
+        result << "- #{n}) @ #{p.sub(/\/$/,'')}\n"
         #         puts "- #{n.ljust(7)} #{p.sub(/\/$/,'')}"
         #puts "- #{n}: #{p}"
       end
@@ -337,9 +337,7 @@ Ol.line
 Ol << "bookmark: #{bookmark.inspect}"
     Bookmarks.go("q#{bookmark}")
 Ol.line
-    if bookmark == "p"
-      $el.use_local_map elvar.deck_mode_map
-    end
+    Deck.use_keys if bookmark == "p"
   end
 
 end

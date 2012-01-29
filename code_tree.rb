@@ -47,12 +47,11 @@ class CodeTree
     message = exception.message
 
     if exception.is_a?(RuntimeError)
-
       # If it was in the format of tree output, just show it
 
       # Some messages start with "path:line:...: " at beginning again
 
-      message.sub!(/.+: /, '') if message =~ /in `/
+      message.sub!(/.+?: /, '') if message =~ /in `/
 
       return message if message =~ /\A[|+-] /   # /^- /
       return View.flash($1) if(message =~ /^\.flash (.+)/)

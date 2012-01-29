@@ -136,4 +136,8 @@ class Overlay
   def []= key, val
     $el.overlay_put(@overlay, key, val)
   end
+
+  def [] key
+    $el.overlay_get(@overlay, key)
+  end
 end

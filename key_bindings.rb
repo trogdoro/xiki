@@ -88,7 +88,8 @@ class KeyBindings
     Keys.open_list_appointments { View.bar; Launcher.open("- Agenda.menu/") }
     Keys.open_list_bookmarks { Launcher.open("- Bookmarks.list/") }
     #     Keys.open_last_error { Code.show_el4r_error }
-    Keys.open_list_flashes { Launcher.open "- view/flashes/" }
+    Keys.open_list_faces { Styles.list_faces }
+    #     Keys.open_list_flashes { Launcher.open "- view/flashes/" }
     #     Keys.open_list_faces { list_faces_display }
     Keys.open_lisp_info { info("elisp") }   # Open manual
 
@@ -195,7 +196,7 @@ class KeyBindings
     Keys.enter_upper { View.enter_upper }
     Keys.enter_value { Clipboard.paste }
     # W
-    Keys.enter_whitespace { open_line(elvar.current_prefix_arg || 1) }
+    Keys.enter_whitespace { Code.enter_whitespace }
     # X
     # Y
     # Z
@@ -220,7 +221,7 @@ class KeyBindings
     Keys.do_as_javascript { Javascript.run }
     Keys.do_as_launched { Launcher.do_as_launched }
     Keys.do_as_php { Php.run }
-    #     Keys.do_as_python { Python.run }
+    #     Keys.do_as_python { Python.run_block }
     Keys.do_add_space { Code.add_space }
     Keys.do_as_test { Code.do_as_rspec }
     Keys.do_as_wrap { Block.do_as_wrap }
@@ -383,7 +384,7 @@ class KeyBindings
     Keys.layout_balance { 3.times { View.balance } }   # balance windows *
     Keys.layout_create { View.create }   # open new view **
 
-    Keys.layout_dimensions { View.dimensions; View.scroll_bars; View.visibility("f") }
+    Keys.layout_dimensions { Launcher.open('- window/dimensions/presets/', :bar_is_fine=>1, :delay=>1) }
 
     Keys.layout_expand { View.enlarge }   # *
     # F
@@ -392,13 +393,13 @@ class KeyBindings
     Keys.layout_hide { View.hide }   # **
     Keys.layout_indent { Hide.hide_by_indent }   # only show lines indented less than x
     Keys.layout_jump { View.shift }
-    Keys.layout_kill { $el.kill_this_buffer }   # **
+    Keys.layout_kill { View.kill }
     # L: defined above - mapped to what C-d does by default
     Keys.layout_marker { Color.colorize }   # colorize line, etc
     #Keys.layout_menu { CodeTree.layout_menu }   # show menu bare in current state
     Keys.layout_next { View.next(:blink=>true) }   # next view **
     Keys.layout_output { View.layout_output }
-    Keys.layout_previous { View.previous(:blink=>true) }   # previous view **
+    Keys.layout_previous { View.previous(:blink=>true) }
     # Q
     Keys.layout_right { View.to_upper(:blink=>true) }   # Go to view to the right
     #     Keys.layout_right { View.layout_right }   # Go to view to the right
@@ -406,7 +407,7 @@ class KeyBindings
     Keys.layout_todo { View.layout_todo }   # show bar on left with the quick bookmark named "-t" *
     Keys.layout_uncover { Hide.reveal }   # Reveal all hidden text
     # V
-    Keys.layout_visibility { View.visibility }
+    Keys.layout_visibility { Launcher.open('- window/opacity/', :bar_is_fine=>1, :delay=>1) }
     Keys.layout_wrap { toggle_truncate_lines }   # wrap lines **
     # X
     # Y
@@ -651,6 +652,10 @@ class KeyBindings
       txt.sub! " \\\n \\", "\n"
       View.insert txt
     }
+
+
+    Keys.set("M-=") { Styles.zoom }
+    Keys.set("M--") { Styles.zoom :out=>1 }
 
     View.sensible_defaults
   end

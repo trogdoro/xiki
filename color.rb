@@ -167,13 +167,13 @@ class Color
   def self.define_styles   # For Keys.layout_kolor_light, etc.
 
     # Orange path in mode line
-    Styles.define :mode_line_dir, :fg=>"d93", :size=>"0", :face=>"arial", :bold=>false   # Brighter
     # Blue path in mode line
     #     Styles.define :mode_line_dir, :fg=>"7ce", :size=>"0", :face=>"arial", :bold=>false
 
     Styles.define :mode_line_file, :fg=>"fff", :size=>"0", :face=>"arial", :bold=>false
 
     if Styles.inverse
+      Styles.define :mode_line_dir, :fg=>"d93", :size=>"0", :face=>"arial", :bold=>false   # Brighter
 
       Styles.define :color_rb_red, :bg => "500"
       Styles.define :color_rb_orange, :bg => "442500"
@@ -187,6 +187,10 @@ class Color
       Styles.define :color_rb_purple, :bg => "203"
 
     else
+
+      #       Styles.define :mode_line_dir, :fg=>"d93", :size=>"0", :face=>"arial", :bold=>false   # Brighter
+      Styles.define :mode_line_dir, :fg=>"ea4", :size=>"0", :face=>"arial", :bold=>false   # Brighter
+
       Styles.define :color_rb_red, :bg => "ffd5d5"
       Styles.define :color_rb_orange, :bg => "ffe5bb"
       Styles.define :color_rb_yellow, :bg => "f9f9aa"
