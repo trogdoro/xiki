@@ -11,18 +11,6 @@ class Menu
     - .setup/
       - @~/menus/
       - .reload_menus/
-    - .docs/
-      - .how_to_use/
-      - .how_to_create/
-      - .keys/
-        > Summary
-        | Helpful keyboard shortcuts when using menus.
-        |
-        | - as+menu
-        |   - Save changes to menu (or create new one)
-        | - to+menu
-        |   - Jump to file that implements menu
-        |
     - .api/
       > Summary
       | How to use ruby code to define menus.
@@ -76,9 +64,19 @@ class Menu
       | If you want to create a very simple menu you can do so without code,
       | by just putting the menu in a file such as ~/menu/foo.menu. See:
       |
-      < docs/how_to_create/
-
-
+      << docs/how_to_create/
+    - .docs/
+      - .How to use/
+      - .How to create/
+      - .keys/
+        > Summary
+        | Helpful keyboard shortcuts when using menus.
+        |
+        | - as+menu
+        |   - Save changes to menu (or create new one)
+        | - to+menu
+        |   - Jump to file that implements menu
+        |
     '
   end
 
@@ -366,7 +364,7 @@ class Menu
 
     root = trunk[0][/^[\w _-]+/]
 
-    root = trunk[-1][/^[\w _-]+/] if Keys.prefix_u
+    root = trunk[-1][/^[\w _-]+/] if ! Keys.prefix_u
 
     root.gsub!(/[ -]/, '_') if root
 
@@ -577,12 +575,32 @@ class Menu
 
 
     if Line.indent.blank?
-      line.sub! /^@/, ''
+      line.sub! /^@ ?/, ''
     end
 
     Line << line unless skip
     Launcher.launch
 
+  end
+
+  def self.config txt, *args
+
+    # TODO: implement
+      # Args look like sample invocation below
+      # If not there, create it first, using supplied default
+      # Insert quoted file contents to be edited
+
+    # Sample invocation
+    #     Menu.config "
+    #       - @ ~/xiki/config/browser.notes
+    #         | - default browser:
+    #         |   - Firefox
+    #         | - others:
+    #         |   - Safari
+    #         |   - Chrome
+    #       ", *args
+
+    "TODO"
   end
 
   def self.replacer_launcher

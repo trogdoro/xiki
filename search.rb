@@ -437,10 +437,6 @@ class Search
     end
   end
 
-  def self.google
-    browse_url "http://google.com/search?q=#{View.selection}"
-  end
-
   def self.search_in_bookmark match
 
     bm = Keys.bookmark_as_path :include_file=>1

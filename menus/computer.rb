@@ -11,6 +11,8 @@ class Computer
   end
 
   def self.ip
+    #     return "| 192.168.5.231"
+
     txt = `ifconfig`
     inet = txt.grep(/\binet\b/)
 

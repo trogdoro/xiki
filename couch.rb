@@ -4,12 +4,13 @@ require 'couchrest'
 class Couch
   @@server = 'http://localhost:5984'
 
-  def self.menu # name=nil
+  def self.menu
     "
     - .start/
+    - @db/
     - .admin url/
-    - .databases/
     "
+    #     - .databases/
   end
 
   def self.start

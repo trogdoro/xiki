@@ -1,10 +1,14 @@
 class Mysql
   def self.menu
     "
-    - .tables/
-    - .dbs/
+    - @tables/
+    - @dbs/
+    - @columns/
     - .setup/
       - .start/
+      - stop/
+        @ $ ps -eo pcpu,pid,user,args | grep mysql | grep -v grep
+        @ $ kill _
       - db/
         - .use/
         - .create/
@@ -19,9 +23,6 @@ class Mysql
       |
       > Others
       @ technologies/mysql/
-    - .roots/
-      - @tables/
-      - @columns/
     > Or just type some sql here
     | show tables
     "
@@ -41,7 +42,7 @@ class Mysql
   def self.start
     Console.run "mysqld", :buffer=>"mysql", :dir=>"/tmp/"
     View.to_buffer "mysql"
-    ".flash - started!"
+    nil
   end
 
   def self.install
@@ -266,7 +267,7 @@ end
 Launcher.add "columns" do |path|
   args = path.split('/')[1..-1]
   if args.size > 0
-    next Mysql.run('default_dev', "desc #{args[0]}").gsub!(/^/, '| ')
+    next Mysql.run(@default_db, "desc #{args[0]}").gsub!(/^/, '| ')
   end
   Mysql.tables(*args)
 end

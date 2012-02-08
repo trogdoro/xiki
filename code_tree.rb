@@ -53,19 +53,23 @@ class CodeTree
 
       message.sub!(/.+?: /, '') if message =~ /in `/
 
-      return message if message =~ /\A[|+-] /   # /^- /
+      return message if message =~ /\A[>|+-] /   # /^- /
       return View.flash($1) if(message =~ /^\.flash (.+)/)
     end
 
     backtrace = exception.backtrace[0..8].join("\n").gsub(/^/, '  ') + "\n"
 
     # If path in message, move it to the stack trace
-    if message =~ /(.+\d:in `.+'): (.+)/
+    if message =~ /(.+\d:in `.+'): (.+)/m
       path, message = $1, $2
       backtrace = "  #{path}\n#{backtrace}"
     end
 
-    return "- tried to run: #{code}\n- error: #{message}\n- backtrace:\n#{backtrace}"
+    message = message =~ /\n/ ?
+      "\n"+message.strip.gsub(/^/, "  | ").gsub(/^( +\|) ([+-])/, "\\1\\2") :
+      " #{message}"
+
+    return "- tried to run: #{code}\n- error:#{message}\n- backtrace:\n#{backtrace}"
   end
 
   def self.run code, options={}
@@ -335,13 +339,28 @@ class CodeTree
 
     left1, right1, left2, right2 = Tree.sibling_bounds
 
-    if prefix == 8
-      View.delete left1, right2
-      return
+    # If number, adjust
+
+    if prefix.is_a?(Fixnum)
+      left2 = Line.left prefix + 1
+    elsif prefix == :u
+      right2 = left2
+    elsif prefix == :uu
+      right1 = left1
     end
 
-    View.delete left2, right2 unless prefix == 1
-    View.delete left1, right1 unless prefix == 2
+    View.delete left2, right2
+    View.delete left1, right1
+  end
+
+  def self.as_indented
+    left1, right1, left2, right2 = Tree.sibling_bounds
+
+    View.cursor = left1
+    $el.set_mark right2
+    Effects.blink(:left=>left1, :right=>right2)
+
+    Clipboard.copy("0")
   end
 
   def self.kill_rest

@@ -59,18 +59,19 @@ class Launcher
     `
   end
 
-  def self.last path, options={}
+  def self.last path=nil, options={}
 
-    path = path.sub /^last\/?/, ''
+    path = path.sub /^last\/?/, '' if path
 
-    log = IO.read(self.log_file)
-    paths = log.split("\n")
+    paths = IO.readlines self.log_file
 
     # If nothing passed, just list all roots
 
-    if path.empty?
+    if path.blank?
       paths.map!{|o| o.sub /\/.+/, '/'}   # Cut off after path
-      return paths.reverse.uniq.join("\n")+"\n"
+      paths = paths.reverse.uniq
+      paths.delete "- #{options[:omit]}/\n" if options[:omit]
+      return paths.join
     end
 
     # Root passed, so show all matches
@@ -85,7 +86,9 @@ class Launcher
     else
       paths = paths.map{|o| o.sub /^- #{Notes::LABEL_REGEX}/, '\\0@'}
     end
-    paths.reverse.uniq.join("\n")+"\n"
+    paths = paths.reverse.uniq
+    paths.delete_if{|o| o == "| \n"}
+    paths.join #("\n")+"\n"
   end
 
   def self.log options={}
@@ -167,7 +170,7 @@ class Launcher
 
   # Call the appropriate launcher if we find one, passing it line
   def self.launch options={}
-    Tree.plus_to_minus
+    Tree.plus_to_minus unless options[:leave_bullet]
 
     Line.sub! /^[@*-]$/, '...'   # Expand "." to auto-complete all paths
     Line.sub! /^\.$/, './'   # Expand "." to auto-complete all paths
@@ -226,7 +229,8 @@ class Launcher
     # If current line is indented and not passed recursively yet, try again, passing tree
 
     if Line.value =~ /^ / && ! options[:line] && !is_root   # If indented, call .launch recursively
-      Tree.plus_to_minus
+      # TODO This is already being fucking done at the top, no?
+      #       Tree.plus_to_minus
 
       # Use Xiki.branch here? (breaks up by @'s)
 
@@ -235,7 +239,11 @@ class Launcher
       found = list.index{|o| o =~ /^@/} and list = list[found..-1]   # Remove before @... node if any
       merged = list.map{|o| o.sub /\/$/, ''}.join('/')
       merged << "/" if list[-1] =~ /\/$/
-      return self.launch options.slice(:no_search).merge(:line=>merged)
+
+      return self.launch options.merge(:line=>merged)
+
+      # What was this doing, did we mean to only pass on :no_search??
+      #       return self.launch options.slice(:no_search).merge(:line=>merged)
     end
 
     if self.launch_by_proc   # Try procs (currently all trees)
@@ -254,7 +262,7 @@ class Launcher
 
     # See if it matches path launcher
 
-    return if self.try_menu_launchers line
+    return if self.try_menu_launchers line, options
 
     # Try to auto-complete based on menu-launchers
     if line =~ /^([\w -]*)(\.\.\.)?\/?$/
@@ -267,7 +275,7 @@ class Launcher
       end
       if matches.any?
         if matches.length == 1
-          Line.sub! /^([ +-]*).*/, "\\1#{matches[0]}"
+          Line.sub! /^([ +-]*).*/, "\\1#{matches[0].gsub('_', ' ')}"
           Launcher.launch
           return
         end
@@ -297,7 +305,6 @@ class Launcher
           end
           return self.launch   # options.slice(:no_search).merge(:line=>merged)
         end
-
       end
     end
 
@@ -317,7 +324,11 @@ class Launcher
     $xiki_no_search = false
   end
 
-  def self.try_menu_launchers line
+  def self.try_menu_launchers line, options={}
+
+    # If there's a /@ in the path, cut it off
+    line.sub! /.+\/@/, ''
+
     root = line[/^[\w -]+/]   # Grab thing to match
     root.gsub!(/[ -]/, '_') if root
 
@@ -326,8 +337,6 @@ class Launcher
 
     orig_pwd = nil
     if trunk.size > 1 && closest_dir = Tree.closest_dir
-
-      # TODO: we're only doing trunk[-2] - should we find the closest file path?? - Tree.closest_dir
 
       orig_pwd = Dir.pwd   # Where ruby pwd was before
 
@@ -342,7 +351,7 @@ class Launcher
         # remove file
 
       else   # If doesn't exist
-        Tree << "| Directory '#{closest_dir}' doesn't exist. Create it?\n- @mkdir/"
+
         return true
       end
     end
@@ -375,8 +384,7 @@ class Launcher
 
     if block_other = @@menus[1][root]   # If class menu
       begin
-
-        Tree.output_and_search block_other, :line=>line  #, :dir=>file_path
+        Tree.output_and_search block_other, options.merge(:line=>line)  #, :dir=>file_path
       ensure
         Dir.chdir orig_pwd if orig_pwd
       end
@@ -478,19 +486,6 @@ class Launcher
       FileTree.launch
     end
 
-    self.add "google" do |line|
-      line.sub! /^google\/?/, ''
-      line.sub! /\/$/, ''
-      line.sub! /^\| /, ''
-
-      if line.blank?   # If no path, pull from history
-        next Launcher.last "google", :exclude_path=>1, :quoted=>1
-      end
-      txt = line.sub(/^\s+/, '').gsub('"', '%22').gsub(':', '%3A').gsub(' ', '%20')
-      $el.browse_url "http://www.google.com/search?q=#{txt}"
-      nil
-    end
-
     self.add(/^ *$/) do |line|  # Empty line
       View.beep
       View.message "There was nothing on this line to launch."
@@ -556,7 +551,7 @@ class Launcher
     # Menu launchers
 
     Launcher.add "log" do
-      Launcher.log :at=>1
+      Launcher.log
     end
 
     Launcher.add "last" do |path|
@@ -839,19 +834,25 @@ class Launcher
     path = path.sub /^[+-] /, ''   # Remove bullet
     path = "#{path}/" if path !~ /\//   # Append slash if just root without path
 
-    return if path =~ /^(log|last)(\/|$)/
+    return if path =~ /^(h|log|last)\//
+
     path = "- #{path}"
     File.open(@@log, "a") { |f| f << "#{path}\n" } rescue nil
   end
 
-  def self.insert txt
+  def self.insert txt, options={}
     View.insert txt
     $el.open_line(1)
-    Launcher.launch
+    Launcher.launch options
+  end
+
+  def self.show menu, options={}
+    self.open menu, options.merge(:no_launch=>1)
   end
 
   def self.open menu, options={}
-    $el.sit_for 0.3 if options[:delay]   # Delay slightly, (avoid flicking screen when they type command quickly)
+
+    $el.sit_for 0.25 if options[:delay] || options[:first_letter]   # Delay slightly, (avoid flicking screen when they type command quickly)
 
     View.to_after_bar if View.in_bar? && !options[:bar_is_fine]
 
@@ -881,6 +882,11 @@ class Launcher
     if options[:choices]
       View.to_highest
       Tree.search
+      return
+    end
+
+    if options[:no_launch]
+      View.to_highest
       return
     end
 
@@ -925,7 +931,9 @@ class Launcher
 
   def self.wrapper_rb dir, file, path
     output = Console.run "ruby #{Xiki.dir}/etc/wrappers/wrapper.rb #{file}.rb \"#{path}\"", :sync=>1, :dir=>dir
-    output = Tree.children output, path
+
+    output = Tree.children output, path if path !~ /^\./
+
     Tree << output
   end
 
@@ -947,7 +955,7 @@ class Launcher
 
   def self.wrapper_py dir, file, path
     output = Console.run "python #{Xiki.dir}etc/wrappers/wrapper.py \"#{dir}#{file}.py\" \"#{path}\"", :sync=>1, :dir=>dir
-    output = Tree.children output, path
+    output = Tree.children output, path if path !~ /^\./
     Tree << output
   end
 
@@ -985,7 +993,7 @@ class Launcher
 
   def self.as_update
     Keys.prefix = "save"
-    Launcher.launch
+    Launcher.launch :leave_bullet=>1
   end
 
   def self.as_destroy

@@ -10,6 +10,9 @@ load file
 
 clazz = file[/\w+/].gsub(/_([a-z]+)/) {"#{$1.capitalize}"}.sub(/(.)/) {$1.upcase}.gsub("_", "")
 
-output = eval "#{clazz}.menu"
+method = ".menu"
+method = path.sub(/\/$/, '') if path =~ /^\./
+
+output = eval "#{clazz}#{method}"
 puts output
 

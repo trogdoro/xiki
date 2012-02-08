@@ -15,7 +15,7 @@ class Styles
       - white
       - black
     - .list faces/
-    - docs/
+    - api/
       > Summary
       | How to use the Styles class.  You can change the color and font of text.
       | You define styles, then make them apply to the text that matches
@@ -34,6 +34,9 @@ class Styles
       |   :size => 90,
       |   :bold => true
       |
+      > See
+      | For styling specific text (not just a pattern):
+      <<< @overlay/
     '
     #       > Apply multiple fonts and groups
 

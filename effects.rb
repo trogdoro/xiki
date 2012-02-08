@@ -12,6 +12,8 @@ class Effects
     |
     - Glow/
       @Effects.glow
+      @Effects.glow :what=>:line
+      |
       @Effects.glow :color=>:fire
       @Effects.glow :color=>:water
       @Effects.glow :color=>:forest
@@ -37,6 +39,8 @@ class Effects
     end
 
     options = args[0] || {}
+
+    left, right = Line.left, Line.right if options[:what] == :line
 
     times = options[:times] || 3
 

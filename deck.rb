@@ -37,11 +37,11 @@ class Deck
 
   @@size = 10
 
-  def self.enable_arrow_keys
+  def self.enable_arrow_keys options={}
     last = View.files.find{|o| o =~ /\.notes$/}
     basename = File.basename(last)
 
-    View.flash "- Enabling for '#{basename}'..."
+    View.flash "- Enabling arrow keys for '#{basename}'..." unless options[:silent]
 
     View.open last
     $el.use_local_map $el.elvar.deck_mode_map
@@ -73,18 +73,9 @@ class Deck
     Keys.open_related_heading { Deck.open_related_heading }
 
     $el.define_key(:deck_mode_map, $el.kbd("<right>")) { Deck.right_arrow }
-
     $el.define_key(:deck_mode_map, $el.kbd("<left>")) { Deck.left_arrow }
-  end
 
-  def self.init
-    self.define_styles
-    self.keys
-    # Make deck mode happen for .deck files
-    Mode.define(:deck, ".deck") do
-      Notes.mode
-      $el.use_local_map $el.elvar.deck_mode_map   # Adds arrow keys onto notes map
-    end
+    Keys.do_keys_deck { Deck.enable_arrow_keys }
   end
 
   def self.open_related_heading
@@ -162,6 +153,16 @@ class Deck
 
     View.column = column
 
+  end
+
+  def self.init
+    self.define_styles
+    self.keys
+    # Make deck mode happen for .deck files
+    Mode.define(:deck, ".deck") do
+      Notes.mode
+      $el.use_local_map $el.elvar.deck_mode_map   # Adds arrow keys onto notes map
+    end
   end
 
 end

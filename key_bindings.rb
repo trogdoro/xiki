@@ -28,7 +28,7 @@ class KeyBindings
     Keys.as_everything { Clipboard.copy_everything }
     Keys.as_file { DiffLog.save }   # save (or, with prefix, save as) **
     # H
-    # I
+    Keys.as_indented { CodeTree.as_indented }
     Keys.as_job { Macros.record }   # start recording macro *
     Keys.as_kill { Clipboard.cut(0); Location.as_spot('killed') }   # cut) **
     Keys.as_line { Clipboard.as_line }
@@ -158,7 +158,7 @@ class KeyBindings
     Keys.enter_insert_log { Code.enter_log_line }   # Enter Old: enter newly-deleted from last save
     Keys.enter_insert_new { DiffLog.enter_new }   # Enter Old: enter newly-deleted from last save
     Keys.enter_insert_ruby { code = Keys.input(:prompt=>"Enter ruby code to eval and insert results: "); View.insert(eval(code).to_s)}
-    Keys.enter_insert_search {View.insert(Line.matches(/^ *- $/) ? "google/" : "- google/")}
+    Keys.enter_insert_search { Google.insert }
 
     Keys.enter_insert_old { DiffLog.enter_old }   # Enter Old: enter newly-deleted from last save
 
@@ -220,8 +220,8 @@ class KeyBindings
     Keys.do_as_browser { Firefox.run_block }
     Keys.do_as_javascript { Javascript.run }
     Keys.do_as_launched { Launcher.do_as_launched }
-    Keys.do_as_php { Php.run }
-    #     Keys.do_as_python { Python.run_block }
+    #     Keys.do_as_php { Php.run }
+    Keys.do_as_python { Python.run_block }
     Keys.do_add_space { Code.add_space }
     Keys.do_as_test { Code.do_as_rspec }
     Keys.do_as_wrap { Block.do_as_wrap }
@@ -384,7 +384,7 @@ class KeyBindings
     Keys.layout_balance { 3.times { View.balance } }   # balance windows *
     Keys.layout_create { View.create }   # open new view **
 
-    Keys.layout_dimensions { Launcher.open('- window/dimensions/presets/', :bar_is_fine=>1, :delay=>1) }
+    Keys.layout_dimensions { Launcher.open('- window/dimensions/presets/', :bar_is_fine=>1, :first_letter=>1) }
 
     Keys.layout_expand { View.enlarge }   # *
     # F
@@ -407,7 +407,7 @@ class KeyBindings
     Keys.layout_todo { View.layout_todo }   # show bar on left with the quick bookmark named "-t" *
     Keys.layout_uncover { Hide.reveal }   # Reveal all hidden text
     # V
-    Keys.layout_visibility { Launcher.open('- window/opacity/', :bar_is_fine=>1, :delay=>1) }
+    Keys.layout_visibility { Launcher.open('- window/visibility/', :bar_is_fine=>1, :first_letter=>1) }
     Keys.layout_wrap { toggle_truncate_lines }   # wrap lines **
     # X
     # Y
@@ -588,7 +588,7 @@ class KeyBindings
     define_key(:isearch_mode_map, kbd("C-0")) { Search.isearch_pause_or_resume }   # isearch_just_0
     #     define_key(:isearch_mode_map, kbd("C-8")) { Search.isearch_query_replace Clipboard[0] }   # isearch_just_0
 
-    define_key(:isearch_mode_map, kbd("C-8")) { History.open_current :all => true, :prompt_for_bookmark => true }
+    #     define_key(:isearch_mode_map, kbd("C-8")) { History.open_current :all => true, :prompt_for_bookmark => true }
 
     # Safe mapping of C-m to Search.isearch_m (works when el4r is down)
     el4r_lisp_eval(%`(defun isearch-m () (interactive)
@@ -644,15 +644,6 @@ class KeyBindings
     add_hook :ediff_keymap_setup_hook, :ediff_disable_C_l
 
     ControlTab.keys
-
-    Keys.set("C-e C-\\") {
-      txt, left, right = Clipboard.copy_paragraph(:just_return => true)
-      View.delete left, right
-      txt.gsub! /$/, ' \\'
-      txt.sub! " \\\n \\", "\n"
-      View.insert txt
-    }
-
 
     Keys.set("M-=") { Styles.zoom }
     Keys.set("M--") { Styles.zoom :out=>1 }

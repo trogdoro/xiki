@@ -6,40 +6,20 @@
 # switch-to-buffer-other-window-maybe
 # Represents a division of a window (in emacs terms, it's a window (which is within a frame))
 
-=begin
-
-# Sample code for the most commonly-used
-
-View.path
-  /projects/xiki/xiki_git/
-
-View.file
-  /projects/xiki/xiki_git/view.rb
-
-View.file_name
-  view.rb
-
-View.open "/tmp/"
-  # Switches to the view (opening if necessary)
-
-p Line.value
-  # Grabs text on this line
-
-=end
-
 class View
   include ElMixin
   extend ElMixin
 
   def self.menu
-    "
+    %`
     - @window/
     - .flashes/
-    - docs/
-      | The View class is the catch-all class for dealing with editing text.
+    - api/
+      > Summary
+      | View class is the catch-all class for dealing with editing text.
       | It has methods for inserting text and grabbing text, and quite a few
       | other things.
-    - api/
+      |
       > Text
       | Inserts into the view.
       @ View << 'Hello'
@@ -67,6 +47,8 @@ class View
       | Returns dir of file.
       @ p View.dir
       |
+      | Switches to the view (opening if necessary)
+      @ View.open "/tmp/"
       |
       > Messages
       | Shows temporary message inline.
@@ -87,7 +69,13 @@ class View
       > Also see
       - line/
       |
-    "
+    - docs/
+      > Summary
+      | Menus to deal with the layout, etc.
+      |
+      - Keys/
+        | layout+create - TODO should we just refer to a @layout menu for these?
+    `
   end
 
   # Stores things user copies
@@ -990,6 +978,7 @@ class View
     self.fullscreen_off
     set_frame_size(View.frame, size_x, size_y)
     set_frame_position(View.frame, position_x, position_y) unless position_x.nil?
+    nil
   end
 
   # Toggle full-screen mode
@@ -1028,7 +1017,7 @@ class View
     end
 
     # No numeric prefix, so just grab this line's opening indent text
-    indent_txt = Line[/^[ |\/\\#+!-]+/] || ""
+    indent_txt = Line[/^[ |$&%@\/\\#+!-]+/] || ""
 
     Deletes.delete_whitespace if ! Line.at_left && ! Line.at_right
 

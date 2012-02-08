@@ -11,6 +11,7 @@ class Itunes
     - api/
       > Play a song
       @ Itunes.songs 'Thunderstorm'
+      |
     - docs/
       | Play specific song
       @itunes/songs/Around the Fur

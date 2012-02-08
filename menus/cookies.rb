@@ -3,7 +3,7 @@ class Cookies
 
     txt = Firefox.run "document.cookie"
     hash = txt.split('; ').inject({}) do |acc, e|
-      k, v = e.match(/(.+?)=(.+)/)[1..2]
+      k, v = e.match(/(.*?)=(.*)/)[1..2]
       acc[k] = v
       acc
     end
@@ -14,8 +14,12 @@ class Cookies
       return hash.keys.sort.map{|k| "- #{k}/\n"}.join
     end
 
-    # If key, show its value
+    # If just key, show its value
+    if val.nil?
+      return "| #{hash[key]}"
+    end
 
-    "| #{hash[key]}"
+    ".flash - updated!"
+
   end
 end

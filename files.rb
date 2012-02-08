@@ -2,6 +2,52 @@
 class Files
   extend ElMixin
 
+  def self.menu
+    "
+    - @current/
+    - @edited/
+    - .history/
+    - docs/
+      > Summary
+      | The 'files' menu deals with navigating the filesystem.
+      |
+      - keys/
+        > Navigating
+        | open+tree - navigate the files in a bookmarked dir
+        |   (type '/' for the root)
+        | search+bookmark - searches file contents in a bookmarked dir
+        |
+        > Recent Files
+        | open+current - Show files currently open
+        | open+edited - Show files recently edited
+        | open+history - Show files recently open
+        |
+        > Saving
+        | as+file - saves the file
+        |   (using the normal emacs shortcut won't update the difflog)
+        |
+        > File Trees
+        | do+name+file
+        |   Renames a file (the file in a tree that the cursor is on).
+        |
+        | do+kill+file
+        |   Deletes a file (the file in a tree that the cursor is on).
+        |
+        | do+copy+to
+        |   Copies a file in the filesystem.  Used in a tree.  To use:
+        |
+        |   - 1) Put the cursor on a file in a tree
+        |   - 2) do as+spot to remember that's the file you want to copy
+        |   - 3) Put cursor on a file you want to copy it to
+        |     - If you don't want to over-write an existing file
+        |       - add the filename to the tree that you want to exist
+        |   - 4) Type do+copy+to
+        |
+        > See
+        @diff_log/docs/
+    "
+  end
+
   @@dir_hash = {
     'j' => '.js',
     'r' => '.rb',
@@ -90,23 +136,6 @@ class Files
       View.file :
       Bookmarks["$#{bm}"]
     Console.run "tail -f #{file}", :buffer => "*tail of #{file}"
-  end
-
-  def self.menu
-    "
-    - @current/
-    - @edited/
-    - .history/
-    - docs/
-      | Show files currently open
-      - @current/
-      |
-      | Show files recently edited
-      - @edited/
-      |
-      | Show files recently open
-      - @files/history/
-    "
   end
 
   def self.edited_array
@@ -238,14 +267,15 @@ class Files
     $el.shell_command(command)
   end
 
-  def self.open_in_window
+  def self.open_in_window file=nil
 
-    file = FileTree.tree_path_or_this_file
+    file ||= FileTree.tree_path_or_this_file
 
     # Else, reveal current file
     command = "open --reveal \"#{file}\""
     $el.shell_command(command)
 
+    nil
   end
 
   def self.dir_of path

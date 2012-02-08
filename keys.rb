@@ -11,103 +11,119 @@ class Keys
   def self.menu
     %`
     - .history/
+    - .api/
+      > Map C-c C-a
+      | Keys.CA { View.insert "foo" }
+      |
+      > Map C-d C-h
+      | Keys.do_hi { Line << "hey there" }
+      |
+      > Map M-x (in shell mode)
+      | Keys._X(:shell_mode_map) { View.insert "foooo" }
+      |
+      > Get user input
+      | - A String
+      |   - puts Keys.input(:prompt => "Name: ")
+      | - Just one char
+      |   - puts Keys.input :chars=>1
     - docs/
-      > Summary
-      | Xiki has keyboard shortcuts predefined for doing all kinds of things.
-      | Each keyboard shortcut has a mnemonic. Check out the "Keys" menu bar
-      | menu for a quick look at them.
-      |
-      | And Xiki lets you define your own keyboard shortcuts.  This line makes
-      | Control-e Control-n insert "Steve".
-      |
-      |   Keys.EN { View << "Steve" }
-      |
-      | For more about defining your own keyboard shortcuts see:
-      - @keys/api/
-      |
-      > Xiki's "type the acronym" approach
-      | Each xiki keyboard shortcut has a mnemonic that helps you
-      | simultaneously remember what it does and how to type it.
-      |
-      | For example, given this mnemonic:
-      |
-      |   layout_create
-      |
-      | you type:
-      |
-      |   Control-l Control-c  (l for "layout" and c for "create")
-      |
-      > Reasons for this appoarch
-      - More possible shortcuts/
-        | The approach of having single character key shortcuts (e.g. Control-a)
-        | works nicely for apps that have a small number of shortcuts. But it
-        | becomes less elegant when more shortcuts are used (Ctrl-a, Alt-a,
-        | Ctrl-Shift-a).
+      - Summary/
+        > Xiki Shortcuts
+        | Xiki has keyboard shortcuts predefined for doing all kinds of things.
+        | Each keyboard shortcut has a mnemonic. Check out the "Keys" menu bar
+        | menu for a quick look at them.
         |
-        | The "type the acronym" approach with just the Control
-        | key allows for very a large number of key shortcuts that are less
-        | prone to get confused with one another.
+        | And Xiki lets you define your own keyboard shortcuts.  This line makes
+        | Control-e Control-n insert "Steve".
         |
-      - Less to remember/
-        | A mnemonic clues you into what the keyboard shortcut does and how to type it,
-        | so it's all you need to remember. There's no need to separately remember a keyboard shortcut and what it does (a
-        | challenging part of most keyboard shortcut schemes having a large number of
-        | shortcuts, which xiki attempts to avoid).
+        |   Keys.EN { View << "Steve" }
         |
-        | Doesn't sound like standard emacs shortcuts?  Here's an explanation about
-        | how xiki deals with existing emacs shortcuts.
+        | For more about defining your own keyboard shortcuts see:
+        - @keys/api/
         |
-      - emacs_shortcuts/
-        | TODO add stuff about how C-a turns into C-a C-a, etc.
-        | Mention how this lets a large number of key shortcuts without interfering
-        | with emacs shortcuts.
-        | But an admitted downside is it affects 6 existing emacs shortcuts
-        | and makes you type them twice.
-        | In practice the annoyance caused by this isn't as bad as it initially may seem
-        | Consider using to_axis instead of C-a C-a and to_end instead of C-e C-e.
+        > Xiki's "type the acronym" approach
+        | Each xiki keyboard shortcut has a mnemonic that helps you
+        | simultaneously remember what it does and how to type it.
+        |
+        | For example, given this mnemonic:
+        |
+        |   layout_create
+        |
+        | you type:
+        |
+        |   Control-l Control-c  (l for "layout" and c for "create")
+        |
+        > Reasons for this appoarch
+        - More possible shortcuts/
+          | The approach of having single character key shortcuts (e.g. Control-a)
+          | works nicely for apps that have a small number of shortcuts. But it
+          | becomes less elegant when more shortcuts are used (Ctrl-a, Alt-a,
+          | Ctrl-Shift-a).
+          |
+          | The "type the acronym" approach with just the Control
+          | key allows for very a large number of key shortcuts that are less
+          | prone to get confused with one another.
+          |
+        - Less to remember/
+          | A mnemonic clues you into what the keyboard shortcut does and how to type it,
+          | so it's all you need to remember. There's no need to separately remember a keyboard shortcut and what it does (a
+          | challenging part of most keyboard shortcut schemes having a large number of
+          | shortcuts, which xiki attempts to avoid).
+          |
+          | Doesn't sound like standard emacs shortcuts?  Here's an explanation about
+          | how xiki deals with existing emacs shortcuts.
+          |
+        - emacs_shortcuts/
+          | TODO add stuff about how C-a turns into C-a C-a, etc.
+          | Mention how this lets a large number of key shortcuts without interfering
+          | with emacs shortcuts.
+          | But an admitted downside is it affects 6 existing emacs shortcuts
+          | and makes you type them twice.
+          | In practice the annoyance caused by this isn't as bad as it initially may seem
+          | Consider using to_axis instead of C-a C-a and to_end instead of C-e C-e.
       |
       > Six categories
       | As you can see by looking at the "Keys" menu in the menu bar, there are
       | six main categories of key shortcuts.
       |
       - Descriptions of each category/
-        |   to: jumping to specific points
-        |   open: open things
-        |   layout: subdivisions of windows
-        |   as: remembering things
-        |   enter: inserting things
-        |   do: executing things
+        - to: jumping to specific points
+        - open: opening things
+        - layout: views and windows
+        - as: remembering things
+        - enter: inserting things
+        - do: executing things
       |
       > Examples
       | Here are some of the most commonly used shortcuts in each category.
       | (Double-click a category to see them.)
       |
       - to/
-        | to_highest: Jump to top of file
-        | to_lowest: Jump to bottom of file
-        | to_axis: Jump to beginning of line
-        | to_end: Jump to end of line
+        | to+highest: Jump to top of file
+        | to+lowest: Jump to bottom of file
+        | to+axis: Jump to beginning of line
+        | to+end: Jump to end of line
       - open/
-        | open_bookmark: view a bookmark
-        | open_tree: view a tree of a directory
-        | open_current: shows currently open files
-        | open_edited: shows recently edited files
-        | open_open_history: shows recently viewed files
-        | open_menu: opens view that lets you type a menu (type "-" to see all)
+        | open+bookmark: view a bookmark
+        | open+tree: view a tree of a directory
+        | open+current: shows currently open files
+        | open+edited: shows recently edited files
+        | open+history: shows recently viewed files
+        | open+menu: opens view that lets you type a menu (type "-" to see all)
       - layout/
-        | layout_create: Create a new view
-        | layout_hide: Hide this view
-        | layout_next: Go to next view
-        | layout_previous: Go to previous view
-        | layout_kill: Close the current file
+        | layout+create: Create a new view
+        | layout+hide: Hide this view
+        | layout+next: Go to next view
+        | layout+previous: Go to previous view
+        | layout+kill: Close the current file
       - as/
-        | as_clipboard: Copy (after doing Control-space on the other side)
-        | as_kill: Cut (after doing Control-space on the other side)
-        | as_bookmark: remember this file as a bookmark
+        | as+clipboard: Copy (after doing Control-space on the other side)
+        | as+kill: Cut (after doing Control-space on the other side)
+        | as+bookmark: remember this file as a bookmark
       - enter/
-        | enter_clipboard: Paste
+        | enter+clipboard: Paste
       - do/
-        | do_tree: view an expanded tree of a directory
+        | do+tree: view an expanded tree of a directory
       |
       - miscellaneous/
         | Control-tab: cycles through files
@@ -121,18 +137,6 @@ class Keys
       | The seventh category, "search" has special behavior.  See:
       - @search/docs/
       |
-    - .api/
-      > Map C-c C-a
-      | Keys.CA { View.insert "foo" }
-      |
-      > Map M-x (in shell mode)
-      | Keys._X(:shell_mode_map) { View.insert "foooo" }
-      |
-      > Get user input
-      | - A String
-      |   - puts Keys.input(:prompt => "Name: ")
-      | - Just one char
-      |   - puts Keys.input :chars=>1
     `
   end
 
@@ -309,10 +313,12 @@ class Keys
 
     # Not completely implemented
     if options[:control]
-
       prompt = "todo - implement this: "
 
       elvar.inhibit_quit = true
+      # Maybe use this?
+        # Or call self.char?
+      # char = $el.char_to_string(Keys.remove_control($el.read_char(prompt))).to_s
       c = read_char(prompt)
       elvar.inhibit_quit = nil
       if c == 7
@@ -323,6 +329,7 @@ class Keys
       Cursor.restore :before_input
       return c
     end
+
     if options[:chars]
       char = $el.char_to_string(
         self.remove_control($el.read_char(prompt))).to_s

@@ -1,7 +1,17 @@
 # Starting and stopping macros
 class Macros
-#  include ElMixin
   extend ElMixin
+
+  def self.menu
+    "
+    docs/
+      > Keys
+      | as+job - Start or stop recording macro
+      | do+job - Run macro (the last recorded one)
+      | up+do+job - Stop recording and apply macro to any following contiguous lines
+    "
+  end
+
   def self.record
     # If ending a macro
     if elvar.defining_kbd_macro

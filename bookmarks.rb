@@ -6,30 +6,10 @@ class Bookmarks
   extend ElMixin
 
   def self.menu
-    '
-    - .tree/
+    %`
     - .list/
-    - .file/
-      - @~/.emacs.bmk
-    - .elisp/
-      | > Save unsaved bookmarks to ~/.emacs.bmk
-      | (bookmark-save)
-      |
-      | > Delete a bookmark
-      | (bookmark-delete "foo")
-    - docs/
-      | > Summary
-      | Xiki uses standard emacs bookmarks, while adding several keyboard shortcuts
-      | and the ability to bookmark buffers in addition to just files.
-      |
-      | > Shortcuts
-      | All of these prompt for a bookmark name:
-      |
-      | as_bookmark: bookmark the current file
-      | open_bookmark: jumps to bookmark file
-      | open_point: jumps to bookmark file and cursor position
-      |
-    - api/
+    - .tree/
+    - .api/
       | > Summary
       | Some of the common ways to use the Bookmarks class programatically.
       |
@@ -38,7 +18,31 @@ class Bookmarks
       |
       | > Expand bookmark in a path
       @p Bookmarks["$tm/hi.txt"]
-    '
+      |
+      > Where Emacs stores bookmarks
+      @ ~/.emacs.bmk
+      |
+      - .elisp/
+        | > Save unsaved bookmarks to ~/.emacs.bmk
+        | (bookmark-save)
+        |
+        | > Delete a bookmark
+        | (bookmark-delete "foo")
+    - docs/
+      > Summary
+      | Xiki uses standard emacs bookmarks, while adding several keyboard shortcuts
+      | and the ability to bookmark buffers in addition to just files.
+      |
+      > Keys
+      | All of these prompt for a bookmark name:
+      |
+      | as_bookmark: bookmark the current file
+      | open_bookmark: jumps to bookmark file
+      | open_point: jumps to bookmark file and cursor position
+      |
+      > See Also
+      @files/docs/
+    `
   end
 
   def self.save arg=nil

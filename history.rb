@@ -14,7 +14,6 @@ class History
   end
 
   def self.open_current options={}
-
     if options[:paths]
       paths = options[:paths]
     elsif options[:prompt_for_bookmark]
@@ -59,8 +58,13 @@ class History
       end
 
       View.to_buffer("*tree of current")
-      View.clear;  notes_mode
-      View.insert FileTree.paths_to_tree(paths)
+      View.clear;  $el.notes_mode
+
+      raise "Thought this wouldn't happen :(" if paths.length > 1
+
+      dir, file = paths[0].match(/(.+\/)(.+)/)[1..2]
+      View << "- #{dir}\n  - #{file}\n"
+
       View.to_top
       Keys.clear_prefix
       FileTree.select_next_file
@@ -222,7 +226,9 @@ class History
     # Copy file
     $el.copy_file path, "#{bm}#{name} #{Time.now.strftime('%Y-%m-%d %H-%M')}"
 
-    View.message "Successfully backed up '#{name}' to $bak/"
+    message = "backed up '#{name}' to $bak/"
+    View.flash "- #{message}", :times=>3
+    View.message "Successfully #{message}"
   end
 
   def self.diff_with_backup
@@ -233,7 +239,11 @@ class History
     end
 
     backup = Dir["#{Bookmarks['$bak']}#{View.file_name}*"].last
+
     diff = Console.run "diff -w -U 0 \"#{backup}\" \"#{buffer_file_name}\"", :sync=>true
+
+    return Launcher.show "- No Differences!" if diff.blank?
+
     diff = DiffLog.format diff
 
     View.to_buffer("*diff with saved*")

@@ -1,3 +1,6 @@
+gem "rspec"
+require "rspec"
+
 class Specs
 
   def self.menu
@@ -28,7 +31,7 @@ class Specs
 
     # Must be "continue/"
     gem "rspec"
-    require "spec"
+    require "rspec"
     return "- loaded!"
 
   end

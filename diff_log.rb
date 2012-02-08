@@ -5,7 +5,20 @@ class DiffLog
   extend ElMixin
 
   @@log = File.expand_path("~/.emacs.d/difflog.notes")
-  @@temp_path = elvar.temporary_file_directory + "latest-diff.txt"
+  @@temp_path = "/tmp/saved.txt"
+
+  def self.menu
+    "
+    docs/
+      > Summary
+      | The difflog tracks diffs of all the changes you make to file
+      | (assuming you save using as+file).
+      |
+      > Keys
+      | open+diffs - open the difflog
+      | search+diffs - search the difflog from the bottom
+    "
+  end
 
   # Open file having difflog
   def self.open
@@ -120,7 +133,7 @@ class DiffLog
   end
 
   def self.compare_with_saved
-    diff = self.save_diffs :dont_save=>1
+    diff = self.save_diffs :dont_log=>1
     diff = "" if diff.nil?
 
     View.to_buffer("*diff with saved*")
@@ -148,14 +161,52 @@ class DiffLog
       patha = View.file
       $el.write_region nil, nil, @@temp_path
     end
+
     diff = Console.sync "diff -w -U 0 \"#{patha}\" \"#{@@temp_path}\""
 
     return if diff.empty? || diff =~ /: No such file or directory\n/   # Fail quietly if file didn't exist
 
     diff = self.format diff
 
-    return diff if options[:dont_save]
+    return diff if options[:dont_log]
 
     File.open(@@log, "a") { |f| f << diff } unless diff.count("\n") <= 2
   end
+
+  def self.parse_tree_diffs txt
+    result = [[], []]
+
+    txt = txt.split("\n")
+    i, length = 0, txt.length
+
+    while i < length
+      line = txt[i]
+      #       a_or_d = line[/^[ad]/]
+      match = line.match(/^(.)(\d+) (\d+)/)
+      raise "Line #{line} unexpected by DiffLog.parse_tree_diffs" if ! match
+      a_or_d, line_number, many = match[1..3]
+      line_number, many = line_number.to_i, many.to_i
+
+      if a_or_d == "d"
+        i += 1
+        many.times do |n|
+          result[1] << line_number + n
+        end
+        next
+      end
+
+      if a_or_d == "a"
+        i += 1
+        many.times do |n|
+          result[0] << line_number + n
+        end
+        next
+      end
+
+      raise "DiffLog.parse_tree_diffs doesn't know what to do with #{line}"
+    end
+
+    result
+  end
+
 end

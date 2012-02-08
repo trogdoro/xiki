@@ -49,7 +49,7 @@ class Memcache
         " if `which memcached`.empty?
 
       return "
-        | > Not running
+        > Not running
         | Memcached doesn't appear to be running.
         - start it) @memcache/start/"
     end

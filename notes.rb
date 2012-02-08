@@ -221,7 +221,6 @@ class Notes
     define_key(:notes_mode_map, kbd("M-<mouse-1>"), :notes_mouse_meta_click)
     define_key(:notes_mode_map, kbd("<double-mouse-1>"), :notes_mouse_double_click)
     define_key(:notes_mode_map, kbd("<mouse-1>"), :notes_mouse_toggle)
-
   end
 
   def self.define_styles
@@ -245,38 +244,38 @@ class Notes
     # Colors of "| ..." headings
     if Styles.inverse   # If black bg
       @@h1_styles = {
-        :notes_h1 =>"333333",
-        :notes_h1r=>"661111",   # | r This will be red
-        :notes_h1o=>"884411",   # | o This will be orange
-        :notes_h1y=>"887711",
-        :notes_h1e=>"336633",
-        :notes_h1g=>"336633",
-        :notes_h1b=>"666699",
-        :notes_h1p=>"663366",
-        :notes_h1m=>"662222",
-        :notes_h1x=>"333333",
-        :notes_h1t=>"005555",
+        :notes_h1 =>"333",
+        :notes_h1r=>"611",   # | r This will be red
+        :notes_h1o=>"841",   # | o This will be orange
+        :notes_h1y=>"871",
+        :notes_h1e=>"363",
+        :notes_h1g=>"363",
+        :notes_h1b=>"669",
+        :notes_h1p=>"636",
+        :notes_h1m=>"622",
+        :notes_h1x=>"345",
+        :notes_h1t=>"055",
         }
     else
       # Colors of headings
       @@h1_styles = {
-        :notes_h1 =>"aaaaaa",
-        :notes_h1r=>"bb6666",   # | r This will be red
-        :notes_h1o=>"bb8833",   # | o This will be orange
-        :notes_h1y=>"bbbb33",
-        :notes_h1e=>"336633",
-        :notes_h1g=>"77bb66",
-        :notes_h1b=>"9999bb",
-        :notes_h1p=>"bb88bb",
-        :notes_h1m=>"994444",
-        :notes_h1x=>"999999",
-        :notes_h1t=>"005555",
+        :notes_h1 =>"aaa",
+        :notes_h1r=>"b66",   # | r This will be red
+        :notes_h1o=>"b83",   # | o This will be orange
+        :notes_h1y=>"bb3",
+        :notes_h1e=>"363",
+        :notes_h1g=>"7b6",
+        :notes_h1b=>"99b",
+        :notes_h1p=>"b8b",
+        :notes_h1m=>"944",
+        :notes_h1x=>"678",
+        :notes_h1t=>"055",
         }
     end
 
     @@h1_styles.each do |k, v|
-      pipe = v.gsub(/../) {|c| (c.to_i(16) + "22".to_i(16)).to_s(16)}
-      label = v.gsub(/../) {|c| (c.to_i(16) + "55".to_i(16)).to_s(16)}
+      pipe = v.gsub(/./) {|c| (c.to_i(16) + "3".to_i(16)).to_s(16)}
+      label = v.gsub(/./) {|c| (c.to_i(16) + "5".to_i(16)).to_s(16)}
       Styles.define k,
         :face=>'arial', :size=>h1_size, :fg=>'ffffff', :bg=>v, :bold=> true
       Styles.define "#{k}_pipe".to_sym, :face=>'arial', :size=>h1_size, :fg=>pipe, :bg=>v, :bold=>true
@@ -489,7 +488,7 @@ class Notes
   def self.bullet bullet_text="- "
     prefix = Keys.prefix :clear=>true
 
-    return Tree.collapse if prefix == :-
+    return Tree.collapse if prefix == :u
 
     line = Line.value
     indent = Line.indent indent
@@ -550,10 +549,6 @@ class Notes
     $el.indent_rigidly top, Line.left, 2
     View.cursor = cursor
 
-    $el.forward_word
-    $el.skip_chars_forward "/"
-
-    #ControlLock.disable
   end
 
   def self.help_wiki_format

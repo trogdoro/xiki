@@ -19,10 +19,10 @@ class Image
     `
   end
 
-  def self.>> file
+  def self.>> file, txt=" "
     Move.to_end
     Notes.enter_junior
-    self.<< file
+    self.<< file, txt
     Move.backward
   end
 

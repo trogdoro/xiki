@@ -256,9 +256,14 @@ class Piano
       return false
     end
 
+    if Line =~ /\(/
+      Tree.to_parent
+      Move.to_end
+      Search.forward("^[^(\n]+$")
+    end
+
     txt = ENV['txt']
     self.song txt, :move=>1
-    #     @@repeat = 1
 
     nil
   end
@@ -281,11 +286,9 @@ class Piano
 
       # Start at where cursor is
       View.column = Line.value[/.+(\/|\| ?)/].length if options[:move]
-
       longest = @@lines.inject(0){|acc, e| e.length > acc ? e.length : acc}
 
       longest.times do |i|
-
         self.run_functions @@functions_by_index[i] # unless i == 0
 
         sharp = false
@@ -370,6 +373,9 @@ class Piano
       @@melodic_accumulator[track] ||= 0
       random *= @@climb if @@climb != 0
       @@melodic_accumulator[track] += random
+
+      @@melodic_accumulator[track] = 0 if @@melodic_accumulator[track] > 28 || @@melodic_accumulator[track] < -28
+
       random = @@melodic_accumulator[track]
     end
 

@@ -44,7 +44,7 @@ class Git
     | Put the @git menu under a path that has or will have a git repo, like
     | so:
     |
-    | - /tmp/my_project/
+    | - /tmp/myproject/
     |   - @git/
     "
 

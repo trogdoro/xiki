@@ -40,9 +40,17 @@ class Tree
     pattern = ""
     lines = $el.buffer_substring(left, right).split "\n"
 
+    ch = nil
+
+    if options[:first_letter]
+      ch, ch_raw = self.first_letter lines
+      return if ! ch
+    end
+
     Message << "filter... "
 
-    ch, ch_raw = Keys.char
+    ch, ch_raw = Keys.char if ch.nil?
+
     if ch.nil?
       return Cursor.restore(:before_file_tree)
     end
@@ -140,6 +148,7 @@ class Tree
       end
 
     end
+
 
     # Exiting, so restore cursor
     Cursor.restore :before_file_tree
@@ -359,10 +368,69 @@ class Tree
       $el.delete_region(Line.left(2), right)   # Delete other files
       self.drill
 
+    when "\a"   # Typed C-g
+      View.beep
     else
       $el.command_execute ch
     end
   end
+
+
+  def self.first_letter lines
+    letters = {}
+    lines.each_with_index do |l, i|
+      found = false
+      l.length.times do |j|
+        #         letter = l[/^  \S+ (\w)/, 1]   # Grab 1st letter
+        letter = l[j].chr
+        next if letter !~ /[a-z]/i
+        next if letters[letter]
+
+        letters[letter] = [i+1, j+1]   # Set letter to index, if not there yet
+        break
+      end
+    end
+
+    self.highlight_tree_keys letters, Line.number
+
+    # Get input
+    Message << "type 1st letter... "
+    ch, ch_raw = Keys.char
+    letterized = $el.char_to_string(Keys.remove_control ch_raw).to_s
+
+    Overlay.delete_all
+
+    if letters[letterized]
+      Cursor.restore :before_file_tree
+      Line.next letters[letterized][0] - 1
+      CodeTree.kill_siblings
+      Launcher.launch
+      return nil
+    end
+
+    # If was a valid letter but no match
+    if ch =~ /^[a-z0-9]$/i
+      return [ch, ch_raw]   # We didn't do anything, so continue on
+    end
+
+    Cursor.restore :before_file_tree
+    $el.command_execute ch
+
+    nil   # We handled it
+  end
+
+  def self.highlight_tree_keys letters, line
+
+    letters.each do |k, v|
+      View.line = line + v[0] - 1
+      cursor = View.cursor
+      Overlay.face :tree_keys, :left=>cursor-1+v[1], :right=>cursor+v[1]
+    end
+
+    View.line = line
+
+  end
+
 
   # Drill into a file, showing lines one indent level deeper
   # Returns lowest item in path, or if pipe-quoted
@@ -820,21 +888,21 @@ class Tree
 
     # Determine how to search based on output!
 
-    params = {:left=>left, :right=>right}
+    options.merge! :left=>left, :right=>right
 
     root_indent = output[/\A */]
     if output =~ /^#{root_indent}  /   # If any indenting
       if output =~ /^  +\|/
         Search.forward "^ +\\(|\\|- ##\\)", :beginning=>true
         Line.to_beginning
-        params[:recursive_quotes] = true
+        options[:recursive_quotes] = true
       else
         FileTree.select_next_file
-        params[:recursive] = true
+        options[:recursive] = true
       end
-      Tree.search params
+      Tree.search options
     else
-      Tree.search params.merge(:number_means_enter=>true)
+      Tree.search options.merge(:number_means_enter=>true)
     end
 
   end
@@ -1270,14 +1338,18 @@ class Tree
   end
 
   def self.dir options={}
+
     dir = Xiki.trunk[-2]
 
     if ! FileTree.handles?(dir)
 
       return nil if options[:silent]
+      return File.expand_path("~/Desktop") if options[:or] == :desktop
 
       guessed_menu = caller(0)[1][/.+\/(.+)\.rb/, 1]
-      raise "| This menu must be nested under a #{options[:file] ? 'file' : 'dir'}, like this:\n|\n| - /tmp/#{options[:file] ? 'file.txt' : ''}\n|   @#{guessed_menu}"
+      file = !options[:file] ? '' : options[:file].is_a?(String) ? options[:file] : 'file.txt'
+
+      raise "> This menu must be nested under a #{options[:file] ? 'file' : 'dir'}, like this:\n| - /tmp/#{file}\n|   @#{guessed_menu}"
     end
 
     Bookmarks[dir]

@@ -144,7 +144,7 @@ class Xiki
     txt.
       gsub(/^/, '| ').
       gsub(/ +$/, '').
-      gsub(/^\|        +([+-])/) {|o| "|#{$1 == '-' ? '+' : '-'}"}
+      gsub(/^\|        +([+-])/, "|\\1") # {|o| "|#{$1 == '-' ? '+' : '-'}"}
   end
 
   def self.tests clazz=nil, *test
@@ -152,7 +152,9 @@ class Xiki
       return ["all/"] + Dir["#{Xiki.dir}/spec/*_spec.rb"].entries.map{|o| "#{o[/.+\/(.+)_spec\.rb/, 1]}/"}
     end
 
-    if test.empty?   # If just class, list all tests
+    # If just class, list all tests
+
+    if test.empty?
       Xiki.dont_search
 
       if clazz == "all"
@@ -176,8 +178,9 @@ class Xiki
 
     quote = Line[/^ *\| ?(.+)/, 1]
 
-    if ! quote   # If just test
+    # If just test, jump to it?
 
+    if ! quote
       # If U prefix, just jump to file
       if Keys.prefix_u :clear=>true
         View.open "$x/spec/#{clazz}_spec.rb"
@@ -195,6 +198,7 @@ class Xiki
     end
 
     # Quoted line, so jump to line number
+
     file, line = Line.value.match(/([\/\w.]+)?:(\d+)/)[1..2]
     file.sub! /^\.\//, Bookmarks["$x"]
     View.open file

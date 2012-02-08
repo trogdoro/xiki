@@ -291,8 +291,11 @@ class FileTree
       Styles.define :diff_green, :bg => "130", :fg => "44dd33", :size => "-1"
       Styles.define :diff_small, :fg => "222", :size => "-11"
 
+      Styles.tree_keys :fg=>"#fff", :underline=>nil
+
       # dir/
       Styles.define :ls_dir, :fg => "888", :face => "verdana", :size => "-2", :bold => true
+      #       Styles.define :ls_dir, :fg => "bbb", :face => "verdana", :size => "-2", :bold => true
 
     else
       Styles.define :quote_heading, :fg=>"444", :size=>"0", :face=>"arial", :bold=>false
@@ -305,6 +308,8 @@ class FileTree
       Styles.define :diff_red, :bg => "ffdddd", :fg => "cc4444"
       Styles.define :diff_green, :bg => "ddffcc", :fg => "337744"
       Styles.define :diff_small, :fg => "ddd", :size => "-11"
+
+      Styles.tree_keys :fg=>"#ff0", :underline=>1
 
       # dir/
       Styles.define :ls_dir, :fg => "777", :face => "verdana", :size => "-2", :bold => true
@@ -562,13 +567,111 @@ class FileTree
   def self.save_quoted path
     txt = Tree.siblings :quotes=>1
 
-    return View.flash("- All siblings should be quoted - make more flexible") if txt[0] !~ /^\|/
+    if txt[0] !~ /^\|/
+      # TODO: also check that it's a tree
+      #     return View.flash("- All siblings should be quoted - (make this more flexible?)")
+      return self.move_or_delete_via_diffs
+    end
+
+    dir = File.dirname path
+
+    if ! File.exists? dir
+      View.flash "- Dir doesn\'t exist. Create it?"
+
+      key = Keys.input :chars=>1, :prompt=>"Create the \"#{dir}\" directory? "
+      return if key != "y"
+
+      `mkdir -p "#{dir}"`
+    end
 
     txt = txt.map{|o| "#{o.sub /^\| ?/, ''}\n"}.join('')
     DiffLog.save_diffs :patha=>path, :textb=>txt
+
     File.open(path, "w") { |f| f << txt }
 
     View.flash "- Saved!"
+  end
+
+  def self.operations_via_diffs added, deleted
+    tmp_path = "/tmp/saved.txt"
+    operations = [[], []]
+
+    file = View.file
+    with(:with_temp_buffer) do
+      $el.insert_file file
+      #       Ol << "View.txt(1, 150): #{View.txt(1, 150)}"
+      deleted.each do |line_number|
+        View.line = line_number
+        path = Tree.construct_path
+        operations[1] << path
+      end
+    end
+
+    if added.any?
+      with(:with_temp_buffer) do
+        $el.insert_file tmp_path
+        added.each do |add|
+          line_number = add
+          View.line = line_number
+          path = Tree.construct_path
+          operations[0] << path
+        end
+      end
+    end
+    operations
+  end
+
+  def self.move_or_delete_via_diffs
+
+    # Save current version to temporary place, and diff
+    tmp_path = "/tmp/saved.txt"
+    $el.write_region nil, nil, tmp_path
+    diff = Console.sync %`diff --old-group-format="d%df %dn%c'\012'" --new-group-format="a%dF %dN%c'\012'" --unchanged-line-format="" "#{View.file}" "#{tmp_path}"`
+
+    added, deleted = DiffLog.parse_tree_diffs diff
+
+    return Tree.<<("> Error\n| You haven't changed any lines (since you last saved).", :no_slash=>1) if added.blank? && deleted.blank?
+
+    return Tree.<<("> Error\n| You\'ve deleted #{deleted.length} lines but added #{added.length} (since you last saved).\n| It\'s unclear what you\'re trying to do.", :no_slash=>1) if added.any? && added.length != deleted.length
+    operation = added.any? ? :moves : :deletes
+
+    operations = self.operations_via_diffs added, deleted
+
+    View.flash "- Are you sure?", :times=>1
+
+    if operation == :moves
+      message = "Move these files?\n"
+      operations[0].each_with_index do |o, i|
+        delete = operations[1][i]
+        message << "- #{delete} -> #{o}\n"
+      end
+    else
+      message = "Delete these files?\n"
+      operations[1].each do |o|
+        message << "- #{o}\n"
+      end
+    end
+
+    choice = Keys.input :prompt=>"#{message}", :chars=>1
+
+    return if choice !~ /[ym]/i
+
+    if operation == :moves
+      operations[0].each_with_index do |o, i|
+        delete = operations[1][i]
+        command = "mv \"#{delete}\" \"#{o}\""
+        Console.sync command, :dir=>"/tmp/"
+      end
+    else
+      operations[1].each do |o|
+        command = "rm \"#{o}\""
+        Console.sync command, :dir=>"/tmp/"
+      end
+    end
+
+    View.flash "- done!", :times=>1
+
+    nil
   end
 
   def self.drill_quote path
@@ -631,13 +734,15 @@ class FileTree
     # If no dir, do tree in current dir
     dir ||= elvar.default_directory
 
+    line = Line.value
+
     # If to be in bar, go to the tree file in the bar
     if options[:open_in_bar]
       self.open_in_bar :ignore_prefix   # Open tree
       # If not on a blank line, go to the top
-      View.to_top unless Line.matches(/^$/)
+      View.to_top unless line =~ /^$/
       # If on line, add another blank
-      unless Line.matches(/^$/)
+      unless line =~ /^$/
         View.insert "\n\n";  backward_char 2
       end
     end
@@ -662,7 +767,6 @@ class FileTree
       Notes.mode
       use_local_map elvar.notes_mode_map
     end
-
     # If recursive
     if options[:recursive]
       left = point
@@ -686,7 +790,12 @@ class FileTree
         return
       end
 
-      View.insert "+ #{dir}\n"
+      bullet = "+ "
+
+      bullet = "" if line =~ /^[ @]+$/
+      bullet = "@" if line =~ /^ +$/
+
+      View.insert "#{bullet}#{dir}\n"
       previous_line
       self.dir  # Draw actual tree
     end
@@ -722,6 +831,7 @@ class FileTree
 
     only_one_view_in_bar = Keys.prefix_u?
     only_one_view_in_bar = ! only_one_view_in_bar if @@one_view_in_bar_by_default
+
     unless only_one_view_in_bar  # Unless u prefix, open $tl as well (under bar)
 
       # If 2nd view isn't at left margin, open 2nd view
@@ -1024,7 +1134,7 @@ class FileTree
 
       # If it's a dir, delegate to Open Tree
       if path =~ /\/$/
-        FileTree.ls :here => true, :dir => path
+        FileTree.ls :here=>true, :dir => path
         return
       end
 
@@ -1039,11 +1149,15 @@ class FileTree
     Line.to_left
     path ||= options[:path] || Tree.construct_path  # Get path
     path = Bookmarks.expand(path)
-    indent = Line.indent  # get indent
+    indent = Line.indent   # get indent
+
+    # If image, insert it
+    return self.enter_image path if extension =~ /^(jpg|jpeg|png|gif)$/
 
     # Get matches from file
     matches = ""
     indent_more = options[:path] ? '' : '  '
+
     if path =~ /^\/\w+@/
       contents = Remote.file_contents path
       Tree.under contents, :escape=>'| ', :no_slash=>1
@@ -1059,6 +1173,7 @@ class FileTree
       self.file_not_found_from_template(path)
       return
     end
+
     IO.foreach(path) do |line|
       i+=1
       line.sub!(/[\r\n]+$/, '')
@@ -1081,6 +1196,29 @@ class FileTree
 
     Tree.insert_quoted_and_search matches, :line_found=>line_found
   end
+
+  def self.enter_image image
+
+    tmp_dir = "/tmp/insert_image"
+    Dir.mkdir tmp_dir if ! File.exists? tmp_dir
+
+    width, height = Console.sync("identify \"#{image}\"").match(/(\d+)x(\d+)/)[1..2]
+    max = 300
+    if width.to_i > max || height.to_i > max
+      dest = tmp_dir+"/"+File.basename(image).sub(".", "_#{max}.")
+      Console.sync %`convert "#{image}" -resize #{max}x#{max} "#{dest}"`, :dir=>"/tmp"
+    else
+      dest = image
+    end
+
+    Image.>> dest, "_"
+
+    Line.previous
+    Line.to_beginning
+
+    nil
+  end
+
 
   def self.file_not_found_from_template path
 

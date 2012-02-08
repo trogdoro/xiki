@@ -81,7 +81,7 @@ class Firefox
   end
 
   def self.js txt=nil
-    return "| Type some javascript here (to run in Firefox)." if ! txt
+    return "| $('p').toggle()  // Type some javascript here (to run in the browser)" if ! txt
 
     Firefox.run txt, :jquery=>1
     ".flash - ran in browser!"
@@ -272,7 +272,8 @@ class Firefox
 
   def self.html txt=nil
 
-    return "| Provide some html here." if ! txt
+    return "| <h1>Provide some html here.</h1>\n| <p>Then click to show in <span>the browser.</span></p>" if ! txt
+
 
     # When C-8, delegate to .dom to show whole body
     return Tree.<< Firefox.dom(:prefix=>"all") if Keys.prefix == "all"
@@ -312,8 +313,8 @@ class Firefox
     Firefox.run Tree.leaf(txt), :jquery=>1
   end
 
-  def self.css html
-    txt = Tree.leaf(html)
+  def self.css txt
+    return "| h1 {color:red;}  /* Type some css here (to run in the browser) */" if ! txt
 
     txt.gsub!("\n", '\n')
     txt.gsub!('"', '\"')
@@ -728,5 +729,4 @@ end
 
 Menu.css do |path|
   Firefox.css Tree.rest(path)
-  nil
 end

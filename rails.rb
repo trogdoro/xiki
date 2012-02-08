@@ -109,7 +109,7 @@ class Rails
       return "- generating #{what}..."
     when "controller"
       return View.prompt "Enter a name" if ! name
-      return View.prompt "Enter an detail" if ! detail
+      return View.prompt "Enter an action" if ! detail
       Console.run "rails g controller #{name} #{detail}", :dir=>Projects.current
       return "- generating controller..."
     end

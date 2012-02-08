@@ -1,4 +1,6 @@
-# represents an overlay and has finder methods for getting overlays
+# Wrapper around the elisp 'overlay'.
+#
+# Represents an overlay and has finder methods for getting overlays
 # for more, see http://www.gnu.org/software/emacs/elisp/html_node/Overlays.html
 # represents an elisp overlay.  the Overlay class finder methods for getting overlays
 #-- IMPORTANT NOTES:
@@ -8,6 +10,22 @@ class Overlay
   def initialize(elisp_overlay)
     # raise TypeError.new("argument must be elisp overlay") if overlayp(elisp_overlay)
     @overlay = elisp_overlay
+  end
+
+  def self.menu
+    "
+    - api/
+      | Make some text have a style
+      @ Overlay.face :underline, :left=>1, :right=>300
+      |
+      | Remove all overlays
+      @ Overlay.delete_all
+    "
+  end
+
+  # create elisp overlay and wrap it in a ruby object
+  def self.make(left, right)
+    Overlay.new($el.make_overlay(left, right))
   end
 
   # returns all overlays that contain at least one character between left and right
@@ -69,6 +87,12 @@ class Overlay
     o = Overlay.find_or_make(left, right)
     o[:face] = face
     o
+    nil
+  end
+
+  def self.delete_all
+    $el.overlays_in(View.top, View.bottom).to_a.each{|o| $el.delete_overlay o}
+    nil
   end
 
   # returns the buffer that overlay belongs to. It returns nil if overlay has been deleted.

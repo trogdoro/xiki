@@ -60,8 +60,14 @@ class Code
 
   # Evaluates file, paragraph, or next x lines using el4r
   def self.run options={}
-
     prefix = Keys.prefix
+
+    if prefix == :uu
+      path = Tree.construct_path
+
+      load path
+      return View.flash "- loaded!"
+    end
 
     if options[:left]
       left, right = options[:left], options[:right]
@@ -88,10 +94,8 @@ class Code
       Effects.blink :left => left, :right => right
     end
 
-    # Remove quoted lines if it's quoted
-    if txt =~ /\A *\|/
-      txt.gsub! /^ *\| ?/, ''
-    end
+    txt.sub! /\A( *)@ /, "\\1"   # Remove @ if at beginning
+    txt.gsub! /^ *\| ?/, '' if txt =~ /\A *\|/   # Remove quoted lines if it's quoted
 
     # If C--, define the launcher
     if prefix == :-
@@ -501,8 +505,8 @@ class Code
     orig.go
   end
 
-  def self.randomize_lines
-    txt = View.selection :delete=>true
+  def self.randomize_lines txt=nil
+    txt ||= View.selection :delete=>true
     l = txt.split("\n")
     orig = Location.new
     View.insert l.sort_by{ rand }.sort_by{ rand }.join("\n") + "\n"

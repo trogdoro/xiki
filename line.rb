@@ -1,26 +1,29 @@
 class Line
   extend ElMixin
 
-  CODE_SAMPLES = %q<
-    # Moving
-    - up: Line.previous
-    - down: Line.next
-
-    # Getting text
-    - line text: p Line.value
-    - indent: p Line.indent
-      - without indent: p Line.without_indent
-    - label: p Line.label
-      - without label: p Line.without_label
-
-    # Getting Positions
-    - line start: p Line.left
-    - line ending: p Line.right
-
-    # Tests
-    - blank: p Line.blank?
-    - matches something: p Line[/s...thing/]
-  >
+  def self.menu
+    "
+    - api/
+      > Moving
+      @ Line.previous   # up
+      @ Line.next   # down
+      |
+      > Getting text
+      @ p Line.value   # line text
+      @ p Line.indent   # indent
+      @ p Line.without_indent   # without indent
+      @ p Line.label   # label
+      @ p Line.without_label   # without label
+      |
+      > Getting Positions
+      @ p Line.left   # line start
+      @ p Line.right   # line ending
+      |
+      > Tests
+      @ p Line.blank?   # blank
+      @ Line[/s...thing/]   # matches something
+    "
+  end
 
   # Text on current line (minus linebreak)
   def self.[] regex, index=0
@@ -224,9 +227,6 @@ class Line
     self.matches /^\s*[+-] /, line
   end
 
-  def self.fuckyou pos=nil
-    return line_number_at_pos pos
-  end
   def self.number pos=nil
     $el.xiki_line_number pos || $el.point
   end
