@@ -1,0 +1,65 @@
+> One-liner
+
+- run in left bar:
+Foo.add(1, 2).should == 3
+
+class Foo
+  def self.add a, b
+    3
+  end
+end
+
+
+> Tests
+
+- explore, run, navigate
+
+xiki/tests/
+
+
+> Run in-place
+
+- key: do+as+test
+
+xiki/tests/line/
+  - all/
+  - #without_label/
+    - removes bullets/
+    - should remove new parethesis labels/
+    - should keep labels if opening paren/
+    - should respect collapse bullets/
+    - should respect multiple collapse bullets/
+    - should respect multiple collapses and only label/
+    - should leave old style labels/
+
+
+> Add a couple to the left bar
+
+- key: enter+like+test
+
+xiki/tests/line/
+
+
+> Future
+
+- Port from rails to merb
+
+test/bite
+
+
+> Future
+
+- Port from rails to merb
+
+test/bite/
+  | # Run options: include {:locations=>{"./spec/tree_spec.rb"=>[106]}}
+  | # .
+  | #
+  | # Finished in 0.0008 seconds
+  | # 1 example, 0 failures
+
+
+> End of Topic
+
+- /projects/bleeding_edge_xiki_presentation/
+  + bleeding_edge_xiki_presentation.notes

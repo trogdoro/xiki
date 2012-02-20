@@ -36,7 +36,14 @@ class Window
       return "#{View.width}, #{View.height}, #{$el.frame_parameter(nil, :left)}, #{$el.frame_parameter(nil, :top)}"
     end
 
-    txt = File.read(File.expand_path("~/menus/dimensions_config.menu")).split("\n")
+    txt = File.read(File.expand_path("~/menus/dimensions_config.menu"))
+
+    txt.sub! /\n\n.+/m, "\n"
+
+    txt = txt.split("\n")
+
+    # Any after blank line will be ignored
+
 
     # If just presets/, list all presets
 

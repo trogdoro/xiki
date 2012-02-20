@@ -49,4 +49,26 @@ class Javascript
 
   end
 
+  def self.wrap_jquery_load txt, url=nil
+
+    url ||= "http://code.jquery.com/jquery-latest.js"
+
+    txt = "
+      var f = function(){
+      #{txt}
+      };
+
+      if(typeof($) == 'undefined') {
+        var s = document.createElement('script');
+        s.src = '#{url}';
+        s.onload = f;
+        document.getElementsByTagName('head')[0].appendChild(s);
+      }else{
+        f();
+      }
+      ".unindent
+
+    txt
+  end
+
 end

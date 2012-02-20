@@ -935,7 +935,11 @@ class FileTree
           - @mkdir/
           "
       end
-      return View.flash "- Directory is empty", :times=>4
+      View.flash "- Directory is empty"#, :times=>2
+      Move.to_end
+      Notes.enter_junior
+      View << "- "
+      return
     end
 
     # Change path to proper indent
@@ -1079,8 +1083,8 @@ class FileTree
     indent = Line.indent
     list = nil
     path = Tree.construct_path  # Get path
-    if path =~ /\.(rb|js|coffee|py)\//   # run files followed by slash as menus
-      Launcher.wrapper path
+    if Launcher.wrapper path   # run files followed by slash as menus
+      # Do nothing if it returned true
     elsif line =~ /^[^|\n]* (\*\*|##)/   # *foo or ## means do grep
       self.grep_syntax indent
     elsif self.dir?   # foo/ is a dir (if no | before)
@@ -1092,27 +1096,18 @@ class FileTree
 
   # Grabs matching lines in file and starts hide search
   def self.outline_pattern extension=nil, options={}
-    if extension.nil?
-      extension = View.file_name[/\.(\w+)$/, 1]
-    end
-
-    elisp = options[:elisp]
+    extension ||= View.extension
 
     if extension == "rb"
       "^\s*(def|class|module|it|describe|create_table|context) "
-      #       elisp ? "^\\s-*\\(def\\|class\\|module\\|it\\|describe\\) " : "^\s*(def|class|module|it|describe) "
     elsif extension == "rake"
       "^\\s*(task|def|class) "
-      #       elisp ? "^\\s-*\\(task\\|def\\|class\\) " : "^\\s*(task|def|class) "
     elsif extension == "js"
       "(^ *(function)| = function\\()"
-      #       elisp ? "\\(^ *function\\| = function(\\)" : "(^ *(function)| = function\\()"
-    elsif extension == "notes"
+    elsif extension =~ /^notes|deck$/
       "^[\\|>]( |$)"
-      #       elisp ? "^| " : "^\\| "
     else
       "^[^ \\t\\n]"
-      #       elisp ? "^[^ \\t\\n]" : "^[^ \\t\\n]"
     end
   end
 
@@ -1144,7 +1139,7 @@ class FileTree
     line = options[:path] || Line.value
     extension = line[/\.(\w+)$/, 1]
     if pattern.nil?
-      return self.enter_lines(/#{outline_pattern extension}/, options)
+      return self.enter_lines(/#{self.outline_pattern extension}/, options)
     end
     Line.to_left
     path ||= options[:path] || Tree.construct_path  # Get path
@@ -1532,17 +1527,16 @@ class FileTree
   end
 
   def self.delete_file
-
-    in_file_beind_deleted = Line !~ /^[ +-]/ || Keys.prefix_u
+    in_file_being_deleted = Line !~ /^[ +-]/ || Keys.prefix_u
 
     # If not on tree, must want to delete this file
-    if in_file_beind_deleted
+    if in_file_being_deleted
       dest_path = View.file
     else
       dest_path = Tree.construct_path
     end
 
-    dest_path = File.expand_path dest_path
+    dest_path = View.expand_path dest_path
 
     return View.flash("- File doesn't exist: #{dest_path}", :times=>5) if ! File.exists?(dest_path)
 
@@ -1561,9 +1555,10 @@ class FileTree
       return
     end
 
-    return View.kill if in_file_beind_deleted
+    return View.kill if in_file_being_deleted
 
     Tree.kill_under
+    Effects.glow :color=>:fire, :what=>:line, :times=>1
     Line.delete
     Line.to_beginning
   end
@@ -1684,10 +1679,12 @@ class FileTree
     Console.run command, :sync=>true
 
     indent = Line.indent
+    Effects.glow :color=>:fire, :what=>:line, :times=>1
     Line.delete
     View.insert((is_dir ? "#{indent}- #{new_name}/\n" : "#{indent}+ #{new_name}\n"), :dont_move=>true)
 
     View.column = column
+    Effects.glow :color=>:forest, :what=>:line, :times=>1
   end
 
   def self.open_as_upper where=false
@@ -1738,6 +1735,21 @@ class FileTree
     if prefix == 8
       return Launcher.enter_all
     end
+
+    if prefix == 2
+      Move.to_end
+      View << "\n    @"
+      return ControlLock.disable
+    end
+
+    if prefix == 7
+      Move.to_end
+      View << "\n    @info"
+      Launcher.launch
+      return
+    end
+
+    return if prefix == 0   # Just select it
 
     if prefix == :u
       txt, line = Search.deep_outline *args

@@ -24,17 +24,17 @@ class Code
   end
 
   def self.bounds_of_thing left=nil, right=nil
-    if left == :line
-      left, right = Line.left, Line.right+1
-    elsif left.nil?
-      n = Keys.prefix_n(:clear=>true)   # Check for numeric prefix
-      if n   # If prefix, move down
-        return [Line.left, Line.left(n+1)]
-      else
-        left, right = View.range
-      end
-    end
-    [left, right]
+
+    return [Line.left, Line.right+1] if left == :line
+
+    n = Keys.prefix_n :clear=>true   # Check for numeric prefix
+
+    return View.paragraph(:bounds=>1) if n == 0
+    return [Line.left, Line.left(n+1)] if n   # If prefix, move down
+
+    return View.range if left.is_a?(Hash) && left[:default] == :region
+
+    [Line.left, Line.right]   # Do line by default
   end
 
   def self.to_comment
@@ -47,6 +47,7 @@ class Code
       left, right = View.paragraph(:bounds => true)
     else
       Line.to_left
+      left ||= {:default=>:region}
       left, right = Code.bounds_of_thing(left, right)
       left, right = right, left if View.cursor == right   # In case cursor is at right side
     end

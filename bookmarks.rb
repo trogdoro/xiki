@@ -56,6 +56,7 @@ class Bookmarks
         $el.find_file path
         self.set keys
       end
+      View.flash "- bookmarked as: $#{keys}", :times=>3
       return
     end
 
@@ -336,12 +337,8 @@ class Bookmarks
   end
 
   def self.open_quick
-Ol.line
     bookmark = Keys.input :timed=>1, :prompt=>"Enter a quick bookmark to jump to:"
-Ol << "bookmark: #{bookmark.inspect}"
     Bookmarks.go("q#{bookmark}")
-Ol.line
-    Deck.use_keys if bookmark == "p"
   end
 
 end

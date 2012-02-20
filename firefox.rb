@@ -81,10 +81,10 @@ class Firefox
   end
 
   def self.js txt=nil
-    return "| $('p').toggle()  // Type some javascript here (to run in the browser)" if ! txt
+    return "| $('div').toggle()  // Type some javascript here (to run in the browser)" if ! txt
 
-    Firefox.run txt, :jquery=>1
-    ".flash - ran in browser!"
+    Firefox.run txt  #, :jquery=>1
+    return View.flash "- ran in browser!", :times=>1
   end
 
   def self.coffee txt=nil
@@ -92,7 +92,7 @@ class Firefox
 
     txt = CoffeeScript.run_internal txt
 
-    Firefox.run txt, :jquery=>1
+    Firefox.run txt  #, :jquery=>1
     ".flash - ran in browser!"
   end
 
@@ -101,18 +101,25 @@ class Firefox
   end
 
   def self.reload
-    # Why is this here?
+
+    # Clears out OL log
     Code.open_log_view if Keys.prefix_u && View.buffer_visible?('*ol')
+
     prefix = Keys.prefix_n :clear=>true
-    if prefix   # If numeric prefix, go to that tab
+    if ! prefix
+      Firefox.run("gBrowser.reload()", :browser=>true)
+    elsif prefix == 0
+      # Similar to reload, but field values will reset
+      Firefox.run("document.location = document.location;")
+    else
+
       tab = prefix - 1
       if tab == -1   # If 0, close tab
         self.close_tab
-      else
-        Firefox.mozrepl_command("gBrowser.tabContainer.selectedIndex = #{tab}", :browser=>true)
+      else   # If number, switch to tab
+        Firefox.run("gBrowser.tabContainer.selectedIndex = #{tab}", :browser=>true)
       end
-    else
-      Firefox.mozrepl_command("gBrowser.reload()", :browser=>true)
+
     end
     nil
   end
@@ -216,17 +223,22 @@ class Firefox
 
     Firefox.run "#{funcs}\n#{txt.gsub('\\', '\\\\\\')}"
     return
-
   end
 
   def self.run txt, options={}
+
     result = Firefox.mozrepl_command txt, options
+
+    if result =~ /\$ is not defined/   # If no jquery wrap it and try again
+      txt = Javascript.wrap_jquery_load txt
+      result = Firefox.mozrepl_command txt, options
+    elsif result =~ /\bp is not defined\b/   # If no jquery wrap it and try again
+      txt = Javascript.wrap_jquery_load txt, "http://xiki.org/javascripts/util.js"
+      result = Firefox.mozrepl_command txt, options
+    end
+
     result.sub! /^"(.+)"$/m, "\\1"   # Remove quotes
 
-    if options[:jquery]
-      message = self.load_jquery_maybe(result)
-      return message if message
-    end
     result
   end
 
@@ -237,28 +249,29 @@ class Firefox
   def self.url url, options={}
     return $el.browse_url(url) if options[:new]
 
-    # Try to find it in a tab
+    reload = "gBrowser.reload();";
 
     js = %`
       var browsers = gBrowser.browsers;
 
-      found = false;
-
-      if((browsers[gBrowser.tabContainer.selectedIndex]).contentDocument.location.href == "#{url}")
+      if((browsers[gBrowser.tabContainer.selectedIndex]).contentDocument.location.href == "#{url}"){
+        #{reload}
         false;
-      else{
-        for(var i = 0; i < browsers.length; i++) {
+      }else{
+        var found = false;
+        for(var i=0; i < browsers.length; i++) {
           if(browsers[i].contentDocument.location.href != "#{url}") continue;
-          found = true;
           gBrowser.tabContainer.selectedIndex = i;
+          #{options[:reload] ? reload : ''}
+          found = true;
+          break;
         }
-        found;
+        if(! found) (browsers[gBrowser.tabContainer.selectedIndex]).contentDocument.location.href = "#{url}";
       }
+
       `.unindent
 
     result = self.run js, :browser=>true
-
-    self.run "window.location = '#{url}'" if result != "true"
 
     nil
   end
@@ -272,12 +285,11 @@ class Firefox
 
   def self.html txt=nil
 
-    return "| <h1>Provide some html here.</h1>\n| <p>Then click to show in <span>the browser.</span></p>" if ! txt
-
-
     # When C-8, delegate to .dom to show whole body
     return Tree.<< Firefox.dom(:prefix=>"all") if Keys.prefix == "all"
     return Tree.<< Firefox.dom(:prefix=>"outline") if Keys.prefix == "outline"
+
+    return "| <h1>Provide some html here.</h1>\n| <div>Then click to show in <span>the browser.</span></div>" if ! txt
 
     return "
       | Enter something here to show it in the browser.
@@ -286,10 +298,7 @@ class Firefox
 
     File.open("/tmp/tmp.html", "w") { |f| f << txt }
 
-    # Then load in browser (or reload)
-    Firefox.value('document.location.toString()') == "file:///tmp/tmp.html" ?
-      Firefox.reload :
-      $el.browse_url("file:///tmp/tmp.html")
+    Firefox.url "file:///tmp/tmp.html", :reload=>1
 
     nil
   end
@@ -304,24 +313,13 @@ class Firefox
     html.gsub! "\n", ' '
 
     code = "$('body').append(\"#{html}\")"
-    result = Firefox.run code, :jquery=>1
+    result = Firefox.run code  #, :jquery=>1
     nil
   end
 
   def self.jso txt=nil
     return View.prompt("Add some js to output its result") if txt.nil?
-    Firefox.run Tree.leaf(txt), :jquery=>1
-  end
-
-  def self.css txt
-    return "| h1 {color:red;}  /* Type some css here (to run in the browser) */" if ! txt
-
-    txt.gsub!("\n", '\n')
-    txt.gsub!('"', '\"')
-    code = "$('head').append(\"<style>#{txt}</style>\")"
-    Firefox.run code, :jquery=>1
-
-    nil
+    Firefox.run txt  #, :jquery=>1
   end
 
   def self.enter_log_javascript_line
@@ -474,7 +472,7 @@ class Firefox
       result;
       `.unindent
 
-    result = Firefox.run js, :jquery=>1
+    result = Firefox.run js  #, :jquery=>1
 
     result.sub "html/", "- @dom/"
   end
@@ -522,6 +520,15 @@ class Firefox
     end
 
     js = %`
+      $.fn.blink = function() {
+        var el = $(this);
+        for(x=1;x<=2;x++) {
+          el.animate({opacity: 0.0}, {easing: 'swing', duration: 200});
+          el.animate({opacity: 1.0}, {easing: 'swing', duration: 200});
+        }
+        return this;
+      };
+
       var kids = [];
       `.unindent
 
@@ -547,7 +554,7 @@ class Firefox
         "html::"+$("#{args}").html();
       `.unindent
 
-    kids = Firefox.run js, :jquery=>1
+    kids = Firefox.run js  #, :jquery=>1
 
     kids = kids.sub(/\A"/, '').sub(/"\z/, '') if kids =~ /\A"/
     if kids =~ /\Ahtml::/
@@ -605,6 +612,7 @@ class Firefox
   end
 
   def self.load_jquery_maybe txt=nil #, options={}
+
     # If text passed, check it and error if complaining about jquery missing
 
     if txt && txt !~ /( (\$|p) is not defined|blink is not a function)/
@@ -652,8 +660,15 @@ class Firefox
 
   def self.blink txt
     return View.prompt("Type a selector to blink in firefox", :times=>5) if txt.nil?
-    code = "$(\"#{Tree.slashless txt}\").blink()"
-    txt = Firefox.run code, :jquery=>1
+    selector = Tree.slashless txt
+
+    code = "
+      for(x=1;x<=2;x++) {
+        $(\"#{selector}\").animate({opacity: 0.0}, {easing: 'swing', duration: 200}).animate({opacity: 1.0}, {easing: 'swing', duration: 200})
+      }
+      "
+
+    txt = Firefox.run code  #, :jquery=>1
     nil
   end
 end
@@ -683,14 +698,14 @@ Menu.jsp do |path|
   txt = Tree.leaf path
   txt = txt.strip.sub(/;\z/, '')   # Remove any semicolon at end
   code = "p(#{txt})"
-  result = Firefox.run code, :jquery=>1
+  result = Firefox.run code  #, :jquery=>1
 end
 
 Menu.jsc do |path|   # - (js): js to run in firefox
   txt = Tree.leaf path
   txt = txt.strip.sub(/;\z/, '')   # Remove any semicolon at end
   code = "console.log(#{txt})"
-  Firefox.run code, :jquery=>1
+  Firefox.run code  #, :jquery=>1
   nil
 end
 
@@ -715,18 +730,10 @@ end
 Menu.click do |path|
   nth = 0
   txt = Tree.leaf path
-  Firefox.run("$('a, *[onclick]').filter(':contains(#{txt}):eq(#{nth})').click()", :jquery=>1)
+  Firefox.run("$('a, *[onclick]').filter(':contains(#{txt}):eq(#{nth})').click()")  #, :jquery=>1)
   nil
-end
-
-Menu.html do |path|
-  Firefox.html Tree.rest path
 end
 
 Menu.append do |path|
   Firefox.append Tree.rest(path)
-end
-
-Menu.css do |path|
-  Firefox.css Tree.rest(path)
 end

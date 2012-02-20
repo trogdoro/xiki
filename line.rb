@@ -245,11 +245,10 @@ class Line
     times = if prefix.nil?
         1
       elsif prefix == :u
-        0
+        1   # Put commented line after
+        # 0   # Put commented line before
       elsif prefix == 0
         0
-              #       else
-              #         prefix
       elsif prefix > 0
         prefix + 1
       elsif prefix < 0

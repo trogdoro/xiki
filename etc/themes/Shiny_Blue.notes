@@ -1,0 +1,28 @@
+Styles.mode_line(
+  :bg=>'4473af',
+  :border=>['5583a3', -5, 'released-button'],
+  :face=>'Lucida Grande',
+  :size=>'3',
+  :bold=>false,
+  :fg=>'fff'
+  )
+Styles.mode_line_inactive(
+  :bg=>'999',
+  :border=>['bbbbbb', -1, 'released-button'],
+  :face=>'Lucida Grande',
+  :size=>'3',
+  :bold=>false,
+  :fg=>'000'
+  )
+Styles.mode_line_dir(
+  :fg=>"222222",
+  :size=>"0",
+  :face=>"arial",
+  :bold=>false
+  )
+Styles.mode_line_file(
+  :fg=>"fff",
+  :size=>"0",
+  :face=>"arial",
+  :bold=>false
+  )

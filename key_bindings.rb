@@ -109,7 +109,7 @@ class KeyBindings
     Keys.open_list_technologies { Launcher.open("- technologies/") }   # open first hyperlink on page
     Keys.open_last_urls { Launcher.open "- last/urls/" }
     Keys.open_menu { Xiki.open_menu }   # Open all menus and show them **
-    Keys.open_not_saved { History.open_unsaved }
+    Keys.open_not_saved { Launcher.open("- history/unsaved files/") }
     # O: defined above - mapped to what C-o does by default
     Keys.open_point { Bookmarks.go(nil, :point => true) }
     Keys.open_quick { Bookmarks.open_quick }   # like OB but uses different temporary namespace
@@ -155,7 +155,6 @@ class KeyBindings
     Keys.enter_insert_1 { Notes.enter_do_bullet }    # insert date string (and time if C-u)
     Keys.enter_insert_date { View.enter_date }    # insert date string (and time if C-u)
     Keys.enter_insert_command { insert("- (/): "); ControlLock.disable }    # insert date string (and time if C-u)
-    Keys.enter_insert_log { Code.enter_log_line }   # Enter Old: enter newly-deleted from last save
     Keys.enter_insert_new { DiffLog.enter_new }   # Enter Old: enter newly-deleted from last save
     Keys.enter_insert_ruby { code = Keys.input(:prompt=>"Enter ruby code to eval and insert results: "); View.insert(eval(code).to_s)}
     Keys.enter_insert_search { Google.insert }
@@ -177,7 +176,8 @@ class KeyBindings
     Keys.enter_list_databases { Launcher.insert('- Couch.databases/') }
     Keys.enter_log_javascript { Firefox.enter_log_javascript_line }
     Keys.enter_log_stack { Code.enter_log_stack }
-    Keys.enter_last_log { Launcher.insert(Keys.prefix_u ? "- last/" : "- log/") }
+    Keys.enter_log_line { Code.enter_log_line }   # Enter Old: enter newly-deleted from last save
+    #     Keys.enter_last_log { Launcher.insert(Keys.prefix_u ? "- last/" : "- log/") }
     #     Keys.enter_last_launched { Launcher.enter_last_launched }
     Keys.enter_like_test { Specs.enter_as_rspec }
     #     Keys.enter_log_time { Code.enter_log_time }
@@ -190,7 +190,10 @@ class KeyBindings
     Keys.enter_push { Gito.code_tree_diff(:enter=>true) }   # Commit to repos, push, etc
     Keys.enter_quote { FileTree.enter_quote }
     Keys.enter_row { View.insert_line }
-    Keys.enter_search { Search.enter_search }
+
+    #     Keys.enter_search { Search.enter_search }
+    Keys.enter_snippet { Snippet.insert }
+
     #Keys.enter_spot { Location.enter_at_spot }   # enter selected text at spot
     Keys.enter_tree { FileTree.tree(:here=>true) }
     Keys.enter_upper { View.enter_upper }
@@ -266,6 +269,7 @@ class KeyBindings
     Keys.do_load_browser { Firefox.reload }
     Keys.do_last_command { Console.do_last_command }
     Keys.do_line_duplicate { Line.duplicate_line }
+    Keys.do_line_effects { Effects.do_effect }
     Keys.do_load_file { Files.do_load_file }   # U prefix will auto-update / auto-refresh to relflect changes
     Keys.do_lines_having {   # delete lines matching a regex
       unless elvar.current_prefix_arg

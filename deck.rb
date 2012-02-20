@@ -9,61 +9,50 @@ class Deck
     - .enable arrow keys/
     - docs/
       > Summary
-      | Use a .notes file like a lightweight presentation. Present it via emacs.
-      | The sections behave like slides. Use the arrow keys navigate between them.
-      | Only one section is shown at a time.
+      | Create a file with a ".deck" extension to create a lightweight
+      | presentation.  The left and right arrow keys will go back and forth
+      | between the "slides".
       |
-      > Enabling the arrow keys
-      | Create a .notes file to use like a presentation, then:
-      | - 1) Type as+quick+presentation to give it the "p" quick bookmark
-      | - 2) Type open+quick+presentation to jump to it in presentation mode
-      |
-      | - or use) @deck/enable arrow keys/
+      | Make .deck files just like you make .notes files, with sections divided
+      | by headings ("> foo" lines).  The sections behave like slides.  Only one
+      | section is shown at a time.
       |
       > Keys
       | Use these keys to go back and forth between slides:
-      | - left arrow key
-      | - right arrow key
+      | - right+arrow+key: show next slide (hiding everything else)
+      | - left+arrow+key: show next slide
+      | - open+related+heading: jump to corresponding hint
       |
       > Hints
-      | To get hints to pop up temporarily when moving between slides, create a file
-      | named like this, and create blocks with corresponding headings:
-      | - my_presentation.hints.notes
+      | To create and show hints that correspond to a section, create a section
+      | near the bottom of the file with the same heading but starting with
+      | ">>" instead of ">"
       |
-      > Using with .deck files
-      | Deprecated. Use with .notes files per above.
+      | Then, type open+related+heading to jump back and forth.
+      |
+      > To enable the deck keys in a .notes file
+      - type: do+keys+deck
+      - or use) @deck/enable arrow keys/
+      |
     `
   end
 
   @@size = 10
 
   def self.enable_arrow_keys options={}
+
+    # If in an actual file, just enable for it
+    if View.file
+      $el.use_local_map $el.elvar.deck_mode_map
+      return View.flash "- Enabling arrow keys"
+    end
+
     last = View.files.find{|o| o =~ /\.notes$/}
     basename = File.basename(last)
-
-    View.flash "- Enabling arrow keys for '#{basename}'..." unless options[:silent]
-
     View.open last
+
+    View.flash "- Enabling arrow keys!", :times=>4 unless options[:silent]
     $el.use_local_map $el.elvar.deck_mode_map
-  end
-
-  def self.use_keys
-    $el.use_local_map $el.elvar.deck_mode_map
-  end
-
-  def self.define_styles
-    Styles.define :deck_plain, :size => "+#{@@size}"#, :face => "arial black"
-    Styles.define :deck_h1, :fg => 'ffffff', :bg => "333355", :size => "+#{@@size+10}", :face => "arial black"
-    Styles.define :deck_h1_label, :fg => '555577', :bg => "333355", :size => "+#{@@size+10}", :face => "arial black"
-    Styles.define :deck_bullet, :fg => 'f90', :size => "+#{@@size}", :face => "arial black"
-  end
-
-  def self.apply_styles
-    # Normal text
-    Styles.apply ".+", :deck_plain
-    # | Headings and - Bullets
-    Styles.apply "^\\(| \\)\\(.*\n\\)", nil, :deck_h1_label, :deck_h1
-    Styles.apply "^\\( *\\)\\(-\\) \\(.+\\)", nil, :deck_plain, :deck_bullet, :deck_plain
   end
 
   def self.keys # mode=:deck_mode_map
@@ -156,7 +145,6 @@ class Deck
   end
 
   def self.init
-    self.define_styles
     self.keys
     # Make deck mode happen for .deck files
     Mode.define(:deck, ".deck") do

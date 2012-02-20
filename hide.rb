@@ -5,6 +5,13 @@ class Hide
   #  include ElMixin
   # (hide-find-overlays)
 
+  def self.menu
+    "
+    | TODO: add docs about hiding.
+    "
+  end
+
+
   #  self.reset
   def self.hide_unless search, options={}
     self.hide_unless_block(options) do |l, bol, eol|

@@ -1,0 +1,32 @@
+> Difflog
+
+- Everything change you make is saved
+
+- key: open+difflog
+
+
+> Edits to one file or dir
+
+- key: search+edits
+
+
+> Edits since backup
+
+- Make backup: as+version
+
+- key: do+compare+last
+
+
+
+> Diff of unsaved files
+
+- Show all changes not saved: open+not+saved
+
+
+
+
+> End of Topic
+
+- /projects/bleeding_edge_xiki_presentation/
+  - bleeding_edge_xiki_presentation.notes
+

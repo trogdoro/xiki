@@ -66,6 +66,9 @@ class View
       @ View.beep
       |
       |
+      > Advanced
+      @ View.<< "hey", :dont_move=>1   # Without moving cursor
+      |
       > Also see
       - line/
       |
@@ -387,7 +390,7 @@ class View
     if self.bar?
       buffer = selected_window
       select_window frame_first_window
-      #       enlarge_window (27 - window_width), true
+      #       enlarge_window (31 - window_width), true
       enlarge_window (48 - window_width), true
       select_window buffer
     end
@@ -707,6 +710,10 @@ class View
     file ? File.expand_path(file) : nil
   end
 
+  def self.extension
+    View.file[/\.(\w+)$/, 1]
+  end
+
   def self.file_or_buffer
     self.file || self.name
   end
@@ -875,7 +882,9 @@ class View
     View.line = line
   end
 
-  def self.delete left, right
+  def self.delete left=nil, right=nil
+    return Line.delete if left == :line
+
     $el.delete_region left, right
   end
 
@@ -934,6 +943,7 @@ class View
     right = Line.right
     orig.go
     left = Line.left if options[:start_here]
+
     return [left, right] if options[:bounds]
     txt = View.txt(left, right)
     View.delete(left, right) if options[:delete]
@@ -966,7 +976,8 @@ class View
     # Expand ~
 
     had_slash = path =~ /\/$/   # Check whether / at end
-    # Expand . and ..
+
+    # This cleans up /./ nad /../ in paths as side-effect of above
     path = File.expand_path path
 
     path = "#{path}/" if had_slash && path !~ /\/$/   # Put / back at end, if it was there (and not there now)
@@ -1247,6 +1258,8 @@ class View
 
   def self.flash message=nil, options={}
 
+    was_modified = $el.buffer_modified_p
+
     File.open("/tmp/flashes.log", "a") { |f| f << "#{message}\n" } if message
 
     message ||= "- Success!"
@@ -1269,6 +1282,9 @@ class View
     self.delete left, right
 
     self.cursor = orig
+
+    $el.not_modified if ! was_modified
+
     nil
   end
 
@@ -1276,6 +1292,11 @@ class View
     txt = IO.readlines File.expand_path("/tmp/flashes.log") rescue return "- No messages flashed yet!"
     txt = txt.reverse.uniq.join
   end
+
+  def self.refresh
+    $el.sit_for 0
+  end
+
 
 end
 

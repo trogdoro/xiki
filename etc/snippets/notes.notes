@@ -1,0 +1,20 @@
+- Wiki elements/
+  - Heading:
+    | > Foo
+  - Bullets:
+    | - Foo
+    |   - bar
+- Shell commands/
+  - In current dir:
+    | $ ls
+  - In specific dir:
+    | /tmp/
+    |   $ ls
+  > Async
+  - In any visible shell:
+    | % ls
+  - Shell in specific dir:
+    | /tmp/
+    |   % ls
+  - In iTerm:
+    |   & ls

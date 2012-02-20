@@ -6,28 +6,35 @@ class Effects
 
   def self.menu
     "
-    > Summary
-    | Make text do things that look cool.
-    | Try these out by double-clicking on them.
+    > Do cool-looking things to text
+    - api/
+      | Try these out by double-clicking on them.
+      - Glow/
+        @Effects.glow
+        @Effects.glow :what=>:line
+        @Effects.glow :times=>6
+        |
+        @Effects.glow :color=>:fire
+        @Effects.glow :color=>:water
+        @Effects.glow :color=>:forest
+        @Effects.glow :color=>:rainbow
+        @Effects.glow :color=>:fat_rainbow
+      - Blink/
+        | Makes line blink orange. Using a longer time since the blink happens
+        | anyway.
+        |
+        @Effects.blink :time=>1
+      - Some View methods that use effects/
+        @View.prompt
+        @View.flash
+        @View.flash 'Saved!'
+    - docs/
+      > Keys
+      | do+line+effects: make line blink
+      | up+do+line+effects: make line blink rainbow color
     |
-    - Glow/
-      @Effects.glow
-      @Effects.glow :what=>:line
-      |
-      @Effects.glow :color=>:fire
-      @Effects.glow :color=>:water
-      @Effects.glow :color=>:forest
-      @Effects.glow :color=>:rainbow
-      @Effects.glow :color=>:fat_rainbow
-    - Blink/
-      | Makes line blink orange. Using a longer time since the blink happens
-      | anyway.
-      |
-      @Effects.blink :time=>1
-    - Some View methods that use effects/
-      @View.prompt
-      @View.flash
-      @View.flash 'Saved!'
+    > See
+    << themes/
     "
   end
 
@@ -41,12 +48,14 @@ class Effects
     options = args[0] || {}
 
     left, right = Line.left, Line.right if options[:what] == :line
+    left, right = View.paragraph(:bounds=>1) if options[:what] == :paragraph
 
     times = options[:times] || 3
 
     over = $el.make_overlay left, right
 
-    faces = if options[:color] == :fire
+    faces =
+      if options[:color] == :fire
         ['change-log-function', 'change-log-function', 'change-log-file', 'change-log-file', 'change-log-date', 'change-log-date', 'change-log-date']
       elsif options[:color] == :forest
         ['dired-mark', 'dired-mark', 'widget-documentation', 'widget-documentation', 'widget-documentation', 'bookmark-menu-heading', 'bookmark-menu-heading']
@@ -116,6 +125,19 @@ class Effects
 
     Styles.define :purple, :fg => "808"
     Styles.define :cyan, :fg => "f0f"
+  end
+
+  def self.do_effect
+
+    prefix = Keys.prefix
+    left, right = Code.bounds_of_thing(left, right)
+
+    options = {}
+    options[:color] = :rainbow if prefix == :u
+    options[:color] = :fire if prefix == :uu
+
+    Effects.glow left, right, options
+
   end
 
 end

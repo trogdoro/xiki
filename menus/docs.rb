@@ -2,10 +2,10 @@ class Docs
   def self.menu
     %`
     - Introduction/
-      Most of the Xiki documentation is spread out among other menus, under
-      their respective 'docs' menus.
+      | Most of the Xiki documentation is spread out among other menus, under
+      | their respective 'docs' menus.
       |
-      Here are some you might be interested in first:
+      > Here are some to check out first
       @keys/docs/
       @menu/docs/
       @files/docs/
@@ -41,7 +41,7 @@ class Docs
       | - Framework for making lightweight user interfaces
       |
       > What does Xiki stand for?
-      | It is short for eXecutable wIKI
+      | XIKI is short for eXecutable wIKI
       |
       > What are Xiki's main dependencies?
       | - Xiki runs inside of Emacs

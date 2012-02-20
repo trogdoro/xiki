@@ -7,8 +7,8 @@ class Console
 
   def self.menu
     %`
-    - log/
-    - tree/
+    - .log/
+    - .tree/
     - docs/
       | Commands you've run recently:
       << log/
@@ -505,7 +505,7 @@ class Console
       end
     end
 
-    CodeTree.tree_search_option + txt
+    txt
   end
 
 end

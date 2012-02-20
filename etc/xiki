@@ -9,7 +9,7 @@
 # @xiki/setup/install command/
 #
 
-# require "/projects/xiki/xiki_git/ol"
+# require "/projects/xiki/ol"
 
 `open "/Applications/emacs.app"`   # Bring emacs to front
 

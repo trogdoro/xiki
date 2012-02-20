@@ -1,0 +1,43 @@
+> Various databases
+
+databases/
+
+
+> Mysql
+
+- explore
+
+mysql/
+
+
+> Mysql
+
+- create new table and record
+
+
+> Couch
+
+- explore
+
+couch/
+  - start/
+  - @db/
+  + admin url/
+
+db/
+
+
+> Mongo
+
+- explore docs
+
+mongo/
+  + collections/
+  + docs/
+
+
+> End of Topic
+
+- /projects/bleeding_edge_xiki_presentation/
+  + bleeding_edge_xiki_presentation.notes
+

@@ -8,6 +8,7 @@ class Cursor
     | Api for changing the cursor
     |
     - Colors/
+      @Cursor.white
       @Cursor.red
       @Cursor.green
       @Cursor.blue
@@ -61,6 +62,10 @@ class Cursor
   end
   def self.green
     $el.set_face_background :cursor, "#33bb00"
+    nil
+  end
+  def self.white
+    $el.set_face_background :cursor, "#ffffff"
     nil
   end
   def self.black

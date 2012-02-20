@@ -28,7 +28,7 @@ class LocalStorage
         for (var key in localStorage) { result.push(key) }
         JSON.stringify(result);
         `
-      txt = Firefox.run js, :jquery=>1  #, :jquery_extra=>ls_function
+      txt = Firefox.run js,   #:jquery=>1  #, :jquery_extra=>ls_function
       array = JSON[txt]
       return "
         | None found.  Create a few test records?
@@ -40,7 +40,7 @@ class LocalStorage
 
     if ENV['prefix'] == "destroy"
       # return
-      Firefox.run "localStorage.removeItem(\"#{key}\")", :jquery=>1
+      Firefox.run "localStorage.removeItem(\"#{key}\")"  #, :jquery=>1
       Tree.to_parent if val
       Tree.kill_under
       View.flash "- deleted!"
@@ -52,7 +52,7 @@ class LocalStorage
     end
 
     if val.nil?   # If just key passed, show val
-      txt = Firefox.run "localStorage[\"#{key}\"]", :jquery=>1
+      txt = Firefox.run "localStorage[\"#{key}\"]"  #, :jquery=>1
       return self.docs if txt.blank? && key =~ /docs\/?/
       return self.api if txt.blank? && key =~ /api\/?/
       return Tree.quote txt
@@ -61,7 +61,7 @@ class LocalStorage
     Tree.unquote! val
 
     val = ENV['txt']
-    txt = Firefox.run "localStorage[\"#{key}\"] = #{val.inspect}", :jquery=>1
+    txt = Firefox.run "localStorage[\"#{key}\"] = #{val.inspect}"  #, :jquery=>1
     View.flash "- Saved!"
   end
 

@@ -275,7 +275,8 @@ class Launcher
       end
       if matches.any?
         if matches.length == 1
-          Line.sub! /^([ +-]*).*/, "\\1#{matches[0].gsub('_', ' ')}"
+          match = matches[0].gsub '_', ' '
+          Line.sub! /^([ @+-]*).*/, "\\1#{match}"
           Launcher.launch
           return
         end
@@ -337,7 +338,6 @@ class Launcher
 
     orig_pwd = nil
     if trunk.size > 1 && closest_dir = Tree.closest_dir
-
       orig_pwd = Dir.pwd   # Where ruby pwd was before
 
       if root == "mkdir"
@@ -351,7 +351,6 @@ class Launcher
         # remove file
 
       else   # If doesn't exist
-
         return true
       end
     end
@@ -763,6 +762,7 @@ class Launcher
     actions, variables = args.partition{|o| o =~ /^\./ }
     action = actions.last || ".#{default_method}"
     action.gsub! /[ -]/, '_'
+    action.gsub! /[^\w.]/, ''
 
     if action == ".menu" && txt == nil && menu_arity == 0
       return self.invoke_menu_after clazz, txt, args
@@ -913,20 +913,16 @@ class Launcher
   def self.wrapper path
 
     # TODO: load all the adapters and construct the "rb|js" part of the regex
-    dir, file, extension, path = path.match(/(.+\/)(\w+)\.(rb|js|coffee|py)\/(.*)/)[1..4]
+    match = path.match(/(.+\/)(\w+)\.(rb|js|coffee|py|notes)\/(.*)/)
+    return false if ! match
+
+    dir, file, extension, path = match[1..4]
 
     # TODO: instead, call Launcher.invoke JsAdapter(dir, path), path
-    case extension
-    when "rb"
-      self.wrapper_rb dir, file, path
-    when "js"
-      self.wrapper_js dir, file, path
-    when "coffee"
-      self.wrapper_coffee dir, file, path
-    when "py"
-      self.wrapper_py dir, file, path
-    end
 
+    self.send "wrapper_#{extension}", dir, file, path
+
+    return true   # Indicate we handled it
   end
 
   def self.wrapper_rb dir, file, path
@@ -953,6 +949,13 @@ class Launcher
     Tree << output
   end
 
+  def self.wrapper_notes dir, file, path
+    heading, content = (path.match(/^(\| .+)(\| .*)?/) || [nil, nil])[1..2]
+
+    output = Notes.drill "#{dir}/#{file}.notes", heading, content
+    Tree << output
+  end
+
   def self.wrapper_py dir, file, path
     output = Console.run "python #{Xiki.dir}etc/wrappers/wrapper.py \"#{dir}#{file}.py\" \"#{path}\"", :sync=>1, :dir=>dir
     output = Tree.children output, path if path !~ /^\./
@@ -965,7 +968,7 @@ class Launcher
       next unless File.directory? dir
 
       Files.in_dir(dir).each do |f|
-        next if f !~ /^[a-z]/   # Skip ^. files
+        next if f !~ /^[a-z].+\.rb$/   # Skip ^. files
         path = "#{dir}/#{f}"
         stem = f[/[^.]*/]
         self.add stem, :menu=>path

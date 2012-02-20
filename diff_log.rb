@@ -9,6 +9,9 @@ class DiffLog
 
   def self.menu
     "
+    .open/
+    .diffs/
+    .diffs/$p/
     docs/
       > Summary
       | The difflog tracks diffs of all the changes you make to file
@@ -39,19 +42,16 @@ class DiffLog
 
   def self.diffs path=nil
 
-    if path == nil
-      match_tree = "^- "
-    else
-      path = Bookmarks[path]
-      match_tree = File.directory?(path) ?   # If it's a dir
-        "^- #{path}" :
-        "^- #{File.dirname path}/\n  - #{File.basename path}\n"
-    end
-
     txt = File.read @@log
     txt = txt.sub(/\A- /, '').split(/^- /).reverse.uniq
 
-    if File.file? path   # File
+    path ||= Tree.dir   # Pull from tree if there
+
+    path = Bookmarks[path] if path
+
+    if ! path
+      regex = /^\//
+    elsif File.file? path   # File
       regex = /^#{Regexp.escape File.dirname path}\/\n  - #{Regexp.escape File.basename path}/
     else   # Dir
       regex = /^#{Regexp.escape path}/
@@ -163,11 +163,9 @@ class DiffLog
     end
 
     diff = Console.sync "diff -w -U 0 \"#{patha}\" \"#{@@temp_path}\""
-
     return if diff.empty? || diff =~ /: No such file or directory\n/   # Fail quietly if file didn't exist
 
     diff = self.format diff
-
     return diff if options[:dont_log]
 
     File.open(@@log, "a") { |f| f << diff } unless diff.count("\n") <= 2

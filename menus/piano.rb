@@ -215,7 +215,7 @@ class Piano
             @piano/
               | reset()
               | repeat(8)
-              | tempo(60)
+              | tempo(40)
               | mode(rand 100)
               | variation()
               | melodic()

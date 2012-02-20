@@ -41,8 +41,8 @@ class Standalone
     %`
     <head>
       <script src="http://code.jquery.com/jquery-1.6.4.min.js"></script>
-      <script src="file:///projects/xiki/xiki_git/etc/js/xiki.js"></script>
-      <script src="file:///projects/xiki/xiki_git/etc/js/menu1.js"></script>
+      <script src="file://#{Xiki.dir}etc/js/xiki.js"></script>
+      <script src="file://#{Xiki.dir}etc/js/menu1.js"></script>
       <script src="http://code.jquery.com/mobile/1.0/jquery.mobile-1.0.min.js"></script>
       <link rel="stylesheet" href="http://code.jquery.com/mobile/1.0/jquery.mobile-1.0.min.css" />
     </head>

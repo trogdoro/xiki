@@ -1,0 +1,15 @@
+if Styles.inverse   # Black bg
+
+  Styles.mode_line :bg=>'333', :border=>['666', -1], :face=>'Lucida Grande', :size=>'3', :bold=>false, :fg=>'fff'
+  Styles.mode_line_inactive :bg=>'666', :border=>['888', -1], :face=>'Lucida Grande', :size=>'3', :bold=>false, :fg=>'fff'
+  Styles.mode_line_dir :fg=>"d93", :size=>"0", :face=>"arial", :bold=>false   # Brighter
+  Styles.mode_line_file :fg=>"fff", :size=>"0", :face=>"arial", :bold=>false
+
+else   # White bg
+
+  Styles.mode_line :fg=>'222222', :bg=>'555', :border=>['333', -1], :face=>'Lucida Grande', :size=>'3', :bold=>false
+  Styles.mode_line_inactive :fg=>'999999', :bg=>'888', :border=>['666', -1], :face=>'Lucida Grande', :size=>'3', :bold=>false
+  Styles.mode_line_dir :fg=>"ea4", :size=>"0", :face=>"arial", :bold=>false   # Brighter
+  Styles.mode_line_file :fg=>"fff", :size=>"0", :face=>"arial", :bold=>false
+
+end

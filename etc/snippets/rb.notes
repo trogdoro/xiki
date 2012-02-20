@@ -1,0 +1,13 @@
+- Class/
+  | class Foo
+  |
+  | end
+- Methods/
+  - Instance/
+    |   def foo
+    |
+    |   end
+  - Class/
+    |   def self.foo
+    |
+    |   end

@@ -1,0 +1,65 @@
+> Purpose
+
+- Demo day-to-day usage to edit code
+  - When doing: rails development
+
+
+> Generate app
+
+- Make controller, view page, edit
+
+/tmp/app1/
+  @rails/
+
+
+> Future
+
+- Port visit log from Merb
+
+visits/
+  - turtles/swim/
+  - turtles/swim?a=aa&b=bb/
+  - turtles/swim?a=aa&b=bb/c=cc&d=dd/
+
+
+> Future
+
+- Port visit log from Merb
+
+visits/
+  - turtles/swim/
+  - turtles/swim?a=aa&b=bb/
+  - turtles/swim?a=aa&b=bb/c=cc&d=dd/
+    | <div>
+    |   This is the output
+    | </div>
+
+
+> Future
+
+- key: enter+last+visit
+
+visits/turtles/swim?a=aa&b=bb/
+
+
+> Future
+
+- key: enter+last+visit
+
+visits/turtles/swim?a=aa&b=bb/
+  | <div>
+  |   This is the output
+  | </div>
+
+
+> Future
+
+- turn into test
+
+visits/turtles/swim?a=aa&b=bb/
+
+
+> End of Topic
+
+- /projects/bleeding_edge_xiki_presentation/
+  + bleeding_edge_xiki_presentation.notes

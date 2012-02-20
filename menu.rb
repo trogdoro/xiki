@@ -392,7 +392,7 @@ class Menu
 
     View.scroll_bars = false
 
-    Window.opacity("full")
+    Window.visibility('high')
     View.message ""
 
     View.wrap :off
@@ -569,10 +569,9 @@ class Menu
       end
 
       unless i == skip   # Remove last item, or after bullet if no items
-        Line.sub!(/\/[^\/]+\/$/, '/') || Line.sub!(/^([ +-]*).*/, "\\1")
+        Line.sub!(/\/[^\/]+\/$/, '/') || Line.sub!(/^([ @+-]*).*/, "\\1")
       end
     end
-
 
     if Line.indent.blank?
       line.sub! /^@ ?/, ''

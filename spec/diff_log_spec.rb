@@ -10,12 +10,12 @@ describe Line, "#parse_tree_diffs" do
     DiffLog.parse_tree_diffs("d5 1\na5 1\n    - cccc\n").should == [[[5, "    - cccc"]], [5]]
   end
 
-  it "parses a move" do
-    DiffLog.parse_tree_diffs("d4 1\na7 1\n    - bb\n").should == [[[7, "    - bb"]], [4]]
+  it "parses a delete" do
+    DiffLog.parse_tree_diffs("d3 2\nd6 1\n").should == [[], [3, 4, 5]]
   end
 
-  it "parses a delete" do
-    DiffLog.parse_tree_diffs("d3 2\nd6 1\n").should == [[], [3, 4, 6]]
+  it "parses a move" do
+    DiffLog.parse_tree_diffs("d4 1\na7 1\n    - bb\n").should == [[[7, "    - bb"]], [4]]
   end
 
   it "parses an add" do

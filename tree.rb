@@ -12,6 +12,7 @@ class Tree
       @ p Tree.siblings :all=>1
       @ p Tree.siblings :after=>1
       @ p Tree.siblings :before=>1
+      @ p Tree.siblings :string=>1   # Consecutive lines, quotes removed
       |
       > Get dir (or file) menu is nested under (or error if we're not)
       @ p Tree.dir
@@ -400,6 +401,10 @@ class Tree
 
     Overlay.delete_all
 
+    if ch_raw == 7   # C-g
+      return Cursor.restore :before_file_tree
+    end
+
     if letters[letterized]
       Cursor.restore :before_file_tree
       Line.next letters[letterized][0] - 1
@@ -557,6 +562,9 @@ class Tree
     indent = Line.indent.size
     pattern = "^ \\{0,#{indent}\\}\\([^ \n]\\|$\\)"
 
+    # Aborted refactor to allow blank lines in trees
+    #     pattern = "^ \\{0,#{indent}\\}[^ \n]"
+
     self.minus_to_plus_maybe unless options[:no_plus]
 
     # Get indent
@@ -590,8 +598,8 @@ class Tree
     nil
   end
 
-  def self.to_parent
-    prefix = Keys.prefix :clear=>true
+  def self.to_parent prefix=nil
+    prefix ||= Keys.prefix :clear=>true
 
     # U means go to previous line at margin
     if prefix == :u
@@ -857,11 +865,11 @@ class Tree
     right1 = Line.left   # Right side of lines before
 
     # Search for line indented less - parent (to get siblings after)
-    indent_less < 0 ?
-      Search.backward("^$") :
+    found = indent_less < 0 ?
+      Search.backward("^$", :go_anyway=>1) :
       Search.backward("^ \\{0,#{indent_less}\\}\\($\\|[^ \n]\\)")
 
-    Line.next
+    Line.next if found
     left1 = Line.left   # Left side of lines before
 
     orig.go
@@ -910,15 +918,18 @@ class Tree
   def self.traverse tree, options={}, &block
     branch, indent = [], 0
     tree.split("\n").each do |line|
-      # Ol << "line: #{line.inspect}"
+
       line_indent = line[/^ */].length / 2
       line.strip!
 
       branch[line_indent] = line
+
+      # Aborted refactor to allow blank lines in trees
+      #       branch[line_indent] = line unless line.empty?
+
       if line_indent < indent
         branch = branch[0..line_indent]
       end
-
 
       branch_dup = branch.dup
 
@@ -926,14 +937,16 @@ class Tree
         branch_dup.map!{|o| o.sub /^[+-] /, ''}
       end
 
-      if options[:flattened]
-        flattened = branch_dup.dup
-        flattened.map!{|o| o.sub /^[+-] /, ''} if ! options[:no_bullets]   # Might have side-effects if done twice
-        flattened = flattened.join('')#.gsub(/[.:]/, '')   # Why were :'s removed??
-        block.call branch_dup, flattened
-      else
-        block.call branch_dup
-      end
+      flattened = branch_dup.dup
+      flattened.map!{|o| o.sub /^[+-] /, ''} if ! options[:no_bullets]   # Might have side-effects if done twice
+      flattened = flattened.join('')#.gsub(/[.:]/, '')   # Why were :'s removed??
+
+      block.call branch_dup, flattened
+
+      # Aborted refactor to allow blank lines in trees
+      #       if line.empty?
+      #         block.call [], ""
+      #       else
 
       indent = line_indent
     end
@@ -1008,7 +1021,7 @@ class Tree
   def self.dotify! tree, target
     target_flat = target.join "/"
 
-    self.traverse(tree, :flattened=>1, :no_bullets=>1) do |branch, path|
+    self.traverse(tree, :no_bullets=>1) do |branch, path|
 
       match = self.target_match path, target_flat
 
@@ -1210,6 +1223,8 @@ class Tree
 
   def self.closest_dir
     dir = Xiki.trunk.reverse.find{|o| FileTree.matches_root_pattern? o}
+
+    dir = Bookmarks[dir]
     return nil if dir.nil?
 
     File.expand_path dir
@@ -1241,7 +1256,7 @@ class Tree
 
     @@under_preexpand = false   # Will include sub-items of only some children
 
-    self.traverse tree, :flattened=>1 do |branch, path|
+    self.traverse tree do |branch, path|
 
       if ! found
         target_match = Tree.target_match path, target
@@ -1251,7 +1266,6 @@ class Tree
       else
         current_indent = branch.length - 1
         # If found and still indented one deeper
-        #         if current_indent == found + 1
         one_deeper = current_indent == found + 1
 
         if one_deeper || ((include_subitems || @@under_preexpand) && current_indent > found)
@@ -1272,7 +1286,15 @@ class Tree
           @@under_preexpand = true if one_deeper && (item =~ /^([+-] )?@/ || item !~ /\/$/)
 
           result << "#{item}\n"  # Output
+
         else  # Otherwise, stop looking for children if indent is less
+
+          # Aborted refactor to allow blank lines in trees
+          # Continue on if blank line
+          #           if branch.empty?
+          #             next result << "\n"
+          #           end
+
           next if current_indent > found
           # No longer beneath found item
           found = nil
@@ -1281,6 +1303,9 @@ class Tree
       end
 
     end
+
+    # Aborted refactor to allow blank lines in trees
+    #     result.empty? ? nil : result
     result.empty? ? nil : result.gsub(/^$/, '|')
   end
 

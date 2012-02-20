@@ -1,0 +1,150 @@
+> Examples
+
+- examples:
+  - layout+create
+  - layout+hide
+
+
+> Comparison to other shortcuts
+
+- XCode:
+  - Reveal in Project Navigator
+    - Command+Shift+J
+
+- Xiki:
+  - open+in+window
+
+
+> Finding keys
+
+- "Keys" menu
+
+
+> Categories
+
+to
+open
+layout
+
+as
+enter
+do
+
+search
+
+
+> Categories
+
+to - jump to specific point
+open
+layout
+
+as
+enter
+do
+
+search
+
+
+> Categories
+
+to
+open - jump to view
+layout
+
+as
+enter
+do
+
+search
+
+
+> Categories
+
+to
+open
+layout - window arrangement
+
+as
+enter
+do
+
+search
+
+
+> Categories
+
+to
+open
+layout
+
+as - remember something
+enter
+do
+
+search
+
+
+> Categories
+
+to
+open
+layout
+
+as
+enter - insert something
+do
+
+search
+
+
+> Categories
+
+to
+open
+layout
+
+as
+enter
+do - run something
+
+search
+
+
+> Categories
+
+to
+open
+layout
+
+as
+enter
+do
+
+search - keys while searching
+
+
+> Other ways of finding keys
+
+- docs:
+files/docs/keys/
+
+- definitions:
+- /projects/xiki/
+  + key_bindings.rb
+
+
+> Existing emacs shortcuts
+
+- Any emacs users?
+
+- Only conflicts with: some keys
+
+- Remaps C-t, C-o, C-l, C-a, C-e, C-d, C-s
+  - To C-t C-t, etc.
+
+
+> End of Topic
+
+- /projects/bleeding_edge_xiki_presentation/
+  + bleeding_edge_xiki_presentation.notes

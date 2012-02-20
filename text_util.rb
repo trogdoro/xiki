@@ -32,7 +32,7 @@ class TextUtil
 
   def self.snake_case s
     s.gsub(/[ -]/, '_').
-      gsub(/([a-z])([A-Z0-9])/) {"#{$1}_#{$2}"}.downcase.
+      gsub(/([a-z0-9])([A-Z])/) {"#{$1}_#{$2}"}.downcase.
       gsub(/[^\w]/, "").
       gsub(/__+/, "_")
   end
@@ -64,11 +64,15 @@ class TextUtil
     s.replace self.camel_case(s)
   end
 
-  def self.title_case s
-    s.gsub(/[ -]/, '_').
+  def self.title_case s, options={}
+    s = s.gsub(/[ -]/, '_').
       gsub(/([a-z])([A-Z0-9])/) {"#{$1}_#{$2}"}.downcase.
       gsub(/([a-z]+)/) {"#{$1.capitalize}"}.
       gsub(/__*/, " ")
+
+    s.gsub! " ", "_" if options[:underscores]
+
+    s
   end
 
   def self.title_case! s

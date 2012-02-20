@@ -59,7 +59,8 @@ class Styles
 
     Styles.define :default, :size=>size.to_i
 
-    Color.define_styles
+    # To resize mode lines
+    Themes.use "Shiny Blue"
     Notes.define_styles
     FileTree.define_styles
 
@@ -126,14 +127,14 @@ class Styles
 
     if options[:size]
       size = options[:size]
-      # If a string, convert to relative size
-      size = self.size(size.to_i) if size.is_a? String
+      size = self.size(size.to_i) if size.is_a? String   # If a string, convert to relative size
       code << "  :height #{size}\n"
     end
 
-    code << "  :strike-through t\n" if options[:strike]
+    code += options[:strike] ? "  :strike-through t\n" : "  :strike-through nil\n" if options.has_key?(:strike)
 
     code += options[:underline] ? "  :underline t\n" : "  :underline nil\n" if options.has_key?(:underline)
+    code += options[:overline] ? "  :overline t\n" : "  :overline nil\n" if options.has_key?(:overline)
 
     code += options[:bold] ? "  :weight 'bold\n" : "  :weight 'normal\n" if options.has_key?(:bold)
     if options[:border]
@@ -144,7 +145,7 @@ class Styles
         elsif border.class == String
           ":box '(:line-width 1 :color \"##{border}\")\n"
         elsif border.class == Array
-          ":box '(:line-width #{border[1]} :color \"##{border[0]}\")\n"
+          ":box '(:line-width #{border[1]} :color \"##{border[0]}\" :style #{border[2] || 'nil'})\n"
         end
     end
     code << "  )"
@@ -188,6 +189,7 @@ class Styles
     #$el.el4r_lisp_eval "(setq font-lock-keywords-case-fold-search t)"
     $el.el4r_lisp_eval code
     $el.font_lock_mode 1
+    nil
   end
 
   def self.init

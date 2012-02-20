@@ -52,51 +52,68 @@ class Notes
   end
 
   def self.to_block up=false
-    heading_regex = "^[>=]\\( \\|$\\)"
+
+    regex = self.heading_regex Keys.prefix
+
+    prefix = Keys.prefix :clear=>1
+
+    times = prefix.is_a?(Fixnum) ? prefix : 1
+
     if up
-      (Keys.prefix || 1).times do
+      times.times do
         Line.to_left
-        Search.backward heading_regex
+        Search.backward regex
       end
     else
-      (Keys.prefix || 1).times do
-        Line.next if Line[/^[>|=]( |$)/]
-
-        Search.forward heading_regex
-
+      times.times do
+        Line.next if $el.string_match regex, Line.value   # Use elisp matcher
+        Search.forward regex
         Line.to_left
       end
     end
   end
 
+  def self.heading_regex prefix=nil
+    prefix == :u ?
+      "^[>=]\\{1,2\\}\\( \\|$\\)" :
+      "^[>=]\\( \\|$\\)"
+  end
+
   def self.move_block up=false
-    header_regex = "^>\\( \\|$\\)"
+    regex = self.heading_regex Keys.prefix
 
     times = Keys.prefix_times
 
     orig = Location.new
 
-    block = get_block
+    prefix = Keys.prefix
+
+    block = get_block prefix == :u ? 2 : 1
     block.blink
     block.delete_content
 
     if up
       times.times do
-        Search.backward header_regex, :go_anyway=>true
+        Search.backward regex, :go_anyway=>true
       end
       insert block.content
-      Search.backward header_regex
+      Search.backward regex
     else
-      Search.forward header_regex
+
+      move_regex = prefix == :u ? "^>" : regex
+
+      Search.forward move_regex
       times.times do
-        Search.forward header_regex, :go_anyway=>true
+        Search.forward move_regex, :go_anyway=>true
+        #         Search.forward "^>", :go_anyway=>true
       end
-      beginning_of_line
+      Move.to_axis
+
       View.insert block.content
 
-      Search.backward header_regex
+      Search.backward move_regex
     end
-    moved_block = get_block
+    moved_block = get_block regex
 
     times == 1 ?
       moved_block.blink :
@@ -136,7 +153,7 @@ class Notes
   end
 
   def self.cut_block no_clipboard=false
-    block = get_block
+    block = get_block Keys.prefix
     block.blink
     unless no_clipboard
       Clipboard.set("0", block.content)
@@ -186,9 +203,9 @@ class Notes
     elvar.notes_mode_map = make_sparse_keymap unless boundp :notes_mode_map
 
     Keys.custom_archive(:notes_mode_map) { Notes.archive }
-    Keys.custom_back(:notes_mode_map) { Notes.move_block true }   # Move block up to before next block
+    Keys.custom_back(:notes_mode_map) { Notes.move_block :backwards }   # Move block up to before next block
     Keys.custom_clipboard(:notes_mode_map) { Notes.copy_block }   # block -> clipboard
-    Keys.custom_delete(:notes_mode_map) { Notes.cut_block(true) }   # block -> clear
+    Keys.custom_delete(:notes_mode_map) { Notes.cut_block :backwards }   # block -> clear
     Keys.custom_expand(:notes_mode_map) { Notes.narrow_block }   # Show just block
     Keys.custom_forward(:notes_mode_map) { Notes.move_block }   # Move block down to after next block
     Keys.custom_heading(:notes_mode_map) { Notes.insert_heading }   # Insert |... etc. heading
@@ -199,7 +216,7 @@ class Notes
     Keys.custom_mask(:notes_mode_map) { Notes.hide_text }   # block -> hide
     Keys.custom_next(:notes_mode_map) { Notes.to_block }   # Go to block after next block
     Keys.custom_open(:notes_mode_map) { Notes.show_text }   # block -> reveal
-    Keys.custom_previous(:notes_mode_map) { Notes.to_block(true) }   # Go to block before next block
+    Keys.custom_previous(:notes_mode_map) { Notes.to_block :backwards }   # Go to block before next block
     # q
     # r
     Keys.custom_stamp(:notes_mode_map) { $el.insert Time.now.strftime("- %Y-%m-%d %I:%M%p: ").downcase.sub(' 0', ' ') }
@@ -250,7 +267,7 @@ class Notes
         :notes_h1y=>"871",
         :notes_h1e=>"363",
         :notes_h1g=>"363",
-        :notes_h1b=>"669",
+        :notes_h1b=>"678",
         :notes_h1p=>"636",
         :notes_h1m=>"622",
         :notes_h1x=>"345",
@@ -265,7 +282,7 @@ class Notes
         :notes_h1y=>"bb3",
         :notes_h1e=>"363",
         :notes_h1g=>"7b6",
-        :notes_h1b=>"99b",
+        :notes_h1b=>"678",
         :notes_h1p=>"b8b",
         :notes_h1m=>"944",
         :notes_h1x=>"678",
@@ -275,7 +292,7 @@ class Notes
 
     @@h1_styles.each do |k, v|
       pipe = v.gsub(/./) {|c| (c.to_i(16) + "3".to_i(16)).to_s(16)}
-      label = v.gsub(/./) {|c| (c.to_i(16) + "5".to_i(16)).to_s(16)}
+      label = v.gsub(/./) {|c| (c.to_i(16) + "6".to_i(16)).to_s(16)}
       Styles.define k,
         :face=>'arial', :size=>h1_size, :fg=>'ffffff', :bg=>v, :bold=> true
       Styles.define "#{k}_pipe".to_sym, :face=>'arial', :size=>h1_size, :fg=>pipe, :bg=>v, :bold=>true
@@ -345,6 +362,12 @@ class Notes
       Styles.define :notes_h2_pipe, :face=>'arial', :size=>"-1", :fg=>'bbb', :bg=>"999", :bold=>true
     end
 
+    if Styles.inverse   # If black bg
+      Styles.dotted :bg=>'080808', :fg=>'111', :strike=>nil, :underline=>nil, :border=>['111', -1]
+    else
+      Styles.dotted :bg=>'eee', :fg=>'ddd', :strike=>nil, :underline=>nil, :border=>['ddd', -1]
+    end
+
     notes_exclamation_color = Styles.inverse ? "7c4" : "5a0"
 
     Styles.define :notes_exclamation,  # Green bold text
@@ -381,9 +404,10 @@ class Notes
     end
 
     # >>... lines
+    #     Styles.apply("^\\(>>\\)\\(.*\\)", nil, :notes_h2_pipe, :notes_h2)
     Styles.apply("^\\(>>\\)\\(.*\n\\)", nil, :notes_h2_pipe, :notes_h2)
-    Styles.apply("^\\(>> .+?: \\)\\(.+\n\\)", nil, :notes_h2_pipe, :notes_h2)
-    # Delete
+
+    # Commented
     Styles.apply("^\\(>> .+?: \\)\\(.+\n\\)", nil, :notes_h2_pipe, :notes_h2)
 
     # >>>... lines
@@ -423,7 +447,9 @@ class Notes
 
     Styles.apply "^ *@? ?\\([%$&]\\) ", nil, :shell_prompt   # Colorize shell prompts
 
-    Styles.apply "^[ +-]*keyless/\\(.+\\)", nil, :keyless
+    Styles.apply "^[ +-]*dotsies/\\(.+\\)", nil, :dotsies
+
+    Styles.apply "^        \\( \\)  ", nil, :dotted
 
   end
 
@@ -607,7 +633,12 @@ class Notes
 
   # Returns an instance of BlockNotes representing the block the point is currently in
   #   def self.get_block regex="^[|>]\\( \\|$\\)"
-  def self.get_block regex="^>\\( \\|$\\)"
+  def self.get_block regex=nil
+    regex ||= self.heading_regex
+
+    regex = self.heading_regex if regex == 1
+    regex = self.heading_regex(:u) if regex == 2 || regex == :u
+
     left, after_header, right = View.block_positions regex
     NotesBlock.new(left, after_header, right)
   end

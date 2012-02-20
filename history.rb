@@ -3,7 +3,13 @@ class History
 
   FILENAME = File.expand_path "~/.emacs.d/path_log.notes"
   def self.menu
-    File.read FILENAME
+    "
+    - .unsaved files/
+    - menus) @log/
+    | Files
+    @edited/
+    @files/history/
+    "
   end
 
   def self.prefix_times
@@ -128,27 +134,39 @@ class History
     Tree.search :recursive => true, :left => point, :right => right
   end
 
-  def self.open_unsaved
-
-    # Get unsaved paths
-    buffer_modified_p
+  def self.unsaved_files
 
     # Narrow down to modified buffer only
-    modified = buffer_list.to_a.
+    buffers = buffer_list.to_a.
       select{|b| buffer_modified_p(b)}.
-      select{|b| buffer_file_name(b)}.
-      map{|b| buffer_file_name(b)}
+      select{|b| buffer_file_name(b)}
 
-    View.to_buffer("*tree of unsaved buffers")
-    View.clear;  notes_mode
-    if (modified.size == 0)
-      return insert("> Note\n- No Buffers Unsaved!\n")
+    if (buffers.size == 0)
+      return "- No files unsaved!\n"
     end
-    View.insert FileTree.paths_to_tree(modified)
-    View.to_top
-    Keys.clear_prefix
-    FileTree.select_next_file
-    Tree.search :recursive => true
+
+    txt = ""
+
+    buffers.each do |b|
+      path = $el.buffer_file_name(b)
+      with(:save_excursion) do
+        $el.set_buffer b
+
+        diffs = DiffLog.save_diffs :dont_log=>1
+
+        if ! diffs
+          diffs = "    | File no longer exists?\n" if ! File.exists?(path)
+          diffs ||= "    | no changes\n"
+        end
+        diffs = diffs.sub(/^.+\n.+\n/, '').gsub /^  /, ''
+
+        txt << "@#{path}\n"
+        txt << diffs
+
+      end
+    end
+
+    txt
   end
 
   def self.setup_editedhistory

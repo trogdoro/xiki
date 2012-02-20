@@ -13,6 +13,7 @@ class Google
 
   def self.insert
     line = Line.value
+    return View << "google/" if line =~ /^$/
     return View << "@google/" if line =~ /^ /
     return View << "google/" if line =~ /^ *- $/
 

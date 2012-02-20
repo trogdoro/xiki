@@ -1,0 +1,57 @@
+> Summary
+
+
+
+> Python
+
+
+
+> 
+
+- do!
+- /tmp/
+  + milkshake.rb
+  + milkshake.rb/
+
+- demo loading class and using
+  - 
+
+- /tmp/
+  + milkshake.rb
+
+
+- demo classes in other languages!
+
+- and get this working!
+  - bar.py/.foo/
+
+- /projects/
+  - xiki_menu_examples/
+    + bar.coffee
+    + bar.js
+    + bar.py
+    + bar.rb
+    + foo.coffee
+    + foo.js
+    + foo.py
+    + foo.rb
+
+- do!
+- calling /.foo/
+
+- do!
+- python
+
+
+> Hints
+>> Python
+
+- type this out:
+- /tmp/
+  - shark.py/.hi/
+  - shark.py
+    | class Shark:
+    |   def hi(me):
+    |     return "thrash"
+
+

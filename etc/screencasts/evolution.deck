@@ -1,0 +1,18 @@
+> How xiki started
+
+
+> Obvious Next steps
+
+- aren't obvious until you get to the previous step
+  - but then are obvious
+
+
+> 
+- 1) textual bullets (indent 2 spaces)
+- 2) files
+- 3) contents indented 2 spaces
+- 4) code
+- 2) output is indented 2 spaces
+- 5) mapping to classes / methods
+- 6) simpler path-like syntax
+- 7) if file isn't there, create it

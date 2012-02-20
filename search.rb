@@ -176,10 +176,10 @@ class Search
     if match.nil?   # If nothing searched for yet, do search_edits
       bm = Keys.input :timed=>true, :prompt=>"Enter a bookmark to search edits: "
 
-      return Launcher.open("- DiffLog.diffs/") if bm == "8" || bm == " "
+      return Launcher.open("diff log/diffs/") if bm == "8" || bm == " "
 
-      path = bm == "." ? View.file : "$#{bm}"
-      return Launcher.open("- DiffLog.diffs \"#{path}\"/")
+      path = bm == "." ? View.file : "$#{bm}/"
+      return Launcher.open("- #{path}\n  @diff log/diffs/")
     end
 
     View.delete(Search.left, Search.right)
@@ -1285,20 +1285,29 @@ class Search
 
     View.to_highest
 
-    View.insert("\n", :dont_move=>true) unless Line.blank?   # Make room if line not blank
+    line_occupied = ! Line.blank?
 
     View.insert match
 
-    # Add line after if before heading
-    unless match =~ /\n$/   # If there wasn't a linebreak at the end of the match
-      Line.next
-      View.insert("\n", :dont_move=>true) if Line[/^>/]
-    end
+    View.insert "\n" if line_occupied   # Make room if line not blank
+
+    # Add line after if before heading, unless match already had one
+    View.insert "\n" if Line[/^>/] && match !~ /\n$/   # If there wasn't a linebreak at the end of the match
+
+    line = View.line
 
     View.to_highest
 
-    return if path == "$t" && (was_in_bar && ! orig.buffer == "todo.notes")
+    # Which case was this handling?  Being in $f?  Why leave cursor in $t when in $f?
+    #     return if path == "$t" && was_in_bar && orig.buffer != "todo.notes"
+
     orig.go
+
+    if path == "$t" && orig.buffer == "todo.notes"
+      Line.next line-1
+      View.column = orig.column
+    end
+
   end
 
   def self.log
