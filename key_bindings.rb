@@ -172,7 +172,7 @@ class KeyBindings
     Keys.enter_junior { Notes.enter_junior }
     Keys.enter_key { Keys.insert_code }
     #Keys.EK { Clipboard.paste }   # Enter Clipboard: paste
-    #     Keys.enter_list_buckets 
+    #     Keys.enter_list_buckets
     #     Keys.enter_list_bullet { Notes.enter_label_bullet }
     Keys.enter_last_commands {
       bm = Keys.input(:timed => true, :prompt => "bookmark to show commands for (space for currently open): ")

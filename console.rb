@@ -217,7 +217,7 @@ class Console
           next false unless Console.prompt?
 
           cd_dir = View.dir
-          cd_dir = "#{cd_dir}/" unless cd_dir =~ /\/$/ 
+          cd_dir = "#{cd_dir}/" unless cd_dir =~ /\/$/
           next false unless cd_dir == dir
           next false if Console.commands.join("\n") =~ /^(ssh|ftp) /
           true
