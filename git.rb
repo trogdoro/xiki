@@ -34,6 +34,8 @@ class Git
     - .setup/
       - .create/
       - .make sample files/
+      - github/
+        @ % git remote add origin git@github.com:trogdoro/foo.git
     - .docs/
     "
   end

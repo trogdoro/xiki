@@ -9,20 +9,42 @@ class Console
     %`
     - .log/
     - .tree/
-    - docs/
-      | Commands you've run recently:
-      << log/
-      |
-      | Commands from currently open consoles:
-      << tree/
+    - .history/
     - api/
       | In console (asynchronously)
       @ Console.run "ls"
       @ Console.run "ls", :dir=>"/tmp"
-      |
+
       | Inline (synchronously)
       @ Console.sync "ls"
       @ Console.sync "ls", :dir=>"/etc"
+    - docs/
+      You can run shell commands by typing things like this...
+
+      In current dir
+      @ $ ls
+
+      In other dir
+      @ /tmp/
+        $ ls
+
+      Async, in any open console view
+      @ /tmp/
+        % ls
+
+      Async, in other dir
+      @ /tmp/
+        % ls
+
+      Async, in iTerm
+      @ /tmp/
+        & ls
+
+      Commands you've run recently:
+      << log/
+
+      Commands from currently open consoles:
+      << tree/
     `
   end
 
@@ -436,14 +458,7 @@ class Console
       result << "#{l}" if match
     end
 
-    #     View.to_buffer "*commands run in #{dir}"
-    #     Notes.mode
-    #     View.kill_all
-    #     View result
-    #     View.to_bottom
-    #     Search.isearch nil, :reverse=>true
-
-    return CodeTree.tree_search_option+"@ #{dir}\n"+result.reverse.uniq.join("\n")+"\n"
+    "@ #{dir}\n"+result.reverse.uniq.join("\n")+"\n"
 
   end
 
@@ -471,13 +486,13 @@ class Console
 
   def self.search_last_commands
     bm = Keys.input(:timed => true, :prompt => "bookmark to show commands for (space for currently open): ")
-    return Launcher.open("- Console.tree/") if bm == " "
+    return Launcher.open("- console/tree/") if bm == " "
     if bm == "8"
       Console.log; View.to_bottom; Search.isearch nil, :reverse=>true
       return
     end
 
-    Launcher.open("- Console.history \"$#{bm}\"/")
+    Launcher.open("- console/history/$#{bm}/")
   end
 
   def self.tree console=nil, command=nil

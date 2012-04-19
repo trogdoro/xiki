@@ -1,13 +1,18 @@
-- Class/
+- files/
+  - read/
+    | File.read("/tmp/t.txt")
+  - write/
+    | File.open("/tmp/t.txt", "w") { |f| f << "abc" }
+- classes/
   | class Foo
   |
   | end
-- Methods/
-  - Instance/
+- methods/
+  - Instance:
     |   def foo
     |
     |   end
-  - Class/
+  - Class:
     |   def self.foo
     |
     |   end

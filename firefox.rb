@@ -84,7 +84,6 @@ class Firefox
     return "| $('div').toggle()  // Type some javascript here (to run in the browser)" if ! txt
 
     Firefox.run txt  #, :jquery=>1
-    return View.flash "- ran in browser!", :times=>1
   end
 
   def self.coffee txt=nil
@@ -199,8 +198,10 @@ class Firefox
 
   def self.run_block
 
+    prefix = Keys.prefix
+
     # Get block contents
-    txt, left, right = View.txt_per_prefix Keys.prefix
+    txt, left, right = View.txt_per_prefix prefix
 
     funcs = %q`
       function p(s) {
@@ -217,11 +218,11 @@ class Firefox
       }
     `
 
-    # Remove comments
-    txt.gsub! %r'^ *// .+', ''
-    txt.gsub! %r'  // .+', ''
+    # If started with <..., treat it as html
 
-    Firefox.run "#{funcs}\n#{txt.gsub('\\', '\\\\\\')}"
+    return Browser.html txt if txt =~ /\A\s*</
+
+    Browser.js txt
     return
   end
 
@@ -250,6 +251,7 @@ class Firefox
     return $el.browse_url(url) if options[:new]
 
     reload = "gBrowser.reload();";
+    reload = "" if options[:no_reload];
 
     js = %`
       var browsers = gBrowser.browsers;
@@ -275,6 +277,7 @@ class Firefox
 
     nil
   end
+
 
   def self.do_as_html
     # Grab block
@@ -663,9 +666,11 @@ class Firefox
     selector = Tree.slashless txt
 
     code = "
-      for(x=1;x<=2;x++) {
-        $(\"#{selector}\").animate({opacity: 0.0}, {easing: 'swing', duration: 200}).animate({opacity: 1.0}, {easing: 'swing', duration: 200})
+      $.fn.blink = function(times, orig) {
+        for(x=1;x<=2;x++) { $(this).animate({opacity: 0.0}, {easing: 'swing', duration: 200}).animate({opacity: 1.0}, {easing: 'swing', duration: 200}) }
+        return this;
       }
+      $(\"#{selector}\").blink();
       "
 
     txt = Firefox.run code  #, :jquery=>1
@@ -688,10 +693,12 @@ end
 Menu.js do |path|
   Applescript.run("Firefox", "activate") if Keys.prefix_u
   Firefox.js Tree.rest(path)
+  nil
 end
 
 Menu.coffee do |path|
   Firefox.coffee Tree.rest(path)
+  nil
 end
 
 Menu.jsp do |path|
@@ -699,6 +706,7 @@ Menu.jsp do |path|
   txt = txt.strip.sub(/;\z/, '')   # Remove any semicolon at end
   code = "p(#{txt})"
   result = Firefox.run code  #, :jquery=>1
+  nil
 end
 
 Menu.jsc do |path|   # - (js): js to run in firefox
@@ -716,7 +724,18 @@ end
 
 
 Menu.jso do |path|   # - (js): js to run in firefox
-  Firefox.jso Tree.rest(path)
+  txt = Firefox.jso Tree.rest(path)
+  Tree.<< txt, :no_slash=>1
+  nil
+end
+
+Menu.jsi do |path|   # - (js): js to run in firefox
+  txt = Tree.rest(path)
+  txt.sub! /;/, ''
+  txt = "JSON.stringify(#{txt})"
+  txt = Firefox.jso txt
+  Tree.<< txt, :no_slash=>1
+  nil
 end
 
 Menu.xul do |path|   # - (js): js to run in firefox

@@ -179,7 +179,7 @@ class Search
       return Launcher.open("diff log/diffs/") if bm == "8" || bm == " "
 
       path = bm == "." ? View.file : "$#{bm}/"
-      return Launcher.open("- #{path}\n  @diff log/diffs/")
+      return Launcher.open("- #{path}\n  @edits/")
     end
 
     View.delete(Search.left, Search.right)
@@ -304,7 +304,7 @@ class Search
     $el.isearch_clean_overlays
     $el.isearch_done
 
-    txt == :not_found ? Search.searches[0] : txt
+    txt == :not_found ? Search.last_search : txt
   end
 
   def self.match left=nil, right=nil
@@ -461,25 +461,6 @@ class Search
     FileTree.grep_with_hashes bm, match
   end
 
-  def self.search_like_timer
-
-    match = self.stop
-
-    # Prompt for time
-    minutes = Keys.input :prompt=>'How many minutes? ', :timed=>true
-    times = {"1"=>"30/30", "2"=>"1/1", "3"=>"90/90", "4"=>"2/2", "5"=>"2:30/2:30", "6"=>"3/3", "9"=>"45/45"}[minutes]
-    if match.nil?
-      input = Keys.input :prompt=>'Add timer for what? '
-      return Firefox.run("$('#timers').val('')", :tab=>0) if input == ""
-      input = "#{times} #{input}" unless input =~ /^\d/
-    else
-      return Firefox.run("$('#timers').val('')", :tab=>0) if input == ""
-      input = "#{times} #{match}"
-    end
-
-    # Replace field
-    Firefox.run "$('#timers').val(\"#{input}\")", :tab=>0
-  end
 
   def self.subtract
     match = self.match
@@ -835,6 +816,12 @@ class Search
     downcase_region(self.left, self.right)
   end
 
+  def self.enter_like_edits
+    Notes.enter_junior
+    View << "@edits/"
+    Launcher.launch
+  end
+
   def self.enter_search bm=nil, input=nil
     # If line already has something, assume we'll add - ##foo/ to it
     if ! Line[/^ *$/]
@@ -874,13 +861,19 @@ class Search
     match = self.stop
     self.to_start
     return View.insert("Ol.line") if match.nil?
+
+    if Tree.construct_path(:all=>1, :slashes=>1) =~ /<script/
+      View.insert "console.log('#{match}: ' + #{match});"
+      return
+    end
+
     View.insert "Ol << \"#{match}: \#{#{match}.inspect}\""
   end
 
   def self.isearch_log_javascript
     match = self.stop
     self.to_start
-    View.insert "p(\"#{match}: \" + #{match});"
+    View.insert "console.log(\"#{match}: \" + #{match});"
   end
 
   def self.isearch_as_camel
@@ -973,7 +966,7 @@ class Search
     View.to(Search.left+1)
   end
 
-  def self.isearch_just_surround_with_char left, right=nil
+  def self.isearch_just_surround_with_char left=nil, right=nil
 
     right ||= left
     term = self.stop
@@ -991,10 +984,25 @@ class Search
     View.to Search.left
   end
 
+
+  def self.isearch_surround_with_tag
+
+    term = self.stop
+    left = Search.left
+
+    tag = Keys.input :timed=>1, :prompt=>"Enter tag to surround: "
+
+    View.to(left + term.length)
+    View.insert "</#{tag}>"
+    View.to left
+    View.insert "<#{tag}>"
+    View.to left
+  end
+
   # Copy match as name (like Keys.as_name)
   def self.just_name
     term = self.stop
-    loc ||= Keys.input(:chars=>1, :prompt=>"Enter one char (to store this as): ") || "0"
+    loc ||= Keys.input(:chars=>1, :prompt=>"Enter one char (variable name to store this as): ") || "0"
     Clipboard.copy loc, term
     Effects.blink :left=>left, :right=>right
   end
@@ -1087,7 +1095,7 @@ class Search
 
   def self.isearch_restart path, options={}
     self.stop
-    term = Search.searches[0]
+    term = Search.last_search
 
     if path == "$t"   # If $t, open bar
       View.layout_todo
@@ -1268,6 +1276,31 @@ class Search
     self.move_to path, match
   end
 
+  def self.move_to_files match
+    match_with_path = FileTree.snippet match
+    match_with_path = ">\n- #{match_with_path.sub(/^  /, '  - ')}\n"
+    target_path = View.file
+
+    View.layout_files
+
+    # See if it can be merged in
+    View.to_highest
+    Move.to_junior   # Go to first file
+
+    path = Xiki.trunk.last   # Grab from wiki tree
+
+    fits_under = target_path.start_with? path
+
+    # If doesn't fit in the tree, just delegate it to .move_to
+    return match_with_path if ! fits_under
+
+    FileTree.enter_quote match
+
+    return nil   # If handled
+
+  end
+
+
   def self.move_to path, match
     Search.stop
     orig = Location.new
@@ -1276,9 +1309,13 @@ class Search
     if path == "$t"   # If $f, grab path also
       View.layout_todo
     elsif path == "$f"   # If $f, grab path also
-      match = FileTree.snippet(match)
-      match = ">\n- #{match.sub(/^  /, '  - ')}\n"
-      View.layout_files
+      match = self.move_to_files match
+
+      if ! match   # It handled it if it didn't return the match
+        orig.go
+        return
+      end
+
     else
       View.open path
     end
@@ -1330,7 +1367,15 @@ class Search
   end
 
   def self.searches
-    elvar.search_ring.to_a
+    begin
+      elvar.search_ring.to_a
+    rescue Exception=>e
+      ["error getting searches, probably because of special char :("]
+    end
+  end
+
+  def self.last_search
+    $el.nth 0, elvar.search_ring.to_a
   end
 
   def self.history txt=nil
@@ -1436,6 +1481,34 @@ class Search
     View.open path
     View.to_highest
     Search.isearch match
+  end
+
+  def self.enter_insert_search
+    # If in file tree, do ##
+    if FileTree.handles?
+      Search.enter_search
+    else
+      Google.insert
+    end
+  end
+
+  def self.like_delete
+    match = self.stop
+
+    line = View.line
+
+    View.to_highest
+    $el.delete_matching_lines match
+
+    View.line = line
+
+  end
+
+  def self.have_right
+    match = self.stop
+    View.to_upper
+    View.to_highest
+    View << "#{match}\n\n"
   end
 
 end

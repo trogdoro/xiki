@@ -1,6 +1,10 @@
 class Snippet
   def self.menu *args
 
+    if args[0] == "docs"
+      return Tree.children self.docs, args[1..-1]
+    end
+
     extension = View.extension
     file = "#{Xiki.dir}etc/snippets/#{extension}.notes"
 
@@ -17,8 +21,7 @@ class Snippet
       txt << "\n" if txt !~ /\n/
 
       Tree.to_parent :u
-      Tree.kill_under
-      Line.delete
+      View.kill_paragraph
 
       View.<< txt, :dont_move=>1
 
@@ -39,16 +42,24 @@ class Snippet
       # TODO: maybe let them type directly into the @snippet menu and do C-. to save
     end
 
-
     txt = File.read file
     Tree.children txt, args
-
 
     # TODO: if line has quote and path doesn't exist in file (.drill fails), create new snippet
 
   end
 
   def self.insert
-    "do something with me"
+    Launcher.insert("snippet/")
   end
+
+  def self.docs
+    "
+    > To edit
+
+    > To Use
+    ___
+    "
+  end
+
 end

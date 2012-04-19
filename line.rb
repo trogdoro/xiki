@@ -311,6 +311,10 @@ class Line
     Move.to_end
   end
 
+  def self.before_cursor
+    View.txt self.left, View.cursor
+  end
+
   def self.init
     # Define lisp function to get list of displayed lines
     # In case something has been done to change them

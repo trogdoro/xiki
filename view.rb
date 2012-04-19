@@ -347,7 +347,8 @@ class View
     end
     delete_other_windows
     #     split_window_horizontally 32   # Width of bar
-    split_window_horizontally 54   # Width of bar
+    #     split_window_horizontally 54   # Width of bar
+    split_window_horizontally 48   # Width of bar
     other_window 1
     o = nil
     # For each window but last
@@ -391,7 +392,8 @@ class View
       buffer = selected_window
       select_window frame_first_window
       #       enlarge_window (31 - window_width), true
-      enlarge_window (48 - window_width), true
+      #       enlarge_window (48 - window_width), true
+      enlarge_window (42 - window_width), true
       select_window buffer
     end
   end
@@ -775,8 +777,12 @@ class View
       orig = $el.elvar.coding_system_for_read   # Read file as utf-8
       $el.elvar.coding_system_for_read = 'utf-8'.to_sym
       $el.insert_file_contents "/tmp/tmp.txt"
-      $el.elvar.coding_system_for_read = orig
 
+      # breaks when utf8 - doesn't go far enaugh??!
+      # Maybe get length of file instead of string?
+      # Or, set encoding of buffer to utf8?
+
+      $el.elvar.coding_system_for_read = orig
       Move.forward txt.size unless options[:dont_move]   # .insert_file_contents leaves cursor at beginning
     else
       $el.insert txt
@@ -1027,14 +1033,14 @@ class View
       return
     end
 
+    Move.to_end if Line.before_cursor =~ /^ +$/   # If at awkward position, move
+
     # No numeric prefix, so just grab this line's opening indent text
-    indent_txt = Line[/^[ |$&%@\/\\#+!-]+/] || ""
+    indent_txt = Line[/^[ |$~&%@\/\\#+!-]+/] || ""
 
     Deletes.delete_whitespace if ! Line.at_left && ! Line.at_right
 
-    if Line.at_left
-      Line.to_right
-    end
+    Line.to_right if Line.at_left
 
     View.insert "\n#{indent_txt}"
   end

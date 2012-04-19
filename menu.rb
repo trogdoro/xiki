@@ -102,6 +102,9 @@ class Menu
     if wrapper = trunk[-2]   # If @menu/create/here is nested
       menu = Tree.root wrapper
     else   # If put it under a fake menu
+
+      # What?  This is if it's not nested? - is this used?
+
       # TODO: Go to left margin and remove menu...
 
       Tree.to_root
@@ -149,7 +152,7 @@ class Menu
         - #{menu}.rb
           | class #{TextUtil.camel_case(menu)}
           |   def self.menu *args
-          |     "- Args passed in: \#{args.inspect}\\n- Customize me in) @ ~/menus/#{menu}.rb"
+          |     "- Args Passed: \#{args.inspect}\\n- Customize me in) @ ~/menus/#{menu}.rb"
           |   end
           | end
       - more examples) @menu/api/classes/
@@ -167,7 +170,7 @@ class Menu
       - #{root}.rb
         | class #{TextUtil.camel_case(root)}
         |   def self.menu *args
-        |     "- Args passed in: \#{args.inspect}\n- Customize me in) @ ~/menus/#{menu}.rb"
+        |     "- args passed: \#{args.inspect}\n- Customize me in) @ ~/menus/#{menu}.rb"
         |   end
         | end
     `
@@ -480,9 +483,11 @@ class Menu
     orig = View.cursor
 
     Move.to_end   # In case we're at root of tree (search would make it go elsewhere)
-    Search.backward("^[^ \n]")   # Start at root
+    Tree.to_root
+    Move.to_axis
+
     root, left = Line.value, View.cursor
-    root = Line.without_label(:line=>root)
+    root = Line.without_label :line=>root
 
     root = TextUtil.snake_case(root).sub(/^_+/, '')
 
@@ -495,13 +500,16 @@ class Menu
       orig = nil
     end
 
-    ignore, right = View.paragraph :bounds=>true, :start_here=>true
+    Tree.to_right
+    right = View.cursor
+    View.cursor = left
 
     # Go until end of paragraph (simple for now)
     Effects.blink :left=>left, :right=>right
     txt = View.txt left, right
     txt.sub! /.+\n/, ''
     txt.gsub! /^  /, ''
+    txt.unindent
     txt.gsub! /^\|$/, ''
 
     return Tree << "| You must supply something to put under the '#{root}' menu.\n| First, add some lines here, such as these:\n- line/\n- another line/\n" if txt.empty?

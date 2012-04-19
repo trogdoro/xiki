@@ -294,7 +294,7 @@ class FileTree
       Styles.tree_keys :fg=>"#fff", :underline=>nil
 
       # dir/
-      Styles.define :ls_dir, :fg => "888", :face => "verdana", :size => "-2", :bold => true
+      Styles.define :ls_dir, :fg => "888", :face => "verdana", :size => "-1", :bold => true
       #       Styles.define :ls_dir, :fg => "bbb", :face => "verdana", :size => "-2", :bold => true
 
     else
@@ -312,7 +312,7 @@ class FileTree
       Styles.tree_keys :fg=>"#ff0", :underline=>1
 
       # dir/
-      Styles.define :ls_dir, :fg => "777", :face => "verdana", :size => "-2", :bold => true
+      Styles.define :ls_dir, :fg => "777", :face => "verdana", :size => "-1", :bold => true
 
     end
 
@@ -370,7 +370,8 @@ class FileTree
     Styles.apply("^[ <+-]*[^)\n]+) \\(@ \\)", nil, :ls_dir)  # - label) @ ...
 
     Styles.apply("^[ <+-]*\\([@~$#a-zA-Z0-9_,? ().:-]*[^ \n]\/\\)", nil, :ls_dir)  # slash after almost anything
-    Styles.apply("^[ <+-]*\\([@~$a-zA-Z0-9_,? ().:<-]+\/[@\#'$a-zA-Z0-9_,? ().:\/<-]+\/\\)", nil, :ls_dir)  # one word, path, slash
+    # Covers paths in files by themselves
+    Styles.apply("^[ <+-]*\\([@~$a-zA-Z0-9_,? ().:<-]*\/[@\#'$a-zA-Z0-9_,? ().:\/<-]+\/\\)", nil, :ls_dir)  # one word, path, slash
 
     Styles.apply("^[ \t]*[<+-] [a-zA-Z0-9_,? ().:-]+?[:)] \\(\[.@a-zA-Z0-9 ]+\/\\)", nil, :ls_dir)   # label, one word, slash
     Styles.apply("^[ \t]*[<+-] [a-zA-Z0-9_,? ().:-]+?[:)] \\([.@a-zA-Z0-9 ]+\/[.@a-zA-Z0-9 \/]+\/\\)", nil, :ls_dir)   # label, one word, path, slash
@@ -415,11 +416,17 @@ class FileTree
 
   def self.apply_styles_at_end
     Styles.apply('^ *[+-] \\(##.*/\\)$', nil, :ls_search)  # ##_/
+    Styles.apply('^ *\\([+-] \\)?\\(@f/.*/\\)$', nil, nil, :ls_search)  # ##_/
     Styles.apply('^ *[+-] \\(\*\*.+/\\)$', nil, :ls_search)  # **_/
+    Styles.apply('^ *\\([+-] \\)?\\(@n/.*/\\)$', nil, nil, :ls_search)  # ##_/
   end
 
   def self.handles? list=nil
-    list ||= Tree.construct_path(:list=>true)   # Use current line by default
+    begin
+      list ||= Tree.construct_path(:list=>true)   # Use current line by default
+    rescue Exception=>e
+      return nil
+    end
 
     return 0 if self.matches_root_pattern?(Line.without_label :line=>list.first)
     nil
@@ -436,6 +443,10 @@ class FileTree
   # be mapped to C-. .
   # TODO: remove ignore_prefix, and just use Keys.clear_prefix
   def self.open options={}
+
+    # If passed just a dir, open it in new view
+    return FileTree.ls :dir=>options if options.is_a? String
+
     original_file = View.file_name
 
     path = options[:path] || Tree.construct_path(:list=>true)
@@ -797,7 +808,7 @@ class FileTree
 
       View.insert "#{bullet}#{dir}\n"
       previous_line
-      self.dir  # Draw actual tree
+      self.dir options   # Draw actual tree
     end
   end
 
@@ -962,7 +973,13 @@ class FileTree
 
     Line.to_beginning
 
-    Tree.search(:left=>left, :right=>right, :always_search=>true)   # Kick off hidesearch (deleting)
+    if options[:focus]
+      Search.forward "^ +\\+ #{options[:focus]}$"
+      Line.to_beginning
+      Color.colorize :l
+    end
+
+    Tree.search(:left=>left, :right=>right, :always_search=>true)
 
   end
 
@@ -1007,14 +1024,14 @@ class FileTree
   end
 
   # Enter what's in clipboard with | to on the left margin, with appropriate indent
-  def self.enter_quote
+  def self.enter_quote txt=nil
     # Skip forward if on heading
     Line.to_left
     if Line[/^\|/]
       Move.to_end
       $el.newline
     end
-    clip = Clipboard.get(0, :add_linebreak => true)
+    txt ||= Clipboard.get(0, :add_linebreak => true)
     dir = Tree.construct_path rescue nil
     if self.dir? && FileTree.handles? # If current line is path
       Tree.plus_to_minus_maybe
@@ -1031,10 +1048,10 @@ class FileTree
       return
     end
 
-    if Keys.prefix_u? || clip =~ /\A  +[-+]?\|[-+ ]/   # If C-u or whole thing is quoted already
+    if Keys.prefix_u? || txt =~ /\A  +[-+]?\|[-+ ]/   # If C-u or whole thing is quoted already
       # Unquote
-      clip = clip.grep(/\|/).join()
-      return insert(clip.gsub(/^ *[-+]?\|([-+ ]|$)/, ""))   # Remove | ..., |+...., |<blank>, etc
+      txt = txt.grep(/\|/).join()
+      return insert(txt.gsub(/^ *[-+]?\|([-+ ]|$)/, ""))   # Remove | ..., |+...., |<blank>, etc
     end
 
     if Line.blank?   # If empty line, just enter tree
@@ -1060,10 +1077,10 @@ class FileTree
     end
 
     indent += " " * Keys.prefix_or_0   # If numeric prefix, add to indent
-    clip = clip.sub /\n+\z/, ''   # Remove last \n
-    clip = clip.gsub /^/, "#{indent}\| "
-    clip = clip.gsub /^( *\|) $/, "\\1"   # Remove blank lines
-    View.insert "#{clip}\n"
+    txt = txt.sub /\n+\z/, ''   # Remove last \n
+    txt = txt.gsub /^/, "#{indent}\| "
+    txt = txt.gsub /^( *\|) $/, "\\1"   # Remove blank lines
+    View.insert "#{txt}\n"
   end
 
   def self.enter_as_search
@@ -1147,7 +1164,7 @@ class FileTree
     indent = Line.indent   # get indent
 
     # If image, insert it
-    return self.enter_image path if extension =~ /^(jpg|jpeg|png|gif)$/
+    return self.enter_image path if extension =~ /^(jpg|jpeg|png|gif)$/i
 
     # Get matches from file
     matches = ""
@@ -1254,19 +1271,21 @@ class FileTree
   # Mapped to shortcuts that displays the trees
   def self.tree options={}
     $xiki_no_search = false
+    bm = Keys.input(:timed=>true, :prompt=>"Enter bookmark to show tree of: ")
+    options.merge!(:focus=>View.file_name) if bm == "."
+    dir = Keys.bookmark_as_path(:bm=>bm)
 
-    dir = Keys.bookmark_as_path(:prompt=>"Enter bookmark to show tree of: ")
     dir = "/" if dir == :slash
     if dir.nil?
       beep
       return View.message("Bookmark doesn't exist.")
     end
     dir = Bookmarks.dir_only(dir) if options[:recursive]
-    options.merge!(:dir => dir)
+    options.merge!(:dir=>dir)
 
     # If U prefix, open in bar
     if Keys.prefix_u?
-      self.ls options.merge(:open_in_bar => true)
+      self.ls options.merge(:open_in_bar=>true)
     # Otherwise, open in new buffer
     else
       self.ls options
@@ -1415,6 +1434,8 @@ class FileTree
       path = View.file
     else
       path = Xiki.trunk.last   # Grab from wiki tree
+
+      path.sub! /\/$/, '' if Line.value !~ /\/$/   # If current line doesn't have trailing slash, remove it
     end
 
     View.flash "- copied: #{path}", :times=>2
@@ -1557,8 +1578,8 @@ class FileTree
 
     return View.kill if in_file_being_deleted
 
-    Tree.kill_under
     Effects.glow :color=>:fire, :what=>:line, :times=>1
+    Tree.kill_under
     Line.delete
     Line.to_beginning
   end
@@ -1712,7 +1733,6 @@ class FileTree
   end
 
   def self.to_outline
-
     prefix = Keys.prefix :clear=>true
     args = [View.txt, View.line] if prefix == :u
 
@@ -1753,7 +1773,7 @@ class FileTree
 
     if prefix == :u
       txt, line = Search.deep_outline *args
-      Tree.<< txt, :line_found=>line, :escape=>'| '
+      Tree.<< txt, :line_found=>line, :escape=>'| ', :no_slash=>1
       return
     end
 

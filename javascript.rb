@@ -13,7 +13,7 @@ class Javascript
 
       txt << "
         function p(txt) {
-          print(txt);
+          print(JSON.stringify(txt));
         }";
 
       result = self.run_internal txt
@@ -31,7 +31,7 @@ class Javascript
   def self.launch
     line = Line.without_label
     result = self.run_internal line
-    Tree.under result, :escape=>''
+    Tree.under result, :escape=>'', :no_slash=>1
   end
 
   def self.enter_as_jquery

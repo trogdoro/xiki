@@ -394,7 +394,11 @@ class Code
 
   def self.load_this_file
     Effects.blink :what=>:all
-    load View.file
+    begin
+      load View.file
+    rescue Exception=>e
+      Tree << "- Error:\n#{e.message.gsub /^/, '  '}!"
+    end
   end
 
   def self.do_code_align
@@ -590,11 +594,16 @@ class Code
 
   def self.enter_log_line
     $el.open_line(1) unless Line.blank?
+
+    # Javascript
+    if Tree.construct_path(:all=>1, :slashes=>1) =~ /<script/
+      View << "console.log('!');"
+      return Move.backward 4
+    end
+
     if Keys.prefix_u?
       View.insert 'Ol << "!"'
-      Line.to_right
-      Move.backward 2
-      return
+      return Move.backward 2
     end
 
     View.insert "Ol.line"

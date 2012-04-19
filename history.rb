@@ -1,14 +1,16 @@
 class History
   extend ElMixin
 
-  FILENAME = File.expand_path "~/.emacs.d/path_log.notes"
+  #   FILENAME = File.expand_path "~/.emacs.d/menu_log.notes"
+  # Unused
   def self.menu
     "
-    - .unsaved files/
     - menus) @log/
-    | Files
-    @edited/
-    @files/history/
+
+    > Files
+    - .unsaved files/
+    - @edited/
+    - @files/history/
     "
   end
 
@@ -241,11 +243,11 @@ class History
 
     name = path.sub(/.+\//, '')
 
-    # Copy file
-    $el.copy_file path, "#{bm}#{name} #{Time.now.strftime('%Y-%m-%d %H-%M')}"
+    # Copy file xx
+    $el.copy_file path, "#{bm}#{name}.#{Time.now.strftime('%Y-%m-%d.%H-%M')}"
 
     message = "backed up '#{name}' to $bak/"
-    View.flash "- #{message}", :times=>3
+    View.flash "- #{message}"#, :times=>3
     View.message "Successfully #{message}"
   end
 

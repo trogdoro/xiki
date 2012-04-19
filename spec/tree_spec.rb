@@ -419,10 +419,10 @@ describe Tree, "#children" do
 
 
   # Aborted refactor to allow blank lines in trees
-  #   it "allows blank lines" do
-  #     result = Tree.children "- a/\n  aa\n\n  ab\n", "a"
-  #     result.should == "aa\n\nab\n"
-  #   end
+  it "allows blank lines" do
+    result = Tree.children "- a/\n  aa\n\n  ab\n", "a"
+    result.should == "aa\n\nab\n"
+  end
 
   it "includes empty lines" do
     result = Tree.children "Hey\n\nyou\n", ""

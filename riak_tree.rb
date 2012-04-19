@@ -202,6 +202,6 @@ Launcher.add "buckets" do |path|
 end
 
 # Keys.open_riak_log { Launcher.open("- Riak.log/") }
-Keys.enter_as_riak { Launcher.insert("- Riak.log/") }
+Keys.enter_like_riak { Launcher.insert("- Riak.log/") }
 
 CodeTree.add_menu "Riak"   # Force it, since we're a module

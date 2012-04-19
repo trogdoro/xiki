@@ -1,9 +1,20 @@
 class Css
   def self.menu *args
 
-    return "| h1 {color:red;}  /* Type some css here (to run in the browser) */" if args.empty?
+    if args.empty?
+      return "
+        | /* Type some css here (to run in the browser) */
+        | h1 { color: red; }
+        | body {
+        |   font-family: arial;
+        |   font-size: 12px;
+        |   color: #000;
+        |   background-color: #fff;
+        | }
+        "
+    end
 
-    txt = ENV['txt']
+    txt = ENV['txt'].dup
 
     txt.gsub!("\n", '\n')
     txt.gsub!('"', '\"')

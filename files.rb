@@ -146,15 +146,6 @@ class Files
     Buffers.tree times
   end
 
-  def self.edited times=nil, options={}
-    times ||= History.prefix_times
-    paths = edited_array[0..(times-1)]
-    if options[:dir]
-      paths = paths.grep(Regexp.new(Regexp.escape(options[:dir])))
-    end
-    puts CodeTree.tree_search_option + FileTree.paths_to_tree(paths)
-  end
-
   def self.history # *path
     paths = history_array#[0..400]
     paths.map!{|i| i.sub(/(.+\/)(.+)/, "- @\\1\n  - \\2")}
@@ -189,13 +180,10 @@ class Files
   end
 
   def self.open_edited
-    Launcher.open("- edited/")
-    #     case Keys.prefix
-    #     when nil:  Keys.prefix = nil; Launcher.open("- Files.edited_flat/")
-    #     when 0:  Launcher.open("- Files.edited/")
-    #     when :u:  Launcher.open("- Files.edited 7/")
-    #     else  Launcher.open("- Files.edited #{Keys.prefix}/")
-    #     end
+    case Keys.prefix
+    when :u, 8:  Launcher.open("- edited/tree/")
+    else  Launcher.open("- edited/")
+    end
   end
 
   def self.open_history
@@ -212,8 +200,16 @@ class Files
   end
 
   def self.open_in_os path=nil
+
+    # If we're in a file tree, use path
+
+    if path.nil? && FileTree.handles?
+      path = Xiki.trunk[-1]
+    end
+
     path ||= View.file
     path ||= View.dir
+
     $el.shell_command("open \"#{path}\"")
   end
 

@@ -162,7 +162,8 @@ class Notes
   end
 
   def self.copy_block
-    block = get_block
+    prefix = Keys.prefix
+    block = get_block prefix == :u ? 2 : 1
     block.blink
     Clipboard.set("0", Keys.prefix_u ? block.text : block.content)
   end
@@ -238,6 +239,8 @@ class Notes
     define_key(:notes_mode_map, kbd("M-<mouse-1>"), :notes_mouse_meta_click)
     define_key(:notes_mode_map, kbd("<double-mouse-1>"), :notes_mouse_double_click)
     define_key(:notes_mode_map, kbd("<mouse-1>"), :notes_mouse_toggle)
+
+    define_key(:notes_mode_map, kbd("C-i")) { Notes.tab_key }
   end
 
   def self.define_styles
@@ -447,7 +450,11 @@ class Notes
 
     Styles.apply "^ *@? ?\\([%$&]\\) ", nil, :shell_prompt   # Colorize shell prompts
 
-    Styles.apply "^[ +-]*dotsies/\\(.+\\)", nil, :dotsies
+    Styles.apply "^[ ]*@dotsies roman/\\(.+\\)", nil, :dotsies_roman
+    Styles.apply "^[ ]*@dotsies/\\(.+\\)", nil, :dotsies
+    Styles.apply "^[ ]*@dots/\\(.+\\)", nil, :dotsies
+    Styles.apply "^[ ]*@tt/\\(.+\\)", nil, :dotsies_mono
+    Styles.apply("^ *\\(|~\\)\\(.*\n\\)", nil, :quote_heading_pipe, :dotsies)
 
     Styles.apply "^        \\( \\)  ", nil, :dotted
 
@@ -497,6 +504,9 @@ class Notes
   end
 
   def self.enter_junior
+
+    Move.to_end if Line.before_cursor =~ /^ +$/   # If at awkward position, move
+
     cursor = View.cursor
     line = Line.value
     indent = Line.indent line
@@ -514,7 +524,15 @@ class Notes
   def self.bullet bullet_text="- "
     prefix = Keys.prefix :clear=>true
 
-    return Tree.collapse if prefix == :u
+    if prefix == :u
+      CodeTree.kill_siblings
+      return Tree.collapse
+    end
+
+    if prefix == :uu
+      CodeTree.kill_siblings
+      return Tree.collapse :replace_parent=>1
+    end
 
     line = Line.value
     indent = Line.indent indent
@@ -814,6 +832,12 @@ class Notes
 
   def self.read_block file, heading
     self.extract_block File.read(file), heading
+  end
+
+  def self.tab_key
+    indent = Line.indent(Line.value 0)
+    Line.sub! /^ */, indent
+    Line.to_beginning
   end
 end
 

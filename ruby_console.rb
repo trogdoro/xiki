@@ -149,6 +149,7 @@ $stdout.print out
   end
 
   def self.at key, the_command
+    key = key.to_sym if key.is_a? String
     console = self[key]
     raise "No console has been defined for key '#{key}'." unless console
     console.run the_command

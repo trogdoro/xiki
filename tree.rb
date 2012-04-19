@@ -16,12 +16,14 @@ class Tree
       |
       > Get dir (or file) menu is nested under (or error if we're not)
       @ p Tree.dir
+      |
+      > Go to the right side of the tree item (move to after last item that is indented lower)
+      @ Tree.to_right
     "
   end
 
   def self.search options={}
     return $xiki_no_search=false if $xiki_no_search
-    #     return if $xiki_no_search
 
     recursive = options[:recursive]
     recursive_quotes = options[:recursive_quotes]
@@ -558,21 +560,32 @@ class Tree
     ControlLock.disable unless options[:dont_disable_control_lock]
   end
 
-  def self.kill_under options={}
+  # Go to the right side of the tree item (move to after last item that is indented lower)
+  def self.to_right options={}
     indent = Line.indent.size
-    pattern = "^ \\{0,#{indent}\\}\\([^ \n]\\|$\\)"
+    #     pattern = "^ \\{0,#{indent}\\}\\([^ \n]\\|$\\)"
 
     # Aborted refactor to allow blank lines in trees
-    #     pattern = "^ \\{0,#{indent}\\}[^ \n]"
+    pattern = "^ \\{0,#{indent}\\}[^ \n]"
 
     self.minus_to_plus_maybe unless options[:no_plus]
+
+    Line.next
+    Search.forward pattern, :go_anyway=>1
+    Line.to_left
+
+    Search.backward "^."
+    Line.next
+  end
+
+  def self.kill_under options={}
 
     # Get indent
     orig = Line.left
     left = Line.left(Keys.prefix_u? ? 1 : 2)
-    Line.next
-    Search.forward pattern
-    Line.to_left
+
+    self.to_right options
+
     View.delete(left, View.cursor)
     View.to orig
   end
@@ -646,7 +659,7 @@ class Tree
       line = Line.value
       clean = self.clean_path line
       while(line =~ /^ / && (options[:all] || clean !~ /^@/))
-        line =~ /^  ( *)(.+)/
+        line =~ /^  ( *)(.*)/
         spaces, item = $1, $2
         item = clean unless options[:raw]
         path.unshift item  # Add item to list
@@ -668,7 +681,11 @@ class Tree
       root.slice! /^@ ?/
       path.unshift root
 
-      path.map!{|o| o =~ /\/$/ ? o : "#{o}/"} if options[:slashes]
+      last = path.length - 1
+      path = path.map_with_index{|o, i|
+        next o if i == last   # Don't add slash to last
+        o =~ /\/$/ ? o : "#{o}/"
+      } if options[:slashes]
 
       $el.goto_char orig
       if options[:indented]
@@ -684,8 +701,16 @@ class Tree
   end
 
   def self.to_root
-    Move.to_end   # In case we're already on root at left margin
-    $el.search_backward_regexp "^[^\t \n]"
+
+    # Until we're at the root, keep jumping to parent
+    line = Line.value
+
+    while (line =~ /^\s/ && line !~ /^ *([+-] )?@/) do
+      Tree.to_parent
+      line = Line.value
+    end
+
+    nil
   end
 
   def self.is_root? path
@@ -767,8 +792,12 @@ class Tree
     txt.gsub(/^\| ?/, '')
   end
 
-  def self.quote txt
-    TextUtil.unindent(txt).gsub(/^([^>])/, "| \\1").gsub(/^\| $/, '|')
+  def self.quote txt, options={}
+    if options[:leave_headings]
+      return TextUtil.unindent(txt).gsub(/^([^>])/, "| \\1").gsub(/^\| $/, '|')
+    end
+
+    TextUtil.unindent(txt).gsub(/^/, "| ").gsub(/^\| $/, '|')
 
     #     TextUtil.unindent(txt).gsub(/^([^|@>+-])/, "| \\1").gsub(/^\| $/, '|')
   end
@@ -810,7 +839,7 @@ class Tree
   def self.siblings options={}
     left1, right1, left2, right2 = self.sibling_bounds
 
-    return self.siblings(:all=>true).join("\n").gsub(/^ *\| ?/, '')+"\n" if options[:string]
+    return self.siblings(:all=>true).join("\n").gsub(/^ *\| ?/, '')+"\n" if options[:string] && ! options[:before] && ! options[:after]
 
     # Combine and process siblings
     if options[:all] || options[:everything]
@@ -847,6 +876,11 @@ class Tree
     siblings.gsub! /^#{Line.indent} .*\n/, ''   # Remove more indented lines
     siblings.gsub! /^ +\n/, ''   # Remove blank lines
     siblings.gsub! /^ +/, ''   # Remove indents
+
+    if options[:string]   # Must have :before or :after option also if it got here
+      return siblings.gsub /^\| ?/, ''
+    end
+
     siblings = siblings.split("\n")
 
     unless options[:include_label]   # Optionally remove labels
@@ -925,7 +959,7 @@ class Tree
       branch[line_indent] = line
 
       # Aborted refactor to allow blank lines in trees
-      #       branch[line_indent] = line unless line.empty?
+      branch[line_indent] = line unless line.empty?
 
       if line_indent < indent
         branch = branch[0..line_indent]
@@ -941,12 +975,12 @@ class Tree
       flattened.map!{|o| o.sub /^[+-] /, ''} if ! options[:no_bullets]   # Might have side-effects if done twice
       flattened = flattened.join('')#.gsub(/[.:]/, '')   # Why were :'s removed??
 
-      block.call branch_dup, flattened
-
       # Aborted refactor to allow blank lines in trees
-      #       if line.empty?
-      #         block.call [], ""
-      #       else
+      if line.empty?
+        block.call [], ""
+      else
+        block.call branch_dup, flattened
+      end
 
       indent = line_indent
     end
@@ -1109,10 +1143,13 @@ class Tree
     treea.txt
   end
 
-  def self.collapse
+  def self.collapse options={}
     # If at root or end of line, go to next
     Line.next if Line !~ /^ / || View.cursor == Line.right
     Move.to_end -1
+
+    Line.sub! /([ +-]*).+/, "\\1" if options[:replace_parent]
+
     left = View.cursor
     $el.skip_chars_forward(" \n+-")
     View.delete left, View.cursor
@@ -1196,9 +1233,11 @@ class Tree
     Line.to_left
     Line.next
     left = View.cursor
-    output.gsub!(/^/, "#{indent}  ")
+
+    output.gsub! /^./, "#{indent}  \\0"   # Add indent, except for blank lines
 
     View.<< output, :utf8=>1
+
     right = View.cursor
 
     orig.go   # Move cursor back  <-- why doing this?
@@ -1218,7 +1257,6 @@ class Tree
       Line.to_beginning :down=>1
     end
     output
-    #     nil
   end
 
   def self.closest_dir
@@ -1291,9 +1329,9 @@ class Tree
 
           # Aborted refactor to allow blank lines in trees
           # Continue on if blank line
-          #           if branch.empty?
-          #             next result << "\n"
-          #           end
+          if branch.empty?
+            next result << "\n"
+          end
 
           next if current_indent > found
           # No longer beneath found item
@@ -1305,8 +1343,7 @@ class Tree
     end
 
     # Aborted refactor to allow blank lines in trees
-    #     result.empty? ? nil : result
-    result.empty? ? nil : result.gsub(/^$/, '|')
+    result.empty? ? nil : result
   end
 
   def self.children_at_cursor options={}
@@ -1374,10 +1411,10 @@ class Tree
       guessed_menu = caller(0)[1][/.+\/(.+)\.rb/, 1]
       file = !options[:file] ? '' : options[:file].is_a?(String) ? options[:file] : 'file.txt'
 
-      raise "> This menu must be nested under a #{options[:file] ? 'file' : 'dir'}, like this:\n| - /tmp/#{file}\n|   @#{guessed_menu}"
+      raise "> This menu must be nested under a #{options[:file] ? 'file' : 'dir'} path, like this:\n| - /tmp/#{file}\n|   @#{guessed_menu}"
     end
 
-    Bookmarks[dir]
+    Bookmarks[dir].sub '//', '/'
   end
 
 end

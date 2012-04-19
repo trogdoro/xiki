@@ -23,7 +23,7 @@ class Dotsies
   end
 
   def self.emacs_view
-    View.kill if View.name == "menu"
+    View.kill if View.name == "menu" || View.name =~ /^@/
 
     Styles.apply ".+", :dotsies
   end
@@ -39,6 +39,8 @@ class Dotsies
 
   def self.define_styles
     Styles.define :dotsies, :size => '+2', :face => "Dotsies"
+    Styles.define :dotsies_roman, :size => '+2', :face => "Dotsies Roman"
+    Styles.define :dotsies_mono, :size => '+2', :face => "Dotsies Mono"
   end
 
   def self.apply_styles

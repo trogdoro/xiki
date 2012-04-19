@@ -4,6 +4,9 @@ require 'ruby_console'
 gem 'httparty'; require 'httparty'
 gem 'activesupport'; require 'active_support/ordered_hash'
 
+gem "haml"
+require "haml"
+
 class Launcher
   extend ElMixin
 
@@ -19,7 +22,7 @@ class Launcher
     File.expand_path("~/menus"),
     ]
 
-  @@log = File.expand_path("~/.emacs.d/path_log.notes")
+  @@log = File.expand_path("~/.emacs.d/menu_log.notes")
 
   # Set this to true to just see which launcher applied.
   # Look in /tmp/output.notes
@@ -29,7 +32,7 @@ class Launcher
   @@launchers ||= ActiveSupport::OrderedHash.new
   @@launchers_procs ||= []
   @@launchers_parens ||= {}
-  @@menus ||= [{}, {}]
+  @@menus ||= [{}, {}]   # [.menu files, .rb files]
 
   def self.menus
     @@menus
@@ -76,7 +79,7 @@ class Launcher
 
     # Root passed, so show all matches
 
-    paths = paths.select{|o| o =~ /^- #{Notes::LABEL_REGEX}#{path}\//}
+    paths = paths.select{|o| o =~ /^- #{Notes::LABEL_REGEX}#{path}\/./}
 
     bullet = options[:quoted] ? "|" : "-"
 
@@ -264,8 +267,8 @@ class Launcher
 
     return if self.try_menu_launchers line, options
 
-    # Try to auto-complete based on menu-launchers
-    if line =~ /^([\w -]*)(\.\.\.)?\/?$/
+    if line =~ /^([\w -]*)$/ || line =~ /^([\w -]*)\.\.\.\/?$/
+      #     if line =~ /^([\w -]*)(\.\.\.)?\/?$/
       # TODO just check for exact match in dir, and load it if no launcher yet!
 
       root = $1
@@ -290,7 +293,12 @@ class Launcher
 
     # If just root line, load any unloaded launchers this completes and relaunch
 
-    if line =~ /^([\w -]+)\/?$/
+
+    # Failed attempt to not auto-complete if slash
+      # It's tough because we still want to load!
+    # Don't do if ends with slash? - does this mean it won't load unloaded?
+
+    if line =~ /^([\w -]+)\/?$/ && ! options[:recursed]
       root = $1
       root.gsub!(/[ -]/, '_') if root
 
@@ -304,8 +312,9 @@ class Launcher
             next if @@menus[0][root] || @@menus[1][root]   # Skip if already loaded
             require_menu(file)  # if File.exists? file
           end
-          return self.launch   # options.slice(:no_search).merge(:line=>merged)
+          return self.launch :recursed=>1   # options.slice(:no_search).merge(:line=>merged)
         end
+
       end
     end
 
@@ -317,6 +326,7 @@ class Launcher
         | right here, or you can create a class.
         <= @menu/create/here/
         <= @menu/create/class/
+        <= @menu/install/gem/
         "
     else
       View.flash "- No launcher matched!"
@@ -357,6 +367,7 @@ class Launcher
 
     # If there was a menu, call it
     out = nil
+
     if block_dot_menu = @@menus[0][root]
       begin
         out = Tree.output_and_search block_dot_menu, :line=>line  #, :dir=>file_path
@@ -441,7 +452,7 @@ class Launcher
       orig.go
     end
 
-    self.add(/^ *[+-]? *(http|file).?:\/\/.+/) do |path|
+    self.add(/^(http|file).?:\/\/.+/) do |path|
       Launcher.append_log "- urls/#{path}"
 
       prefix = Keys.prefix
@@ -461,7 +472,7 @@ class Launcher
       View.open Line.without_indent(line)
     end
 
-    self.add(/^ *p /) do |line|
+    self.add(/^p /) do |line|
       CodeTree.run line
     end
 
@@ -714,7 +725,6 @@ class Launcher
     txt = options[:tree]
 
     # Maybe call .menu with no args to actionize and get child menus
-
     if txt.nil?
       method = clazz.method(default_method) rescue nil
       if method && method.arity == 0
@@ -727,7 +737,21 @@ class Launcher
     end
 
     # Error if no menu method or file
-    raise "#{clazz} doesn't seem to have a .#{default_method} method!" if method.nil? && txt.nil?
+    if method.nil? && txt.nil? && ! args.find{|o| o =~ /^\./}
+
+      #     raise "#{clazz} doesn't seem to have a .#{default_method} method!"
+
+      #       code = "#{camel}.#{default_method}"
+      #       returned, out, exception = Code.eval code
+      #       return CodeTree.draw_exception exception, code if exception
+      #       txt = CodeTree.returned_to_s returned   # Convert from array into string, etc.
+
+      cmethods = clazz.methods - Class.methods
+      return cmethods.sort.map{|o| ".#{o}/"}
+    end
+
+
+
 
     # If got routable menu text, use it to route (get children or dotify)
 
@@ -913,34 +937,43 @@ class Launcher
   def self.wrapper path
 
     # TODO: load all the adapters and construct the "rb|js" part of the regex
-    match = path.match(/(.+\/)(\w+)\.(rb|js|coffee|py|notes)\/(.*)/)
-    return false if ! match
+    match = path.match(/(.+\/)(\w+)\.(rb|js|coffee|py|notes|haml)\/(.*)/)
+    if match
+      dir, file, extension, path = match[1..4]
+      # TODO: instead, call Launcher.invoke JsAdapter(dir, path), path
+      self.send "wrapper_#{extension}", dir, "#{file}.#{extension}", path
+      return true   # Indicate we handled it
+    end
 
-    dir, file, extension, path = match[1..4]
+    match = path.match(/(.+\/)(Rakefile)\/(.*)/)
+    if match
+      dir, file, path = match[1..4]
+      # TODO: instead, call Launcher.invoke JsAdapter(dir, path), path
+      self.send "wrapper_#{file.downcase}", dir, file, path
+      return true   # Indicate we handled it
+    end
 
-    # TODO: instead, call Launcher.invoke JsAdapter(dir, path), path
+    return false
 
-    self.send "wrapper_#{extension}", dir, file, path
-
-    return true   # Indicate we handled it
   end
 
   def self.wrapper_rb dir, file, path
-    output = Console.run "ruby #{Xiki.dir}/etc/wrappers/wrapper.rb #{file}.rb \"#{path}\"", :sync=>1, :dir=>dir
+    output = Console.run "ruby #{Xiki.dir}/etc/wrappers/wrapper.rb #{file} \"#{path}\"", :sync=>1, :dir=>dir
 
-    output = Tree.children output, path if path !~ /^\./
+    # Sensible thing for now is to just do literal output
+    #     output = Tree.children output, path if path !~ /^\./
 
     Tree << output
   end
 
   def self.wrapper_js dir, file, path
-    output = Console.run "node #{Xiki.dir}etc/wrappers/wrapper.js \"#{dir}#{file}.js\" \"#{path}\"", :sync=>1, :dir=>dir
+    output = Console.run "node #{Xiki.dir}etc/wrappers/wrapper.js \"#{dir}#{file}\" \"#{path}\"", :sync=>1, :dir=>dir
     output = Tree.children output, path
     Tree << output
   end
 
   def self.wrapper_coffee dir, file, path
-    txt = CoffeeScript.to_js("#{dir}#{file}.coffee")
+    txt = CoffeeScript.to_js("#{dir}#{file}")
     tmp_file = "/tmp/tmp.js"
     File.open(tmp_file, "w") { |f| f << txt }
 
@@ -952,15 +985,55 @@ class Launcher
   def self.wrapper_notes dir, file, path
     heading, content = (path.match(/^(\| .+)(\| .*)?/) || [nil, nil])[1..2]
 
-    output = Notes.drill "#{dir}/#{file}.notes", heading, content
+    output = Notes.drill "#{dir}/#{file}", heading, content
     Tree << output
   end
 
   def self.wrapper_py dir, file, path
-    output = Console.run "python #{Xiki.dir}etc/wrappers/wrapper.py \"#{dir}#{file}.py\" \"#{path}\"", :sync=>1, :dir=>dir
+    output = Console.run "python #{Xiki.dir}etc/wrappers/wrapper.py \"#{dir}#{file}\" \"#{path}\"", :sync=>1, :dir=>dir
     output = Tree.children output, path if path !~ /^\./
     Tree << output
   end
+
+  def self.wrapper_haml dir, file, path
+
+    engine = Haml::Engine.new(File.read "#{dir}#{file}")
+
+    foos = ["foo1", "foo2", "foo3"]
+    o = Object.new
+    o.instance_eval do
+      @foo = "Foooo"
+      @foos = foos
+    end
+
+    txt = engine.render(o, "foo"=>"Fooooooo", "foos"=>foos)
+
+    Tree << Tree.quote(txt)
+  end
+
+  def self.wrapper_rakefile dir, file, path
+
+    # If just file passed, show all tasks
+
+    if path.blank?
+      txt = Console.sync "rake -T", :dir=>dir
+
+      txt = txt.scan(/^rake (.+?) *#/).flatten
+
+      Tree << txt.map{|o| "- #{o}/\n"}.join
+      return
+    end
+
+    # Task name passed, so run it
+
+    path.sub! /\/$/, ''
+    Console.run "rake #{path}", :dir=>dir
+    nil
+
+  end
+
+
+
 
   def self.reload_menu_dirs
 
@@ -968,7 +1041,7 @@ class Launcher
       next unless File.directory? dir
 
       Files.in_dir(dir).each do |f|
-        next if f !~ /^[a-z].+\.rb$/   # Skip ^. files
+        next if f !~ /^[a-z].*\..*[a-z]$/ || f =~ /__/
         path = "#{dir}/#{f}"
         stem = f[/[^.]*/]
         self.add stem, :menu=>path

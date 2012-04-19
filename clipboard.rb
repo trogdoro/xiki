@@ -25,12 +25,15 @@ class Clipboard
 
   def self.copy loc=nil, txt=nil
     # Use string if user types it quickly
-    loc ||= Keys.input(:chars=>1, :prompt=>"Enter one char (to store this as): ") || "0"
+    if ! loc
+      View.flash "Enter variable name:", :times=>1
+      loc = Keys.input(:chars=>1, :prompt=>"Enter one char (variable name to store this as): ") || "0"
+    end
 
     unless txt
       left, right = View.range
       Effects.blink :left=>left, :right=>right
-      txt = buffer_substring(region_beginning, region_end)
+      txt = $el.buffer_substring($el.region_beginning, $el.region_end)
     end
     self.set(loc, txt, Keys.prefix)
   end

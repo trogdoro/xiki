@@ -47,7 +47,7 @@ class Remote
       path.sub! /^\/\//, '/'
     end
 
-    timeout(6) do
+    timeout(15) do
       if path =~ /\/$/   # If a dir
         out = connection.exec!("ls -pa #{path}")
         out ||= ""
@@ -70,6 +70,7 @@ class Remote
           begin
             connection.sftp.download!(path, local_path)
           rescue Exception=>e
+            # If doesn't exist, we'll just create
           end
         end
 
@@ -126,7 +127,7 @@ class Remote
         Net::SSH.start(server, user, :port => port.to_i, :paranoid => false)
       end
     rescue Exception => e
-      puts "Timed out: #{e.message}"
+      raise "Timed out: #{e.message}"
     end
   end
 

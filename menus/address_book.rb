@@ -1,14 +1,21 @@
 class AddressBook
   def self.names
-    `osascript -e 'launch app "Address Book"'`
-    names = `osascript -e 'tell app "Address Book" to get the name of every person'`
-    names.split(', ').sort.uniq
+    names = Applescript.run "address book", "get the name of every person"
+    names.sub! /^\{(.+)\}/, "[\\1]"
+    JSON[names]
   end
 
   def self.menu key=nil
     return self.names.map{|o| "#{o}/"} if key.nil?
 
-    '| todo!'
+    # Clean up a bit
+    txt = Applescript.run "address book", "get vcard of people whose name is \"#{key}\""
+    txt.gsub! /, /, "\n"
+    txt.gsub! /:/, ": "
+    txt = txt.split("\n").select{|o| o !~ /^"}|missing value|END: VCARD|VERSION: 3.0|BEGIN: VCARD/}.join("\n")
+    txt.gsub! /^/, "- "
+
+    txt
   end
 
 end
