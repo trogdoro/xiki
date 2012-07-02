@@ -41,7 +41,7 @@ class Scale
     Line.next
     View.<< "#{indent}- #{dest}\n", :dont_move=>1
 
-    Effects.glow :color=>:forest, :what=>:line, :times=>1
+    Effects.glow :fade_in=>1
 
     nil
 

@@ -5,9 +5,14 @@ class Node
     | puts(1 + 2)
     - .controller/
     - docs/
-      > To try out controller code
-      | @node/controller/
-      |   | function
+      - menu/
+        > To try out controller code
+        | @node/controller/
+        |   | function
+
+      - node/
+        > Snippets
+        @technologies/node_js/
     "
   end
 

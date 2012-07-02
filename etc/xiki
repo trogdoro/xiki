@@ -11,7 +11,10 @@
 
 # require "/projects/xiki/ol"
 
-`open "/Applications/emacs.app"`   # Bring emacs to front
+# Bring emacs to front
+
+`open "/Applications/Aquamacs Emacs.app"`
+# `open "/Applications/emacs.app"`   # If you're not using Aquamacs
 
 menu = ARGV.join(' ')
 

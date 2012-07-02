@@ -15,11 +15,8 @@ class Remote
     "
     - docs/
       > Summary
-      | Lets you browse files and run commands on remote servers.
-      |
-      > Wiki Syntax
+      | You can browse files and run commands on remote servers.
       @ /user@foo.com/tmp/
-      |
     << see) @servers/
     "
   end
@@ -112,6 +109,10 @@ class Remote
 
       Tree.under out, :escape=>'| ', :no_slash=>1
     end
+  end
+
+  def self.connections
+    @@connections
   end
 
   def self.connection root

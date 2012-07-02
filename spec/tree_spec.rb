@@ -17,7 +17,7 @@ describe Tree, "#traverse" do
     Tree.traverse tree do |array|
       paths << array
     end
-    paths.should == [["- a/"], ["- a/", "- b/"], ["- c/"]]
+    paths.should == [[["- a/"], "a/"], [["- a/", "- b/"], "a/b/"], [["- c/"], "c/"]]
   end
 
   it "handles two-level dropoff and no dropoff" do
@@ -33,7 +33,15 @@ describe Tree, "#traverse" do
     Tree.traverse tree do |array|
       paths << array
     end
-    paths.should == [["- a/"], ["- a/", "- aa/"], ["- a/", "- aa2/"], ["- a/", "- aa2/", "- aaa/"], ["- c/"]]
+
+    paths.should ==[
+      [["- a/"], "a/"],
+      [["- a/", "- aa/"], "a/aa/"],
+      [["- a/", "- aa2/"], "a/aa2/"],
+      [["- a/", "- aa2/", "- aaa/"], "a/aa2/aaa/"],
+      [["- c/"], "c/"]
+    ]
+
   end
 
   it "leaves in comments" do
@@ -47,7 +55,11 @@ describe Tree, "#traverse" do
     Tree.traverse tree do |array|
       paths << array
     end
-    paths.should == [["- hey) a/"], ["- hey) a/", "- you) b/"], ["- c/"]]
+    paths.should == [
+      [["- hey) a/"], "hey) a/"],
+      [["- hey) a/", "- you) b/"], "hey) a/you) b/"],
+      [["- c/"], "c/"]
+    ]
   end
 
   it "removes bullets" do
@@ -60,10 +72,75 @@ describe Tree, "#traverse" do
     Tree.traverse tree, :no_bullets=>1 do |array|
       paths << array
     end
-    paths.should == [["a/"], ["a/", "b/"]]
+    paths.should == [
+      [["a/"], "a/"], [["a/", "b/"], "a/b/"]
+    ]
+  end
+
+  it "passes blanks as nil" do
+    paths = []
+    tree = "
+      - a/
+
+      - b/
+      ".unindent
+
+    Tree.traverse tree, :no_bullets=>1 do |array|
+      paths << array
+    end
+
+    paths.should == [
+      [["a/"], "a/"],
+      [[nil], ""],
+      [["b/"], "b/"],
+    ]
+  end
+
+  it "passes blanks as nil one level down" do
+    paths = []
+    tree = "
+      - a/
+        - aa/
+
+        - ab/
+      ".unindent
+
+    Tree.traverse tree, :no_bullets=>1 do |array|
+      paths << array
+    end
+    paths.should == [
+      [["a/"], "a/"],
+      [["a/", "aa/"], "a/aa/"],
+      [["a/", nil], "a/"],
+      [["a/", "ab/"], "a/ab/"],
+    ]
+  end
+
+
+  it "error when blank line between parent and child" do
+
+    # For simplicity, we're just erroring, as opposed to looking ahead
+    # to see what the assumed indent would be.
+    #
+    # It could be possible to assume that the indent is one lower if
+    # there's a child following.  But, since we're not allowing space
+    # between a parent and child, this may not be necessary.
+
+    paths = []
+    tree = "
+      - a/
+
+        - aa/
+      ".unindent
+
+    lambda {
+      Tree.traverse tree, :no_bullets=>1 do |array|
+        paths << array
+      end
+    }.should raise_error(RuntimeError)
+
   end
 end
-
 
 
 describe Tree, "#dotify" do
@@ -151,6 +228,17 @@ describe Tree, "#dotify" do
     target.should == ["roots", "docs"]
 
     tree.should == orig
+  end
+
+  it "adds dot to path when arrow bullets" do
+    tree = "
+      <= .a/
+        - aa/
+      ".unindent
+
+    path = ["a"]
+    Tree.dotify! tree, path
+    path.should == [".a"]
   end
 
 end
@@ -300,26 +388,60 @@ describe Tree, "#restore" do
       - n/
       ".unindent
   end
-
+end
   #   def test_paths_to_tree
-  #     paths = %w[
-  #       /projects/foo/a.txt
-  #       /projects/foo/b.txt
-  #       /other/c.txt
-  #       ]
 
-  #     tree =
-  #       "|- /other/
-  #        |  + c.txt
-  #        |- /projects/
-  #        |  - foo/
-  #        |    + a.txt
-  #        |    + b.txt
-  #        |".gsub(/^ *\|/, '')
+describe Tree, "#test_paths_to_tree" do
 
-  #     # TODO: uncomment
-  #     #assert_equal tree, FileTree.paths_to_tree(paths)
-  #   end
+  it "maintains trailing slashes" do
+    paths = ["/projects/"]
+
+    txt = Tree.paths_to_tree(paths)
+    txt.should == "- /projects/\n"
+  end
+
+  it "builds a tree" do
+    paths = %w[
+      /projects/foo/a.txt
+      /projects/foo/b.txt
+      /other/c.txt
+      ]
+
+    tree = "
+      - /other/
+        + c.txt
+      - /projects/
+        - foo/
+          + a.txt
+          + b.txt
+      ".unindent
+
+    txt = Tree.paths_to_tree(paths)
+    txt.should == tree
+  end
+
+  it "handles menus" do
+    paths = %w[
+      Tree/
+      Tree/api/
+      dotsies/apply/all views/
+      dotsies/apply/one view/
+      files/
+      ]
+
+    tree = "
+      - Tree/
+        + api
+      - dotsies/
+        - apply/
+          + all views
+          + one view
+      - files/
+      ".unindent
+
+    txt = Tree.paths_to_tree(paths)
+    txt.should == tree
+  end
 
 end
 
@@ -410,44 +532,121 @@ end
 describe Tree, "#children" do
 
   it "shows shallowest items when blank path" do
-    Tree.children("- a/\n- .b/\n", "").should == "+ a/\n+ b/\n"
+    Tree.children("
+      - a/
+      - .b/
+      ", "").should == "
+      + a/
+      + b/
+      ".unindent
   end
 
   it "shows children of 1 deep" do
-    Tree.children("- a/\n  - aa/\n  - ab/\n- b/\n", "a").should == "+ aa/\n+ ab/\n"
+    Tree.children("
+      - a/
+        - aa/
+        - ab/
+      - b/
+      ", "a").should == "
+      + aa/
+      + ab/
+      ".unindent
   end
 
+  it "returns nil when no match" do
+Ol.line
+x = "hey"
+Ol << "x: #{x.inspect}"
+    Tree.children("
+      - a/
+        - aa/
+        - ab/
+      - b/
+      ", "a").should == nil
+  end
 
-  # Aborted refactor to allow blank lines in trees
   it "allows blank lines" do
-    result = Tree.children "- a/\n  aa\n\n  ab\n", "a"
-    result.should == "aa\n\nab\n"
+    result = Tree.children "
+      - a/
+        aa
+
+        ab
+      ", "a"
+    result.should == "
+      aa
+
+      ab
+      ".unindent
   end
 
-  it "includes empty lines" do
-    result = Tree.children "Hey\n\nyou\n", ""
+  it "includes blank lines in root" do
+    result = Tree.children "
+      Hey
+
+      you
+      ", ""
     result.should == "
       Hey
-      |
+
       you
       ".unindent
   end
 
-  it "works with dots" do
-    Tree.children("- .a/\n- b/\n", "").should == "+ a/\n+ b/\n"
+  it "doesn't show dots" do
+    Tree.children("
+      - .a/
+      - b/
+      ", "").should == "
+      + a/
+      + b/
+      ".unindent
+  end
+
+  it "doesn't show dots when arrow bullets" do
+    Tree.children("
+      <= .a/
+      - b/
+      ", "").should == "
+      <= a/
+      + b/
+      ".unindent
   end
 
   it "returns nil if child is star" do
-    Tree.children("- a/\n  - */\n", "a").should == nil
+    Tree.children("
+      - a/
+        - */
+      ", "a").should == nil
   end
 
   it "matches when star" do
-    Tree.children("- a/\n  - */\n    - aaa/\n", "a/z").should == "+ aaa/\n"
+    Tree.children("
+      - a/
+        - */
+          - aaa/
+      ", "a/z").should == "+ aaa/\n"
   end
 
-  it "includes all sub-items of items with at sign" do
-    Tree.children("- @a/\n  - .b/\n    - c/\n", "").should == "+ @a/\n  + b/\n    + c/\n"
-    Tree.children("- a/\n  - @b/\n    - c/\n      - d/\n", "a").should == "+ @b/\n  + c/\n    + d/\n"
+  it "includes all sub-items of items under at sign" do
+    Tree.children("
+      - @a/
+        - .b/
+          - c/
+      ", "").should == "
+      + @a/
+        + b/
+          + c/
+      ".unindent
+    Tree.children("
+      - a/
+        - @b/
+          - c/
+            - d/
+      ", "a").should == "
+      + @b/
+        + c/
+          + d/
+      ".unindent
   end
 
   #   it "doesn't include items under item with at sign" do
@@ -455,7 +654,36 @@ describe Tree, "#children" do
   #   end
 
   it "includes all sub-items when :include_subitems option" do
-    Tree.children("- a\n  - b\n", "", :include_subitems=>1).should == "- a\n  - b\n"
+    Tree.children("
+      - a
+        - b
+      ", "", :include_subitems=>1).should == "
+      - a
+        - b
+      ".unindent
+  end
+
+  it "doesn't misinterpret blank lines as children" do
+    result = Tree.children "
+      - a/
+
+      - b/
+      ", "a"
+    result.should == nil
+  end
+
+  it "isn't confused by blank lines a level deeper" do
+    result = Tree.children "
+      a/
+        aa
+
+        ab
+      b/
+      ", ""
+    result.should == "
+      a/
+      b/
+      ".unindent
   end
 
 end
@@ -583,6 +811,87 @@ describe Tree, "#target_match" do
 
   it "recognizes match when star" do
     Tree.target_match("a/*/aa/", "a/zzzz").should == :shorter
+  end
+
+end
+
+
+describe Tree, "#add_pluses_and_minuses" do
+
+  it "adds bullets" do
+    txt = "aa\n  bb\n"
+    Tree.add_pluses_and_minuses(txt)
+    txt.should == "+ aa\n  + bb\n"
+  end
+
+  it "doesn't add redundantly" do
+    txt = "- aa\n  - bb\n"
+    Tree.add_pluses_and_minuses(txt)
+    txt.should == "- aa\n  - bb\n"
+  end
+
+end
+
+describe Tree, "#to_html" do
+  it "handles one tag" do
+    Tree.to_html("
+      p/
+        hi
+      ".unindent).should == "
+      <p>
+        hi
+      </p>
+      ".unindent
+  end
+
+  it "handles single with no contents" do
+    Tree.to_html("
+      p/
+      ".unindent).should == "
+      <p>
+      </p>
+      ".unindent
+  end
+
+  #   it "doesn't close certain tags" do
+  #     Tree.to_html("
+  #       hr/
+  #       ".unindent).should == "
+  #       <p>
+  #       </p>
+  #       ".unindent
+  #   end
+
+  it "doesn't confuse comments" do
+    Tree.to_html("
+      p/
+        /* hey */
+      ".unindent).should == "
+      <p>
+        /* hey */
+      </p>
+      ".unindent
+  end
+
+  it "adds closing tags to html" do
+    Tree.to_html("
+      <p>
+        hi
+      ".unindent).should == "
+      <p>
+        hi
+      </p>
+      ".unindent
+  end
+
+  it "doesn't close comment tags" do
+    Tree.to_html("
+      <!-- hey -->
+      hi
+      ".unindent).should == "
+      <!-- hey -->
+      hi
+      ".unindent
   end
 
 end

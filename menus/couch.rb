@@ -10,7 +10,6 @@ class Couch
     - @db/
     - .admin url/
     "
-    #     - .databases/
   end
 
   def self.start
@@ -29,9 +28,6 @@ class Couch
     if db.nil?   # If no db yet, list all
       txt = Net::HTTP.get(URI.parse("#{@@server}/_all_dbs"))
       dbs = JSON[txt]
-
-      # Unless C-u, only show _development dbs
-      #       dbs = dbs.select{|o| o =~ /_development$/} unless Keys.prefix == :u
 
       return dbs.map{|i| "#{i}/"}
     end

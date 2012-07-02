@@ -37,7 +37,7 @@ This file tells how to install Xiki.  See README.txt for a description of Xiki.
         | Styles.use_xiki_color_scheme   # Use xiki's color scheme
 
 - 4: Install dependant packages
-  $ sudo gem install ParseTree ruby2ruby net-ssh net-sftp
+  % sudo gem install ParseTree ruby2ruby net-ssh net-sftp
 
 > Trouble-shooting
 The install is a bit rough at the moment...
@@ -55,7 +55,7 @@ The install is a bit rough at the moment...
     - M-e to look at the latest error
 
 - If you get a "can't find header dir for ruby" error
-  $ sudo apt-get install ruby1.8-dev
+  % sudo apt-get install ruby1.8-dev
 
 >> Google group
 Feel free to join the google group and email install questions.

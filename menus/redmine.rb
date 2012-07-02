@@ -37,12 +37,6 @@ class Redmine
     txt.gsub!('&lt;', '<');  txt.gsub!('&gt;', '>')
     txt.gsub!('&amp;', '&');  txt.gsub!('&quot;', '"')
 
-#     puts txt
-#     return
-
-#     (1..7).to_a.reverse.each do |i|  # Headers (h1. etc)
-#       txt.gsub!(/^h#{i}\. /, "#{'|' * i} ")
-#     end
     (1..7).to_a.reverse.each do |i|  # Headers
       txt.gsub!(/^#{'#' * i}/, "#{'|' * i} ")
     end
@@ -55,7 +49,6 @@ class Redmine
 
   def self.xiki_to_redmine txt
     # Headers (h1. etc)
-    #(1..7).to_a.reverse.each { |i| txt.gsub!(/^#{'\\|' * i} /, "h#{i}. ") }
     (1..7).to_a.reverse.each { |i| txt.gsub!(/^#{'\\|' * i} /, "#{'#' * i}") }
     (1..9).to_a.reverse.each { |i| txt.gsub!(/^#{'  ' * (i-1)}-/, "#{'*' * i}") }
     txt

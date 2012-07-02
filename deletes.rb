@@ -15,8 +15,8 @@ class Deletes
 
     # If at end of line, go forward, and remember to delete backward
     was_blank = Line.blank?
-    was_at_end = (Line.at_right and (! was_blank))
-    was_at_beginning = (Line.at_left and (! was_blank))
+    was_at_end = (Line.at_right? and (! was_blank))
+    was_at_beginning = (Line.at_left? and (! was_blank))
     if was_blank  # If blank, stay on line
       # Do nothing
     elsif was_at_end
@@ -35,8 +35,8 @@ class Deletes
 
     Deletes.backward if was_at_end
     if was_at_beginning
-      Deletes.backward if Line.at_left
-      delete_char(1) if Line.at_right
+      Deletes.backward if Line.at_left?
+      delete_char(1) if Line.at_right?
     end
     if was_blank
       if prefix

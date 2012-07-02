@@ -72,35 +72,57 @@ class DiffLog
     end
   end
 
-  def self.enter_old
-    diff = DiffLog.last_diff
-    diff.gsub! /^ *[+:-].*\n/, ""   # Only leave red and green lines
-
-    diff.gsub! /^ +\|\+.*\n/, ""
-    diff.gsub! /^ +\|\-/, ""
-
-    View.insert diff
+  def self.is_one_line_change? txt
+    txt.scan(/^ +\|\-/).length == 1 &&
+      txt.scan(/^ +\|\+/).length == 1 &&
+      txt.scan(/^ +:/).length
   end
 
   # Insert new text added during last save
   def self.enter_new
+    self.enter_old_or_new :new
+  end
+
+  def self.enter_old
+    self.enter_old_or_new :old
+  end
+
+  def self.enter_old_or_new old_or_new
+
     diff = DiffLog.last_diff
+    one_line_change = DiffLog.is_one_line_change? diff
+
+    # Show intraline change if changed just one line and not up+
+
+    if ! Keys.up? && one_line_change
+      View.<< DiffLog.last_intraline_diff[old_or_new == :old ? 0 : 1] rescue View.beep $!
+      return
+    end
+
+    # Show lines
+
     diff.gsub! /^ *[+:-].*\n/, ""   # Only leave red and green lines
+    if old_or_new == :old
+      diff.gsub! /^ +\|\+.*\n/, ""
+      diff.gsub! /^ +\|\-/, ""
+    else
+      diff.gsub! /^ +\|\-.*\n/, ""
+      diff.gsub! /^ +\|\+/, ""
+    end
+    View << diff
 
-    diff.gsub! /^ +\|\-.*\n/, ""
-    diff.gsub! /^ +\|\+/, ""
-
-    View.insert diff
   end
 
   # Appends diff to difflog, then saves.  Mapped to as_file.
   def self.save
     return if View.file_name == "difflog.notes"
+
+    prefix = Keys.prefix :clear=>1
+
     self.save_diffs
 
     $el.save_buffer
 
-    prefix = Keys.prefix
     if prefix == :u
       sleep(0.3)
       Firefox.reload
@@ -205,6 +227,57 @@ class DiffLog
     end
 
     result
+  end
+
+  def self.do_compare_with
+    prefix = Keys.prefix :clear=>1
+
+    # up+ means compare buffers in first two views
+
+    return $el.ediff_buffers( window_buffer(nth(0, window_list)), window_buffer(nth(1, window_list))) if prefix == :u
+
+    # Save place and grab file at spot
+
+    source_path = Tree.dir_at_spot
+    dest_path = Tree.dir :file=>1
+    $el.ediff_files source_path, dest_path
+
+  end
+
+  #
+  # Grabs last diff from difflog, and calculates exactly what changed.  Whithin the line.
+  # So, it performs a single-line diff
+  #
+  # It presumes a single-line change, and a change at only one point on the line.
+  #
+  # DiffLog.last_intraline_diff
+  #
+  def self.last_intraline_diff txt=nil
+    txt ||= DiffLog.last_diff
+
+    linea = txt[/ +\|\-(.+)/, 1]
+    lineb = txt[/ +\|\+(.+)/, 1]
+
+    raise "The last diff in the difflog didn't have a red and a green." if linea.nil? || lineb.nil?
+
+    linea_length, lineb_length = linea.length, lineb.length
+
+    from_start = 0
+    while from_start < linea_length
+      break if linea[from_start] != lineb[from_start]
+      from_start += 1
+    end
+
+    from_end = 1
+    while from_end < linea_length
+      break if from_end > linea_length || from_end > lineb_length || linea[linea_length-from_end] != lineb[lineb_length-from_end]
+      from_end += 1
+    end
+
+    deltaa = from_end > linea_length ? "" : linea[from_start..(linea_length-from_end)]
+    delteab = from_end > lineb_length ? "" : lineb[from_start..(lineb_length-from_end)]
+
+    [deltaa, delteab]
   end
 
 end

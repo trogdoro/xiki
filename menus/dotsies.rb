@@ -1,9 +1,10 @@
 class Dotsies
   def self.menu
     %`
-    - dotsies/this is an example
+    |~this is an example
     - .apply/
-      - .emacs view/
+      - .one view/
+      - .all views/
       - .web browser/
     - .browse/
     - api/
@@ -15,17 +16,48 @@ class Dotsies
       | Has to do with the "dotsies" font.
       |
       > Show dotsies text inline
-      - dotsies/some text
+      |~Show dotsies text inline
       |
       > To show something in the browser
       | Use the "browse" menu.
+
+    > See
+    << dotsies tweets/
     `
   end
 
-  def self.emacs_view
+  def self.all_views
+
     View.kill if View.name == "menu" || View.name =~ /^@/
 
-    Styles.apply ".+", :dotsies
+    if Styles.attribute(:default, :family) =~ /dotsies/
+      Styles.define :default, :face=>"monaco", :size=>110
+      Styles.define :ls_dir, :fg=>"888", :face=>"verdana", :size=>"-1", :bold=>true
+    else
+      Styles.define :ls_dir, :fg=>"888", :face=>"Dotsies", :size=>120, :bold=>false
+      Styles.define :default, :face=>"dotsies", :size=>120
+    end
+  end
+
+  def self.one_view
+    View.kill if View.name == "menu" || View.name =~ /^@/
+
+    $el.make_local_variable :dotsies_enabled
+    dotsies_enabled = $el.boundp(:dotsies_enabled) && $el.elvar.dotsies_enabled
+
+    font =
+      if dotsies_enabled
+        :default
+      elsif Keys.prefix_u
+        :dotsies_experimental
+      else
+        :dotsies
+      end
+
+    Styles.apply(".+", font)
+
+    $el.elvar.dotsies_enabled = ! dotsies_enabled
+    nil
   end
 
   def self.web_browser
@@ -39,6 +71,7 @@ class Dotsies
 
   def self.define_styles
     Styles.define :dotsies, :size => '+2', :face => "Dotsies"
+    Styles.define :dotsies_experimental, :size => '+2', :face => "Dotsies Experimental"
     Styles.define :dotsies_roman, :size => '+2', :face => "Dotsies Roman"
     Styles.define :dotsies_mono, :size => '+2', :face => "Dotsies Mono"
   end

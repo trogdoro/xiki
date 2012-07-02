@@ -4,21 +4,30 @@ class Tree
   def self.menu
     "
     - api/
+      > Get dir (or file) menu is nested under
+      @ p Tree.file
+      @ p Tree.file :require=>1   # Raise message if not nested under dir or file
+      @ p Tree.file :require=>'file'   # Raise message if not nested under file
+      @ p Tree.file :require=>'dir'   # Raise message if not nested under dir
+
       > Show siblings
       @ p Tree.siblings
-      |
+
       | Include all siblings (current line is usually ommited), just
       | siblings before, or just siblings after:
       @ p Tree.siblings :all=>1
       @ p Tree.siblings :after=>1
       @ p Tree.siblings :before=>1
       @ p Tree.siblings :string=>1   # Consecutive lines, quotes removed
-      |
-      > Get dir (or file) menu is nested under (or error if we're not)
-      @ p Tree.dir
-      |
-      > Go to the right side of the tree item (move to after last item that is indented lower)
-      @ Tree.to_right
+
+      > Moving around
+      @ Tree.to_parent   # Go to parent, regardless of blanks
+      @ Tree.after_children   # Go after children of this element, crossing blank lines
+      @ Tree.before_siblings   # Jumps to first sibling, crossing blank lines, but not double-blank lines
+      @ Tree.after_siblings   # Go after last sibling, crossing blank lines, but not double-blank lines
+
+      > All methods
+      @ Tree.meths
     "
   end
 
@@ -29,7 +38,7 @@ class Tree
     recursive_quotes = options[:recursive_quotes]
     left, right = options[:left], options[:right]
     if ! left
-      ignore, left, right = View.block_positions "^>"
+      left, right = Line.left(2), Tree.after
     end
 
     # No search if there aren't more than 3 lines
@@ -58,10 +67,12 @@ class Tree
       return Cursor.restore(:before_file_tree)
     end
 
-    # While narrowing down list
-    while (ch =~ /[ -"&-),.\/:<?A-~]/) ||   # Be careful editing, due to ranges (_-_)
+    # While alpha chars (or other chars to search for), narrow down list
+    while (ch =~ /[ -"&-),-.\/-:<?A-~]/ &&   # Be careful editing, due to ranges (_-_)
+        (ch_raw < 67108912 || ch_raw > 67108921) && ch_raw != 67108909) ||   # If not control-<number> or C--
         (recursive && ch_raw == 2 || ch_raw == 6) ||
         ch == :up || ch == :down
+
       if ch == ' '
         pattern = ''
       elsif ch_raw == 2   # C-b
@@ -160,6 +171,7 @@ class Tree
     case ch   # Do option based on last char, or run as command
     when "0"
       file = self.construct_path   # Expand out ~
+      # Open in OS
       $el.shell_command("open #{file}")
       #     when "\C-a"
       #       Line.to_left
@@ -181,6 +193,8 @@ class Tree
     when :return   # If return, just stop (like isearch)
       # Do nothing
 
+      Keys.clear_prefix
+      Launcher.launch
 
       #     when :control_return, :return, "\C-m", :control_period, :right   # If C-., go in but don't collapse siblings
     when :control_return, "\C-m", :control_period, :right   # If C-., go in but don't collapse siblings
@@ -196,8 +210,48 @@ class Tree
       self.search(:left => Line.left, :right => Line.left(2))
 
     when :control_slash   # Collapse tree and exit
-      self.to_parent
-      self.kill_under
+
+      line = Line.txt
+
+      # Don't kill siblings if "<<" or "<=" line
+
+      if line =~ /^<+=? /
+        Keys.clear_prefix
+        Launcher.launch
+        return
+      end
+
+      # If CodeTree search
+      if CodeTree.handles?
+        # Kill others
+        View.delete(Line.left(2), right)
+
+        if Line.without_label =~ /^\./   # If just a method
+          # Back up to first . on last line
+          Search.forward "\\."
+          right = View.cursor
+          Line.previous
+          Search.forward "\\."
+        else   # Else, just delete previous line
+          right = View.cursor
+          Line.previous
+          Line.to_beginning
+        end
+        View.delete(View.cursor, right)
+        return Launcher.launch
+      end
+
+      $el.delete_region(Line.left(2), right)  # Delete other files
+      $el.delete_horizontal_space
+      $el.delete_backward_char 1
+
+      # delete -|+ if there
+      if View.txt(View.cursor, Line.right) =~ /^[+-] /
+        $el.delete_char 2
+      end
+
+      Launcher.launch if line =~ /\/$/   # Only launch if it can expand
+
 
     when "#"   # Show ##.../ search
       self.stop_and_insert left, right, pattern
@@ -322,54 +376,26 @@ class Tree
     when "\C-r"
       $el.isearch_backward
 
-    when ";"   # If semicolon, append selected dir to parent dir
+    when ";"   # Replace parent
 
-      # Don't kill siblings if "<<" or "<=" line
+      CodeTree.kill_siblings
+      Tree.collapse :replace_parent=>1
+      return Launcher.launch
 
-      if Line.txt =~ /^<+=? /
-        Keys.clear_prefix
-        Launcher.launch
-        return
-      end
 
-      # If CodeTree search
-      if CodeTree.handles?
-        # Kill others
-        View.delete(Line.left(2), right)
+    # when "/"   # Append selected dir to parent dir
+    # Just search for a slash
 
-        if Line.without_label =~ /^\./   # If just a method
-          # Back up to first . on last line
-          Search.forward "\\."
-          right = View.cursor
-          Line.previous
-          Search.forward "\\."
-        else   # Else, just delete previous line
-          right = View.cursor
-          Line.previous
-          Line.to_beginning
-        end
-        View.delete(View.cursor, right)
-        return Launcher.launch
-      end
-
-      $el.delete_region(Line.left(2), right)  # Delete other files
-      $el.delete_horizontal_space
-      $el.delete_backward_char 1
-
-      # delete -|+ if there
-      if View.txt(View.cursor, Line.right) =~ /^[+-] /
-        $el.delete_char 2
-      end
-
-      Launcher.launch
 
     when "="   # Drill into the file
       dir = self.construct_path  # Expand out ~
       View.open(dir)
 
-    when "0"   # Drill into the file
-      $el.delete_region(Line.left(2), right)   # Delete other files
-      self.drill
+      # Does something else above
+      #     when "0"   # Drill into the file
+      #       # TODO Is this ever used? - does it work?
+      #       $el.delete_region(Line.left(2), right)   # Delete other files
+      #       self.drill
 
     when "\a"   # Typed C-g
       View.beep
@@ -400,7 +426,6 @@ class Tree
     Message << "type 1st letter... "
     ch, ch_raw = Keys.char
     letterized = $el.char_to_string(Keys.remove_control ch_raw).to_s
-
     Overlay.delete_all
 
     if ch_raw == 7   # C-g
@@ -439,12 +464,17 @@ class Tree
   end
 
 
-  # Drill into a file, showing lines one indent level deeper
-  # Returns lowest item in path, or if pipe-quoted
-  # grabs siblings and turns into multi-line string.
+  #
+  # If foo/bar line, returns bar.
+  # If pipe-quoted returns siblings as multi-line string (assuming current
+  # line is pipe-quoted).
+  #
+  # Tree.leaf "hey/you"
+  # Tree.leaf "| hii"   # Would get siblings also if line cursor is on had siblings
+  #
   def self.leaf path, options={}
-
     if path =~ /(?:^\||\/\|) ?(.*)/   # If has ^| or /|, grab siblings
+      # We should probably verify that the current line is the same as the path too? (in case cursor moved to other quoted tree?)
       orig = $1
       # First, make sure the current line is quoted (otherwise, .siblings will be pulling from somewhere else)
       return orig if options[:dont_look] || Line.value !~ /^ *\|/
@@ -467,60 +497,65 @@ class Tree
     path.sub /\/.*/, ''
   end
 
-  def self.drill
-    Line.to_left
-    # Get indent between | and tabs
-    match = Line.value.match(/^( *)\|( *)(.+)/)
-    # Get content
-    path = Bookmarks.expand(construct_path)  # Get path
-    matches = ""
-    if match  # It's a quoted line
-      indent, indent_after_bar, rest = match[1,3]
-      indent_after_bar.gsub!("\t", "        ")
-      #"#{indent_after_bar}#{rest}"
-      # Go through and find line
-      found = nil
-      IO.foreach(path[/(.+?)\|/, 1]) do |line|
-        line.sub!(/[\r\n]+$/, '')
-        # If not found yet, check for line
-        if !found && line == "#{indent_after_bar}#{rest}"
-          found = true
-          next
-        end
-        next unless found
 
-        # Exit if indented at same level (unless blank or comment)
-        if((Line.indent(line).length <= indent_after_bar.length) &&
-           (! (line =~ /^\s*$/)) &&
-           (! (line =~ /^\s*#/))
-           )
-          break
-        end
+  #
+  # Not used - apparently surplanted during Tree.search by
+  # the methods C-a and C-o call.
+  #
+  #   def self.drill
+  #     Line.to_left
+  #     # Get indent between | and tabs
+  #     match = Line.value.match(/^( *)\|( *)(.+)/)
+  #     # Get content
+  #     path = Bookmarks.expand(construct_path)  # Get path
+  #     matches = ""
+  #     if match   # It's a quoted line
+  #       indent, indent_after_bar, rest = match[1,3]
+  #       indent_after_bar.gsub!("\t", "        ")
+  #       #"#{indent_after_bar}#{rest}"
+  #       # Go through and find line
+  #       found = nil
+  #       IO.foreach(path[/(.+?)\|/, 1]) do |line|
+  #         line.sub!(/[\r\n]+$/, '')
+  #         # If not found yet, check for line
+  #         if !found && line == "#{indent_after_bar}#{rest}"
+  #           found = true
+  #           next
+  #         end
+  #         next unless found
 
-        # Skip unless indented 2 later
-        next unless Line.indent(line).length == 2 + indent_after_bar.length
+  #         # Exit if indented at same level (unless blank or comment)
+  #         if((Line.indent(line).length <= indent_after_bar.length) &&
+  #            (! (line =~ /^\s*$/)) &&
+  #            (! (line =~ /^\s*#/))
+  #            )
+  #           break
+  #         end
 
-        matches << "#{indent}| #{line}\n"
-      end
-      self.insert_quoted_and_search matches
-    else  # It's a file
-      indent = Line.value[/^ */]
-      this_was_used = last_was_used = false
-      IO.foreach(path) do |line|  # Print lines with no indent
-        last_was_used = this_was_used
-        this_was_used = false
-        line.sub!(/[\r\n]+$/, '')
-        next if line =~ /^ +/  # Skip non top-level lines
-        next if line =~ /^$/ and ! last_was_used  # Skip blank lines, unless following top-level
-        matches << "#{indent}  | #{line}\n"
-        this_was_used = true
-      end
-      self.insert_quoted_and_search matches
-      # TODO Search in result
+  #         # Skip unless indented 2 later
+  #         next unless Line.indent(line).length == 2 + indent_after_bar.length
 
-      # TODO Do some checking for duplicates
-    end
-  end
+  #         matches << "#{indent}| #{line}\n"
+  #       end
+  #       self.insert_quoted_and_search matches
+  #     else   # It's a file
+  #       indent = Line.value[/^ */]
+  #       this_was_used = last_was_used = false
+  #       IO.foreach(path) do |line|  # Print lines with no indent
+  #         last_was_used = this_was_used
+  #         this_was_used = false
+  #         line.sub!(/[\r\n]+$/, '')
+  #         next if line =~ /^ +/  # Skip non top-level lines
+  #         next if line =~ /^$/ and ! last_was_used  # Skip blank lines, unless following top-level
+  #         matches << "#{indent}  | #{line}\n"
+  #         this_was_used = true
+  #       end
+  #       self.insert_quoted_and_search matches
+  #       # TODO Search in result
+
+  #       # TODO Do some checking for duplicates
+  #     end
+  #   end
 
   def self.clear_empty_dirs! lines, options={}
     regex = options[:quotes] ?
@@ -561,14 +596,13 @@ class Tree
   end
 
   # Go to the right side of the tree item (move to after last item that is indented lower)
-  def self.to_right options={}
+  def self.after_children options={}
     indent = Line.indent.size
-    #     pattern = "^ \\{0,#{indent}\\}\\([^ \n]\\|$\\)"
 
-    # Aborted refactor to allow blank lines in trees
-    pattern = "^ \\{0,#{indent}\\}[^ \n]"
+    pattern = "\\(\n\n\n\\|^ \\{0,#{indent}\\}[^ \n]\\)"   # Find line with same or less indent
 
-    self.minus_to_plus_maybe unless options[:no_plus]
+    # Why would I do this at all?
+    #     self.minus_to_plus_maybe unless options[:no_plus]
 
     Line.next
     Search.forward pattern, :go_anyway=>1
@@ -578,18 +612,39 @@ class Tree
     Line.next
   end
 
+  # Go after last sibling, crossing blank lines, but not double-blank lines.
+  # Tree.after_siblings
+  def self.after_siblings # options={}
+    indent = Line.indent.size
+
+    return if indent == 0
+
+    indent -= 2
+
+    pattern = "\\(\n\n\n\\|^ \\{0,#{indent}\\}[^ \n]\\)"   # Find line with less indent
+
+    Search.forward pattern, :go_anyway=>1
+    Line.to_left
+
+    Search.backward "^."
+    Line.next
+    nil
+  end
+
   def self.kill_under options={}
 
     # Get indent
     orig = Line.left
     left = Line.left(Keys.prefix_u? ? 1 : 2)
 
-    self.to_right options
+    self.after_children options
 
     View.delete(left, View.cursor)
     View.to orig
   end
 
+  # Inserts text indented under, and searches.
+  # Called by Tree.<<
   def self.under txt, options={}
 
     return if txt.nil?
@@ -611,7 +666,27 @@ class Tree
     nil
   end
 
-  def self.to_parent prefix=nil
+  # Jumps to first sibling, crossing blank lines, but not double-blank lines
+  def self.before_siblings
+
+    indent = Line.value[/^  ( *)/, 1]
+
+    # For now, don't handle if at root
+
+    regex = "\\(\n\n\n\\|^#{indent}[^\t \n]\\)"
+    Search.backward regex, :go_anyway=>true
+
+    hit_two_blanks = View.cursor == Line.right
+
+    return Move.to_next_paragraph(:no_skip=>1) if hit_two_blanks || Line.value(2).blank?
+    Line.next
+
+    # Can't get siblings of item at left margin - undecided how to implement it" if !indent
+  end
+
+  # Jumps to parent, regardless of blanks
+  def self.to_parent prefix=nil #, options={}
+
     prefix ||= Keys.prefix :clear=>true
 
     # U means go to previous line at margin
@@ -627,7 +702,8 @@ class Tree
       # If odd indent, subtract 1
       indent.slice!(/ /) if indent && indent.length % 2 == 1
 
-      $el.search_backward_regexp "^#{indent}[^\t \n]"
+      regex = "^#{indent}[^\t \n]"
+      $el.search_backward_regexp regex
       Line.to_beginning :quote=>1
     end
   end
@@ -661,8 +737,10 @@ class Tree
       while(line =~ /^ / && (options[:all] || clean !~ /^@/))
         line =~ /^  ( *)(.*)/
         spaces, item = $1, $2
-        item = clean unless options[:raw]
-        path.unshift item  # Add item to list
+        item = clean unless options[:raw]   # Removes labels, ##..., **...
+        if item != ""   # If item wasn't completely cleaned away
+          path.unshift item  # Add item to list
+        end
         $el.search_backward_regexp "^#{spaces}[^\t \n]"
 
         # If ignoring Ol lines, keep searching until not on one
@@ -700,7 +778,12 @@ class Tree
     end
   end
 
-  def self.to_root
+  def self.to_root options={}
+
+    Move.to_end   # In case already at left of line and root
+
+    # Always go up at least once
+    Tree.to_parent
 
     # Until we're at the root, keep jumping to parent
     line = Line.value
@@ -827,7 +910,11 @@ class Tree
     self.under txt, options
   end
 
+  # Inserts indented underneath.
+  # Not sure why it's calling View.under instead of Tree.under
   def self.after txt
+    # Is anything calling this - maybe make them just call Tree.under.
+    # View.under does a couple lines, then calls Tree.under.
     View.under txt, :after=>1
   end
 
@@ -836,10 +923,25 @@ class Tree
   # blank lines).  In this context, lines having only spaces are not considered blank.
   # Any lines indented *more* than the current line won't affect the bounds, but will be
   # filtered out.
+  #
+  # p Tree.siblings   # Doesn't include current line
+  # p Tree.siblings :string=>1   # As string, not list
+  # p Tree.siblings :all=>1   # Includes current line
+  # p Tree.siblings :everything=>1   # Includes current line and all children (returns string)
+  # p Tree.siblings :cross_blank_lines=>1   # Includes current line, and crosses single blank lines (returns string)
+  #
+    # sample chile
+  #
   def self.siblings options={}
-    left1, right1, left2, right2 = self.sibling_bounds
+    return self.siblings(:all=>true).join("\n").gsub(/^ *\| ?/, '')+"\n" if options[:string] && ! options[:cross_blank_lines] && ! options[:before] && ! options[:after]
 
-    return self.siblings(:all=>true).join("\n").gsub(/^ *\| ?/, '')+"\n" if options[:string] && ! options[:before] && ! options[:after]
+    if options[:cross_blank_lines]
+      left1, right2 = self.sibling_bounds :cross_blank_lines=>1
+      # For now, if :cross_blank_lines, assume just left1, right2
+      options[:all] = 1
+    else
+      left1, right1, left2, right2 = self.sibling_bounds# options
+    end
 
     # Combine and process siblings
     if options[:all] || options[:everything]
@@ -865,6 +967,9 @@ class Tree
     elsif options[:after]
       siblings = View.txt(options.merge(:left=>left2, :right=>right2))
     else
+      # By default, don't include sibling on current line
+      # TODO: swap this, so it includes all by default?
+      # Go through and make new :exclude_current param, and make invocations use it
       siblings = View.txt(options.merge(:left=>left1, :right=>right1)) + View.txt(options.merge(:left=>left2, :right=>right2))
     end
 
@@ -873,7 +978,7 @@ class Tree
       return siblings.gsub(/^#{indent}/, '')
     end
 
-    siblings.gsub! /^#{Line.indent} .*\n/, ''   # Remove more indented lines
+    siblings.gsub! /^#{Line.indent} .*\n/, ''   # Remove more indented lines (children)
     siblings.gsub! /^ +\n/, ''   # Remove blank lines
     siblings.gsub! /^ +/, ''   # Remove indents
 
@@ -887,10 +992,24 @@ class Tree
       siblings.map!{|i| Line.without_label(:line=>i)}
     end
 
+    # Change blanks to nil
+    siblings.map!{|o| o.blank? ? nil : o}
+
     siblings
   end
 
-  def self.sibling_bounds
+  def self.sibling_bounds options={}
+    if options[:cross_blank_lines]   # If :cross_blank_lines, just jump to parent, then use .after_children
+      orig = Location.new
+      Tree.before_siblings
+      left = Line.left
+      Tree.after_siblings
+      right = View.cursor
+
+      orig.go
+      return [left, right]
+    end
+
     indent_size = Line.indent.size   # Get indent
     indent_less = indent_size - 1
 
@@ -910,7 +1029,7 @@ class Tree
 
     # Search for line indented same or less (to get siblings after)
     Line.next
-    Search.forward "^ \\{0,#{indent_size}\\}\\($\\|[^ \n]\\)"
+    Search.forward "^ \\{0,#{indent_size}\\}\\($\\|[^ \n]\\)"   # Move after original node's children, if any
     Line.to_left
     left2 = View.cursor
     # Search for line indented less
@@ -949,17 +1068,25 @@ class Tree
 
   end
 
+  # Iterate through each line in the tree
+  # Tree.traverse("a\n  b") {|o| p o}
   def self.traverse tree, options={}, &block
-    branch, indent = [], 0
+    branch, indent, last_indent = [], 0, 0
     tree.split("\n").each do |line|
 
-      line_indent = line[/^ */].length / 2
-      line.strip!
+      # If empty line use last non-blank line's indent
+      if line.empty?
+        line = nil
+        line_indent = last_indent
+      else
+        line_indent = line[/^ */].length / 2
+        last_indent = line_indent
+        line.strip!
+      end
+
+      raise "Blank lines in trees between parents and children aren't allowed" if line_indent > 0 && branch[line_indent - 1].nil?
 
       branch[line_indent] = line
-
-      # Aborted refactor to allow blank lines in trees
-      branch[line_indent] = line unless line.empty?
 
       if line_indent < indent
         branch = branch[0..line_indent]
@@ -968,19 +1095,15 @@ class Tree
       branch_dup = branch.dup
 
       if options[:no_bullets]
-        branch_dup.map!{|o| o.sub /^[+-] /, ''}
+        branch_dup.map!{|o| o ? o.sub(/^[<+-][<=]* /, '') : nil }
       end
 
       flattened = branch_dup.dup
-      flattened.map!{|o| o.sub /^[+-] /, ''} if ! options[:no_bullets]   # Might have side-effects if done twice
+
+      flattened.map!{|o| o ? o.sub(/^[+-] /, '') : nil } if ! options[:no_bullets]   # Might have side-effects if done twice
       flattened = flattened.join('')#.gsub(/[.:]/, '')   # Why were :'s removed??
 
-      # Aborted refactor to allow blank lines in trees
-      if line.empty?
-        block.call [], ""
-      else
-        block.call branch_dup, flattened
-      end
+      block.call [branch_dup, flattened]
 
       indent = line_indent
     end
@@ -1076,6 +1199,13 @@ class Tree
   end
 
 
+  #
+  # Called by Tree.children and Tree.dotify
+  #
+  # p Tree.target_match "a/b", "a/b"
+  # p Tree.target_match "a/b", "a"
+  # p Tree.target_match "a", "a/b"
+  #
   def self.target_match path, target
     pi, ti = 0, 0
 
@@ -1115,9 +1245,16 @@ class Tree
   end
 
 
+  #
+  # Cuts off 1st item in the path.
+  #
   # Use instead of .leaf when you know all but the root is part of the leaf
   # (in case there are slashes).
+  #
+  # Tree.rest "hey/you/there"
+  #
   def self.rest path
+
     path = self.rootless path
     path = "|#{path}" unless path =~ /^(\||$)/
 
@@ -1160,12 +1297,21 @@ class Tree
     $el.indent_rigidly View.cursor, right, -2
   end
 
-  def self.branch
-    txt = Tree.siblings(:all=>1).join("\n")+"\n"
-    txt.gsub! /^\| ?/, ''
-    txt
+  # Gets path from root to here, indenting each line by 2 spaces deeper.
+  # Tree.ancestors_indented
+  def self.ancestors_indented options={}
+
+    all = options[:just_sub_tree] ? nil : 1
+    path = Tree.construct_path(:list=>1, :ignore_ol=>1, :all=>all)
+    result = ""
+    path.each_with_index { |o, i|
+      result << "#{'  ' * i}#{o}\n"
+    }
+
+    result
   end
 
+  # Returns self and all siblings (without children).
   def self.unset_env_vars
     ENV['no_slash'] = nil
   end
@@ -1185,8 +1331,7 @@ class Tree
         block_or_string
       else   # Must be a proc
         begin
-          result = block_or_string.call line
-          result
+          block_or_string.call line
         rescue Exception=>e
           message = e.message
 
@@ -1195,6 +1340,12 @@ class Tree
         end
       end
     return if output.blank?
+
+    if output.strip =~ /\A<<< (.+)\/\z/
+      Tree.replace_item $1
+      Launcher.launch
+      return true
+    end
 
     # TODO: move some of this crap into the else block above (block_or_string is proc)
 
@@ -1208,17 +1359,11 @@ class Tree
     # Remove any double linebreaks at end
     output = CodeTree.returned_to_s output
 
-    return View.flash $1 if output =~ /^\.flash (.+)/
+    return View.prompt $1 if output =~ /\A\.prompt (.+)/
+    return View.flash $1 if output =~ /\A\.flash (.+)/
 
     output.sub!(/\n\n\z/, "\n")
     output = "#{output}\n" if output !~ /\n\z/
-
-    if $menu_resize
-      height = output.count("\n") + 12
-      height = 60 if height > 60
-      View.height = height
-      $menu_resize = false
-    end
 
     if options[:just_return]
       return output
@@ -1237,7 +1382,6 @@ class Tree
     output.gsub! /^./, "#{indent}  \\0"   # Add indent, except for blank lines
 
     View.<< output, :utf8=>1
-
     right = View.cursor
 
     orig.go   # Move cursor back  <-- why doing this?
@@ -1251,7 +1395,7 @@ class Tree
       Color.colorize :l
     end
 
-    if !error_happened && !$xiki_no_search && !buffer_changed && !moved
+    if !error_happened && !$xiki_no_search &&!options[:no_search] && !buffer_changed && !moved
       Tree.search_appropriately left, right, output, options
     elsif ! options[:line_found]
       Line.to_beginning :down=>1
@@ -1274,8 +1418,14 @@ class Tree
   end
 
 
+  #
+  # Extracts children from tree arg and target (path) arg.
+  #
+  # Or, if no tree passed in, delegates to Tree.children_at_cursor
+  #
+  # Tree.children "a\n  b\n  c", "a"
+  #
   def self.children tree=nil, target=nil, options={}
-
     include_subitems = options[:include_subitems]   # Include sub-items for all children
 
     return self.children_at_cursor(tree) if tree.nil? || tree.is_a?(Hash)   # tree is actually options
@@ -1295,6 +1445,7 @@ class Tree
     @@under_preexpand = false   # Will include sub-items of only some children
 
     self.traverse tree do |branch, path|
+      blank = branch[-1].nil?
 
       if ! found
         target_match = Tree.target_match path, target
@@ -1306,11 +1457,17 @@ class Tree
         # If found and still indented one deeper
         one_deeper = current_indent == found + 1
 
-        if one_deeper || ((include_subitems || @@under_preexpand) && current_indent > found)
+        if blank
+
+          # If blank line is assumed to be a child, add it
+          result << "\n" if one_deeper
+          next
+
+        elsif one_deeper || ((include_subitems || @@under_preexpand) && current_indent > found)
 
           item = branch[-1]
           item.sub!(/^- /, '+ ') if item =~ /\/$/
-          item.sub!(/^([+-] )?\./, "\\1")
+          item.sub!(/^([<+-][<=]* )?\./, "\\1")
           next if item =~ /^[+-] \*\/$/   # Skip asterixes
 
           # If @@under_preexpand, add on indent
@@ -1327,11 +1484,10 @@ class Tree
 
         else  # Otherwise, stop looking for children if indent is less
 
-          # Aborted refactor to allow blank lines in trees
-          # Continue on if blank line
-          if branch.empty?
-            next result << "\n"
-          end
+          #           # If blank line is at same level
+          #           if branch.empty? && found == current_indent
+          #             next result << "\n"
+          #           end
 
           next if current_indent > found
           # No longer beneath found item
@@ -1342,14 +1498,39 @@ class Tree
 
     end
 
-    # Aborted refactor to allow blank lines in trees
     result.empty? ? nil : result
   end
 
+  #
+  # Returns children indented underneath.
+  #
+  # Tree.children.inspect
+  # Tree.children(:string=>1).inspect
+  # Tree.children(:cross_blank_lines=>1).inspect
+    # a
+      # ab
+    # b
+
+    # c
+  #
   def self.children_at_cursor options={}
+
     options ||= {}
     child = self.child
     return nil if child.nil?   # Return if no child
+
+
+    # If :cross_blank_lines, use Tree.after_children to find end
+    if options[:cross_blank_lines]
+      orig = Location.new
+
+      left = Line.left 2
+      Tree.after_children
+      right = Line.left
+      orig.go
+      # return
+      return View.txt left, right
+    end
 
     indent = Line.indent(Line.value(2)).size
 
@@ -1390,6 +1571,13 @@ class Tree
       Line.indent.size
   end
 
+  #
+  # Returns the child indented underneath (but not its children).
+  #
+  # Tree.child
+    # foo
+      # bar
+  #
   def self.child
     next_line = Line.value 2
     # If indent is one greater, it is a child
@@ -1399,22 +1587,208 @@ class Tree
     nil
   end
 
-  def self.dir options={}
+  # Returns tree at cursor (assumes no spaces???).
+  def self.txt
+    "hi"
+  end
 
-    dir = Xiki.trunk[-2]
+  def self.dir_at_spot options={}
+    orig = Location.new   # Save where we are
+    Location.to_spot
+    path = Tree.construct_path
 
-    if ! FileTree.handles?(dir)
+    if options[:delete]
+      Effects.glow :fade_out=>1
+      Tree.kill_under
+      Line.delete
 
-      return nil if options[:silent]
-      return File.expand_path("~/Desktop") if options[:or] == :desktop
-
-      guessed_menu = caller(0)[1][/.+\/(.+)\.rb/, 1]
-      file = !options[:file] ? '' : options[:file].is_a?(String) ? options[:file] : 'file.txt'
-
-      raise "> This menu must be nested under a #{options[:file] ? 'file' : 'dir'} path, like this:\n| - /tmp/#{file}\n|   @#{guessed_menu}"
+      # Adjust orig if in same file and above
+      if orig.file_or_buffer == View.file_or_buffer && orig.line > View.line_number
+        orig.line = orig.line - 1
+      end
     end
 
-    Bookmarks[dir].sub '//', '/'
+    orig.go   # Go back to where we were
+
+    Bookmarks[path]
   end
+
+  # Returns the dir that a @menu is nested under, or says
+  # must be nested under a dir.
+  #
+  # Tree.dir
+  def self.dir options={}
+    self.file options.merge(:require=>'dir')
+  end
+
+  # Returns the dir or file that a @menu is nested under.
+  #
+  # Tree.file
+  # Tree.file :require=>1   # Shows message if not nested under something
+  # Tree.file :require=>'dir'   # Shows message if not nested under a dir
+  # Tree.file :require=>'file'   # Shows message if not nested under a file
+  def self.file options={}
+    trunk = Xiki.trunk
+
+    # If tree we're in is a file tree, they probably just wanted that
+
+    return Bookmarks[trunk[-1]] if FileTree.handles? trunk[-1]
+    # Just return it if we're under a dir
+
+    dir = trunk[-2]
+    dir = "/" if dir == ""   # Root dir will come across as blank
+
+    return Bookmarks[dir].sub('//', '/') if FileTree.handles?(dir)
+
+    # Dir wasn't found, raise message for certain options
+    return File.expand_path("~/Desktop") if options[:or] == :desktop
+    kind_required = options[:require]
+    return nil if ! kind_required
+
+    guessed_menu = trunk.last.split('/').first
+    example = options[:example] || (kind_required == "file" ? "/tmp/file.txt" : "/tmp/dir/")
+
+    if kind = options[:require]
+      adjective = kind.is_a?(String) ? kind : "filesystem"
+      raise "> This menu must be nested under a #{adjective} path, like:\n| - #{example}\n|   @#{guessed_menu}"
+    end
+    nil
+  end
+
+  def self.path options={}
+    path = Tree.construct_path(:all=>1, :slashes=>1)
+    options[:string] ? path : path.split(/\/@ ?/)
+  end
+
+  def self.paths_to_tree paths
+    result = ""
+    stack = []
+    paths.sort.each do |path|   # For each path
+
+      beginning_slash = path =~ /^\//
+      ending_slash = path =~ /\/$/
+      split = path.sub(/^\//, '').split('/')
+
+      split[0].sub! /^/, '/' if beginning_slash   # Restore beginning slash after split
+      split[-1].sub! /$/, '/' if ending_slash   # Restore beginning slash after split
+
+      # put all slashes back first!
+
+      # Pop from stack until path begins with stack
+      while(stack.size > 0 && stack != split[0..(stack.size - 1)])
+        stack.pop
+      end
+      indent = stack.length   # Get remainder of path after stack
+      remainder = split[indent..-1]
+      remainder.each do |dir|
+        result << ("  " * indent) + dir
+        result << "\n"
+        indent += 1
+      end
+      stack = split
+    end
+    self.add_pluses_and_minuses result
+    result
+  end
+
+  # Prepend bullets (pluses and minuses) to lines
+  def self.add_pluses_and_minuses tree, dirs='-', files='+'
+    tree.gsub! /^( *)([^ \n|+-].*\/)$/, "\\1#{dirs} \\2"
+    tree.gsub! /^( *)([^ \n|+-].*[^\/\n])$/, "\\1#{files} \\2"
+  end
+
+  # Tree.to_html "p/\n  hi\n"
+  def self.to_html txt
+    html = ""
+
+    txt = txt.gsub /^( *)([+-] )?(\w[\w ]*\/)(.+)/, "\\1\\3\n\\1  \\4"   # Preprocess to break foo/Bar into separate lines
+
+    previous = []
+    Tree.traverse(txt) do |l, path|
+
+      last = l.last
+      next if !last   # Blank lines
+
+      self.add_closing_tags html, l, previous   # If lower than last, add any closing tags
+
+      last = Line.without_label :line=>last
+      if last =~ /([^*\n]+)\/$/
+        tag = $1
+        html.<<("  " * (l.length-1)) unless l[-2] =~ /[ +-]*pre\/$/
+
+        next html << "<#{tag}>\n"
+      end
+
+      last.sub! /^\| ?/, ''
+
+      if last =~ /\.\.\.$/   # If "Lorem..." or "Lorem ipsum..." etc. make progressively longer
+        old_length = last.length
+        last.gsub!(/\w+/){|o| @@lorem[o.downcase] || o}
+        last.sub!(/\.\.\.$/, '') if last.length != old_length   # Remove ... if we replaced something
+      end
+
+      parent = l[-2]
+      html.<<("  " * (l.length-1)) unless parent =~ /[ +-]*pre\/$/
+
+      html << "#{last}\n"
+    end
+
+
+    self.add_closing_tags html, [], previous
+
+    html
+  end
+
+  @@lorem = {
+    "lorem"=>"Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+    "ipsum"=>"Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
+    "dolor"=>"Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.",
+    "sit"=>"Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
+  }
+
+  def self.add_closing_tags html, l, previous
+
+    if l.length <= previous.length
+      left = l.length-1
+      left = 0 if left < 0
+      close_these = previous[left..-1]
+      close_these.reverse.each_with_index do |tag, i|
+
+        tag.sub! /^\| ?/, ''
+        tag = Line.without_label :line=>tag
+        next if tag !~ /(.*\w)\/$/ && tag !~ /^<([^<\n]*[\w"'])>$/
+        tag = $1
+        tag = tag.sub(/ \w+=.+/, '')
+        next if ["img"].member? tag
+        html << "  " * (previous.length - i - 1)
+        html << "</#{tag}>\n"
+      end
+    end
+    previous.replace l
+  end
+
+
+  # Replace last path item with this string.
+  #
+  # Tree.replace_item "replaces whole line"
+  # Tree.replace_item "replaces after slash"  # /hey
+  # Tree.replace_item "replaces after slash"  # /hey/
+  def self.replace_item txt
+
+    new_ends_in_slash = txt =~ /\/$/   # If slash at end, remember to not add another one
+
+    # If there's a slash (not counting end of line), replace after last slash
+
+    if Line.value =~ /\/.+/
+      (! new_ends_in_slash && Line.sub!(/(.+)\/.+\/$/, "\\1/#{txt}/")) ||
+        Line.sub!(/(.+)\/.+/, "\\1/#{txt}")
+    else   # else, just replace whole line minus bullet
+      (! new_ends_in_slash && Line.sub!(/^([ +-]*).+\//, "\\1#{txt}\/")) ||
+        Line.sub!(/^([ +-]*).+/, "\\1#{txt}")
+    end
+
+    nil
+  end
+
 
 end

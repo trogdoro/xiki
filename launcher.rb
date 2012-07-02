@@ -1,11 +1,9 @@
 require 'effects'
-require 'ruby_console'
-# require 'xiki'
-gem 'httparty'; require 'httparty'
-gem 'activesupport'; require 'active_support/ordered_hash'
 
-gem "haml"
-require "haml"
+# require 'xiki'
+Requirer.require_gem 'httparty'   # Not super-important
+Requirer.require_gem 'activesupport', :name2=>'active_support/ordered_hash'
+Requirer.require_gem 'haml', :optional=>1
 
 class Launcher
   extend ElMixin
@@ -18,16 +16,15 @@ class Launcher
     ]
 
   MENU_DIRS = [
-    "#{Xiki.dir}/menus",
+    "#{Xiki.dir}menus",
     File.expand_path("~/menus"),
     ]
 
   @@log = File.expand_path("~/.emacs.d/menu_log.notes")
 
-  # Set this to true to just see which launcher applied.
+  # Use @launcher/options/show or launch/ to enable.
   # Look in /tmp/output.notes
   @@just_show = false
-  #   @@just_show = true
 
   @@launchers ||= ActiveSupport::OrderedHash.new
   @@launchers_procs ||= []
@@ -44,22 +41,31 @@ class Launcher
 
   def self.menu
     %`
+    - .options/
+      > Toggle Temporarily just showing the launcher that matched
+      - .show or launch/
     - docs/
       > Summary
       Launcher is the class that handles "launching" things (double-clicking on a
       line, or typing Ctrl-enter).
-      |
+
       > See
       @launcher/api/
-      |
     - api/
-      > Summary
-      A few methods on the Launcher class.
-      |
-      > invoke
+      > Open menu in new buffer
+      @ Launcher.open "computer"
+
+      > Insert monu
+      @ Launcher.insert "computer"   # Assumes you're on a blank line
+
+      > Invoke (used behind the scenes?)
       @ p Launcher.invoke 'Computer', 'computer/ip/'
-      |
     `
+  end
+
+  def self.show_or_launch
+    @@just_show = ! @@just_show
+    View.flash "- Will #{@@just_show ? 'just show' : 'actually launch'}!"
   end
 
   def self.last path=nil, options={}
@@ -94,10 +100,17 @@ class Launcher
     paths.join #("\n")+"\n"
   end
 
-  def self.log options={}
-    result = IO.readlines self.log_file
-    result = result.map{|o| o.sub /^- #{Notes::LABEL_REGEX}/, '\\0@'} if options[:at]
-    result.reverse.uniq.map{|o| o.sub /^- /, '<< '}.join
+  def self.log
+
+    lines = IO.readlines self.log_file
+
+    # If parent, narrow down to just it
+    trunk = Xiki.trunk
+    if trunk.length > 1 && trunk[-2] != "menu/history"   # Show all if under this menu
+      lines = lines.select {|o| o.start_with? "- #{trunk[-2]}"}
+    end
+
+    lines.reverse.uniq.map{|o| o.sub /^- /, '<< '}.join
   end
 
   def self.log_file
@@ -123,11 +136,11 @@ class Launcher
   def self.add_menu root, hash, block
     if hash.nil? && block   # If just block, just define
       return @@menus[1][root] = block
-    elsif hash.is_a?(Hash) && hash[:menu_file] && block   # If just block, just define
+    elsif hash.is_a?(Hash) && hash[:menu_file] && block
       return @@menus[0][root] = block
     end
 
-    # If just root, define class with that name
+    # If just root, we'll use use class with that name
     if block.nil? && (hash.nil? || hash[:class])
       clazz = hash ? hash[:class] : root
       clazz.sub!(/(\w+)/) {TextUtil.snake_case $1} if hash
@@ -137,6 +150,7 @@ class Launcher
       end
       return
     end
+
     menu = hash[:menu]
     if menu
       if menu =~ /\A\/.+\.\w+\z/   # If it's a file (1 line and has extension)
@@ -171,19 +185,31 @@ class Launcher
     self.launch options
   end
 
+  def self.hide
+    Tree.kill_under
+  end
+
   # Call the appropriate launcher if we find one, passing it line
   def self.launch options={}
+
+    # Add linebreak at end if at end of file and none
+    Line.<<("\n", :dont_move=>1) if Line.right == View.bottom
+
     Tree.plus_to_minus unless options[:leave_bullet]
 
-    Line.sub! /^[@*-]$/, '...'   # Expand "." to auto-complete all paths
-    Line.sub! /^\.$/, './'   # Expand "." to auto-complete all paths
-    Line.sub! /^~$/, '~/'   # Expand "." to auto-complete all paths
+    Line.sub! /^\.$/, './'
+    Line.sub! /^~$/, '~/'
 
     # Maybe don't blink when in $__small_menu_box!"
     Effects.blink(:what=>:line) if options[:blink]
     line = options[:line] || Line.value   # Get paren from line
-
     label = Line.label(line)
+
+    if line =~ / *@$/
+      matches = Launcher.menu_keys
+      Tree.<< matches.sort.map{|o| "<< #{o.sub '_', ' '}/"}.join("\n"), :no_slash=>1
+      return
+    end
 
     # Special hooks for specific files and modes
     return if self.file_and_mode_hooks
@@ -204,6 +230,9 @@ class Launcher
       is_root = true
       line = $1
     end
+
+    # Special case to turn launchers back on
+    return self.show_or_launch if line == "launcher/options/show or launch/"
 
     @@launchers.each do |regex, block|   # Try each potential regex match
       # If we found a match, launch it
@@ -232,17 +261,18 @@ class Launcher
     # If current line is indented and not passed recursively yet, try again, passing tree
 
     if Line.value =~ /^ / && ! options[:line] && !is_root   # If indented, call .launch recursively
-      # TODO This is already being fucking done at the top, no?
-      #       Tree.plus_to_minus
 
       # Use Xiki.branch here? (breaks up by @'s)
 
       # merge together (spaces if no slashes) and pass that to launch
-      list = Tree.construct_path(:list=>true)   # Get path to pass to procs, to help them decide
+
+      list = Tree.construct_path :list=>true, :ignore_ol=>1   # Get path to pass to procs, to help them decide
+
       found = list.index{|o| o =~ /^@/} and list = list[found..-1]   # Remove before @... node if any
       merged = list.map{|o| o.sub /\/$/, ''}.join('/')
       merged << "/" if list[-1] =~ /\/$/
 
+      # Recursively call again with full path
       return self.launch options.merge(:line=>merged)
 
       # What was this doing, did we mean to only pass on :no_search??
@@ -250,10 +280,6 @@ class Launcher
     end
 
     if self.launch_by_proc   # Try procs (currently all trees)
-      return $xiki_no_search = false
-    end
-
-    if @@just_show
       return $xiki_no_search = false
     end
 
@@ -265,9 +291,14 @@ class Launcher
 
     # See if it matches path launcher
 
-    return if self.try_menu_launchers line, options
+    self.set_env_vars line
+
+    result = self.try_menu_launchers line, options
+    self.unset_env_vars
+    return if result
 
     if line =~ /^([\w -]*)$/ || line =~ /^([\w -]*)\.\.\.\/?$/
+
       #     if line =~ /^([\w -]*)(\.\.\.)?\/?$/
       # TODO just check for exact match in dir, and load it if no launcher yet!
 
@@ -292,7 +323,6 @@ class Launcher
     end
 
     # If just root line, load any unloaded launchers this completes and relaunch
-
 
     # Failed attempt to not auto-complete if slash
       # It's tough because we still want to load!
@@ -331,7 +361,6 @@ class Launcher
     else
       View.flash "- No launcher matched!"
     end
-
     $xiki_no_search = false
   end
 
@@ -340,11 +369,13 @@ class Launcher
     # If there's a /@ in the path, cut it off
     line.sub! /.+\/@/, ''
 
-    root = line[/^[\w -]+/]   # Grab thing to match
-    root.gsub!(/[ -]/, '_') if root
+    root_orig = root = line[/^[\w -]+/]   # Grab thing to match
+    root = TextUtil.snake_case root if root
 
     self.append_log line
     trunk = Xiki.trunk
+
+    # If menu nested under dir or file, chdir first
 
     orig_pwd = nil
     if trunk.size > 1 && closest_dir = Tree.closest_dir
@@ -361,14 +392,22 @@ class Launcher
         # remove file
 
       else   # If doesn't exist
+        View.beep "- Dir doesn't exist: #{closest_dir}"
         return true
       end
     end
 
-    # If there was a menu, call it
-    out = nil
+    # If there is a matching .menu, use it
 
+    out = nil
     if block_dot_menu = @@menus[0][root]
+
+      if @@just_show
+        Ol.line "Maps to .menu file, for menu: #{root}\n - #{block_dot_menu}\n - #{block_dot_menu.to_ruby}"
+        View.flash "- Showed launcher in $o", :times=>4
+        return true   # To make it stop trying to run it
+      end
+
       begin
         out = Tree.output_and_search block_dot_menu, :line=>line  #, :dir=>file_path
       ensure
@@ -388,11 +427,19 @@ class Launcher
           return true
         end
       end
-
       return true if out   # Output means we handled it, otherwise continue on and try class
     end
 
+    # If there is a matching .rb for the menu, use it
+
     if block_other = @@menus[1][root]   # If class menu
+
+      if @@just_show
+        Ol.line << "Maps to class or other block, for menu: #{root}\n - #{block_other}\n - #{block_other.to_ruby}"
+        View.flash "- Showed launcher in $o", :times=>4
+        return true   # To make it stop trying to run it
+      end
+
       begin
         Tree.output_and_search block_other, options.merge(:line=>line)  #, :dir=>file_path
       ensure
@@ -401,6 +448,37 @@ class Launcher
 
       return true
     end
+
+    # If uppercase, try invoking on in-memory class
+    if root_orig =~ /^[A-Z]/
+
+      if @@just_show
+        Ol.line << "Maps to in-memory class for: #{root}"
+        View.flash "- Showed launcher in $o", :times=>4
+        return true   # To make it stop trying to run it
+      end
+
+      begin
+
+        lam = lambda do |path|
+          Launcher.invoke root_orig, path
+        end
+
+        #         Launcher.invoke__
+        #         do |path|
+        #           # Make class me camel case, and change Launcher.invoke to Menu.call
+        #         end
+
+        Tree.output_and_search lam, options.merge(:line=>line)  #, :dir=>file_path
+      ensure
+        Dir.chdir orig_pwd if orig_pwd
+      end
+
+      return true
+    end
+
+    # Pull into other function?
+      # re-use code that calls class wrapper
 
     false   # No match, keep looking
   end
@@ -425,15 +503,15 @@ class Launcher
 
   def self.init_default_launchers
 
-    self.add(/^ *\$ /) do |l|   # $ shell command inline (sync)
+    self.add(/^\$ /) do |l|   # $ shell command inline (sync)
       Console.launch :sync=>true
     end
 
-    self.add /^ *%( |$)/ do   # % shell command (async)
+    self.add /^%( |$)/ do   # % shell command (async)
       Console.launch_async
     end
 
-    self.add /^ *&( |$)/ do   # % shell command in iterm
+    self.add /^&( |$)/ do   # % shell command in iterm
       Console.launch_async :iterm=>1
     end
 
@@ -468,8 +546,13 @@ class Launcher
       prefix == :u ? $el.browse_url(url) : Firefox.url(url)
     end
 
-    self.add(/^[ +-]*\$[^ #*!\/]+$/) do |line|   # Bookmark
+    self.add(/^\$[^ #*!\/]+$/) do |line|   # Bookmark
       View.open Line.without_indent(line)
+    end
+
+    self.add(/^(p )?[A-Z][A-Za-z]+\.(\/|$)/) do |line|
+      line.sub! /^p /, ''
+      Code.launch_dot_at_end line
     end
 
     self.add(/^p /) do |line|
@@ -507,8 +590,8 @@ class Launcher
       View.to_buffer name
     end
 
-    self.add(/^[^\|@:]+[\/\w\-]+\.\w+:\d+/) do |line|  # Stack traces, etc
-
+    # Must have at least 2 slashes!
+    self.add(/^[^\|@:]+\/\w+\/[\/\w\-]+\.\w+:\d+/) do |line|  # Stack traces, etc
       # Match again (necessary)
       line =~ /([$\/.\w\-]+):(\d+)/
       path, line = $1, $2
@@ -528,8 +611,27 @@ class Launcher
       self.web_menu line
     end
 
-    self.add(/^localhost:?\d*(\/|$)/) do |line|  # **.../: Tree grep in dir
+    self.add(/^localhost:?\d*(\/|$)/) do |line|
       self.web_menu line
+    end
+
+    self.add(/^ *(Ol\.line|Ol << )/) do
+      View.layout_output :called_by_launch=>1
+    end
+
+    # Example code in method comments
+    #   /tmp/foo.rb
+    #     class Foo
+    #       # Control-enter to run this line
+    #       # Foo.bar
+    #       def self.bar
+    Launcher.add /^class (\w+)\/\#.+/ do |path|
+      # Remove comment and run
+      txt = Line.value.sub /^ +# /, ''
+      result = Code.eval(txt)
+      next Tree.<<(CodeTree.draw_exception(result[2], txt), :no_search=>1) if result[2]
+      next Tree.<< result[0].to_s, :no_slash=>1 if result[0]   # Returned value
+      Tree.<< result[1].to_s, :no_slash=>1 if result[1].any?   # Stdout
     end
 
     Launcher.add /^class (\w+)\/def self.menu\/(.+)/ do |path|
@@ -538,6 +640,10 @@ class Launcher
       path = "#{TextUtil.snake_case clazz}/#{path}".gsub("/.", '/')
 
       Tree << Menu[path]
+    end
+
+    Launcher.add /^  +<+@ .+/ do
+      Menu.root_collapser_launcher
     end
 
     Launcher.add /^  +<+ .+/ do
@@ -560,8 +666,8 @@ class Launcher
 
     # Menu launchers
 
-    Launcher.add "log" do
-      Launcher.log
+    Launcher.add "log" do # |path|
+      Launcher.log# Tree.rootless(path)
     end
 
     Launcher.add "last" do |path|
@@ -631,11 +737,13 @@ class Launcher
 
     line = Line.value
 
-    # Go to parent and collapse, if not at left margin
-    if line =~ /^ / #&& line !~ /^ *[+-] /  # and not a bullet
-      Tree.to_parent
+    # Go to parent and collapse, if not at left margin, and buffer modified (shows we recently inserted)
+    if ! Color.at_cursor.member?("color-rb-light")   #&& line !~ /^ *[+-] /  # and not a bullet
+      if line =~ /^ /
+        Tree.to_parent
+      end
+      Tree.kill_under
     end
-    Tree.kill_under
 
     Launcher.launch_or_hide :blink=>true, :no_search=>true
     View.to_nth orig
@@ -657,7 +765,6 @@ class Launcher
     menu =
       if bm == "8" || bm == " "
         "- search/launched/"
-        #         "- Search.launched/"
       elsif bm == "."
         "- Search.launched '#{View.file}'/"
       elsif bm == "3"
@@ -669,13 +776,8 @@ class Launcher
       end
   end
 
-  def self.do_as_launched
-    txt = "- #{View.file_name}\n    | #{Line.value}"
-    txt.sub!("| ", "- #{Keys.input(:prompt => "enter label: ")}: | ") if Keys.prefix_u
-    Search.append_log "#{View.dir}/", txt
-  end
-
   def self.invoke clazz, path, options={}
+
     default_method = "menu"
     # If dot, extract it as method
     if clazz =~ /\./
@@ -686,14 +788,15 @@ class Launcher
       # Require it to be camel case (because .invoke will be Menu.call "Class"
       # if lower case, will assume Menu.call "path"
       camel = TextUtil.camel_case clazz
-      clazz = $el.el4r_ruby_eval(camel) rescue nil
+      clazz = $el.instance_eval(camel, __FILE__, __LINE__) rescue nil
+
     elsif clazz.is_a? Class
       camel = clazz.to_s
     end
 
     snake = TextUtil.snake_case camel
 
-    raise "No class '#{clazz}' found in launcher" if clazz.nil?
+    raise "No class '#{clazz || camel}' found in launcher" if clazz.nil?
 
     # reload 'path_to_class'
     Menu.load_if_changed File.expand_path("~/menus/#{snake}.rb")
@@ -705,7 +808,7 @@ class Launcher
 
     method = clazz.method("menu_before") rescue nil
 
-    self.set_env_vars args
+    self.set_env_vars path
     if method
       code = "#{camel}.menu_before *#{args.inspect}"
       returned, out, exception = Code.eval code
@@ -739,18 +842,9 @@ class Launcher
     # Error if no menu method or file
     if method.nil? && txt.nil? && ! args.find{|o| o =~ /^\./}
 
-      #     raise "#{clazz} doesn't seem to have a .#{default_method} method!"
-
-      #       code = "#{camel}.#{default_method}"
-      #       returned, out, exception = Code.eval code
-      #       return CodeTree.draw_exception exception, code if exception
-      #       txt = CodeTree.returned_to_s returned   # Convert from array into string, etc.
-
       cmethods = clazz.methods - Class.methods
       return cmethods.sort.map{|o| ".#{o}/"}
     end
-
-
 
 
     # If got routable menu text, use it to route (get children or dotify)
@@ -806,6 +900,7 @@ class Launcher
     self.unset_env_vars
 
     txt = txt.unindent if txt =~ /\A[ \n]/
+
     return CodeTree.draw_exception exception, code if exception
 
     txt = self.invoke_menu_after clazz, txt, args
@@ -852,7 +947,6 @@ class Launcher
   end
 
   def self.append_log path
-
     return if View.name =~ /_log.notes$/
 
     path = path.sub /^[+-] /, ''   # Remove bullet
@@ -936,8 +1030,13 @@ class Launcher
 
   def self.wrapper path
 
+    # If starts with bookmark, expand as file (not dir)
+
+    path = Bookmarks.expand path, :file_ok=>1
+
+    # TODO: make generic
     # TODO: load all the adapters and construct the "rb|js" part of the regex
-    match = path.match(/(.+\/)(\w+)\.(rb|js|coffee|py|notes|haml)\/(.*)/)
+    match = path.match(/(.+\/)(\w+)\.(rb|js|coffee|py|notes|menu|haml)\/(.*)/)
     if match
       dir, file, extension, path = match[1..4]
       # TODO: instead, call Launcher.invoke JsAdapter(dir, path), path
@@ -945,6 +1044,7 @@ class Launcher
       return true   # Indicate we handled it
     end
 
+    # For matches to filename instead of extensions?
     match = path.match(/(.+\/)(Rakefile)\/(.*)/)
     if match
       dir, file, path = match[1..4]
@@ -962,6 +1062,12 @@ class Launcher
 
     # Sensible thing for now is to just do literal output
     #     output = Tree.children output, path if path !~ /^\./
+
+    # How to know when to do children?!
+      # Because it called .menu, and menu had no args
+        # Make it set env var?
+
+    #     output = Tree.children output, path
 
     Tree << output
   end
@@ -983,9 +1089,30 @@ class Launcher
   end
 
   def self.wrapper_notes dir, file, path
+    if match = path.match(/^(\| .+)(\| .*)/)
+      heading, content = match[1..2]
+      # [nil, nil])[1..2]
+    else
+      heading, content = [path, nil]
+    end
+
+    heading = nil if heading.blank?
+
+    #     heading, content = (path.match(/^(\| .+)(\| .*)/) || [nil, nil])[1..2]
+
+    dir = "#{dir}/" if dir !~ /\/$/
+    output = Notes.drill "#{dir}#{file}", heading, content
+    Tree << output
+  end
+
+  def self.wrapper_menu dir, file, path
     heading, content = (path.match(/^(\| .+)(\| .*)?/) || [nil, nil])[1..2]
 
-    output = Notes.drill "#{dir}/#{file}", heading, content
+    #     output = Menu.drill "#{dir}/#{file}", heading, content
+
+    #     output = Tree.children File.read(file), Tree.rootless(path)
+    output = Tree.children File.read("#{Bookmarks[dir]}/#{file}"), path
+
     Tree << output
   end
 
@@ -1032,9 +1159,6 @@ class Launcher
 
   end
 
-
-
-
   def self.reload_menu_dirs
 
     MENU_DIRS.each do |dir|
@@ -1054,7 +1178,10 @@ class Launcher
     txt = Search.stop
     return if txt.nil?
 
-    menu = Keys.input :timed => true, :prompt => "Enter menu to pass '#{txt}' to: "
+    menu = Keys.input :timed=>true, :prompt=>"Enter menu to pass '#{txt}' to (space if menu): "
+
+    return Launcher.open txt if menu == " "
+
 
     matches = Launcher.menu_keys.select do |possibility|
       possibility =~ /^#{menu}/
@@ -1068,12 +1195,17 @@ class Launcher
   end
 
   def self.as_update
-    Keys.prefix = "save"
+    Keys.prefix = "update"
     Launcher.launch :leave_bullet=>1
   end
 
-  def self.as_destroy
-    Keys.prefix = "destroy"
+  def self.as_delete
+    Keys.prefix = "delete"
+    Launcher.launch
+  end
+
+  def self.as_open
+    Keys.prefix = "open"
     Launcher.launch
   end
 
@@ -1091,12 +1223,13 @@ class Launcher
     Launcher.launch
   end
 
-  def self.set_env_vars args
+  def self.set_env_vars path
     ENV['prefix'] = Keys.prefix.to_s
 
-    # Might have been split based on "/"
+    args = path.is_a?(Array) ?
+      path : Menu.split(path, :rootless=>1)
 
-    # If any has ^|, then make sure current line has slash
+    # ?? If any has ^|, then make sure current line has slash
 
     quoted = args.find{|o| o =~ /^\|( |$)/}
 
@@ -1137,9 +1270,9 @@ def require_menu file, options={}
 
   stem = file[/(\w+)\./, 1]
 
-  # As .menu
+  # As .menu...
 
-  if file =~ /\.menu$/
+  if file =~ /\.menu$/ || options[:force_as] == "menu"
     Launcher.add stem, :menu_file=>1 do |path|
       next View.flash("- Xiki couldn't find: #{file}", :times=>5) if ! File.exists?(file)
       Tree.children File.read(file), Tree.rootless(path)
@@ -1147,9 +1280,19 @@ def require_menu file, options={}
     return
   end
 
-  # As class, so require and add launcher
+  # As class, so require and add launcher...
 
-  result = Menu.load_if_changed file
+  result = :not_found
+  begin
+    result = Menu.load_if_changed file
+  rescue LoadError => e
+    gem_name = Requirer.extract_gem_from_exception e.to_s
+    Requirer.show "The file #{file} wants to use the '#{gem_name}' gem.\n% sudo gem install #{gem_name}\n\n"
+  rescue Exception=>e
+    txt = CodeTree.draw_exception e
+    Requirer.show "The file #{file} had this exception:\n#{txt}\n\n"
+  end
+
   return if result == :not_found
 
   Launcher.add stem if ! Launcher.menus[1][stem]

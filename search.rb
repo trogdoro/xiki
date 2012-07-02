@@ -20,8 +20,9 @@ class Search
     - .launched/
     - docs/
       | > Summary
-      | Some interesting keys to type while searching.
-      | Note you start a search by typing Control-s.
+      | You start a search by typing Control-s.  Then type the search string.
+      | Here are some interesting keys to type while searching, to do things
+      | with the match.
       |
       | > What do we mean by "search_bookmark" etc.?
       | With all xiki keyboard shorcuts, you "type the acronym".
@@ -53,6 +54,8 @@ class Search
       | For more details about Xiki keyboard shortcuts, see:
       - @keys/docs/
       |
+    - see/
+      <@ next/
     '
   end
 
@@ -84,10 +87,10 @@ class Search
 
   def self.insert_tree_at_spot
     self.stop
-    txt = FileTree.snippet()   # Grab symbol
+    txt = FileTree.snippet   # Grab symbol
     Hide.show
     Location.go :_0
-    insert txt + "\n"
+    $el.insert txt
   end
 
   def self.insert_at_search_start
@@ -98,8 +101,8 @@ class Search
       loc = Keys.input(:chars=>1, :prompt=>"Enter one char to search for corresponding string: ")
       loc = loc.to_s
 
-      txt = self.searches.find{|o| o =~ /^#{loc}/i}
-      txt ||= Clipboard.hash[loc.to_s] || Clipboard.hash_by_first_letter[loc.to_s]
+      txt = Clipboard.hash[loc.to_s] || Clipboard.hash_by_first_letter[loc.to_s]
+      txt ||= self.searches.find{|o| o =~ /^#{loc}/i}
 
       return View.message("Nothing to search for matching '#{loc}'.", :beep=>1) if txt.nil?
       self.isearch txt, :reverse=>was_reverse
@@ -235,6 +238,9 @@ class Search
 
   def self.jump_to_difflog
     match = self.stop
+    self.to_start
+    Location.as_spot
+
     DiffLog.open
     View.to_bottom
 
@@ -351,6 +357,7 @@ class Search
     else
       query_replace_regexp(first, Keys.input(:timed=>true))
     end
+    nil
   end
 
   def self.isearch_query_replace after=nil
@@ -456,6 +463,7 @@ class Search
     end
 
     match.gsub!(/([#()*+?^$\[\]|.])/, "\\\\\\1")
+    match.gsub! "\\+", "."   # Change + to . to help when searching for key shortcuts
 
     # Search in bookmark
     FileTree.grep_with_hashes bm, match
@@ -627,19 +635,34 @@ class Search
       Search.isearch_restart "$t", :restart=>true
 
     else
-      #       match = self.match
-      dir = Keys.bookmark_as_path(:prompt=>"Enter bookmark to look in (or space for recently edited): ")
+      dir = Keys.bookmark_as_path :prompt=>"Enter bookmark to look in (or space for recently edited): "
 
       return View.message("Use space!", :beep=>1) if dir == :comma
 
-      return self.isearch_open_last_edited(match) if dir == :space   # If key is comma, treat as last edited
+      return self.open_file_and_method(match) if dir == :space   # If key is comma, treat as last edited
 
       TextUtil.snake_case! match if match =~ /[a-z][A-Z]/   # If camel case, file is probably snake
       FileTree.grep_with_hashes dir, match, '**'   # Open buffer and search
     end
   end
 
-  def self.isearch_open_last_edited match
+  #
+  # Jumps to the file corresponding to a string.
+  # The string has no path - the edited history (and visited history?)
+  # are used to find the file.
+  #
+  # If the string is like "Foo.bar" it jumps to the method as well ("foo").
+  #
+  # > Examples
+  # Search.open_file_and_method "View"
+  # Search.open_file_and_method "View.path"
+  #
+  def self.open_file_and_method match
+
+    # Ifnore everything after a space?
+    match.sub!(/^[+-] /, '')
+    match.sub!(/ .+/, '')
+
     if match =~ /(.+)[.#](.+)/
       match, method = $1, $2   # split off, and open
     end
@@ -679,6 +702,9 @@ class Search
     else
       message "'#{match}' not found (no recently edited file with that substring found)."
     end
+
+    return
+
   end
 
   def self.isearch_or_copy name
@@ -857,7 +883,10 @@ class Search
 
   end
 
-  def self.isearch_log
+  def self.isearch_have_output
+
+    return self.isearch_have_output_javascript if View.extension == "js"
+
     match = self.stop
     self.to_start
     return View.insert("Ol.line") if match.nil?
@@ -870,10 +899,10 @@ class Search
     View.insert "Ol << \"#{match}: \#{#{match}.inspect}\""
   end
 
-  def self.isearch_log_javascript
+  def self.isearch_have_output_javascript
     match = self.stop
     self.to_start
-    View.insert "console.log(\"#{match}: \" + #{match});"
+    View.insert "p(\"#{match}: \" + #{match});"
   end
 
   def self.isearch_as_camel
@@ -1015,7 +1044,7 @@ class Search
   def self.to_left
     match = self.stop
     if match.nil?   # If nothing searched for yet
-      return Launcher.open("- search/.history/")
+      return Launcher.open "- search/.history/", :bar_is_fine=>1
     end
 
     Line.to_left
@@ -1054,20 +1083,21 @@ class Search
     View.insert TextUtil.snake_case(term)
   end
 
+  @@zap_hooks ||= {}
+  # To set a hook
+  # Search.zap_hooks 'm' do ... end
+  def self.zap_hooks # key, &block
+    @@zap_hooks#[key] = value
+  end
+
   def self.zap
     match = self.stop
 
     if match.nil?   # If nothing searched for yet
       char = Keys.input(:chars=>1, :prompt=>"Enter one char: ")
-      if char == "m"
-        Launcher.open("- $a/\n  - ## def /")
-      elsif char == "f"
-        Launcher.open("- $wj/\n  - ##\\bfunction.*\\(/")
-      else
-        View.beep
-        View.message "Don't know what to do with that char."
-      end
-      return
+      block = self.zap_hooks[char]
+      return View.beep "- search+zap+#{char}... doesn't seem to be defined!" if block.nil?
+      return block.call
     end
 
     right = View.point
@@ -1078,19 +1108,19 @@ class Search
   def self.xiki
     match = self.stop
 
-    if match.nil?   # If nothing searched for yet
-      char = Keys.input(:chars=>1, :prompt=>"Enter one char: ")
-      if char == "m"
-        Launcher.open("- $x/\n  - ##\\bdef /")
-      else
-        View.beep
-        View.message "Don't know what to do with that char."
-      end
-      return
+    View.beep "- Don't know what to do when search+x with search match." if match
+
+    char = Keys.input(:chars=>1, :prompt=>"Enter one char: ")
+    if char == "m"
+      Launcher.open("- $x/\n  - ##\\bdef /")
+    elsif char == "k"
+      Launcher.open("- $x/key_bindings.rb\n  - ##\\bKeys\\./")
+    elsif char == "l"
+      Launcher.open("- $ttm\n  - ##xiki|isearch/")
+    else
+      View.beep "Don't know what to do with that char."
     end
 
-    View.beep
-    View.message "use 'pull'" + "!" * 600
   end
 
   def self.isearch_restart path, options={}
@@ -1270,59 +1300,61 @@ class Search
     Search.isearch match
   end
 
-  def self.isearch_move_to path
+  def self.isearch_move_to path, options={}
     match = self.stop
     match = Line.value if match.nil?   # Use line if nothing searched for
-    self.move_to path, match
+    self.move_to path, match, options
   end
 
+
   def self.move_to_files match
-    match_with_path = FileTree.snippet match
-    match_with_path = ">\n- #{match_with_path.sub(/^  /, '  - ')}\n"
+    match_with_path = FileTree.snippet :txt=>match
+    match_with_path = ">\n- #{match_with_path}"
+
+    result = self.fit_in_snippet match
+    result ? nil : match_with_path
+  end
+
+  def self.fit_in_snippet match
+
     target_path = View.file
+    View.layout_files :no_blink=>1
 
-    View.layout_files
-
-    # See if it can be merged in
     View.to_highest
     Move.to_junior   # Go to first file
 
     path = Xiki.trunk.last   # Grab from wiki tree
 
-    fits_under = target_path.start_with? path
+    # If doesn't fit in the tree, just return to delegate back
+    return false if ! target_path || ! target_path.start_with?(path)
 
-    # If doesn't fit in the tree, just delegate it to .move_to
-    return match_with_path if ! fits_under
-
+    cursor = Line.left 2
     FileTree.enter_quote match
+    View.cursor = cursor
 
-    return nil   # If handled
-
+    return true   # If handled
   end
 
 
-  def self.move_to path, match
-    Search.stop
+  def self.move_to path, match, options={}
     orig = Location.new
     was_in_bar = View.in_bar?
 
     if path == "$t"   # If $f, grab path also
-      View.layout_todo
+      View.layout_todo :no_blink=>1
     elsif path == "$f"   # If $f, grab path also
       match = self.move_to_files match
-
-      if ! match   # It handled it if it didn't return the match
-        orig.go
-        return
-      end
-
+      return orig.go if ! match   # It handled it if it didn't return the match
     else
       View.open path
     end
 
+    # Maybe extract to .insert_in_section ?
     View.to_highest
 
     line_occupied = ! Line.blank?
+
+    Notes.to_block if options[:append]
 
     View.insert match
 
@@ -1344,7 +1376,6 @@ class Search
       Line.next line-1
       View.column = orig.column
     end
-
   end
 
   def self.log
@@ -1375,21 +1406,32 @@ class Search
   end
 
   def self.last_search
-    $el.nth 0, elvar.search_ring.to_a
+    begin
+      $el.nth 0, elvar.search_ring.to_a
+    rescue Exception=>e
+      View.beep
+      return "- weird stuff in search ring!"
+    end
   end
 
   def self.history txt=nil
-    if txt
-      txt.sub! /^\| /, ''
 
-      # Go back to where we came from, if we're in special search buffer
-      ControlTab.go if View.buffer_name == "*CodeTree - search/history/"
+    # If nothing selected yet, show history
 
-      Search.isearch txt
-      return
+    if ! txt
+      searches = self.searches.uniq
+      return searches.map{|o| "| #{o}\n"}.join("")
     end
-    searches = self.searches.uniq
-    searches.map{|o| "| #{o}\n"}.join("")
+
+    # Option selected, so search for it
+
+    txt.sub! /^\| /, ''
+
+    # Go back to where we came from, if we're in special search buffer
+    View.kill if View.buffer_name == "@search/history/"
+
+    Search.isearch txt
+    nil
   end
 
   def self.outline_goto_once; @@outline_goto_once; end
@@ -1509,6 +1551,21 @@ class Search
     View.to_upper
     View.to_highest
     View << "#{match}\n\n"
+  end
+
+  #
+  # Query replaces from "1" clipboard to "2" clipboard, etc.
+  #
+  # Search.query_replace_nth "1", "2"
+  #
+  def self.query_replace_nth n1, n2
+
+    if Keys.up?   # If up+, grab line from last diff
+      a, b = DiffLog.last_intraline_diff
+      return Search.query_replace a, b
+    end
+
+    Search.query_replace Clipboard.get(n1), Clipboard.get(n2)
   end
 
 end

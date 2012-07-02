@@ -4,8 +4,9 @@ class Files
 
   def self.menu
     "
-    - @current/
     - @edited/
+    - @current/
+    - tree) @Buffers.tree 25/
     - .history/
     - docs/
       > Summary
@@ -158,7 +159,7 @@ class Files
 
   def self.history_tree times=nil
     times ||= History.prefix_times
-    puts CodeTree.tree_search_option + FileTree.paths_to_tree(history_array[0..(times-1)])
+    puts CodeTree.tree_search_option + Tree.paths_to_tree(history_array[0..(times-1)])
   end
 
   def self.open_just
@@ -214,10 +215,9 @@ class Files
   end
 
   def self.do_load_file
-    $el.revert_buffer(true, true, true)
+    $el.revert_buffer(true, true, true) rescue nil
 
     View.message "Reverted file"
-
     return if ! Keys.prefix_u
 
     View.message $el.auto_revert_mode ? "Enabled Auto-revert" : "Disabled Auto-revert"
@@ -293,6 +293,38 @@ class Files
   # Returns contents of a dir.  Just a wrapper around Dir.entries that removes "." and ".."
   def self.in_dir path
     Dir.entries(path).select{|o| o !~ /^\.+$/}
+  end
+
+  def self.open_nth nth
+    View.layout_files :no_blink=>1
+    View.to_highest
+    nth.times { Move.to_quote }
+    Effects.blink
+    Launcher.launch
+  end
+
+  def self.delete_current_file
+
+    dest_path = View.file
+    return View.beep("- There's no file for this buffer!") if ! dest_path
+
+    View.beep :times=>3
+    View.flash "- Delete CURRENT file for sure?", :times=>4
+    answer = Keys.input :chars=>1, :prompt=>"- Delete current file for sure?"   #"
+
+    return View.flash("- cancelled!") if answer !~ /y/i
+
+    command = "rm \"#{dest_path}\""
+
+    result = Console.run command, :sync=>true
+    if (result||"").any?
+      View.beep
+      View.message "#{result}"
+      return
+    end
+
+    return View.kill
+
   end
 
 end

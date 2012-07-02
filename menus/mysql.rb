@@ -17,6 +17,13 @@ class Mysql
         - .create/
         - .drop/
       - .install/
+      - config/
+        > Main config file
+        @ /etc/my.cnf
+
+        > Example config files
+        @ /usr/local/mysql/support-files/
+          - **cnf/
     - misc commands/
       > Drop db
       @ % mysqladmin -u root drop foo
@@ -27,6 +34,20 @@ class Mysql
     | show tables
     "
     #     - .all/
+  end
+
+  def self.install
+    "
+    | > Installing Mysql
+    | For now, this just has the mac / homebrew instructions.  Fork xiki on github to add docs for other platforms.
+    |
+    | > Install using homebrew
+    - double-click to install) @$ brew install mysql
+    |
+    | > More
+    | See this link for more info on installing:
+    @http://www.mysql.com/downloads/mysql/
+    "
   end
 
   def self.menu_after txt, *args
@@ -43,20 +64,6 @@ class Mysql
     Console.run "mysqld", :buffer=>"mysql", :dir=>"/tmp/"
     View.to_buffer "mysql"
     nil
-  end
-
-  def self.install
-    "
-    | > Installing Mysql
-    | For now, this just has the mac / homebrew instructions.  Fork xiki on github to add docs for other platforms.
-    |
-    | > Install using homebrew
-    - double-click to install) @$ brew install mysql
-    |
-    | > More
-    | See this link for more info on installing:
-    @http://www.mysql.com/downloads/mysql/
-    "
   end
 
   def self.tables *args
@@ -137,7 +144,6 @@ class Mysql
     txt.sub(/^.+\n/, '').split("\n").map{|o|
       l = o.split("\t")
       [l[0], l[1].sub(/\(.+/, '')] }
-
   end
 
   def self.use kind=nil, db=nil
@@ -198,10 +204,6 @@ class Mysql
     ".flash - dropped table!"
   end
 
-  #   def self.drop_db name
-  #     Console.run "mysqladmin -u root drop #{name}", :buffer => "drop #{name}"
-  #   end
-
   def self.run db, sql
     db ||= @default_db
 
@@ -249,7 +251,6 @@ Launcher.add(/^select /) do |path|
   args = Menu.split(path)
   Tree.<< Mysql.select(*args), :no_slash=>(args.length > 1)
 end
-
 
 Launcher.add "tables" do |path|
   Mysql.tables *Menu.split(path, :rootless=>1)

@@ -33,7 +33,7 @@ class Window
 
     if action == "current"
       # width, height, left, top
-      return "#{View.width}, #{View.height}, #{$el.frame_parameter(nil, :left)}, #{$el.frame_parameter(nil, :top)}"
+      return "#{View.frame_width}, #{View.frame_height}, #{$el.frame_parameter(nil, :left)}, #{$el.frame_parameter(nil, :top)}"
     end
 
     txt = File.read(File.expand_path("~/menus/dimensions_config.menu"))
@@ -59,9 +59,16 @@ class Window
     # If preset passed, apply it
 
     View.kill if View.name == "@window/dimensions/presets/"
+    txt = txt.find { |o| o =~ /^[ +-]*#{preset}\// }
 
-    txt = txt.find { |o| o =~ /#{preset}\// }
     txt = txt[/\/(.+)/, 1]
+    self.dimensions_set txt
+
+    nil
+
+  end
+
+  def self.dimensions_set txt
 
     # If just numbers and commas
     if txt =~ /^[0-9, ]+$/
@@ -73,31 +80,17 @@ class Window
     # Otherwise, it's code so just eval
 
     eval txt
-    nil
-
-
-    #     # TODO: use View.input :options=>@@dimension_options
-    #     if key.nil?
-    #       message = @@dimension_options.map{|i|
-    #         "[#{i.first[/./]}]#{i.first[/.(.+)/,1]}"}.
-    #         join(', ')
-    #       key = Keys.input(:chars=>1, :prompt=>"dimensions: #{message}")
-    #     end
-    #     option = @@dimension_options.find{|i| i.first =~ /^#{key}/}
-    #     return View.message("Option not #{key} found") if option.nil?
-    #     option[1].call
   end
 
   def self.adjust type, direction
 
     if type == "size"
       case direction
-      when "wider"; View.width += 1
-      when "narrower"; View.width -= 1
-      when "taller"; View.height += 1
-      when "shorter"; View.height -= 1
+      when "wider"; View.frame_width += 1
+      when "narrower"; View.frame_width -= 1
+      when "taller"; View.frame_height += 1
+      when "shorter"; View.frame_height -= 1
       end
-      #       View.height = View.height - 1
 
     elsif type == "wider"
 
@@ -131,7 +124,7 @@ class Window
 
   def self.scroll_bars
     result = $el.scroll_bar_mode
-    View.width += View.scroll_bars ? -3 : 3
+    View.frame_width += View.scroll_bars ? -3 : 3
     #     View.scroll_bars = false
     View.kill if View.name == "@window/visibility/"
     nil

@@ -5,7 +5,7 @@ class Edited
 
     # If "tree" option, show in tree form
     if option == "tree"
-      txt = FileTree.paths_to_tree paths
+      txt = Tree.paths_to_tree paths
       txt.gsub! /^- \//, "- @/"
       return txt
     end

@@ -98,7 +98,7 @@ class Memcache
         return
       end
 
-      value = YAML::load Xiki.branch
+      value = YAML::load Tree.siblings(:string=>1)
       self.connection.set key, value
 
       View.flash "- Saved!"

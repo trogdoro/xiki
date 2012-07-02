@@ -1,0 +1,156 @@
+> Home page
+- it's currently .loc
+  - how to fix?!
+
+bootstrap/
+  - project name/Xiki
+  - navbar/
+    | <img src="http://xiki.org/images/bootstrap_icon.png">
+  - container/
+    - hero/
+      - <div id="myCarousel" class="carousel slide" style="width:319px; float:left;">
+        <div class="carousel-inner">
+          <div class="active item"><img src="http://xiki.org/images/demo.png"></div>
+          <div class="item"><img src="http://xiki.org/images/demo2.png"></div>
+          <div class="item"><img src="http://xiki.org/images/demo3.png"></div>
+        <a class="carousel-control left" href="#myCarousel" data-slide="prev">&lsaquo;</a>
+        <a class="carousel-control right" href="#myCarousel" data-slide="next">&rsaquo;</a>
+      - script/
+        $('.carousel').carousel({interval: 3200})
+      - <div style="min-height:290px;">
+        - <h1 style="margin-top:10px;">
+          | Like a shell console, but better.
+        - p/Xiki does what shell consoles do, but lets you edit everything at any time. It's trivial to make your own commands and menus - just type them.
+    - row/
+      - span6/
+        - h1/
+          - icon/023_cogwheels
+          Type and double-click
+        - p/
+          Type a word, any word. Then double click on it or type control-return (or command-return).
+          For example type: git, bootstrap, mysql, mongo, rails, node, coffee, js, dom, jquery.
+      - span6/
+        - h1/
+          - icon/110_align_left
+          Wiki inspired
+        - p/
+          Everything is editable text. Type commands anywhere. Intermix them with menus, headings, bullet points, wherever you want.
+          <b>Xiki</b> == e<b>x</b>ecutable w<b>iki</b>.
+  - <div style="background: transparent url('http://xiki.org/images/waves.png') repeat-x;">
+    - container/
+      - row/
+        - span4/
+          - h1/
+            - icon/051_eye_open
+            - Screencasts
+          - p/
+            Check out the
+            <a href="screencasts/">screencast</a>
+            to see Xiki in action.
+        - span4/
+          - h1/
+            - icon/012_heart
+            - Code
+          - p/
+            Go to
+            <a href="http://github.com/trogdoro/xiki">github.com/trogdoro/xiki</a>
+            to check out the code and
+            <a href="http://github.com/trogdoro/xiki/tree/master/INSTALL.txt">install</a>
+            Xiki.
+        - span4/
+          | <img src="http://xiki.org/images/shark.png" style="opacity:.65">
+      - row/
+        - span4/
+          - h1/
+            - icon/043_group
+            - Mailing list
+          - p/
+            See the
+            <a href="http://groups.google.com/group/xiki">group page</a>
+            for help getting Xiki installed, or to ask other questions or share ideas.
+        - span4/
+          - h1/
+            - icon/108_left_indent
+            Twitter
+          - p/
+            Follow
+            <a href="http://twitter.com/xiki">twitter.com/xiki</a>
+            to chat and stay up to date on the latest Xiki screencasts.
+        - span4/
+          - h1/
+            - icon/160_imac
+            Shell + GUI
+          - <div style="min-height:300px;">
+            Xiki merges shell and GUI concepts.
+            Commands can have nested menus. Menus are just text indented by 2 spaces. Optionally use the mouse.
+    - style/
+      | .hero-unit {
+      |   background-color: #225C88;   /* #eee #555 #999 #9D261D #369 #096 */
+      |   background: -webkit-linear-gradient(top, #222, #555);   /* Gray */
+      |   background: -moz-linear-gradient(top, #222, #555);
+      |   color: #fff;
+      |   text-shadow: 2px 2px 2px #000;
+      |   border-radius: 20px;
+      |   padding: 32px 60px 40px 26px;
+      | }
+      | .navbar .container { padding: 1px 30px 0px; }
+
+
+      |   background: -webkit-linear-gradient(top, #610, #921);   /* Red */
+      |   background: -moz-linear-gradient(top, #610, #921);
+      |   background: -webkit-linear-gradient(top, #223, #456);   /* Blue */
+      |   background: -moz-linear-gradient(top, #223, #456);
+
+      | .hero-unit h1 {
+      |   font-size:55px;
+      | }
+
+
+      - row/
+        - span4/
+          - h1 icon/Navigate files
+          - p/Navigate, search, edit, with the wiki syntax
+        - span4/
+          - h1 icon/Shell consoles are static
+          - p/In shell consoles, text is read only. Command output is appended to the end.
+        - span4/
+          - h1 icon/New way
+          - p/In Xiki, text is always editable. Command output is inserted underneath the command, nested two spaces.
+
+
+> Screencasts
+bootstrap/
+  - project name/Xiki
+  - navbar/
+    | <img src="http://xiki.org/images/bootstrap_icon.png">
+
+  - style/
+    .section {
+      padding: 30px 0 60px
+    }
+
+  - h1/Screencasts
+
+  <div class="section">
+    <object width="640" height="385"><param name="movie" value="http://www.youtube.com/v/LA-lViZ8vls&hl=en_US&fs=1&rel=0"></param><param name="allowFullScreen" value="true"></param><param name="allowscriptaccess" value="always"></param><embed src="http://www.youtube.com/v/LA-lViZ8vls&hl=en_US&fs=1&rel=0" type="application/x-shockwave-flash" allowscriptaccess="always" allowfullscreen="true" width="640" height="385"></embed></object>
+
+  <div class="section">
+    <object width="640" height="385"><param name="movie" value="http://www.youtube.com/v/lfgLAgLorn8&hl=en_US&fs=1&rel=0"></param><param name="allowFullScreen" value="true"></param><param name="allowscriptaccess" value="always"></param><embed src="http://www.youtube.com/v/lfgLAgLorn8&hl=en_US&fs=1&rel=0" type="application/x-shockwave-flash" allowscriptaccess="always" allowfullscreen="true" width="640" height="385"></embed></object>
+
+  <div class="section">
+    <object width="640" height="385"><param name="movie" value="http://www.youtube.com/v/mumcFOk4PF4&hl=en_US&fs=1&rel=0"></param><param name="allowFullScreen" value="true"></param><param name="allowscriptaccess" value="always"></param><embed src="http://www.youtube.com/v/mumcFOk4PF4&hl=en_US&fs=1&rel=0" type="application/x-shockwave-flash" allowscriptaccess="always" allowfullscreen="true" width="640" height="385"></embed></object>
+
+  <div class="section">
+    <object width="640" height="385"><param name="movie" value="http://www.youtube.com/v/OWG_88s5YA8&hl=en_US&fs=1&rel=0"></param><param name="allowFullScreen" value="true"></param><param name="allowscriptaccess" value="always"></param><embed src="http://www.youtube.com/v/OWG_88s5YA8&hl=en_US&fs=1&rel=0" type="application/x-shockwave-flash" allowscriptaccess="always" allowfullscreen="true" width="640" height="385"></embed></object>
+
+  <h3 class="section" style="margin:130px 0 0">
+    Older screencasts from before the Xiki re-write...
+
+  <div class="section">
+    <object width="640" height="385"><param name="movie" value="http://www.youtube.com/v/6aIsQ71tDpg&hl=en_US&fs=1&rel=0"></param><param name="allowFullScreen" value="true"></param><param name="allowscriptaccess" value="always"></param><embed src="http://www.youtube.com/v/6aIsQ71tDpg&hl=en_US&fs=1&rel=0" type="application/x-shockwave-flash" allowscriptaccess="always" allowfullscreen="true" width="640" height="385"></embed></object>
+
+  <div class="section">
+    <object width="640" height="385"><param name="movie" value="http://www.youtube.com/v/ixtXTnypxg0&hl=en_US&fs=1&rel=0"></param><param name="allowFullScreen" value="true"></param><param name="allowscriptaccess" value="always"></param><embed src="http://www.youtube.com/v/ixtXTnypxg0&hl=en_US&fs=1&rel=0" type="application/x-shockwave-flash" allowscriptaccess="always" allowfullscreen="true" width="640" height="385"></embed></object>
+
+
+

@@ -9,12 +9,3 @@ class UrlTree
   end
 end
 
-Menu.urls do |path|
-  url = path[/urls\/(.+)/, 1]
-
-  if url.nil?
-    next Launcher.last "urls", :exclude_path=>1
-  end
-  Keys.prefix == :u ? $el.browse_url(url) : Firefox.url(url)
-  nil
-end

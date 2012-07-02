@@ -10,30 +10,55 @@ class ControlTab
 
   # Primary method.  Is mapped to C-tab and does the switching.
   def self.go
-    prefix = Keys.prefix
 
-    if prefix == :-   # If C-0 prefix, just burry buffer
-      $el.bury_buffer
-      # Store original order, and windows originally opened
-      @@original = buffer_list.to_a   # Hide evidence that we were on top (lest it restore us)
-      @@open_windows = window_list.collect {|b| window_buffer b}
-      @@consider_test = lambda{|b| ! buffer_name(b)[/Minibuf/] }
+    prefix = Keys.prefix :clear=>1
+
+    first_tab_in_sequence = Keys.before_last !~ /\btab$/   # If first tab, clear edited
+    @@edited = @@dash_prefix = @@nine_prefix = nil if first_tab_in_sequence
+
+    if prefix == :- || @@dash_prefix   # Go to next quote in $f
+      View.layout_files :no_blink=>1
+      Move.to_quote
+      Effects.blink
+      Launcher.launch
+      @@dash_prefix = true
       return
     end
 
-    first_tab_in_sequence = Keys.before_last !~ /\btab$/   # If first tab, clear edited
+    if prefix == 9 || @@nine_prefix   # Navigate to next Ol line in *ol buffer
 
-    @@edited = nil if first_tab_in_sequence
+      View.layout_output :dont_highlight=>1
+
+      Move.to_end
+      Search.forward "^-", :go_anyway=>1
+      if View.cursor == View.bottom
+        Move.to_previous_paragraph
+        Line.next
+      end
+      Effects.blink
+      Launcher.launch
+      @@nine_prefix = true
+      return
+    end
+
+      #     if prefix == 9   # If __ prefix, just burry buffer
+      #       $el.bury_buffer
+      #       # Store original order, and windows originally opened
+      #       @@original = buffer_list.to_a   # Hide evidence that we were on top (lest it restore us)
+      #       @@open_windows = window_list.collect {|b| window_buffer b}
+      #       @@consider_test = lambda{|b| ! buffer_name(b)[/Minibuf/] }
+      #       return
+      #     end
 
     if prefix == :u   # If U prefix (must be first alt-tab in sequence)
       # Go to last edited file, and store list
       @@edited = elvar.editedhistory_history.to_a
       @@edited -= View.files :visible=>1   # Exclude currently visible files
-      find_file @@edited.shift
+      $el.find_file @@edited.shift
 
       return
     elsif @@edited   # Subsequent alt-tab
-      find_file @@edited.shift
+      $el.find_file @@edited.shift
       return
     end
 
@@ -72,14 +97,14 @@ class ControlTab
         @@consider_test = lambda{|b| buffer_file_name(b) =~ /\/app\/controllers\//}
       when 66   # Models
         @@consider_test = lambda{|b| buffer_file_name(b) =~ /\/app\/models\//}
-      when 60   # Tests
+      when 67   # Tests
         @@consider_test = lambda{|b| buffer_file_name(b) =~ /_(spec|test)\.rb$/}
       when 7   # .notes files
         @@consider_test = lambda{|b| buffer_file_name(b) =~ /\.notes$/}
       when 8   # Anything (just like no arg)
         @@consider_test = lambda{|b| ! buffer_name(b)[/Minibuf/] }
-      when 9   # js
-        @@consider_test = lambda{|b| buffer_file_name(b) =~ /\.js$/}
+        #       when 9   # js
+        #         @@consider_test = lambda{|b| buffer_file_name(b) =~ /\.js$/}
       else   # Anything (except minibuffer)
         @@consider_test = lambda{|b| ! buffer_name(b)[/Minibuf/] }
       end
@@ -126,7 +151,7 @@ class ControlTab
       if @@switch_index >= @@original.size
         @@switch_index = buffer_started_at
         #         View.to_buffer buffer_started_at
-        View.beep;  View.message('None left')
+        View.beep 'None left'
         break
       end
 
@@ -137,8 +162,7 @@ class ControlTab
   def self.to_next_unless_nil
     to_buffer = @@original[@@switch_index]
     if to_buffer.nil?
-      View.beep
-      return View.message('None left')
+      View.beep 'None left'
     end
     $el.set_buffer(to_buffer)   # Go there so test can look at buffer mode, etc
   end

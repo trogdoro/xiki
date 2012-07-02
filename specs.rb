@@ -7,15 +7,15 @@ class Specs
     '
     - .load/
       | Loads rspec (including the .should method) into the xiki environment:
+      - more/
       - continue/
-      - docs/
-    - .see/
-      - @xiki/tests/
+    > See
+    << xiki/tests/
     '
   end
 
   def self.load choice
-    if choice == "docs"
+    if choice == "more"
       return "
         | > Point
         | The point is so you can use rspec methods like .should when using
@@ -157,68 +157,35 @@ class Specs
   # Pastes in for the line in the clipboard:
   #   Spec.foo "bar"
   def self.enter_as_rspec
-    # If U, add it in $t
-    prefix_u = Keys.prefix_u :clear=>true
 
     line = Line.value
+    orig = Location.new
 
-    if prefix_u
-      u_orig = Location.new
-      Clipboard.as_line
+    clazz = View.file_name[/(\w+)_spec\.rb/, 1]
+    path = "xiki/tests/#{clazz}/"
 
-      View.open "$t"
-      View.to_highest
-
-      View.insert("\n", :dont_move=>1) unless line.empty?   # Make room if line not blank
+    # If on describe, just append and done
+    if line =~ /^ *describe/
+      describe = line[/"(.+)"/, 1]
+      path << "#{describe}/"
+    else # If on it, grab, then go to describe
+      test = line[/"(.+)"/, 1]
+      Search.backward "^ *describe "
+      describe = Line[/"(.+)"/, 1]
+      path << "#{describe}/#{test}/"
     end
 
-    # Add extra space if heading is after!
-    View.insert("\n", :dont_move=>1) if Line.value(2) =~ /^>/
 
-    if Line.blank?   # Assume clipboard contains "it..." line
-      snippet = Clipboard['=']
+    View.layout_todo
+    View.to_highest
 
-      path = snippet[/.+/]
-      clazz = snippet[/(\w+)_spec\.rb/, 1]
+    View.insert("\n", :dont_move=>1) unless line.empty?   # Make room if line not blank
+    View.insert("\n", :dont_move=>1) if Line.value(2) =~ /^>/   # Add extra space if heading is after!
 
-      desc = snippet[/(".+")/, 1]
+    View.insert path
 
-      # If no description, do enter_as_title
-      if desc.nil?
-        View.insert TextUtil.title_case(Clipboard.get(0))
-      else
-
-        # TODO: pull from projects.menu
-        #         bms = Projects.listing.map{|o| o[1]}
-        bm_were_in = bms.find{|o| path[Bookmarks[o]]}
-
-        # Add symbol for project if it's a specific one
-        project = bm_were_in ? "#{bm_were_in.sub('$', ':')}, " : ""
-        project = "" if project == ":pm, "   # :m is the default, so not required
-        View.insert "xiki/tests/#{clazz}/#{desc.gsub "\"", ''}/"
-      end
-    else
-
-      desc = Line[/  it (".+")/, 1]
-
-      # If no description, do title case
-      # WTF was this trying to do?!
-      return View.insert TextUtil.title_case(Clipboard.get(0)) if desc.nil?
-
-      orig = View.cursor
-      Search.backward "^ *[+-] "
-      clazz = Line[/(\w+)_spec\.rb/, 1]
-
-      View.cursor = orig
-      Line.delete :leave_linebreak
-      View.insert "Specs.#{clazz} #{desc}"
-      Move.to_axis
-    end
-
-    if prefix_u
-      Move.to_axis
-      u_orig.go
-    end
+    Move.to_axis
+    orig.go
 
   end
 

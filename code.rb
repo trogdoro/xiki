@@ -2,8 +2,9 @@ require 'block'
 require 'stringio'
 gem 'ruby2ruby'
 require 'ruby2ruby'
+gem 'ParseTree'
 require 'parse_tree'
-require 'parse_tree_extensions'
+require 'parse_tree_extensions'   # required for .to_ruby
 class Code
   extend ElMixin
 
@@ -25,6 +26,8 @@ class Code
 
   def self.bounds_of_thing left=nil, right=nil
 
+    return [left, right] if left.is_a?(Fixnum)
+
     return [Line.left, Line.right+1] if left == :line
 
     n = Keys.prefix_n :clear=>true   # Check for numeric prefix
@@ -42,10 +45,26 @@ class Code
   end
 
   def self.comment left=nil, right=nil
-    # If 0 prefix, comment paragraph
-    if Keys.prefix == 0
+
+    prefix = Keys.prefix
+
+    if prefix == 0   # If 0 prefix, comment paragraph
       left, right = View.paragraph(:bounds => true)
     else
+
+      if prefix == 2
+        a_commented = Line =~ /^ *(#|\/\/)/
+        b_commented = Line.value(2) =~ /^ *(#|\/\/)/
+        if !!a_commented ^ !!b_commented
+          Keys.clear_prefix
+          orig = Location.new
+          Code.comment Line.left(1), Line.left(2)   # Toggle commenting of this line
+          Code.comment Line.left(2), Line.left(3)   # Toggle commenting of next line
+          orig.go
+          return
+        end
+      end
+
       Line.to_left
       left ||= {:default=>:region}
       left, right = Code.bounds_of_thing(left, right)
@@ -193,7 +212,7 @@ class Code
     exception = nil
     begin   # Run code
       # Good place to debug
-      returned = $el.el4r_ruby_eval(code)
+      returned = $el.instance_eval(code, __FILE__, __LINE__)
     rescue Exception => e
       exception = e
     end
@@ -397,7 +416,7 @@ class Code
     begin
       load View.file
     rescue Exception=>e
-      Tree << "- Error:\n#{e.message.gsub /^/, '  '}!"
+      Tree.<< "- Error:\n#{e.message.gsub /^/, '  '}!", :no_slash=>1
     end
   end
 
@@ -408,8 +427,11 @@ class Code
 
   def self.indent_to
 
+    prefix_n = Keys.prefix_n
+    prefix = Keys.prefix :clear=>true
+
     # If universal, indent current line 2 over
-    if Keys.prefix_u
+    if prefix == :u
       cursor = View.cursor
       Move.to_axis
       View.insert "  "
@@ -417,7 +439,7 @@ class Code
       return
     end
 
-    if Keys.prefix_uu
+    if prefix == :uu
       orig = View.cursor
       Move.to_axis
       was_near_axis = View.cursor+2 > orig
@@ -429,7 +451,7 @@ class Code
     # If universal, indent current line 2 to left
 
     if View.cursor == View.mark   # If C-space was just hit, manually indent this line
-      prefix = (Keys.prefix_n :clear=>true) || 0
+      prefix = prefix_n || 0
       old_column = View.column
       line = Line.value 1, :delete=>true
 
@@ -444,15 +466,18 @@ class Code
     end
 
     # If no prefix, just indent code according to mode
-    return Code.indent if ! Keys.prefix
+    return Code.indent if ! prefix
 
-    new_indent = Keys.prefix || 0
+    new_indent = prefix || 0
     orig = Location.new
     txt = View.selection :delete => true   # Pull out block
 
-    txt = TextUtil.unindent(txt)
-    txt.gsub!(/^/, ' ' * new_indent)   # Add back new indent
-    txt.gsub!(/^ +$/, '')   # Blank out lines with just spaces
+    # Grab indent if 1st line that has text
+    txt.gsub!(/^\s+/) { |t| t.gsub("\t", '        ') }   # Untab indent
+    old_indent = txt[/^( *)[^ \n]/, 1]
+    txt.gsub! /^#{old_indent}/, ' ' * new_indent
+
+    txt.gsub!(/^ +$/, '')   # Kill trailing spaces on lines with just spaces
 
     View.insert txt
 
@@ -536,6 +561,7 @@ class Code
   end
 
   def self.enter_log_stack
+    return View.insert "p_stack()" if View.extension == "js"
     View.insert "Ol.stack"
   end
 
@@ -544,8 +570,9 @@ class Code
     Move.backward 2
   end
 
-  def self.open_log_view
+  def self.open_log_view options={}
     prefix = Keys.prefix :clear=>true
+    prefix = nil if options[:called_by_launch]
     orig = View.current if prefix == :u
 
     file = Ol.file_path
@@ -593,6 +620,9 @@ class Code
   end
 
   def self.enter_log_line
+
+    return Firefox.enter_log_javascript_line if View.extension == "js"
+
     $el.open_line(1) unless Line.blank?
 
     # Javascript
@@ -608,6 +638,21 @@ class Code
 
     View.insert "Ol.line"
     Line.to_left
+  end
+
+  def self.enter_log_output
+    orig = Location.new
+    View.layout_output
+
+    output = Line.value[/: (.+)/, 1]
+    orig.go
+
+    return View.flash("- Not found!") if output.nil?
+
+    Move.to_end
+    View.insert_line
+    View << "# #{output}"
+    Line.to_beginning
   end
 
   def self.enter_log_time
@@ -639,16 +684,27 @@ class Code
   end
 
   def self.do_list_ancestors
-    path = Tree.construct_path(:list=>1, :ignore_ol=>1)[0..-1]
-    result = ""
-    path.each_with_index { |o, i|
-      result << "#{'  ' * i}#{o}\n"
-    }
+    prefix = Keys.prefix :clear=>1
+
+    result = Tree.ancestors_indented
 
     result = result.strip.gsub('%', '%%')
 
     # If U, save in clipboard as quote, ready to be pasted into a tree
-    Clipboard[0] = result if Keys.prefix_u
+    #     Clipboard[0] = result if Keys.prefix_u
+
+    if prefix == :-   # Actually insert it inline
+      Line.next
+      View << "#{result}\n"
+      Line.previous
+      return
+    end
+
+    if prefix == :u   # Just recenter to method
+      View.recenter_under "^\\( *def \\| *it \\|^>\\)"
+    elsif prefix == :uu
+      result = "Cursor: #{View.cursor}"
+    end
 
     View.message result
   end
@@ -736,6 +792,54 @@ class Code
     end
 
     $el.open_line(prefix || 1)
+
+  end
+
+  # Searches upward for "def..." and returns the line
+  def self.grab_containing_method
+    orig = Location.new
+    Search.backward "^  def "
+    txt = Line.value
+    orig.go
+    txt
+  end
+
+  # Convenience for entering "# " to start a comment
+  def self.enter_insert_comment
+    if Line.blank?
+      View << "# "
+      $el.ruby_indent_line
+    else
+      Move.to_end
+      View << "   # "
+    end
+
+    ControlLock.disable    # insert date string (and time if C-u)
+  end
+
+  def self.launch_dot_at_end line
+    prefix = Keys.prefix :clear=>1
+
+    # If just Foo., show methods
+
+    if line =~ /\A\w+\.\z/
+      txt = Code.eval("#{line}meths")[0].map{|o| "- #{o}" }.join("\n")
+      return Tree.<< txt, :no_slash=>1
+    end
+
+    if prefix == "open"   # If as+open, just navigate there
+      return Search.open_file_and_method line.sub("./.", '.')
+    end
+
+    # It's foo./.bar/, so go to parent, collapse, and add this at end
+
+    last = line.split('/').last
+    Tree.to_parent
+    CodeTree.kill_rest
+    Line.sub! /\.$/, "#{last}"
+    Move.to_end
+
+    # If Foo. ... .bar, merge it back to parent (make Foo.bar), then launch
 
   end
 

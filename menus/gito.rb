@@ -172,7 +172,6 @@ class Gito
       txt.gsub! /(.+?) (.+)/, "\\2) \\1"
       txt.gsub! /^- /, ''
       return txt.gsub!(/^/, '+ ')
-      #return "- TODO: show all revs"
     end
 
     if line.nil?   # If no diff, show diff
@@ -351,7 +350,7 @@ class Gito
       # Remove question files
       status = status.split("\n")#.select{|l| l !~ /^\?/}
       status = status.each{|l| l.sub!(/^. +/, dir)}
-      FileTree.paths_to_tree(status)
+      Tree.paths_to_tree(status)
     else   # git
       status = Console.run "git status", :dir => dir, :sync => true
 
@@ -361,7 +360,7 @@ class Gito
       found.each do |m|
         result << "#{dir}#{m[0]}"
       end
-      FileTree.paths_to_tree(result)
+      Tree.paths_to_tree(result)
     end
   end
 
@@ -457,10 +456,6 @@ class Gito
       option = is_unadded ? "- .add\n" : "- .commit/\n"
       if expand   # If showing diffs right away
         txt = Gito.diff_internal "git diff --patience --relative #{self.git_diff_options}#{is_unadded ? '' : ' HEAD'}", dir
-
-        Ol << "show this if completely new - look at status?!"
-      #       return "| No files exist yet.  Consider using \"setup/make sample files/\"\n" if ! txt.any?
-
 
         if txt =~ /^fatal: ambiguous argument 'HEAD': unknown revision/
           txt = self.status_hash_to_bullets hash, is_unadded
@@ -728,14 +723,6 @@ class Gito
       - commit: ! git commit -m \"First commit.\"
     "
   end
-
-  #   def self.initialize project
-  #     dir = self.extract_dir project
-  #     # Create dir if not there
-  #     Dir.mkdir(dir) if not File.directory?(dir)
-  #     Console.run("git init", :dir => dir)
-  #     nil
-  #   end
 
   def self.files project
     "- #{self.extract_dir(project)}/"

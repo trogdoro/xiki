@@ -36,9 +36,9 @@ class Bookmarks
       > Keys
       | All of these prompt for a bookmark name:
       |
-      | as_bookmark: bookmark the current file
-      | open_bookmark: jumps to bookmark file
-      | open_point: jumps to bookmark file and cursor position
+      | as+bookmark: bookmark the current file
+      | open+bookmark: jumps to bookmark file
+      | open+point: jumps to bookmark file and cursor position
       |
       > See Also
       @files/docs/
@@ -231,11 +231,14 @@ class Bookmarks
       return path if bm.nil?
 
       # If a slash, cut off filename if there is one (only dir is wanted)
-      if slash != ""
-        bm = bm.sub(/[^\\\/]+$/, "")
+      if options[:file_ok]   # Put slash back if there was one
+        bm << "/" if bm !~ /\/$/ && slash.any?
+      elsif slash.any?
+        bm.sub! /[^\\\/]+$/, ""
       end
 
       path = "#{bm}#{rest}"
+
       # Expand ~/ if it has it
 
       path = View.expand_path(path)  if path =~ /^~/
@@ -333,7 +336,7 @@ class Bookmarks
       path
     }
 
-    FileTree.paths_to_tree(paths)
+    Tree.paths_to_tree(paths)
   end
 
   def self.open_quick

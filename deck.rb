@@ -59,6 +59,7 @@ class Deck
     $el.elvar.deck_mode_map = $el.make_sparse_keymap unless $el.boundp :deck_mode_map
     $el.set_keymap_parent $el.elvar.deck_mode_map, $el.elvar.notes_mode_map
 
+    # TODO Get this to not add key at beginning - how?!
     Keys.open_related_heading { Deck.open_related_heading }
 
     $el.define_key(:deck_mode_map, $el.kbd("<right>")) { Deck.right_arrow }

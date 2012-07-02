@@ -10,18 +10,21 @@ class Snippet
 
     prefix = Keys.prefix
 
-    return View.open file if prefix == :u   # If up+, just go to file
+    return View.open file if prefix == 'open' || prefix == :u   # If up+, just go to file
 
     # If leaf has quote, kill the rest or create new snippet
 
     if args[-1] =~ /\|/
-
       txt = ENV['txt'].dup
 
       txt << "\n" if txt !~ /\n/
 
-      Tree.to_parent :u
-      View.kill_paragraph
+      #Tree.to_parent :u
+      Tree.to_root
+      CodeTree.kill_rest
+      indent = Line.indent
+      Line.delete
+      View.<< txt.gsub(/^/, indent), :dont_move=>1
 
       View.<< txt, :dont_move=>1
 
@@ -50,6 +53,8 @@ class Snippet
   end
 
   def self.insert
+    View << "@" if Line =~ /^ /
+
     Launcher.insert("snippet/")
   end
 

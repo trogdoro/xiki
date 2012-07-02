@@ -90,6 +90,9 @@ class Ol
 
   def self.line txt=nil, l=nil, indent="", name=nil, time=nil
     l ||= caller(0)[1]
+
+    l.sub! /^\(eval\)/, 'eval'   # So "(" doesn't mess up the label
+
     h = self.parse_line(l)
 
     txt = txt ? " #{txt}" : ''
@@ -168,6 +171,22 @@ class Ol
     File.open(path, "w") { |f| f << html }
 
     `open '#{url}'`
+  end
+
+  def self.open_last_output
+
+    prefix = Keys.prefix :clear=>1
+    View.layout_output
+    if prefix == :u
+      View.to_highest
+      Search.forward "^-"
+    else
+      View.to_bottom
+      Line.previous
+    end
+
+    Launcher.launch
+
   end
 
 end

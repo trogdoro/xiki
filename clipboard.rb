@@ -127,7 +127,7 @@ class Clipboard
       @@hash["/"] = expand_file_name( buffer_file_name ? buffer_file_name : elvar.default_directory )
       if buffer_file_name
         # Store as tree snippet
-        @@hash["="] = FileTree.snippet(str)
+        @@hash["="] = FileTree.snippet :txt=>str
         @@hash["."] = "#{file_name_nondirectory(buffer_file_name)}"
         @@hash["\\"] = "#{elvar.default_directory}\n  #{file_name_nondirectory(buffer_file_name)}"
       end
@@ -169,10 +169,12 @@ class Clipboard
   end
 
   def self.copy_paragraph options={}
-    if Keys.prefix_u? or options[:rest]   # If U prefix, get rest of paragraph
+    prefix = Keys.prefix
+
+    if prefix == :u or options[:rest]   # If U prefix, get rest of paragraph
       left, right = View.paragraph(:bounds => true, :start_here => true)
     else
-      if Keys.prefix   # If numeric prefix
+      if prefix   # If numeric prefix
         self.as_line
         return
       end
@@ -186,7 +188,6 @@ class Clipboard
     goto_char left
     set_mark right
     Effects.blink(:left => left, :right => right)
-    Keys.clear_prefix
     Clipboard.copy("0")
   end
 
@@ -208,7 +209,15 @@ class Clipboard
 
   def self.as_thing
 
-    # If on blank spaces, use them
+    orig = Location.new
+
+    # If at end of space, grab as tree
+    if Line.indent.length == View.column
+      left = Line.left
+      return
+    end
+
+    # If on blank spaces, copy them
     if buffer_substring(point-1, point+1) =~ /[ \n] /
       skip_chars_forward " "
       right = point
@@ -230,6 +239,9 @@ class Clipboard
     View.to right
     View.mark left
     Clipboard.save_by_first_letter txt
+
+    orig.go
+
   end
 
   def self.as_object
@@ -245,7 +257,11 @@ class Clipboard
   end
 
   def self.as_line many=nil
-    many ||= Keys.prefix(:clear=>true) || 1
+    prefix = Keys.prefix :clear=>true
+
+    return FileTree.copy_path if prefix == :u
+
+    many ||= prefix || 1
     Move.to_axis
     left = Line.left
     right = Line.left(many+1)

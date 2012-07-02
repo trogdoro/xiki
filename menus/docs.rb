@@ -30,8 +30,8 @@ class Docs
         __
         - for developers
           - code dirs/__
-        @menu/all/
-          - implement!
+        > All Commands
+        @all/
       |
     - FAQ/
       > What is Xiki?

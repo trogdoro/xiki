@@ -1,0 +1,79 @@
+> Grab more from old candylands
+/projects/xiki.org/www/images/
+  - xiki_candyland.png
+  - xiki_candyland.png_1
+
+
+> Use the mouse
+- click plus or minus
+
+(or type Control-return or Command-return)
+
+>> Re-run commands in-place
+- click again
+  - to collapse and re-run in-place
+
+
+> Search Files
+
+
+> Git diffs
+git
+
+
+> Bootstrap layouts
+bootstrap
+
+
+> Crud on mysql, mongo, couchdb, riak
+mysql
+mongo
+
+
+> Make rails apps
+rails, node
+
+
+> Run sql queries
+
+
+> Coffeescript
+coffee
+
+
+> Contents of files
+/tmp/foo.txt
+  | the
+  | contents
+
+
+> Navigate remote file systems
+/doties@dotsies.org/
+  var/www/foo_
+    index.html
+      | Hey
+      | Heyy
+
+
+> Commands within dirs
+- Edit files inline
+
+
+> Commands within dirs
+/tmp/
+  $ df
+
+- commands in remote dirs:
+/tmp/
+  $ df
+
+> Custom menus can call...
+- other menus
+- shell commands
+- classes and methods
+
+
+> History
+- Recent commands in a dir
+- Recent menus run
+

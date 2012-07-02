@@ -10,7 +10,7 @@ class Agenda
 
     # If no line, display all of them
     if lines.empty?
-      return IO.read(t).grep(/^> \d\d\d\d-\d\d-\d\d/).sort.reverse.join("").gsub(/^> /, '- ')
+      return IO.read(t).grep(/^> \d\d\d\d-\d\d-\d\d: /).sort.reverse.join("").gsub(/^> /, '- ')
     end
 
     line = Line.value

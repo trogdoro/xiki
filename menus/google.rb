@@ -1,7 +1,9 @@
+require "cgi"
+
 class Google
   def self.menu *args
 
-    if args.blank?   # If no path, pull from history
+    if args.empty?   # If no path, pull from history
       return Launcher.last "google", :exclude_path=>1, :quoted=>1
     end
     txt = CGI.escape ENV['txt']
@@ -17,7 +19,7 @@ class Google
     return View << "@google/" if line =~ /^ /
     return View << "google/" if line =~ /^ *- $/
 
-    View << "- google/"
+    View << "google/"
   end
 
   def self.search txt

@@ -1,15 +1,23 @@
 class Buffers
 
-  def self.menu buffer=nil
+  def self.menu# buffer=nil
     "
     - .current/
-    - .tree 20/
-    - .search 'foo'/
+    - .tree/
+      - 20/
+    - .search/
+
+    > Lists
+    - .list/
+    - .current/
+
+    - docs/
+      > Todo
     "
   end
 
   def self.current *name
-    if name.blank?  # If no buffer passed in, show list
+    if name.empty?  # If no buffer passed in, show list
       case Keys.prefix :clear=>true
       when nil:  return list.select{ |b| $el.buffer_file_name(b) }.map{ |b| "| #{$el.buffer_name(b)}\n" }.join('')
       when 0:  return list.select{ |b| ! $el.buffer_file_name(b) }.map{ |b| "| #{$el.buffer_name(b)}\n" }[1..-1].join('')
@@ -48,7 +56,7 @@ class Buffers
     if options[:dir]
       paths = paths.grep(Regexp.new(Regexp.escape(options[:dir])))
     end
-    puts CodeTree.tree_search_option + FileTree.paths_to_tree(paths)
+    puts CodeTree.tree_search_option + Tree.paths_to_tree(paths)
   end
 
   def self.search string, options={}
@@ -132,8 +140,23 @@ class Buffers
     $el.buffer_name(buffer)
   end
 
+  def self.kill name
+    self.delete name
+  end
+
   def self.delete name
     $el.kill_buffer name
+  end
+
+  def self.to name
+    View.to_buffer name
+  end
+
+  def self.txt name
+    $el.with(:save_window_excursion) do
+      $el.switch_to_buffer name
+      View.txt
+    end
   end
 
 end

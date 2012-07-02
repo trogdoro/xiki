@@ -19,14 +19,16 @@ class Image
     `
   end
 
-  def self.>> file, txt="_"
+  def self.>> file, txt=nil
+    txt ||= "@img/#{file}"
     Move.to_end
     Notes.enter_junior
     self.<< file, txt
     Move.backward
   end
 
-  def self.<< file, txt="_"
+  def self.<< file, txt=nil
+    txt ||= "@img/#{file}"
     $el.insert_image $el.create_image(file), txt
   end
 end

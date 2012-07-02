@@ -33,6 +33,12 @@ describe "matches_root_pattern?" do
 end
 
 
+describe "snippet" do
+  it "uses options" do
+    FileTree.snippet(:txt=>"hey", :file=>"/projects/xiki/file_tree.rb").should == "/projects/xiki/\n  - file_tree.rb\n    | hey\n"
+  end
+end
+
 
 # TODO 2011-11-11: turn these into specs!
 

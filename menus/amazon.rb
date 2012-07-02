@@ -6,7 +6,7 @@ class Amazon
   def self.menu line=nil
     # If no arg, prompt to type something
 
-    return View.prompt "Type something to search on amazon" if line.nil?
+    return Keys.prompt "Type something to search on amazon" if line.nil?
 
     # If arg, look it up
 

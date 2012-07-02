@@ -1,13 +1,11 @@
-require 'rubygems'
-gem 'midiator'
-require 'midiator'
+Requirer.require_gem 'midiator', :optional=>1
 
 require "mode"
 
 class Piano
 
-  include MIDIator::Notes
-  include MIDIator::Drums
+  include MIDIator::Notes rescue nil
+  include MIDIator::Drums rescue nil
 
   @@midi = nil
   @@velocity = 120
@@ -25,13 +23,16 @@ class Piano
   @@repeat = 1
   @@names = ['Acoustic Grand Piano', 'Bright Acoustic Piano', 'Electric Grand Piano', 'Honky-tonk Piano', 'Electric Piano 1', 'Electric Piano 2', 'Harpsichord', 'Clavinet', 'Celesta', 'Glockenspiel', 'Music Box', 'Vibraphone', 'Marimba', 'Xylophone', 'Tubular Bells', 'Dulcimer', 'Drawbar Organ', 'Percussive Organ', 'Rock Organ', 'Church Organ', 'Reed Organ', 'Accordion', 'Harmonica', 'Tango Accordion', 'Acoustic Guitar (nylon)', 'Acoustic Guitar (steel)', 'Electric Guitar (jazz)', 'Electric Guitar (clean)', 'Electric Guitar (muted)', 'Overdriven Guitar', 'Distortion Guitar', 'Guitar harmonics', 'Acoustic Bass', 'Electric Bass (finger)', 'Electric Bass (pick)', 'Fretless Bass', 'Slap Bass 1', 'Slap Bass 2', 'Synth Bass 1', 'Synth Bass 2', 'Violin', 'Viola', 'Cello', 'Contrabass', 'Tremolo Strings', 'Pizzicato Strings', 'Orchestral Harp', 'Timpani', 'String Ensemble 1', 'String Ensemble 2', 'Synth Strings 1', 'Synth Strings 2', 'Choir Aahs', 'Voice Oohs', 'Synth Choir', 'Orchestra Hit', 'Trumpet', 'Trombone', 'Tuba', 'Muted Trumpet', 'French Horn', 'Brass Section', 'Synth Brass 1', 'Synth Brass 2', 'Soprano Sax', 'Alto Sax', 'Tenor Sax', 'Baritone Sax', 'Oboe', 'English Horn', 'Bassoon', 'Clarinet', 'Piccolo', 'Flute', 'Recorder', 'Pan Flute', 'Blown Bottle', 'Shakuhachi', 'Whistle', 'Ocarina', 'Lead 1 (square)', 'Lead 2 (sawtooth)', 'Lead 3 (calliope)', 'Lead 4 (chiff)', 'Lead 5 (charang)', 'Lead 6 (voice)', 'Lead 7 (fifths)', 'Lead 8 (bass + lead)', 'Pad 1 (new age)', 'Pad 2 (warm)', 'Pad 3 (polysynth)', 'Pad 4 (choir)', 'Pad 5 (bowed)', 'Pad 6 (metallic)', 'Pad 7 (halo)', 'Pad 8 (sweep)', 'FX 1 (rain)', 'FX 2 (soundtrack)', 'FX 3 (crystal)', 'FX 4 (atmosphere)', 'FX 5 (brightness)', 'FX 6 (goblins)', 'FX 7 (echoes)', 'FX 8 (sci-fi)', 'Sitar', 'Banjo', 'Shamisen', 'Koto', 'Kalimba', 'Bag pipe', 'Fiddle', 'Shanai', 'Tinkle Bell', 'Agogo', 'Steel Drums', 'Woodblock', 'Taiko Drum', 'Melodic Tom', 'Synth Drum', 'Reverse Cymbal', 'Guitar Fret Noise', 'Breath Noise', 'Seashore', 'Bird Tweet', 'Telephone Ring', 'Helicopter', 'Applause', 'Gunshot']
 
-  @@map = {
-    '@'=>BassDrum2, '#'=>BassDrum1,
-    '='=>SnareDrum2, '-'=>SnareDrum1,
-    "'"=>ClosedHiHat, '"'=>OpenHiHat,
-    '^'=>RideCymbal1, '`'=>CrashCymbal1, '*'=>CrashCymbal2, '<'=>Cowbell,
-    '['=>MidTom1,  '_'=>MidTom2,  ']'=>LowTom2,
-    }
+  begin
+    @@map = {
+      #       '@'=>BassDrum2, '#'=>BassDrum1,
+      '='=>SnareDrum2, '-'=>SnareDrum1,
+      "'"=>ClosedHiHat, '"'=>OpenHiHat,
+      '^'=>RideCymbal1, '`'=>CrashCymbal1, '*'=>CrashCymbal2, '<'=>Cowbell,
+      '['=>MidTom1,  '_'=>MidTom2,  ']'=>LowTom2,
+      }
+  rescue Exception=>e
+  end
 
   def self.menu
 
@@ -324,7 +325,7 @@ class Piano
   end
 
   def self.clear channel=1
-    @@midi.driver.control_change 123, channel, 123
+    self.driver.control_change 123, channel, 123
   end
 
   def self.<< letter
@@ -421,7 +422,7 @@ class Piano
     number += 1 if options[:sharp]
     number += (@@octave * 12)
 
-    @@midi.driver.note_on(number, channel, velocity) unless number == 0
+    self.driver.note_on(number, channel, velocity) unless number == 0
 
     return if options[:no_sit]
 
@@ -430,7 +431,6 @@ class Piano
   end
 
   def self.pause
-
     pause = @@tempo * 4
     pause = pause / 60.0
     pause = 1 / pause
@@ -441,12 +441,12 @@ class Piano
 
   def self.keydef letter, note, channel=1, velocity=126
     $el.define_key(:piano_mode_map, letter) do
-      @@midi.driver.note_on(note, channel, velocity)
+      self.driver.note_on(note, channel, velocity)
     end
   end
 
   def self.midi
-    @@midi
+    @@midi || self.connect
   end
 
   def self.keys
@@ -512,6 +512,9 @@ class Piano
     $el.define_key(:piano_mode_map, $el.kbd("<backspace>")) do
       @@midi.control_change 123, 1, 123
     end
+
+  rescue Exception=>e
+
   end
 
   def self.init
@@ -520,7 +523,6 @@ class Piano
     Mode.define(:piano, ".piano") do
       Notes.apply_styles
     end
-    self.connect if @@midi.nil?
   end
 
   def self.instrument type, name=nil, options={}
@@ -579,6 +581,7 @@ class Piano
     @@midi.use :dls_synth
     @@midi.control_change 32, 10, 1 # TR-808 is Program 26 in LSB bank 1
     @@midi.program_change 10, 26
+    @@midi
   end
 
   def self.velocity txt="126";  @@velocity = txt.to_i;  ".flash - updated!";  end
@@ -619,6 +622,10 @@ class Piano
     alias :oct :octave
     alias :mod :mode
     alias :ins :instrument
+  end
+
+  def self.driver
+    @@midi ||= self.connect
   end
 
   def self.random_notes range=nil, notes=nil

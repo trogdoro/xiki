@@ -1,16 +1,15 @@
 Styles.mode_line(
-  :bg=>'4473af',
-  :border=>['5583a3', -5, 'released-button'],
+  :bg=>'5483bf',
+  :border=>['6593b3', -5, 'released-button'],
   :face=>'Lucida Grande',
   :size=>'3',
   :bold=>false,
   :fg=>'fff'
   )
 Styles.mode_line_inactive(
-  :bg=>'999',
-  :border=>['bbbbbb', -1, 'released-button'],
+  :bg=>'bbb',
+  :border=>['bbbbbb', -1],
   :face=>'Lucida Grande',
-  :size=>'3',
   :bold=>false,
   :fg=>'000'
   )

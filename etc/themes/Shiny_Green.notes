@@ -7,10 +7,9 @@ Styles.mode_line(
   :fg=>'fff'
   )
 Styles.mode_line_inactive(
-  :bg=>'999',
-  :border=>['bbbbbb', -1, 'released-button'],
+  :bg=>'bbb',
+  :border=>['bbbbbb', -1],
   :face=>'Lucida Grande',
-  :size=>'3',
   :bold=>false,
   :fg=>'000'
   )

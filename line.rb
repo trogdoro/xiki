@@ -70,7 +70,7 @@ class Line
     point_at_eol
   end
 
-  def self.at_right
+  def self.at_right?
     point_at_eol == point
   end
 
@@ -82,7 +82,7 @@ class Line
     point_at_bol down
   end
 
-  def self.at_left
+  def self.at_left?
     point_at_bol == point
   end
 
@@ -198,7 +198,9 @@ class Line
   end
 
   def self.without_label options={}
-    line = options[:line] || self.value
+    line = options.has_key?(:line) ? options[:line] : self.value
+
+    return nil if line.nil?
 
     # Delete comment (parenthesis)
     line = line.sub /^(\s*)(?:[+-]|<+) [^\n\(]+\) (.*)/, "\\1\\2"
@@ -236,11 +238,20 @@ class Line
   end
 
   def self.duplicate_line
+
+    prefix = Keys.prefix
+
+    # If in file tree, actually duplicate file
+    if prefix == :u && FileTree.handles?
+      Location.as_spot
+      FileTree.copy_to :prefix=>1
+      return
+    end
+
     column = View.column
 
     line = "#{Line.value}\n"
     Line.to_left
-    prefix = Keys.prefix
     Code.comment(:line) if prefix == :u
     times = if prefix.nil?
         1
@@ -267,7 +278,8 @@ class Line
     many = Keys.prefix_times
 
     many = (0 - many) if direction == :previous
-    line = Line.value 1, :include_linebreak => true, :delete => true   # Get line
+
+    line = Line.value 1, :include_linebreak=>true, :delete=>true   # Get line
     Line.to_next many
     View.insert line
 
@@ -295,10 +307,12 @@ class Line
     value
   end
 
-  def self.<< txt
+  def self.<< txt, options={}
+    orig = View.cursor
     Keys.clear_prefix
     Move.to_end
     View.insert txt
+    View.cursor = orig if options[:dont_move]
   end
 
   def self.< txt
@@ -306,13 +320,47 @@ class Line
     self.insert txt
   end
 
-  def self.add_slash
-    Line << "/" unless Line =~ /\/$/
-    Move.to_end
+  def self.add_slash options={}
+    Line =~ /\/$/ ?
+      Move.to_end :
+      Line << "/"
+    orig = View.cursor
+    Line << options[:txt] if options[:txt]
+    View.cursor = orig if options[:left]
+    nil
   end
 
   def self.before_cursor
     View.txt self.left, View.cursor
+  end
+
+  def self.do_lines_sort
+    old = elvar.sort_fold_case# rescue true
+    elvar.sort_fold_case = true
+    sort_lines(nil, region_beginning, region_end)
+    elvar.sort_fold_case = old
+  end
+
+  def self.do_lines_toggle
+    prefix = Keys.prefix :clear=>1
+
+    prefix ||= 1   # Default to one line
+
+    if prefix.is_a? Fixnum   # If number, grab that many lines
+      line_a = [Line.left, Line.left(1+prefix)]
+      line_b = [Line.left(1+prefix), Line.left(1+prefix*2)]
+      Effects.glow :fade_out=>1, :what=>line_b
+      txt = View.delete *line_b
+
+      View.to line_a[0]
+      View.<< txt, :dont_move=>1
+      line_a_size = line_a[1] - line_a[0]
+      line_b.map! {|o| o - line_a_size}
+      Effects.glow :fade_in=>1, :what=>line_b
+
+      return
+    end
+
   end
 
   def self.init

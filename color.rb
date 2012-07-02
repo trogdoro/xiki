@@ -11,6 +11,10 @@ class Color
     @Color.colorize :r
     @Color.colorize :y
     @Color.colorize :b
+
+    > See
+    << themes/
+    << styles/
     "
   end
 
@@ -24,7 +28,7 @@ class Color
   }
 
   def self.colorize char=nil
-    char ||= Keys.input(:chars=>1, :prompt => 'Enter first letter of color: ')
+    char ||= Keys.input(:chars=>1, :prompt=>'Enter first letter of color: ')
     char = char.to_s
     # If h, just show all colors
     case char
@@ -84,11 +88,13 @@ class Color
       Clipboard['0'] = res
 
     when "h"   # Hilight
-      ignore, left, right = View.txt_per_prefix nil, :just_positions=>1
+      prefix = Keys.prefix :clear=>1
 
-      Keys.prefix_u ?
-        Effects.glow(Line.left, Line.right, :color=>:rainbow) :
-        Effects.glow(left, right)
+      ignore, left, right = View.txt_per_prefix prefix, :just_positions=>1, :default_is_line=>1
+
+      prefix == :u ?
+        Effects.glow(:color=>:rainbow, :times=>4) :
+        Effects.glow(:what=>[left, right], :times=>4)
 
       #     when "h"   # Hide
       #       Hide.hide_unless_block { |l, bol, eol|
@@ -112,7 +118,9 @@ class Color
       pos = previous_overlay_change(pos-2) if overlays_at(pos-2)
       return View.to pos
     when "d"
-      return delete_overlay( overlays_at(next_overlay_change(point_at_bol - 1))[0] )
+      overlays = overlays_at(next_overlay_change(point_at_bol - 1))
+      return View.beep "- No highlights after cursor!" if ! overlays
+      return delete_overlay(overlays[0])
     when "k"
 
       if Keys.prefix_u   # Don't delete map mark
@@ -181,14 +189,13 @@ class Color
       Styles.define :color_rb_green, :bg => "131"
       Styles.define :color_rb_white, :fg=>'222', :bg=>'fff', :border=>['fff', -1]
 
-      Styles.define :color_rb_light, :bg => "2b2b2b"
+      Styles.define :color_rb_light, :bg => "252525"
 
       Styles.define :color_rb_blue, :bg => "005"
       Styles.define :color_rb_purple, :bg => "203"
 
     else
 
-      #       Styles.define :mode_line_dir, :fg=>"d93", :size=>"0", :face=>"arial", :bold=>false   # Brighter
       Styles.define :mode_line_dir, :fg=>"ea4", :size=>"0", :face=>"arial", :bold=>false   # Brighter
 
       Styles.define :color_rb_red, :bg => "ffd5d5"
@@ -241,7 +248,7 @@ class Color
       file = View.file
       next unless file
       path = file ?
-        "- #{File.expand_path(file).sub(/(.+)\//, "\\1/\n  - ")}\n" :
+        "@#{File.expand_path(file).sub(/(.+)\//, "\\1/\n  - ")}\n" :
         "- buffer #{View.name}/\n"
 
       txt << path
@@ -250,7 +257,16 @@ class Color
     end
     View.to_buffer orig
     txt
+  end
 
+
+  # Returns list of colors at cursor
+  # Color.at_cursor
+  def self.at_cursor
+    overlays = overlays_in(Line.left, Line.right)
+    overlays = overlays.to_a.reverse.inject([]) do |a, o|   # Loop through and copy all
+      a.push overlay_get(o, :face).to_s
+    end
   end
 
 end

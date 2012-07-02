@@ -48,7 +48,7 @@ class FileTree
       |
     - api/
       | Turn paths into a tree
-      @ puts FileTree.paths_to_tree elvar.recentf_list.to_a[0..2]
+      @ puts Tree.paths_to_tree elvar.recentf_list.to_a[0..2]
     `
   end
 
@@ -355,23 +355,27 @@ class FileTree
 
     # - bullets
     Styles.apply("^[ \t]*\\([+=-]\\)\\( \\)", nil, :ls_bullet, :variable)
-    Styles.apply("^[ \t]*\\(<+=?\\)\\( \\)", nil, :ls_bullet, :variable)
 
     # With numbers
     Styles.apply("^ +\\(:[0-9]+\\)\\(|.*\n\\)", nil, :ls_quote_line_number, :ls_quote)
 
     # Path-like lines and parts of lines (make gray)
 
+    # Single "@" at beginning
+    Styles.apply("^[ <+=@-]*\\(@\\)", nil, :ls_dir)   # @
+
+    Styles.apply("^[ \t]*\\(<+=?@?\\)\\( \\)", nil, :ls_bullet, :variable)
+
     # Remove later?
-    Styles.apply("^[ <+=-]*\\([^|\n]+/\\)$", nil, :ls_dir)  # slash at end
+    Styles.apply("^[ <+=@-]*\\([^|\n]+/\\)$", nil, :ls_dir)  # slash at end
 
-    # @ ... lines
-    Styles.apply("^[ <+-]*\\(@ \\)", nil, :ls_dir)  # @ ...
-    Styles.apply("^[ <+-]*[^)\n]+) \\(@ \\)", nil, :ls_dir)  # - label) @ ...
 
-    Styles.apply("^[ <+-]*\\([@~$#a-zA-Z0-9_,? ().:-]*[^ \n]\/\\)", nil, :ls_dir)  # slash after almost anything
+    # Slash after almost anything
+
+    Styles.apply("^[ <+-]*@?\\([~$#a-zA-Z0-9_,? ().:-]*[^ \n]\/\\)", nil, :ls_dir)
     # Covers paths in files by themselves
-    Styles.apply("^[ <+-]*\\([@~$a-zA-Z0-9_,? ().:<-]*\/[@\#'$a-zA-Z0-9_,? ().:\/<-]+\/\\)", nil, :ls_dir)  # one word, path, slash
+
+    Styles.apply("^[ <+-]*\\([@~$a-zA-Z0-9_,? ().:<-]*\/[@\#'$a-zA-Z0-9_,? ().:\/<-]+\/\\)", nil, :ls_dir)   # Paths with multiple slashes
 
     Styles.apply("^[ \t]*[<+-] [a-zA-Z0-9_,? ().:-]+?[:)] \\(\[.@a-zA-Z0-9 ]+\/\\)", nil, :ls_dir)   # label, one word, slash
     Styles.apply("^[ \t]*[<+-] [a-zA-Z0-9_,? ().:-]+?[:)] \\([.@a-zA-Z0-9 ]+\/[.@a-zA-Z0-9 \/]+\/\\)", nil, :ls_dir)   # label, one word, path, slash
@@ -427,7 +431,6 @@ class FileTree
     rescue Exception=>e
       return nil
     end
-
     return 0 if self.matches_root_pattern?(Line.without_label :line=>list.first)
     nil
   end
@@ -445,7 +448,7 @@ class FileTree
   def self.open options={}
 
     # If passed just a dir, open it in new view
-    return FileTree.ls :dir=>options if options.is_a? String
+    return self.ls :dir=>options if options.is_a? String
 
     original_file = View.file_name
 
@@ -478,12 +481,15 @@ class FileTree
     end
     # Prefix keys with specific behavior
     prefix_was_u = false
+
     case Keys.prefix
     when :u   # Just open file
       prefix_was_u = true
       Keys.clear_prefix
-    when "save"   # Save ($ave) file
+    when "update"   # Save ($ave) file
       return self.save_quoted path
+    when "delete"   # Save ($ave) file
+      return self.delete_file
     when "all"
       Keys.clear_prefix
       search_string ?   # If quote, enter lines under
@@ -523,7 +529,7 @@ class FileTree
       # See if it exists, and store contents if not?
 
       options[:same_view] ? View.open(path, :same_view=>true) : Location.go(path)
-      Effects.blink(:what=>:line) unless line_number or search_string
+      Effects.blink(:what=>:line) unless line_number || search_string || path =~ /\.xiki$/
     end
 
     return unless line_number || search_string
@@ -546,11 +552,20 @@ class FileTree
       end
       unless found   # If not found, search for substring of line
         Move.top
-        found = search_forward_regexp("#{regexp_quote(search_string)}", nil, true)
+        found = search_forward_regexp "#{regexp_quote(search_string)}", nil, true
       end
       unless found   # If not found, search for it stripped
         Move.top
-        found = search_forward_regexp("#{regexp_quote(search_string.strip)}")
+        found = search_forward_regexp "#{regexp_quote(search_string.strip)}", nil, true
+      end
+      unless found   # If not found, suggest creating or show error
+
+        return if self.suggest_creating search_string
+
+        View.beep
+        View.message "Didn't find: \"#{search_string.strip}\"", :beep=>1
+        return
+
       end
 
       beginning_of_line
@@ -567,6 +582,17 @@ class FileTree
     View.column = column
 
   end
+
+  def self.suggest_creating search_string
+
+    if search_string =~ /^ *def/   # If it's a method, suggest creating it
+      View.beep "TODO: If it's a method, suggest creating it!"
+      return true
+    end
+
+    return false   # We didn't handle it
+  end
+
 
   def self.drill_quotes_or_enter_lines path, quote
     return self.enter_lines if ! quote   # If not quote must be whole file
@@ -747,6 +773,8 @@ class FileTree
 
     line = Line.value
 
+    Line << "\n" if line =~ /^>/   # If it's on a >... line, insert linebreak
+
     # If to be in bar, go to the tree file in the bar
     if options[:open_in_bar]
       self.open_in_bar :ignore_prefix   # Open tree
@@ -778,6 +806,7 @@ class FileTree
       Notes.mode
       use_local_map elvar.notes_mode_map
     end
+
     # If recursive
     if options[:recursive]
       left = point
@@ -814,23 +843,27 @@ class FileTree
 
 
   def self.open_in_bar options={}
+    prefix = Keys.prefix :clear=>1
 
     # If numeric prefix, open nth thing in tree
-    if Keys.prefix and !(Keys.prefix_u?) and !(options[:ignore_prefix])
+    if prefix and prefix != :u and !(options[:ignore_prefix])
+      View.flash "- Don't know what this was supposed to do!"
+
       # Remember original view
-      start = selected_window
+      #       start = $el.selected_window
       # Open tree (ignoring prefix)
-      self.open_in_bar :ignore_prefix=>true
+      #       self.open_in_bar# :ignore_prefix=>true
       # Find nth file in tree
-      View.to_highest
-      #beginning_of_buffer
-      Keys.prefix.times do
-        re_search_forward "^  +[a-zA-Z0-9_.-]+$"
-      end
+      #       View.to_highest
+
+      #       prefix.times do
+      #         re_search_forward "^  +[a-zA-Z0-9_.-]+$"
+      #       end
       # Go to next line if comment
-      Line.next if Line.next_matches(/^ *\|/)
-      Line.to_beginning
-      self.open :ignore_prefix=>true
+
+      #       Line.next if Line.next_matches(/^ *\|/)
+      #       Line.to_beginning
+      #       self.open :ignore_prefix=>true
       return
     end
 
@@ -840,7 +873,7 @@ class FileTree
     View.to_nth 0
     find_file Bookmarks.expand("$t")
 
-    only_one_view_in_bar = Keys.prefix_u?
+    only_one_view_in_bar = prefix == :u
     only_one_view_in_bar = ! only_one_view_in_bar if @@one_view_in_bar_by_default
 
     unless only_one_view_in_bar  # Unless u prefix, open $tl as well (under bar)
@@ -863,16 +896,20 @@ class FileTree
   end
 
   # Creates tree snippet of text in file
-  def self.snippet str=nil
-    str ||= View.selection
+  def self.snippet options={}
+    txt = options[:txt] || View.selection
+    file = options[:file] || View.file
+
     # Remove linebreak from end
-    str = str.sub(/\n\z/, "")
-    if buffer_file_name
-      "#{elvar.default_directory}\n  #{file_name_nondirectory(buffer_file_name)}\n" +
-        str.gsub(/^/, "    | ").
+    txt = txt.sub(/\n\z/, "")
+    if file
+      txt = "#{File.dirname(file)}/\n  - #{File.basename(file)}\n" +
+        txt.gsub(/^/, "    | ").
         gsub(/^    \| $/, "    |")   # Remove trailing spaces on blank lines
+      "#{txt}\n"
     else
-      "- From #{buffer_name}:\n" + str.gsub(/^/, "    #")
+      #       "- From #{buffer_name}:\n" + txt.gsub(/^/, "    #")
+      "- From #{View.name}:\n" + txt.gsub(/^/, "  | ")
     end
   end
 
@@ -885,6 +922,8 @@ class FileTree
     prefix = Keys.prefix
     if prefix == 8 || prefix == "all"
       self.dir_recursive
+    elsif prefix == "delete"
+      return self.delete_file
     else
       self.dir_one_level options
    end
@@ -939,10 +978,9 @@ class FileTree
     dirs, files = self.files_in_dir(dir, options)   # Get dirs and files in it
 
     if files.empty? && dirs.empty?
-      # If doesn't exist, show message
-      if ! File.exists? dir
+      if ! File.exists? dir   # If doesn't exist, show message
         return Tree << "
-          | Directory '#{dir}' doesn't exist.  Create it?
+          > Directory '#{dir}' doesn't exist.  Create it?
           - @mkdir/
           "
       end
@@ -983,43 +1021,43 @@ class FileTree
 
   end
 
-  def self.enter_snippet
-    start = selected_window
-    snippet = self.snippet
-    self.open_in_bar
+  #   def self.enter_snippet
+  #     start = selected_window
+  #     snippet = self.snippet
+  #     self.open_in_bar
 
-    loc = Location.new
-    Line.to_left
-    #orig = point
+  #     loc = Location.new
+  #     Line.to_left
+  #     #orig = point
 
-    # If at indented line
-    while(Line.matches(/^ /))
-      Line.previous
-    end
+  #     # If at indented line
+  #     while(Line.matches(/^ /))
+  #       Line.previous
+  #     end
 
-    # Check to see if it's the same file
-    if snippet[/.+\n.+\n/] == buffer_substring(point, Line.left(3))
-      Line.next 2
-      View.insert "#{snippet.sub(/.+\n.+\n/, '')}\n"
-    # Check to see if it's just in same dir
-    elsif snippet[/.+\n/] == buffer_substring(point, Line.left(2))
-      Line.next
-      View.insert "#{snippet.sub(/.+\n/, '')}\n"
-    else
-      View.insert "#{snippet}\n"
-    end
+  #     # Check to see if it's the same file
+  #     if snippet[/.+\n.+\n/] == buffer_substring(point, Line.left(3))
+  #       Line.next 2
+  #       View.insert "#{snippet.sub(/.+\n.+\n/, '')}\n"
+  #     # Check to see if it's just in same dir
+  #     elsif snippet[/.+\n/] == buffer_substring(point, Line.left(2))
+  #       Line.next
+  #       View.insert "#{snippet.sub(/.+\n/, '')}\n"
+  #     else
+  #       View.insert "#{snippet}\n"
+  #     end
 
-    loc.go
-    #goto_char orig
+  #     loc.go
+  #     #goto_char orig
 
-    select_window(start)
-  end
+  #     select_window(start)
+  #   end
 
   # Enter tree of selection at the spot (saved by AS).
   def self.enter_at_spot
     snippet = self.snippet
     Location.jump("0")
-    View.insert "#{snippet}\n"
+    View.insert snippet
     Location.save("0")  # So any more will be entered after
   end
 
@@ -1031,9 +1069,10 @@ class FileTree
       Move.to_end
       $el.newline
     end
+
     txt ||= Clipboard.get(0, :add_linebreak => true)
     dir = Tree.construct_path rescue nil
-    if self.dir? && FileTree.handles? # If current line is path
+    if self.dir? && self.handles?   # If current line is path
       Tree.plus_to_minus_maybe
       indent = Line.indent
       dir = Tree.construct_path
@@ -1042,7 +1081,7 @@ class FileTree
       if t.sub!(/\A\n/, '')   # If no dir left, indent one over
         t.gsub!(/^  /, '')
       end
-      self.add_pluses_and_minuses t, '-', '-'
+      Tree.add_pluses_and_minuses t, '-', '-'
       Line.next
       View.insert "#{t}\n".gsub(/^/, "#{indent}  ")
       return
@@ -1056,16 +1095,15 @@ class FileTree
 
     if Line.blank?   # If empty line, just enter tree
       start = point
-      t = Clipboard.get("=")
+      txt = Clipboard.get("=")
       indent = Keys.prefix || 0   # Indent prefix spaces, or 2
-      t = t.gsub(/^/, " " * indent)
-      self.add_pluses_and_minuses t, '-', '-'
-      View.insert t
-      set_mark(Line.left(2))
+      txt = txt.gsub(/^/, " " * indent)
+
+      View.insert txt
+      $el.set_mark(Line.left(2))
       goto_char start
       return
     end
-
 
     indent = Line.indent   # Get current indent
     on_comment_line = Line.matches /^ +\|/
@@ -1097,14 +1135,34 @@ class FileTree
 
     #Tree.plus_to_minus_maybe
     line = Line.value
+
     indent = Line.indent
     list = nil
     path = Tree.construct_path  # Get path
+
+    without_label = Line.without_label
     if Launcher.wrapper path   # run files followed by slash as menus
       # Do nothing if it returned true
+    elsif without_label =~ /^ *\$ /   # $ shell command inline (sync)
+      Console.launch :sync=>true
+    elsif without_label =~ /^ *%( |$)/   # % shell command (async)
+      Console.launch_async
+    elsif without_label =~ /^ *&( |$)/   # % shell command in iterm
+      Console.launch_async :iterm=>1
     elsif line =~ /^[^|\n]* (\*\*|##)/   # *foo or ## means do grep
       self.grep_syntax indent
-    elsif self.dir?   # foo/ is a dir (if no | before)
+    elsif self.dir?   # if has slash - foo/ is a dir (if no | before)
+
+      # If is bookmark, delegate to wrapper / driller__
+      #       if without_label =~ /@?\$/
+
+      #   # Use this instead
+
+      # Ol << "delegate to wrapper!"
+      #         return
+      #       end
+      # Ol << "line: #{line.inspect}"
+
       self.dir
     else
       self.open
@@ -1128,6 +1186,7 @@ class FileTree
     end
   end
 
+  # Called by to+outline and enter+outline, (others?).
   def self.enter_lines pattern=nil, options={}
 
     $xiki_no_search = false
@@ -1146,11 +1205,11 @@ class FileTree
 
       # If it's a dir, delegate to Open Tree
       if path =~ /\/$/
-        FileTree.ls :here=>true, :dir => path
+        self.ls :here=>true, :dir => path
         return
       end
 
-      View.insert "- " + FileTree.filename_to_next_line(path)
+      View.insert "- " + self.filename_to_next_line(path)
       $el.open_line 1
     end
     line = options[:path] || Line.value
@@ -1202,15 +1261,10 @@ class FileTree
       matches_count+=1
     end
 
-    if Keys.prefix_u
-      matches.gsub!(/    \| /, '    ')
-    end
-
     Tree.insert_quoted_and_search matches, :line_found=>line_found
   end
 
   def self.enter_image image
-
     tmp_dir = "/tmp/insert_image"
     Dir.mkdir tmp_dir if ! File.exists? tmp_dir
 
@@ -1223,7 +1277,7 @@ class FileTree
       dest = image
     end
 
-    Image.>> dest, "_"
+    Image.>> dest
 
     Line.previous
     Line.to_beginning
@@ -1261,7 +1315,7 @@ class FileTree
     end
 
     # If no templates matched
-    View.flash "- File doesn't exist"
+    View.flash "- File doesn't exist", :times=>1
     Tree.<< "|", :no_slash=>1
     Move.to_end
     View << ' '
@@ -1357,39 +1411,6 @@ class FileTree
     result
   end
 
-  # Takes in paths, constructs tree of them
-  def self.paths_to_tree paths
-    result = ""
-    stack = []
-    paths.sort.each do |path|   # For each path
-      path = path.sub(/^\//, '')   # Create list from path
-      split = path.split('/')
-
-      # Pop from stack until path begins with stack
-      while(stack.size > 0 && stack != split[0..(stack.size - 1)])
-        stack.pop
-      end
-      indent = stack.length   # Get remainder of path after stack
-      remainder = split[indent..-1]
-      remainder.each do |dir|
-        result << "/" if indent == 0
-        result << ("  " * indent) + dir
-        result << "/" unless indent == (split.length - 1)
-        result << "\n"
-        indent += 1
-      end
-      stack = split
-    end
-    self.add_pluses_and_minuses result
-    result
-  end
-
-  # Prepend bullets (pluses and minuses) to lines
-  def self.add_pluses_and_minuses tree, dirs='-', files='+'
-    tree.gsub! /^( *)([^ \n|].*\/)$/, "\\1#{dirs} \\2"
-    tree.gsub! /^( *)([^ \n|].*[^\/\n])$/, "\\1#{files} \\2"
-  end
-
   def self.tree_to_paths tree
     # TODO: implement
   end
@@ -1402,7 +1423,7 @@ class FileTree
   def self.tree_path_or_this_file dir_only=false
 
     # If in tree, use that dir
-    path = FileTree.handles? ?
+    path = self.handles? ?
       Tree.construct_path :
       View.file
 
@@ -1427,7 +1448,7 @@ class FileTree
   end
 
   def self.copy_path options={}
-    Effects.blink(:what=>:line)
+    Effects.blink :what=>:line
 
     # Return dir of view's file if at left margin, U, or not ^[|@-]
     if Line !~ /^ +[|@+-]/ || Keys.prefix_u
@@ -1548,21 +1569,22 @@ class FileTree
   end
 
   def self.delete_file
-    in_file_being_deleted = Line !~ /^[ +-]/ || Keys.prefix_u
+
+    #     in_file_being_deleted = Line !~ /^[ +-]/ || Keys.prefix_u
 
     # If not on tree, must want to delete this file
-    if in_file_being_deleted
-      dest_path = View.file
-    else
-      dest_path = Tree.construct_path
-    end
+    #     if in_file_being_deleted
+    #       dest_path = View.file
+    #     else
+    dest_path = Tree.construct_path
+    #     end
 
     dest_path = View.expand_path dest_path
 
     return View.flash("- File doesn't exist: #{dest_path}", :times=>5) if ! File.exists?(dest_path)
 
-    View.flash "- Are you sure?"
-    answer = Keys.input :chars=>1, :prompt=>"Are you sure you want to delete #{dest_path} ?"   #"
+    View.flash "- Delete file for sure?"
+    answer = Keys.input :chars=>1, :prompt=>"For sure delete?: #{dest_path}"   #"
 
     return unless answer =~ /y/i
 
@@ -1576,15 +1598,15 @@ class FileTree
       return
     end
 
-    return View.kill if in_file_being_deleted
+    #     return View.kill if in_file_being_deleted
 
-    Effects.glow :color=>:fire, :what=>:line, :times=>1
     Tree.kill_under
+    Effects.glow :fade_out=>1
     Line.delete
     Line.to_beginning
   end
 
-  def self.copy_to_latest_screenshot dest_path, dest_dir
+  def self.move_latest_screenshot_to dest_path, dest_dir
     desktop = Bookmarks['$dt']
 
     latest_screenshot = `ls -t #{desktop} "Screen shot*"`[/Screen shot .*/]
@@ -1597,38 +1619,61 @@ class FileTree
     View.message result
   end
 
-  def self.copy_to
-    prefix = Keys.prefix :clear=>true
+  def self.move_to
+    self.copy_to :move=>1
+  end
 
-    if Line !~ /^ *[+-] /   # Error if not indented with bullet
-      View.beep
-      return View.message "You need to be in a file tree to copy."
+  def self.copy_current_file_to options={}
+
+    return View.beep '- Save the file first!' if View.modified?
+
+    # Go from current file to bookmark
+    source_path = View.file
+    View.flash "- to which bookmark?"
+    verb = options[:move] ? "Move" : "Copy"
+    dest_path = Keys.bookmark_as_path :prompt=>"#{verb} current file to which bookmark? "
+    return if ! dest_path.is_a? String
+    #     dest_path = File.dirname dest_path
+
+    executable = options[:move] ? "mv" : "cp -r"
+    command = "#{executable} \"#{source_path}\" \"#{dest_path}\""
+
+    result = Console.run command, :sync=>true
+
+    return View.beep result if (result||"").any?   # If output isn't as expected, beep and show error
+
+    if options[:move]
+      View.kill
+      View.open "#{dest_path}#{File.basename source_path}"
+      verb = "Moved"
+    else
+      verb = "Copied"
     end
 
+    View.flash "- #{verb} to: #{dest_path}"
+  end
+
+  def self.copy_to options={}
+    prefix = options[:prefix] || Keys.prefix
+    Keys.clear
+
+    # Error if not in a file tree
+
+    return self.copy_current_file_to options if ! FileTree.handles?
+
     dest_path = Tree.construct_path
+
     dest_dir = dest_path.sub(/(.+\/).*/, "\\1")
 
     if prefix == 2
-      return self.copy_to_latest_screenshot dest_path, dest_dir
+      self.move_latest_screenshot_to dest_path, dest_dir
+      return View.flash "- Moved the latest screenshot to here!"
     end
 
-    orig = Location.new   # Save where we are
-    Location.to_spot
-    source_path = Tree.construct_path
+    arg = options[:move] ? {:delete=>1} : {}
+    source_path = Tree.dir_at_spot arg
 
-    if prefix == :u
-      Tree.kill_under
-      Line.delete
-
-      # Adjust orig if in same file and above
-      if orig.file_or_buffer == View.file_or_buffer && orig.line > View.line_number
-        orig.line = orig.line - 1
-      end
-    end
-
-    orig.go   # Go back to where we were
-
-    stem = source_path.sub(/.+\/(.+)/, "\\1")   # Cut of path of source
+    stem = File.basename source_path   # Cut of path of source
     indent = Line.indent
 
     dest_is_dir = dest_path =~ /\/$/
@@ -1641,7 +1686,7 @@ class FileTree
     else   # If file, use as dest
       dest_stem = Line.without_label
     end
-    executable = prefix == :u ? "mv" : "cp -r"
+    executable = options[:move] ? "mv" : "cp -r"
 
     # Add ".1" if prefix is 1
     if prefix == 1
@@ -1669,9 +1714,10 @@ class FileTree
     if dest_is_dir || prefix == 1   # If it's a file, we didn't delete it
       Line.next if prefix == 1
       View.insert "#{indent}+ #{dest_stem}\n", :dont_move=>true
+      Line.to_beginning
+      Effects.glow :fade_in=>1
       Line.previous if prefix == 1
     end
-    Line.to_beginning
   end
 
   def self.rename_file
@@ -1700,12 +1746,12 @@ class FileTree
     Console.run command, :sync=>true
 
     indent = Line.indent
-    Effects.glow :color=>:fire, :what=>:line, :times=>1
+    Effects.glow :fade_out=>1
     Line.delete
     View.insert((is_dir ? "#{indent}- #{new_name}/\n" : "#{indent}+ #{new_name}\n"), :dont_move=>true)
 
     View.column = column
-    Effects.glow :color=>:forest, :what=>:line, :times=>1
+    Effects.glow :fade_in=>1
   end
 
   def self.open_as_upper where=false
@@ -1728,13 +1774,14 @@ class FileTree
       $el.recenter 0
       where ? View.next : View.previous
     end
-    FileTree.open :path=>path, :same_view=>true
+
+    self.open :path=>path, :same_view=>true
     View.to_window(view) if orig_u
   end
 
   def self.to_outline
     prefix = Keys.prefix :clear=>true
-    args = [View.txt, View.line] if prefix == :u
+    args = [View.txt, View.line] if prefix == :u || prefix == :uu
 
     current_line = Line.number
 
@@ -1746,7 +1793,7 @@ class FileTree
       txt = "- #{dir}\n  - #{file}\n"
       View.insert txt
       View.to_top
-      FileTree.select_next_file
+      self.select_next_file
     else
       View.insert "- buffer/\n"
       View.to_top
@@ -1758,8 +1805,8 @@ class FileTree
 
     if prefix == 2
       Move.to_end
-      View << "\n    @"
-      return ControlLock.disable
+      View << "\n    "
+      return Xiki.insert_menu
     end
 
     if prefix == 7
@@ -1769,15 +1816,28 @@ class FileTree
       return
     end
 
-    return if prefix == 0   # Just select it
+    # Just select line if 0+.
 
-    if prefix == :u
+    return if prefix == 0
+    if prefix == :uu
+      # TODO: this isn't really useful. Figure out way to make it better.
+      # Maybe maintianing point where found would help?
+        # like Search.deep_outline
+
+      #       Tree.<< "xtxt", :line_found=>line, :escape=>'| ', :no_slash=>1
+      #       txt = args[0].grep(/^ *(def |# .+\.$)/)
+      txt = args[0].grep(/^ *# .+\.$/)
+      txt = txt.join('')
+      Tree.<< txt, :escape=>'| ', :no_slash=>1
+      return
+      # :line_found=>line
+    elsif prefix == :u
       txt, line = Search.deep_outline *args
       Tree.<< txt, :line_found=>line, :escape=>'| ', :no_slash=>1
       return
     end
 
-    FileTree.enter_lines nil, :current_line=>current_line
+    self.enter_lines nil, :current_line=>current_line
   end
 
   def self.skip_dirs dir, skip_these

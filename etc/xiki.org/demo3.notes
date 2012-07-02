@@ -1,0 +1,8 @@
+foo/
+  | There's no "foo" menu yet.
+  | Create it? You can start by
+  | adding items right here, or
+  | you can create a class.
+  <= @menu/create/here/
+  <= @menu/create/class/
+  <= @menu/install/gem/

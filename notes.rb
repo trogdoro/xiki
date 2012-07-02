@@ -11,7 +11,11 @@ class Notes
   LABEL_REGEX = /(?:[a-zA-Z0-9 _-]+\) )?/
 
   def self.menu
-    puts "- .help_wiki_format"
+    %`
+    - api/
+      > Turn notes wiki text into html
+      @ Notes.to_html "> Heading\\njust text\\n"
+    `
   end
 
   def self.block regex="^> "
@@ -86,10 +90,9 @@ class Notes
 
     orig = Location.new
 
-    prefix = Keys.prefix
+    prefix = Keys.prefix :clear=>1
 
     block = get_block prefix == :u ? 2 : 1
-    block.blink
     block.delete_content
 
     if up
@@ -105,7 +108,6 @@ class Notes
       Search.forward move_regex
       times.times do
         Search.forward move_regex, :go_anyway=>true
-        #         Search.forward "^>", :go_anyway=>true
       end
       Move.to_axis
 
@@ -116,7 +118,7 @@ class Notes
     moved_block = get_block regex
 
     times == 1 ?
-      moved_block.blink :
+      moved_block.fade_in :
       orig.go
 
   end
@@ -135,26 +137,13 @@ class Notes
     end
 
     View.insert("\n", :dont_move=>1) if orig != ""
-
-    #     # If U
-    #     # # get letter from next bullet
-    #     if Keys.prefix_u?
-    #       orig = Location.new
-    #       Search.forward "^| "   # Find next heading
-    #       char = Line.value[/^\| (\w) /, 1]   # Pull char off and insert, if there is one
-    #       orig.go
-    #       View.insert "#{char} " if char
-    #     end
-
-    #PauseMeansSpace.go
-
-    # Exit control lock mode if on
-    #ControlLock.disable
   end
 
   def self.cut_block no_clipboard=false
     block = get_block Keys.prefix
+
     block.blink
+
     unless no_clipboard
       Clipboard.set("0", block.content)
     end
@@ -179,14 +168,12 @@ class Notes
       orig_right = block.right
     end
 
-    block.blink unless prefix_u
+    block.fade_out unless prefix_u
+
     block.delete_content
 
     beginning_of_buffer
     insert block.content
-
-    moved_block = get_block
-    moved_block.blink unless prefix_u
 
     if prefix_u
       View.to_line line
@@ -196,6 +183,10 @@ class Notes
     else
       View.to_line 2
     end
+
+    moved_block = get_block
+
+    moved_block.fade_in unless prefix_u
 
   end
 
@@ -207,7 +198,7 @@ class Notes
     Keys.custom_back(:notes_mode_map) { Notes.move_block :backwards }   # Move block up to before next block
     Keys.custom_clipboard(:notes_mode_map) { Notes.copy_block }   # block -> clipboard
     Keys.custom_delete(:notes_mode_map) { Notes.cut_block :backwards }   # block -> clear
-    Keys.custom_expand(:notes_mode_map) { Notes.narrow_block }   # Show just block
+    #     Keys.custom_expand(:notes_mode_map) { Notes.narrow_block }   # Show just block
     Keys.custom_forward(:notes_mode_map) { Notes.move_block }   # Move block down to after next block
     Keys.custom_heading(:notes_mode_map) { Notes.insert_heading }   # Insert |... etc. heading
     Keys.custom_item(:notes_mode_map) { Agenda.quick_add_line }
@@ -229,16 +220,13 @@ class Notes
     # y
     # z
 
-    #     define_key :notes_mode_map, kbd("C-\\") do
-    #       widen; Hide.show
-    #       Hide.hide_unless /^\| /
-    #       recenter -2
-    #       Hide.search
-    #     end
-
-    define_key(:notes_mode_map, kbd("M-<mouse-1>"), :notes_mouse_meta_click)
     define_key(:notes_mode_map, kbd("<double-mouse-1>"), :notes_mouse_double_click)
     define_key(:notes_mode_map, kbd("<mouse-1>"), :notes_mouse_toggle)
+
+    define_key(:notes_mode_map, kbd("<M-mouse-1>"), :notes_mouse_double_click)
+    define_key(:notes_mode_map, kbd("<S-mouse-1>"), :notes_mouse_double_click)
+    define_key(:notes_mode_map, kbd("<C-mouse-1>"), :notes_mouse_double_click)
+
 
     define_key(:notes_mode_map, kbd("C-i")) { Notes.tab_key }
   end
@@ -434,7 +422,7 @@ class Notes
     Styles.apply("^ +\\(!.*\n\\)", nil, :ls_quote)   # ^!... for commands
 
     # exclamation! / todo
-    Styles.apply("^[ \t]*\\([<+-]\\) \\(.+!\\)$", nil, :ls_bullet, :notes_exclamation)
+    Styles.apply("^[ \t]*\\([<+-]\\) \\(.*!\\)$", nil, :ls_bullet, :notes_exclamation)
     Styles.apply("^ +\\(!\\+.*\n\\)", nil, :diff_green)   # Whole lines
     Styles.apply("^ +\\(!-.*\n\\)", nil, :diff_red)
 
@@ -450,13 +438,7 @@ class Notes
 
     Styles.apply "^ *@? ?\\([%$&]\\) ", nil, :shell_prompt   # Colorize shell prompts
 
-    Styles.apply "^[ ]*@dotsies roman/\\(.+\\)", nil, :dotsies_roman
-    Styles.apply "^[ ]*@dotsies/\\(.+\\)", nil, :dotsies
-    Styles.apply "^[ ]*@dots/\\(.+\\)", nil, :dotsies
-    Styles.apply "^[ ]*@tt/\\(.+\\)", nil, :dotsies_mono
-    Styles.apply("^ *\\(|~\\)\\(.*\n\\)", nil, :quote_heading_pipe, :dotsies)
-
-    Styles.apply "^        \\( \\)  ", nil, :dotted
+    Styles.apply("^ *\\(|`\\)\\(.*\n\\)", nil, :quote_heading_pipe, :dotsies_experimental)
 
   end
 
@@ -510,14 +492,14 @@ class Notes
     cursor = View.cursor
     line = Line.value
     indent = Line.indent line
-    pipe = line =~ /^ *\|/ ? "| " : ""
+    pipe = line =~ /^ *([|#])/ ? $1 : ""
     if Line.left == cursor || Line.right == cursor   # If beginning or end, leave current line alone
       Move.to_end
     else   # In middle of line
       Deletes.delete_whitespace
     end
 
-    return View.<< "\n#{line[/^[ |]*/]}  " if pipe
+    return View.<< "\n#{line[/^[ |#]*/]}  " if pipe
     View << "\n#{indent}#{pipe}  "
   end
 
@@ -551,7 +533,7 @@ class Notes
       View.insert "\n"
 
       # Do simple case if quoted
-      return View.<<("#{line[/^[ |]*/]}  - ") if line =~ /^ *\|/
+      return View.<<("#{line[/^[ |#]*/]}  - ") if line =~ /^ *[|#]/
 
       # Do simple case if on heading
       return View.<<("- ") if line =~ /^>/
@@ -661,7 +643,132 @@ class Notes
     NotesBlock.new(left, after_header, right)
   end
 
-  private
+  def self.to_html txt
+    txt = txt.
+      gsub(/^> (.+)/, "<h1>\\1</h1>").
+      gsub(/(^|[^\n>])$/, "\\0<br>")
+  end
+
+  def self.as_nav
+
+    prefix = Keys.prefix :clear=>true
+    txt = ""
+    if prefix == :u || prefix == :uu
+      txt = Code.grab_containing_method
+    end
+
+    label = nil
+    if prefix == 9
+      label = Keys.input :prompt=>"label: ", :timed=>1
+      label = "do" if label.blank?
+      label = Notes.expand_if_action_abbrev label
+
+      prefix = nil
+    end
+
+    if prefix == :uu   # up+up means add function and line
+      txt << "\n#{Line.value}"
+    elsif prefix != :u
+      txt = View.txt_per_prefix prefix, :selection=>1, :default_is_line=>1, :just_txt=>1
+    end
+
+    # If file has bullet or ends with slash, grab path
+
+    keep_tweeking = true
+    if ! prefix && FileTree.handles?   # Grab tree
+      txt = Tree.ancestors_indented :just_sub_tree=>1
+      txt.sub! /^  /, '  - '
+      keep_tweeking = false
+    end
+
+    file = View.file
+    orig = Location.new
+
+    if keep_tweeking
+      if Search.fit_in_snippet(txt)   # Insert it in existing tree if there
+        View << "    - #{label}:\n" if label
+        return orig.go
+      end
+    else
+      View.layout_files :no_blink=>1
+    end
+
+    # Make it quoted, unless already a quote
+    if keep_tweeking && (txt !~ /\A([+-] |\/)/ || txt !~ /^ +/)   # If txt isn't already a tree, make it one
+      txt = FileTree.snippet :txt=>txt, :file=>file
+      txt.sub! /^    /, "    - #{label}:\n    " if label
+    end
+
+    # Else, add it to top...
+
+    View.to_highest
+
+    if prefix == 8
+      if Line =~ /^>/
+        Line.next
+      end
+      result = "#{txt}\n"
+    else
+      result = ">\n#{txt}\n"
+    end
+
+    View.<< result, :dont_move=>1
+
+    orig.go
+  end
+
+
+  def self.as_todo
+    prefix = Keys.prefix :clear=>1
+
+    txt = nil
+
+    # If method, make it Foo.bar method call
+    line = Line.value
+
+    if View.file =~ /_spec.rb/ && line =~ /^ *(it|describe) /
+      return Specs.enter_as_rspec
+    end
+
+    buffer_name = View.buffer_name
+    file_name = View.file_name
+    trunk = Xiki.trunk
+
+    if prefix.nil?   # So 1+ or numeric prefix just grab normally
+      if buffer_name == "*ol"   # Make it into "foo = bar" format
+        txt = line[/\) (.+)/, 1]
+        txt.sub!(": ", " = ") if txt
+        txt ||= line[/ *- (.+?) /, 1]
+
+      elsif trunk.last =~ /(\w+)\.rb\/\| *def ([\w\.?]+)/
+        clazz = $1
+        method = $2
+        clazz = TextUtil.camel_case clazz if method.slice! /^self\./
+        txt = "#{clazz}.#{method}"
+
+      elsif line =~ /^ +def (.+)/   # Make it into Foo.bar format
+        method = $1
+        clazz = file_name[/\w+/]
+        clazz = TextUtil.camel_case clazz if method.slice! /^self\./
+
+        txt = "#{clazz}.#{method}"
+
+      elsif line =~ /^ *\|/   # Make it into Foo.bar format
+        txt = line.sub /^ *\| ?/, ''
+      elsif FileTree.handles?
+        txt = Tree.dir
+      elsif line =~ /(^ *[+-] |\/$)/   # Make it into Foo.bar format
+        txt = Xiki.trunk.last
+      end
+    end
+
+    txt ||= View.txt_per_prefix(prefix, :selection=>1, :just_txt=>1, :default_is_line=>1)
+    txt.strip! if txt =~ /\A.+\n\z/   # Strip when only 1 linebreak
+
+    options = prefix == :uu ? {:append=>1} : {}
+    Search.move_to "$t", txt, options
+  end
+
 
   class NotesBlock
     include ElMixin
@@ -689,6 +796,14 @@ class Notes
 
     def blink
       Effects.blink :left => after_header, :right => right
+    end
+
+    def fade_out
+      Effects.glow :fade_out=>1, :what=>[left, right]
+    end
+
+    def fade_in
+      Effects.glow :fade_in=>1, :what=>[left, right]
     end
 
     def delete_content
@@ -726,6 +841,9 @@ class Notes
 
   def self.enter_do_bullet
 
+    txt = Keys.input :timed=>1
+    expanded = Notes.expand_if_action_abbrev txt
+
     # If on blank line, just insert it
     if ! Line.blank?
 
@@ -736,9 +854,22 @@ class Notes
       $el.open_line(1)
     end
 
-    View.insert "#{indent}- do!"
-    Move.backward
-    return
+    if txt == " "
+      View << "#{indent}- !"
+      ControlLock.disable
+      return View.column = -1
+    end
+
+    if expanded
+      View << "#{indent}- #{expanded}!"
+      Line.to_beginning
+    else
+      View << "#{indent}- !"
+      Move.backward
+      View << txt
+    end
+
+    nil
   end
 
   def self.drill file, heading=nil, *content
@@ -746,12 +877,13 @@ class Notes
     prefix = Keys.prefix :clear=>true
     content = content.any? ? content.join('/') : nil
 
-    had_bookmark = file =~ /^\$/
+    file_orig = file.dup
     file = Bookmarks[file]
 
     # If bookmark wasn't found, complain
-    if had_bookmark && file =~ /^\$/
-      return "| Set the bookmark first. Then you'll be able to use this menu to\n| browse the file. The file should have '> ...' headings.\n|\n@ #{file}\n"
+    if file =~ /^\$(\w+)/
+      bm = $1
+      return "| Set the following bookmark first. Then you'll be able to use this menu to\n| browse the file. The file should have '> ...' headings.\n\n@ $#{bm}\n"
     end
 
     # If docs/, output docs string
@@ -766,11 +898,24 @@ class Notes
       return message
     end
 
+    if ! File.exists? file
+      return "
+        | File doesn't exist yet, do as+update to create it:
+        @ #{file}
+          | > Heading
+          | Stuff
+        "
+      #         @ /docs/notes/technologies/hyperestraier/hyperestraier.notes
+    end
+
     txt = File.read file
 
     # If just file passed, headings
 
     if ! heading
+
+      return View.open file if prefix == "open"   # If as+open, just jump there
+
       txt = txt.grep /^\>( .+)/
       return "| This file has no '>...' headings:\n@ #{file}" if txt.empty?
       return txt.join('').gsub /^> /, '| '
@@ -780,8 +925,16 @@ class Notes
 
     heading.sub!(/^\| /, '> ')
     escaped_heading = Regexp.escape heading
-
     if ! content
+
+      if prefix == :u || prefix == "open"   # If C-u on a heading, just jump there
+        View.open file
+        View.to_highest
+        Search.forward "^#{$el.regexp_quote heading}$", :beginning=>1
+        View.recenter_top
+        return
+      end
+
       txt = self.extract_block txt, heading
       return txt.gsub(/^/, '| ').gsub(/^\| $/, '|')
     end
@@ -789,7 +942,7 @@ class Notes
     # If content passed
 
     # If C-4, grab text and save it to file / update
-    if prefix == "save"
+    if prefix == "update"
       # Update difflog
 
       # Grab before and after
@@ -804,6 +957,8 @@ class Notes
 
       txt = "#{before}#{content}#{after}"
 
+      DiffLog.save_diffs :patha=>file, :textb=>txt
+
       # return
       File.open(file, "w") { |f| f << txt }
 
@@ -813,7 +968,7 @@ class Notes
       return
     end
 
-    # Just navigate to heading
+    # Navigate to heading, then content
 
     View.open file
     View.to_highest
@@ -838,6 +993,25 @@ class Notes
     indent = Line.indent(Line.value 0)
     Line.sub! /^ */, indent
     Line.to_beginning
+  end
+
+  @@single_letter_abbrev = {
+    "f"=>"fix",
+    "b"=>"borrow",
+    "i"=>"implement",
+    "d"=>"delete",
+    "r"=>"rename",
+    "t"=>"todo",
+    "e"=>"extract",
+    }
+
+  # If the string is "t" or "i", or a few others, return "todo" or "imprement" etc. respectively.
+  def self.expand_if_action_abbrev txt
+    @@single_letter_abbrev[txt] || txt
+  end
+
+  def self.do_as_quote
+    # Make this add or remove quotes
   end
 end
 

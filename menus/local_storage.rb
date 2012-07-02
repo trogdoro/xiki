@@ -38,8 +38,7 @@ class LocalStorage
       return array.sort.inject("") {|acc, element| "#{acc}- #{element}/\n"}
     end
 
-    if ENV['prefix'] == "destroy"
-      # return
+    if Keys.delete?
       Firefox.run "localStorage.removeItem(\"#{key}\")"  #, :jquery=>1
       Tree.to_parent if val
       Tree.kill_under

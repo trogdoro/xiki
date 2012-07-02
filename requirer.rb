@@ -1,34 +1,40 @@
-require 'notes'
 require 'core_ext'
 
 class Requirer
-  def self.safe_require files
+  def self.show txt
+    $el.switch_to_buffer "Issues Loading Xiki"
+    $el.insert txt
+    $el.bury_buffer unless $el.buffer_substring($el.point_min, $el.point_max) =~ /(^Xiki requires|exception:$)/
+  end
+
+  def self.require_gem name, options={}
+    begin
+      gem name
+      require options[:name2] || name
+    rescue Exception=>e
+      self.show "Xiki #{options[:optional] ? 'optionally uses' : 'requires'} the '#{name}' gem.\n% sudo gem install #{name}\n\n"
+      raise e if options[:raise]
+    end
+  end
+
+  def self.extract_gem_from_exception txt
+    txt = txt[/-- (.*)/, 1] || txt[/RubyGem (.*)/, 1] || txt[/Could not find (.+?) /, 1] || txt
+
+    return nil if ! txt
+
+    txt.sub!(/\(.+/, '')
+    txt.strip
+
+  end
+
+  def self.require_classes files
     files.each do |l|
       begin
         require l
       rescue LoadError => e
-        #         View.to_buffer '* missing gems'
-        #         Notes.mode
-        gem_name = e.to_s[/-- (.*)/, 1] || e.to_s[/RubyGem (.*)/, 1] || gem_name
-        if gem_name
-          gem_name.sub!(/\(.+/, '')
-          gem_name.strip!
-        end
-        $el.message("
-          | Warning: gem '#{gem_name}' missing
-          - Explanation:
-            A gem used by a Xiki class is not installed on your system.
-            Note that installing it isn't mandatory.
-            - Missing gem: #{gem_name}
-            - Class that uses it: #{l}
-
-          - To install '#{gem_name}':
-            - 1: Double-click or C-. on this line
-              $ sudo gem install #{gem_name}
-            - 2: Press M-l to reload xiki, or manually restart.
-          \n
-          ".unindent)
-        #         View.to_top
+        self.show "#{e.to_s}\n"
+        gem_name = self.extract_gem_from_exception e.to_s
+        self.show "_Xiki requires the '#{gem_name}' gem.\n% sudo gem install #{gem_name}\n\n"
       end
     end
 

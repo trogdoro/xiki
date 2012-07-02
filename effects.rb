@@ -11,18 +11,24 @@ class Effects
       | Try these out by double-clicking on them.
       - Glow/
         @Effects.glow
-        @Effects.glow :what=>:line
         @Effects.glow :times=>6
-        |
-        @Effects.glow :color=>:fire
-        @Effects.glow :color=>:water
-        @Effects.glow :color=>:forest
-        @Effects.glow :color=>:rainbow
-        @Effects.glow :color=>:fat_rainbow
+        @Effects.glow :what=>:paragraph
+        @Effects.glow :what=>:block
+        @Effects.glow :what=>[1, 100]
+
+        - Colors/
+          @Effects.glow :color=>:fire
+          @Effects.glow :color=>:water
+          @Effects.glow :color=>:forest
+          @Effects.glow :color=>:rainbow
+          @Effects.glow :color=>:fat_rainbow
+        - Fade in and out/
+          @Effects.glow :fade_in=>1
+          @Effects.glow :fade_out=>1
       - Blink/
         | Makes line blink orange. Using a longer time since the blink happens
         | anyway.
-        |
+
         @Effects.blink :time=>1
       - Some View methods that use effects/
         @View.prompt
@@ -32,25 +38,30 @@ class Effects
       > Keys
       | do+line+effects: make line blink
       | up+do+line+effects: make line blink rainbow color
-    |
+
     > See
     << themes/
     "
   end
 
-  def self.glow *args
-    if args[0].is_a? Fixnum
-      left, right = args.shift, args.shift
-    else
+  def self.glow options={}
+
+    what = options[:what]
+    if what.is_a? Array
+      left, right = what
+    elsif what == :block
       ignore, left, right = View.block_positions "^[|>]"
+    elsif what == :paragraph
+      left, right = View.paragraph :bounds=>1
+    else
+      left, right = Line.left, Line.right
     end
 
-    options = args[0] || {}
 
-    left, right = Line.left, Line.right if options[:what] == :line
-    left, right = View.paragraph(:bounds=>1) if options[:what] == :paragraph
+    # Set :times to 1 if no args and fade out
+    times = 1 if ! options[:times] && (options[:fade_out] || options[:fade_in])
 
-    times = options[:times] || 3
+    times ||= options[:times] || 3
 
     over = $el.make_overlay left, right
 
@@ -72,9 +83,13 @@ class Effects
     up = [6, 5, 4, 3, 2]
     down = [2, 3, 4, 5, 6]
 
-    sequence = options[:reverse] ?
-      ([7] + (up + [1] + down + [7]) * times) :
-      ([1] + (down + [7] + up + [1]) * times)
+    sequence =
+      if options[:fade_out]; [1] + (down + [7]) * times
+      elsif options[:fade_in]; [7] + (up + [1]) * times
+      elsif options[:reverse]; [7] + (up + [1] + down + [7]) * times
+      else; [1] + (down + [7] + up + [1]) * times
+      end
+
     sequence.each do |i|
       $el.overlay_put over, :face, (faces[i-1] || faces[0])
       $el.sit_for 0.02
@@ -125,19 +140,6 @@ class Effects
 
     Styles.define :purple, :fg => "808"
     Styles.define :cyan, :fg => "f0f"
-  end
-
-  def self.do_effect
-
-    prefix = Keys.prefix
-    left, right = Code.bounds_of_thing(left, right)
-
-    options = {}
-    options[:color] = :rainbow if prefix == :u
-    options[:color] = :fire if prefix == :uu
-
-    Effects.glow left, right, options
-
   end
 
 end

@@ -1,0 +1,10 @@
+> Headings
+- bullet
+  - points
+
+
+> Notes about commands
+$ df
+  | /dev/disk1   42%   /
+  - notes about output:
+  | /dev/disk2   96%   /vol/Reef

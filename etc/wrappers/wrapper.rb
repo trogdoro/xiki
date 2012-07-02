@@ -1,7 +1,7 @@
 # Gets shelled out to by xiki to delegate call to a no-dependency .rb file.
 # Just gets the args passed in and requires and invokes.
 
-# require "/projects/xiki/ol.rb"
+require "/projects/xiki/ol.rb"
 
 file = ARGV.shift
 path = ARGV.shift
@@ -9,10 +9,16 @@ path = ARGV.shift
 load file
 
 clazz = file[/\w+/].gsub(/_([a-z]+)/) {"#{$1.capitalize}"}.sub(/(.)/) {$1.upcase}.gsub("_", "")
+clazz = eval clazz
 
-method = ".menu"
-method = path.sub(/\/$/, '') if path =~ /^\./
+method = "menu"
+method = path[/^\.(.+?)\/?$/, 1] if path =~ /^\./
+method = method.to_sym
 
-output = eval "#{clazz}#{method}"
-puts output
+if clazz.respond_to? method
+  puts clazz.send method
+else
+  cmethods = clazz.methods - Class.methods
+  puts cmethods.sort.map{|o| "+ .#{o}/"}
+end
 

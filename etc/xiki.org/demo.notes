@@ -1,0 +1,13 @@
+$ cat foo.txt
+  | Run shell commands
+
+/tmp/
+  - Navigate_files.txt
+
+puts "Eval" + " code"
+  Eval code
+
+tables/
+  - my_table/
+    | id   description
+    | 1    Browse databases

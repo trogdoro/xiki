@@ -393,9 +393,7 @@ class Keys
     if ch < 27
       ch += 96
 
-    # Now it includes C-.  Do we want that?!
-    elsif 67108910 <= ch and ch <= 67108921
-      #     elsif 67108912 <= ch and ch <= 67108921
+    elsif 67108896 <= ch and ch <= 67108921
       ch -= 67108864
     end
     ch.chr
@@ -418,10 +416,6 @@ class Keys
     loc = self.remove_control loc
     loc
   end
-
-  #   def self.prefix
-  #     elvar.current_prefix_arg || 1
-  #   end
 
   def self.insert_code
     keys = $el.read_key_sequence("Type some keys, to insert the corresponding code: ")
@@ -461,7 +455,7 @@ class Keys
     proc = self.proc_from_key keys
     if proc.nil?
       $el.beep
-      return View.message("Key wasn't mapped")
+      return View.message("Key isn't mapped in Xiki")
     end
 
     file, line = Code.location_from_proc proc
@@ -505,20 +499,15 @@ class Keys
     # Get first char and insert
     c = $el.read_char("insert text (pause to exit): ").chr
     inserted = "#{c}"
-    #     c = c.upcase if prefix == :u
 
     View.insert c
-    #     o = $el.make_overlay $el.point, $el.point - 1
-    #     $el.overlay_put o, :face, :control_lock_found
+
     # While no pause, insert more chars
     while(c = $el.read_char("insert text (pause to exit): ", nil, 0.36))
-      #       $el.delete_overlay o
       inserted += c.chr
       View.insert c.chr
-      #       o = $el.make_overlay $el.point, $el.point - inserted.size
-      #       $el.overlay_put o, :face, :control_lock_found
     end
-    #     $el.delete_overlay o
+
     $el.elvar.qinserted = inserted
     $el.message "input ended"
 
@@ -584,6 +573,26 @@ class Keys
     result
   end
 
+  def self.up? options={}
+    self.prefix_u options
+  end
+
+  def self.update? options={}
+    # TODO update so prefix can have multiple values, like C-u and "update"
+    #   for when C-u as+update
+    #   (space-separated list)?
+    #     "u update"
+    self.prefix == "update"
+  end
+
+  def self.delete? options={}
+    self.prefix == "delete"
+  end
+
+  def self.open? options={}
+    self.prefix == "open"
+  end
+
   def self.prefix_n options={}
     pre = self.prefix(options)
     pre.is_a?(Fixnum) ? pre : nil
@@ -603,6 +612,8 @@ class Keys
       return :space
     elsif bm == "/"   # If slash, return special token
       return :slash
+    elsif bm == "x"   # If slash, return special token
+      return Xiki.dir
     elsif bm == ","   # If slash, return special token
       return :comma
     elsif bm =~ /^\.+$/   # If .+ do tree in current dir
@@ -617,8 +628,8 @@ class Keys
 
     dir = Bookmarks.expand bm, :just_bookmark=>true
     if dir.nil?   # If no dir, return nil
-      View.message "Bookmark '#{bm}' doesn't exist."
-      return nil
+      View.beep "- Bookmark '#{bm}' doesn't exist."
+      return :bookmark_doesnt_exist
     end
 
     unless options[:include_file]
@@ -722,5 +733,6 @@ class Keys
   def self.human_readable txt
     txt.split(/[^a-z]/i).map{|o| "Control-#{o[/./].upcase}"}.join(" ")
   end
+
 end
 

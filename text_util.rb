@@ -14,8 +14,8 @@ class TextUtil
       ]
   end
 
-  def self.unindent txt
-    txt.sub!(/\A\n/, '')   # Delete initial blank line if there
+  def self.unindent txt, options={}
+    txt.sub!(/\A\n/, '')# if ! options[:no_strip]   # Delete initial blank line if there
 
     txt.gsub!(/^\s+/) { |t| t.gsub("\t", '        ') }   # Untab indent
 
@@ -26,6 +26,7 @@ class TextUtil
     end
 
     old_indent = Line.indent(txt)   # Get indent of first line
+
     txt.gsub!(/^#{old_indent}/, '')   # Delete current indent
     "#{txt.strip}\n"
   end

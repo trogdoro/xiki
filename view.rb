@@ -12,7 +12,7 @@ class View
 
   def self.menu
     %`
-    - @window/
+    << @window/
     - .flashes/
     - api/
       > Summary
@@ -92,31 +92,35 @@ class View
   end
 
   # Make current window larger.  Take into account that there might be other vertical windows
-  def self.height= chars
+  def self.height
+    $el.window_height
+  end
+
+  def self.frame_height= chars
     $el.set_frame_parameter nil, :height, chars
   end
 
-  def self.width= chars
+  def self.frame_width= chars
     $el.set_frame_parameter nil, :width, chars
   end
 
-  def self.height options={}
+  def self.frame_height options={}
     return $el.frame_parameter(nil, :height) if options.empty?
     return unless options.is_a?(Hash)
 
     if options[:add]
-      self.height = self.height + 1
+      self.frame_height = self.frame_height + 1
     end
 
     nil
   end
 
-  def self.width options={}
+  def self.frame_width options={}
     return $el.frame_parameter(nil, :width) if options.empty?
     return unless options.is_a?(Hash)
 
     if options[:add]
-      self.width = self.width + 1
+      self.frame_width = self.frame_width + 1
     end
 
     nil
@@ -279,6 +283,17 @@ class View
   end
 
   # Move to nth window
+  def self.to_nth_paragraph n
+    View.to_relative
+
+    if Line.blank? && ! Line.value(2).blank?   # Weird case when just one blank line at top
+      n -= 1
+      Line.next if n == 0
+    end
+
+    n.times { Move.to_next_paragraph }
+  end
+
   def self.to_nth n
     # If greater than size of windows, open last
     #insert self.list.size.to_s
@@ -558,21 +573,20 @@ class View
 
   # Switches to a buffer
   def self.to_buffer name, options={}
-    # If we're here already, do nothing
-    return if buffer_name == name
+    return if buffer_name == name   # If we're here already, do nothing
 
-    # If already displayed, move to it's window
-    if ( ( window_list.collect {|b| window_buffer b} ).collect {|u| buffer_name u} ).member?(name) &&
-        ! options[:in_current]
-      switch_to_buffer_other_window name
-    else
-      switch_to_buffer name
+    found = View.list.find do |w|
+      buffer_name(window_buffer(w)) == name
     end
+    found ? View.to_window(found) : switch_to_buffer(name)
+
     View.clear if options[:clear]
     View.dir = options[:dir] if options[:dir]
   end
 
   def self.txt options={}, right=nil
+
+    options.is_a?(Hash) && buffer = options[:buffer] and return Buffers.txt(buffer)
 
     # If 2nd arg is there, we were passed right,left
     if right
@@ -599,9 +613,10 @@ class View
   # - no prefix means the notes block
   # - etc
   def self.txt_per_prefix prefix=nil, options={}
-    prefix ||= Keys.prefix
+    prefix ||= Keys.prefix(:clear=>1)
 
     prefix = prefix.abs if prefix.is_a?(Fixnum)
+    left, right = [nil, nil]
 
     case prefix
     when 0   # Do paragraph
@@ -609,8 +624,17 @@ class View
     when 1..6   # Should probably catch all numeric prefix?
       left = Line.left
       right = $el.point_at_bol(prefix+1)
-    else   # Should this be only if no prefix?
-      ignore, left, right = View.block_positions "^>"
+    when :-
+      left, right = View.range if options[:selection]
+    end
+
+    # If no prefixes
+    if left == nil
+      if options[:default_is_line]
+        left, right = [Line.left, Line.right]
+      else
+        ignore, left, right = View.block_positions("^>")
+      end
     end
 
     Effects.blink(:left=>left, :right=>right) if options[:blink]
@@ -620,6 +644,8 @@ class View
       txt.sub! /.+\n/, ''
       # left won't be fixed, but who cares, for now
     end
+
+    return txt if options[:just_txt]
 
     return [txt, left, right]
   end
@@ -812,8 +838,34 @@ class View
     $el.point_min == $el.point_max
   end
 
-  def self.recenter
-    $el.recenter Keys.prefix
+  def self.recenter n=nil
+    n ||= Keys.prefix
+
+    return View.recenter_under "^\\( *def \\| *it \\|^>\\)" if n == :u
+    if n == :uu
+
+      return View.recenter_under "^\\( *def \\| *it \\|^>\\)", :to_previous_paragraph=>1
+    end
+
+    $el.recenter n
+  end
+
+  #
+  # Scrolls window so top line matches pattern (first match above).
+  #
+  # View.recenter_under "^ *def "
+  #
+  def self.recenter_under pattern, options={}
+    orig = Location.new
+    Search.backward pattern
+
+    Move.to_previous_paragraph if options[:to_previous_paragraph]
+
+    line = View.line
+    View.recenter_top
+    orig.go
+    difference = View.line - line
+    View.recenter -2 if difference > (View.height-3)
   end
 
   def self.recenter_top
@@ -870,6 +922,7 @@ class View
 
   def self.column= to
     Move.to_column to
+    nil
   end
 
   def self.cursor
@@ -888,10 +941,14 @@ class View
     View.line = line
   end
 
+  # Delete string between two points
+  # View.delete 1, 10
+  # 1
   def self.delete left=nil, right=nil
     return Line.delete if left == :line
-
+    txt = $el.buffer_substring left, right
     $el.delete_region left, right
+    txt
   end
 
   def self.char
@@ -927,8 +984,25 @@ class View
     self.message txt
   end
 
-  def self.beep
+  #   def self.beep options={}
+  def self.beep *args
+
+    # Pull out 1st arg if string
+    txt = args[0].nil? || args[0].is_a?(Hash) ? nil : args.shift.to_s
+
+    options = args[0] || {}
+    raise "Too many args" if args.size > 1
+
     $el.beep
+    if times = options[:times]
+      (times-1).times do
+        View.pause 0.11
+        View.beep
+      end
+    end
+    View.flash txt, :times=>6 if txt
+
+    options[:return_txt] ? txt : nil
   end
 
   def self.mode
@@ -1021,26 +1095,24 @@ class View
   end
 
   def self.insert_line
+
     orig_indent = Line.indent
     n = Keys.prefix   # Check for numeric prefix
-    if(n)
-      Line.previous unless n.nil?
-      Line.next(n) if n.is_a? Fixnum   # If there, move down
-      Line.to_right
-      View.insert "\n"
-      # Optionally indent
-      $el.indent_for_tab_command unless(View.mode == :fundamental_mode && orig_indent == '')
-      return
+
+    if n == 0
+      n = nil
+      Line.previous
     end
 
     Move.to_end if Line.before_cursor =~ /^ +$/   # If at awkward position, move
 
-    # No numeric prefix, so just grab this line's opening indent text
-    indent_txt = Line[/^[ |$~&%@\/\\#+!-]+/] || ""
+    indent_txt = n ?
+      (" " * n) :
+      Line[/^[ |$~&%@\/\\#+!-]+/] || ""   # No numeric prefix, so just grab this line's opening indent text
 
-    Deletes.delete_whitespace if ! Line.at_left && ! Line.at_right
+    Deletes.delete_whitespace if ! Line.at_left? && ! Line.at_right?
 
-    Line.to_right if Line.at_left
+    Line.to_right if Line.at_left?
 
     View.insert "\n#{indent_txt}"
   end
@@ -1105,40 +1177,46 @@ class View
     Effects.blink(:what=>:line) unless options[:no_blink]
   end
 
-  def self.layout_files # nth=nil
+  def self.layout_files options={}
     FileTree.open_in_bar
     View.to_nth 1
-    Effects.blink(:what=>:line)
+    Effects.blink(:what=>:line) unless options[:no_blink]
   end
 
-  def self.layout_output
+  def self.layout_output options={}
     # If current line has Ol., grab line and path
 
     prefix = Keys.prefix
 
-    found = prefix != :u && Line =~ /^ *Ol\b/ && OlHelper.source_to_output(View.file, Line.number)
+    if options[:called_by_launch]
+      prefix = nil
+    end
+
+    View.layout_files if ! View.bar?   # If not already showing bar, do it first, so it shows up on left
+
+    found = prefix != :u && ! options[:dont_highlight] && Line =~ /^ *Ol\b/ && OlHelper.source_to_output(View.file, Line.number)
 
     orig = nil
-    if prefix == :-
+    if prefix == :-   # If want to keep cursor where it is
       return View.flash("- Not found!") if ! found
       orig = Location.new
     end
 
-    Code.open_log_view
+    Code.open_log_view options
 
     if found
       if found >= (Line.number(View.bottom) - 1)   # If too far back to be shown
         found = nil
-        View.flash("- Not found!")
+        View.flash("- Not found!", :times=>1)
       else
         View.to_bottom
         Line.previous(found+1)
       end
     end
 
-    Effects.blink(:what=>:line)
     if found
       Color.colorize :l
+      Effects.blink(:what=>:line)
     end
 
     if orig
@@ -1223,6 +1301,13 @@ class View
       Time.now.strftime("%Y-%m-%d")
   end
 
+  #
+  # Makes message glow at end of line, and adds "/", like
+  #
+  # foo/Type something here
+  # View.prompt
+  # @ View.prompt/
+  #
   def self.prompt message="Type something here", options={}
     ControlLock.disable
 
@@ -1234,7 +1319,7 @@ class View
     self.insert(message, :dont_move=>1)
 
     left, right = self.cursor, Line.right
-    Effects.glow left, right, {:reverse=>1}.merge(options)
+    Effects.glow({:what=>[left, right], :reverse=>1}.merge(options))
     self.delete left, right
 
 
@@ -1262,6 +1347,17 @@ class View
     $el.elvar.inhibit_quit = nil
   end
 
+  def self.modified?
+    $el.buffer_modified_p
+  end
+
+
+  #
+  # Makes message temporarily appear and glow, then go away, like:
+  #
+  # foo/
+  #   - Success!
+  #
   def self.flash message=nil, options={}
 
     was_modified = $el.buffer_modified_p
@@ -1283,7 +1379,7 @@ class View
     left, right = Line.left, Line.left+message.length
     self.cursor = orig
 
-    Effects.glow left, right, {:reverse=>1, :times=>2}.merge(options)
+    Effects.glow({:what=>[left, right], :reverse=>1, :times=>2}.merge(options))
 
     self.delete left, right
 
@@ -1303,11 +1399,9 @@ class View
     $el.sit_for 0
   end
 
-
-end
-
-def View txt
-  View.insert txt
+  def self.pause n   # wait / sleep / sit
+    $el.sit_for n
+  end
 end
 
 View.init

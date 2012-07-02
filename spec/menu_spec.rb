@@ -35,3 +35,17 @@ describe Menu, "#split" do
     Menu.split("dom/| </div>", :rootless=>1).should == ["| </div>"]
   end
 end
+
+describe Menu, "#menu_to_hash" do
+  it "handles simple menu" do
+    input = "
+      | dotsies.loc : /projects/dotsies.org/www/
+      | dotsies.org : /xiki@xiki.org/var/www/dotsies.org/
+      ".unindent
+
+    Menu.menu_to_hash(input).should == {
+      "dotsies.loc"=>"/projects/dotsies.org/www/",
+      "dotsies.org"=>"/xiki@xiki.org/var/www/dotsies.org/",
+    }
+  end
+end

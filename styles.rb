@@ -12,8 +12,8 @@ class Styles
       - 200
       - 250
     - .background color/
-      - white
-      - black
+      - white/
+      - black/
     - .list faces/
     - api/
       > Summary
@@ -157,12 +157,12 @@ class Styles
 
     if Styles.inverse
 
-      Styles.define :font_lock_comment_face, :fg=>'484848'   # gray
+      Styles.define :font_lock_comment_face, :fg=>'777'   # gray
       Styles.define :font_lock_function_name_face, :fg=>'f50'   # orange
       Styles.define :font_lock_type_face, :fg=>'0a1'   # green
       Styles.define :font_lock_variable_name_face, :fg=>'fd0'   # yellow
       Styles.define :font_lock_string_face, :fg=>'e10'   # red
-      Styles.define :font_lock_keyword_face, :fg=>'666'   # blue
+      Styles.define :font_lock_keyword_face, :fg=>'999'
 
     else
 
@@ -220,6 +220,10 @@ class Styles
     $el.el4r_lisp_eval "(face-attribute 'default :height)"
   end
 
+  def self.attribute style, attribute
+    $el.el4r_lisp_eval "(face-attribute '#{style} :#{attribute})"
+  end
+
   def self.size relative=0
     # Cache so subsequent calls don't have to look up from elisp
     size = $el.el4r_lisp_eval "(face-attribute 'default :height)"
@@ -232,18 +236,14 @@ class Styles
       # Mode line (bar between windows)
 
       $el.set_face_background :trailing_whitespace, "#333333"
-      Styles.define :default, :bg=>'000000', :fg=>'ffffff'
+      Styles.define :default, :bg=>'111111', :fg=>'ffffff'
       Styles.define :cursor, :bg=>'ffffff', :fg=>'000000'
 
-      Styles.define :fringe, :bg=>'000000', :fg=>'666666'
+      Styles.define :fringe, :bg=>'111111', :fg=>'666666'
 
       # Dark gray scheme
       Styles.define :mode_line, :bg=>'333', :border=>['666', -1], :face=>'Lucida Grande', :size=>'3', :bold=>false, :fg=>'fff'
       Styles.define :mode_line_inactive, :bg=>'666', :border=>['888', -1], :face=>'Lucida Grande', :size=>'3', :bold=>false, :fg=>'fff'
-
-      #       # Aqua, blue bg, mac font
-      #       Styles.define :mode_line, :fg=>'000000', :bg=>'2e7795', :border=>['387fa5', -4], :face=>'Lucida Grande', :size=>'3', :bold=>false
-      #       Styles.define :mode_line_inactive, :fg=>'363636', :bg=>'949494', :border=>['a2a2a2', -4], :face=>'Lucida Grande', :size=>'3', :bold=>false
 
     else
       $el.set_face_background :trailing_whitespace, "#aaaaaa"

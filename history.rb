@@ -91,7 +91,7 @@ class History
     times = self.prefix_times
     View.to_buffer("*tree of edited")
     View.clear;  notes_mode
-    View.insert FileTree.paths_to_tree(elvar.editedhistory_history.to_a[0..(times-1)])
+    View.insert Tree.paths_to_tree(elvar.editedhistory_history.to_a[0..(times-1)])
     View.to_top
     Keys.clear_prefix
     FileTree.select_next_file
@@ -111,7 +111,7 @@ class History
   end
 
   def self.insert_history times
-    insert FileTree.paths_to_tree(elvar.recentf_list.to_a[0..(times-1)])
+    insert Tree.paths_to_tree(elvar.recentf_list.to_a[0..(times-1)])
   end
 
   def self.enter_history
@@ -125,7 +125,7 @@ class History
   def self.insert_viewing times
     paths = ( buffer_list.map { |b| buffer_file_name(b) }.select{|path| path})
     paths = paths[0..(times-1)] if times  # Limit to number if prefix passed
-    insert FileTree.paths_to_tree(paths)
+    insert Tree.paths_to_tree(paths)
   end
 
   def self.enter_viewing
@@ -232,22 +232,24 @@ class History
 
   def self.backup_file
     bm = Bookmarks['$bak']
+    return View.beep "- First, set the 'bak' bookmark to a dir!" if bm == "$bak"
+
     unless bm.any?   # If no bookmark, just show error
       View.beep
       return View.message("Error: create a bookmark named 'bak' first, in a dir where you backups will go.")
     end
 
-    path = Keys.prefix_u? && FileTree.handles? ?   # If backup file in tree
-      Tree.construct_path :
-      View.file
+    path = Keys.prefix_u? ?
+      View.file :
+      FileTree.tree_path_or_this_file
 
     name = path.sub(/.+\//, '')
 
     # Copy file xx
     $el.copy_file path, "#{bm}#{name}.#{Time.now.strftime('%Y-%m-%d.%H-%M')}"
 
-    message = "backed up '#{name}' to $bak/"
-    View.flash "- #{message}"#, :times=>3
+    message = "backed up to $bak: '#{name}'"
+    View.flash "- #{message}", :times=>3
     View.message "Successfully #{message}"
   end
 

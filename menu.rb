@@ -5,9 +5,12 @@ class Menu
     - history/
       - @log/
       - @last/
+    - @all/
     - .create/
       - here/
       - class/
+    - .install/
+      - gem/
     - .setup/
       - @~/menus/
       - .reload_menus/
@@ -78,6 +81,18 @@ class Menu
         |   - Jump to file that implements menu
         |
     '
+  end
+
+  def self.install *args
+    Xiki.dont_search
+    Tree.quote "
+      > TODO
+      - implement this.
+
+      - Should it look for installed gems with this name?
+      - Should it just show commands to do a gem install?
+        - How would it know whether it the gem has a xiki menu?
+      "
   end
 
   def self.create *args
@@ -345,7 +360,7 @@ class Menu
   end
 
   def self.split path, options={}
-    path.sub! /\/$/, ''
+    path = path.sub /\/$/, ''
     path = Tree.rootless path if options[:rootless]
 
     return [] if path.empty?
@@ -359,7 +374,7 @@ class Menu
     result += groups[1..-1].map{|o| "|#{o}"}
   end
 
-  def self.open_related_file
+  def self.to_menu
     # Take best guess, by looking through dirs for root
     trunk = Xiki.trunk
 
@@ -371,6 +386,8 @@ class Menu
 
     root.gsub!(/[ -]/, '_') if root
 
+    root.downcase!
+
     ([Xiki.dir]+Launcher::MENU_DIRS).reverse.each do |dir|
       next unless File.directory? dir
       file = Dir["#{dir}/#{root}.*"]
@@ -378,43 +395,40 @@ class Menu
       return View.open file[0]
     end
 
-    message = "
-      - No menu found:
-        | No \"#{root}\" menu or class file found in these dirs:
-        @ ~/menus/
-        @ $x/menus/
-        ".unindent
+    #     message = "
+    #       - No menu found:
+    #         | No \"#{root}\" menu or class file found in these dirs:
+    #         @ ~/menus/
+    #         @ $x/menus/
+    #         ".unindent
+
+    # Should be able to get it right from proc
 
     proc = Launcher.menus[1][root]
-    message << "  |\n  > Here's what it does:\n  | #{proc.to_ruby}" if proc
 
-    Tree.<< message, :no_slash=>1
+    return View.flash "- Menu 'root' doesn't exist!", :times=>4 if ! proc
+
+    location = proc.source_location # ["./firefox.rb", 739]
+    location[0].sub! /^\.\//, Xiki.dir
+    View.open location[0]
+    View.line = location[1]
+
   end
 
   def self.external menu, options={}
 
-    View.scroll_bars = false
-
-    Window.visibility('high')
     View.message ""
 
     View.wrap :off
 
     # IF nothing passed, must want to do tiny search box
     if menu.empty?
-      Window.dimensions "presets", "prompt"
       Launcher.open ""
       View.message ""
       View.prompt "Type anything", :timed=>1, :times=>2 #, :color=>:rainbow
 
-      View.hide_others :all=>1
-      Window.dimensions "presets", "center"
-
-      $menu_resize = true
       Launcher.launch
     else
-      View.hide_others :all=>1
-      Window.dimensions "presets", "center"
       Launcher.open menu, options
     end
   end
@@ -482,9 +496,7 @@ class Menu
   def self.as_menu
     orig = View.cursor
 
-    Move.to_end   # In case we're at root of tree (search would make it go elsewhere)
     Tree.to_root
-    Move.to_axis
 
     root, left = Line.value, View.cursor
     root = Line.without_label :line=>root
@@ -500,7 +512,7 @@ class Menu
       orig = nil
     end
 
-    Tree.to_right
+    Tree.after_children
     right = View.cursor
     View.cursor = left
 
@@ -510,7 +522,6 @@ class Menu
     txt.sub! /.+\n/, ''
     txt.gsub! /^  /, ''
     txt.unindent
-    txt.gsub! /^\|$/, ''
 
     return Tree << "| You must supply something to put under the '#{root}' menu.\n| First, add some lines here, such as these:\n- line/\n- another line/\n" if txt.empty?
 
@@ -531,7 +542,7 @@ class Menu
 
     require_menu path
 
-    View.flash "- #{file_existed ? 'Updated' : 'Created'} ~/menus/#{root}.menu", :times=>4
+    View.flash "- #{file_existed ? 'Updated' : 'Created'} ~/menus/#{root}.menu", :times=>3
     nil
   end
 
@@ -543,7 +554,8 @@ class Menu
     recent = File.mtime(file)
 
     if previous == nil
-      require file
+      #       require file
+      load file
       @@loaded_already[file] = recent
       return
     end
@@ -583,10 +595,74 @@ class Menu
 
     if Line.indent.blank?
       line.sub! /^@ ?/, ''
+      Line.sub! /^@ ?/, ''
     end
 
     Line << line unless skip
     Launcher.launch
+
+  end
+
+  def self.root_collapser_launcher
+
+    View.cursor
+
+
+    # Grab line
+    line = Line.value
+
+    arrows = line[/<+/].length
+
+    line.sub!(/ *<+@ /, '')
+
+    # Go up to root, and kill under
+    arrows.times { Tree.to_root }
+    Tree.kill_under
+
+    # Insert line, and launch
+    old = Line.delete :leave_linebreak
+    old.sub! /^( *).+/, "\\1"
+    old << "@" if old =~ /^ /   # If any indent, @ is needed
+    View << "#{old}#{line}"
+
+    Launcher.launch
+  end
+
+  def self.replacer_launcher
+    Line.sub! /^( +)<+= /, "\\1+ "
+
+    # Run in place, grab output, then move higher and show output
+
+    orig = View.line
+    Launcher.launch :no_search=>1
+
+    # If didn't move line, assume it had no output, and it's collapse things itself
+    return if orig == View.line
+
+    # If it inserted something
+
+    output = Tree.siblings :everything=>1
+
+    # return
+
+    # Shouldn't this be looping like self.collapser_launcher ?
+    Tree.to_parent
+    Tree.to_parent
+    Tree.kill_under :no_plus=>1
+    Tree << output
+
+    # TODO: do search now, after insterted?
+
+  end
+
+  def self.menu_to_hash txt
+    txt = File.read txt if txt =~ /\A\/.+\z/   # If 1 line and starts with slash, read file
+
+    txt.gsub(/^\| /, '').split("\n").inject({}) do |o, txt|
+      txt = txt.split(/ : /)
+      o[txt[0]] = txt[1]
+      o
+    end
 
   end
 
@@ -610,19 +686,5 @@ class Menu
     "TODO"
   end
 
-  def self.replacer_launcher
-    Line.sub! /^( +)<+= /, "\\1+ "
-
-    # Run in place, then move higher
-
-    Launcher.launch
-
-    output = Tree.siblings(:everything=>1)
-    Tree.to_parent
-    Tree.to_parent
-    Tree.kill_under :no_plus=>1
-    Tree << output
-
-  end
 
 end

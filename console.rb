@@ -21,29 +21,29 @@ class Console
     - docs/
       You can run shell commands by typing things like this...
 
-      In current dir
+      > In current dir
       @ $ ls
 
-      In other dir
+      > In other dir
       @ /tmp/
         $ ls
 
-      Async, in any open console view
+      > Async, in any open console view
       @ /tmp/
         % ls
 
-      Async, in other dir
+      > Async, in other dir
       @ /tmp/
         % ls
 
-      Async, in iTerm
+      > Async, in iTerm
       @ /tmp/
         & ls
 
-      Commands you've run recently:
+      > Commands you've run recently
       << log/
 
-      Commands from currently open consoles:
+      > Commands from currently open consoles
       << tree/
     `
   end
@@ -339,6 +339,10 @@ class Console
           path.pop
         end
         dir = path.join('')
+
+        # If starts with ./, replace with current dir
+        dir.sub! /^\.\//, "#{View.dir}/"
+
       end
       View.to orig
     end
@@ -495,9 +499,12 @@ class Console
     Launcher.open("- console/history/$#{bm}/")
   end
 
-  def self.tree console=nil, command=nil
+  def self.tree *args
+    command = args.pop if args[-1] =~ /^\|/
+    console = args.any? ? args.join("/") : nil
+
     if console
-      View.to_buffer console.sub /\/$/, ''
+      View.to_buffer console#.sub /\/$/, ''
       return
     end
 
@@ -521,6 +528,20 @@ class Console
     end
 
     txt
+  end
+
+  def self.exit   # Kills running server or process in shell
+    $el.comint_interrupt_subjob
+  end
+
+  def self.wait_until buffer, options={}
+    max = options[:max] || 10
+    message = options[:message] || "Launching..."
+    while View.txt(:buffer=>buffer) !~ options[:contains]
+      View.flash message, :times=>1
+      max -= 1
+      break if max < 0
+    end
   end
 
 end

@@ -13,11 +13,14 @@ class CodeTree
 
   # Mapped to C-.
   def self.launch options={}
+    line = Line.without_indent
+
+    return Search.open_file_and_method line if Keys.open?   # If as+open, just navigato to it!
+
     FileTree.extra_line_if_end_of_file
     Tree.plus_to_minus_maybe
     orig = Location.new
     Line.to_left
-    line = Line.without_indent
     path = options[:path] || Tree.construct_path(:list=>true)
     path.each do |l|
       # if '- .xx:/", get rid of trailing slash
@@ -43,10 +46,27 @@ class CodeTree
     end
   end
 
-  def self.draw_exception exception, code
+  def self.draw_exception exception, code=nil
     message = exception.message
 
-    if exception.is_a?(RuntimeError)
+    # TODO: pay attention to this option?
+    #     Ol << "options[:suggest_args]: #{options[:suggest_args].inspect}"
+
+    if exception.is_a? ArgumentError
+
+      # TODO
+      # - How to not show "arg1" etc
+      #   - when ArgumentError is code deeper than the immediate one
+
+      count, required = message.match(/\((\d+) for (\d+)\)/)[1..2]
+
+      if count < required   # We can't add sample args if too many were supplied
+        return (count.to_i+1..required.to_i).to_a.map{|o| "arg#{o}"}.join('/')+"/"
+      end
+    end
+
+
+    if exception.is_a? RuntimeError
       # If it was in the format of tree output, just show it
 
       # Some messages start with "path:line:...: " at beginning again
@@ -54,7 +74,8 @@ class CodeTree
       message.sub!(/.+?: /, '') if message =~ /in `/
 
       return message if message =~ /\A[>|+-] /   # /^- /
-      return View.flash($1) if(message =~ /^\.flash (.+)/)
+      return View.prompt($1) if(message =~ /\A\.prompt (.+)/)
+      return View.flash($1) if(message =~ /\A\.flash (.+)/)
     end
 
     backtrace = exception.backtrace[0..8].join("\n").gsub(/^/, '  ') + "\n"
@@ -69,7 +90,10 @@ class CodeTree
       "\n"+message.strip.gsub(/^/, "  | ").gsub(/^( +\|) ([+-])/, "\\1\\2") :
       " #{message}"
 
-    return "- tried to run: #{code}\n- error:#{message}\n- backtrace:\n#{backtrace}"
+    txt = ""
+    txt << "- tried to run: #{code}\n" if code
+    txt << "- error:#{message}\n- backtrace:\n#{backtrace}"
+    txt
   end
 
   def self.run code, options={}
@@ -353,14 +377,44 @@ class CodeTree
     View.delete left1, right1
   end
 
+  def self.do_kill_indented options={}
+    if Keys.up? || options[:cross_blank_lines]
+      left, right = Tree.sibling_bounds :cross_blank_lines=>1
+    else
+      left, ignore1, ignore2, right = Tree.sibling_bounds
+    end
+
+    View.cursor = left
+    $el.set_mark right
+    Effects.blink :left=>left, :right=>right # unless options[:dont_cross_blank_lines]
+
+    View.delete left, right
+
+  end
+
   def self.as_indented
-    left1, right1, left2, right2 = Tree.sibling_bounds
+    prefix = Keys.prefix :clear=>1
 
-    View.cursor = left1
-    $el.set_mark right2
-    Effects.blink(:left=>left1, :right=>right2)
+    indent = Line.indent.length
 
-    Clipboard.copy("0")
+    # If at left margin or current line followed by child
+    if prefix != :u && (prefix == :- || indent == 0 || indent == Line.indent(Line.value(2)).length - 2)
+      orig = View.cursor
+      left = Line.left
+      Line.next
+      ignore, right = Tree.sibling_bounds :cross_blank_lines=>1
+      View.cursor = orig
+    elsif prefix == :u
+      left, right = Tree.sibling_bounds :cross_blank_lines=>1
+    else
+      left, ignore1, ignore2, right = Tree.sibling_bounds
+    end
+    View.cursor = left
+    $el.set_mark right
+    Effects.blink :left=>left, :right=>right
+
+    Clipboard.copy "0"
+
   end
 
   def self.kill_rest

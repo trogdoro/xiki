@@ -8,6 +8,10 @@ class Ruby
       | Evaluate the ruby code on the following lines, until a '> ...' heading.
       @eval
     - @eval/
+    - @technologies/ruby/
+    - language docs/
+      > Listing and categories of gems
+      @ https://www.ruby-toolbox.com/
     "
   end
 

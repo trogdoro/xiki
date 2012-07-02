@@ -6,9 +6,10 @@ class Filter
 
     # For now, just assume it's the current file
 
-    if ! filter   # If nothing passed, tell them to add something
-      return View.prompt "Type something to filter by"
-    end
+    # If nothing passed, tell them to add something
+    return View.prompt "Type something to filter by" if ! filter
+
+    return Tree.children(self.docs, target) if filter == "docs"
 
     if target.blank?   # If just filter, show results
       return View.txt.grep(/#{filter}/i).join("").gsub(/^/, '| ')
@@ -24,6 +25,22 @@ class Filter
 
     Line.to_beginning
     nil
-
   end
+
+  def self.docs
+    "
+    > Examples
+    | Filter the whole file for the string 'tt'
+    @filter/tt/
+
+    | Filter for NOT the string 'tt'
+    @filter/!/tt/
+
+    | Filter children for the string 'tt'
+    @filter/tt/
+      | Hat
+      | Hatty
+    "
+  end
+
 end
