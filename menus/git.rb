@@ -27,6 +27,7 @@ class Git
 
     branch = self.branch_name
 
+
     "
     - .push/#{branch}/
     - .diff/
@@ -36,6 +37,7 @@ class Git
       - .make sample files/
       - github/
         @ % git remote add origin git@github.com:trogdoro/foo.git
+    - .status/
     - .docs/
     "
   end
@@ -49,7 +51,16 @@ class Git
     | - /tmp/myproject/
     |   - @git/
     "
+  end
 
+  def self.status
+
+    # Limit to just file, if nested under file - different command?!
+    file = Tree.file
+    path = File.file?(file) ? file : "."
+
+    result = Console.sync "git status #{path}", :dir=>Dir.pwd
+    Tree.quote result
   end
 
   def self.create
@@ -138,6 +149,16 @@ class Git
 
   def self.show_log_one_file
     Gito.show_log_one_file
+  end
+
+  def self.methods_by_date path
+    txt = Console.sync "git blame \"#{path}\""
+    txt = txt.split "\n"
+
+    txt = txt.select{|o| o =~ /\) *def /}   # Remove all but method definitions
+    txt.sort!{|a, b| a[/....-..-.. ..:..:../] <=> b[/....-..-.. ..:..:../]}   # Sort by date
+    txt.each{|o| o.sub! /.+?\) /, ''}
+    txt = txt.reverse
   end
 
 end

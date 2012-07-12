@@ -482,7 +482,9 @@ class FileTree
     # Prefix keys with specific behavior
     prefix_was_u = false
 
-    case Keys.prefix
+    prefix = Keys.prefix
+
+    case prefix
     when :u   # Just open file
       prefix_was_u = true
       Keys.clear_prefix
@@ -496,9 +498,12 @@ class FileTree
         Tree.enter_under :
         self.enter_lines(//)   # If file, enter all lines
       return
-    when "outline"
-      Keys.clear_prefix
-      return self.drill_quotes_or_enter_lines path, search_string
+    else
+      if prefix =~ /\boutline\b/
+        prefix = Keys.prefix_n
+        Keys.clear_prefix
+        return self.drill_quotes_or_enter_lines path, search_string, :prefix=>prefix
+      end
     end
 
     # If numeric prefix, jump to nth window
@@ -585,8 +590,8 @@ class FileTree
 
   def self.suggest_creating search_string
 
-    if search_string =~ /^ *def/   # If it's a method, suggest creating it
-      View.beep "TODO: If it's a method, suggest creating it!"
+    if search_string =~ /^ *def self\.(.+)/   # If it's a method, suggest creating it
+      Code.suggest_creating_method View.file, $1
       return true
     end
 
@@ -594,8 +599,8 @@ class FileTree
   end
 
 
-  def self.drill_quotes_or_enter_lines path, quote
-    return self.enter_lines if ! quote   # If not quote must be whole file
+  def self.drill_quotes_or_enter_lines path, quote, options={}
+    return self.enter_lines(nil, options) if ! quote   # If not quote must be whole file
     result = self.drill_quote path   # Try showing only children with children
     return Tree.<<(result) if result.any?
     return Tree.enter_under   # Only leafs, so show them
@@ -958,6 +963,7 @@ class FileTree
   end
 
   def self.dir_one_level options={}
+
     Line.to_left
     line = Line.value
     indent = line[/^ */] + "  "  # Get indent
@@ -1063,6 +1069,9 @@ class FileTree
 
   # Enter what's in clipboard with | to on the left margin, with appropriate indent
   def self.enter_quote txt=nil
+
+    prefix = Keys.prefix :clear=>1
+
     # Skip forward if on heading
     Line.to_left
     if Line[/^\|/]
@@ -1070,8 +1079,10 @@ class FileTree
       $el.newline
     end
 
-    txt ||= Clipboard.get(0, :add_linebreak => true)
+    txt ||= Clipboard.get(0, :add_linebreak=>1)
+
     dir = Tree.construct_path rescue nil
+
     if self.dir? && self.handles?   # If current line is path
       Tree.plus_to_minus_maybe
       indent = Line.indent
@@ -1080,6 +1091,7 @@ class FileTree
       t = t.gsub(/^#{dir}/, '')
       if t.sub!(/\A\n/, '')   # If no dir left, indent one over
         t.gsub!(/^  /, '')
+        #         t = t.gsub(/^  /, '')
       end
       Tree.add_pluses_and_minuses t, '-', '-'
       Line.next
@@ -1087,16 +1099,18 @@ class FileTree
       return
     end
 
-    if Keys.prefix_u? || txt =~ /\A  +[-+]?\|[-+ ]/   # If C-u or whole thing is quoted already
-      # Unquote
-      txt = txt.grep(/\|/).join()
-      return insert(txt.gsub(/^ *[-+]?\|([-+ ]|$)/, ""))   # Remove | ..., |+...., |<blank>, etc
-    end
+    # If empty line, just enter tree...
 
-    if Line.blank?   # If empty line, just enter tree
+    if Line.blank?
+
+      if prefix == :u || txt =~ /\A  +[-+]?\|[-+ ]/   # If C-u or whole thing is quoted already, unquote
+        txt = txt.grep(/\|/).join()
+        return insert(txt.gsub(/^ *[-+]?\|([-+ ]|$)/, ""))   # Remove | ..., |+...., |<blank>, etc
+      end
+
       start = point
       txt = Clipboard.get("=")
-      indent = Keys.prefix || 0   # Indent prefix spaces, or 2
+      indent = prefix || 0   # Indent prefix spaces, or 2
       txt = txt.gsub(/^/, " " * indent)
 
       View.insert txt
@@ -1105,19 +1119,29 @@ class FileTree
       return
     end
 
+    # Line has content, so indent under...
+
+    txt = txt.unindent   # Unindent
+    # TODO: don't unindent if up+?
+
     indent = Line.indent   # Get current indent
-    on_comment_line = Line.matches /^ +\|/
+    on_quoted_line = Line.matches /^ +\|/
     Line.next
 
     # Indent one level further unless on comment already
-    unless on_comment_line
+    unless on_quoted_line
       indent = "#{indent}  "
     end
 
     indent += " " * Keys.prefix_or_0   # If numeric prefix, add to indent
     txt = txt.sub /\n+\z/, ''   # Remove last \n
-    txt = txt.gsub /^/, "#{indent}\| "
+
+    # Quote unless already quoted
+    quote = txt =~ /^\|/ ? '' : "| "
+
+    txt = txt.gsub /^/, "#{indent}#{quote}"
     txt = txt.gsub /^( *\|) $/, "\\1"   # Remove blank lines
+
     View.insert "#{txt}\n"
   end
 
@@ -1186,10 +1210,18 @@ class FileTree
     end
   end
 
+  #
   # Called by to+outline and enter+outline, (others?).
+  #
   def self.enter_lines pattern=nil, options={}
-
     $xiki_no_search = false
+
+    # If prefix is 6, delegate to Git to enter methods by date
+    if options[:prefix] == 6
+      txt = Git.methods_by_date(Tree.path[-1]).join("\n")
+      Tree.<< Tree.quote(txt), :no_slash=>1
+      return
+    end
 
     # If dir, delegate to C-. (they meant to just open it)
     return Launcher.launch if self.dir?
@@ -1423,7 +1455,7 @@ class FileTree
   def self.tree_path_or_this_file dir_only=false
 
     # If in tree, use that dir
-    path = self.handles? ?
+    path = self.handles? && Keys.prefix != :u ?
       Tree.construct_path :
       View.file
 
@@ -1635,7 +1667,10 @@ class FileTree
     return if ! dest_path.is_a? String
     #     dest_path = File.dirname dest_path
 
+    dest_path = Bookmarks[dest_path]
+
     executable = options[:move] ? "mv" : "cp -r"
+
     command = "#{executable} \"#{source_path}\" \"#{dest_path}\""
 
     result = Console.run command, :sync=>true
@@ -1677,6 +1712,7 @@ class FileTree
     indent = Line.indent
 
     dest_is_dir = dest_path =~ /\/$/
+    source_is_dir = source_path =~ /\/$/
 
     if dest_is_dir   # If dest is a dir, insert junior
       Line.next
@@ -1709,6 +1745,8 @@ class FileTree
       View.message "#{result}"
       return
     end
+
+    dest_stem << "/" if source_is_dir
 
     Line.to_left
     if dest_is_dir || prefix == 1   # If it's a file, we didn't delete it
@@ -1781,7 +1819,7 @@ class FileTree
 
   def self.to_outline
     prefix = Keys.prefix :clear=>true
-    args = [View.txt, View.line] if prefix == :u || prefix == :uu
+    args = [View.txt, View.line] if prefix == :u || prefix == :-
 
     current_line = Line.number
 
@@ -1799,45 +1837,35 @@ class FileTree
       View.to_top
     end
 
-    if prefix == 8
-      return Launcher.enter_all
-    end
-
-    if prefix == 2
+    case prefix
+    when 2   # Prompt to add @... menu under file
       Move.to_end
-      View << "\n    "
-      return Xiki.insert_menu
-    end
-
-    if prefix == 7
+      Xiki.insert_menu
+    when 4   # Get ready to run $... shell command on file
+      $el.delete_char(1)
+      View << "$ "
+      ControlLock.disable
+    when 6   # List methods by date (use 'git blame')
+      self.enter_lines nil, :prefix=>6
+    when 7
       Move.to_end
       View << "\n    @info"
       Launcher.launch
-      return
-    end
-
-    # Just select line if 0+.
-
-    return if prefix == 0
-    if prefix == :uu
-      # TODO: this isn't really useful. Figure out way to make it better.
-      # Maybe maintianing point where found would help?
-        # like Search.deep_outline
-
-      #       Tree.<< "xtxt", :line_found=>line, :escape=>'| ', :no_slash=>1
-      #       txt = args[0].grep(/^ *(def |# .+\.$)/)
-      txt = args[0].grep(/^ *# .+\.$/)
-      txt = txt.join('')
-      Tree.<< txt, :escape=>'| ', :no_slash=>1
-      return
-      # :line_found=>line
-    elsif prefix == :u
+    when 8
+      Launcher.enter_all
+    when 0
+      # Just show path if 0+...
+    when :-   # Just show # foo... comments...
+      self.enter_lines(/(^ *def | # .+\.\.\.$)/, :current_line=>current_line)
+    when 6   # Just show # foo... comments...
+      self.enter_lines(/(^ *def |self\.)/, :current_line=>current_line)
+    when :u
       txt, line = Search.deep_outline *args
       Tree.<< txt, :line_found=>line, :escape=>'| ', :no_slash=>1
-      return
+    else
+      self.enter_lines nil, :current_line=>current_line
     end
 
-    self.enter_lines nil, :current_line=>current_line
   end
 
   def self.skip_dirs dir, skip_these

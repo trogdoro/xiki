@@ -7,6 +7,10 @@ class Array
 end
 
 class NilClass
+  def empty?
+    self.nil?
+  end
+
   def blank?
     self.nil?
   end

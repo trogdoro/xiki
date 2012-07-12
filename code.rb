@@ -225,16 +225,27 @@ class Code
   end
 
   def self.open_related_rspec
-    if View.file =~ /\/xiki\//   # If in xiki project
+
+    # If in xiki project...
+
+    if View.file =~ /\/xiki\//
       if View.file =~ /\/spec\//   # If in spec, open corresponding file
         View.open View.file.sub('/spec/', '/').sub(/_spec\.rb/, '.rb')
       else   # Otherwise, open file corresponding spec
-        View.open View.file.sub(/(.+)\/(.+)/, "\\1/spec/\\2").sub(/\.rb/, '_spec.rb')
+
+        method = Code.grab_containing_method :name=>1
+        path = View.file.sub(/(.+)\/(.+)/, "\\1/spec/\\2").sub(/\.rb/, '_spec.rb')
+        View.open path
+
+        View.recenter_under "^ *describe .+##{method}[^_a-zA-Z0-9]"
       end
+
       return
     end
 
-    if View.file =~ /\/(app|spec)\//   # If normal specs
+    # If normal specs...
+
+    if View.file =~ /\/(app|spec)\//
       if View.file =~ /\/app\//   # If in file, open corresponding spec
         unless Keys.prefix_u   # Unless C-u, store method
           orig = View.cursor
@@ -422,7 +433,7 @@ class Code
 
   def self.do_code_align
     left, right = bounds_of_thing_at_point(:paragraph).to_a
-    align_regexp(left, right, "\\( *\\)"+Keys.input(:prompt => "align to regex: "), 1, 1, false)
+    align_regexp(left, right, "\\( *\\)"+Keys.input(:prompt => "align to regex: "), 1, 3, true)
   end
 
   def self.indent_to
@@ -430,25 +441,12 @@ class Code
     prefix_n = Keys.prefix_n
     prefix = Keys.prefix :clear=>true
 
-    # If universal, indent current line 2 over
-    if prefix == :u
-      cursor = View.cursor
-      Move.to_axis
-      View.insert "  "
-      View.to cursor + 2
-      return
+    # If notes mode...
+    if View.mode == :ruby_mode
+      # If up+, indent 2 to left
     end
 
-    if prefix == :uu
-      orig = View.cursor
-      Move.to_axis
-      was_near_axis = View.cursor+2 > orig
-      View.delete View.cursor, View.cursor+2
-      View.to orig-2 unless was_near_axis
-      return
-    end
-
-    # If universal, indent current line 2 to left
+    # If universal, indent current line 2 to left...
 
     if View.cursor == View.mark   # If C-space was just hit, manually indent this line
       prefix = prefix_n || 0
@@ -469,6 +467,8 @@ class Code
     return Code.indent if ! prefix
 
     new_indent = prefix || 0
+    new_indent *= 2
+
     orig = Location.new
     txt = View.selection :delete => true   # Pull out block
 
@@ -701,7 +701,7 @@ class Code
     end
 
     if prefix == :u   # Just recenter to method
-      View.recenter_under "^\\( *def \\| *it \\|^>\\)"
+      View.recenter_under "^\\( *def \\| *it \\|^>\\)", :relative=>1
     elsif prefix == :uu
       result = "Cursor: #{View.cursor}"
     end
@@ -796,11 +796,14 @@ class Code
   end
 
   # Searches upward for "def..." and returns the line
-  def self.grab_containing_method
+  def self.grab_containing_method options={}
     orig = Location.new
     Search.backward "^  def "
     txt = Line.value
     orig.go
+
+    return txt[/def (self\.)?(\w+)/, 2] if options[:name]
+
     txt
   end
 
@@ -841,6 +844,35 @@ class Code
 
     # If Foo. ... .bar, merge it back to parent (make Foo.bar), then launch
 
+  end
+
+  def self.suggest_creating_method file, method
+
+    View.open "method doesn't exist", :txt=>"
+      > Method doesn't exist. Create it?
+
+      #{file}
+        |+
+        |+  def self.#{method}
+        |+
+        |+  end
+        | end
+      ".unindent
+
+    View.line = 4
+    View.column = 2
+
+  end
+
+  #
+  # Grabs /foo/bar.rb:123 pattern from line, and jumps to file / line.
+  #
+  def self.open_as_file
+    return if Line.value !~ /(\/.+?):(\d+)/
+
+    file, line = $1, $2
+    View.open file
+    View.line = line
   end
 
 end

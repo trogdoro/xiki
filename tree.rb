@@ -38,7 +38,7 @@ class Tree
     recursive_quotes = options[:recursive_quotes]
     left, right = options[:left], options[:right]
     if ! left
-      left, right = Line.left(2), Tree.after
+      ignore, left, right = View.block_positions "^>"
     end
 
     # No search if there aren't more than 3 lines
@@ -67,26 +67,27 @@ class Tree
       return Cursor.restore(:before_file_tree)
     end
 
-    # While alpha chars (or other chars to search for), narrow down list
+    # While chars to search for (alpha chars etc.), narrow down list...
+
     while (ch =~ /[ -"&-),-.\/-:<?A-~]/ &&   # Be careful editing, due to ranges (_-_)
         (ch_raw < 67108912 || ch_raw > 67108921) && ch_raw != 67108909) ||   # If not control-<number> or C--
         (recursive && ch_raw == 2 || ch_raw == 6) ||
         ch == :up || ch == :down
 
-      if ch == ' '
+      if ch == ' ' && pattern != ""   # If space and not already cleared out
         pattern = ''
       elsif ch_raw == 2   # C-b
         while(Line.previous == 0)
-          next if FileTree.dir?  # Keep going if line is a dir
+          next if FileTree.dir?   # Keep going if line is a dir
           Line.to_words
-          break  # Otherwise, stop
+          break   # Otherwise, stop
         end
 
       elsif ch_raw == 6   # C-f
         while(Line.next == 0)
-          next if FileTree.dir?  # Keep going if line is a dir
+          next if FileTree.dir?   # Keep going if line is a dir
           Line.to_words
-          break  # Otherwise, stop
+          break   # Otherwise, stop
         end
       elsif ch == :up
         Line.previous
@@ -163,12 +164,13 @@ class Tree
 
     end
 
-
-    # Exiting, so restore cursor
-    Cursor.restore :before_file_tree
+    Cursor.restore :before_file_tree   # Exiting, so restore cursor
 
     # Options during search
-    case ch   # Do option based on last char, or run as command
+
+    # Do something based on char that exited search, like run as command...
+
+    case ch
     when "0"
       file = self.construct_path   # Expand out ~
       # Open in OS
@@ -612,7 +614,7 @@ class Tree
     Line.next
   end
 
-  # Go after last sibling, crossing blank lines, but not double-blank lines.
+  # Move cursor to after last sibling, crossing blank lines, but not double-blank lines.
   # Tree.after_siblings
   def self.after_siblings # options={}
     indent = Line.indent.size
@@ -643,8 +645,10 @@ class Tree
     View.to orig
   end
 
+  #
   # Inserts text indented under, and searches.
   # Called by Tree.<<
+  #
   def self.under txt, options={}
 
     return if txt.nil?
@@ -676,6 +680,7 @@ class Tree
     regex = "\\(\n\n\n\\|^#{indent}[^\t \n]\\)"
     Search.backward regex, :go_anyway=>true
 
+    # Move.to_next_paragraph(:no_skip=>1)
     hit_two_blanks = View.cursor == Line.right
 
     return Move.to_next_paragraph(:no_skip=>1) if hit_two_blanks || Line.value(2).blank?
@@ -778,6 +783,12 @@ class Tree
     end
   end
 
+  #
+  # Moves cursor to root of tree.
+  #
+  # Tree.to_root   # To last @.. line
+  # Tree.to_root :highest=>1   # All the way to highest root (left margin)
+  #
   def self.to_root options={}
 
     Move.to_end   # In case already at left of line and root
@@ -788,7 +799,15 @@ class Tree
     # Until we're at the root, keep jumping to parent
     line = Line.value
 
-    while (line =~ /^\s/ && line !~ /^ *([+-] )?@/) do
+    if options[:highest]
+      while(line =~ /^\s/) do
+        Tree.to_parent
+        line = Line.value
+      end
+      return
+    end
+
+    while(line =~ /^\s/ && line !~ /^ *([+-] )?@/) do
       Tree.to_parent
       line = Line.value
     end
@@ -918,6 +937,7 @@ class Tree
     View.under txt, :after=>1
   end
 
+  #
   # Returns group of lines close to current line that are indented at the same level.
   # The bounds are determined by any lines indented *less* than the current line (including
   # blank lines).  In this context, lines having only spaces are not considered blank.
@@ -1071,20 +1091,22 @@ class Tree
   # Iterate through each line in the tree
   # Tree.traverse("a\n  b") {|o| p o}
   def self.traverse tree, options={}, &block
-    branch, indent, last_indent = [], 0, 0
-    tree.split("\n").each do |line|
+    branch, line_indent, indent = [], 0, 0
+
+    tree = tree.split("\n")
+    tree.each_with_index do |line, i|
 
       # If empty line use last non-blank line's indent
       if line.empty?
         line = nil
-        line_indent = last_indent
+        last_indent = line_indent
+        line_indent = tree[i+1]   # Use indent of following line
+        line_indent = line_indent ? (line_indent[/^ */].length / 2) : 0
+        raise "Blank lines in trees between parents and children aren't allowed." if line_indent > 0 && line_indent > last_indent
       else
         line_indent = line[/^ */].length / 2
-        last_indent = line_indent
         line.strip!
       end
-
-      raise "Blank lines in trees between parents and children aren't allowed" if line_indent > 0 && branch[line_indent - 1].nil?
 
       branch[line_indent] = line
 
@@ -1339,9 +1361,10 @@ class Tree
           CodeTree.draw_exception e, Code.to_ruby(block_or_string)
         end
       end
+
     return if output.blank?
 
-    if output.strip =~ /\A<<< (.+)\/\z/
+    if output.is_a?(String) && output.strip =~ /\A<<< (.+)\/\z/
       Tree.replace_item $1
       Launcher.launch
       return true
@@ -1386,7 +1409,6 @@ class Tree
 
     orig.go   # Move cursor back  <-- why doing this?
     ended_up.go   # End up where script took us
-
     moved = View.cursor != orig_left
 
     # Move to :line_found if any
@@ -1457,13 +1479,9 @@ class Tree
         # If found and still indented one deeper
         one_deeper = current_indent == found + 1
 
-        if blank
+        if one_deeper || ((include_subitems || @@under_preexpand) && current_indent > found)
 
-          # If blank line is assumed to be a child, add it
-          result << "\n" if one_deeper
-          next
-
-        elsif one_deeper || ((include_subitems || @@under_preexpand) && current_indent > found)
+          next result << "\n" if blank
 
           item = branch[-1]
           item.sub!(/^- /, '+ ') if item =~ /\/$/
@@ -1587,15 +1605,34 @@ class Tree
     nil
   end
 
-  # Returns tree at cursor (assumes no spaces???).
-  def self.txt
-    "hi"
+  #
+  # Returns subtree rooted at cursor.
+  #
+  def self.subtree
+
+    # Just return line if no children
+    return Line.value if ! Tree.has_child?
+
+    orig = View.cursor
+    left = Line.left
+    Line.next
+    ignore, right = Tree.sibling_bounds :cross_blank_lines=>1
+    View.cursor = orig
+
+    txt = View.txt left, right
+    txt
   end
 
+  #
+  # Goes to spot (from as+spot) and grabs path?
+  #
   def self.dir_at_spot options={}
     orig = Location.new   # Save where we are
     Location.to_spot
+
     path = Tree.construct_path
+    # TODO: Make it use this instead:
+    #     path = Tree.construct_path :string=>1 instead
 
     if options[:delete]
       Effects.glow :fade_out=>1
@@ -1790,5 +1827,35 @@ class Tree
     nil
   end
 
+
+  #
+  # Grab last path item.
+  #
+  # Tree.last_item
+  # Tree.last_item   # /hey
+  # Tree.last_item   # /hey/
+  #
+  def self.last_item
+
+    # If there's a slash (not counting end of line), use after last slash
+
+    if Line.value =~ /\/.+/
+      Line[/.+\/(.+)\/$/, 1] || Line[/.+\/(.+)/, 1]
+    else   # else, just replace whole line minus bullet
+      Line[/^[ +-]*(.+)\//, 1] || Line[/^[ +-]*(.+)/, 1]
+    end
+
+  end
+
+  #
+  # Returns whether the next line is indented one lower
+  #
+  # p Tree.has_child?
+  #
+  def self.has_child?
+
+    Line.indent(Line.value)+"  " == Line.indent(Line.value 2)
+
+  end
 
 end

@@ -6,6 +6,7 @@ class Mysql
     - @columns/
     - .setup/
       - .start/
+      - .start in background/
       - stop/
         @ $ ps -eo pcpu,pid,user,args | grep mysql | grep -v grep
         @ $ kill _
@@ -22,7 +23,7 @@ class Mysql
         @ /etc/my.cnf
 
         > Example config files
-        @ /usr/local/mysql/support-files/
+        @ /usr/local/Cellar/mysql/5.5.25/support-files/
           - **cnf/
     - misc commands/
       > Drop db
@@ -33,7 +34,6 @@ class Mysql
     > Or just type some sql here
     | show tables
     "
-    #     - .all/
   end
 
   def self.install
@@ -42,7 +42,8 @@ class Mysql
     | For now, this just has the mac / homebrew instructions.  Fork xiki on github to add docs for other platforms.
     |
     | > Install using homebrew
-    - double-click to install) @$ brew install mysql
+    - 1. double-click to install) @ % brew install mysql
+    - 2. look at the output) and run the commands it tells you to run
     |
     | > More
     | See this link for more info on installing:
@@ -64,6 +65,10 @@ class Mysql
     Console.run "mysqld", :buffer=>"mysql", :dir=>"/tmp/"
     View.to_buffer "mysql"
     nil
+  end
+
+  def self.start_in_background
+    Console.run "mysql.server start"
   end
 
   def self.tables *args

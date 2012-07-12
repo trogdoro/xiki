@@ -17,7 +17,7 @@ class Applescript
     `
   end
 
-  def self.menu_after output, *command
+  def self.menu_after output, *args
 
     return output if output   # If menu handled it, just return
 

@@ -337,14 +337,18 @@ class Menu
 
   # Other .init mode defined below
   def self.init
+
+    return if ! $el   # Do nothing if not running under el4r
+
     Mode.define(:menu, ".menu") do
       Notes.mode
     end
   end
 
   def self.[] path
-    root, rest = path.match(/^(.+?)\/(.+)/)[1..2]   # Grab thing to match
-    self.call root, rest
+    path, rest = path.split '/', 2
+
+    self.call path, rest
   end
 
   def self.call root, rest=nil
@@ -686,5 +690,26 @@ class Menu
     "TODO"
   end
 
+  # Moves item to root of tree (replacing tree), then launches.
+  def self.do_as_menu
+    line = Line.value
+
+    # If on ^@... line and there's child on next line...
+
+    on_subtree = line =~ /^[ +-]*@/ && Tree.has_child?
+
+    txt = on_subtree ? Tree.subtree.unindent.sub(/^[ @+-]+/, '') : Tree.path.last
+
+    Tree.to_root :highest=>1
+    Tree.kill_under
+
+    Line.sub! /.+/, txt
+
+    return if on_subtree
+
+    # replace line with menu
+
+    Launcher.launch
+  end
 
 end

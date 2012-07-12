@@ -1,5 +1,7 @@
 require 'effects'
 
+require 'requirer'
+
 # require 'xiki'
 Requirer.require_gem 'httparty'   # Not super-important
 Requirer.require_gem 'activesupport', :name2=>'active_support/ordered_hash'
@@ -36,7 +38,7 @@ class Launcher
   end
 
   def self.menu_keys
-    (@@menus[0].keys + @@menus[1].keys).uniq.sort #.select do |possibility|
+    (@@menus[0].keys + @@menus[1].keys).sort.uniq #.select do |possibility|
   end
 
   def self.menu
@@ -69,7 +71,6 @@ class Launcher
   end
 
   def self.last path=nil, options={}
-
     path = path.sub /^last\/?/, '' if path
 
     paths = IO.readlines self.log_file
@@ -90,14 +91,14 @@ class Launcher
     bullet = options[:quoted] ? "|" : "-"
 
     if options[:exclude_path]
-      paths.each{|o| o.sub! /^- #{path}\//, "#{bullet} "}
+      paths.each{|o| o.sub! /^- (#{Notes::LABEL_REGEX})#{path}\//, "#{bullet} \\1"}
       paths = paths.select{|o| o != "#{bullet} "}
     else
       paths = paths.map{|o| o.sub /^- #{Notes::LABEL_REGEX}/, '\\0@'}
     end
     paths = paths.reverse.uniq
     paths.delete_if{|o| o == "| \n"}
-    paths.join #("\n")+"\n"
+    paths.join
   end
 
   def self.log
@@ -205,7 +206,7 @@ class Launcher
     line = options[:line] || Line.value   # Get paren from line
     label = Line.label(line)
 
-    if line =~ / *@$/
+    if line =~ /^ *@$/
       matches = Launcher.menu_keys
       Tree.<< matches.sort.map{|o| "<< #{o.sub '_', ' '}/"}.join("\n"), :no_slash=>1
       return
@@ -213,8 +214,6 @@ class Launcher
 
     # Special hooks for specific files and modes
     return if self.file_and_mode_hooks
-
-    View.bar if Keys.prefix == 7
 
     $xiki_no_search = options[:no_search]   # If :no_search, disable search
 
@@ -571,14 +570,6 @@ class Launcher
       Javascript.launch
     end
 
-    self.add(/^[^|-]+\*\*.+\//) do |line|  # **.../: Tree grep in dir
-      FileTree.launch
-    end
-
-    self.add(/^[^|]+##.+\//) do |line|  # ##.../: Tree grep in dir
-      FileTree.launch
-    end
-
     self.add(/^ *$/) do |line|  # Empty line
       View.beep
       View.message "There was nothing on this line to launch."
@@ -720,7 +711,7 @@ class Launcher
     return false
   end
 
-  def self.do_last_launch
+  def self.do_last_launch options={}
     orig = View.index
 
     CLEAR_CONSOLES.each do |buffer|
@@ -729,7 +720,7 @@ class Launcher
 
     prefix = Keys.prefix :clear=>true
 
-    if prefix ==:u
+    if prefix ==:u || options[:here]
       View.to_nth orig
     else
       Move.to_window 1
@@ -804,11 +795,12 @@ class Launcher
     args = path.is_a?(Array) ?
       path : Menu.split(path, :rootless=>1)
 
-    # Maybe call .menu_before
+    # Call .menu_before if there...
 
     method = clazz.method("menu_before") rescue nil
 
     self.set_env_vars path
+
     if method
       code = "#{camel}.menu_before *#{args.inspect}"
       returned, out, exception = Code.eval code
@@ -821,13 +813,13 @@ class Launcher
         returned = returned.unindent if returned =~ /\A[ \n]/
         return returned
       end
-
     end
 
     menu_arity = nil
     txt = options[:tree]
 
-    # Maybe call .menu with no args to actionize and get child menus
+    # Call .menu with no args to get child menus or route to other method...
+
     if txt.nil?
       method = clazz.method(default_method) rescue nil
       if method && method.arity == 0
@@ -847,7 +839,7 @@ class Launcher
     end
 
 
-    # If got routable menu text, use it to route (get children or dotify)
+    # If got routable menu text, use it to route (get children or dotify)...
 
     if txt
       txt = txt.unindent if txt =~ /\A[ \n]/
@@ -858,7 +850,7 @@ class Launcher
       txt = Tree.children tree, args
 
       if txt && txt != "- */\n"
-        # Pass in output of menu as either...
+        # Pass in output of menu as either:
           # ENV['output']
           # 1st parameter: .menu_after output, *args
         return self.invoke_menu_after clazz, txt, args
@@ -867,6 +859,21 @@ class Launcher
       # Copy dots onto args, so last dotted one will be used as action
 
       Tree.dotify! tree, args
+
+      # TODO: when to invoke this?
+        # Maybe invoke even if there was no .menu method
+          # Is that happening now?
+
+      # If .menu_hidden exists, dotify based on its output as well...
+      method = clazz.method("menu_hidden") rescue nil
+      if method
+        returned, out, exception = Code.eval "#{camel}.menu_hidden"
+
+        if returned && returned.is_a?(String)
+          returned = returned.unindent
+          Tree.dotify! returned, args
+        end
+      end
 
     end
     # Else, continue on to run it based on routified path
@@ -881,6 +888,8 @@ class Launcher
     action = actions.last || ".#{default_method}"
     action.gsub! /[ -]/, '_'
     action.gsub! /[^\w.]/, ''
+
+    # Call .menu_after if appropriate...
 
     if action == ".menu" && txt == nil && menu_arity == 0
       return self.invoke_menu_after clazz, txt, args
@@ -958,6 +967,11 @@ class Launcher
     File.open(@@log, "a") { |f| f << "#{path}\n" } rescue nil
   end
 
+  #
+  # Insert menu right here and launch it
+  #
+  # Launcher.open "computer"
+  #
   def self.insert txt, options={}
     View.insert txt
     $el.open_line(1)
@@ -968,6 +982,11 @@ class Launcher
     self.open menu, options.merge(:no_launch=>1)
   end
 
+  #
+  # Open new buffer and launch the menu in it
+  #
+  # Launcher.open "computer"
+  #
   def self.open menu, options={}
 
     $el.sit_for 0.25 if options[:delay] || options[:first_letter]   # Delay slightly, (avoid flicking screen when they type command quickly)
@@ -982,7 +1001,7 @@ class Launcher
     View.to_buffer buffer, :dir=>dir
 
     View.clear
-    $el.notes_mode
+    Notes.mode
     View.wrap :off
 
     txt = menu
@@ -1182,7 +1201,6 @@ class Launcher
 
     return Launcher.open txt if menu == " "
 
-
     matches = Launcher.menu_keys.select do |possibility|
       possibility =~ /^#{menu}/
     end
@@ -1192,6 +1210,7 @@ class Launcher
     end
 
     Launcher.open(matches.map{|o| "- #{o}/#{txt}\n"}.join(''), :choices=>1)
+    Tree.search
   end
 
   def self.as_update
@@ -1217,9 +1236,10 @@ class Launcher
   end
 
   def self.enter_outline
-    return FileTree.enter_lines if Line.blank?
+    return FileTree.enter_lines if Line.blank?   # Prompts for bookmark
 
-    Keys.prefix = "outline"
+    # If there's a numeric prefix, add it
+    Keys.add_prefix "outline"
     Launcher.launch
   end
 

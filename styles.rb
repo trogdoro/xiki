@@ -5,12 +5,6 @@ class Styles
 
     '
     - .font size/
-      - 110
-      - 120
-      - 135
-      - 160
-      - 200
-      - 250
     - .background color/
       - white/
       - black/
@@ -37,6 +31,9 @@ class Styles
       > See
       | For styling specific text (not just a pattern):
       <<< @overlay/
+    - see/
+      > List styles in current page in web browser
+      <<< @css/list/
     '
     #       > Apply multiple fonts and groups
 
@@ -55,7 +52,22 @@ class Styles
     nil
   end
 
-  def self.font_size size
+  def self.font_size size=nil
+
+    # If nothing passed, show default sizes
+
+
+    if ! size
+      return "
+        - original) #{Styles.height}
+        - 110
+        - 120
+        - 135
+        - 160
+        - 200
+        - 250
+        "
+    end
 
     Styles.define :default, :size=>size.to_i
 

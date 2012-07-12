@@ -55,7 +55,7 @@ class Xiki
         |
       - install global shortcut/
         - 1) With cursor on the following, type open+in+os, then click "Install"
-          @ /projects/xiki/etc/services/Xiki Menu.workflow
+          @ #{Xiki.dir}etc/services/Xiki Menu.workflow
 
         - 2) In Mac OS, open
           | System Preferences > Keyboard > Keyboard Shortcuts > Services
@@ -113,7 +113,6 @@ class Xiki
   end
 
   def self.insert_menu
-
     line = Line.value
     indent = Line.indent line
     blank = Line.blank?
@@ -134,7 +133,7 @@ class Xiki
 
     # Todo: if dash+, do auto-complete even if exact match - how to implement?
 
-    input = Keys.input(:timed => true, :prompt => "Start typing a menu that might exist (* for all): ")
+    input = Keys.input(:timed=>true, :prompt=>"Start typing a menu that might exist (or type 'all'): ")
 
     View << input
 
@@ -145,7 +144,7 @@ class Xiki
 
     return Launcher.open("- last/") if Keys.prefix_u
 
-    input = Keys.input(:timed => true, :prompt => "Start typing a menu that might exist (* for all): ")
+    input = Keys.input(:timed=>true, :prompt=>"Start typing a menu that might exist (or type 'all'): ")
     View.to_buffer "menu"
     Notes.mode
     View.kill_all
@@ -168,6 +167,7 @@ class Xiki
 
   def self.dont_search
     $xiki_no_search = true
+    nil
   end
 
   def self.quote_spec txt

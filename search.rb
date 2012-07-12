@@ -659,7 +659,6 @@ class Search
   #
   def self.open_file_and_method match
 
-    # Ifnore everything after a space?
     match.sub!(/^[+-] /, '')
     match.sub!(/ .+/, '')
 
@@ -690,8 +689,11 @@ class Search
     if found   # Open it if it matches
       View.open found
       if method  # If method, go to it
-        Move.top
-        Search.forward "^ +def \\(self\\.\\)?#{method}[^_a-zA-Z0-9]", :beginning=>true
+        View.to_highest
+        result = Search.forward "^ +def \\(self\\.\\)?#{method}[^_a-zA-Z0-9]", :beginning=>true
+
+        return Code.suggest_creating_method View.file, method if !result   # If not found, suggest creating
+
         Move.to_axis
         recenter 0
 

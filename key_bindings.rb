@@ -1,7 +1,6 @@
 class KeyBindings
   extend ElMixin
 
-
   # Define all keys
   def self.keys
     Menu.init
@@ -73,6 +72,7 @@ class KeyBindings
     Keys.OO { open_line elvar.current_prefix_arg || 1 }   # OO - open line (O's default)
     Keys.open_a_calendar { calendar }
     #Keys.OAD { Svn.jump_to_diff }
+    Keys.open_as_file { Code.open_as_file }
     Keys.open_as_elisp { find_function_at_point }   # jump to definition of lisp function
     Keys.open_as_highest { FileTree.open_as_upper }
     Keys.open_as_lowest { FileTree.open_as_upper(:lowest) }
@@ -237,6 +237,7 @@ class KeyBindings
     Keys.do_as_javascript { Javascript.run }
     #     Keys.do_as_launched { Launcher.do_as_launched }
     #     Keys.do_as_php { Php.run }
+    Keys.do_as_menu { Menu.do_as_menu }   # Grab item after '@' and run it by itself
     Keys.do_as_python { Python.run_block }
     # Do, take numeric prefix for before and after
     Keys.do_add_space { Code.add_space }
@@ -272,6 +273,7 @@ class KeyBindings
     Keys.do_forward { kill_word(Keys.prefix || 1) }   # delete word forward
     # H
     # G: leave unmapped for escape
+    Keys.do_here { Launcher.do_last_launch :here=>1 }
     Keys.do_indent { Code.indent_to }
     Keys.do_job { Macros.run }   # do last macro
     Keys.do_kill_all { Effects.blink :what=>:all; View.kill_all }   # kill all text in buffer
@@ -647,6 +649,7 @@ class KeyBindings
 
     ControlTab.keys
 
+    Keys.set("M-0") { Styles.font_size 120 }
     Keys.set("M-=") { Styles.zoom }
     Keys.set("M--") { Styles.zoom :out=>1 }
 

@@ -71,6 +71,7 @@ class Dotsies
 
   def self.define_styles
     Styles.define :dotsies, :size => '+2', :face => "Dotsies"
+    Styles.define :dotsies_white, :size => '+2', :face => "Dotsies", :fg=>"fff"
     Styles.define :dotsies_experimental, :size => '+2', :face => "Dotsies Experimental"
     Styles.define :dotsies_roman, :size => '+2', :face => "Dotsies Roman"
     Styles.define :dotsies_mono, :size => '+2', :face => "Dotsies Mono"

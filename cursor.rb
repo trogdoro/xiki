@@ -94,12 +94,12 @@ class Cursor
     self.box
   end
 
-  def self.remember symbol
+  def self.remember symbol=:default
     # Save is hash for later restoring (only if not there yet)
     @@remember[symbol] = [$el.elvar.cursor_type, $el.face_background(:cursor)]
   end
 
-  def self.restore symbol
+  def self.restore symbol=:default
     before = @@remember[symbol]
     return Cursor.black_box unless before  # Black if not found
     type, color = before

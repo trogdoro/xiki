@@ -22,10 +22,8 @@ class Firefox
       - .back/
       - .forward/
     - .tabs/
-    - .search/
     - load js into a page) .include_jquery_and_utils
-    - .roots/
-      - @ff/
+    - see/
       - @append/
       - @click/
       - @blink/
@@ -348,7 +346,7 @@ class Firefox
 
     Firefox.run "
       var s=document.createElement('script');
-      s.setAttribute('src', 'http://code.jquery.com/jquery-latest.js');
+      s.setAttribute('src', 'http://code.jquery.com/jquery.min.js');
       document.getElementsByTagName('head')[0].appendChild(s);
 
       var s=document.createElement('script');
@@ -443,166 +441,6 @@ class Firefox
     result.sub(/\A"/, '').sub(/"\z/, '')
   end
 
-  def self.search txt=nil
-    if txt.nil?
-      return View.prompt "Enter a string to search for on the page"
-    end
-
-    js = %`
-      var result="", depth=-1;
-      $('*:contains(#{txt})').each(function(i, e){
-        var tag = e.tagName.toLowerCase();
-        e = $(e);
-        var current_depth = e.parents().length;   // Only climb downward
-        if(current_depth <= depth) return depth = 9999;   // Don't grab any more
-        depth = current_depth;
-        var prev_count = $(e).prevAll(tag).length;
-        result += tag;
-        if(prev_count > 0) result += ':'+(prev_count+1);
-        result += '/';
-      })
-      result;
-      `.unindent
-
-    result = Firefox.run js  #, :jquery=>1
-
-    result.sub "html/", "- @dom/"
-  end
-
-  def self.dom *args#, options={}
-
-    options = args[-1].is_a?(Hash) ? args.pop : {}
-
-    prefix = options[:prefix] || Keys.prefix
-
-    raw_args = args.to_s.sub /\/$/, ''
-
-    # If last arg has linebreakes, save
-    save = args.pop if args.last =~ /^\|/
-
-    args.each do |o|
-      o.sub! /\/$/, ''
-      o.sub!(/:(\d+)$/) { ":eq(#{$1.to_i - 1})" }
-      o.sub!(/$/, ':eq(0)') if o !~ /[:#]/
-    end
-    args = ['html'] + args unless args[0] =~ /[.#]/
-    args = args.join ' > '
-
-    if save
-      save = Tree.siblings(:all=>true).map{|i| "#{i.gsub(/^\| /, '')}\n"}.join('')
-      save.gsub! "\n", "\\n"
-      save.gsub! '"', '\\"'
-
-      js = %`
-        var e = $(\"#{args}\");
-        if(e.length)
-          e.html(\"#{save}\");
-        `.unindent
-
-      if args =~ /(.+) > (.+)/
-        parent, child = $1, $2.sub!(/:.+/, '')
-        js << %`
-          else
-            $(\"#{parent}\").append(\"<#{child}>#{save}</#{child}>\");
-          `.unindent
-      end
-
-      Firefox.run js
-      return
-    end
-
-    js = %`
-      $.fn.blink = function() {
-        var el = $(this);
-        for(x=1;x<=2;x++) {
-          el.animate({opacity: 0.0}, {easing: 'swing', duration: 200});
-          el.animate({opacity: 1.0}, {easing: 'swing', duration: 200});
-        }
-        return this;
-      };
-
-      var kids = [];
-      `.unindent
-
-    if prefix == :-
-      Firefox.run "$(\"#{args}\").blink()"
-      return
-    end
-    if prefix != "all" && prefix != "outline"
-      js << %`
-        $("#{args}").blink().children().each(function(n, e){
-          var tag = e.nodeName.toLowerCase();
-          var id = $(e).attr('id');
-          if(id) tag += "#"+id
-          kids.push(tag);
-        })
-        `
-    end
-
-    js << %`
-      if(kids.length)
-        String(kids);
-      else
-        "html::"+$("#{args}").html();
-      `.unindent
-
-    kids = Firefox.run js  #, :jquery=>1
-
-    kids = kids.sub(/\A"/, '').sub(/"\z/, '') if kids =~ /\A"/
-    if kids =~ /\Ahtml::/
-      kids = kids.sub(/\Ahtml::/, '').strip
-      return prefix == "all" ?
-        kids.gsub(/^/, '| ') :
-        self.tidy(kids, raw_args)
-    end
-
-    kids = kids.split ','
-
-    counts = {}
-    kids.each do |k|   # Add on counts
-      k_raw = k.sub /#.+/, ''
-      counts[k] ||= 0
-      counts[k] += 1
-      k.replace "#{k}:#{counts[k]}" unless k =~ /#/ || counts[k] == 1
-    end
-    kids.map{|o| "#{o}/"}
-  end
-
-  def self.tidy html, tag=nil
-
-    File.open("/tmp/tidy.html", "w") { |f| f << html }
-
-    errors = `tidy --indent-spaces 2 --tidy-mark 0 --force-output 1 -i -wrap 0 -o /tmp/tidy.html.out /tmp/tidy.html`
-    html = IO.read("/tmp/tidy.html.out")
-
-    html.gsub! /\n\n+/, "\n"
-
-    if tag == ""   # It's the whole thing, do nothing
-    elsif tag == "head"
-      html.sub! /.+?<head>\n/m, ''
-      html.sub! /^<\/head>\n.+/m, ''
-    else
-      html.sub! /.+?<body>\n/m, ''
-      html.sub! /^<\/body>\n.+/m, ''
-    end
-
-    html.gsub!(/ +$/, '')
-    html.gsub! /^  /, '' unless html =~ /^</
-    html.gsub! /^/, '| '
-    html
-
-      # Try Nokogiri and xsl - Fucking dies part-way through
-      #       return Nokogiri::XML(kids).human.sub(/\A<\?.+\n\n/, '').gsub(/^/, '| ')
-      #       return Nokogiri::XML("<foo>#{kids}</foo>").human.gsub(/^/, '| ')
-      #       return Nokogiri::XML(kids).human.gsub(/^/, '| ')
-
-      # Try REXML (gives errors)
-      #       doc = REXML::Document.new("<foo>#{kids}</foo>")
-      #       out = StringIO.new; doc.write( out, 2 )
-      #       return out.string
-
-  end
-
   def self.load_jquery_maybe txt=nil #, options={}
 
     # If text passed, check it and error if complaining about jquery missing
@@ -614,7 +452,7 @@ class Firefox
     self.run "
       if(! document.getElementById('jqid')){
         var s=document.createElement('script');
-        s.setAttribute('src', 'http://code.jquery.com/jquery-latest.js'); s.setAttribute('id', 'jqid');
+        s.setAttribute('src', 'http://code.jquery.com/jquery.min.js'); s.setAttribute('id', 'jqid');
         document.getElementsByTagName('head')[0].appendChild(s);
 
         var s=document.createElement('script');
@@ -682,10 +520,6 @@ Launcher.add(/^\.[\w-]+$/) do |line|
   Launcher.launch
 end
 
-Menu.dom do |line|
-  Firefox.dom *Menu.split(line, :rootless=>1)
-end
-
 Menu.js do |path|
   Applescript.run("Firefox", "activate") if Keys.prefix_u
   Firefox.js Tree.rest(path)
@@ -749,10 +583,6 @@ end
 
 Menu.xul do |path|   # - (js): js to run in firefox
   Firefox.xul Tree.leaf(path)
-end
-
-Menu.ff do |line|
-  Menu["firefox/search/#{Tree.rootless line}"]
 end
 
 Menu.click do |path|

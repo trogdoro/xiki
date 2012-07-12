@@ -51,7 +51,7 @@ class Javascript
 
   def self.wrap_jquery_load txt, url=nil
 
-    url ||= "http://code.jquery.com/jquery-latest.js"
+    url ||= "http://code.jquery.com/jquery.min.js"
 
     txt = "
       var f = function(){

@@ -1,5 +1,4 @@
 class Line
-  extend ElMixin
 
   def self.menu
     "
@@ -36,10 +35,10 @@ class Line
     # Optionally include linebreak
     eol = "(+ 1 #{eol})" if options[:include_linebreak]
 
-    result = el4r_lisp_eval("(buffer-substring (point-at-bol #{n}) #{eol})")
+    result = $el.el4r_lisp_eval("(buffer-substring (point-at-bol #{n}) #{eol})")
 
     if options[:delete]
-      el4r_lisp_eval("(delete-region (point-at-bol #{n}) #{eol})")
+      $el.el4r_lisp_eval("(delete-region (point-at-bol #{n}) #{eol})")
     end
 
     result
@@ -67,11 +66,11 @@ class Line
   end
 
   def self.right
-    point_at_eol
+    $el.point_at_eol
   end
 
   def self.at_right?
-    point_at_eol == point
+    $el.point_at_eol == $el.point
   end
 
   def self.blank?
@@ -79,11 +78,11 @@ class Line
   end
 
   def self.left down=1
-    point_at_bol down
+    $el.point_at_bol down
   end
 
   def self.at_left?
-    point_at_bol == point
+    $el.point_at_bol == $el.point
   end
 
   def self.without_indent txt=nil
@@ -96,23 +95,23 @@ class Line
   end
 
   def self.bounds
-    [point_at_bol, point_at_eol]
+    [$el.point_at_bol, $el.point_at_eol]
   end
 
   def self.delete leave_linebreak=nil
     value = self.value
-    bol, eol = point_at_bol, point_at_eol
+    bol, eol = $el.point_at_bol, $el.point_at_eol
     eol += 1 unless leave_linebreak
-    delete_region(bol, eol)
+    $el.delete_region(bol, eol)
     value
   end
 
   # Gets symbol at point
   def self.symbol options={}
-    symbol = thing_at_point(:symbol)
+    symbol = $el.thing_at_point(:symbol)
     # Delete if option passed
     if options[:delete]
-      delete_region(* bounds_of_thing_at_point(:symbol))
+      $el.delete_region(* $el.bounds_of_thing_at_point(:symbol))
     end
     symbol
   end
@@ -129,7 +128,7 @@ class Line
 
   # Moves down, going to first column
   def self.next times=nil
-    forward_line times
+    $el.forward_line times
     nil
   end
 
@@ -138,12 +137,12 @@ class Line
     times = times ?
       -times :
       -1
-    forward_line times
+    $el.forward_line times
     nil
   end
 
   def self.beginning
-    forward_line 0
+    $el.forward_line 0
     nil
   end
 
@@ -152,11 +151,11 @@ class Line
   end
 
   def self.end
-    end_of_line
+    $el.end_of_line
   end
 
   def self.to_right
-    end_of_line
+    $el.end_of_line
   end
 
   def self.to_end
@@ -168,8 +167,8 @@ class Line
   end
 
   def self.to_words
-    beginning_of_line
-    skip_chars_forward "[^ \t]"
+    $el.beginning_of_line
+    $el.skip_chars_forward "[^ \t]"
   end
 
   def self.to_beginning options={}
@@ -234,7 +233,7 @@ class Line
   end
 
   def self.to_blank
-    re_search_forward "^[ \t]*$"
+    $el.re_search_forward "^[ \t]*$"
   end
 
   def self.duplicate_line
@@ -292,7 +291,7 @@ class Line
     value = Line.value
     return unless value.sub! from, to
     self.delete :leave
-    self.insert value
+    View.insert value
     orig.go :assume_file=>1
     value
   end
@@ -302,7 +301,7 @@ class Line
     value = Line.value
     return unless value.gsub! from, to
     self.delete :leave
-    self.insert value
+    View.insert value
     orig.go :assume_file=>1
     value
   end
@@ -317,7 +316,7 @@ class Line
 
   def self.< txt
     self.delete :leave
-    self.insert txt
+    View.insert txt
   end
 
   def self.add_slash options={}
@@ -335,10 +334,10 @@ class Line
   end
 
   def self.do_lines_sort
-    old = elvar.sort_fold_case# rescue true
-    elvar.sort_fold_case = true
-    sort_lines(nil, region_beginning, region_end)
-    elvar.sort_fold_case = old
+    old = $el.elvar.sort_fold_case# rescue true
+    $el.elvar.sort_fold_case = true
+    $el.sort_lines(nil, $el.region_beginning, $el.region_end)
+    $el.elvar.sort_fold_case = old
   end
 
   def self.do_lines_toggle
@@ -364,16 +363,19 @@ class Line
   end
 
   def self.init
+
+    return if ! $el   # Do nothing if not running under el4r
+
     # Define lisp function to get list of displayed lines
     # In case something has been done to change them
-    el4r_lisp_eval %q[
+    $el.el4r_lisp_eval %q`
       (defun xiki-line-number (pos)
         (save-excursion
           (goto-char pos)
           (forward-line 0)
           (1+ (count-lines 1 (point))))
       )
-    ]
+    `
   end
 
 end

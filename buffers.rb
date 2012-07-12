@@ -19,14 +19,22 @@ class Buffers
   def self.current *name
     if name.empty?  # If no buffer passed in, show list
       case Keys.prefix :clear=>true
-      when nil:  return list.select{ |b| $el.buffer_file_name(b) }.map{ |b| "| #{$el.buffer_name(b)}\n" }.join('')
+
+      # Show all by default
+      when nil, "all":  return list.map{ |b| $el.buffer_name(b) }.map{ |o| "| #{o}\n" }.join('')
+
+      # Only files (no buffers)
+      when :u:  return list.select{ |b| $el.buffer_file_name(b) }.map{ |b| "| #{$el.buffer_name(b)}\n" }.join('')
+
+      # Only buffer without files
       when 0:  return list.select{ |b| ! $el.buffer_file_name(b) }.map{ |b| "| #{$el.buffer_name(b)}\n" }[1..-1].join('')
-        #       when 0:  return list.select{ |b| ! $el.buffer_file_name(b) }.map{ |b| $el.buffer_name(b) }[1..-1]
+
       when 1:  return list.select{ |b| $el.buffer_file_name(b) }.map{ |b| $el.buffer_name(b) }[1..-1]
       when 3:  return list.select{ |b| ! $el.buffer_file_name(b) && $el.buffer_name(b) =~ /^#/ }.map{ |b| $el.buffer_name(b) }
       when 4:  return list.select{ |b| ! $el.buffer_file_name(b) && $el.buffer_name(b) =~ /^\*console / }.map{ |b| $el.buffer_name(b) }
-      when 8, "all":  return list.map{ |b| $el.buffer_name(b) }
-      when :u:  return list.select{ |b| ! $el.buffer_file_name(b) && $el.buffer_name(b) =~ /!$/ }.map{ |b| $el.buffer_name(b) }
+      when 6:  return list.select{ |b| $el.buffer_file_name(b) =~ /\.rb$/ }.map{ |b| $el.buffer_name(b) }
+      when 7:  return list.select{ |b| $el.buffer_file_name(b) =~ /\.notes$/ }.map{ |b| $el.buffer_name(b) }
+
       end
       return
     end

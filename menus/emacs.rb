@@ -5,7 +5,6 @@ class Emacs
       - Keys/
       - Prefix Keymaps/
       - Keymaps/
-      - Keymaps/
       - Prefix Keymaps/
     "
   end

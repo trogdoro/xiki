@@ -52,18 +52,16 @@ class CodeTree
     # TODO: pay attention to this option?
     #     Ol << "options[:suggest_args]: #{options[:suggest_args].inspect}"
 
-    if exception.is_a? ArgumentError
-
-      # TODO
-      # - How to not show "arg1" etc
-      #   - when ArgumentError is code deeper than the immediate one
-
-      count, required = message.match(/\((\d+) for (\d+)\)/)[1..2]
-
-      if count < required   # We can't add sample args if too many were supplied
-        return (count.to_i+1..required.to_i).to_a.map{|o| "arg#{o}"}.join('/')+"/"
-      end
-    end
+    # TODO
+    # For now, don't do it!
+    # - How to not show "arg1" etc
+    #   - when ArgumentError is code deeper than the immediate one
+    #     if exception.is_a? ArgumentError
+    #       count, required = message.match(/\((\d+) for (\d+)\)/)[1..2]
+    #       if count < required   # We can't add sample args if too many were supplied
+    #         return (count.to_i+1..required.to_i).to_a.map{|o| "arg#{o}"}.join('/')+"/"
+    #       end
+    #     end
 
 
     if exception.is_a? RuntimeError
@@ -358,7 +356,7 @@ class CodeTree
   end
 
 
-  def self.kill_siblings
+  def self.kill_siblings options={}
     prefix = Keys.prefix :clear=>true
 
     left1, right1, left2, right2 = Tree.sibling_bounds
@@ -405,9 +403,9 @@ class CodeTree
       ignore, right = Tree.sibling_bounds :cross_blank_lines=>1
       View.cursor = orig
     elsif prefix == :u
-      left, right = Tree.sibling_bounds :cross_blank_lines=>1
-    else
       left, ignore1, ignore2, right = Tree.sibling_bounds
+    else
+      left, right = Tree.sibling_bounds :cross_blank_lines=>1
     end
     View.cursor = left
     $el.set_mark right

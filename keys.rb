@@ -537,7 +537,17 @@ class Keys
     pre.is_a?(Fixnum) ? pre : 0
   end
 
-  # Returns nil, numeric prefix if C-1 etc, or :u if C-u
+  #
+  # Set prefix, or append it (space-delimited) if one already there.
+  #
+  def self.add_prefix new_prefix
+    prefix = self.prefix
+
+    return self.prefix = new_prefix if ! prefix   # If none there already, just set it
+
+    self.prefix = "#{self.prefix} #{new_prefix}"
+  end
+
   def self.prefix options={}
     pre = $el.elvar.current_prefix_arg
     return nil unless pre
@@ -545,6 +555,8 @@ class Keys
     # Clear prefix if :clear
     $el.elvar.current_prefix_arg = nil if options[:clear]
     str = pre.to_s
+
+    return :u if str == "u"
 
     if str =~ /^\(/
       return :uu if str == "(16)"
@@ -595,7 +607,9 @@ class Keys
 
   def self.prefix_n options={}
     pre = self.prefix(options)
-    pre.is_a?(Fixnum) ? pre : nil
+    return pre if pre.is_a?(Fixnum)
+    return $&.to_i if pre.is_a?(String) && pre =~ /\d+/
+    nil
   end
 
   def self.prefix_uu

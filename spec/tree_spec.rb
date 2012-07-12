@@ -116,6 +116,38 @@ describe Tree, "#traverse" do
     ]
   end
 
+  it "when blanks, use indent of next line" do
+    paths = []
+    tree = "
+      a/
+        aa/
+          aaa/
+
+          aab/
+
+        ab/
+          aba/
+
+      b/
+      ".unindent
+
+    Tree.traverse tree, :no_bullets=>1 do |array|
+      paths << array
+    end
+    paths.should == [
+      [["a/"], "a/"],
+      [["a/", "aa/"], "a/aa/"],
+      [["a/", "aa/", "aaa/"], "a/aa/aaa/"],
+      [["a/", "aa/", nil], "a/aa/"],
+      [["a/", "aa/", "aab/"], "a/aa/aab/"],
+      [["a/", nil], "a/"],
+      [["a/", "ab/"], "a/ab/"],
+      [["a/", "ab/", "aba/"], "a/ab/aba/"],
+      [[nil], ""],
+      [["b/"], "b/"],
+    ]
+  end
+
 
   it "error when blank line between parent and child" do
 
@@ -554,15 +586,12 @@ describe Tree, "#children" do
   end
 
   it "returns nil when no match" do
-Ol.line
-x = "hey"
-Ol << "x: #{x.inspect}"
     Tree.children("
       - a/
         - aa/
         - ab/
       - b/
-      ", "a").should == nil
+      ", "x").should == nil
   end
 
   it "allows blank lines" do
@@ -655,11 +684,25 @@ Ol << "x: #{x.inspect}"
 
   it "includes all sub-items when :include_subitems option" do
     Tree.children("
-      - a
-        - b
+      - a/
+        - b/
       ", "", :include_subitems=>1).should == "
+      + a/
+        + b/
+      ".unindent
+  end
+
+  it "includes all sub-items when no slashes" do
+    Tree.children("
       - a
         - b
+
+        - c
+      ", "").should == "
+      - a
+        - b
+
+        - c
       ".unindent
   end
 
@@ -682,6 +725,20 @@ Ol << "x: #{x.inspect}"
       ", ""
     result.should == "
       a/
+      b/
+      ".unindent
+  end
+
+  it "associates blank lines at end with root" do
+    result = Tree.children "
+      a/
+        aa
+
+      b/
+      ", ""
+    result.should == "
+      a/
+
       b/
       ".unindent
   end

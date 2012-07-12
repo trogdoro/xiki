@@ -66,7 +66,7 @@ class History
       end
 
       View.to_buffer("*tree of current")
-      View.clear;  $el.notes_mode
+      View.clear;  Notes.mode
 
       raise "Thought this wouldn't happen :(" if paths.length > 1
 
@@ -262,7 +262,9 @@ class History
 
     backup = Dir["#{Bookmarks['$bak']}#{View.file_name}*"].last
 
-    diff = Console.run "diff -w -U 0 \"#{backup}\" \"#{buffer_file_name}\"", :sync=>true
+    return View.beep("- No backup exists in $bak/") if ! backup
+
+    diff = Console.run "diff -U 0 \"#{backup}\" \"#{buffer_file_name}\"", :sync=>true
 
     return Launcher.show "- No Differences!" if diff.blank?
 

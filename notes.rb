@@ -120,10 +120,9 @@ class Notes
     times == 1 ?
       moved_block.fade_in :
       orig.go
-
   end
 
-  def self.insert_heading
+  def self.insert_heading options={}
     Line.start
     orig = Line.value
 
@@ -131,7 +130,7 @@ class Notes
     times.times { insert ">" }
     View.insert " " # unless times > 1
 
-    if Keys.prefix_u?   # If U create blank lines.
+    if options[:extra_space] || Keys.prefix_u?   # If U create blank lines.
       View.insert("\n"*4, :dont_move=>1)
       return
     end
@@ -439,6 +438,7 @@ class Notes
     Styles.apply "^ *@? ?\\([%$&]\\) ", nil, :shell_prompt   # Colorize shell prompts
 
     Styles.apply("^ *\\(|`\\)\\(.*\n\\)", nil, :quote_heading_pipe, :dotsies_experimental)
+    Styles.apply("^ *\\(|~\\)\\([^\n~]+\\)\\(~?\\)", nil, :quote_heading_pipe, :dotsies, :quote_heading_pipe)
 
   end
 
@@ -527,7 +527,7 @@ class Notes
       # If at beginning of line, just insert bullet
       return View.insert "- " if View.column == 0 && bullet_text == "- " && line !~ /^ /
 
-      if Line.point != Line.right
+      if View.cursor != Line.right
         Deletes.delete_whitespace
       end
       View.insert "\n"
@@ -886,7 +886,7 @@ class Notes
       return "| Set the following bookmark first. Then you'll be able to use this menu to\n| browse the file. The file should have '> ...' headings.\n\n@ $#{bm}\n"
     end
 
-    # If docs/, output docs string
+    # If docs/, output docs string...
 
     if heading == "docs"
       message = "
@@ -905,7 +905,6 @@ class Notes
           | > Heading
           | Stuff
         "
-      #         @ /docs/notes/technologies/hyperestraier/hyperestraier.notes
     end
 
     txt = File.read file
@@ -918,7 +917,7 @@ class Notes
 
       txt = txt.grep /^\>( .+)/
       return "| This file has no '>...' headings:\n@ #{file}" if txt.empty?
-      return txt.join('').gsub /^> /, '| '
+      return txt.join('')  #.gsub /^> /, '| '
     end
 
     # If just heading passed, show text under heading

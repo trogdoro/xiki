@@ -37,6 +37,8 @@ class Browser
 
     file = FileTree.tree_path_or_this_file
 
+    return Browser.html Markdown.render(View.txt) if View.extension == "markdown"   # If .markdown, render it
+
     mappings = Menu.menu_to_hash "/Users/craig/menus/url_mappings.menu"
 
     result = nil

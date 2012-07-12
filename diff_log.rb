@@ -160,7 +160,7 @@ class DiffLog
 
     View.to_buffer("*diff with saved*")
     View.clear
-    $el.notes_mode
+    Notes.mode
 
     View.insert diff.count("\n") > 2 ?
       diff :
@@ -184,7 +184,7 @@ class DiffLog
       $el.write_region nil, nil, @@temp_path
     end
 
-    diff = Console.sync "diff -w -U 0 \"#{patha}\" \"#{@@temp_path}\""
+    diff = Console.sync "diff -U 0 \"#{patha}\" \"#{@@temp_path}\""
     return if diff.empty? || diff =~ /: No such file or directory\n/   # Fail quietly if file didn't exist
 
     diff = self.format diff

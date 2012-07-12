@@ -19,63 +19,39 @@ class View
       | View class is the catch-all class for dealing with editing text.
       | It has methods for inserting text and grabbing text, and quite a few
       | other things.
-      |
+
       > Text
-      | Inserts into the view.
-      @ View << 'Hello'
-      |
-      | Return all the text.
-      @ p View.txt
-      |
-      | Return text in a range.
-      @ p View.txt 1, 5
-      |
-      | Return where the cursor is.
-      @ p View.cursor
-      |
-      | Returns the line number the cursor is on.
-      @ p View.line
-      |
-      |
+      @View << 'Hello'    # Inserts into the view.
+      @p View.txt         # Return all the text.
+      @p View.txt 1, 5    # Return text in a range.
+      @p View.cursor      # Return where the cursor is.
+      @p View.line        # Returns the line number the cursor is on.
+
       > Files and dirs
-      | Returns file name.
-      @ p View.name
-      |
-      | Returns file with whole path.
-      @ p View.file
-      |
-      | Returns dir of file.
-      @ p View.dir
-      |
-      | Switches to the view (opening if necessary)
-      @ View.open "/tmp/"
-      |
+      @p View.name                  # Returns file name.
+      @p View.file                  # Returns file with whole path.
+      @p View.dir                   # Returns dir of file.
+      @View.open "/tmp/"            # Opens file in the first view, (switching to it if it's already open)
+      @View.open nil, :txt=>"Hi"    # Show message in new buffer.
+
       > Messages
-      | Shows temporary message inline.
-      @ View.flash
-      @ View.flash 'Saved'
-      |
-      | Shows message at bottom.
-      @ View.message 'Hi there'
-      |
-      | Prompt user to type at end af line.
-      @ View.prompt
-      @ View.prompt 'Type something, dude'
-      |
-      | Makes a noise.
-      @ View.beep
-      |
-      |
+      @View.flash                 # Shows temporary message inline.
+      @View.flash 'Saved'
+      @View.message 'Hi there'    # Shows message at bottom.
+      @View.prompt                # Prompt user to type at end af line.
+      @View.prompt 'Type here'
+      @View.beep                  # Makes a noise.
+
       > Advanced
-      @ View.<< "hey", :dont_move=>1   # Without moving cursor
-      |
+      @View.<< "hey", :dont_move=>1    # Without moving cursor
+
       > Also see
-      - line/
-      |
+      << line/
+
     - docs/
       > Summary
       | Menus to deal with the layout, etc.
-      |
+
       - Keys/
         | layout+create - TODO should we just refer to a @layout menu for these?
     `
@@ -83,8 +59,6 @@ class View
 
   # Stores things user copies
   @@hash = {}
-
-
 
   def self.windows_in_my_column
     my_left = left_edge
@@ -196,10 +170,26 @@ class View
     end
   end
 
+  def self.show_txt txt, options={}
+    View.to_buffer(options[:name] || "message")
+    View.kill_all
+    Notes.mode
+    View << "#{txt.strip}\n"
+    View.to_highest
+  end
+
+  #
   # Opens file (or whatever) from the path (can contain $bookmarks), just
   # moving to or exposing its view if it's already open.
   # By default it will open in 2nd view if we're in the bar view.
+  #
+  # View.open "/etc/paths"
+  # View.open "hello", :txt=>"> Hi\nMessage to show in new buffer."
+  #
   def self.open path, options={}
+
+    return self.show_txt(options[:txt], :name=>path) if options[:txt]
+
     # Pull off line number if there
     path.sub!(/(.+?:\d+).*/, "\\1")
     line_number = path.slice!(/:\d+$/)
@@ -208,6 +198,7 @@ class View
     if View.in_bar? && (! options[:stay_in_bar]) && path != "$0" && path != Bookmarks['$t'] && path != Bookmarks['$f']
       View.to_after_bar
     end
+
     # Expand $bookmark strings at beginning
     expanded = Bookmarks.expand(path)
     if expanded == ""   # If nothing there, return false
@@ -222,13 +213,11 @@ class View
     if expanded   # Handle opening in other window
       if options[:same_view]
         $el.find_file expanded
-      # If already there, do nothing
-      elsif expanded == buffer_file_name
-      # If already displayed, move to its window
-      elsif ( ( window_list.collect {|b| window_buffer b} ).collect {|u| buffer_file_name u} ).member?(expanded)
+      elsif expanded == buffer_file_name   # If already there
+        # do nothing
+      elsif ( ( window_list.collect {|b| window_buffer b} ).collect {|u| buffer_file_name u} ).member?(expanded)   # If already displayed, move to its window
         find_file_other_window expanded
-      # If not visible, just open it
-      else
+      else   # If not visible, just open it
         $el.find_file expanded
       end
     end
@@ -270,6 +259,7 @@ class View
   def self.list_names
     self.list.map{|v| buffer_name(window_buffer(v))}
   end
+
 
   def self.files options={}
     if options[:visible]
@@ -823,7 +813,7 @@ class View
   def self.unindent txt
 
     # Trim off optional first line
-    txt.sub! /^\n/, ''
+    txt = txt.sub /^\n/, ''
     # Get indent of first line
     indent = txt[/\A +/]
     # Delete this much indent on other lines
@@ -841,10 +831,10 @@ class View
   def self.recenter n=nil
     n ||= Keys.prefix
 
-    return View.recenter_under "^\\( *def \\| *it \\|^>\\)" if n == :u
-    if n == :uu
+    return View.recenter_under "^\\( *def \\| *it \\|^>\\)", :relative=>1 if n == :u
 
-      return View.recenter_under "^\\( *def \\| *it \\|^>\\)", :to_previous_paragraph=>1
+    if n == :uu
+      return View.recenter_under "^\\( *def \\| *it \\|^>\\)", :relative=>1, :incude_comments=>1
     end
 
     $el.recenter n
@@ -859,13 +849,24 @@ class View
     orig = Location.new
     Search.backward pattern
 
-    Move.to_previous_paragraph if options[:to_previous_paragraph]
+    # If :relative, search backward from here...
 
-    line = View.line
+    if options[:relative]
+      Move.to_previous_paragraph if options[:incude_comments] && Line.value(0) =~ /^ *#/
+      line = View.line
+      View.recenter_top
+      orig.go
+      difference = View.line - line
+      View.recenter -2 if difference > (View.height-3)
+      return
+    end
+
+    # Search from top...
+
+    View.to_highest
+    Search.forward pattern
+    Line.to_beginning
     View.recenter_top
-    orig.go
-    difference = View.line - line
-    View.recenter -2 if difference > (View.height-3)
   end
 
   def self.recenter_top
@@ -936,6 +937,7 @@ class View
   def self.visible_line_number
     Line.number - Line.number($el.window_start) + 1
   end
+
   def self.visible_line_number= num
     line = Line.number($el.window_start) + num - 1
     View.line = line
@@ -1283,14 +1285,6 @@ class View
     Tree.under txt, options# .merge(:escape=>'')
   end
 
-  def a
-    caller(0)[0..2]
-  end
-
-  def self.aa
-    caller(0)[0..2]
-  end
-
   def self.>> txt
     View.<< txt, :dont_move=>1
   end
@@ -1399,9 +1393,69 @@ class View
     $el.sit_for 0
   end
 
-  def self.pause n   # wait / sleep / sit
+  def self.pause n=0.5   # wait / sleep / sit
     $el.sit_for n
   end
+
+  #
+  # Set small string in mode line.
+  #
+  # View.status "aa"
+  # View.status nil
+  # View.status "bb", :nth=>2
+  # View.status "dotsies", :nth=>3
+  # View.status :scale=>5
+  # View.status :scale=>1
+  # View.status :scale=>0
+  # View.status :bars=>[2, 5]   # Show 2 bars
+  #
+  def self.status val=nil, options={}
+
+    if !options && ! val || val == :docs   # If nothing passed, show help message
+      return "
+        > Examples
+        @View.status 'aa'
+        @View.status :scale=>5
+        @View.status 'abc', :nth=>3
+        "
+    end
+
+    options = val if val.is_a? Hash
+
+    nth = options[:nth] || 1
+
+    # If :bars=>[n, n]...
+
+    if bars = options[:bars]
+      nth = 3
+
+      a, b = bars
+      if a < b
+        common, remainder, remainder_char = a, b - a, 'i'
+      else
+        common, remainder, remainder_char = b, a - b, 'f'
+      end
+
+      val = " #{"z" * common}#{remainder_char * remainder}"
+    end
+
+    if scale = options[:scale]
+      nth = 3
+      val = {0=>' ', 1=>'e', 2=>'i', 3=>'v', 4=>'ø', 5=>'ß'}[scale]
+    end
+
+    key = "xiki_status#{nth}".to_sym
+
+    $el.make_local_variable key
+    $el.elvar[key] = val
+
+    nil
+  end
+
+  def self.length
+    $el.buffer_size
+  end
+
 end
 
 View.init

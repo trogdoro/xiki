@@ -31,6 +31,10 @@ class Mac
   #
   def self.keys_for_aquamacs
 
+    $el.define_key(:osx_key_mode_map, $el.kbd("A-0")) { Styles.font_size 110 }
+    $el.define_key(:osx_key_mode_map, $el.kbd("A-=")) { Styles.zoom }
+    $el.define_key(:osx_key_mode_map, $el.kbd("A--")) { Styles.zoom :out=>1 }
+
     # Changes aquamacs behavior so it opens in same frame.  Is there
     # an aquamacs setting for this that could be used instead of redefining
     # key?

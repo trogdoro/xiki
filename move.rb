@@ -187,7 +187,7 @@ class Move
     when :uuu
       forward_word 3
     else
-      forward_char(count)
+      forward_char(count) rescue nil   # In case tried to move past end
     end
   end
 

@@ -1,25 +1,29 @@
 class Html
   def self.menu *args
 
-    return Tree.<< Firefox.dom(:prefix=>"all") if Keys.prefix == "all"
-    return Tree.<< Firefox.dom(:prefix=>"outline") if Keys.prefix == "outline"
+    return Tree.<< Dom.dom(:prefix=>"all") if Keys.prefix == "all"
+    return Tree.<< Dom.dom(:prefix=>"outline") if Keys.prefix == "outline"
 
     prefix = Keys.prefix :clear=>1
 
-    # If not expandable or open+, render in browser
+    # If as+open, or launched line without slash, render in browser...
 
     if prefix == "open" || (Line !~ /\/$/ && Line =~ /^ /)
-
       orig = Location.new
       Tree.to_root
-      #       txt = Tree.children :cross_blank_lines=>1
       txt = Tree.children :string=>1, :cross_blank_lines=>1
       orig.go
       txt = txt.unindent
 
-      html = Tree.to_html txt
-      return Browser.html html
+      # Convert from tree to html if any ident, or 1st line doesn't start with "<"
+      txt = txt =~ /^ / || txt !~ /\A</ ?
+        Tree.to_html(txt) :
+        txt.gsub(/^\| ?/, '')
+
+      return Browser.html txt
     end
+
+    # Suggest relevant elements...
 
     last = args.last
     if filler = @@filler[last]
@@ -29,7 +33,7 @@ class Html
     elsif last == 'html'
       ['head/', 'body/']
     elsif last == 'head'
-      "- title/\n- style/\n| <script src='http://code.jquery.com/jquery-latest.js'></script>"
+      "- title/\n- style/\n| <script src='http://code.jquery.com/jquery.min.js'></script>"
     elsif last == 'style'
       "
       | body {

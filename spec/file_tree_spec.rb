@@ -35,7 +35,7 @@ end
 
 describe "snippet" do
   it "uses options" do
-    FileTree.snippet(:txt=>"hey", :file=>"/projects/xiki/file_tree.rb").should == "/projects/xiki/\n  - file_tree.rb\n    | hey\n"
+    FileTree.snippet(:txt=>"hey", :file=>"/tmp/file_tree.rb").should == "/tmp/\n  - file_tree.rb\n    | hey\n"
   end
 end
 
