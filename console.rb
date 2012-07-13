@@ -179,7 +179,7 @@ class Console
 
       # TODO Make sure there's no ssh or cd in history!
       View.list.each do |w|
-        $el.set_buffer window_buffer(w)
+        $el.set_buffer $el.window_buffer(w)
         next if View.mode != :shell_mode || ! Console.prompt?
         next if Tree.slashless(dir) != Tree.slashless(View.dir)
         next if View.cursor != View.bottom
@@ -196,7 +196,7 @@ class Console
     # Deprecated:
     # Try to find visible shell buffer with matching name
     View.list.each do |w|
-      next if $el.buffer_name(window_buffer(w)) !~ pattern
+      next if $el.buffer_name($el.window_buffer w) !~ pattern
       View.to_window(w)
       return true
     end
