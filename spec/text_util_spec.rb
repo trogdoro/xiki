@@ -1,5 +1,4 @@
 $:.unshift "spec/"
-require 'el_mixin'
 require 'text_util'
 
 describe TextUtil, "#unindent" do

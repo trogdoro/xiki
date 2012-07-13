@@ -228,7 +228,7 @@ class KeyBindings
     # Use D prefix for: things that modify text or execute code
 
     #     Keys.D { insert "Apparently this is necessary to remap C-d" }
-    Keys.DD { delete_char $el.elvar.current_prefix_arg || 1 }   # DD - delete character (D's default)
+    Keys.DD { $el.delete_char $el.elvar.current_prefix_arg || 1 }   # DD - delete character (D's default)
     #     Keys.do_as_camelcase { Clipboard.do_as_camel_case }   # change word to camel case (LikeThat)
     Keys.do_as_execute { Console.do_as_execute }   # Run shell command on tree
     Keys.do_as_html { Firefox.do_as_html }
@@ -323,7 +323,7 @@ class KeyBindings
     Keys.do_viewing { Buffers.open_viewing }   # Not great fit here
     Keys.do_whitespace { Deletes.delete_whitespace }   # delete blank lines
     # X
-    Keys.do_you { delete_char $el.elvar.current_prefix_arg || 1 }   # Delete character
+    Keys.do_you { $el.delete_char $el.elvar.current_prefix_arg || 1 }   # Delete character
     Keys.do_zip_next { Files.zip }
     Keys.set("C-d C-.") {   # Do .:  Go to point/bookmark starting with "." and run it (like pressing C-. on that line)
       input = Keys.input(:timed => true)

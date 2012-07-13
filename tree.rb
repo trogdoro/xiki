@@ -1339,11 +1339,15 @@ class Tree
   end
 
   def self.output_and_search block_or_string, options={}
-    line=options[:line]
 
-    buffer_orig = View.buffer
-    orig = Location.new
-    orig_left = View.cursor
+    line = options[:line]
+
+    if $el
+      buffer_orig = View.buffer
+      orig = Location.new
+      orig_left = View.cursor
+    end
+
     error_happened = nil
 
     self.unset_env_vars
@@ -1372,25 +1376,29 @@ class Tree
 
     # TODO: move some of this crap into the else block above (block_or_string is proc)
 
-    buffer_changed = buffer_orig != View.buffer   # Remember whether we left the buffer
 
-    ended_up = Location.new
-    orig.go   # Go back to where we were before running code
+    if $el
+      buffer_changed = buffer_orig != View.buffer   # Remember whether we left the buffer
+
+      ended_up = Location.new
+      orig.go   # Go back to where we were before running code
+    end
 
     # Move what they printed over to left margin initally, in case they haven't
     output = TextUtil.unindent(output) if output =~ /\A[ \n]/
     # Remove any double linebreaks at end
     output = CodeTree.returned_to_s output
 
-    return View.prompt $1 if output =~ /\A\.prompt (.+)/
-    return View.flash $1 if output =~ /\A\.flash (.+)/
+    if $el
+      return View.prompt $1 if output =~ /\A\.prompt (.+)/
+      return View.flash $1 if output =~ /\A\.flash (.+)/
+    end
 
     output.sub!(/\n\n\z/, "\n")
     output = "#{output}\n" if output !~ /\n\z/
 
-    if options[:just_return]
-      return output
-    end
+    return output if options[:just_return]
+
 
     # Add slash to end of line if not suppressed, and line isn't a quote
     line=options[:line]

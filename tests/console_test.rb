@@ -1,5 +1,4 @@
 require 'test/unit'
-require 'el_mixin'
 $:.unshift File.expand_path("..")
 require 'console'
 require 'ol'

@@ -1,5 +1,4 @@
 require 'test/unit'
-require 'el_mixin'
 $:.unshift "../"
 require 'merb'
 require 'core_ext'

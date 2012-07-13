@@ -1,5 +1,4 @@
 require 'test/unit'
-require 'el_mixin'
 $:.unshift "../"
 require 'redmine'
 require 'core_ext'

@@ -1,6 +1,5 @@
 $:.unshift "spec/"
 require 'rubygems'
-require 'el_mixin'
 class Keys
   def self.method_missing(meth, *args, &block); end
 end

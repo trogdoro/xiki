@@ -437,66 +437,6 @@ class Menu
     end
   end
 
-end
-
-Menu.init   # Define mode
-
-
-
-# Below is a different use of the "Menu" class - the "Xiki" menu at the top of emacs
-
-# TODO move into menu_bar.rb
-
-
-
-class Menu
-  def self.add_menu *name
-    menu_spaces = name.join(' ').downcase
-    menu_dashes = name.join('-').downcase
-    name = name[-1]
-
-    lisp = %Q<
-      (define-key global-map
-        [menu-bar #{menu_spaces}]
-        (cons "#{name}" (make-sparse-keymap "#{menu_dashes}")))
-    >
-    $el.el4r_lisp_eval lisp
-
-    menu = $el.elvar.menu_bar_final_items.to_a
-    $el.elvar.menu_bar_final_items = menu.push(name.downcase.to_sym)
-  end
-
-  def self.add_item menu, name, function
-
-    menu_spaces = menu.join(' ').downcase
-    lisp = "
-      (define-key global-map
-        [menu-bar #{menu_spaces} #{function}]
-        '(\"#{name}\" . #{function}))
-    "
-    $el.el4r_lisp_eval lisp
-  end
-
-  ROOT_MENU = 'Keys'
-
-  def self.init
-
-    add_menu ROOT_MENU
-
-    menus = [
-      [ROOT_MENU, 'To'],
-      [ROOT_MENU, 'Open'],
-      [ROOT_MENU, 'Layout'],
-      [ROOT_MENU, 'As'],
-      [ROOT_MENU, 'Enter'],
-      [ROOT_MENU, 'Do'],
-      [ROOT_MENU, 'Search']
-    ]
-    menus.reverse.each do |tuple|
-      add_menu tuple[0], tuple[1]
-    end
-  end
-
   def self.as_menu
     orig = View.cursor
 
@@ -712,4 +652,65 @@ class Menu
     Launcher.launch
   end
 
+
+
+
+  # The following 3 methods are for the menu bar
+  #   - a different use of the "Menu" class
+  # TODO move them into menu_bar.rb ?
+
+  def self.add_menu *name
+    menu_spaces = name.join(' ').downcase
+    menu_dashes = name.join('-').downcase
+    name = name[-1]
+
+    lisp = %Q<
+      (define-key global-map
+        [menu-bar #{menu_spaces}]
+        (cons "#{name}" (make-sparse-keymap "#{menu_dashes}")))
+    >
+    $el.el4r_lisp_eval lisp
+
+    menu = $el.elvar.menu_bar_final_items.to_a
+    $el.elvar.menu_bar_final_items = menu.push(name.downcase.to_sym)
+  end
+
+  def self.add_item menu, name, function
+
+    menu_spaces = menu.join(' ').downcase
+    lisp = "
+      (define-key global-map
+        [menu-bar #{menu_spaces} #{function}]
+        '(\"#{name}\" . #{function}))
+    "
+    $el.el4r_lisp_eval lisp
+  end
+
+  ROOT_MENU = 'Keys'
+
+  def self.init
+
+    return if ! $el
+
+    add_menu ROOT_MENU
+
+    menus = [
+      [ROOT_MENU, 'To'],
+      [ROOT_MENU, 'Open'],
+      [ROOT_MENU, 'Layout'],
+      [ROOT_MENU, 'As'],
+      [ROOT_MENU, 'Enter'],
+      [ROOT_MENU, 'Do'],
+      [ROOT_MENU, 'Search']
+    ]
+    menus.reverse.each do |tuple|
+      add_menu tuple[0], tuple[1]
+    end
+  end
+
+
 end
+
+Menu.init   # Define mode
+
+

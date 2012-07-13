@@ -33,7 +33,7 @@ class Location
     if args[0] && args[0].class == Hash
       options = args.shift
       if options[:save_scroll_position]
-        @scroll_position = (line_number_at_pos point) - (line_number_at_pos window_start)
+        @scroll_position = ($el.line_number_at_pos $el.point) - ($el.line_number_at_pos $el.window_start)
       end
     end
 
@@ -123,7 +123,6 @@ class Location
     # Save location in corresponding register
     # @@hash[name] = Location.new
     $el.bookmark_set(name)
-
   end
 
   def self.jump path=nil
@@ -155,7 +154,7 @@ class Location
     end
 
     # Must be a buffer
-    @@spots[key] = [$el.buffer_name(View.buffer), point]
+    @@spots[key] = [$el.buffer_name(View.buffer), $el.point]
   end
 
   def self.to_spot key='0'

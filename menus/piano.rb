@@ -216,13 +216,13 @@ class Piano
             @piano/
               | reset()
               | repeat(8)
-              | tempo(40)
+              | tempo(45)
               | mode(rand 100)
               | variation()
+              | consistency(50)
               | melodic()
-              | consistency(25)
-              | probability(85)
-              | aaaaaaaa
+              | probability(80)
+              | aaaaaaa
               | AAAAAAAA
               | H   H
       |
@@ -574,6 +574,13 @@ class Piano
     @@repeat = 1
 
     ".flash - success!"
+  end
+
+  #
+  # Low level call to configure midi.
+  #
+  def self.control_change a, b, c
+    self.driver.control_change a, b, c
   end
 
   def self.connect

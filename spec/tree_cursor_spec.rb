@@ -1,6 +1,4 @@
 $:.unshift "spec/"
-# require 'el_mixin'
-require 'el_mixin'
 require 'core_ext'
 require 'tree_cursor'
 require 'ol'

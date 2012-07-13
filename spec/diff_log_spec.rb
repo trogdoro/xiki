@@ -1,5 +1,4 @@
 $:.unshift "spec/"
-require 'el_mixin'
 require 'line'
 require 'ol'
 require 'diff_log'

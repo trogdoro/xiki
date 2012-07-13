@@ -8,9 +8,10 @@ class Xiki
   def self.dir
     @@dir
   end
+
 end
 
-$el.el4r_lisp_eval '(ignore-errors (kill-buffer "Issues Loading Xiki"))'
+$el.el4r_lisp_eval '(ignore-errors (kill-buffer "Issues Loading Xiki"))' if $el
 
 # Require some of the core files
 require 'trouble_shooting'
@@ -339,7 +340,6 @@ class Xiki
   end
 
   def self.init
-
     # Get rest of files to require
     classes = Dir["**/*.rb"]
     classes = classes.select{|i|

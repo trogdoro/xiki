@@ -2,24 +2,34 @@
 
 #
 # > Summary
-# This is aliased to /usr/local/bin/xiki so it can be called from the command
-# line to open a xiki menu in a shrunk-down window.
+# This file is aliased to /usr/local/bin/xiki, so it can be
+# called from the command line.  It exposes xiki menus.
+#
+# > Example
+# $ xiki ip
+#   111.1.1.111
 #
 # To create the alias, see:
 # @xiki/setup/install command/
 #
 
-# require "/projects/xiki/ol"
+require 'rubygems'
 
-# Bring emacs to front
+# Generate with correct path (see below)
+xiki_dir = "/projects/xiki/"
 
-`open "/Applications/Aquamacs Emacs.app"`
-# `open "/Applications/emacs.app"`   # If you're not using Aquamacs
+require "#{xiki_dir}/ol"
 
-menu = ARGV.join(' ')
+$:.unshift xiki_dir.sub(/\/$/, '')
+$:.unshift '/projects/xiki/etc/stubs/'
 
-ruby = %`Menu.external \\"#{menu}\\"`
-ruby << %`, :dir=>\\"#{Dir.pwd}\\"` if menu =~ /^@/
+load "xiki_command.rb"
+result = XikiCommand.run
 
-command = %`emacsclient -n -e '(el4r-ruby-eval "#{ruby}")'`
-`#{command}`
+exit 0
+
+# TODO: Start with template, and when installing, change:
+  # - #!.. line to: result of: `which ruby`
+  # - xiki_dir to: Xiki.dir
+
+

@@ -1,6 +1,5 @@
 require 'rubygems'
 require 'test/unit'
-require 'el_mixin'
 $:.unshift "../"
 require 'remote'
 

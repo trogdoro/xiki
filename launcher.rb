@@ -1,14 +1,12 @@
 require 'effects'
-
 require 'requirer'
+require 'xiki'
 
-# require 'xiki'
-Requirer.require_gem 'httparty'   # Not super-important
+Requirer.require_gem 'httparty', :optional=>1   # Not super-important
 Requirer.require_gem 'activesupport', :name2=>'active_support/ordered_hash'
 Requirer.require_gem 'haml', :optional=>1
 
 class Launcher
-  extend ElMixin
 
   CLEAR_CONSOLES = [
     "*ol",
@@ -248,7 +246,7 @@ class Launcher
           rescue RelinquishException
             next   # They didn't want to handle it, keep going
           rescue Exception=>e
-            Tree.<< CodeTree.draw_exception(e, block.to_ruby), :no_slash=>ENV['no_slash']
+            Tree.<< CodeTree.draw_exception(e, block.to_ruby), :no_slash=>true
           end
 
         end
@@ -1179,7 +1177,6 @@ class Launcher
   end
 
   def self.reload_menu_dirs
-
     MENU_DIRS.each do |dir|
       next unless File.directory? dir
 
@@ -1244,6 +1241,11 @@ class Launcher
   end
 
   def self.set_env_vars path
+
+    return if ! $el
+
+    # TODO: I guess they'll need to be set from somewhere else as well?
+
     ENV['prefix'] = Keys.prefix.to_s
 
     args = path.is_a?(Array) ?
