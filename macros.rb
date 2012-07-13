@@ -1,6 +1,5 @@
 # Starting and stopping macros
 class Macros
-  extend ElMixin
 
   def self.menu
     "
@@ -14,17 +13,17 @@ class Macros
 
   def self.record
     # If ending a macro
-    if elvar.defining_kbd_macro
+    if $el.elvar.defining_kbd_macro
       end_kbd_macro nil
     # If starting a macro
     else
-      start_kbd_macro nil
+      $el.start_kbd_macro nil
     end
   end
 
   def self.run
     # If defining a macro, just end it and run it
-    if elvar.defining_kbd_macro
+    if $el.elvar.defining_kbd_macro
       end_kbd_macro nil
     end
 
@@ -34,8 +33,8 @@ class Macros
       Line.next
       left = point
       Search.forward "^$"
-      beginning_of_line
-      apply_macro_to_region_lines left, point
+      $el.beginning_of_line
+      $el.apply_macro_to_region_lines left, point
       orig.go
       return
     elsif Keys.prefix == 0   # If 0, do to region
@@ -44,6 +43,6 @@ class Macros
     end
 
     # Run it prefix times
-    call_last_kbd_macro elvar.current_prefix_arg || 1
+    $el.call_last_kbd_macro $el.elvar.current_prefix_arg || 1
   end
 end

@@ -6,7 +6,6 @@ gem 'ParseTree'
 require 'parse_tree'
 require 'parse_tree_extensions'   # required for .to_ruby
 class Code
-  extend ElMixin
 
   def self.menu
     %`
@@ -74,7 +73,7 @@ class Code
     View.to left
     View.set_mark right
 
-    comment_or_uncomment_region View.range_left, View.range_right
+    $el.comment_or_uncomment_region View.range_left, View.range_right
     Code.indent View.range_left, View.range_right
   end
 
@@ -162,12 +161,12 @@ class Code
 
   def self.run_in_rails_console
     left, after_header, right = View.block_positions "^>"
-    block = buffer_substring after_header, right
+    block = $el.buffer_substring after_header, right
 
     View.to_after_bar if View.in_bar?
 
     View.to_buffer "*rails console"
-    erase_buffer
+    $el.erase_buffer
     View.to_bottom
 
     #     if elvar.current_prefix_arg
@@ -175,32 +174,32 @@ class Code
     #       command_execute "\C-m"
     #     end
 
-    insert block
-    command_execute "\C-m"
+    $el.insert block
+    $el.command_execute "\C-m"
 
-    beginning_of_buffer
+    $el.beginning_of_buffer
 
   end
 
   def self.show_el4r_error
-    View.open elvar.el4r_log_path
-    revert_buffer(true, true, true)
+    View.open $el.elvar.el4r_log_path
+    $el.revert_buffer(true, true, true)
     View.wrap
     View.to_end
-    re_search_backward "^  from "
-    re_search_backward "^[A-Z]"
-    recenter 0
+    $el.re_search_backward "^  from "
+    $el.re_search_backward "^[A-Z]"
+    $el.recenter 0
     Color.colorize :r
   end
 
   def self.enter_ruby_log
     txt = Clipboard.get("0")
-    insert "Ol << \"#{txt}: \#{#{txt}}\""
+    $el.insert "Ol << \"#{txt}: \#{#{txt}}\""
   end
 
   def self.indent left=nil, right=nil
     left, right = View.range if left.nil?
-    indent_region(left, right)
+    $el.indent_region(left, right)
   end
 
   # Evaluates a string, and returns the output and the stdout string generated
@@ -221,7 +220,7 @@ class Code
   end
 
   def self.do_as_align
-    align_regexp
+    $el.align_regexp
   end
 
   def self.open_related_rspec
@@ -406,7 +405,7 @@ class Code
     Line.next
     Search.backward "^ +def "
     meth = Line.value[/def ([\w.!]+)/, 1].sub /^self\./, ''
-    p meth
+
     View.cursor = orig
 
     # Go to relevant test
@@ -432,7 +431,7 @@ class Code
   end
 
   def self.do_code_align
-    left, right = bounds_of_thing_at_point(:paragraph).to_a
+    left, right = $el.bounds_of_thing_at_point(:paragraph).to_a
     align_regexp(left, right, "\\( *\\)"+Keys.input(:prompt => "align to regex: "), 1, 3, true)
   end
 
@@ -492,7 +491,7 @@ class Code
     txt.strip!
     txt.gsub!(/$/, "\\")  # Add \'s
     txt.gsub!(/\\\z/, '')  # Remove last \
-    insert txt
+    $el.insert txt
   end
 
   #   def self.enter_as_trunk
@@ -514,7 +513,7 @@ class Code
     txt = View.selection :delete=>true
     count = 0
     txt.gsub!(/^.+/) { |m|
-      if m =~ /^\s+(end|else|elsif|})/
+      if m =~ /^\s+(end|else|elsif|\})/
         m
       else
         count += 1;

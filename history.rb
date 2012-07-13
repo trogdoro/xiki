@@ -1,5 +1,4 @@
 class History
-  extend ElMixin
 
   #   FILENAME = File.expand_path "~/.emacs.d/menu_log.notes"
   # Unused
@@ -37,10 +36,10 @@ class History
 
       paths = [path]
     elsif options[:outline] || options[:all]
-      paths = [buffer_file_name(buffer_list[0])]
+      paths = [$el.buffer_file_name($el.buffer_list[0])]
     else  # No options passed
       times = Keys.prefix
-      paths = ( buffer_list.map { |b| buffer_file_name(b) }.select{|path| path})
+      paths = ( $el.buffer_list.map { |b| $el.buffer_file_name(b) }.select{|path| path})
       paths = paths[0..(times-1)] if times  # Limit to number if prefix passed
     end
 
@@ -91,7 +90,7 @@ class History
     times = self.prefix_times
     View.to_buffer("*tree of edited")
     View.clear;  notes_mode
-    View.insert Tree.paths_to_tree(elvar.editedhistory_history.to_a[0..(times-1)])
+    View.insert Tree.paths_to_tree($el.elvar.editedhistory_history.to_a[0..(times-1)])
     View.to_top
     Keys.clear_prefix
     FileTree.select_next_file
@@ -111,19 +110,19 @@ class History
   end
 
   def self.insert_history times
-    insert Tree.paths_to_tree(elvar.recentf_list.to_a[0..(times-1)])
+    insert Tree.paths_to_tree($el.elvar.recentf_list.to_a[0..(times-1)])
   end
 
   def self.enter_history
     orig = Location.new
     self.insert_history self.prefix_times
-    right = point
+    right = $el.point
     orig.go
-    Tree.search :recursive => true, :left => point, :right => right
+    Tree.search :recursive => true, :left => $el.point, :right => right
   end
 
   def self.insert_viewing times
-    paths = ( buffer_list.map { |b| buffer_file_name(b) }.select{|path| path})
+    paths = ( $el.buffer_list.map { |b| $el.buffer_file_name(b) }.select{|path| path})
     paths = paths[0..(times-1)] if times  # Limit to number if prefix passed
     insert Tree.paths_to_tree(paths)
   end
@@ -131,17 +130,17 @@ class History
   def self.enter_viewing
     orig = Location.new
     self.insert_viewing self.prefix_times
-    right = point
+    right = $el.point
     orig.go
-    Tree.search :recursive => true, :left => point, :right => right
+    Tree.search :recursive => true, :left => $el.point, :right => right
   end
 
   def self.unsaved_files
 
     # Narrow down to modified buffer only
-    buffers = buffer_list.to_a.
-      select{|b| buffer_modified_p(b)}.
-      select{|b| buffer_file_name(b)}
+    buffers = $el.buffer_list.to_a.
+      select{|b| $el.buffer_modified_p(b)}.
+      select{|b| $el.buffer_file_name(b)}
 
     if (buffers.size == 0)
       return "- No files unsaved!\n"
@@ -151,7 +150,7 @@ class History
 
     buffers.each do |b|
       path = $el.buffer_file_name(b)
-      with(:save_excursion) do
+      $el.with(:save_excursion) do
         $el.set_buffer b
 
         diffs = DiffLog.save_diffs :dont_log=>1
@@ -172,7 +171,10 @@ class History
   end
 
   def self.setup_editedhistory
-    el4r_lisp_eval %q<
+
+    return if ! $el
+
+    $el.el4r_lisp_eval %q<
       (progn
         ; Settings
         (setq editedhistory-log "~/.editedhistory")
@@ -264,7 +266,7 @@ class History
 
     return View.beep("- No backup exists in $bak/") if ! backup
 
-    diff = Console.run "diff -U 0 \"#{backup}\" \"#{buffer_file_name}\"", :sync=>true
+    diff = Console.run "diff -U 0 \"#{backup}\" \"#{$el.buffer_file_name}\"", :sync=>true
 
     return Launcher.show "- No Differences!" if diff.blank?
 
@@ -272,9 +274,9 @@ class History
 
     View.to_buffer("*diff with saved*")
     View.clear
-    notes_mode
+    Notes.mode
 
-    insert diff.count("\n") > 2 ?
+    $el.insert diff.count("\n") > 2 ?
       diff :
       "| Alert\n- ~No Differences~\n"
 

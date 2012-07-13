@@ -1,5 +1,4 @@
 class Deletes
-  extend ElMixin
   def self.delete_whitespace
 
     prefix = Keys.prefix(:clear=>true)   # Number prefix means add that many lines after deleting
@@ -20,9 +19,9 @@ class Deletes
     if was_blank  # If blank, stay on line
       # Do nothing
     elsif was_at_end
-      forward_char
+      $el.forward_char
     elsif was_at_beginning and not View.char =~ /\s/
-      backward_char
+      $el.backward_char
     else   # If not at end of a line, simply delete horizontal
       $el.delete_horizontal_space
       View.insert(" " * prefix) if prefix
@@ -30,13 +29,13 @@ class Deletes
     end
 
     # Delete any blank lines
-    delete_blank_lines if Line.blank?
-    delete_char(1) if Line.blank?   # Delete line if left
+    $el.delete_blank_lines if Line.blank?
+    $el.delete_char(1) if Line.blank?   # Delete line if left
 
     Deletes.backward if was_at_end
     if was_at_beginning
       Deletes.backward if Line.at_left?
-      delete_char(1) if Line.at_right?
+      $el.delete_char(1) if Line.at_right?
     end
     if was_blank
       if prefix
@@ -44,7 +43,7 @@ class Deletes
         Move.backward prefix
       end
     else
-      delete_horizontal_space
+      $el.delete_horizontal_space
       View.insert(" " * prefix) if prefix
     end
   end
@@ -54,13 +53,13 @@ class Deletes
     prefix = Keys.prefix
     case prefix
     when :u
-      backward_kill_word 1
+      $el.backward_kill_word 1
     when :uu
-      backward_kill_word 2
+      $el.backward_kill_word 2
     when :uuu
-      backward_kill_word 3
+      $el.backward_kill_word 3
     else
-      delete_backward_char(prefix || 1)
+      $el.delete_backward_char(prefix || 1)
     end
   end
 end

@@ -1,5 +1,4 @@
 class KeyBindings
-  extend ElMixin
 
   # Define all keys
   def self.keys
@@ -69,14 +68,14 @@ class KeyBindings
     # O: open...
     # Use O prefix for: opening, jumping to files
 
-    Keys.OO { open_line elvar.current_prefix_arg || 1 }   # OO - open line (O's default)
-    Keys.open_a_calendar { calendar }
+    Keys.OO { $el.open_line $el.elvar.current_prefix_arg || 1 }   # OO - open line (O's default)
+    Keys.open_a_calendar { $el.calendar }
     #Keys.OAD { Svn.jump_to_diff }
     Keys.open_as_file { Code.open_as_file }
-    Keys.open_as_elisp { find_function_at_point }   # jump to definition of lisp function
+    Keys.open_as_elisp { $el.find_function_at_point }   # jump to definition of lisp function
     Keys.open_as_highest { FileTree.open_as_upper }
     Keys.open_as_lowest { FileTree.open_as_upper(:lowest) }
-    Keys.open_as_utf { revert_buffer_with_coding_system('utf-8'.to_sym) }
+    Keys.open_as_utf { $el.revert_buffer_with_coding_system('utf-8'.to_sym) }
     Keys.open_as_2 { FileTree.open_as_upper(:second) }
     Keys.open_as_root { Files.open_sudo }
     Keys.open_a_shell { Console.open }
@@ -102,7 +101,7 @@ class KeyBindings
     Keys.open_list_faces { Styles.list_faces }
     #     Keys.open_list_flashes { Launcher.open "- view/flashes/" }
     #     Keys.open_list_faces { list_faces_display }
-    Keys.open_lisp_info { info("elisp") }   # Open manual
+    Keys.open_lisp_info { $el.info "elisp" }   # Open manual
 
     #     Keys.open_log_list { Launcher.open(Keys.prefix_u ? "- last/" : "- log/") }   # Show git diffs o 1 file
     Keys.open_log_list { Git.show_log_one_file }   # Show git diffs o 1 file
@@ -229,7 +228,7 @@ class KeyBindings
     # Use D prefix for: things that modify text or execute code
 
     #     Keys.D { insert "Apparently this is necessary to remap C-d" }
-    Keys.DD { delete_char elvar.current_prefix_arg || 1 }   # DD - delete character (D's default)
+    Keys.DD { delete_char $el.elvar.current_prefix_arg || 1 }   # DD - delete character (D's default)
     #     Keys.do_as_camelcase { Clipboard.do_as_camel_case }   # change word to camel case (LikeThat)
     Keys.do_as_execute { Console.do_as_execute }   # Run shell command on tree
     Keys.do_as_html { Firefox.do_as_html }
@@ -245,7 +244,7 @@ class KeyBindings
     Keys.do_as_wrap { Block.do_as_wrap }
     Keys.do_as_quote { Notes.do_as_quote }
     Keys.do_as_xul { Firefox.do_as_xul }
-    Keys.do_backward { backward_kill_word(Keys.prefix || 1) }   # delete word backward
+    Keys.do_backward { $el.backward_kill_word(Keys.prefix || 1) }   # delete word backward
     Keys.do_code_align { Code.do_code_align }   # Based on input character, all matches line up
     Keys.do_click_back { Firefox.back }
     Keys.do_create_directory { FileTree.do_create_dir }
@@ -269,8 +268,8 @@ class KeyBindings
     Keys.do_compare_with { DiffLog.do_compare_with }
     Keys.DC1 { Clipboard.diff_1_and_2 }   # Compare contents of clipboards "1" and "2"
     # D: defined above - mapped to what C-d does by default
-    Keys.do_expand { dabbrev_expand nil }   # expand abbreviation
-    Keys.do_forward { kill_word(Keys.prefix || 1) }   # delete word forward
+    Keys.do_expand { $el.dabbrev_expand nil }   # expand abbreviation
+    Keys.do_forward { $el.kill_word(Keys.prefix || 1) }   # delete word forward
     # H
     # G: leave unmapped for escape
     Keys.do_here { Launcher.do_last_launch :here=>1 }
@@ -290,23 +289,23 @@ class KeyBindings
     Keys.do_line_duplicate { Line.duplicate_line }
     Keys.do_load_file { Files.do_load_file }   # U prefix will auto-update / auto-refresh to relflect changes
     Keys.do_lines_having {   # delete lines matching a regex
-      unless elvar.current_prefix_arg
+      unless $el.elvar.current_prefix_arg
         delete_matching_lines( Keys.input(:prompt => "Delete lines having: ") )
       else
         delete_non_matching_lines( Keys.input(:prompt => "Delete lines not having: ") )
       end
     }
     Keys.do_lines_jumble { Code.randomize_lines }   # Shuffle lines
-    Keys.do_linebreaks_linux { set_buffer_file_coding_system :unix }
+    Keys.do_linebreaks_linux { $el.set_buffer_file_coding_system :unix }
     Keys.do_line_next { Line.move :next }
     Keys.do_line_previous { Line.move(:previous) }
-    Keys.do_lines_reverse { reverse_region(region_beginning, region_end) }
+    Keys.do_lines_reverse { $el.reverse_region(region_beginning, region_end) }
 
     Keys.do_lines_sort { Line.do_lines_sort }
     Keys.do_lines_toggle { Line.do_lines_toggle }   # Swap next N lines
 
     Keys.do_lines_unique { Code.kill_duplicates }   # Uniqify, delete duplicates
-    Keys.do_linebreaks_windows { set_buffer_file_coding_system :dos }
+    Keys.do_linebreaks_windows { $el.set_buffer_file_coding_system :dos }
     Keys.do_move_to { FileTree.move_to }
     Keys.do_name_buffer { Buffers.rename }
     Keys.do_notes_colors { FileTree.apply_styles; Notes.apply_styles; FileTree.apply_styles_at_end }
@@ -324,11 +323,11 @@ class KeyBindings
     Keys.do_viewing { Buffers.open_viewing }   # Not great fit here
     Keys.do_whitespace { Deletes.delete_whitespace }   # delete blank lines
     # X
-    Keys.do_you { delete_char elvar.current_prefix_arg || 1 }   # Delete character
+    Keys.do_you { delete_char $el.elvar.current_prefix_arg || 1 }   # Delete character
     Keys.do_zip_next { Files.zip }
     Keys.set("C-d C-.") {   # Do .:  Go to point/bookmark starting with "." and run it (like pressing C-. on that line)
       input = Keys.input(:timed => true)
-      with(:save_window_excursion) do
+      $el.with(:save_window_excursion) do
         Bookmarks.go(".#{input}")
         Launcher.launch
       end
@@ -346,15 +345,15 @@ class KeyBindings
     # T: to...
     # Use T prefix for: moving cursor, jumping to specific points
 
-    el4r_lisp_eval(%Q`(global-set-key (kbd "C-\'") \'repeat)`)
+    $el.el4r_lisp_eval(%Q`(global-set-key (kbd "C-\'") \'repeat)`)
 
-    Keys.TT { transpose_chars elvar.current_prefix_arg }   # TT - toggle character (T's default)
+    Keys.TT { $el.transpose_chars $el.elvar.current_prefix_arg }   # TT - toggle character (T's default)
     Keys.to_axis { Move.to_axis }   # to beginning of file
-    Keys.to_backward { backward_word(Keys.prefix || 1) }   # move backward one word
+    Keys.to_backward { $el.backward_word(Keys.prefix || 1) }   # move backward one word
     Keys.to_column { Move.to_column }   # to x coordinate - ie column
     # D
     Keys.to_end { Move.to_end }   # To end of line
-    Keys.to_forward { forward_word(Keys.prefix || 1) }   # move forward one word
+    Keys.to_forward { $el.forward_word(Keys.prefix || 1) }   # move forward one word
     Keys.to_highest { View.to_highest }   # to beginning of file
     Keys.to_indent { Move.to_indent }
     Keys.to_junior { Move.to_junior }
@@ -419,10 +418,10 @@ class KeyBindings
     Keys.layout_uncover { Hide.reveal }   # Reveal all hidden text
     # V
     Keys.layout_visibility { Launcher.open('- window/visibility/', :bar_is_fine=>1, :first_letter=>1) }
-    Keys.layout_wrap { toggle_truncate_lines }   # wrap lines
+    Keys.layout_wrap { $el.toggle_truncate_lines }   # wrap lines
     # X
     # Y
-    Keys.layout_zoom { narrow_to_region(region_beginning, region_end) }   # show selection only
+    Keys.layout_zoom { $el.narrow_to_region($el.region_beginning, $el.region_end) }   # show selection only
     Keys.L0 { View.recenter_top }   # Layout 0: scroll so cursor is 0 lines from top af window
     Keys.L1 { Move.to_window(1, :blink=>true) }   # Layout 1
     Keys.L2 { Move.to_window(2, :blink=>true) }   # Layout 2
@@ -453,7 +452,7 @@ class KeyBindings
     Keys.search_frontward { Search.go_to_end }   # Forward
     Keys.search_g { Search.cancel }   # Stop searching
     # have_...
-    define_key :isearch_mode_map, kbd("C-h"), nil
+    $el.define_key :isearch_mode_map, $el.kbd("C-h"), nil
     Keys.search_have_append { Search.isearch_move_to "$t", :append=>1 }
     Keys.search_have_bullet { Search.have_label }
     Keys.search_have_case { Search.isearch_have_case }
@@ -477,7 +476,7 @@ class KeyBindings
 
     # I: leave unmapped - had issues using it (messes up position)
     # just_...
-    define_key :isearch_mode_map, kbd("C-j"), nil
+    $el.define_key :isearch_mode_map, $el.kbd("C-j"), nil
     Keys.search_just_adjust { Search.isearch_just_adjust }
     Keys.search_just_bookmark { Search.just_bookmark }
     Keys.search_just_case { Search.isearch_just_case }   # make match be camel case
@@ -503,7 +502,7 @@ class KeyBindings
     Keys.search_just_yellow { Search.just_orange }
     Keys.search_kill { Search.cut }   # cut
 
-    define_key :isearch_mode_map, kbd("C-l"), nil
+    $el.define_key :isearch_mode_map, $el.kbd("C-l"), nil
 
     Keys.search_like_clipboard {
       reverse = Search.was_reverse
@@ -551,65 +550,65 @@ class KeyBindings
 
     # Surround with characters (quotes and brackets)
 
-    define_key(:isearch_mode_map, kbd("C-'")) { Search.isearch_just_surround_with_char '"' }
-    define_key(:isearch_mode_map, kbd("C-j C-'")) { Search.isearch_just_surround_with_char "'" }
+    $el.define_key(:isearch_mode_map, $el.kbd("C-'")) { Search.isearch_just_surround_with_char '"' }
+    $el.define_key(:isearch_mode_map, $el.kbd("C-j C-'")) { Search.isearch_just_surround_with_char "'" }
 
-    define_key(:isearch_mode_map, kbd("C-j C-,")) { Search.isearch_surround_with_tag }
+    $el.define_key(:isearch_mode_map, $el.kbd("C-j C-,")) { Search.isearch_surround_with_tag }
 
-    define_key(:isearch_mode_map, kbd("C-j C-SPC")) { Search.isearch_just_surround_with_char " " }
+    $el.define_key(:isearch_mode_map, $el.kbd("C-j C-SPC")) { Search.isearch_just_surround_with_char " " }
 
-    define_key(:isearch_mode_map, kbd("C-`")) { Search.isearch_just_surround_with_char "~" }
+    $el.define_key(:isearch_mode_map, $el.kbd("C-`")) { Search.isearch_just_surround_with_char "~" }
 
-    define_key(:isearch_mode_map, kbd("C-j C-/")) { Search.isearch_just_comment }
-    define_key(:isearch_mode_map, kbd("C-j C-=")) { Search.just_increment }
-    define_key(:isearch_mode_map, kbd("C-j C--")) { Search.just_increment(:decrement=>true) }
+    $el.define_key(:isearch_mode_map, $el.kbd("C-j C-/")) { Search.isearch_just_comment }
+    $el.define_key(:isearch_mode_map, $el.kbd("C-j C-=")) { Search.just_increment }
+    $el.define_key(:isearch_mode_map, $el.kbd("C-j C--")) { Search.just_increment(:decrement=>true) }
 
-    define_key(:isearch_mode_map, kbd("C-9")) { Search.isearch_just_surround_with_char '(', ')' }
-    define_key(:isearch_mode_map, kbd("C-j C-9")) { Search.isearch_just_surround_with_char '[', ']'}
+    $el.define_key(:isearch_mode_map, $el.kbd("C-9")) { Search.isearch_just_surround_with_char '(', ')' }
+    $el.define_key(:isearch_mode_map, $el.kbd("C-j C-9")) { Search.isearch_just_surround_with_char '[', ']'}
 
-    define_key(:isearch_mode_map, kbd("C-h C-[")) { Search.isearch_just_surround_with_char '[', ']' }
-    define_key(:isearch_mode_map, kbd("C-j C-[")) { Search.isearch_just_surround_with_char '{', '}' }
+    $el.define_key(:isearch_mode_map, $el.kbd("C-h C-[")) { Search.isearch_just_surround_with_char '[', ']' }
+    $el.define_key(:isearch_mode_map, $el.kbd("C-j C-[")) { Search.isearch_just_surround_with_char '{', '}' }
 
-    define_key(:isearch_mode_map, kbd("C-h C-'")) { Search.insert_quote_at_search_start }
+    $el.define_key(:isearch_mode_map, $el.kbd("C-h C-'")) { Search.insert_quote_at_search_start }
 
-    define_key(:isearch_mode_map, kbd("C-j C-1")) { Search.enter(Clipboard[1]) }   # isearch_just_1
-    define_key(:isearch_mode_map, kbd("C-j C-2")) { Search.enter(Clipboard[2]) }   # isearch_just_2
-    define_key(:isearch_mode_map, kbd("C-j C-3")) { Search.enter(Clipboard[3]) }   # isearch_just_3
-    define_key(:isearch_mode_map, kbd("C-h C-1")) { Search.isearch_query_replace Clipboard[1] }
-    define_key(:isearch_mode_map, kbd("C-h C-2")) { Search.isearch_query_replace Clipboard[2] }
+    $el.define_key(:isearch_mode_map, $el.kbd("C-j C-1")) { Search.enter(Clipboard[1]) }   # isearch_just_1
+    $el.define_key(:isearch_mode_map, $el.kbd("C-j C-2")) { Search.enter(Clipboard[2]) }   # isearch_just_2
+    $el.define_key(:isearch_mode_map, $el.kbd("C-j C-3")) { Search.enter(Clipboard[3]) }   # isearch_just_3
+    $el.define_key(:isearch_mode_map, $el.kbd("C-h C-1")) { Search.isearch_query_replace Clipboard[1] }
+    $el.define_key(:isearch_mode_map, $el.kbd("C-h C-2")) { Search.isearch_query_replace Clipboard[2] }
 
 
-    define_key(:isearch_mode_map, kbd("C-h C-0")) { Search.isearch_query_replace Clipboard[0] }
+    $el.define_key(:isearch_mode_map, $el.kbd("C-h C-0")) { Search.isearch_query_replace Clipboard[0] }
 
-    define_key(:isearch_mode_map, kbd("C-1")) { Search.isearch_or_copy("1") }
-    define_key(:isearch_mode_map, kbd("C-2")) { Search.isearch_or_copy("2") }
-    define_key(:isearch_mode_map, kbd("C-3")) { Search.isearch_or_copy("3") }
-    define_key(:isearch_mode_map, kbd("C-4")) { Search.isearch_or_copy("4") }
-    define_key(:isearch_mode_map, kbd("C-5")) { Search.isearch_or_copy("5") }
-    define_key(:isearch_mode_map, kbd("C-6")) { Search.isearch_or_copy("6") }
-    define_key(:isearch_mode_map, kbd("C-7")) { Search.isearch_or_copy("7") }
-    define_key(:isearch_mode_map, kbd("C-8")) { Search.isearch_or_copy("8") }
+    $el.define_key(:isearch_mode_map, $el.kbd("C-1")) { Search.isearch_or_copy("1") }
+    $el.define_key(:isearch_mode_map, $el.kbd("C-2")) { Search.isearch_or_copy("2") }
+    $el.define_key(:isearch_mode_map, $el.kbd("C-3")) { Search.isearch_or_copy("3") }
+    $el.define_key(:isearch_mode_map, $el.kbd("C-4")) { Search.isearch_or_copy("4") }
+    $el.define_key(:isearch_mode_map, $el.kbd("C-5")) { Search.isearch_or_copy("5") }
+    $el.define_key(:isearch_mode_map, $el.kbd("C-6")) { Search.isearch_or_copy("6") }
+    $el.define_key(:isearch_mode_map, $el.kbd("C-7")) { Search.isearch_or_copy("7") }
+    $el.define_key(:isearch_mode_map, $el.kbd("C-8")) { Search.isearch_or_copy("8") }
 
-    define_key(:isearch_mode_map, kbd("C-=")) { $el.isearch_yank_char }   # Add one char from isearch
-    define_key(:isearch_mode_map, kbd("C--")) { Search.subtract }   # Remove one char from isearch
-    define_key(:isearch_mode_map, kbd("C-/")) { $el.isearch_delete_char }   # Remove last action from search results
-    define_key(:isearch_mode_map, kbd("C-,")) { Search.isearch_query_replace }   # Replace all occurrences
+    $el.define_key(:isearch_mode_map, $el.kbd("C-=")) { $el.isearch_yank_char }   # Add one char from isearch
+    $el.define_key(:isearch_mode_map, $el.kbd("C--")) { Search.subtract }   # Remove one char from isearch
+    $el.define_key(:isearch_mode_map, $el.kbd("C-/")) { $el.isearch_delete_char }   # Remove last action from search results
+    $el.define_key(:isearch_mode_map, $el.kbd("C-,")) { Search.isearch_query_replace }   # Replace all occurrences
 
-    define_key(:isearch_mode_map, kbd("C-\\")) { Search.hide }   # Hide: hide non-matching
+    $el.define_key(:isearch_mode_map, $el.kbd("C-\\")) { Search.hide }   # Hide: hide non-matching
 
-    define_key(:isearch_mode_map, kbd("C-0")) { Search.isearch_pause_or_resume }   # isearch_just_0
+    $el.define_key(:isearch_mode_map, $el.kbd("C-0")) { Search.isearch_pause_or_resume }   # isearch_just_0
 
     # Safe mapping of C-m to Search.isearch_m (works when el4r is down)
-    el4r_lisp_eval(%`(defun isearch-m () (interactive)
+    $el.el4r_lisp_eval(%`(defun isearch-m () (interactive)
       (if (eq (process-status el4r-process) 'run) (el4r-ruby-eval "Search.isearch_m") (isearch-exit)))
       `.unindent)
-    define_key :isearch_mode_map, kbd("C-m"), :isearch_m   # Hide: hide non-matching
+    $el.define_key :isearch_mode_map, $el.kbd("C-m"), :isearch_m   # Hide: hide non-matching
 
   end
 
   def self.misc
 
-    define_key :global_map, kbd("C-S-v"), :scroll_down
+    $el.define_key :global_map, $el.kbd("C-S-v"), :scroll_down
 
     # Single character definitions
     Keys.B { Move.backward }
@@ -621,31 +620,31 @@ class KeyBindings
     Keys.set("<C-return>") { Launcher.launch_or_hide(:blink=>true) }
     Keys.set("<M-return>") { Launcher.launch_or_hide(:blink=>true) }
 
-    if locate_library "ruby-mode"
-      el_require :ruby_mode
-      define_key :ruby_mode_map, kbd("C-\\") do
+    if $el.locate_library "ruby-mode"
+      $el.el_require :ruby_mode
+      $el.define_key :ruby_mode_map, $el.kbd("C-\\") do
         Hide.show
         Hide.hide_unless /^ *(def|class|module|create_table|it|describe) /
-        recenter -2
+        $el.recenter -2
         Hide.search
       end
     end
-    el_require :cc_mode
+    $el.el_require :cc_mode
 
     # Unmap keys in modes that interfere
-    el4r_lisp_eval("(require 'shell)")
-    define_key :shell_mode_map, kbd("C-d"), nil   # shell-mode etc. special C-d shortcuts over-ride xiki
-    define_key :objc_mode_map, kbd("C-d"), nil
-    define_key :c_mode_map, kbd("C-d"), nil
-    el4r_lisp_eval("(require 'dired)")
-    define_key :dired_mode_map, kbd("C-o"), nil
-    define_key :java_mode_map, kbd("C-d"), nil
-    el_require :php_mode
-    define_key :php_mode_map, kbd("C-d"), nil
+    $el.el4r_lisp_eval("(require 'shell)")
+    $el.define_key :shell_mode_map, $el.kbd("C-d"), nil   # shell-mode etc. special C-d shortcuts over-ride xiki
+    $el.define_key :objc_mode_map, $el.kbd("C-d"), nil
+    $el.define_key :c_mode_map, $el.kbd("C-d"), nil
+    $el.el4r_lisp_eval("(require 'dired)")
+    $el.define_key :dired_mode_map, $el.kbd("C-o"), nil
+    $el.define_key :java_mode_map, $el.kbd("C-d"), nil
+    $el.el_require :php_mode
+    $el.define_key :php_mode_map, $el.kbd("C-d"), nil
 
     # C-l in ediff mode
-    defun(:ediff_disable_C_l) { define_key(:ediff_mode_map, kbd("C-l"), nil) }
-    add_hook :ediff_keymap_setup_hook, :ediff_disable_C_l
+    $el.defun(:ediff_disable_C_l) { $el.define_key(:ediff_mode_map, $el.kbd("C-l"), nil) }
+    $el.add_hook :ediff_keymap_setup_hook, :ediff_disable_C_l
 
     ControlTab.keys
 

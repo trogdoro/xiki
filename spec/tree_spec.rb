@@ -1,5 +1,4 @@
 $:.unshift "spec/"
-require 'el_mixin'
 require 'ol'
 require 'tree'
 require 'core_ext'
@@ -421,59 +420,61 @@ describe Tree, "#restore" do
       ".unindent
   end
 end
-  #   def test_paths_to_tree
 
-describe Tree, "#test_paths_to_tree" do
 
-  it "maintains trailing slashes" do
-    paths = ["/projects/"]
+describe Tree, "#paths_to_tree" do
 
-    txt = Tree.paths_to_tree(paths)
-    txt.should == "- /projects/\n"
-  end
+  # Uncomment if we mess with paths_to_tree again
 
-  it "builds a tree" do
-    paths = %w[
-      /projects/foo/a.txt
-      /projects/foo/b.txt
-      /other/c.txt
-      ]
+  #   it "maintains trailing slashes" do
+  #     paths = ["/projects/"]
 
-    tree = "
-      - /other/
-        + c.txt
-      - /projects/
-        - foo/
-          + a.txt
-          + b.txt
-      ".unindent
+  #     txt = Tree.paths_to_tree(paths)
+  #     txt.should == "- /projects/\n"
+  #   end
 
-    txt = Tree.paths_to_tree(paths)
-    txt.should == tree
-  end
+  #   it "builds a tree" do
+  #     paths = %w[
+  #       /projects/foo/a.txt
+  #       /projects/foo/b.txt
+  #       /other/c.txt
+  #       ]
 
-  it "handles menus" do
-    paths = %w[
-      Tree/
-      Tree/api/
-      dotsies/apply/all views/
-      dotsies/apply/one view/
-      files/
-      ]
+  #     tree = "
+  #       - /other/
+  #         + c.txt
+  #       - /projects/
+  #         - foo/
+  #           + a.txt
+  #           + b.txt
+  #       ".unindent
 
-    tree = "
-      - Tree/
-        + api
-      - dotsies/
-        - apply/
-          + all views
-          + one view
-      - files/
-      ".unindent
+  #     txt = Tree.paths_to_tree(paths)
+  #     txt.should == tree
+  #   end
 
-    txt = Tree.paths_to_tree(paths)
-    txt.should == tree
-  end
+  #   it "handles menus" do
+  #     paths = %w[
+  #       Tree/
+  #       Tree/api/
+  #       dotsies/apply/all views/
+  #       dotsies/apply/one view/
+  #       files/
+  #       ]
+
+  #     tree = "
+  #       - Tree/
+  #         + api
+  #       - dotsies/
+  #         - apply/
+  #           + all views
+  #           + one view
+  #       - files/
+  #       ".unindent
+
+  #     txt = Tree.paths_to_tree(paths)
+  #     txt.should == tree
+  #   end
 
 end
 

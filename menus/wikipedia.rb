@@ -3,7 +3,7 @@ class Wikipedia
   def self.menu name=nil
     "
     > See
-    - @go/wp/
+    << wp/
     "
   end
 

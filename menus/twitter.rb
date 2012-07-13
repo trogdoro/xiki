@@ -2,7 +2,6 @@ require 'net/http'
 require 'timeout'
 
 class Twitter
-  extend ElMixin
 
   CODE_SAMPLES = %q<
     # C-. on this
@@ -24,7 +23,7 @@ class Twitter
     Styles.define :twitter_date, :fg => 'ddd'
     Styles.apply '^\\(-- .+\\)\\( at .+\\)', nil, :twitter_name, :twitter_date
     View.to_top
-    kill_line
+    $el.kill_line
     View.previous
   end
 

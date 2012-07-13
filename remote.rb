@@ -5,7 +5,6 @@ require 'timeout'
 require 'ol'
 
 class Remote
-  extend ElMixin
 
   @@temp_dir = "/tmp/remote_rb"
 

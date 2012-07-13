@@ -3,7 +3,6 @@ require 'file_tree'
 
 # Provides copy and paste functionality
 class Clipboard
-  extend ElMixin
 
   # Stores things user copies
   @@hash = {}
@@ -52,7 +51,7 @@ class Clipboard
     end
 
     self.copy loc
-    delete_region(region_beginning, region_end)
+    $el.delete_region($el.region_beginning, $el.region_end)
 
     Location.as_spot('killed')
   end
@@ -71,7 +70,7 @@ class Clipboard
 
     return View.message("Nothing to search for matching '#{loc}'.", :beep=>1) if txt.nil?
 
-    (elvar.current_prefix_arg || 1).times do   # Get from corresponding register
+    ($el.elvar.current_prefix_arg || 1).times do   # Get from corresponding register
       View << txt
     end
   end
@@ -107,14 +106,14 @@ class Clipboard
   end
 
   def self.list
-    switch_to_buffer "*clipboard*"
-    erase_buffer
-    notes_mode
+    $el.switch_to_buffer "*clipboard*"
+    $el.erase_buffer
+    Notes.mode
 
     Clipboard.hash.sort.each do |a, b|
-      insert "| #{a}\n#{b}\n\n"
+      $el.insert "| #{a}\n#{b}\n\n"
     end
-    beginning_of_buffer
+    $el.beginning_of_buffer
   end
 
   def self.set loc, str, append=nil
@@ -124,22 +123,22 @@ class Clipboard
       @@hash[loc] += str
     else
       # Store as path
-      @@hash["/"] = expand_file_name( buffer_file_name ? buffer_file_name : elvar.default_directory )
-      if buffer_file_name
+      @@hash["/"] = $el.expand_file_name( $el.buffer_file_name ? $el.buffer_file_name : $el.elvar.default_directory )
+      if $el.buffer_file_name
         # Store as tree snippet
         @@hash["="] = FileTree.snippet :txt=>str
-        @@hash["."] = "#{file_name_nondirectory(buffer_file_name)}"
-        @@hash["\\"] = "#{elvar.default_directory}\n  #{file_name_nondirectory(buffer_file_name)}"
+        @@hash["."] = "#{$el.file_name_nondirectory($el.buffer_file_name)}"
+        @@hash["\\"] = "#{$el.elvar.default_directory}\n  #{$el.file_name_nondirectory($el.buffer_file_name)}"
       end
       @@hash[loc] = str
-      x_select_text str if loc == "0"  # If 0, store in OS clipboard
+      $el.x_select_text str if loc == "0"  # If 0, store in OS clipboard
     end
   end
 
   def self.do_as_snake_case
     Keys.prefix_times.times do
       word = Line.symbol(:delete => true)
-      insert TextUtil.snake_case(word)
+      $el.insert TextUtil.snake_case(word)
       Move.forward
     end
   end
@@ -147,7 +146,7 @@ class Clipboard
   def self.do_as_camel_case
     Keys.prefix_times.times do
       word = Line.symbol(:delete => true)
-      insert TextUtil.camel_case(word)
+      $el.insert TextUtil.camel_case(word)
       Move.forward
     end
   end
@@ -155,7 +154,7 @@ class Clipboard
   def self.do_as_upper_case
     Keys.prefix_times.times do
       word = Line.symbol(:delete => true)
-      insert word.upcase
+      $el.insert word.upcase
       Move.forward
     end
   end
@@ -163,7 +162,7 @@ class Clipboard
   def self.do_as_lower_case
     Keys.prefix_times.times do
       word = Line.symbol(:delete => true)
-      insert word.downcase
+      $el.insert word.downcase
       Move.forward
     end
   end
@@ -185,8 +184,8 @@ class Clipboard
     if options[:just_return]
       return [View.txt(left, right), left, right]
     end
-    goto_char left
-    set_mark right
+    $el.goto_char left
+    $el.set_mark right
     Effects.blink(:left => left, :right => right)
     Clipboard.copy("0")
   end
@@ -204,7 +203,7 @@ class Clipboard
     one.gsub!(/^ +\|/, '') if one =~ /\A   +\|/
     $el.insert Clipboard["2"]
 
-    ediff_buffers "1", "2"
+    $el.ediff_buffers "1", "2"
   end
 
   def self.as_thing
@@ -219,13 +218,13 @@ class Clipboard
 
     # If on blank spaces, copy them
     if buffer_substring(point-1, point+1) =~ /[ \n] /
-      skip_chars_forward " "
-      right = point
-      skip_chars_backward " "
-      left = point
+      $el.skip_chars_forward " "
+      right = $el.point
+      $el.skip_chars_backward " "
+      left = $el.point
     else
-      skip_chars_forward " "
-      left, right = bounds_of_thing_at_point(:sexp).to_a
+      $el.skip_chars_forward " "
+      left, right = $el.bounds_of_thing_at_point(:sexp).to_a
     end
 
     if Keys.prefix_u?
@@ -245,8 +244,8 @@ class Clipboard
   end
 
   def self.as_object
-    set("0", thing_at_point(:symbol))
-    left, right = bounds_of_thing_at_point(:symbol).to_a
+    set("0", $el.thing_at_point(:symbol))
+    left, right = $el.bounds_of_thing_at_point(:symbol).to_a
     Effects.blink(:left=>left, :right=>right)
   end
 
@@ -274,7 +273,7 @@ class Clipboard
 
   def self.enter_replacement
     # If on whitespace, move to off of it
-    skip_chars_forward " "
+    $el.skip_chars_forward " "
 
     orig = point
     Move.to_other_bracket

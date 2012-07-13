@@ -7,8 +7,6 @@
 # Represents a division of a window (in emacs terms, it's a window (which is within a frame))
 
 class View
-  include ElMixin
-  extend ElMixin
 
   def self.menu
     %`
@@ -62,7 +60,7 @@ class View
 
   def self.windows_in_my_column
     my_left = left_edge
-    window_list(nil, nil, frame_first_window).to_a.select { |w| left_edge(w) == my_left }
+    $el.window_list(nil, nil, $el.frame_first_window).to_a.select { |w| left_edge(w) == my_left }
   end
 
   # Make current window larger.  Take into account that there might be other vertical windows
@@ -123,16 +121,16 @@ class View
 
     wnum = ws.length   # Get number of windows
 
-    usable_height = frame_height - 1 - wnum
+    usable_height = $el.frame_height - 1 - wnum
 
     biggest = usable_height - ((wnum-1) * (small-1))
-    selected = selected_window
+    selected = $el.selected_window
 
     # Do multiple times (emacs daesn't get it right he first time)
     5.times do
       self.enlarge_internal :up, ws, selected, biggest, small
     end
-    #     self.enlarge_internal :down, ws, selected, biggest, small
+
     nil
   end
 
@@ -143,10 +141,10 @@ class View
       # If current window, set to remaining
       if w == selected
         height = biggest # - 1
-        set_window_text_height w, height
+        $el.set_window_text_height w, height
       else
         height = small - 1
-        set_window_text_height w, height
+        $el.set_window_text_height w, height
       end
     end
   end
@@ -213,17 +211,18 @@ class View
     if expanded   # Handle opening in other window
       if options[:same_view]
         $el.find_file expanded
-      elsif expanded == buffer_file_name   # If already there
+      elsif expanded == $el.buffer_file_name   # If already there
         # do nothing
-      elsif ( ( window_list.collect {|b| window_buffer b} ).collect {|u| buffer_file_name u} ).member?(expanded)   # If already displayed, move to its window
-        find_file_other_window expanded
+      elsif ( ( $el.window_list.collect {|b| $el.window_buffer b} ).collect {|u| $el.buffer_file_name u} ).member?(expanded)   # If already displayed, move to its window
+        $el.find_file_other_window expanded
       else   # If not visible, just open it
         $el.find_file expanded
       end
     end
+
     # Jump to point if :goto_point (we assume path is just a bookmark)
     if options[:go_to_point] == true
-      bookmark_jump path.sub(/^\$/, "")
+      $el.bookmark_jump path.sub(/^\$/, "")
     end
 
     if line_number
@@ -235,7 +234,7 @@ class View
   def self.save name=nil
     name ||= Keys.input(:optional => true)
     name ||= "0"
-    @@hash[name] = current_window_configuration
+    @@hash[name] = $el.current_window_configuration
   end
 
   # Saves the configuration
@@ -244,28 +243,27 @@ class View
     name ||= "0"   # Set to "0" if user entered nothing
     # Todo: if "l", winner_undo
     if(name == "l")
-      winner_undo
+      $el.winner_undo
       return
     end
     # Use it to get configuration out of hash
-    set_window_configuration(@@hash[name])
+    $el.set_window_configuration(@@hash[name])
   end
 
   # Return list of windows
   def self.list
-    window_list(nil, nil, frame_first_window).to_a
+    $el.window_list(nil, nil, $el.frame_first_window).to_a
   end
 
   def self.list_names
-    self.list.map{|v| buffer_name(window_buffer(v))}
+    self.list.map{|v| $el.buffer_name $el.window_buffer(v)}
   end
-
 
   def self.files options={}
     if options[:visible]
-      return self.window_list.
-        map {|b| window_buffer b}.
-        collect {|u| buffer_file_name u}.
+      return $el.window_list.
+        map {|b| $el.window_buffer b}.
+        collect {|u| $el.buffer_file_name u}.
         select {|f| f}
     end
 
@@ -288,10 +286,10 @@ class View
     # If greater than size of windows, open last
     #insert self.list.size.to_s
     if n+1 > self.list.size
-      return select_window(self.list.last)
+      return $el.select_window(self.list.last)
     end
     # Otherwise, open nth
-    select_window(self.list[n])
+    $el.select_window(self.list[n])
   end
 
   def self.[] n
@@ -316,7 +314,7 @@ class View
   def self.buffer_of_nth n
     window = View.window
     View.to_nth n
-    buffer = window_buffer
+    buffer = $el.window_buffer
     View.to_window window
     buffer
   end
@@ -348,31 +346,31 @@ class View
     # Remember buffers and heights
     orig = []
     self.list.each do |w|
-      orig << [window_buffer(w), window_height(w)]
+      orig << [$el.window_buffer(w), $el.window_height(w)]
     end
-    delete_other_windows
+    $el.delete_other_windows
     #     split_window_horizontally 32   # Width of bar
     #     split_window_horizontally 54   # Width of bar
-    split_window_horizontally 48   # Width of bar
-    other_window 1
+    $el.split_window_horizontally 48   # Width of bar
+    $el.other_window 1
     o = nil
     # For each window but last
     orig[0..-2].each do |w|
-      switch_to_buffer w[0]
-      split_window_vertically
-      set_window_text_height nil, w[1]
-      o = other_window 1
+      $el.switch_to_buffer w[0]
+      $el.split_window_vertically
+      $el.set_window_text_height nil, w[1]
+      o = $el.other_window 1
     end
     # Last window
-    switch_to_buffer orig[-1][0]
-    set_window_text_height o, orig[-1][1]
+    $el.switch_to_buffer orig[-1][0]
+    $el.set_window_text_height o, orig[-1][1]
     # Go to first window
-    select_window self.first
+    $el.select_window self.first
   end
 
   # Returns whether bar is open
   def self.bar?
-    window_width(self.first) < frame_width
+    $el.window_width(self.first) < $el.frame_width
   end
 
   # Returns whether we're in the bar
@@ -382,7 +380,7 @@ class View
   end
 
   def self.first
-    frame_first_window
+    $el.frame_first_window
   end
 
   def self.last
@@ -391,15 +389,15 @@ class View
 
   # Accounts for bar
   def self.balance
-    balance_windows
+    $el.balance_windows
     return if Keys.prefix_u
     if self.bar?
-      buffer = selected_window
-      select_window frame_first_window
+      buffer = $el.selected_window
+      $el.select_window $el.frame_first_window
       #       enlarge_window (31 - window_width), true
       #       enlarge_window (48 - window_width), true
-      enlarge_window (42 - window_width), true
-      select_window buffer
+      $el.enlarge_window((42 - $el.window_width), true)
+      $el.select_window buffer
     end
   end
 
@@ -425,78 +423,78 @@ class View
       # If I'm the last
       last = index == (size - 1)
 
-      delete_window
-      previous_multiframe_window if View.left_edge != left || middle || last
+      $el.delete_window
+      $el.previous_multiframe_window if View.left_edge != left || middle || last
     end
     nil
   end
 
   def self.hide_others options={}
-    if elvar.current_prefix_arg || self.in_bar? || options[:all]
+    if $el.elvar.current_prefix_arg || self.in_bar? || options[:all]
       return $el.delete_other_windows
     end
     ws = self.windows_in_my_column
-    selected = selected_window
+    selected = $el.selected_window
     # New height should be window minus 2 for each window
     ws.each do |w|
       # If current window, set to remaining
       unless w == selected
-        delete_window w
+        $el.delete_window w
       end
     end
   end
 
   def self.next options={}
     (Keys.prefix_times || options[:times] || 1).times do
-      other_window 1
+      $el.other_window 1
     end
     Effects.blink(:what=>:line) if options[:blink]
   end
 
   def self.previous options={}
     (Keys.prefix_times || options[:times] || 1).times do
-      other_window -1
+      $el.other_window -1
     end
     Effects.blink(:what=>:line) if options[:blink]
   end
 
   def self.show_dir
-    (elvar.current_prefix_arg || 1).times do
-      dired_jump
+    ($el.elvar.current_prefix_arg || 1).times do
+      $el.dired_jump
     end
   end
 
   # Return selected text (aka the "region")
   def self.selection options={}
-    txt = buffer_substring(region_beginning, region_end)
-    delete_region(point, mark) if options[:delete]
+    txt = $el.buffer_substring($el.region_beginning, $el.region_end)
+    $el.delete_region($el.point, mark) if options[:delete]
     txt
   end
 
   def self.range
-    [region_beginning, region_end]
+    [$el.region_beginning, $el.region_end]
   end
 
   def self.range_left
-    region_beginning
+    $el.region_beginning
   end
 
   def self.range_right
-    region_end
+    $el.region_end
   end
 
   def self.buffer
-    window_buffer
+    $el.window_buffer
   end
 
   # Return currently-selected window
   def self.current
-    selected_window
+    $el.selected_window
   end
 
   # Move to window
   def self.to_window window
-    select_window(window)
+    $el.select_window(window)
   end
 
   def self.open_in_bar
@@ -505,7 +503,7 @@ class View
 
     # If already open, just go there
     if View.bar?
-      select_window(View.first)
+      $el.select_window(View.first)
     else
       View.bar
     end
@@ -540,35 +538,35 @@ class View
     return unless self.bar?
 
     # Get width of last window
-    width_of_last = window_width(self.last)
+    width_of_last = $el.window_width(self.last)
 
     # Go to first window not on left margin
     self.list.each do |w|
       if self.edges(w)[0] != 0  # Window is at left of frame
-        select_window(w)
+        $el.select_window(w)
         break
       end
     end
   end
 
   def self.left_edge view=nil
-    view ||= selected_window  # Default to current view
+    view ||= $el.selected_window  # Default to current view
     self.edges(view)[0]
   end
 
   def self.top_edge view=nil
-    view ||= selected_window  # Default to current view
+    view ||= $el.selected_window  # Default to current view
     self.edges(view)[1]
   end
 
   # Switches to a buffer
   def self.to_buffer name, options={}
-    return if buffer_name == name   # If we're here already, do nothing
+    return if $el.buffer_name == name   # If we're here already, do nothing
 
     found = View.list.find do |w|
-      buffer_name(window_buffer(w)) == name
+      $el.buffer_name($el.window_buffer(w)) == name
     end
-    found ? View.to_window(found) : switch_to_buffer(name)
+    found ? View.to_window(found) : $el.switch_to_buffer(name)
 
     View.clear if options[:clear]
     View.dir = options[:dir] if options[:dir]
@@ -582,8 +580,8 @@ class View
     if right
       left = options
     else
-      left = options[:left] || point_min
-      right = options[:right] || point_max
+      left = options[:left] || $el.point_min
+      right = options[:right] || $el.point_max
     end
 
     # If :utf8 option, write to file via elisp and read via ruby (for correct encoding)
@@ -643,20 +641,20 @@ class View
   # Returns bounds of block in the form [left, after_header, right].
   def self.block_positions regex="^> "
 
-    orig = point
+    orig = $el.point
     # Go to the end of the line, so if we're at the heading we'll find it
     Line.end
-    found = re_search_backward regex, nil, 1
+    found = $el.re_search_backward regex, nil, 1
     if found
-      left = point
+      left = $el.point
       after_header = Line.left 2
     else
-      left = after_header = point
+      left = after_header = $el.point
     end
     Line.end
-    re_search_forward regex, nil, 1
-    right = (point == point_max) ? point_max : Line.left
-    goto_char orig
+    $el.re_search_forward regex, nil, 1
+    right = ($el.point == $el.point_max) ? $el.point_max : Line.left
+    $el.goto_char orig
 
     [left, after_header, right]
 
@@ -669,11 +667,11 @@ class View
   end
 
   def self.to_top
-    beginning_of_buffer
+    $el.beginning_of_buffer
   end
 
   def self.to_bottom
-    end_of_buffer
+    $el.end_of_buffer
   end
 
   def self.at_bottom
@@ -681,19 +679,19 @@ class View
   end
 
   def self.to_end
-    end_of_buffer
+    $el.end_of_buffer
   end
 
   def self.beginning
-    point_min
+    $el.point_min
   end
 
   def self.top
-    point_min
+    $el.point_min
   end
 
   def self.bottom
-    point_max
+    $el.point_max
   end
 
   def self.clear name=nil
@@ -710,7 +708,7 @@ class View
 
   def self.dir force_slash=nil
     # TODO: merge with .path?
-    result = File.expand_path(elvar.default_directory)
+    result = File.expand_path($el.elvar.default_directory)
 
     if force_slash
       return result =~ /\/$/ ? result : "#{result}/"
@@ -720,11 +718,11 @@ class View
   end
 
   def self.dir= to
-    elvar.default_directory = File.expand_path(to)+"/"
+    $el.elvar.default_directory = File.expand_path(to)+"/"
   end
 
   def self.file
-    file = buffer_file_name
+    file = $el.buffer_file_name
     file ? File.expand_path(file) : nil
   end
 
@@ -737,43 +735,43 @@ class View
   end
 
   def self.file_name
-    buffer_file_name ?
-      file_name_nondirectory(buffer_file_name) :
+    $el.buffer_file_name ?
+      $el.file_name_nondirectory($el.buffer_file_name) :
       nil
   end
 
   def self.path options={}
     # TODO: merge with .dir?
-    elvar.default_directory
+    $el.elvar.default_directory
   end
 
   def self.frame
-    window_frame(frame_first_window)
+    $el.window_frame($el.frame_first_window)
   end
 
   def self.window
-    selected_window
+    $el.selected_window
   end
 
   # Returns whether a buffer is open / exists
   def self.buffer_open? name
-    Buffers.list.find{|b| buffer_name(b) == name}
+    Buffers.list.find{|b| $el.buffer_name(b) == name}
   end
 
   def self.buffer_visible? name
     View.list.
-      collect {|b| window_buffer b}.
-      collect {|u| buffer_name u}.
+      collect {|b| $el.window_buffer b}.
+      collect {|u| $el.buffer_name u}.
       member?(name)
   end
 
   def self.wrap on_or_off=:on
-    elvar.truncate_lines = on_or_off.to_sym == :off
+    $el.elvar.truncate_lines = on_or_off.to_sym == :off
   end
 
   # Call this at startup to set some sensible view-related default behavior
   def self.sensible_defaults
-    el4r_lisp_eval("(progn (setq truncate-partial-width-windows nil)
+    $el.el4r_lisp_eval("(progn (setq truncate-partial-width-windows nil)
       (set 'default-truncate-lines t)
       )")
   end
@@ -874,7 +872,7 @@ class View
   end
 
   def self.rest
-    buffer_substring(point, point_max)
+    $el.buffer_substring($el.point, $el.point_max)
   end
 
   def self.to_line n=nil
@@ -891,11 +889,11 @@ class View
   end
 
   def self.to n
-    goto_char n
+    $el.goto_char n
   end
 
   def self.focus
-    x_focus_frame(selected_frame)
+    $el.x_focus_frame($el.selected_frame)
   end
 
   def self.index
@@ -905,7 +903,7 @@ class View
   def self.count_matches
     right = $el.buffer_size
     left = 1
-    left = point if Keys.prefix_u?
+    left = $el.point if Keys.prefix_u?
     $el.message how_many(Keys.input('pattern to count: a'), left, right).to_s
   end
 
@@ -918,7 +916,7 @@ class View
   end
 
   def self.column
-    point - point_at_bol
+    $el.point - $el.point_at_bol
   end
 
   def self.column= to
@@ -927,10 +925,10 @@ class View
   end
 
   def self.cursor
-    point
+    $el.point
   end
   def self.cursor= n
-    goto_char n
+    $el.goto_char n
   end
 
 
@@ -954,11 +952,11 @@ class View
   end
 
   def self.char
-    buffer_substring(point, point+1)
+    $el.buffer_substring($el.point, $el.point+1)
   end
 
   def self.char_before
-    buffer_substring(point-1, point)
+    $el.buffer_substring($el.point-1, $el.point)
   end
 
 
@@ -1069,26 +1067,26 @@ class View
 
   def self.dimensions_set size_x, size_y, position_x=nil, position_y=nil
     self.fullscreen_off
-    set_frame_size(View.frame, size_x, size_y)
-    set_frame_position(View.frame, position_x, position_y) unless position_x.nil?
+    $el.set_frame_size(View.frame, size_x, size_y)
+    $el.set_frame_position(View.frame, position_x, position_y) unless position_x.nil?
     nil
   end
 
   # Toggle full-screen mode
   def self.dimensions_full
-    if frame_parameter(nil, :fullscreen)   # If fullscreen on turn it off
-      set_frame_parameter(nil, :fullscreen, nil)
+    if $el.frame_parameter(nil, :fullscreen)   # If fullscreen on turn it off
+      $el.set_frame_parameter(nil, :fullscreen, nil)
     else   # Else, turn it on
       self.fullscreen_on
     end
   end
 
   def self.fullscreen_off
-    set_frame_parameter(nil, :fullscreen, nil) if frame_parameter(nil, :fullscreen)
+    $el.set_frame_parameter(nil, :fullscreen, nil) if $el.frame_parameter(nil, :fullscreen)
   end
 
   def self.fullscreen_on
-    set_frame_parameter nil, :fullscreen, :fullboth
+    $el.set_frame_parameter nil, :fullscreen, :fullboth
   end
 
   # Line at top of visible part of view
@@ -1163,7 +1161,7 @@ class View
     current = View.name
 
     second_visible = Buffers.list.each{|b|
-      name = buffer_name(b)
+      name = $el.buffer_name(b)
       next unless name != current
       next unless self.buffer_visible?(name)
       next unless self.edges(get_buffer_window(b))[0] != 0  # Window is at left of frame
@@ -1235,11 +1233,11 @@ class View
 
   def self.to_relative
     if Keys.prefix == 0
-      goto_char window_end - 1
+      $el.goto_char window_end - 1
       Line.to_left
       return
     end
-    $el.goto_char window_start
+    $el.goto_char $el.window_start
     ((Keys.prefix || 1) -1).times do
       Line.next
     end
@@ -1248,7 +1246,7 @@ class View
   def self.gsub! from, to
     with(:save_excursion) do
       View.to_highest
-      replace_regexp(from, to)
+      $el.replace_regexp(from, to)
     end
   end
 
@@ -1272,7 +1270,7 @@ class View
   end
 
   def self.scroll_position
-    $el.line_number_at_pos(point) - $el.line_number_at_pos(window_start)
+    $el.line_number_at_pos($el.point) - $el.line_number_at_pos($el.window_start)
   end
 
   def self.scroll_position= pos
@@ -1282,7 +1280,7 @@ class View
   def self.under txt, options={}
     options[:escape] = '' if options[:escape].nil?
     txt = CodeTree.returned_to_s txt
-    Tree.under txt, options# .merge(:escape=>'')
+    Tree.under txt, options  # .merge(:escape=>'')
   end
 
   def self.>> txt
@@ -1290,7 +1288,7 @@ class View
   end
 
   def self.enter_date
-    insert elvar.current_prefix_arg ?
+    $el.insert $el.elvar.current_prefix_arg ?
       Time.now.strftime("%Y-%m-%d %I:%M:%S%p").sub(' 0', ' ').downcase :
       Time.now.strftime("%Y-%m-%d")
   end

@@ -2,7 +2,6 @@ require 'keys'
 
 # Provides different ways of moving cursor.
 class Move
-  extend ElMixin
 
   # Go to last line having indent
   def self.to_indent
@@ -42,7 +41,6 @@ class Move
 
     Move.to_column prefix.is_a?(Fixnum) ? indent : column
 
-
     unless success
       View.beep
       orig.go
@@ -70,7 +68,7 @@ class Move
     prefix.times do
       Search.forward "\n[ \t]*\\(\n+[ \t]*\\)+", :go_anyway=>1
     end
-    beginning_of_line
+    $el.beginning_of_line
   end
 
   def self.to_previous_paragraph
@@ -88,11 +86,11 @@ class Move
     prefix = prefix.is_a?(Fixnum) ? prefix : 1
 
     prefix.times do
-      skip_chars_backward "\n "
-      re_search_backward "\n[ \t]*\\(\n+[ \t]*\\)+", nil, 1
+      $el.skip_chars_backward "\n "
+      $el.re_search_backward "\n[ \t]*\\(\n+[ \t]*\\)+", nil, 1
     end
-    skip_chars_forward "\n "
-    beginning_of_line
+    $el.skip_chars_forward "\n "
+    $el.beginning_of_line
   end
 
   def self.to_window n, options={}
@@ -100,9 +98,9 @@ class Move
     views = View.list   # Get views in this window
 
     if n >= views.size   # If they wanted to go further than exists
-      select_window(views[views.size - 1])
+      $el.select_window(views[views.size - 1])
     else
-      select_window(views[n-1])
+      $el.select_window(views[n-1])
     end
 
     Effects.blink(:what=>:line) if options[:blink]
@@ -117,8 +115,8 @@ class Move
 
   def self.to_line n=nil
     # Use arg or numeric prefix or get input
-    n = n || elvar.current_prefix_arg || Keys.input(:prompt=>"Go to line number: ")
-    goto_line n.to_i
+    n = n || $el.elvar.current_prefix_arg || Keys.input(:prompt=>"Go to line number: ")
+    $el.goto_line n.to_i
   end
 
   # Move to the specified column.
@@ -134,7 +132,7 @@ class Move
     n = n || prefix || Keys.input(:prompt=>"column to go to: ").to_i
     if n < 0
       Move.to_end
-      n = abs(n)
+      n = $el.abs(n)
       n > length = Line.txt.length and n = length
       Move.backward n
       return
@@ -146,20 +144,20 @@ class Move
   def self.to_other_bracket
     prefix = Keys.prefix
     # If prefix or after closing bracket, go backward
-    last_char = point == 1 ? "" : buffer_substring(point-1, point)
+    last_char = point == 1 ? "" : $el.buffer_substring(point-1, point)
 
     # If numeric prefix
     if prefix.class == Fixnum
       if prefix > 0
-        prefix.times { forward_sexp }
+        prefix.times { $el.forward_sexp }
       else
-        (0-prefix).times { backward_sexp }
+        (0-prefix).times { $el.backward_sexp }
       end
     elsif prefix == :u or last_char =~ /[)}\]'">]/
-      backward_sexp
+      $el.backward_sexp
     # Otherwise, go forward
     else
-      forward_sexp
+      $el.forward_sexp
     end
   end
 
@@ -167,11 +165,11 @@ class Move
     count ||= Keys.prefix :clear => true
     count ||= 1
     case count
-    when :u; backward_word 1
-    when :uu; backward_word 2
-    when :uuu; backward_word 3
+    when :u; $el.backward_word 1
+    when :uu; $el.backward_word 2
+    when :uuu; $el.backward_word 3
     else
-      backward_char(count)
+      $el.backward_char count
     end
   end
 
@@ -181,22 +179,22 @@ class Move
     count ||= 1
     case count
     when :u
-      forward_word 1
+      $el.forward_word 1
     when :uu
-      forward_word 2
+      $el.forward_word 2
     when :uuu
-      forward_word 3
+      $el.forward_word 3
     else
-      forward_char(count) rescue nil   # In case tried to move past end
+      $el.forward_char(count) rescue nil   # In case tried to move past end
     end
   end
 
   def self.top
-    beginning_of_buffer
+    $el.beginning_of_buffer
   end
 
   def self.bottom
-    end_of_buffer
+    $el.end_of_buffer
   end
 
   def self.to_quote
@@ -212,7 +210,7 @@ class Move
     (times||1).times do
       Line.next if Line.matches(/^ *\|/)
       $el.re_search_forward "^ *|"
-      backward_char
+      $el.backward_char
     end
 
     # If on a quote, move off
@@ -223,7 +221,7 @@ class Move
     Keys.prefix_times.times do
       # Move to line without / at end
       Line.next if Line.matches(/^ +[+-]? ?[a-zA-Z_-].+[^\/\n]$/)
-      re_search_forward "^ +[+-]? ?[a-zA-Z_-].+[^\/\n]$"
+      $el.re_search_forward "^ +[+-]? ?[a-zA-Z_-].+[^\/\n]$"
       Line.to_words
     end
   end

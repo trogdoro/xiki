@@ -2,7 +2,6 @@
 # switches between windows in most operating systems.  Call #keys
 # to map it to Ctrl-tab in emacs.
 class ControlTab
-  extend ElMixin
 
   @@edited = nil
 
@@ -52,7 +51,7 @@ class ControlTab
 
     if prefix == :u   # If U prefix (must be first alt-tab in sequence)
       # Go to last edited file, and store list
-      @@edited = elvar.editedhistory_history.to_a
+      @@edited = $el.elvar.editedhistory_history.to_a
       @@edited -= View.files :visible=>1   # Exclude currently visible files
       $el.find_file @@edited.shift
 
@@ -66,21 +65,21 @@ class ControlTab
     if first_tab_in_sequence# || last_was_modeline_click
 
       # Store original order, and windows originally opened
-      @@original = buffer_list.to_a
-      @@open_windows = window_list.collect {|b| window_buffer b}
+      @@original = $el.buffer_list.to_a
+      @@open_windows = $el.window_list.collect {|b| $el.window_buffer b}
 
       # Check for prefix, and store correct test for files to go through accordingly
       case prefix
       when 0   # Non-files
-        @@consider_test = lambda{|b| ! buffer_file_name(b) && ! buffer_name(b)[/Minibuf/]}
+        @@consider_test = lambda{|b| ! $el.buffer_file_name(b) && ! $el.buffer_name(b)[/Minibuf/]}
       when 1   # Only files
-        @@consider_test = lambda{|b| buffer_file_name(b)}
+        @@consider_test = lambda{|b| $el.buffer_file_name(b)}
         #       when 3   # ...css
         #         @@consider_test = lambda{|b| buffer_name(b) =~ /\.(css|sass)/}
       when 3   # ...css
-        @@consider_test = lambda{|b| buffer_name(b) =~ /^#/}
+        @@consider_test = lambda{|b| $el.buffer_name(b) =~ /^#/}
       when 4   # haml.html files
-        @@consider_test = lambda{|b| buffer_file_name(b) =~ /\.html/}
+        @@consider_test = lambda{|b| $el.buffer_file_name(b) =~ /\.html/}
       when 5   # Consoles
         @@consider_test = lambda{|b|
           next if $el.buffer_file_name b
@@ -92,21 +91,21 @@ class ControlTab
         }
         #         @@consider_test = lambda{|b| buffer_name(b) =~ /^(\*console|\*merb) /i}
       when 6   # Ruby files only
-        @@consider_test = lambda{|b| buffer_file_name(b) =~ /\.rb$/}
+        @@consider_test = lambda{|b| $el.buffer_file_name(b) =~ /\.rb$/}
       when 68   # controller
-        @@consider_test = lambda{|b| buffer_file_name(b) =~ /\/app\/controllers\//}
+        @@consider_test = lambda{|b| $el.buffer_file_name(b) =~ /\/app\/controllers\//}
       when 66   # Models
-        @@consider_test = lambda{|b| buffer_file_name(b) =~ /\/app\/models\//}
+        @@consider_test = lambda{|b| $el.buffer_file_name(b) =~ /\/app\/models\//}
       when 67   # Tests
-        @@consider_test = lambda{|b| buffer_file_name(b) =~ /_(spec|test)\.rb$/}
+        @@consider_test = lambda{|b| $el.buffer_file_name(b) =~ /_(spec|test)\.rb$/}
       when 7   # .notes files
-        @@consider_test = lambda{|b| buffer_file_name(b) =~ /\.notes$/}
+        @@consider_test = lambda{|b| $el.buffer_file_name(b) =~ /\.notes$/}
       when 8   # Anything (just like no arg)
-        @@consider_test = lambda{|b| ! buffer_name(b)[/Minibuf/] }
+        @@consider_test = lambda{|b| ! $el.buffer_name(b)[/Minibuf/] }
         #       when 9   # js
         #         @@consider_test = lambda{|b| buffer_file_name(b) =~ /\.js$/}
       else   # Anything (except minibuffer)
-        @@consider_test = lambda{|b| ! buffer_name(b)[/Minibuf/] }
+        @@consider_test = lambda{|b| ! $el.buffer_name(b)[/Minibuf/] }
       end
 
       # Remember we're starting at the top of the buffer list
@@ -115,13 +114,13 @@ class ControlTab
       # Go to next eligible buffer
       self.move_to_next
 
-      switch_to_buffer(@@original[@@switch_index])
+      $el.switch_to_buffer(@@original[@@switch_index])
 
     # If we've been typing tabs
     else
       self.restore_original_order   # Restore order up to this buffer
       self.move_to_next   # Point to next eligible buffer
-      switch_to_buffer(@@original[@@switch_index])  # Switch to eligible
+      $el.switch_to_buffer(@@original[@@switch_index])  # Switch to eligible
 
     end
   end
@@ -129,7 +128,7 @@ class ControlTab
   def self.restore_original_order
     # Move backwards through original list, moving each to front
     (0..(@@switch_index)).each do |i|
-      switch_to_buffer(@@original[@@switch_index-i])
+      $el.switch_to_buffer(@@original[@@switch_index-i])
     end
   end
 

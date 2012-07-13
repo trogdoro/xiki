@@ -82,6 +82,9 @@ class Dotsies
   end
 
   def self.init
+
+    return if ! $el
+
     $el.defun(:dotsies_mode, :interactive => "", :docstring => "Apply dotsies styles, etc") {
       $el.el4r_lisp_eval "(setq font-lock-defaults '(nil t))"
       Dotsies.apply_styles

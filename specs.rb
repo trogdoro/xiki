@@ -193,7 +193,7 @@ class Specs
   def self.enter_as_test_from_visit
     line = Clipboard[0]
 
-    params_str = line[/\{(.+)}/, 1]
+    params_str = line[/\{(.+)\}/, 1]
     params = eval "{#{params_str}}"
     params_symbols = params.map{|k, v| ":#{k}=>#{v.inspect}"} * ",\n    "
 

@@ -1,7 +1,6 @@
 require 'open3'
 
 class Console
-  extend ElMixin
 
   @@log = File.expand_path("~/.emacs.d/console_log.notes")
 
@@ -74,7 +73,7 @@ class Console
     if dir
       dir = Bookmarks.expand(dir)
       # If relative dir, make current dir be on end of current
-      dir = "#{elvar.default_directory}/#{dir}" unless dir =~ /^\//
+      dir = "#{$el.elvar.default_directory}/#{dir}" unless dir =~ /^\//
       dir.gsub!(/\/\/+/, '/')
 
       # If file, but not dir, try backing up to the dir
@@ -90,7 +89,7 @@ class Console
         return puts("#{dir} is not a dir")
       end
     else
-      dir = elvar.default_directory
+      dir = $el.elvar.default_directory
     end
 
     if sync
@@ -111,15 +110,15 @@ class Console
       buffer ||= "*console #{dir}"
 
       if ! reuse_buffer
-        buffer = generate_new_buffer(buffer)
+        buffer = $el.generate_new_buffer(buffer)
       end
       View.to_buffer buffer
-      erase_buffer if reuse_buffer
-      elvar.default_directory = dir if dir
-      $el.shell current_buffer
+      $el.erase_buffer if reuse_buffer
+      $el.elvar.default_directory = dir if dir
+      $el.shell $el.current_buffer
       Move.bottom
       if command  # If nil, just open console
-        insert command
+        $el.insert command
         Console.enter unless options[:no_enter]
       end
     end
@@ -129,19 +128,19 @@ class Console
 
   def self.open dir=nil
     View.handle_bar
-    dir ||= elvar.default_directory
+    dir ||= $el.elvar.default_directory
     dir = File.expand_path(dir)+"/"
-    View.to_buffer generate_new_buffer("shell")
+    View.to_buffer $el.generate_new_buffer("shell")
     raise "dir '#{dir}' doesn't exist" unless File.directory?(dir)
-    elvar.default_directory = dir
-    $el.shell current_buffer
+    $el.elvar.default_directory = dir
+    $el.shell $el.current_buffer
   end
 
   def self.enter command=nil
     View.insert command if command
 
     begin
-      comint_send_input
+      $el.comint_send_input
     rescue
       #       Ol << "Console.enter error here!"
     end
@@ -163,14 +162,12 @@ class Console
 
     return true if View.name =~ pattern   # If already there, do nothing
 
-
-
     if ! dir
 
       # Try to find visible shell buffer in same dir and with prompt
 
       View.list.each do |w|
-        $el.set_buffer window_buffer(w)
+        $el.set_buffer $el.window_buffer(w)
         next if View.mode != :shell_mode || ! Console.prompt?
         next if View.cursor != View.bottom
         View.to_window(w)
@@ -199,7 +196,7 @@ class Console
     # Deprecated:
     # Try to find visible shell buffer with matching name
     View.list.each do |w|
-      next if buffer_name(window_buffer(w)) !~ pattern
+      next if $el.buffer_name(window_buffer(w)) !~ pattern
       View.to_window(w)
       return true
     end
@@ -211,7 +208,7 @@ class Console
         next false unless name =~ pattern
 
         view = nil
-        with(:save_window_excursion) do
+        $el.with(:save_window_excursion) do
           View.to_buffer name
 
           next false unless Console.prompt?
@@ -236,9 +233,9 @@ class Console
 
     if dir =~ /@/   # If there's a @, it's remote
       View.handle_bar
-      View.to_buffer generate_new_buffer("*console #{dir}")
-      elvar.default_directory = "/tmp"
-      $el.shell current_buffer
+      View.to_buffer $el.generate_new_buffer("*console #{dir}")
+      $el.elvar.default_directory = "/tmp"
+      $el.shell $el.current_buffer
       if dir =~ /(.+?)(\/.+)/   # Split off dir if there
         line = self.ssh_line($1)
         Console.enter line
@@ -265,7 +262,7 @@ class Console
     return View.message("No *console buffer was visible") unless found
 
     $el.erase_buffer
-    comint_previous_input(1)
+    $el.comint_previous_input(1)
     self.enter
     View.to_nth orig
   end
@@ -308,8 +305,13 @@ class Console
 
   # Synchronous - mapped to $ launcher
   def self.launch options={}
+    trunk = Xiki.trunk   # use Tree.path instead
 
-    trunk = Xiki.trunk
+    # If it looks like error output, just jump to it
+    if trunk[-1] =~ /[^\/+]\/\| \s+from / || trunk[-1] =~ /[^\/+]\/\| +\//
+      return Code.open_as_file
+    end
+
     # if not under file
     # raise RelinquishException.new
 
@@ -510,7 +512,7 @@ class Console
 
     txt = ""
 
-    with(:save_excursion) do
+    $el.with(:save_excursion) do
 
       Buffers.list.each do |b|
         next if $el.buffer_file_name b

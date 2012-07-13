@@ -7,7 +7,6 @@ class Search
 
   SPECIAL_ORDER = "X!='\"[]{}<>_-+*@#\\/!$X"
 
-  extend ElMixin
   @@case_options = nil
   @@outline_goto_once = nil
 
@@ -82,7 +81,7 @@ class Search
 
     Location.to_spot
 
-    insert match
+    $el.insert match
   end
 
   def self.insert_tree_at_spot
@@ -111,13 +110,13 @@ class Search
     end
 
     self.to_start  # Go back to start
-    insert match
+    $el.insert match
   end
 
   def self.isearch_have_within
     match = self.stop
     self.to_start  # Go back to start
-    insert match[/^.(.*).$/, 1]
+    $el.insert match[/^.(.*).$/, 1]
   end
 
   def self.move_to_search_start match
@@ -142,19 +141,19 @@ class Search
   def self.insert_var_at_search_start
     match = self.stop
     self.to_start  # Go back to start
-    insert "\#{#{match}}"
+    $el.insert "\#{#{match}}"
   end
 
   def self.insert_quote_at_search_start
     match = self.stop
     self.to_start
-    insert "'#{match}'"
+    $el.insert "'#{match}'"
   end
 
   def self.isearch_select_inner
     self.stop
-    set_mark self.left + 1
-    goto_char self.right - 1
+    $el.set_mark self.left + 1
+    $el.goto_char self.right - 1
     Effects.blink :what=>:region
   end
 
@@ -194,7 +193,7 @@ class Search
     line = Line.value(1, :include_linebreak=>true).sub("\n", "")
     Code.comment Line.left, Line.right
     self.to_start  # Go back to start
-    insert "#{line}"
+    $el.insert "#{line}"
     Line.to_beginning
   end
 
@@ -257,8 +256,8 @@ class Search
 
   def self.copy match
     Clipboard[0] = match
-    set_register ?X, match
-    x_select_text match
+    $el.set_register ?X, match
+    $el.x_select_text match
     Clipboard.save_by_first_letter match   # Store for retrieval with enter_yank
   end
 
@@ -270,7 +269,7 @@ class Search
       Location.to_spot('killed')
     else
       Clipboard.set(0, match)
-      set_register ?X, match
+      $el.set_register ?X, match
       View.delete self.left, self.right
       Location.as_spot('killed')
     end
@@ -284,7 +283,7 @@ class Search
       return
     end
 
-    goto_char self.right
+    $el.goto_char self.right
   end
 
   # Clears the isearch, allowing for inserting, or whatever else
@@ -296,9 +295,9 @@ class Search
 
     # Make it do special clear if nothing found (to avoid weird isearch error)
     if txt.nil?
-      if elvar.isearch_success # || Search.left == View.bottom
+      if $el.elvar.isearch_success # || Search.left == View.bottom
         # Done so isearch_done won't error
-        isearch_resume "[^`]", true, nil, true, "", true
+        $el.isearch_resume "[^`]", true, nil, true, "", true
         View.message ""
       else
         txt = :not_found
@@ -318,14 +317,14 @@ class Search
     right ||= self.right
 
     return nil if left == 0# || self.nil?
-    result = buffer_substring(left, right)
+    result = $el.buffer_substring(left, right)
 
     return nil if result == ""
     result
   end
 
   def self.to_start
-    View.to(elvar.isearch_opoint)
+    View.to($el.elvar.isearch_opoint)
   end
 
   # Do query replace depending on what they type
@@ -338,24 +337,24 @@ class Search
     first = Keys.input(:timed=>true)
     # If they typed 'o', use clipboard 1 and clipboard 2
     if first == "o" || first == "1"
-      query_replace_regexp($el.regexp_quote(Clipboard.get("1")), Clipboard.get("2"))
+      $el.query_replace_regexp($el.regexp_quote(Clipboard.get("1")), Clipboard.get("2"))
     # If they typed 't', use clipboard 2 and clipboard 1
     elsif first == "t" || first == "2"
-      query_replace_regexp(Clipboard.get("2"), Clipboard.get("1"))
+      $el.query_replace_regexp(Clipboard.get("2"), Clipboard.get("1"))
     # If 'q', prompt for both args
     elsif first == "q"
-      query_replace_regexp(
+      $el.query_replace_regexp(
         Keys.input(:prompt=>"Replace: "),
         Keys.input(:prompt=>"With: "))
     # If they typed 'c', use clipboard and prompt for 2nd arg
     elsif first == "c"
-      query_replace_regexp(Clipboard.get, Keys.input(:prompt=>"Replace with (pause when done): ", :timed=>true))
+      $el.query_replace_regexp(Clipboard.get, Keys.input(:prompt=>"Replace with (pause when done): ", :timed=>true))
     # If they typed 'c', use clipboard and prompt for 2nd arg
     elsif first == "l"
-      query_replace_regexp(@@query_from, @@query_to)
+      $el.query_replace_regexp(@@query_from, @@query_to)
     # Otherwise, just get more input and use it
     else
-      query_replace_regexp(first, Keys.input(:timed=>true))
+      $el.query_replace_regexp(first, Keys.input(:timed=>true))
     end
     nil
   end
@@ -415,8 +414,8 @@ class Search
   # Incrementeal search between cursor and end of paragraph (kills unmatching lines)
   def self.kill_search(left, right)
     pattern = ""
-    lines = buffer_substring(left, right).split "\n"
-    ch = char_to_string read_char
+    lines = $el.buffer_substring(left, right).split "\n"
+    ch = $el.char_to_string read_char
     while ch =~ /[~#-'>a-zA-Z0-9!*\_'.~#-\/]/
       if ch == "\t"
         pattern = ""
@@ -427,20 +426,20 @@ class Search
         # Replace out lines that don't match
         lines = lines.grep(/#{pattern}/i)
         # Put back into buffer
-        insert lines.join("\n") + "\n"
-        right = point
+        $el.insert lines.join("\n") + "\n"
+        right = $el.point
         # Go to first file
-        goto_char left
+        $el.goto_char left
       end
-      message "Delete lines not matching: %s", pattern
-      ch = char_to_string read_char
+      $el.message "Delete lines not matching: %s", pattern
+      ch = $el.char_to_string read_char
     end
     # Run whatever they typed last as a command (it was probably C-m or C-a, etc.)
     case ch
     when "\C-m"  # If it was C-m
       # Do nothing
     else
-      command_execute ch
+      $el.command_execute ch
     end
   end
 
@@ -536,12 +535,12 @@ class Search
     new_args << ", #{new_options.inspect[1..-2]}" unless new_options.empty?
 
     View.bar if options[:in_bar]
-    switch_to_buffer "*tree find in buffers"
-    notes_mode
-    erase_buffer
+    $el.switch_to_buffer "*tree find in buffers"
+    Notes.mode
+    $el.erase_buffer
 
     View.insert "+ Buffers.search #{new_args}/"
-    open_line 1
+    $el.open_line 1
     CodeTree.launch :no_search=>true
     if new_options[:buffer]   # Goto first match
       $el.goto_line 4
@@ -558,19 +557,19 @@ class Search
   def self.just_marker
     match = self.stop
 
-    highlight_regexp(Regexp.quote(match), :notes_label)
+    $el.highlight_regexp(Regexp.quote(match), :notes_label)
   end
 
   def self.highlight_found
     match = self.stop
 
-    highlight_regexp(Regexp.quote(match), :hi_yellow)
+    $el.highlight_regexp(Regexp.quote(match), :hi_yellow)
   end
 
   def self.hide
     match = self.stop
     Hide.hide_unless /#{Regexp.quote(match)}/i
-    recenter -3
+    $el.recenter -3
     Hide.search
   end
 
@@ -579,7 +578,7 @@ class Search
     self.stop
     line = Line.value(1, :include_linebreak=>true).sub("\n", "")
     self.to_start  # Go back to start
-    insert line
+    $el.insert line
   end
 
   # Insert line at beginning of search
@@ -587,7 +586,7 @@ class Search
     self.stop
     label = Line.label
     self.to_start  # Go back to start
-    insert "- #{label}: "
+    $el.insert "- #{label}: "
   end
 
   # Insert line at beginning of search
@@ -597,7 +596,7 @@ class Search
     offset = View.cursor - View.paragraph(:bounds=>true)[0]
     self.to_start  # Go back to start
     orig = Location.new
-    insert paragraph
+    $el.insert paragraph
     orig.go
     Move.forward offset
   end
@@ -606,7 +605,7 @@ class Search
   # During isearch, pull next n words
   def self.isearch_pull_in_words n
     # If on the beginning of a grouping char, move back to catch the sexp
-    el4r_lisp_eval "
+    $el.el4r_lisp_eval "
       (isearch-yank-internal
         (lambda ()
           (forward-word #{n}) (point)))"
@@ -616,7 +615,7 @@ class Search
   def self.isearch_pull_in_sexp
     # If on the beginning of a grouping char, move back to catch the sexp
 
-    el4r_lisp_eval %q=
+    $el.el4r_lisp_eval %q=
       (isearch-yank-internal
         (lambda ()
           (if (and (> (point) 1)
@@ -730,10 +729,10 @@ class Search
     # TODO: Get options[:kill_matching]=>true to delete matching
     # - and map to Keys.do_kill_matching
     Line.start
-    left = point
-    re_search_forward "^$", nil, 1
-    right = point
-    goto_char left
+    left = $el.point
+    $el.re_search_forward "^$", nil, 1
+    right = $el.point
+    $el.goto_char left
     Tree.search(:left=>left, :right=>right, :recursive=>true)
   end
 
@@ -752,7 +751,7 @@ class Search
     View.to_highest if options[:from_top]
 
     orig = View.cursor
-    found = re_search_forward search, nil, (options[:go_anyway] ? 1 : true)
+    found = $el.re_search_forward search, nil, (options[:go_anyway] ? 1 : true)
     View.cursor = orig if options[:dont_move]
     View.cursor = self.left if options[:beginning] && View.cursor != View.bottom
 
@@ -761,7 +760,7 @@ class Search
 
   def self.backward search, options={}
     orig = View.cursor
-    found = re_search_backward search, nil, (options[:go_anyway] ? 1 : true)
+    found = $el.re_search_backward search, nil, (options[:go_anyway] ? 1 : true)
     View.cursor = orig if options[:dont_move]
     found
   end
@@ -772,8 +771,8 @@ class Search
       match = $el.buffer_substring self.left, self.right
       Move.backward(match.size)
     else
-      beep
-      message "not found"
+      $el.beep
+      $el.message "not found"
       Move.backward
     end
   end
@@ -791,8 +790,8 @@ class Search
       term = "\"#{term}\"" if options[:quote]
 
       term =~ /^https?:\/\// ?   # If url, just browse
-        browse_url(term) :
-        browse_url("http://google.com/search?q=#{term}")
+        $el.browse_url(term) :
+        $el.browse_url("http://google.com/search?q=#{term}")
       return
     end
 
@@ -805,17 +804,17 @@ class Search
     term = self.stop
 
     url = term.sub(/^\s+/, '').gsub('"', '%22').gsub(':', '%3A').gsub(' ', '%20')
-    browse_url "http://thesaurus.reference.com/browse/#{url}"
+    $el.browse_url "http://thesaurus.reference.com/browse/#{url}"
   end
 
   def self.isearch_move_line
-    isearch_done
-    isearch_clean_overlays
-    line = buffer_substring point_at_bol, point_at_eol + 1
-    View.delete point_at_bol, point_at_eol + 1
+    $el.isearch_done
+    $el.isearch_clean_overlays
+    line = $el.buffer_substring $el.point_at_bol, $el.point_at_eol + 1
+    View.delete $el.point_at_bol, $el.point_at_eol + 1
     #self.to_start  # Go back to start
-    exchange_point_and_mark
-    insert line
+    $el.exchange_point_and_mark
+    $el.insert line
   end
 
   def self.outline
@@ -836,12 +835,12 @@ class Search
 
   def self.upcase
     self.stop
-    upcase_region(self.left, self.right)
+    $el.upcase_region(self.left, self.right)
   end
 
   def self.downcase
     self.stop
-    downcase_region(self.left, self.right)
+    $el.downcase_region(self.left, self.right)
   end
 
   def self.enter_like_edits
@@ -1075,7 +1074,7 @@ class Search
     txt = self.match
     lam = Keys.input(:prompt=>'convert to which case?: ', :choices=>TextUtil.case_choices)
     self.to_start  # Go back to start
-    insert lam[txt]
+    $el.insert lam[txt]
   end
 
   def self.isearch_just_underscores
@@ -1102,9 +1101,9 @@ class Search
       return block.call
     end
 
-    right = View.point
+    right = $el.point
     self.to_start   # Go back to search start
-    View.delete(View.point, right)
+    View.delete($el.point, right)
   end
 
   def self.xiki
@@ -1172,13 +1171,13 @@ class Search
     end
 
     txt ||= ""   # Searchig for nil causes error
-    isearch_resume txt, (options[:regex] ?true:nil), nil, (! options[:reverse]), txt, true
-    isearch_update
+    $el.isearch_resume txt, (options[:regex] ?true:nil), nil, (! options[:reverse]), txt, true
+    $el.isearch_update
   end
 
   def self.isearch_stop_at_end
     # Kind of a hack - search for anything, so it won't error when we stop
-    isearch_resume "[^`]", true, nil, true, "", true
+    $el.isearch_resume "[^`]", true, nil, true, "", true
 
     self.stop
     self.to_start  # Go back to start
@@ -1196,7 +1195,7 @@ class Search
 
     else
       if ! View.file   # If buffer, not file
-        buffer_name = View.buffer_name
+        buffer_name = $el.buffer_name
         txt = View.txt
         View.to_buffer "* outline of matches in #{buffer_name}"
         Notes.mode
@@ -1213,7 +1212,7 @@ class Search
       dir = View.dir
       file_name = View.file_name
       View.to_buffer "*tree grep";  View.dir = dir
-      View.clear;  notes_mode
+      View.clear;  Notes.mode
       View.insert "
         - #{dir}/
           - #{file_name}
@@ -1401,7 +1400,7 @@ class Search
 
   def self.searches
     begin
-      elvar.search_ring.to_a
+      $el.elvar.search_ring.to_a
     rescue Exception=>e
       ["error getting searches, probably because of special char :("]
     end
@@ -1409,7 +1408,7 @@ class Search
 
   def self.last_search
     begin
-      $el.nth 0, elvar.search_ring.to_a
+      $el.nth 0, $el.elvar.search_ring.to_a
     rescue Exception=>e
       View.beep
       return "- weird stuff in search ring!"

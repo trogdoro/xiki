@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 class Files
-  extend ElMixin
 
   def self.menu
     "
@@ -62,21 +61,21 @@ class Files
 
   # Lets user open a file
   def self.open
-    return View.open read_file_name("Open: ") if Keys.prefix_u
-    View.open read_file_name("Open: ", "/")
+    return View.open $el.read_file_name("Open: ") if Keys.prefix_u
+    View.open $el.read_file_name("Open: ", "/")
   end
 
   def self.open_sudo
-    find_file "/sudo:root@localhost:#{View.file || View.dir}"
+    $el.find_file "/sudo:root@localhost:#{View.file || View.dir}"
   end
 
   def self.save
     # If prefix, save as
-    if elvar.current_prefix_arg
-      write_file read_file_name("Save as: ")
+    if $el.elvar.current_prefix_arg
+      $el.write_file $el.read_file_name("Save as: ")
     # Otherwise, difflog save
     else
-      difflog_save
+      $el.difflog_save
     end
     # Refresh
     self.refresh_me_and_next_dired
@@ -89,7 +88,7 @@ class Files
     to = View.dir
     View.previous
     if Keys.prefix_u?
-      rename_file(from, to)
+      $el.rename_file(from, to)
     elsif Keys.prefix_uu
       command = "cp -R \"#{from}\" \"#{to}\""
       Console.run command, :sync => true
@@ -104,31 +103,31 @@ class Files
   def self.zip
     #from = Files.file_name(:path => true)
     from = Files.file_name
-    other_window 1;  to = elvar.default_directory;  other_window -1
+    $el.other_window 1;  to = $el.elvar.default_directory;  $el.other_window -1
     if Keys.prefix_u?
       command = "unzip -d \"#{to}\" \"#{from}\""
     else
       command = "zip -r \"#{to}#{from}.zip\" \"#{from}\""
     end
-    message command
+    $el.message command
     $el.shell_command command
   end
 
   def self.file_name options={}
     if options[:path]
-      return buffer_file_name || dired_get_filename #'no_dir
+      return $el.buffer_file_name || $el.dired_get_filename #'no_dir
     end
-    if buffer_file_name
-      return file_name_nondirectory(buffer_file_name)
+    if $el.buffer_file_name
+      return $el.file_name_nondirectory($el.buffer_file_name)
     end
-    dired_get_filename(:no_dir)
+    $el.dired_get_filename(:no_dir)
   end
 
   def self.refresh_me_and_next_dired
-    revert_buffer(true, true, true) if(elvar.dired_directory)
-    other_window 1
-    revert_buffer(true, true, true) if(elvar.dired_directory)
-    other_window -1
+    $el.revert_buffer(true, true, true) if($el.elvar.dired_directory)
+    $el.other_window 1
+    $el.revert_buffer(true, true, true) if($el.elvar.dired_directory)
+    $el.other_window -1
   end
 
   def self.open_tail
@@ -140,7 +139,7 @@ class Files
   end
 
   def self.edited_array
-    elvar.editedhistory_history.to_a
+    $el.elvar.editedhistory_history.to_a
   end
 
   def self.current times=nil
@@ -154,7 +153,7 @@ class Files
   end
 
   def self.history_array
-    elvar.recentf_list.to_a
+    $el.elvar.recentf_list.to_a
   end
 
   def self.history_tree times=nil
@@ -329,5 +328,7 @@ class Files
 
 end
 
-$el.el4r_lisp_eval("(require 'recentf)")
-$el.el4r_lisp_eval("(recentf-mode 1)")
+if $el
+  $el.el4r_lisp_eval("(require 'recentf)")
+  $el.el4r_lisp_eval("(recentf-mode 1)")
+end

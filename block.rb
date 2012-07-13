@@ -1,5 +1,5 @@
 class Block
-  extend ElMixin
+
   #   def self.value
   #     res = []
   #     with(:save_excursion) do
@@ -30,13 +30,13 @@ class Block
 
       Line.to_left
       View.insert "> "
-      fill_paragraph nil
+      $el.fill_paragraph nil
       txt = View.paragraph(:delete => true)
       View.insert txt.gsub(/^  /, '> ')
       return
     end
 
-    fill_paragraph nil
+    $el.fill_paragraph nil
   end
 
   def self.do_as_something

@@ -3,7 +3,6 @@ require 'styles'
 
 # Colors lines, and shows only colored lines
 class Color
-  extend ElMixin
 
   def self.menu
     "
@@ -34,10 +33,10 @@ class Color
     case char
     when "l"
       # We want there to be only one "light" line per file, so delete existing
-      overlays = overlays_in(View.top, View.bottom)   # Get all overlays
+      overlays = $el.overlays_in(View.top, View.bottom)   # Get all overlays
       overlays.to_a.reverse.each do |o|   # Loop through and copy all
-        if overlay_get(o, :face).to_s == "color-rb-light"
-          delete_overlay(o)
+        if $el.overlay_get(o, :face).to_s == "color-rb-light"
+          $el.delete_overlay(o)
         end
       end
 
@@ -46,8 +45,8 @@ class Color
       prefix = Keys.prefix
 
       if prefix.nil?
-        light = overlays_in(View.top, View.bottom).to_a.find{|o| overlay_get(o, :face).to_s == "color-rb-light"}
-        return View.to(overlay_start(light)) if light
+        light = $el.overlays_in(View.top, View.bottom).to_a.find{|o| $el.overlay_get(o, :face).to_s == "color-rb-light"}
+        return View.to($el.overlay_start(light)) if light
         # Else, contine on and do Color.search
       end
 
@@ -67,7 +66,7 @@ class Color
         "- buffer #{View.name}/\n"
 
       View.to_buffer("*outline of marked in #{path}")
-      View.clear;  notes_mode
+      View.clear;  Notes.mode
       View.insert path
       if res == "    | "
         return View.insert "    - Nothing was marked in this file!"
@@ -99,8 +98,8 @@ class Color
       #     when "h"   # Hide
       #       Hide.hide_unless_block { |l, bol, eol|
       #         # Whether current line contains an overlay of this color
-      #         overlays_in(bol, eol).to_a.find{ |o|
-      #           overlay_get(o, :face).to_s =~ /^color-rb-/
+      #         $el.overlays_in(bol, eol).to_a.find{ |o|
+      #           $el.overlay_get(o, :face).to_s =~ /^color-rb-/
       #         }
       #       }
       #       recenter(-3)
@@ -108,28 +107,28 @@ class Color
       #       return
     when "n"   # to next marker
       #       Keys.prefix_times do
-      pos = next_overlay_change(View.cursor)
+      pos = $el.next_overlay_change(View.cursor)
       #       end
       # If no overlay, may be at end, so continue on
-      pos = next_overlay_change(pos) unless overlays_at(pos)
+      pos = $el.next_overlay_change(pos) unless $el.overlays_at(pos)
       return View.to(pos)
     when "p"   # to next marker
-      pos = previous_overlay_change(View.cursor)
-      pos = previous_overlay_change(pos-2) if overlays_at(pos-2)
+      pos = $el.previous_overlay_change(View.cursor)
+      pos = $el.previous_overlay_change(pos-2) if $el.overlays_at(pos-2)
       return View.to pos
     when "d"
-      overlays = overlays_at(next_overlay_change(point_at_bol - 1))
+      overlays = $el.overlays_at($el.next_overlay_change($el.point_at_bol - 1))
       return View.beep "- No highlights after cursor!" if ! overlays
-      return delete_overlay(overlays[0])
+      return $el.delete_overlay(overlays[0])
     when "k"
 
       if Keys.prefix_u   # Don't delete map mark
-        return remove_overlays
+        return $el.remove_overlays
       end
-      overlays = overlays_in(View.top, View.bottom)   # Get all overlays
+      overlays = $el.overlays_in(View.top, View.bottom)   # Get all overlays
       overlays.to_a.reverse.each do |o|   # Loop through and copy all
-        if overlay_get(o, :face).to_s != "color-rb-light"
-          delete_overlay(o)
+        if $el.overlay_get(o, :face).to_s != "color-rb-light"
+          $el.delete_overlay(o)
         end
       end
       return
@@ -151,8 +150,8 @@ class Color
       return View.message "No char color for '#{char}'"
     end
 
-    over = make_overlay(left, right)
-    overlay_put over, :face, @@colors[char]
+    over = $el.make_overlay(left, right)
+    $el.overlay_put over, :face, @@colors[char]
   end
 
   def self.alternating
@@ -168,11 +167,13 @@ class Color
   end
 
   def self.colorize_line face
-    over = make_overlay(Line.left, Line.right+1)
-    overlay_put over, :face, face
+    over = $el.make_overlay(Line.left, Line.right+1)
+    $el.overlay_put over, :face, face
   end
 
   def self.define_styles   # For Keys.layout_kolor_light, etc.
+
+    return if ! $el
 
     # Orange path in mode line
     # Blue path in mode line
@@ -221,13 +222,13 @@ class Color
   end
 
   def self.get_marked_lines label=nil
-    overlays = overlays_in(View.top, View.bottom)   # Get all overlays
+    overlays = $el.overlays_in(View.top, View.bottom)   # Get all overlays
     res = ""
     overlays.to_a.reverse.each do |o|   # Loop through and copy all
       if label
-        next if overlay_get(o, :face).to_s != label
+        next if $el.overlay_get(o, :face).to_s != label
       end
-      line = View.txt(overlay_start(o), overlay_end(o))
+      line = View.txt($el.overlay_start(o), overlay_end(o))
       line << "\n" unless line =~ /\n$/
       res << line
     end
@@ -263,9 +264,9 @@ class Color
   # Returns list of colors at cursor
   # Color.at_cursor
   def self.at_cursor
-    overlays = overlays_in(Line.left, Line.right)
+    overlays = $el.overlays_in(Line.left, Line.right)
     overlays = overlays.to_a.reverse.inject([]) do |a, o|   # Loop through and copy all
-      a.push overlay_get(o, :face).to_s
+      a.push $el.overlay_get(o, :face).to_s
     end
   end
 

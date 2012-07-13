@@ -2,7 +2,6 @@ require 'hide'
 
 # Will store a diff each time a file is saved.
 class DiffLog
-  extend ElMixin
 
   @@log = File.expand_path("~/.emacs.d/difflog.notes")
   @@temp_path = "/tmp/saved.txt"
@@ -30,14 +29,14 @@ class DiffLog
     # If open, just switch to it and revert
     if View.buffer_open?("difflog.notes")
       View.to_buffer("difflog.notes")
-      revert_buffer true, true, true
+      $el.revert_buffer true, true, true
     else  # Otherwise, open it
       View.open(@@log)
     end
     View.to_bottom
     Line.previous
     Line.to_words
-    recenter -4
+    $el.recenter -4
   end
 
   def self.diffs path=nil
@@ -65,7 +64,7 @@ class DiffLog
 
   # Insert old text deleted during last save
   def self.last_diff
-    with(:save_window_excursion) do
+    $el.with(:save_window_excursion) do
       DiffLog.open
       Search.backward "^-"
       txt = View.txt View.cursor, View.bottom
@@ -171,7 +170,7 @@ class DiffLog
     Location.as_spot
     View.to_after_bar if View.in_bar?
     DiffLog.open
-    isearch_backward
+    $el.isearch_backward
   end
 
   # Util function used by public functions
@@ -234,7 +233,7 @@ class DiffLog
 
     # up+ means compare buffers in first two views
 
-    return $el.ediff_buffers( window_buffer(nth(0, window_list)), window_buffer(nth(1, window_list))) if prefix == :u
+    return $el.ediff_buffers( $el.window_buffer($el.nth(0, $el.window_list)), $el.window_buffer($el.nth(1, $el.window_list))) if prefix == :u
 
     # Save place and grab file at spot
 

@@ -3,7 +3,6 @@ require 'keys'
 require 'yaml'
 
 class Bookmarks
-  extend ElMixin
 
   def self.menu
     %`
@@ -89,7 +88,7 @@ class Bookmarks
   # Like bookmark-set, but accepts buffers
   def self.set name
     # Just create normal bookmark if file
-    return bookmark_set(name) if View.file || $el.elvar.dired_directory
+    return $el.bookmark_set(name) if View.file || $el.elvar.dired_directory
 
     # Must be buffer
 
@@ -118,7 +117,7 @@ class Bookmarks
   def self.jump name
 
     # If normal bookmark found, use it
-    return bookmark_jump(name) if bookmark_get_filename(name)
+    return $el.bookmark_jump(name) if $el.bookmark_get_filename(name)
 
     buffer = self.buffer_bookmark name
 
@@ -170,7 +169,7 @@ class Bookmarks
     keys ||= Keys.input(:timed => true, :prompt => "Enter bookmark to jump to: ") || "0"
 
     # Open file or jump to if already open
-    path = bookmark_get_filename( "#{prefix_to_bm}#{keys}" )
+    path = $el.bookmark_get_filename( "#{prefix_to_bm}#{keys}" )
 
     if path.nil?   # If not found, try buffer in bookmarks.yml
 
@@ -205,7 +204,7 @@ class Bookmarks
 
   def self.expand path, options={}
     if options[:just_bookmark]   # If only a bookmark, just expand it
-      return bookmark_get_filename(path)
+      return $el.bookmark_get_filename(path)
     end
 
     # If $xxx found
@@ -217,7 +216,7 @@ class Bookmarks
       if ["x", "xiki"].member? bm
         bm = Xiki.dir
       else
-        bm = bookmark_get_filename(bm)
+        bm = $el.bookmark_get_filename(bm)
       end
 
       if bm.nil?
@@ -263,7 +262,7 @@ class Bookmarks
       # TODO: pull this list out and make configurable
       %w[a tr p n x 18].each do |name|
 
-        bmpath = bookmark_get_filename(name)
+        bmpath = $el.bookmark_get_filename(name)
         next unless bmpath
         bmpath.sub!(/[^\/]+$/, "")
 
@@ -300,7 +299,7 @@ class Bookmarks
 
     result = ""
     if ! path   # Print all bookmarks
-      all = elvar.bookmark_alist.collect { |bm|
+      all = $el.elvar.bookmark_alist.collect { |bm|
         item = bm.to_a
         [item[0], item[1].to_a[0][1]]
       }
@@ -323,7 +322,7 @@ class Bookmarks
     #       bm.to_a[1].to_a[0][1]
     #     }.select{|path| path =~ /^\/.+\w$/}
 
-    paths = elvar.bookmark_alist.collect {|bm|
+    paths = $el.elvar.bookmark_alist.collect {|bm|
       ary = bm.to_a
       key = ary[0]
       path = ary[1].to_a[0][1]
@@ -346,5 +345,8 @@ class Bookmarks
 
 end
 
-$el.el4r_lisp_eval("(require 'bookmark)")
-$el.bookmark_maybe_load_default_file
+if $el
+  $el.el4r_lisp_eval("(require 'bookmark)")
+  $el.bookmark_maybe_load_default_file
+end
+

@@ -2,6 +2,11 @@ require 'core_ext'
 
 class Requirer
   def self.show txt
+    if ! $el
+      return if txt !~ /(^Xiki requires|exception:$)/
+      return puts "#{txt}"
+    end
+
     $el.switch_to_buffer "Issues Loading Xiki"
     $el.insert txt
     $el.bury_buffer unless $el.buffer_substring($el.point_min, $el.point_max) =~ /(^Xiki requires|exception:$)/
@@ -24,7 +29,6 @@ class Requirer
 
     txt.sub!(/\(.+/, '')
     txt.strip
-
   end
 
   def self.require_classes files

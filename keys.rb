@@ -180,6 +180,8 @@ class Keys
 
   def self.method_missing(meth, *args, &block)
 
+    return if ! $el
+
     # Accept it if block but no args
     meth = meth.to_s
 
@@ -293,14 +295,17 @@ class Keys
     end
   end
 
+  #
   # Gets input from user.
+  #
   # Sample usages:
-  #   - Terminated by enter:  Keys.input
-  #   - Just one char:  Keys.input(:char => true)
-  #   - One char if control:  Keys.input(:control => true)
-  #   - Terminated by pause:  Keys.input(:timed => true)
-  #   - Terminated by pause:  Keys.input(:optional => true)
-  #     - A pause at the beginning will result in no input (nil)
+  # Keys.input   # Terminated by enter
+  # Keys.input :chars=>1   # Just one char
+  # Keys.input :control=>1   # One char if control
+  # Keys.input :timed=>1   # Terminated by pause
+  # Keys.input :optional=>1   # Terminated by pause
+  #   - A pause at the beginning will result in no input (nil)
+  #
   def self.input options={}
 
     return self.input_with_choices(options) if options[:choices]
@@ -315,12 +320,12 @@ class Keys
     if options[:control]
       prompt = "todo - implement this: "
 
-      elvar.inhibit_quit = true
+      $el.elvar.inhibit_quit = true
       # Maybe use this?
         # Or call self.char?
       # char = $el.char_to_string(Keys.remove_control($el.read_char(prompt))).to_s
       c = read_char(prompt)
-      elvar.inhibit_quit = nil
+      $el.elvar.inhibit_quit = nil
       if c == 7
         Cursor.restore :before_input
         keyboard_quit

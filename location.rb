@@ -1,8 +1,6 @@
 # Saves and restores locations.  A location can include multiple of
 # these: a file, a line number, a column number
 class Location
-  extend ElMixin
-  include ElMixin
 
   def self.menu
     %`
@@ -39,13 +37,13 @@ class Location
       end
     end
 
-    @file = buffer_file_name
+    @file = $el.buffer_file_name
     @buffer = View.name
     @line = Line.number
-    @column = point - point_at_bol
+    @column = $el.point - $el.point_at_bol
 
     # Get buffer if no file
-    @buffer = buffer_name unless @file
+    @buffer = $el.buffer_name unless @file
 
   end
 
@@ -61,14 +59,14 @@ class Location
       loc = "_#{loc}"
       View.open("$#{loc}")
       # Optionally go to point
-      bookmark_jump(loc) unless elvar.current_prefix_arg
+      $el.bookmark_jump(loc) unless $el.elvar.current_prefix_arg
       return
 
     # If symbol, look up location in map and go to it
     elsif path.class == Symbol
       # @@hash[path.to_s].go
       View.open("$#{path.to_s}")
-      bookmark_jump(path.to_s)
+      $el.bookmark_jump(path.to_s)
       return
 
     # If string, look up location in map and go to it
@@ -77,7 +75,7 @@ class Location
 
       # Jump to specific boomkark point - redundant??
       # Is this even a bookmark?
-      bookmark_jump(path.sub(/^\$/, ""))
+      $el.bookmark_jump(path.sub(/^\$/, ""))
       return
     end
 
@@ -96,20 +94,20 @@ class Location
       end
     end
 
-    goto_line @line if @line
+    $el.goto_line @line if @line
 
     # Exit if no column is set
     return unless @column
 
     # If enough space, just move to column
-    if point + @column <= point_at_eol
-      forward_char @column
+    if $el.point + @column <= $el.point_at_eol
+      $el.forward_char @column
     # Otherwise, move to end
     else
-      end_of_line
+      $el.end_of_line
     end
 
-    recenter @scroll_position if @scroll_position
+    $el.recenter @scroll_position if @scroll_position
   end
 
   # Saves a generic location based on user input
@@ -124,7 +122,7 @@ class Location
 
     # Save location in corresponding register
     # @@hash[name] = Location.new
-    bookmark_set(name)
+    $el.bookmark_set(name)
 
   end
 
@@ -134,7 +132,7 @@ class Location
     #path = path.to_s unless path.class == String
     View.open("$#{path}")
     # Optionally go to point
-    bookmark_jump(path) #unless elvar.current_prefix_arg
+    $el.bookmark_jump(path) #unless $el.elvar.current_prefix_arg
   end
 
   # Enter selected text at spot
@@ -143,7 +141,7 @@ class Location
     txt = FileTree.snippet if Keys.prefix_u?
     Location.jump("0")
     View.set_mark
-    insert txt
+    $el.insert txt
   end
 
   def self.as_spot key='0'
@@ -157,7 +155,7 @@ class Location
     end
 
     # Must be a buffer
-    @@spots[key] = [buffer_name(View.buffer), point]
+    @@spots[key] = [$el.buffer_name(View.buffer), point]
   end
 
   def self.to_spot key='0'
@@ -167,7 +165,7 @@ class Location
     else    # If file, just jump
       # If original window/buffer still there, go back
       if key == '0'
-        if buffer_file_name(window_buffer(View.nth(@@spot_index))) == Bookmarks["$_0"]
+        if $el.buffer_file_name($el.window_buffer(View.nth(@@spot_index))) == Bookmarks["$_0"]
           View.to_nth @@spot_index
         end
       end

@@ -16,6 +16,8 @@ class Mode
   # Easy way to define a mode
   def self.define name, extension, &block
 
+    return if ! $el
+
     # Mode function
     $el.defun("#{name}_mode".to_sym, :interactive => "", :docstring => "Apply #{name} styles, etc") do
       $el.el4r_lisp_eval "(setq font-lock-defaults '(nil t))"

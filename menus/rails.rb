@@ -1,7 +1,6 @@
 require "ruby_console"
 
 class Rails
-  extend ElMixin
 
   CODE_SAMPLES = %q<
     # Show options to help create new rails app
@@ -73,8 +72,6 @@ class Rails
         - 3. Delete the test/ dir:
         % rm -r test/
       "
-
-
   end
 
 

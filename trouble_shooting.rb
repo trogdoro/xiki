@@ -1,5 +1,7 @@
 class TroubleShooting
   def self.keys
+    return if ! $el
+
     $el.el4r_lisp_eval '
       (progn
         (global-set-key (kbd "M-l") (lambda () (interactive)

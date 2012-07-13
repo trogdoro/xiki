@@ -56,6 +56,8 @@ class Deck
   end
 
   def self.keys # mode=:deck_mode_map
+    return if ! $el
+
     $el.elvar.deck_mode_map = $el.make_sparse_keymap unless $el.boundp :deck_mode_map
     $el.set_keymap_parent $el.elvar.deck_mode_map, $el.elvar.notes_mode_map
 

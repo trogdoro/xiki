@@ -12,26 +12,24 @@ require 'net/http'
 #   instead of Git
 #
 class Svn
-  extend ElMixin
+
   def self.menu action=nil, *path
     if action == "list"
       orig = View.window
       View.to_after_bar
       out = $el.shell_command_to_string("svn list")
       View.to_window orig
-      puts out.gsub(/^/, '- ')
-      return
+      return out.gsub(/^/, '- ')
     end
 
-    puts "
-      + list/
-      + .diff/
+    "
+    + list/
+    + .diff/
     "
   end
 
-
   def self.commit comment=""
-    puts Tree.siblings
+    Tree.siblings
   end
 
   def self.jump_to_diff

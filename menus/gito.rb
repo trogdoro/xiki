@@ -4,7 +4,6 @@
 #   separate and behaved as a common interface to git.rb and svn.rb.
 
 class Gito
-  extend ElMixin
 
   def self.diff_internal command, dir
     txt = Console.run(command, :sync => true, :dir => dir)
@@ -78,10 +77,8 @@ class Gito
   end
 
 
-  # Reusable - used to be in repository.rb
 
-  # class Repository
-  #   extend ElMixin
+  # Reusable - used to be in repository.rb
 
   @@git_diff_options = ' -U2 '
   #@@git_diff_options = ' -U2 -w '   # -w caused a git segfault :/
@@ -284,7 +281,7 @@ class Gito
     Search.backward "^ +[+-] "
     file = options[:file] || Line.without_label
 
-    goto_char orig
+    $el.goto_char orig
 
     View.open("#{dir}/#{file}")
     View.to_line(line.to_i + (inbetween - 1))
@@ -304,8 +301,8 @@ class Gito
   end
 
   def self.styles
-    cm_universal_diff_format
-    difflog_highlight
+    $el.cm_universal_diff_format
+    $el.difflog_highlight
     Styles.apply "^diff.+\n", :diff_subhead
     Styles.apply "^Index:? .+\n", :diff_subhead
     Styles.apply "^===+\n", :diff_subhead

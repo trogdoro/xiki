@@ -6,7 +6,6 @@ require 'keys'
 require 'clipboard'
 
 class Notes
-  extend ElMixin
 
   LABEL_REGEX = /(?:[a-zA-Z0-9 _-]+\) )?/
 
@@ -30,14 +29,14 @@ class Notes
     # If nothing hidden, hide all but current
     if point_min == 1 && (buffer_size + 1 == point_max)
       left, after_header, right = View.block_positions "^#{delimiter}\\( \\|$\\)"
-      narrow_to_region left, right
+      $el.narrow_to_region left, right
       return
     end
     # Otherwise, expand all, go to next heading, hide all but current
-    widen
+    $el.widen
     Notes.to_block
     left, after_header, right = View.block_positions "^#{delimiter}\\( \\|$\\)"
-    narrow_to_region left, right
+    $el.narrow_to_region left, right
   end
 
   def self.archive
@@ -99,7 +98,7 @@ class Notes
       times.times do
         Search.backward regex, :go_anyway=>true
       end
-      insert block.content
+      $el.insert block.content
       Search.backward regex
     else
 
@@ -127,7 +126,7 @@ class Notes
     orig = Line.value
 
     times = Keys.prefix_u? ? 1 : (Keys.prefix || 1)
-    times.times { insert ">" }
+    times.times { $el.insert ">" }
     View.insert " " # unless times > 1
 
     if options[:extra_space] || Keys.prefix_u?   # If U create blank lines.
@@ -171,8 +170,8 @@ class Notes
 
     block.delete_content
 
-    beginning_of_buffer
-    insert block.content
+    $el.beginning_of_buffer
+    $el.insert block.content
 
     if prefix_u
       View.to_line line
@@ -190,8 +189,11 @@ class Notes
   end
 
   def self.keys
+
+    return if ! $el
+
     # Get reference to map if already there (don't mess with existing buffers)
-    elvar.notes_mode_map = make_sparse_keymap unless boundp :notes_mode_map
+    $el.elvar.notes_mode_map = $el.make_sparse_keymap unless $el.boundp :notes_mode_map
 
     Keys.custom_archive(:notes_mode_map) { Notes.archive }
     Keys.custom_back(:notes_mode_map) { Notes.move_block :backwards }   # Move block up to before next block
@@ -219,18 +221,21 @@ class Notes
     # y
     # z
 
-    define_key(:notes_mode_map, kbd("<double-mouse-1>"), :notes_mouse_double_click)
-    define_key(:notes_mode_map, kbd("<mouse-1>"), :notes_mouse_toggle)
+    $el.define_key(:notes_mode_map, $el.kbd("<double-mouse-1>"), :notes_mouse_double_click)
+    $el.define_key(:notes_mode_map, $el.kbd("<mouse-1>"), :notes_mouse_toggle)
 
-    define_key(:notes_mode_map, kbd("<M-mouse-1>"), :notes_mouse_double_click)
-    define_key(:notes_mode_map, kbd("<S-mouse-1>"), :notes_mouse_double_click)
-    define_key(:notes_mode_map, kbd("<C-mouse-1>"), :notes_mouse_double_click)
+    $el.define_key(:notes_mode_map, $el.kbd("<M-mouse-1>"), :notes_mouse_double_click)
+    $el.define_key(:notes_mode_map, $el.kbd("<S-mouse-1>"), :notes_mouse_double_click)
+    $el.define_key(:notes_mode_map, $el.kbd("<C-mouse-1>"), :notes_mouse_double_click)
 
 
-    define_key(:notes_mode_map, kbd("C-i")) { Notes.tab_key }
+    $el.define_key(:notes_mode_map, $el.kbd("C-i")) { Notes.tab_key }
   end
 
   def self.define_styles
+
+    return if ! $el
+
     # - foo (r): <here>
     Styles.define :notes_light_gray,
       :fg => "bbb"
@@ -444,30 +449,33 @@ class Notes
 
   # Startup
   def self.init
-    defun(:notes_mouse_meta_click, :interactive => "e") do |e|
-      mouse_set_point(e)
+
+    return if ! $el
+
+    $el.defun(:notes_mouse_meta_click, :interactive => "e") do |e|
+      $el.mouse_set_point(e)
       View.insert "hey"
     end
 
-    defun(:notes_mouse_double_click, :interactive => "e") do |e|
+    $el.defun(:notes_mouse_double_click, :interactive => "e") do |e|
       next Launcher.insert "h" if Line =~ /^$/   # If blank line, launch history
       Launcher.launch_or_hide(:blink=>true)
     end
 
-    defun(:notes_mouse_toggle, :interactive => "e") do |e|
-      mouse_set_point(e)
+    $el.defun(:notes_mouse_toggle, :interactive => "e") do |e|
+      $el.mouse_set_point(e)
       Notes.mouse_toggle
     end
 
-    defun(:notes_mode, :interactive => "", :docstring => "Apply notes styles, etc") {# |point|
-      el4r_lisp_eval "(setq font-lock-defaults '(nil t))"
+    $el.defun(:notes_mode, :interactive => "", :docstring => "Apply notes styles, etc") {# |point|
+      $el.el4r_lisp_eval "(setq font-lock-defaults '(nil t))"
 
       FileTree.apply_styles
       Notes.apply_styles
       FileTree.apply_styles_at_end
-      use_local_map elvar.notes_mode_map
+      $el.use_local_map $el.elvar.notes_mode_map
     }
-    el4r_lisp_eval %q<
+    $el.el4r_lisp_eval %q<
       (progn
         (add-to-list 'auto-mode-alist '("\\\\.notes\\\\'" . notes-mode))
         (add-to-list 'auto-mode-alist '("\\\\.xik\\\\'" . notes-mode))
@@ -476,7 +484,7 @@ class Notes
   end
 
   def self.mode
-    notes_mode
+    $el.notes_mode
   end
 
   def self.enter_label_bullet
@@ -558,8 +566,8 @@ class Notes
 
     return if bullet_text == ""   # Don't indent rest if not using bullets (enter_junior)
 
-    next_line = Line.value(2)
-    return if next_line !~ /^ /   # Don't indent rest of lines if at left margin
+    following_line = Line.value(2)
+    return if following_line !~ /^ /   # Don't indent rest of lines if at left margin
     return if Line.matches /^[ -]*$/   # Exit if new bullet was blank
 
     indent = Line.indent
@@ -575,37 +583,6 @@ class Notes
     $el.indent_rigidly top, Line.left, 2
     View.cursor = cursor
 
-  end
-
-  def self.help_wiki_format
-    View.to_buffer("*help wiki format*")
-    View.clear;  Notes.mode
-
-    View.unindent %q<
-      | Headings
-      - syntax: put "| " at beginning
-        |  | Foo
-
-      | Bullets
-      - syntax: put "- " at beginning:
-        |  - foo
-      - looks like!
-        - foo
-
-      | Bullets with labels
-      - syntax: put "- " at beginning and colon after label:
-        |  - foo: bar
-      - looks like!
-        - foo: bar
-
-      | Todo item
-      - syntax: put "- " at beginning and "!" at end:
-        | - foo!
-      - looks like!
-        - foo!
-    >
-
-    View.to_top
   end
 
   def self.mouse_toggle
@@ -730,7 +707,7 @@ class Notes
       return Specs.enter_as_rspec
     end
 
-    buffer_name = View.buffer_name
+    buffer_name = $el.buffer_name
     file_name = View.file_name
     trunk = Xiki.trunk
 
@@ -771,15 +748,14 @@ class Notes
 
 
   class NotesBlock
-    include ElMixin
 
     attr_accessor :left, :after_header, :right
     attr_accessor :header, :text
 
     def initialize(left, after_header, right)
       @left, @after_header, @right = left, after_header, right
-      @header = buffer_substring left, after_header
-      @text = buffer_substring after_header, right
+      @header = $el.buffer_substring left, after_header
+      @text = $el.buffer_substring after_header, right
     end
 
     def positions
@@ -807,7 +783,7 @@ class Notes
     end
 
     def delete_content
-      delete_region left, right
+      $el.delete_region left, right
     end
 
     # initialize an overlay for this notes block
@@ -834,19 +810,18 @@ class Notes
       delete_content
       filename = 'archive.' + $el.file_name_nondirectory(buffer_file_name)
       timestamp = "--- archived on #{Time.now.strftime('%Y-%m-%d at %H:%M')} --- \n"
-      append_to_file timestamp, nil, filename
-      append_to_file content, nil, filename
+      $el.append_to_file timestamp, nil, filename
+      $el.append_to_file content, nil, filename
     end
   end
 
   def self.enter_do_bullet
 
-    txt = Keys.input :timed=>1
+    txt = Keys.input :chars=>1, :prompt=>'Enter a character: '
     expanded = Notes.expand_if_action_abbrev txt
 
     # If on blank line, just insert it
     if ! Line.blank?
-
       line = Line.value
       indent, first_char = line.match(/^( *)(.)/)[1..2]
 

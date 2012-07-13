@@ -1,9 +1,6 @@
 class Hide
-  extend ElMixin
 
   @@visible = {}
-  #  include ElMixin
-  # (hide-find-overlays)
 
   def self.menu
     "
@@ -81,7 +78,7 @@ class Hide
     @@areas_to_hide.each do |i|
       elisp += " (overlay-put (make-overlay #{i[0]} #{i[1]}) 'invisible 'hide)\n"
     end
-    el4r_lisp_eval elisp + ")"
+    $el.el4r_lisp_eval elisp + ")"
 
   end
 
@@ -173,7 +170,7 @@ class Hide
   def self.show
 
     # Move down to visible line (this doesn't seem to happen on its own)
-    while( @@already_hidden[point] )
+    while( @@already_hidden[$el.point] )
       forward_line
     end
 
@@ -201,8 +198,9 @@ class Hide
     @@already_hidden = {}
   end
 
-  reset
-  add_to_invisibility_spec :hide
+  # What is this doing here??
+  self.reset
+  $el.add_to_invisibility_spec :hide if $el
 
   def self.hide_by_indent indent=nil
     indent ||= Keys.prefix
@@ -212,7 +210,7 @@ class Hide
     if indent.nil?
       indent = Line.matches(/^ */).size
       # If currently indented to that level, go one deeper
-      if elvar.selective_display && indent == (elvar.selective_display - 1)
+      if $el.elvar.selective_display && indent == (elvar.selective_display - 1)
         indent += 2
       end
     end
@@ -221,9 +219,12 @@ class Hide
   end
 
   def self.init
+
+    return if ! $el
+
     # Define lisp function to get list of displayed lines
     # In case something has been done to change them
-    el4r_lisp_eval %q[
+    $el.el4r_lisp_eval %q[
       (defun hide-find-overlays ()
         (save-excursion
           (beginning-of-buffer)

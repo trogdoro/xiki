@@ -2,7 +2,6 @@ require 'styles'
 
 # Makes visual things happen
 class Effects
-  extend ElMixin
 
   def self.menu
     "
@@ -119,10 +118,10 @@ class Effects
     right = options[:right] if options[:right]
 
     time = options[:time] || 0.04
-    over2 = make_overlay(left, right)
-    overlay_put over2, :face, :color_rb_glow2
-    sit_for time
-    delete_overlay over2
+    over2 = $el.make_overlay(left, right)
+    $el.overlay_put over2, :face, :color_rb_glow2
+    $el.sit_for time
+    $el.delete_overlay over2
   end
 
   # Define font

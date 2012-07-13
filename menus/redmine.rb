@@ -4,7 +4,6 @@ require 'timeout'
 require 'keys'
 
 class Redmine
-  extend ElMixin
 
   @@url ||= 'http://foo.com:80/wiki/1'
   def self.url= to;  @@url = to;  end
@@ -64,11 +63,11 @@ class Redmine
     View.to_buffer("redmine/#{name}/#{version}")
 
     # Set mode and use relevant key shortcuts
-    notes_mode;  use_local_map elvar.redmine_mode_map
+    Notes.mode;  $el.use_local_map $el.elvar.redmine_mode_map
     self.apply_styles
 
     if View.empty?  # If nothing there yet, insert
-      insert wiki
+      $el.insert wiki
     end
     Move.top
     ""
@@ -103,7 +102,7 @@ class Redmine
     else  # Otherwise show diff
       message "- wrong version, show diffs!"
       View.to_buffer "*redmine_collision: #{name}/#{server_version}"
-      notes_mode;  use_local_map elvar.redmine_mode_map
+      notes_mode;  $el.use_local_map $el.elvar.redmine_mode_map
 
       View.clear
       $el.insert "- collision with #{name}/#{server_version}!\n\n"
@@ -125,11 +124,11 @@ class Redmine
   end
 
   def self.init
-    unless boundp :redmine_mode_map
+    unless $el.boundp :redmine_mode_map
       # Create new map
-      elvar.redmine_mode_map = make_sparse_keymap
+      $el.elvar.redmine_mode_map = $el.make_sparse_keymap
       # Inherit notes_mode_map!
-      set_keymap_parent elvar.redmine_mode_map, elvar.notes_mode_map
+      $el.set_keymap_parent $el.elvar.redmine_mode_map, $el.elvar.notes_mode_map
     end
     Keys.XS(:redmine_mode_map) { Redmine.save }
 

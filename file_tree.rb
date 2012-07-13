@@ -17,8 +17,6 @@ require 'cursor'
 #  - Call this to draw a tree from the current directory
 #    - FileTree.ls
 class FileTree
-  extend ElMixin
-  include ElMixin
 
   @@one_view_in_bar_by_default = false
 
@@ -48,7 +46,7 @@ class FileTree
       |
     - api/
       | Turn paths into a tree
-      @ puts Tree.paths_to_tree elvar.recentf_list.to_a[0..2]
+      @ puts Tree.paths_to_tree $el.elvar.recentf_list.to_a[0..2]
     `
   end
 
@@ -71,7 +69,6 @@ class FileTree
 
   # Change dirs into spaces, etc
   def clean path, indent=0
-    #     path.gsub(/.+?\//, "  ")
     path = path.gsub(/.+?\//, "  ")
     indent == 0 ?
       path :
@@ -116,7 +113,7 @@ class FileTree
     unless raw
       View.bar if options[:bar]
       View.to_buffer "*tree grep";  View.dir = dir
-      View.clear;  notes_mode
+      View.clear;  Notes.mode
     end
 
     @@indent_count = dir.count('/') - 1
@@ -143,8 +140,8 @@ class FileTree
     end
 
     View.to_top
-    highlight_regexp(regex, :ls_quote_highlight) if regex
-    re_search_forward "|"
+    $el.highlight_regexp(regex, :ls_quote_highlight) if regex
+    $el.re_search_forward "|"
   end
 
   def self.grep_with_hashes path, regex, prepend='##'
@@ -152,7 +149,7 @@ class FileTree
 
     View.to_buffer "*tree grep"
     View.dir = Files.dir_of(path)
-    View.clear; notes_mode
+    View.clear; Notes.mode
 
     if File.directory?(path)
       View << "- #{File.expand_path path}/\n  - #{prepend}#{regex}/\n"
@@ -268,6 +265,8 @@ class FileTree
 
   def self.define_styles
 
+    return if ! $el
+
     if Styles.inverse   # Bullets
       Styles.define :ls_bullet,
         :face => 'courier', :size => "+2",  # Mac
@@ -346,7 +345,7 @@ class FileTree
   end
 
   def self.apply_styles
-    el4r_lisp_eval "(setq font-lock-defaults '(nil t))"
+    $el.el4r_lisp_eval "(setq font-lock-defaults '(nil t))"
 
     # Must go before quotes - if it goes after, it supercedes them
     Styles.apply("\\(~\\)\\(.+?\\)\\(~\\)", nil, :quote_heading_bracket, :notes_label, :quote_heading_bracket)
@@ -540,28 +539,28 @@ class FileTree
     return unless line_number || search_string
 
     if line_number   # If line number, go to it
-      goto_line line_number.to_i
+      $el.goto_line line_number.to_i
       Effects.blink(:what=>:line)
     elsif search_string   # Else, search for |... string if it passed
       Hide.reveal if View.hidden?
 
       Move.top
       # Search for exact line match
-      found = Search.forward "^#{regexp_quote(search_string)}$"
+      found = Search.forward "^#{$el.regexp_quote(search_string)}$"
 
       unless found   # If not found, search for substring of line, but with a break at the end
         Move.top
         # :beginning
-        found = Search.forward "#{regexp_quote(search_string)}\\([^_a-zA-Z0-9\n]\\|$\\)", :beginning=>true
-        #         found = search_forward_regexp("#{regexp_quote(search_string)}\\([^_a-zA-Z0-9\n]\\|$\\)", nil, true)
+        found = Search.forward "#{$el.regexp_quote(search_string)}\\([^_a-zA-Z0-9\n]\\|$\\)", :beginning=>true
+        #         found = $el.search_forward_regexp("#{$el.regexp_quote(search_string)}\\([^_a-zA-Z0-9\n]\\|$\\)", nil, true)
       end
       unless found   # If not found, search for substring of line
         Move.top
-        found = search_forward_regexp "#{regexp_quote(search_string)}", nil, true
+        found = $el.search_forward_regexp "#{$el.regexp_quote(search_string)}", nil, true
       end
       unless found   # If not found, search for it stripped
         Move.top
-        found = search_forward_regexp "#{regexp_quote(search_string.strip)}", nil, true
+        found = $el.search_forward_regexp "#{$el.regexp_quote(search_string.strip)}", nil, true
       end
       unless found   # If not found, suggest creating or show error
 
@@ -573,8 +572,8 @@ class FileTree
 
       end
 
-      beginning_of_line
-      recenter(0) unless prefix_was_u
+      $el.beginning_of_line
+      $el.recenter(0) unless prefix_was_u
       Effects.blink(:what=>:line)
 
       dir, name = path.match(/(.+\/)(.+)/)[1..2]
@@ -759,22 +758,22 @@ class FileTree
 
   # Goes through files in reverse order and deletes empty dirs
   def self.select_next_file
-    search_forward_regexp /[^\/]$/
-    beginning_of_line
-    skip_chars_forward " "
+    $el.search_forward_regexp /[^\/]$/
+    $el.beginning_of_line
+    $el.skip_chars_forward " "
   end
 
   def self.select_previous_file
-    search_backward_regexp /[^\/]$/
-    beginning_of_line
-    skip_chars_forward "\t"
+    $el.search_backward_regexp /[^\/]$/
+    $el.beginning_of_line
+    $el.skip_chars_forward "\t"
   end
 
   # Draw tree, use dir of bookmark from user input
   def self.ls options={}
     dir = options[:dir]
     # If no dir, do tree in current dir
-    dir ||= elvar.default_directory
+    dir ||= $el.elvar.default_directory
 
     line = Line.value
 
@@ -809,15 +808,15 @@ class FileTree
       View.clear
       View.dir = Bookmarks.dir_only dir
       Notes.mode
-      use_local_map elvar.notes_mode_map
+      $el.use_local_map $el.elvar.notes_mode_map
     end
 
     # If recursive
     if options[:recursive]
-      left = point
+      left = $el.point
       self.ls_here dir   # Draw actual tree
-      right = point
-      goto_char left
+      right = $el.point
+      $el.goto_char left
       self.select_next_file
       # Start incremental search
       Tree.search(:recursive => true, :left => left, :right => right)
@@ -841,7 +840,7 @@ class FileTree
       bullet = "@" if line =~ /^ +$/
 
       View.insert "#{bullet}#{dir}\n"
-      previous_line
+      $el.previous_line
       self.dir options   # Draw actual tree
     end
   end
@@ -876,7 +875,7 @@ class FileTree
       View.bar
     end
     View.to_nth 0
-    find_file Bookmarks.expand("$t")
+    $el.find_file Bookmarks.expand("$t")
 
     only_one_view_in_bar = prefix == :u
     only_one_view_in_bar = ! only_one_view_in_bar if @@one_view_in_bar_by_default
@@ -891,8 +890,8 @@ class FileTree
       View.to_nth 1
 
       # If 2nd view isn't $f, open it
-      if buffer_file_name( window_buffer( View.list[1] ) ) != Bookmarks["$f"]
-        find_file Bookmarks["$f"]
+      if $el.buffer_file_name( $el.window_buffer( View.list[1] ) ) != Bookmarks["$f"]
+        $el.find_file Bookmarks["$f"]
       end
 
       View.to_nth 0
@@ -937,9 +936,9 @@ class FileTree
   # Insert all files in dirs within a dir, and allow user to
   # incremental search therein.
   def self.dir_recursive
-    beginning_of_line
+    $el.beginning_of_line
     line = Line.value
-    left = point
+    left = $el.point
     indent = line[/^ */] + "  "  # Get indent
     dir = Tree.construct_path
 
@@ -954,9 +953,9 @@ class FileTree
     result_indent = t.res[/^ */]   # Get indent of first line
     View.insert t.res.gsub(/^#{result_indent}/, indent)
 
-    right = point
+    right = $el.point
 
-    goto_char left
+    $el.goto_char left
     #    isearch_forward
     self.select_next_file
     Tree.search(:recursive => true, :left => left, :right => right)
@@ -976,7 +975,7 @@ class FileTree
       if Keys.prefix == 2
         # TODO: Open in 1st window
         View.to_after_bar
-        find_file dir
+        $el.find_file dir
         return
       end
     end
@@ -1004,7 +1003,7 @@ class FileTree
     files.collect!{|i| i.sub(/.*\/(.+)/, "#{indent}+ \\1")}
 
     Line.next
-    left = point
+    left = $el.point
 
     # Move .notes files to top
     files = files.select{|i| i =~ /\.notes$/} + files.select{|i| i !~ /\.notes$/}
@@ -1012,8 +1011,8 @@ class FileTree
     both = options[:date_sort] || options[:size_sort] ?
       files + dirs : dirs + files
     View.insert(both.join("\n") + "\n")
-    right = point
-    goto_char left
+    right = $el.point
+    $el.goto_char left
 
     Line.to_beginning
 
@@ -1034,7 +1033,7 @@ class FileTree
 
   #     loc = Location.new
   #     Line.to_left
-  #     #orig = point
+  #     #orig = $el.point
 
   #     # If at indented line
   #     while(Line.matches(/^ /))
@@ -1042,7 +1041,7 @@ class FileTree
   #     end
 
   #     # Check to see if it's the same file
-  #     if snippet[/.+\n.+\n/] == buffer_substring(point, Line.left(3))
+  #     if snippet[/.+\n.+\n/] == buffer_substring($el.point, Line.left(3))
   #       Line.next 2
   #       View.insert "#{snippet.sub(/.+\n.+\n/, '')}\n"
   #     # Check to see if it's just in same dir
@@ -1105,17 +1104,17 @@ class FileTree
 
       if prefix == :u || txt =~ /\A  +[-+]?\|[-+ ]/   # If C-u or whole thing is quoted already, unquote
         txt = txt.grep(/\|/).join()
-        return insert(txt.gsub(/^ *[-+]?\|([-+ ]|$)/, ""))   # Remove | ..., |+...., |<blank>, etc
+        return $el.insert(txt.gsub(/^ *[-+]?\|([-+ ]|$)/, ""))   # Remove | ..., |+...., |<blank>, etc
       end
 
-      start = point
+      start = $el.point
       txt = Clipboard.get("=")
       indent = prefix || 0   # Indent prefix spaces, or 2
       txt = txt.gsub(/^/, " " * indent)
 
       View.insert txt
       $el.set_mark(Line.left(2))
-      goto_char start
+      $el.goto_char start
       return
     end
 
@@ -1537,11 +1536,11 @@ class FileTree
       list.shift   # Pull off first dir, so they'll be relative
     end
     Line.to_next
-    left = point
+    left = $el.point
     tree = list.join("\n") + "\n"
     View.insert tree.gsub(/^/, indent)
-    right = point
-    goto_char left
+    right = $el.point
+    $el.goto_char left
     if Line.matches(/^\s*$/)  # Do nothing
     elsif Line.matches(/^\s+\|/)
       if Search.outline_goto_once   # If we want to go back to a line
@@ -1802,7 +1801,7 @@ class FileTree
     else
       View.to_upper
     end
-    was_at_top = View.start == View.point
+    was_at_top = View.start == $el.point
     $el.split_window_vertically
 
     View.next if where   # :lowest or :second
@@ -1825,7 +1824,7 @@ class FileTree
 
     path = View.file
     View.to_buffer("*tree outline")
-    View.clear;  notes_mode
+    View.clear;  Notes.mode
     if path
       dir, file = path.match(/(.+\/)(.+)/)[1..2]
       txt = "- #{dir}\n  - #{file}\n"

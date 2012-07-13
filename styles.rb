@@ -1,5 +1,4 @@
 class Styles
-  extend ElMixin
 
   def self.menu
 
@@ -130,6 +129,8 @@ class Styles
 
   def self.define name, options
 
+    return if ! $el
+
     self.exand_colors options, [:bg, :fg]
 
     code = "(set-face-attribute (make-face '#{name.to_s.gsub("_", "-")}) nil\n"
@@ -187,7 +188,6 @@ class Styles
 
     end
 
-
   end
 
   def self.apply(pattern, *styles)
@@ -198,13 +198,13 @@ class Styles
       code << "  (#{i} '#{f.to_s.gsub("_", "-")})\n" if f
     end
     code << "  )))"
-    #$el.el4r_lisp_eval "(setq font-lock-keywords-case-fold-search t)"
     $el.el4r_lisp_eval code
     $el.font_lock_mode 1
     nil
   end
 
   def self.init
+    return if ! $el
 
     # Make 'arial black' work in Linux
     $el.el4r_lisp_eval %`

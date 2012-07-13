@@ -1597,10 +1597,10 @@ class Tree
       # bar
   #
   def self.child
-    next_line = Line.value 2
+    following_line = Line.value 2
     # If indent is one greater, it is a child
-    if Line.indent.size + 2 == Line.indent(next_line).size
-      return Line.without_label(:line=>next_line)
+    if Line.indent.size + 2 == Line.indent(following_line).size
+      return Line.without_label(:line=>following_line)
     end
     nil
   end

@@ -42,12 +42,12 @@ class TreeCursor
 
   def at_leaf?
     a = to_a
-    next_line = a[@i+1]
-    return true if next_line.nil?
+    following_line = a[@i+1]
+    return true if following_line.nil?
 
     indent = Line.indent a[@i]
-    next_indent = Line.indent a[@i+1]
-    indent.length >= next_indent.length
+    following_indent = Line.indent a[@i+1]
+    indent.length >= following_indent.length
   end
 
   def [] index

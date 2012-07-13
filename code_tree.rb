@@ -2,7 +2,6 @@ require 'line'
 require 'ol'
 
 class CodeTree
-  extend ElMixin
 
   def self.menus; @menus; end
 
@@ -98,7 +97,7 @@ class CodeTree
     b = View.buffer
 
     orig = Location.new
-    orig_left = point
+    orig_left = $el.point
 
     returned, stdout, e = Code.eval(code)  # Eval code
     # If no stdout (and something was returned), print return value
@@ -131,7 +130,7 @@ class CodeTree
       indent = Line.indent
       Line.to_left
       Line.next
-      left = point
+      left = $el.point
 
       # Move what they printed over to left margin initally, in case they haven't
       stdout = TextUtil.unindent(stdout)
@@ -140,31 +139,30 @@ class CodeTree
       stdout.gsub!(/^/, "#{indent}  ")
 
       View << stdout  # Insert output
-      right = point
+      right = $el.point
 
       orig.go   # Move cursor back
       ended_up.go   # End up where script took us
 
       # These are deprecated - eventually pull them out
       if options[:tree_search]   # If they want to do a tree search
-        goto_char left
+        $el.goto_char left
         FileTree.select_next_file
         Tree.search(:left=>left, :right=>right, :recursive=>true)
         return
       end
       if options[:quote_search]   # If they want to do a tree search
-        goto_char left
+        $el.goto_char left
         Search.forward "|"
         Line.to_beginning
         Tree.search(:left=>left, :right=>right, :recursive_quotes=>true)
         return
       end
 
-
       # If script didn't move us (line or buffer), do incremental search
-      if !options[:no_search] && !buffer_changed && point == orig_left
+      if !options[:no_search] && !buffer_changed && $el.point == orig_left
         # TODO No search if there aren't more than 3 lines
-        goto_char left
+        $el.goto_char left
 
         Line.to_words
 
