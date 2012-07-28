@@ -1,0 +1,24 @@
+> Navigating
+
+- /projects/xiki/etc/
+  + logo.png
+
+- Click the plus!
+
+
+> Doing stuff to images
+
+- /projects/xiki/etc/
+  + logo.png
+    @scale/
+
+
+> Using images in menus
+
+spectrum/
+
+
+> Related demo
+
+/projects/xiki/etc/demos/
+  - svg.deck

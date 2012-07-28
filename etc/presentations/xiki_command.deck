@@ -1,0 +1,20 @@
+> Demo
+
+- Demo in shell console...
+
+$ xiki
+
+
+> Implementation
+
+- Caches loaded classes for speed
+  - Process
+  - Pipes
+
+
+> Purpose
+
+- So Xiki menus can be used from other apps
+  - Vim?
+  - Sublime?
+  - Rubymine?

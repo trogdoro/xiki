@@ -1,0 +1,14 @@
+> Demo
+
+- Demo in browser...
+
+http://xiki
+
+
+> Implementation
+
+- Shells out to xiki command, for speed
+- Apache virtual host
+- /etc/hosts
+
+

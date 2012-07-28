@@ -1,0 +1,28 @@
+> One-liner
+
+- Run in left bar:
+Foo.add(1, 2).should == 3
+
+>> 
+class Foo
+  def self.add a, b
+    3
+  end
+end
+
+
+> Run in-place
+
+- key: do+as+test
+
+
+> Tests menus
+
+- explore, run, navigate...
+
+
+> Add to the left bar
+
+- key: as+todo
+
+

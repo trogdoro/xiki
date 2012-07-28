@@ -1,0 +1,36 @@
+> Summary
+- Make simple menu
+
+
+> Summary
+- Make simple menu
+  - to access external tool
+
+
+> Summary
+- Make simple menu
+  - to access external tool
+  - mysql
+
+
+> List tables
+
+
+> 
+- TODO
+  - finish
+
+
+> Hints
+>> List tables
+tably
+
+/Users/craig/menus/
+  - tably.rb
+    | class Tably
+    |   def self.menu name=nil
+    |     return `mysql dev -u root -e "show tables"` if ! name
+    |     `mysql dev -u root -e "select * from #{name}"`
+    |   end
+    | end
+

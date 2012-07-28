@@ -1,0 +1,41 @@
+> Browse databases
+
+databases/
+
+
+> Mysql
+
+- explore
+
+mysql/
+
+
+> Mysql
+
+select * from
+
+
+
+> Mongo
+
+- explore
+
+mongo/
+  - collections/
+  + docs/
+
+
+> Memcached
+
+- explore
+
+memcache/
+
+
+> HTML5 local storage
+
+- explore
+
+local storage/
+
+

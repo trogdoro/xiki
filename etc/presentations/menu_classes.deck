@@ -1,0 +1,44 @@
+> Make a menu
+
+- Two types of "routing"
+  - manual
+  - .menu method
+
+
+> .menu method that handles params manually
+
+class Short
+  def self.menu arg=nil
+    if ! arg
+      return "
+        - a/
+        - b/
+      "
+    end
+    "- you said '#{arg}'"
+  end
+end
+
+>> Demo it
+
+
+> .menu method that routes
+
+class Short
+  def self.menu
+    "
+    - a/
+      - aa/
+    - .b/
+    "
+  end
+  def self.b arg=nil
+    return "- something" if ! arg
+    "- ((#{arg}))"
+  end
+end
+
+>> Demo it
+
+
+

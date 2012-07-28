@@ -1,0 +1,50 @@
+> Type the interface
+
+- When your UI is just text
+  - you can type the UI
+
+
+> Examples
+
+- Create an email UI...
+
+email/
+
+
+> Stand-alone js component
+
+@standalone/
+  - Inbox/
+    - 4:02pm Steve, Hello/
+    - 10:31am Sam, Late for work/
+    - 10:03am Sam, Late for breakfast/
+  - Sent/
+    - 10:07am Sam, Get a poptart/
+  - Compose/
+
+
+> Node.js server
+
+@serve/
+  - San Francisco/
+    - 415/
+    - 310/
+    - 510/
+  - Mountain View/
+    - 408/
+    - 650/
+
+
+> Code
+- Add code later
+
+area codes/
+  - San Francisco/
+    - 94117/
+    - 94116/
+    - 94109/
+  - Mountain View/
+    - 94041/
+    - 94042/
+
+

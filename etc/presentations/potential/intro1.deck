@@ -1,0 +1,711 @@
+> Xiki Introduction
+
+- Very quick intro to Xiki
+
+  @logo
+
+
+> Xiki Introduction
+
+- Very quick intro to Xiki
+
+- a lot in short time
+
+
+> Xiki Introduction
+
+- Very quick intro to Xiki
+
+- http://xiki.org
+
+
+> Xiki Introduction
+
+- Very quick intro to Xiki
+
+- http://xiki.org/screencasts
+
+
+> Xiki Introduction
+
+- Very quick intro to Xiki
+
+- http://xiki.org/screencasts
+  - short screencasts on various topics
+
+
+> What is Xiki?
+
+
+
+> What is Xiki?
+
+Multiple things...
+
+
+> What is Xiki?
+
+Multiple things...
+
+- 1) Shell terminal
+
+
+> What is Xiki?
+
+Multiple things...
+
+- 1) Shell terminal
+
+$ ls -l
+
+
+> What is Xiki?
+
+Multiple things...
+
+- 1) Shell terminal
+- 2) Note taking tool
+
+
+> What is Xiki?
+
+Multiple things...
+
+- 1) Shell terminal
+- 2) Note taking tool
+
+>> Wiki-ish headings
+
+> What is Xiki?
+
+Multiple things...
+
+- 1) Shell terminal
+- 2) Note taking tool
+
+>> Wiki-ish headings
+- and bullet points
+
+
+> What is Xiki?
+
+Multiple things...
+
+- 1) Shell terminal
+- 2) Note taking tool
+- 3) Development environment
+
+
+> What is Xiki?
+
+Multiple things...
+
+- 1) Shell terminal
+- 2) Note taking tool
+- 3) Development environment
+- 4) UI framework
+
+
+> What is Xiki?
+
+Multiple things...
+
+- 1) Shell terminal
+- 2) Note taking tool
+- 3) Development environment
+- 4) UI framework
+
+bookmarklet/
+
+
+> Pieces
+
+
+> Pieces
+
+- ruby
+
+
+> Pieces
+
+- ruby
+  - can use other languages
+
+
+> Pieces
+
+- ruby
+  - can use other languages
+- uses emacs as an engine
+
+
+> Pieces
+
+- ruby
+  - can use other languages
+- uses emacs as an engine
+  - don't need to know emacs
+
+
+> Pieces
+
+- ruby
+  - can use other languages
+- uses emacs as an engine
+  - don't need to know emacs
+- el4r
+
+
+> Pieces
+
+- ruby
+  - can use other languages
+- uses emacs as an engine
+  - don't need to know emacs
+- el4r
+  - pure awesomeness
+
+
+> Shell terminal but better
+
+
+> Shell terminal but better
+
+- type commands anywhere
+
+
+
+> Shell terminal but better
+
+- expand and collapse
+
+$ ls -l
+  | total 208
+  | -rw-r--r--  1 craig  admin   338 Feb  2 16:57 databases.deck
+  | -rw-r--r--  1 craig  admin   301 Feb  2 00:30 diffs.deck
+  | -rw-r--r--  1 craig  admin   209 Feb  2 01:41 documentation.deck
+  | -rw-r--r--  1 craig  admin   127 Feb  6 23:20 effects.deck
+  | -rw-r--r--  1 craig  admin   350 Feb  7 14:37 evolution.deck
+  | -rw-r--r--  1 craig  admin   170 Feb  2 17:00 face.deck
+  | -rw-r--r--  1 craig  admin   389 Feb  6 15:37 files.deck
+  | -rw-r--r--  1 craig  admin   172 Feb  5 15:28 images.deck
+  | -rw-r--r--  1 craig  admin  1650 Feb  9 17:49 intro.deck
+  | -rw-r--r--  1 craig  admin   303 Feb  2 11:49 key_shortcuts.deck
+  | -rw-r--r--  1 craig  admin   218 Feb  2 16:58 macros.deck
+  | -rw-r--r--  1 craig  admin   313 Feb  2 12:15 menu_routing.deck
+  | -rw-r--r--  1 craig  admin   389 Feb  2 11:36 menus.deck
+  | -rw-r--r--  1 craig  admin   554 Feb  7 13:33 other_languages.deck
+  | -rw-r--r--  1 craig  admin   312 Feb  8 19:38 piano.deck
+  | drwxr-xr-x  3 craig  admin   102 Feb  2 00:30 potential
+  | -rw-r--r--  1 craig  admin   268 Feb  2 11:38 presentations.deck
+  | -rw-r--r--  1 craig  admin   821 Feb  2 01:56 rails_development.deck
+  | -rw-r--r--  1 craig  admin   170 Feb  7 16:34 ruby_development.deck
+  | -rw-r--r--  1 craig  admin   451 Feb  2 12:20 search_key_shortcuts.deck
+  | -rw-r--r--  1 craig  admin   259 Feb  7 13:56 shell_terminal.deck
+  | -rw-r--r--  1 craig  admin   952 Feb  2 17:04 testing.deck
+  | -rw-r--r--  1 craig  admin    92 Feb  9 16:53 type_anything.deck
+  | -rw-r--r--  1 craig  admin  1136 Feb  8 22:37 type_the_acronym.deck
+  | -rw-r--r--  1 craig  admin   700 Feb  2 00:31 ui_prototyping.deck
+  | -rw-r--r--  1 craig  admin   163 Feb  8 01:27 web_development.deck
+  | -rw-r--r--  1 craig  admin   526 Feb  7 13:35 wiki.deck
+
+
+> Shell terminal but better
+
+- type to filter
+
+$ ls -lh
+  | -rw-r--r--  1 craig  admin   312B Feb  8 19:38 piano.deck
+  | -rw-r--r--  1 craig  admin   700B Feb  2 00:31 ui_prototyping.deck
+
+
+> Shell terminal but better
+
+- add notes
+
+- check out this file:
+$ ls -lh
+  | -rw-r--r--  1    312B Feb  8 19:38 piano.deck
+
+
+> Shell terminal but better
+
+- save to files to use later
+
+- 1. look at disk usage:
+$ df
+
+- 2. check out this file:
+$ ls -lh
+  | -rw-r--r--  1    312B Feb  8 19:38 piano.deck
+
+
+> Shell terminal but better
+
+- async commands
+
+% ls -l
+
+
+> Shell terminal but better
+
+- have iTerm run commands
+
+& ls -l
+
+
+> Shell terminal but better
+
+- commands on remote servers
+
+/user@site.com/foo/
+  $ ls -l
+
+
+> Shell terminal but better
+
+- history
+
+
+> Note taking tool
+
+- Put notes in text files
+
+/tmp/rails.notes
+> Note taking tool
+
+- Jump to outline
+
+
+> Note taking tool
+
+http://xiki.org
+
+
+> Note taking tool
+
+google/sharks
+
+
+> Note taking tool
+
+a = 1 + 2
+puts a
+  3
+
+
+> Note taking tool
+
+- /tmp/snakes/
+  - app/
+    - models/
+      + snake.rb
+
+
+> Note taking tool
+
+select * from sharks/
+  | id	name	details	datestamp	timestamp
+  | 1	Ham	Hype	2011-01-01	00:20:11
+  | 2	White	Big	2011-01-01	00:20:11
+  | 3	Bull	Bullish	2011-01-01	00:20:11
+  | 4	Sharky	Test	2011-01-01	00:20:11
+  | 5	name	details	0000-00-00	00:00:00
+
+
+> Note taking tool
+
+- define your own
+
+> Development environment
+
+xiki/tests/
+  - diff_log/
+    - all/
+    - #parse_tree_diffs/
+      - parses a rename/
+      - parses a delete/
+        | Run options: include {:full_description=>/(?-mix:\#parse_tree_diffs\ parses\ a\ delete)/}
+        | F
+        |
+        | Failures:
+        |
+        |   1) Line#parse_tree_diffs parses a delete
+        |      Failure/Error: DiffLog.parse_tree_diffs("d3 2\nd6 1\n").should == [[], [3, 4, 5]]
+        |        expected: [[], [3, 4, 5]]
+        |             got: [[], [3, 4, 6]] (using ==)
+        |        Diff:
+        |        @@ -1,2 +1,2 @@
+        |-[[], [3, 4, 5]]
+        |+[[], [3, 4, 6]]
+        |      # ./spec/diff_log_spec.rb:14
+        |
+        | Finished in 0.00131 seconds
+        | 1 example, 1 failure
+        |
+        | Failed examples:
+        |
+        | rspec ./spec/diff_log_spec.rb:13 # Line#parse_tree_diffs parses a delete
+      - parses a move/
+      - parses an add/
+      - parses 2 adds and 2 deletes/
+
+
+> Development environment
+
+html/
+css/
+js/
+dom/
+
+
+> UI framework
+
+
+> UI framework
+
+- Easy to make your own stuff
+
+
+> UI framework
+
+- Easy to make your own stuff
+  - Keyboard shortcuts
+
+
+> UI framework
+
+- Easy to make your own stuff
+  - Keyboard shortcuts
+  - Wiki syntaxes
+
+
+> UI framework
+
+- Easy to make your own stuff
+  - Keyboard shortcuts
+  - Wiki syntaxes
+  - Menus
+
+
+> Keyboard shortcuts
+
+Keys.Z { Line << "hello" }
+
+hellohellohello
+
+> Wiki syntaxes
+
+Launcher.add(/^shark/) { Line << "!!!!!" }
+
+sharks!!!!!!!!!!
+
+
+> UI framework
+
+- menus
+
+sharks/
+  start/
+  url/
+  clear cache/
+
+
+> UI framework
+
+~/menus/
+  - sharks.menu
+    | start/
+    | url/
+    | clear cache/
+
+
+> UI framework
+
+sharks/
+  start/
+  url/
+    http://localhost:3000
+  clear cache/
+
+
+> UI framework
+
+sharks/
+  start/
+  url/
+    http://localhost:3000
+  clear cache/
+    @ Shark.clear_cache
+
+class Shark
+  def self.clear_cache
+    "cleared it!"
+  end
+end
+
+
+> UI framework
+
+- Give dynamic behaviour to menu items
+
+
+> UI framework
+
+- Blocks
+
+Menu.birds {
+  "
+  blue bird/
+  black bird/
+  "
+}
+
+
+> UI framework
+
+- Classes
+
+class Boats
+  def self.menu
+    "
+    - bayliner/
+    - boston whaler/
+    "
+  end
+end
+
+
+> UI framework
+
+- Classes
+
+class Boats
+  def self.menu
+    "
+    - bayliner/
+    - .boston whaler/
+    "
+  end
+end
+
+
+> UI framework
+
+- Classes
+
+class Boats
+  def self.menu
+    "
+    - bayliner/
+    - .boston whaler/
+    "
+  end
+  def self.boston_whaler
+    "whatevs"
+  end
+end
+
+
+> UI framework
+
+class Boats
+  def self.menu
+    "
+    - bayliner/
+    - .boston whaler/
+    "
+  end
+  def self.boston_whaler
+    "whatevs"
+  end
+end
+
+boats/
+  + bayliner/
+  - boston whaler/
+    whatevs
+
+
+> Other cool stuff xiki does
+
+http://xiki.org
+
+- bookmarklets
+
+
+> Other cool stuff xiki does
+
+http://xiki.org
+
+- rake
+
+
+> Other cool stuff xiki does
+
+http://xiki.org
+
+- applescript
+
+
+> Other cool stuff xiki does
+
+http://xiki.org
+
+- haml
+
+
+> Other cool stuff xiki does
+
+http://xiki.org
+
+- itunes
+
+
+> Other cool stuff xiki does
+
+http://xiki.org
+
+- gems
+
+
+> Other cool stuff xiki does
+
+http://xiki.org
+
+- jquery mobile
+
+
+> Other cool stuff xiki does
+
+http://xiki.org
+
+- coffee script
+
+
+> Other cool stuff xiki does
+
+http://xiki.org
+
+- safari
+
+
+> Other cool stuff xiki does
+
+http://xiki.org
+
+- music generation
+
+
+> Other cool stuff xiki does
+
+http://xiki.org
+
+- python
+
+
+> Other cool stuff xiki does
+
+http://xiki.org
+
+- memcached
+
+
+> Other cool stuff xiki does
+
+http://xiki.org
+
+- browse images
+
+
+> Other cool stuff xiki does
+
+http://xiki.org
+
+- presentations
+
+
+> Other cool stuff xiki does
+
+http://xiki.org
+
+- scale images
+
+
+> Other cool stuff xiki does
+
+http://xiki.org
+
+- browser local storage
+
+
+> Other cool stuff xiki does
+
+http://xiki.org
+
+- sass
+
+
+> Other cool stuff xiki does
+
+http://xiki.org
+
+- riak
+
+
+> Other cool stuff xiki does
+
+http://xiki.org
+
+- diffs
+
+
+> Other cool stuff xiki does
+
+http://xiki.org
+
+- mongodb
+
+
+> Other cool stuff xiki does
+
+http://xiki.org
+
+- browser UI's
+
+
+> Other cool stuff xiki does
+
+http://xiki.org
+
+- remote dirs and files
+
+
+> Other cool stuff xiki does
+
+http://xiki.org
+
+- git
+
+
+> Other cool stuff xiki does
+
+http://xiki.org
+
+- google chrome
+
+
+> Other cool stuff xiki does
+
+http://xiki.org
+
+- couchdb
+
+
+> Other cool stuff xiki does
+
+http://xiki.org
+
+- browser cookies
+
+

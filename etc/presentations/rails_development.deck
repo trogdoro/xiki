@@ -1,0 +1,29 @@
+> Generate app
+
+- Make app, generate scaffold, view page...
+
+/tmp/rails1/
+  @rails
+
+
+> Edit files
+
+- Show files...
+
+
+> Re-play requests
+
+- key: enter+last+visit
+
+visits/turtles/swim?a=aa&b=bb
+
+- replays request in browser
+
+
+> Re-play requests
+
+visits/turtles/swim?a=aa&b=bb
+
+- generate a test from the request
+
+

@@ -1,0 +1,37 @@
+> Intro
+
+Xiki Screencast
+- Topic: Simplest possible user interface
+
+
+> Intro
+
+Xiki Screencast
+- Topic: Simplest possible user interface
+
+http://xiki.org
+- Like a shell terminal but better
+
+
+> Example
+
+
+
+> End
+
+
+
+> Hints
+>> Example
+
+class Clam
+  def self.hi
+    "heyy"
+  end
+end
+
+Clam/
+  - .hi/
+
+
+

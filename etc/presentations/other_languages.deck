@@ -1,0 +1,55 @@
+> Javascript
+
+- do+as+javascript
+
+>> 
+function hi(){
+  print("hey" + "you")
+}
+
+hi();
+
+
+> Python
+
+- do+as+python
+
+>> 
+class Pyth:
+  def hi(self):
+    print "hey" + "you"
+
+Pyth().hi()
+
+
+> Node
+
+node/
+
+
+> Calling classes inline
+
+- Demo...
+
+- /projects/xiki_wrappers/
+  - shrimp.rb
+  + shrimp.rb/
+
+
+> Calling classes inline
+
+- Demo...
+
+- /projects/xiki_wrappers/
+  + crab.rb
+  + crab.rb/
+
+
+> Calling classes inline
+
+- Demo...
+
+- /projects/xiki_wrappers/
+  + clam.py
+  + clam.py/
+

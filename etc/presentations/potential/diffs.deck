@@ -1,0 +1,38 @@
+> Difflog
+
+- Diffs of every change you make is saved
+
+- key: open+difflog
+
+
+> Edits to one file or dir
+
+- key: search+edits
+
+
+> Diff with saved
+
+- key: do+compare+saved
+
+
+> Diff with git
+
+- key: do+compare+repository
+
+
+> Diff all unsaved files
+
+- key: open+not+saved
+
+
+> Edits since backup
+
+- Make backup: as+version
+
+- key: do+compare+last
+
+
+> Diff of unsaved files
+
+- Show all changes not saved: open+not+saved
+

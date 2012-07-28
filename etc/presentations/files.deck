@@ -1,0 +1,79 @@
+> Browse
+
+/tmp/
+
+
+> Search
+
+/projects/xiki/
+
+
+> Create file inline
+
+- Pretend like file exists
+
+/tmp/
+  bar.txt
+
+
+> Edit without opening
+
+/tmp/
+  foo.txt
+
+
+> Create files
+
+- Pretend like file and dir exist...
+
+/tmp/foo/
+  bar.txt
+
+
+> Copy files
+
+/tmp/foo/
+  bar.txt
+  bee.txt
+
+
+> Rename files
+
+- Rename...
+
+/tmp/foo/
+  bar.txt
+  bee.txt
+
+
+> Delete files
+
+- Delete...
+
+/tmp/foo/
+  bar.txt
+  bee.txt
+
+
+> Mass operations
+
+- Mass rename...
+
+/tmp/foo/
+  bar.txt
+  bee.txt
+
+
+> Mass operations
+
+- Mass delete...
+
+/tmp/foo/
+  bar.txt
+  bee.txt
+
+
+> Remote files
+
+/xiki@xiki.org/
+
