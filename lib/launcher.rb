@@ -1187,6 +1187,7 @@ class Launcher
   end
 
   def self.reload_menu_dirs
+Ol.stack
     MENU_DIRS.each do |dir|
       next unless File.directory? dir
 

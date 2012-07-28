@@ -382,7 +382,7 @@ class Menu
 
     root.downcase!
 
-    ([Xiki.dir]+Launcher::MENU_DIRS).reverse.each do |dir|
+    (["#{Xiki.dir}lib/"]+Launcher::MENU_DIRS).reverse.each do |dir|
       next unless File.directory? dir
       file = Dir["#{dir}/#{root}.*"]
       next unless file.any?

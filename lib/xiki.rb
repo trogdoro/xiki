@@ -1,9 +1,11 @@
-XIKI_ROOT = File.dirname(__FILE__)
+XIKI_ROOT = File.expand_path "#{File.dirname(__FILE__)}/.."
 Dir.chdir(XIKI_ROOT)
 
 # Used by a lot of classes
 class Xiki
   @@dir = "#{Dir.pwd}/"   # Store current dir when xiki first launches
+
+  # TODO Just use XIKI_ROOT from above?
 
   def self.dir
     @@dir
@@ -340,25 +342,35 @@ class Xiki
 
   def self.init
     # Get rest of files to require
-    classes = Dir["**/*.rb"]
+
+    classes = Dir["lib/*.rb"]
+Ol << "classes: #{classes.inspect}"
     classes = classes.select{|i|
       i !~ /xiki.rb$/ &&   # Remove self
       i !~ /key_bindings.rb$/ &&   # Remove key_bindings
-      i !~ /\// &&   # Remove all files in dirs
-      i !~ /tests\// &&   # Remove tests
-      i !~ /\// &&   # Remove tests
       i !~ /__/   # Remove __....rb files
     }
 
+    #     classes = Dir["**/*.rb"]
+    #     classes = classes.select{|i|
+    #       i !~ /xiki.rb$/ &&   # Remove self
+    #       i !~ /key_bindings.rb$/ &&   # Remove key_bindings
+    #       i !~ /\// &&   # Remove all files in dirs
+    #       i !~ /tests\// &&   # Remove tests
+    #       i !~ /__/   # Remove __....rb files
+    #     }
+
     classes.map!{|i| i.sub(/\.rb$/, '')}.sort!
+
+Ol << "classes: #{classes.inspect}"
 
     # Require classes
     Requirer.require_classes classes
 
     # key_bindings has many dependencies, require it last
-    Requirer.require_classes ['key_bindings.rb']
+    Requirer.require_classes ['lib/key_bindings.rb']
 
-    Launcher.add_class_launchers classes
+    Launcher.add_class_launchers classes.map{|o| o[/\/(.+)/, 1]}
     Launcher.reload_menu_dirs
 
     Launcher.add "xiki"
