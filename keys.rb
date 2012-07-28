@@ -14,13 +14,13 @@ class Keys
     - .api/
       > Map C-c C-a
       | Keys.CA { View.insert "foo" }
-      |
+
       > Map C-d C-h
       | Keys.do_hi { Line << "hey there" }
-      |
+
       > Map M-x (in shell mode)
       | Keys._X(:shell_mode_map) { View.insert "foooo" }
-      |
+
       > Get user input
       | - A String
       |   - puts Keys.input(:prompt => "Name: ")
@@ -32,47 +32,47 @@ class Keys
         | Xiki has keyboard shortcuts predefined for doing all kinds of things.
         | Each keyboard shortcut has a mnemonic. Check out the "Keys" menu bar
         | menu for a quick look at them.
-        |
+
         | And Xiki lets you define your own keyboard shortcuts.  This line makes
         | Control-e Control-n insert "Steve".
-        |
+
         |   Keys.EN { View << "Steve" }
-        |
+
         | For more about defining your own keyboard shortcuts see:
         - @keys/api/
-        |
+
         > Xiki's "type the acronym" approach
         | Each xiki keyboard shortcut has a mnemonic that helps you
         | simultaneously remember what it does and how to type it.
-        |
+
         | For example, given this mnemonic:
-        |
+
         |   layout_create
-        |
+
         | you type:
-        |
+
         |   Control-l Control-c  (l for "layout" and c for "create")
-        |
+
         > Reasons for this appoarch
         - More possible shortcuts/
           | The approach of having single character key shortcuts (e.g. Control-a)
           | works nicely for apps that have a small number of shortcuts. But it
           | becomes less elegant when more shortcuts are used (Ctrl-a, Alt-a,
           | Ctrl-Shift-a).
-          |
+
           | The "type the acronym" approach with just the Control
           | key allows for very a large number of key shortcuts that are less
           | prone to get confused with one another.
-          |
+
         - Less to remember/
           | A mnemonic clues you into what the keyboard shortcut does and how to type it,
           | so it's all you need to remember. There's no need to separately remember a keyboard shortcut and what it does (a
           | challenging part of most keyboard shortcut schemes having a large number of
           | shortcuts, which xiki attempts to avoid).
-          |
+
           | Doesn't sound like standard emacs shortcuts?  Here's an explanation about
           | how xiki deals with existing emacs shortcuts.
-          |
+
         - emacs_shortcuts/
           | TODO add stuff about how C-a turns into C-a C-a, etc.
           | Mention how this lets a large number of key shortcuts without interfering
@@ -81,11 +81,11 @@ class Keys
           | and makes you type them twice.
           | In practice the annoyance caused by this isn't as bad as it initially may seem
           | Consider using to_axis instead of C-a C-a and to_end instead of C-e C-e.
-      |
+
       > Six categories
       | As you can see by looking at the "Keys" menu in the menu bar, there are
       | six main categories of key shortcuts.
-      |
+
       - Descriptions of each category/
         - to: jumping to specific points
         - open: opening things
@@ -93,11 +93,11 @@ class Keys
         - as: remembering things
         - enter: inserting things
         - do: executing things
-      |
+
       > Examples
       | Here are some of the most commonly used shortcuts in each category.
       | (Double-click a category to see them.)
-      |
+
       - to/
         | to+highest: Jump to top of file
         | to+lowest: Jump to bottom of file
@@ -124,19 +124,16 @@ class Keys
         | enter+clipboard: Paste
       - do/
         | do+tree: view an expanded tree of a directory
-      |
       - miscellaneous/
         | Control-tab: cycles through files
-      |
+
       | For all keyboard shortcuts, see where they're key_bindings.rb, where they're
       | defined:
       - @$xiki/key_bindings.rb
-      |
-      |
+
       > Keyboard shortcuts while searching
       | The seventh category, "search" has special behavior.  See:
       - @search/docs/
-      |
     `
   end
 
@@ -161,7 +158,7 @@ class Keys
     | You can put keyboard shortcuts into any file that gets required by xiki.
     | For example, you could create a file like this:
     |
-    - @~/xiki/lib/
+    - @~/my_xiki_stuff/
       - keys.rb
         | # My shortcuts
         | Keys.enter_name { View << "Steve" }
@@ -171,7 +168,7 @@ class Keys
     |
     - @~/.el4r/
       - init.rb
-        | require "~/xiki/lib/keys"
+        | require "~/my_xiki_stuff/keys"
     '
   end
 

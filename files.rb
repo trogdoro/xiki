@@ -196,7 +196,7 @@ class Files
   end
 
   def self.open? name
-    buffer_list.find{|b| buffer_file_name(b) == name}
+    $el.buffer_list.find{|b| $el.buffer_file_name(b) == name}
   end
 
   def self.open_in_os path=nil

@@ -30,13 +30,20 @@ class Dotsies
 
     View.kill if View.name == "menu" || View.name =~ /^@/
 
+    faces = {
+      :default=>"monaco",
+      :ls_dir=>"verdana",
+      :notes_exclamation=>"arial black",
+      :notes_h1=>"arial",
+    }
+
     if Styles.attribute(:default, :family) =~ /dotsies/
-      Styles.define :default, :face=>"monaco", :size=>110
-      Styles.define :ls_dir, :fg=>"888", :face=>"verdana", :size=>"-1", :bold=>true
+      faces.each{|k,v| Styles.define k, :face=>v}
     else
-      Styles.define :ls_dir, :fg=>"888", :face=>"Dotsies", :size=>120, :bold=>false
-      Styles.define :default, :face=>"dotsies", :size=>120
+      faces.each{|k,v| Styles.define k, :face=>"dotsies"}
     end
+
+    nil
   end
 
   def self.one_view

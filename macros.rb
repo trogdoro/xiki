@@ -14,7 +14,7 @@ class Macros
   def self.record
     # If ending a macro
     if $el.elvar.defining_kbd_macro
-      end_kbd_macro nil
+      $el.end_kbd_macro nil
     # If starting a macro
     else
       $el.start_kbd_macro nil
@@ -24,17 +24,17 @@ class Macros
   def self.run
     # If defining a macro, just end it and run it
     if $el.elvar.defining_kbd_macro
-      end_kbd_macro nil
+      $el.end_kbd_macro nil
     end
 
     # If U prefix prefix, apply until blank line
     if Keys.prefix_u?
       orig = Location.new
       Line.next
-      left = point
+      left = $el.point
       Search.forward "^$"
       $el.beginning_of_line
-      $el.apply_macro_to_region_lines left, point
+      $el.apply_macro_to_region_lines left, $el.point
       orig.go
       return
     elsif Keys.prefix == 0   # If 0, do to region

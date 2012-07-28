@@ -1,6 +1,6 @@
 - files/
   - read/
-    | File.read("/tmp/t.txt")
+    | File.read "/tmp/t.txt"
   - write/
     | File.open("/tmp/t.txt", "w") { |f| f << "abc" }
 - class/

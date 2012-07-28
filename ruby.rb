@@ -3,10 +3,14 @@ class Ruby
     "
     - .classes/
     - .re_index_fast_ri/
-    - .menu/
     - .docs/
-      | Evaluate the ruby code on the following lines, until a '> ...' heading.
+      > Ruby docs
+      @$ qri -h
+
+      > Eval code
+      | Evaluate the ruby code on adjascent lines, until a '> ...' heading.
       @eval
+      puts('hi')
     - @eval/
     - @technologies/ruby/
     - language docs/

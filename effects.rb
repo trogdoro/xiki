@@ -66,7 +66,7 @@ class Effects
 
     faces =
       if options[:color] == :fire
-        ['change-log-function', 'change-log-function', 'change-log-file', 'change-log-file', 'change-log-date', 'change-log-date', 'change-log-date']
+        ['font-lock-doc-face', 'font-lock-function-name-face', 'html-helper-server-script-face', 'font-lock-variable-name-face', 'speedbar-tag-face', 'speedbar-tag-face', 'speedbar-tag-face']
       elsif options[:color] == :forest
         ['dired-mark', 'dired-mark', 'widget-documentation', 'widget-documentation', 'widget-documentation', 'bookmark-menu-heading', 'bookmark-menu-heading']
       elsif options[:color] == :water

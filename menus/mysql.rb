@@ -38,15 +38,15 @@ class Mysql
 
   def self.install
     "
-    | > Installing Mysql
-    | For now, this just has the mac / homebrew instructions.  Fork xiki on github to add docs for other platforms.
-    |
-    | > Install using homebrew
+    > Installing Mysql
+    For now, this just has the mac / homebrew instructions.  Fork xiki on github to add docs for other platforms.
+
+    > Install using homebrew
     - 1. double-click to install) @ % brew install mysql
     - 2. look at the output) and run the commands it tells you to run
-    |
-    | > More
-    | See this link for more info on installing:
+
+    > More
+    See this link for more info on installing:
     @http://www.mysql.com/downloads/mysql/
     "
   end
@@ -73,7 +73,7 @@ class Mysql
 
   def self.tables *args
     if ! @default_db && ! args[0]
-      return "| Select a db first:\n- @mysql/setup/db/use/"
+      @default_db = "dev"   # Temp
     end
 
     self.dbs @default_db, *args
@@ -97,7 +97,7 @@ class Mysql
       txt = Mysql.run(db, 'show tables')
       if txt.blank?
         @default_db = db
-        return "| No tables exist.  Create one?\n- @mysql/setup/table/create/"
+        return "> No tables exist.  Create one?\n- @mysql/setup/table/create/"
       end
       return txt.split[1..-1].map{|o| "#{o}/"}
     end
@@ -106,7 +106,8 @@ class Mysql
 
     if row.nil?
       # Whole table
-      if ! Keys.prefix_u
+
+      if ! $el || ! Keys.prefix_u
         sql = "select * from #{table} limit 1000"
         out = self.run(db, sql)
         out = "No records, create one?\n#{self.dummy_row(db, table)}" if out.blank?
@@ -215,7 +216,7 @@ class Mysql
     File.open("/tmp/tmp.sql", "w") { |f| f << sql }
     out = Console.run "mysql -u root #{db} < /tmp/tmp.sql", :sync=>true
 
-    raise "| Mysql doesn't appear to be running.  Start it?\n- @mysql/setup/start/" if out =~ /^ERROR.+Can't connect/
+    raise "> Mysql doesn't appear to be running.  Start it?\n- @mysql/setup/start/" if out =~ /^ERROR.+Can't connect/
     raise "| Select a db first:\n- @mysql/setup/db/use/" if out =~ /^ERROR.+: No database selected/
     raise "| Database doesn't exist.  Create it?\n- @mysql/setup/db/create/#{$1}/" if out =~ /^ERROR.+Unknown database '(.+)'/
     raise "| Table doesn't exist.  Create it?\n- @mysql/setup/table/create/#{$1}/" if out =~ /^ERROR.+Table '.+\.(.+)' doesn't exist/
@@ -251,6 +252,20 @@ class Mysql
 end
 
 Keys.enter_list_mysql { Launcher.insert('- Mysql.dbs/') }
+
+Launcher.add /^select \* from($|\/)/ do |path|
+  if path !~ /\//   # If just "select * from", show all tables
+    next Tree.<< Mysql.run(@default_db, 'show tables'), :no_slash=>1
+  end
+
+  # If listed table underneath, collapse to same line
+  CodeTree.kill_siblings
+  Move.backward
+  Deletes.backward
+  Deletes.backward
+  Move.to_end
+
+end
 
 Launcher.add(/^select /) do |path|
   args = Menu.split(path)

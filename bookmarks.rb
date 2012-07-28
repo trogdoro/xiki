@@ -51,7 +51,7 @@ class Bookmarks
     if ! Keys.prefix_u? && in_a_file_tree && ! Line[/^ *\|/]
       path = Tree.construct_path
       keys = Keys.input(:timed=>true, :prompt=>"Name of bookmark for #{path.sub(/.+\/(.)/, "\\1")}: ") || "0"
-      with(:save_window_excursion) do
+      $el.with(:save_window_excursion) do
         $el.find_file path
         self.set keys
       end
@@ -79,7 +79,7 @@ class Bookmarks
   end
 
   def self.[]= bookmark, path
-    with(:save_window_excursion) do
+    $el.with(:save_window_excursion) do
       View.open path
       Bookmarks.set bookmark
     end
@@ -122,7 +122,7 @@ class Bookmarks
     buffer = self.buffer_bookmark name
 
     if buffer == :buffer_not_open
-      return View.message "Buffer '#{buffer}' not currently open."
+      return $el.message "Buffer '#{buffer}' not currently open."
     end
     return nil if buffer.nil?
 
@@ -175,7 +175,7 @@ class Bookmarks
 
       return true if self.jump( "#{prefix_to_bm}#{keys}" )
       View.beep
-      message("Bookmark not found!")
+      $el.message("Bookmark not found!")
       return :not_found
     end
 
@@ -305,7 +305,7 @@ class Bookmarks
       }
       all.each do |l|
         n, p = l
-        result << "- #{n}) @ #{p.sub(/\/$/,'')}\n"
+        result << "- #{n}) @#{p.sub(/\/$/,'')}\n"
         #         puts "- #{n.ljust(7)} #{p.sub(/\/$/,'')}"
         #puts "- #{n}: #{p}"
       end

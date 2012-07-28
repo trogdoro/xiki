@@ -154,6 +154,21 @@ class DiffLog
   end
 
   def self.compare_with_saved
+
+    if Keys.prefix_u
+
+      buffer_unsaved = View.buffer
+
+      path = View.file
+
+      View.to_buffer "untitled"
+      $el.rename_uniquely
+      View << File.read(path)
+
+      return $el.ediff_buffers View.buffer, buffer_unsaved
+
+    end
+
     diff = self.save_diffs :dont_log=>1
     diff = "" if diff.nil?
 

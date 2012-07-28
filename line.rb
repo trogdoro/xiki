@@ -319,12 +319,24 @@ class Line
     View.insert txt
   end
 
+  #
+  # Add slash to end of line, and optionally a string as well
+  #
+  # Line.add_slash
+  # Line.add_slash "hi"
+  #
   def self.add_slash options={}
-    Line =~ /\/$/ ?
+
+    line = Line.value
+
+    line =~ /\/$/ || line.blank? ?
       Move.to_end :
       Line << "/"
+
+    txt = options.is_a?(String) ? options : options[:txt]
+
     orig = View.cursor
-    Line << options[:txt] if options[:txt]
+    Line << txt if txt
     View.cursor = orig if options[:left]
     nil
   end
@@ -376,6 +388,40 @@ class Line
           (1+ (count-lines 1 (point))))
       )
     `
+  end
+
+  def self.enter_docs
+
+    line = Line.value
+
+    if line.blank?   # If blank line, prompt for menu
+      return Launcher.like_menu "docs/", :inline=>1
+
+    elsif line =~ /^(\w+\.\w+| +([+-] )?\.)/i   # If a method, grab docs from source and insert
+      orig = Location.new
+
+      txt = nil
+      $el.with(:save_window_excursion) do
+        Launcher.as_open
+
+        # Grab comments
+        right = View.cursor
+        Move.to_previous_paragraph
+        txt = View.txt View.cursor, right
+        orig.go
+      end
+
+      if txt =~ /^ *[^ #]/   # Do nothing if it wasn't one big comment
+        return View.flash "- No docs found for this method!"
+      end
+
+      txt = txt.gsub /^ *#( )?/, "@\\1"
+      Tree.<< txt, :no_slash=>1, :no_search=>1
+      return
+    end
+
+    Line.add_slash :txt=>"docs/", :unless_blank=>1
+    Launcher.launch
   end
 
 end

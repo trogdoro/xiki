@@ -27,7 +27,7 @@ class Notes
     delimiter = options[:delimiter] || ">"
 
     # If nothing hidden, hide all but current
-    if point_min == 1 && (buffer_size + 1 == point_max)
+    if $el.point_min == 1 && ($el.buffer_size + 1 == $el.point_max)
       left, after_header, right = View.block_positions "^#{delimiter}\\( \\|$\\)"
       $el.narrow_to_region left, right
       return
@@ -515,12 +515,11 @@ class Notes
     prefix = Keys.prefix :clear=>true
 
     if prefix == :u
-      CodeTree.kill_siblings
+      Move.forward if Line.at_right?
       return Tree.collapse
     end
 
     if prefix == :uu
-      CodeTree.kill_siblings
       return Tree.collapse :replace_parent=>1
     end
 
@@ -638,7 +637,7 @@ class Notes
     if prefix == 9
       label = Keys.input :prompt=>"label: ", :timed=>1
       label = "do" if label.blank?
-      label = Notes.expand_if_action_abbrev label
+      label = Notes.expand_if_action_abbrev(label) || label
 
       prefix = nil
     end

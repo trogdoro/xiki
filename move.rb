@@ -144,7 +144,7 @@ class Move
   def self.to_other_bracket
     prefix = Keys.prefix
     # If prefix or after closing bracket, go backward
-    last_char = point == 1 ? "" : $el.buffer_substring(point-1, point)
+    last_char = $el.point == 1 ? "" : $el.buffer_substring($el.point-1, $el.point)
 
     # If numeric prefix
     if prefix.class == Fixnum
@@ -162,7 +162,7 @@ class Move
   end
 
   def self.backward count=nil
-    count ||= Keys.prefix :clear => true
+    count ||= Keys.prefix# :clear => true
     count ||= 1
     case count
     when :u; $el.backward_word 1
@@ -175,7 +175,7 @@ class Move
 
   def self.forward count=nil
 
-    count ||= Keys.prefix :clear => true
+    count ||= Keys.prefix# :clear => true
     count ||= 1
     case count
     when :u

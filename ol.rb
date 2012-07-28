@@ -60,11 +60,22 @@ class Ol
   end
 
   def self.write_to_file path, txt
-    File.open(path, "a") { |f| f << txt }
+    existed = File.exists? path   # If file doesn't exist, chmod it to world writable later
+
+    File.open(path, "a") do |f|
+      f << txt
+      f.chmod 0666 if ! existed
+    end
   end
 
   def self.write_to_file_lines path, txt
-    File.open("#{path}.lines", "a") { |f| f << txt }
+    path = "#{path}.lines"
+    existed = File.exists? path   # If file doesn't exist, chmod it to world writable later
+
+    File.open(path, "a", 0666) do |f|
+      f << txt
+      f.chmod 0666 if ! existed
+    end
   end
 
   def self.pause_since_last? time=nil, no_reset=nil

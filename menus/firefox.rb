@@ -79,7 +79,7 @@ class Firefox
   end
 
   def self.js txt=nil
-    return Tree.<<("| $('div').slideToggle()  // Type some javascript here (to run in the browser)") if ! txt
+    return Tree.<<("| $('div').toggle(1300)  // Type some javascript here (to run in the browser)") if ! txt
 
     Firefox.run txt  #, :jquery=>1
   end
@@ -239,13 +239,23 @@ class Firefox
     result.sub! /^"(.+)"$/m, "\\1"   # Remove quotes
 
     result
+
+  rescue Errno::ECONNREFUSED
+
+    # If brawser wasn't running, ask if they want to open it
+
+    raise "> Looks like the browser isn\'t open.  Open it?\n@app/Firefox/"
+
   end
 
   def self.value txt
     self.run(txt).sub(/\A"/, "").sub(/"\z/, "")
   end
 
-  def self.url url, options={}
+  def self.url url=nil, options={}
+
+    return ".prompt Type a url here." if url.empty?
+
     return $el.browse_url(url) if options[:new]
 
     reload = "gBrowser.reload();";
@@ -493,11 +503,11 @@ class Firefox
     selector = Tree.slashless txt
 
     code = "
-      $.fn.blink = function(times, orig) {
-        for(x=1;x<=2;x++) { $(this).animate({opacity: 0.0}, {easing: 'swing', duration: 200}).animate({opacity: 1.0}, {easing: 'swing', duration: 200}) }
+      jQuery.fn.blink = function(times, orig) {
+        for(x=1;x<=2;x++) { jQuery(this).animate({opacity: 0.0}, {easing: 'swing', duration: 200}).animate({opacity: 1.0}, {easing: 'swing', duration: 200}) }
         return this;
       }
-      $(\"#{selector}\").blink();
+      jQuery(\"#{selector}\").blink();
       "
 
     txt = Firefox.run code  #, :jquery=>1

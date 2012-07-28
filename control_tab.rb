@@ -76,6 +76,8 @@ class ControlTab
         @@consider_test = lambda{|b| $el.buffer_file_name(b)}
         #       when 3   # ...css
         #         @@consider_test = lambda{|b| buffer_name(b) =~ /\.(css|sass)/}
+      when 2   # .notes files
+        @@consider_test = lambda{|b| $el.buffer_file_name(b) =~ /\.deck$/}
       when 3   # ...css
         @@consider_test = lambda{|b| $el.buffer_name(b) =~ /^#/}
       when 4   # haml.html files

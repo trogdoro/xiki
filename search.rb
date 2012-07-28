@@ -694,14 +694,14 @@ class Search
         return Code.suggest_creating_method View.file, method if !result   # If not found, suggest creating
 
         Move.to_axis
-        recenter 0
+        $el.recenter 0
 
         dir, name = found.match(/(.+\/)(.+)/)[1..2]
         Search.append_log dir, "- #{name}\n    | #{Line.value}"
 
       end
     else
-      message "'#{match}' not found (no recently edited file with that substring found)."
+      View.message "'#{match}' not found (no recently edited file with that substring found)."
     end
 
     return

@@ -435,45 +435,39 @@ class Code
     align_regexp(left, right, "\\( *\\)"+Keys.input(:prompt => "align to regex: "), 1, 3, true)
   end
 
+  #
+  # Indent selected lines.
+  #
+  # - do+indent       # Indent to the right (by 2 spaces)
+  # - up+do+indent    # Indent to the left (by 2 spaces)
+  # - 3+do+indent     # Make indent be 6 spaces from the left (3*2)
+  #
   def self.indent_to
 
-    prefix_n = Keys.prefix_n
-    prefix = Keys.prefix :clear=>true
+    prefix = Keys.prefix
+    return Code.indent if prefix == :-   # Just indent to where it should go
 
-    # If notes mode...
-    if View.mode == :ruby_mode
-      # If up+, indent 2 to left
-    end
+    txt = View.selection
+    old_indent = txt[/^( *)[^ \n]/, 1]
 
-    # If universal, indent current line 2 to left...
+    new_indent =
+      if ! prefix
+        old_indent.length + 2
+      elsif prefix == :u
+        old_indent.length - 2
+      elsif prefix.is_a?(Fixnum)
+        prefix * 2
+      else
+        raise ".blink Don't know how to indent by '#{prefix}'"
+      end
 
-    if View.cursor == View.mark   # If C-space was just hit, manually indent this line
-      prefix = prefix_n || 0
-      old_column = View.column
-      line = Line.value 1, :delete=>true
-
-      old_indent = line[/^ */].size
-      View.insert line.sub(/^ */, (' ' * prefix))
-
-      old_column == 0 ?
-      Move.to_axis :
-        Move.to_column(old_column + (prefix - old_indent))   # Move to old location + indent diff
-
-      return
-    end
-
-    # If no prefix, just indent code according to mode
-    return Code.indent if ! prefix
-
-    new_indent = prefix || 0
-    new_indent *= 2
+    return if new_indent < 0
 
     orig = Location.new
-    txt = View.selection :delete => true   # Pull out block
+    View.delete
 
     # Grab indent if 1st line that has text
     txt.gsub!(/^\s+/) { |t| t.gsub("\t", '        ') }   # Untab indent
-    old_indent = txt[/^( *)[^ \n]/, 1]
     txt.gsub! /^#{old_indent}/, ' ' * new_indent
 
     txt.gsub!(/^ +$/, '')   # Kill trailing spaces on lines with just spaces
@@ -484,6 +478,7 @@ class Code
       View.set_mark
       orig.go
     end
+
   end
 
   def self.enter_as_backslash
@@ -493,19 +488,6 @@ class Code
     txt.gsub!(/\\\z/, '')  # Remove last \
     $el.insert txt
   end
-
-  #   def self.enter_as_trunk
-  #     bm = Keys.input(:timed => true, :input => 'Enter bookmark: ')
-  #     bm = Bookmarks["$#{bm}"]
-  #     if Keys.prefix_u?
-  #       View.insert "#{bm}\n  ##/"
-  #       $el.backward_char
-  #       return ControlLock.disable
-  #     end
-  #     View.insert "#{bm}\n  ###{Clipboard[0]}/"
-  #     #View.insert "$tr/###{Clipboard[0]}/"
-  #     Launcher.launch
-  #   end
 
   def self.enter_as_debug
 

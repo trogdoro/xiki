@@ -1,11 +1,6 @@
-# Todo
-# - switch_to_buffer generate_new_buffer(buffer_name)
-#   - generate-new-buffer-name
-# - Function to switch to buffer if open already
-# switch-to-buffer-other-window
-# switch-to-buffer-other-window-maybe
+#
 # Represents a division of a window (in emacs terms, it's a window (which is within a frame))
-
+#
 class View
 
   def self.menu
@@ -349,9 +344,13 @@ class View
       orig << [$el.window_buffer(w), $el.window_height(w)]
     end
     $el.delete_other_windows
+
+    $el.split_window_horizontally 48   # Width of bar
+    #     $el.split_window_horizontally 28   # Width of bar
+
     #     split_window_horizontally 32   # Width of bar
     #     split_window_horizontally 54   # Width of bar
-    $el.split_window_horizontally 48   # Width of bar
+
     $el.other_window 1
     o = nil
     # For each window but last
@@ -396,7 +395,10 @@ class View
       $el.select_window $el.frame_first_window
       #       enlarge_window (31 - window_width), true
       #       enlarge_window (48 - window_width), true
+
       $el.enlarge_window((42 - $el.window_width), true)
+      #       $el.enlarge_window((22 - $el.window_width), true)
+
       $el.select_window buffer
     end
   end
@@ -467,7 +469,7 @@ class View
   # Return selected text (aka the "region")
   def self.selection options={}
     txt = $el.buffer_substring($el.region_beginning, $el.region_end)
-    $el.delete_region($el.point, mark) if options[:delete]
+    $el.delete_region($el.point, $el.mark) if options[:delete]
     txt
   end
 
@@ -845,6 +847,7 @@ class View
   #
   def self.recenter_under pattern, options={}
     orig = Location.new
+    Line.next
     Search.backward pattern
 
     # If :relative, search backward from here...
@@ -941,11 +944,19 @@ class View
     View.line = line
   end
 
-  # Delete string between two points
-  # View.delete 1, 10
-  # 1
+  #
+  # Delete string between two points, and returns deleted text.
+  #
+  # p View.delete 1, 10
+  # p View.delete :line
+  # p View.delete   # Delete's selection (and returns it)
+  #
   def self.delete left=nil, right=nil
     return Line.delete if left == :line
+
+    # Default to deleting region
+    left, right = View.range if left.nil?
+
     txt = $el.buffer_substring left, right
     $el.delete_region left, right
     txt
@@ -1261,7 +1272,11 @@ class View
     View.line = prefix if prefix.is_a? Fixnum
 
     line = Line.value
-    Line.delete if prefix == :u
+    if prefix == :u
+      Line.delete
+
+      orig.line -= 1 if Bookmarks['$t'] == orig.file   # If in $t, adjust position by how much is deleted
+    end
 
     todo_orig.go
     orig.go

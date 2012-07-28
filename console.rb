@@ -60,6 +60,12 @@ class Console
     self.run command, options.merge(:sync=>1)
   end
 
+  #
+  # Runs shell command asynchronously.
+  #
+  # Console.run "ls"
+  # Console.run "ls", :dir=>"/tmp/"
+  #
   def self.run command, options={}
 
     dir = options[:dir]
@@ -89,7 +95,7 @@ class Console
         return puts("#{dir} is not a dir")
       end
     else
-      dir = $el.elvar.default_directory
+      dir = $el ? $el.elvar.default_directory : "/tmp/"
     end
 
     if sync

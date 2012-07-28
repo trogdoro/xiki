@@ -335,16 +335,6 @@ class Menu
     nil
   end
 
-  # Other .init mode defined below
-  def self.init
-
-    return if ! $el   # Do nothing if not running under el4r
-
-    Mode.define(:menu, ".menu") do
-      Notes.mode
-    end
-  end
-
   def self.[] path
     path, rest = path.split '/', 2
 
@@ -610,25 +600,25 @@ class Menu
 
   end
 
-  def self.config txt, *args
+  #   def self.config txt, *args
 
-    # TODO: implement
-      # Args look like sample invocation below
-      # If not there, create it first, using supplied default
-      # Insert quoted file contents to be edited
+  #     # TODO: implement
+  #       # Args look like sample invocation below
+  #       # If not there, create it first, using supplied default
+  #       # Insert quoted file contents to be edited
 
-    # Sample invocation
-    #     Menu.config "
-    #       - @ ~/xiki/config/browser.notes
-    #         | - default browser:
-    #         |   - Firefox
-    #         | - others:
-    #         |   - Safari
-    #         |   - Chrome
-    #       ", *args
+  #     # Sample invocation
+  #     #     Menu.config "
+  #     #       - @ ~/xiki_config/browser.notes
+  #     #         | - default browser:
+  #     #         |   - Firefox
+  #     #         | - others:
+  #     #         |   - Safari
+  #     #         |   - Chrome
+  #     #       ", *args
 
-    "TODO"
-  end
+  #     "TODO"
+  #   end
 
   # Moves item to root of tree (replacing tree), then launches.
   def self.do_as_menu
@@ -640,10 +630,10 @@ class Menu
 
     txt = on_subtree ? Tree.subtree.unindent.sub(/^[ @+-]+/, '') : Tree.path.last
 
-    Tree.to_root :highest=>1
+    Keys.prefix_u ? Tree.to_root(:highest=>1) : Tree.to_root
     Tree.kill_under
 
-    Line.sub! /.+/, txt
+    Line.sub! /^([ @]*).+/, "\\1#{txt}"
 
     return if on_subtree
 
@@ -651,8 +641,6 @@ class Menu
 
     Launcher.launch
   end
-
-
 
 
   # The following 3 methods are for the menu bar
@@ -691,6 +679,10 @@ class Menu
   def self.init
 
     return if ! $el
+
+    Mode.define(:menu, ".menu") do
+      Notes.mode
+    end
 
     add_menu ROOT_MENU
 

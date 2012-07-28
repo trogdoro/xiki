@@ -8,7 +8,7 @@ class Piano
   include MIDIator::Drums rescue nil
 
   @@midi = nil
-  @@velocity = 120
+  @@velocity = 126
   @@tempo = 120
   @@probability = 100
   @@melodic = 0
@@ -25,7 +25,7 @@ class Piano
 
   begin
     @@map = {
-      #       '@'=>BassDrum2, '#'=>BassDrum1,
+      '@'=>BassDrum2, '#'=>BassDrum1,
       '='=>SnareDrum2, '-'=>SnareDrum1,
       "'"=>ClosedHiHat, '"'=>OpenHiHat,
       '^'=>RideCymbal1, '`'=>CrashCymbal1, '*'=>CrashCymbal2, '<'=>Cowbell,
@@ -40,30 +40,6 @@ class Piano
     > Pass in notes
     | g cdefg c c
     - .setup/
-      - .mode/
-        - lydian) 4
-        - ionian - major) 3
-        - mixolydian) 2
-        - dorian) 1
-        - aeolian - minor) 0
-        - phrygian) -1
-        - locrian) -2
-        - random/
-      - .pentatonic/
-        - off
-        - on
-      - .tempo/
-        - 60
-        - 120
-        - 240
-        - 480
-        - 960
-      - .octave/
-        - 2
-        - 1
-        - 0
-        - -1
-        - -2
       - .instrument/
         - most common/
           - Acoustic Grand Piano/
@@ -103,16 +79,40 @@ class Piano
           - Woodblock/
           - Taiko Drum/
         - all/
-      - .velocity/
-        - 126
-        - 96
-        - 64
-        - 32
+      - .tempo/
+        - 60
+        - 120
+        - 240
+        - 480
+        - 960
       - .repeat/
         - 1
         - 2
         - 4
         - 8
+      - .mode/
+        - lydian) 4
+        - ionian - major) 3
+        - mixolydian) 2
+        - dorian) 1
+        - aeolian - minor) 0
+        - phrygian) -1
+        - locrian) -2
+        - random/
+      - .pentatonic/
+        - off
+        - on
+      - .octave/
+        - 2
+        - 1
+        - 0
+        - -1
+        - -2
+      - .velocity/
+        - 126
+        - 96
+        - 64
+        - 32
       - .variation/
         - 0
         - 1
@@ -136,6 +136,133 @@ class Piano
         - 50%
       - .reset/
     - .random notes/
+    - examples/
+      - basics/
+        - chords/
+          @piano/
+            | A A A B A
+            | C C D D C
+            | E F F F E
+        - two parts/
+          @piano/
+            | CGcCGc C GaCGa  CGcCGc C GaCGa
+            | cde edc d  c   c de e
+        - three parts/
+          @piano/
+            | ABCDEFGabcdefghijklmnopqrstuv
+            |   B C D E F G a b c d e f g h
+            |     B   C   D   E   F   G   a
+        - sharps/
+          @piano/
+            |             #    # # # #
+            | ce ecbca    Gb baGbG G G a
+            |                    #
+            |  C E C A C L B E B N B L H
+        - drums/
+          @piano/
+            | ' ' ' ' ' '*  '
+            | =@@= @@@=@@= @@@
+        - unofficial xiki theme song/
+          @piano/
+            |                 xiki is so great
+            | P Q P Q P Q P Q P Q P Q P Q P Q
+            | < < < < < < < < < < < < < < < <
+            | @ = @@= @ = @@= @ = @@= @ = @@=
+      - generation/
+        - variation/
+          @piano/
+            | reset()
+            | variation()
+            | aaaaaaaa
+        - probability/
+          @piano/
+            | reset()
+            | variation()
+            | probability(50)
+            | aaaaaaaaaaaa
+        - melodic/
+          @piano/
+            | reset()
+            | variation(1)
+            | melodic()
+            | aaaaaaaaaaaa
+        - climb/
+          @piano/
+            | reset()
+            | variation(1)
+            | melodic()
+            | climb()
+            | aaaaaaaaaaaa
+        - consistency/
+          @piano/
+            | reset()
+            | variation()
+            | consistency(80)
+            | aaaaaaaaaaaa
+        - solo/
+          @piano/
+            | reset()
+            | repeat(8)
+            | tempo(55)
+            | mode(rand 100)
+            | variation()
+            | consistency(50)
+            | melodic()
+            | probability(80)
+            | abcdefgh
+        - duet/
+          @piano/
+            | reset()
+            | repeat(8)
+            | tempo(35)
+            | mode(rand 8)
+            | variation(2)
+            | consistency(10)
+            | melodic()
+            | A A A A
+            |  h h h h
+        - all together/
+          @piano/
+            | reset()
+            | repeat(8)
+            | tempo(45)
+            | mode(rand 100)
+            | variation()
+            | consistency(50)
+            | melodic()
+            | probability(80)
+            | aaaaaaaa
+            | AAAAAAAA
+            | H   H
+        - everything random/
+          @piano/
+            | reset()
+            | repeat(16)
+            | tempo(rand(60) + 40)
+            | mode(rand 200)
+            | variation(rand(6) + 1)
+            | consistency(rand(50))
+            | melodic(rand 1)
+            | octave(-1)
+            | probability(rand(55) + 45)
+            | aaaaaaaaaaaaaaaa
+            | AAAAAAAAAAAAAAAA
+            | H   H   H   H
+        - cool instruments/
+          @piano/
+            | reset()
+            | repeat(32)
+            | tempo(rand(60) + 40)
+            | mode(rand 200)
+            | variation(rand(6) + 1)
+            | instrument([112, 108, 107, 102, 101, 100, 98, 97, 96, 95, 89, 88, 87, 86, 80, 54, 50, 49, 46, 45, 34, 12, 11, 10, 9, 8, 4][rand 27])
+            | consistency(rand(50))
+            | melodic(rand 1)
+            | octave(-1)
+            | probability(rand(55) + 45)
+            | aaaaaaaaaaaaaaaa
+            | AAAAAAAAAAAAAAAA
+            | H   H   H   H
     - .api/
       | Play some notes
       @ Piano.song "abc"
@@ -143,89 +270,11 @@ class Piano
       > Single notes
       - @piano/a/
       - @piano/55/
-      |
+
       > Multiple notes
       - @piano/cde edc d  c   c de e
       - @piano/some words for fun
-      |
-      > Multiple parts
-      - .examples/
-        - basics/
-          - chords/
-            @piano/
-              | A A A B A
-              | C C D D C
-              | E F F F E
-          - two parts/
-            @piano/
-              | CGcCGc C GaCGa  CGcCGc C GaCGa
-              | cde edc d  c   c de e
-          - three parts/
-            @piano/
-              | ABCDEFGabcdefghijklmnopqrstuv
-              |   B C D E F G a b c d e f g h
-              |     B   C   D   E   F   G   a
-          - sharps/
-            @piano/
-              |             #    # # # #
-              | ce ecbca    Gb baGbG G G a
-              |                    #
-              |  C E C A C L B E B N B L H
-          - drums/
-            @piano/
-              | ' ' ' ' ' '*  '
-              | =@@= @@@=@@= @@@
-          - unofficial xiki theme song/
-            @piano/
-              |                 xiki is so great
-              | P Q P Q P Q P Q P Q P Q P Q P Q
-              | < < < < < < < < < < < < < < < <
-              | @ = @@= @ = @@= @ = @@= @ = @@=
-        - generation/
-          - variation/
-            @piano/
-              | reset()
-              | variation()
-              | aaaaaaaa
-          - probability/
-            @piano/
-              | reset()
-              | variation()
-              | probability(50)
-              | aaaaaaaaaaaa
-          - melodic/
-            @piano/
-              | reset()
-              | variation(1)
-              | melodic()
-              | aaaaaaaaaaaa
-          - climb/
-            @piano/
-              | reset()
-              | variation(1)
-              | melodic()
-              | climb()
-              | aaaaaaaaaaaa
-          - consistency/
-            @piano/
-              | reset()
-              | variation()
-              | consistency(80)
-              | aaaaaaaaaaaa
-          - all together/
-            @piano/
-              | reset()
-              | repeat(8)
-              | tempo(45)
-              | mode(rand 100)
-              | variation()
-              | consistency(50)
-              | melodic()
-              | probability(80)
-              | aaaaaaa
-              | AAAAAAAA
-              | H   H
-      |
+
       > Modes
       modes/
         | For reference, here are the whole and half steps for the options under
@@ -257,13 +306,17 @@ class Piano
       return false
     end
 
-    if Line =~ /\(/
-      Tree.to_parent
-      Move.to_end
-      Search.forward("^[^(\n]+$")
+    if $el
+      if Line =~ /\(/
+        Tree.to_parent
+        Move.to_end
+        Search.forward("^[^(\n]+$")
+      end
+      txt = ENV['txt']
+    else
+      txt = args[0]
     end
 
-    txt = ENV['txt']
     self.song txt, :move=>1
 
     nil
@@ -283,22 +336,28 @@ class Piano
     repeat = (@@functions_by_index[0]||[]).find{|o| o =~ /^rep(eat)?\(/}
     @@repeat = (repeat[/\d+/]||"4").to_i if repeat
 
-    @@repeat.times do
+    @@repeat.times do |i|
 
       # Start at where cursor is
-      View.column = Line.value[/.+(\/|\| ?)/].length if options[:move]
+      if $el
+        View.column = Line.value[/.+(\/|\| ?)/].length if options[:move]
+      end
+
       longest = @@lines.inject(0){|acc, e| e.length > acc ? e.length : acc}
 
-      longest.times do |i|
-        self.run_functions @@functions_by_index[i] # unless i == 0
+      longest.times do |j|
+        #         self.run_functions @@functions_by_index[j] # unless j == 0
+        self.run_functions @@functions_by_index[j] unless i == 0
 
         sharp = false
         @@lines.each_with_index do |line, track|
-          char = line[i] ? line[i].chr : nil
+          char = line[j] ? line[j].chr : nil
           self.note char, :no_sit=>1, :sharp=>sharp, :track=>track
           sharp = char == "#"
         end
-        Move.forward if options[:move] && View.cursor != Line.right
+        if $el
+          Move.forward if options[:move] && View.cursor != Line.right
+        end
         self.pause
       end
     end
@@ -363,11 +422,13 @@ class Piano
 
   def self.apply_variation number, options={}
     return number if rand(100) > (100 - @@consistency)   # Do nothing if consistency says to stop
+
     random = rand(@@variation+1)
 
     if @@climb == 0
       random *= ((-1) ** rand(2))   # Half of the time, make it decrease note
     end
+    # Ol << "random: #{random.inspect}"
 
     if @@melodic == 1
       track = options[:track]
@@ -395,6 +456,10 @@ class Piano
 
     channel = 1
     velocity = @@velocity
+
+    # Varying the velocity doesn't sound super-great
+    #     velocity = 63 + rand(63)
+
     if letter.is_a? Fixnum
       number = letter
       # If super-low, make them audible
@@ -408,7 +473,7 @@ class Piano
       channel = 10
       number = @@map[letter]
       velocity = letter.count("@#=-") == 1 ? 126 : 65
-    elsif letter == " "
+    elsif letter == " " || letter == "+"
       number = 0
     elsif letter.is_a?(String) && letter.length > 1
       letter.split('').each{|o| self.note o}
@@ -416,7 +481,6 @@ class Piano
     else
       raise "- Note #{letter.inspect} not recognized!"
     end
-
     return if number == 0
 
     number += 1 if options[:sharp]
@@ -434,7 +498,7 @@ class Piano
     pause = @@tempo * 4
     pause = pause / 60.0
     pause = 1 / pause
-    $el.sit_for pause
+    $el ? $el.sit_for(pause) : sleep(pause)
     Piano.clear
     Piano.clear 10
   end
@@ -572,6 +636,7 @@ class Piano
     @@octave = 0
     @@program = 1
     @@repeat = 1
+    @@seed = nil
 
     ".flash - success!"
   end
@@ -586,21 +651,34 @@ class Piano
   def self.connect
     @@midi = MIDIator::Interface.new
     @@midi.use :dls_synth
-    @@midi.control_change 32, 10, 1 # TR-808 is Program 26 in LSB bank 1
-    @@midi.program_change 10, 26
+    # This doesn't work in Lion :(
+    @@midi.control_change 32, 10, 1   # Drums: R-808 is Program 26 in LSB bank 1
+    @@midi.control_change 7, 1, 126   # Turn volume up to max
     @@midi
   end
 
   def self.velocity txt="126";  @@velocity = txt.to_i;  ".flash - updated!";  end
   def self.tempo txt="120";  @@tempo = txt.to_i;  ".flash - updated!";  end
   def self.probability txt="50";  @@probability = txt.to_s.sub('%', '').to_i;  ".flash - updated!";  end
-  def self.variation txt="3";  @@variation = txt.to_i;  ".flash - updated!";  end
+  def self.variation txt="2"
+    @@variation = txt.to_i
+    if @@seed   # If seed set manually, just use it
+      seed = @@seed
+    else   # Else auto-generate seed
+      seed = rand 999_999_999_999_999_999_999
+    end
+
+    srand seed
+
+    ".flash - updated!"
+  end
   def self.melodic txt="1";  @@melodic = txt.to_i;  ".flash - updated!";  end
   def self.climb txt="1";  @@climb = txt.to_i;  ".flash - updated!";  end
   def self.pentatonic txt="1";  Ol.<<(txt); @@pentatonic = [true, "on", 1].member?(txt);  ".flash - updated!";  end
   def self.consistency txt="50";  @@consistency = txt.to_s.sub('%', '').to_i;  ".flash - updated!";  end
   def self.octave txt="0";  @@octave = txt.to_i;  ".flash - updated!";  end
   def self.repeat txt="4"; @@repeat = txt.to_i;  ".flash - updated!";  end
+  def self.seed txt; @@seed = txt.to_i;  ".flash - updated!";  end
 
   def self.mode txt=nil
     return @@mode if txt.nil?

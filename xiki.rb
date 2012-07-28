@@ -37,8 +37,8 @@ class Xiki
         | Double-click on these lines to add the executable 'xiki' command to
         | your path:
         |
-        @ $ chmod 755 #{Xiki.dir}etc/xiki
-        @ % sudo ln -s #{Xiki.dir}etc/xiki /usr/local/bin/xiki
+        @$ chmod 755 #{Xiki.dir}etc/command/xiki
+        @% sudo ln -s #{Xiki.dir}etc/command/xiki /usr/local/bin/xiki
         |
         | Then you can type 'xiki' on a command line outside of emacs as a
         | shortcut to opening xiki and opening menus, like so:
@@ -66,6 +66,11 @@ class Xiki
 
         - 4) Try it out by typing Command+Control+X from any application
           | It should prompt you to type a xiki menu
+      - .process/
+        - status/
+        - start/
+        - stop/
+        - restart/
     - api/
       > Summary
       Here are some functions that will always be available to menu classes,
@@ -125,12 +130,6 @@ class Xiki
     Line.<<("\n#{indent}  @") if ! blank
 
     # If at end of line, and line not blank, go to next line
-
-    if prefix == :u
-      Line << "@" if Line !~ /@$/
-      Launcher.launch
-      return
-    end
 
     # Todo: if dash+, do auto-complete even if exact match - how to implement?
 
@@ -370,4 +369,24 @@ class Xiki
       Xiki.on_open
     end
   end
+
+  def self.process action
+
+    case action
+    when "status"
+      "- #{`xiki status`}"
+    when "stop"
+      response = `xiki stop`
+      response = "apparently it wasn't running" if response.blank?
+      response.gsub /^/, '- '
+    when "restart"
+      response = `xiki restart`
+      response = "apparently it wasn't running" if response.blank?
+      response.gsub /^/, '- '
+    when "start"
+      result = `xiki`
+      "- started!"
+    end
+  end
+
 end

@@ -110,7 +110,7 @@ class History
   end
 
   def self.insert_history times
-    insert Tree.paths_to_tree($el.elvar.recentf_list.to_a[0..(times-1)])
+    View.insert Tree.paths_to_tree($el.elvar.recentf_list.to_a[0..(times-1)])
   end
 
   def self.enter_history
@@ -124,7 +124,7 @@ class History
   def self.insert_viewing times
     paths = ( $el.buffer_list.map { |b| $el.buffer_file_name(b) }.select{|path| path})
     paths = paths[0..(times-1)] if times  # Limit to number if prefix passed
-    insert Tree.paths_to_tree(paths)
+    View.insert Tree.paths_to_tree(paths)
   end
 
   def self.enter_viewing

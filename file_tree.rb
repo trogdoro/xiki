@@ -638,7 +638,7 @@ class FileTree
     operations = [[], []]
 
     file = View.file
-    with(:with_temp_buffer) do
+    $el.with(:with_temp_buffer) do
       $el.insert_file file
       #       Ol << "View.txt(1, 150): #{View.txt(1, 150)}"
       deleted.each do |line_number|
@@ -649,7 +649,7 @@ class FileTree
     end
 
     if added.any?
-      with(:with_temp_buffer) do
+      $el.with(:with_temp_buffer) do
         $el.insert_file tmp_path
         added.each do |add|
           line_number = add
@@ -1336,7 +1336,7 @@ class FileTree
 
     name, extension = path.match(/([^\/]+)\.(.+)$/)[1..2] rescue [nil, nil]
 
-    [File.expand_path("~/xiki/templates/"), Bookmarks["$x/etc/templates"]].each do |dir|
+    [File.expand_path("~/xiki_stuff/templates/"), Bookmarks["$x/etc/templates"]].each do |dir|
       file = "#{dir}/template.#{extension}"
       next unless File.exists? file
       View.flash "- File doesn't exist, start with this...", :times=>4
@@ -1360,11 +1360,10 @@ class FileTree
     options.merge!(:focus=>View.file_name) if bm == "."
     dir = Keys.bookmark_as_path(:bm=>bm)
 
+    return if dir == :bookmark_doesnt_exist
+
     dir = "/" if dir == :slash
-    if dir.nil?
-      beep
-      return View.message("Bookmark doesn't exist.")
-    end
+
     dir = Bookmarks.dir_only(dir) if options[:recursive]
     options.merge!(:dir=>dir)
 
@@ -1855,7 +1854,7 @@ class FileTree
     when 0
       # Just show path if 0+...
     when :-   # Just show # foo... comments...
-      self.enter_lines(/(^ *def | # .+\.\.\.$)/, :current_line=>current_line)
+      self.enter_lines(/(^ *def |(^| )# .+\.\.\.$)/, :current_line=>current_line)
     when 6   # Just show # foo... comments...
       self.enter_lines(/(^ *def |self\.)/, :current_line=>current_line)
     when :u

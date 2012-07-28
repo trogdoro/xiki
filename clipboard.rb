@@ -217,7 +217,7 @@ class Clipboard
     end
 
     # If on blank spaces, copy them
-    if buffer_substring(point-1, point+1) =~ /[ \n] /
+    if $el.buffer_substring($el.point-1, $el.point+1) =~ /[ \n] /
       $el.skip_chars_forward " "
       right = $el.point
       $el.skip_chars_backward " "
@@ -236,7 +236,7 @@ class Clipboard
     txt = View.txt(left, right)
     Clipboard.set "0", txt
     View.to right
-    View.mark left
+    #     View.mark left   # What did this do?
     Clipboard.save_by_first_letter txt
 
     orig.go
@@ -251,8 +251,8 @@ class Clipboard
 
   def self.copy_everything
     Effects.blink :what=>:all
-    Clipboard.set("0", buffer_string)
-    set_mark(point_max)
+    Clipboard.set("0", $el.buffer_string)
+    $el.set_mark($el.point_max)
   end
 
   def self.as_line many=nil
@@ -275,9 +275,9 @@ class Clipboard
     # If on whitespace, move to off of it
     $el.skip_chars_forward " "
 
-    orig = point
+    orig = $el.point
     Move.to_other_bracket
-    View.delete orig, point
+    View.delete orig, $el.point
     View.insert Clipboard['0']
   end
 

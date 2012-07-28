@@ -36,11 +36,11 @@ class Hide
     unless options[:optimize]
       self.reset
       # Lisp funtion defined below
-      l = hide_find_overlays.to_a
+      l = $el.hide_find_overlays.to_a
       l.each { |i| @@already_hidden[i] = true }
     end
 
-    t = buffer_string
+    t = $el.buffer_string
     lines = t.split "\n"
     bol = 1
     left = 1
@@ -83,7 +83,7 @@ class Hide
   end
 
   def self.char_from_user
-    c = read_char_exclusive
+    c = $el.read_char_exclusive
     # Treat C-0 - C-9 the same as 0-9
     c -= 67108864 if(c >= 67108912 && c <= 67108921)
     "#{c.chr}"
@@ -99,7 +99,7 @@ class Hide
       search = ""
     end
 
-    message "Hide.search for: #{search}"
+    $el.message "Hide.search for: #{search}"
     ch = self.char_from_user
 
     first_search = true
@@ -107,7 +107,7 @@ class Hide
     while true
       break unless ch =~ /[-a-zA-Z ._=@\/\\#,;*<>-]/
       search += ch
-      message "hide-search for: #{search}"
+      $el.message "hide-search for: #{search}"
 
       # If a tab, clear search and keep going
       if ch == ","
@@ -117,11 +117,11 @@ class Hide
       end
 
       self.hide_unless /#{Regexp.escape(search)}/i, options
-      recenter -3
+      $el.recenter -3
 
       # Don't re-check visible regions from now on
       if first_search
-         options.merge!(:optimize => true)
+        options.merge!(:optimize => true)
         first_search = false
       end
 
@@ -139,19 +139,19 @@ class Hide
     if 1 <= ch.to_i && ch.to_i <= 9
       if @@visible.size > 0
         if @@visible[ch.to_i - 1]
-          goto_char @@visible[ch.to_i - 1]
+          $el.goto_char @@visible[ch.to_i - 1]
         else
-          goto_char @@visible[-1]
+          $el.goto_char @@visible[-1]
         end
       else
-        goto_line ch.to_i
+        $el.goto_line ch.to_i
       end
       #      next_line -1
       self.show
-      recenter 0
+      $el.recenter 0
       # Run enter if option was passed
       if options[:press_enter]
-        command_execute "\C-m"
+        $el.command_execute "\C-m"
       end
 
     # Show all if they typed C-a
@@ -159,7 +159,7 @@ class Hide
       self.show
     # Else, if control character, execute it and exit
     elsif "\C-a" <= ch && ch <= "\C-z"
-      command_execute ch unless ch == "\C-m"
+      $el.command_execute ch unless ch == "\C-m"
     end
   end
 
@@ -171,7 +171,7 @@ class Hide
 
     # Move down to visible line (this doesn't seem to happen on its own)
     while( @@already_hidden[$el.point] )
-      forward_line
+      $el.forward_line
     end
 
     #    @@already_hidden = {}
@@ -210,12 +210,12 @@ class Hide
     if indent.nil?
       indent = Line.matches(/^ */).size
       # If currently indented to that level, go one deeper
-      if $el.elvar.selective_display && indent == (elvar.selective_display - 1)
+      if $el.elvar.selective_display && indent == ($el.elvar.selective_display - 1)
         indent += 2
       end
     end
 
-    set_selective_display(indent + 1)
+    $el.set_selective_display(indent + 1)
   end
 
   def self.init
@@ -224,7 +224,7 @@ class Hide
 
     # Define lisp function to get list of displayed lines
     # In case something has been done to change them
-    $el.el4r_lisp_eval %q[
+    $el.el4r_lisp_eval %`
       (defun hide-find-overlays ()
         (save-excursion
           (beginning-of-buffer)
@@ -245,12 +245,12 @@ class Hide
           )
         )
       )
-    ]
+    `
   end
 
   # Reveals all hidden
   def self.reveal
-    widen
+    $el.widen
     self.show
     self.hide_by_indent :u   # If hidden by indent
   end

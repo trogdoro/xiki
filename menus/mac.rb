@@ -45,6 +45,12 @@ class Mac
       View.>> "\n"
     end
 
+    $el.define_key :osx_key_mode_map, $el.kbd("<A-return>") do
+      Launcher.launch_or_hide(:blink=>true)
+    end
+
+    $el.define_key :cua_global_keymap, $el.kbd("<C-return>"), nil   # Prohibit cua from monopolizing C-return key
+
   end
 
   #

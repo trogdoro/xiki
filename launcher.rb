@@ -1,9 +1,10 @@
 require 'effects'
 require 'requirer'
+
 require 'xiki'
 
-Requirer.require_gem 'httparty', :optional=>1   # Not super-important
 Requirer.require_gem 'activesupport', :name2=>'active_support/ordered_hash'
+Requirer.require_gem 'httparty', :optional=>1   # Not super-important
 Requirer.require_gem 'haml', :optional=>1
 
 class Launcher
@@ -41,7 +42,7 @@ class Launcher
 
   def self.menu
     %`
-    - .options/
+    - .setup/
       > Toggle Temporarily just showing the launcher that matched
       - .show or launch/
     - docs/
@@ -229,7 +230,7 @@ class Launcher
     end
 
     # Special case to turn launchers back on
-    return self.show_or_launch if line == "launcher/options/show or launch/"
+    return self.show_or_launch if line == "launcher/setup/show or launch/"
 
     @@launchers.each do |regex, block|   # Try each potential regex match
       # If we found a match, launch it
@@ -528,14 +529,16 @@ class Launcher
     end
 
     self.add(/^(http|file).?:\/\/.+/) do |path|
-      Launcher.append_log "- urls/#{path}"
+      Launcher.append_log "- http/#{path}"
 
       prefix = Keys.prefix
       Keys.clear_prefix
 
       url = path[/(http|file).?:\/\/.+/]
       if prefix == "all"
-        Tree.under RestTree.request("GET", url), :escape=>'| ', :no_slash=>1
+        txt = RestTree.request("GET", url)
+        txt = Tree.quote(txt) if txt =~ /\A<\w/
+        Tree.under txt, :no_slash=>1
         next
       end
       url.gsub! '%', '%25'
@@ -573,7 +576,13 @@ class Launcher
       View.message "There was nothing on this line to launch."
     end
 
-    self.add(/^\*/) do |line|  # *... buffer
+    self.add(/^\*$/) do |line|  # *... buffer
+      Line.sub! /.+/, "all"
+
+      Launcher.launch
+    end
+
+    self.add(/^\*./) do |line|  # *... buffer
       name = Line.without_label.sub(/\*/, '')
       View.to_after_bar
       View.to_buffer name
@@ -986,6 +995,7 @@ class Launcher
   # Launcher.open "computer"
   #
   def self.open menu, options={}
+    return self.insert(menu, options) if options[:inline]
 
     $el.sit_for 0.25 if options[:delay] || options[:first_letter]   # Delay slightly, (avoid flicking screen when they type command quickly)
 
@@ -1190,24 +1200,41 @@ class Launcher
     "- reloaded!"
   end
 
-  def self.search_like_menu
-    txt = Search.stop
-    return if txt.nil?
+  #
+  # Launches "menu/item", first prompting for name.  Used by search+like_menu
+  # and other places.
+  #
+  # If matches substring, shows the possible matches and does an isearch.
+  #
+  # Menu.like_menu "htm"
+  #
+  def self.like_menu item, options={}
 
-    menu = Keys.input :timed=>true, :prompt=>"Enter menu to pass '#{txt}' to (space if menu): "
+    # return
+    return if item.nil?
 
-    return Launcher.open txt if menu == " "
+    menu = Keys.input :timed=>true, :prompt=>"Enter menu to pass '#{item}' to (space if menu): "
 
-    matches = Launcher.menu_keys.select do |possibility|
+    return self.open(item, options) if menu == " "   # Space means text is the menu
+
+    matches = self.menu_keys.select do |possibility|
       possibility =~ /^#{menu}/
     end
 
     if matches.length == 1
-      return Launcher.open("- #{matches[0]}/#{txt}")
+      return self.open("- #{matches[0]}/#{item}", options)
     end
 
-    Launcher.open(matches.map{|o| "- #{o}/#{txt}\n"}.join(''), :choices=>1)
-    Tree.search
+    self.open(matches.map{|o| "- #{o}/#{item}\n"}.join(''), options.merge(:choices=>1))
+    right = View.cursor
+    Move.to_previous_paragraph
+    # return
+    Tree.search :left=>View.cursor, :right=>right
+  end
+
+  def self.search_like_menu
+    txt = Search.stop
+    self.like_menu txt
   end
 
   def self.as_update

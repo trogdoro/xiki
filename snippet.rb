@@ -26,14 +26,12 @@ class Snippet
       Line.delete
       View.<< txt.gsub(/^/, indent), :dont_move=>1
 
-      View.<< txt, :dont_move=>1
-
       return
     end
 
     # Get snippets.foo file from snippets/ dirs, and drill into it
 
-    # TODO: also look in ~/xiki/snippets
+    # TODO: also look in ~/xiki/snippets? - find different dir name, in case ~/xiki is the Xiki.dir
 
     if ! File.exists? file
       # TODO: if none found, show

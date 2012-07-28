@@ -15,8 +15,8 @@ class Html
       orig.go
       txt = txt.unindent
 
-      # Convert from tree to html if any ident, or 1st line doesn't start with "<"
-      txt = txt =~ /^ / || txt !~ /\A</ ?
+      # Convert from tree to html if any ident, or 1st line doesn't start with "|"
+      txt = txt =~ /^ / || txt !~ /\A\|/ ?
         Tree.to_html(txt) :
         txt.gsub(/^\| ?/, '')
 

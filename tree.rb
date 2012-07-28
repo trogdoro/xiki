@@ -380,7 +380,7 @@ class Tree
 
     when ";"   # Replace parent
 
-      CodeTree.kill_siblings
+      #       CodeTree.kill_siblings
       Tree.collapse :replace_parent=>1
       return Launcher.launch
 
@@ -1304,7 +1304,9 @@ class Tree
 
   def self.collapse options={}
     # If at root or end of line, go to next
-    Line.next if Line !~ /^ / || View.cursor == Line.right
+    Line.next if Line !~ /^ / || Line.at_right?
+    CodeTree.kill_siblings
+
     Move.to_end -1
 
     Line.sub! /([ +-]*).+/, "\\1" if options[:replace_parent]
@@ -1368,7 +1370,7 @@ class Tree
 
     return if output.blank?
 
-    if output.is_a?(String) && output.strip =~ /\A<<< (.+)\/\z/
+    if output.is_a?(String) && $el && output.strip =~ /\A<<< (.+)\/\z/
       Tree.replace_item $1
       Launcher.launch
       return true

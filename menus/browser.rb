@@ -1,9 +1,9 @@
 class Browser
   def self.menu
     "
-    - config/
-      | This file has a list of browsers
-      - @ ~/xiki/config/browser.notes
+    - .url/
+    - .reload/
+    - .tabs/
     - api/
       | This class lets you choose a default browser.
       |
@@ -35,6 +35,11 @@ class Browser
 
   def self.open_in_browser
 
+    if Keys.prefix_u   # Open as http://xiki/...
+
+      return self.url "http://xiki/#{Tree.path}"
+    end
+
     file = FileTree.tree_path_or_this_file
 
     return Browser.html Markdown.render(View.txt) if View.extension == "markdown"   # If .markdown, render it
@@ -56,6 +61,18 @@ class Browser
     end
 
     self.url file
+  end
+
+  def self.tabs
+    Firefox.tabs
+  end
+
+  def self.url *args
+    Firefox.url args.join "/"
+  end
+
+  def self.reload
+    Firefox.reload
   end
 
 end

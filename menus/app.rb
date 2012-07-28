@@ -1,12 +1,13 @@
+#
+# Shows each OS X app, and lets you launch them.
+#
 class App
+  def self.menu name=nil
 
-  def self.menu *name
-
-    return View.prompt("Type a mac app to open", :times=>4) if name.empty?
-
-    name = name.join "/"
-
-    # Open app
+    if ! name
+      txt = Dir.new("/Applications/").entries.select{|o| o !~ /^\./}.map{|o| "#{o[/(.+)\.app$/, 1]}/"}
+      return txt
+    end
 
     command = "open \"/Applications/#{name}.app\""
     Console.sync command

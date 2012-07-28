@@ -66,6 +66,23 @@ class Bootstrap
               - span4/
                 - h1 icon/random
                 - p/sit lorem...
+        - shorthand/
+          - @bootstrap/
+            - hero/
+              > Shorthand
+              p/Lines starting with ">" at left margin will have rows and spans auto-wrapped around them.
+
+            > o random
+            lorem...
+            > o random
+            lorem...
+
+            > o random
+            lorem...
+            > o random
+            lorem...
+            > o random
+            lorem...
         - with styled hero/
           - @bootstrap/
             - hero/
@@ -282,9 +299,7 @@ class Bootstrap
       orig.go
       txt = txt.unindent
 
-      bootstrap = Bootstrap.new txt
-      bootstrap.to_html
-      txt = bootstrap.wrap_html_page
+      txt = self.process txt
 
       return Browser.html txt
     end
@@ -319,6 +334,67 @@ class Bootstrap
     @txt = txt
   end
 
+  #
+  # If any >... lines at left margin, interpret them as h1's and assume
+  # we want to auto-wrap in row/spanN/ items.
+  #
+  # If any >... lines indented, just wrap in h1.
+  #
+  def self.expand_wiki_headings txt
+
+    # Always simply wrap >... lines that are indented...
+    txt.gsub! /( +)> /, "\\1h1/"
+
+    return if txt !~ /^> /   # If no >... lines at left margin, we're done (because only they have are meant to be wrapped)
+
+    # Pre-process to deal with >... lines...
+
+    row_i = 0
+    row_hash = {0=>0}   # example: 0=>2, 1=>2
+    lines = txt.split "\n"
+
+    # Preprocess to see how many spans there will be for each row...
+
+    no_h1_yet = true
+    lines.each do |l|
+      if l =~ /^> /   # If >..., increase count in hash
+        row_hash[row_i] += 1
+        no_h1_yet = false
+      elsif no_h1_yet   # Leave items before first >... alone
+        next
+      elsif l =~ /^$/
+        row_i += 1
+        row_hash[row_i] = 0
+      end
+    end
+
+    # Go through each, wrapping and adding h1/ and p/
+
+    txt.replace ""
+
+    no_h1_yet = true
+    row_i = 0
+    lines.each do |l|
+      if l =~ /^> (\w )?(.+)/   # If >..., increase count in hash
+        icon, heading = $1, $2
+        width = 12 / row_hash[row_i]
+        txt << "row/\n" if no_h1_yet   # If first unindented >..., add initial row
+        no_h1_yet = false
+        next txt.<< "  span#{width}/\n    h1 #{icon.strip}/#{heading}\n" if icon
+        txt << "  span#{width}/\n    h1/#{heading}\n"
+      elsif no_h1_yet   # Leave items before first >... alone
+        txt << "#{l}\n"
+        next
+      elsif l =~ /^$/
+        row_i += 1
+        txt << "row/\n"
+      else   # Content, so add paragraph
+        txt << "    p/#{l}\n"
+      end
+    end
+
+  end
+
   def to_html
 
     # Pre-process the text
@@ -327,6 +403,8 @@ class Bootstrap
 
     # Remove |#... comments
     @txt.gsub! /^ *\|# .+\n/, ''
+
+    Bootstrap.expand_wiki_headings @txt
 
     # Wrap "- container/" around all, unless already a container
     if @txt !~ /^ *([+-] )?container\// && @txt !~ /^ *([+-] )?<div.+class=.container\b/
@@ -351,7 +429,7 @@ class Bootstrap
 
     # Add random icons in <h1 icon> tags.
 
-    @html.gsub!(/<h1 icon>/) { |o| "<h1> #{Bootstrap.icon_tag @@icons[rand(93)]}" }
+    @html.gsub!(/<h1 (\w+)>/) { |o| "<h1> #{Bootstrap.icon_tag @@icons[rand(93)]}" }
 
     # Make all lines within <icon> tags become icons.
 
@@ -479,6 +557,12 @@ class Bootstrap
       `.gsub(/^      /, '')
 
     result
+  end
+
+  def self.process txt
+    bootstrap = Bootstrap.new txt
+    bootstrap.to_html
+    bootstrap.wrap_html_page
   end
 
 end

@@ -54,7 +54,6 @@ class KeyBindings
 
     Keys.as_window { View.save }   # remember window configuration as name
     Keys.as_you { Clipboard.as_thing }   # copy object / symbol at point
-    Keys.as_xill { Clipboard.cut(0); Location.as_spot('killed') }   # Here redundantly with as+kill, to be like C-x for cut
 
     # Y
     # Z
@@ -95,7 +94,7 @@ class KeyBindings
     Keys.open_just { Files.open_just }
     Keys.open_key { Keys.jump_to_code }   # jump to ruby code of key definition
     Keys.open_list_appointments { View.bar; Launcher.open("- Agenda.menu/") }
-    Keys.open_list_bookmarks { Launcher.open("- Bookmarks.list/") }
+    Keys.open_list_bookmarks { Launcher.open("bookmarks/list/") }
     Keys.open_list_clipboard { Launcher.open("clipboard/log/") }
     #     Keys.open_last_error { Code.show_el4r_error }
     Keys.open_list_faces { Styles.list_faces }
@@ -159,13 +158,13 @@ class KeyBindings
     Keys.enter_all { Launcher.enter_all }
     Keys.enter_bullet { Notes.bullet }
     Keys.enter_clipboard { Clipboard.paste("0") }   # paste
-    Keys.enter_difflog { DiffLog.enter_from_difflog }   # Save point and go to difflog to search
+    Keys.enter_docs { Line.enter_docs }
     # E: defined above - mapped to what C-e does by default
     Keys.enter_file_path { Files.enter_file }   # Given a bookmark
     Keys.enter_firefox_tabs { Launcher.insert('- Firefox.tabs/') }   # Given a bookmark
-    Keys.enter_history { History.enter_history }   # enter recently viewed files
+    Keys.enter_history { DiffLog.enter_from_difflog }   # Save point and go to difflog to search
     Keys.enter_insert_1 { Notes.enter_do_bullet }    # insert date string (and time if C-u)
-    Keys.enter_insert_date { View.enter_date }    # insert date string (and time if C-u)
+    Keys.enter_insert_date { View.enter_date }
     Keys.enter_insert_comment { Code.enter_insert_comment }    # insert date string (and time if C-u)
     Keys.enter_insert_new { DiffLog.enter_new }   # Enter Old: enter newly-deleted from last save
     Keys.enter_insert_ruby { code = Keys.input(:prompt=>"Enter ruby code to eval and insert results: "); View.insert(eval(code).to_s)}
@@ -190,12 +189,13 @@ class KeyBindings
     #     Keys.enter_last_log { Launcher.insert(Keys.prefix_u ? "- last/" : "- log/") }
     #     Keys.enter_last_launched { Launcher.enter_last_launched }
     Keys.enter_list_ruby { Launcher.insert("technologies/ruby/") }
-    Keys.enter_like_test { Specs.enter_as_rspec }
-    #     Keys.enter_log_time { Code.enter_log_time }
+    #     Keys.enter_like_test { Specs.enter_as_rspec }
+    Keys.enter_log_time { Code.enter_log_time }
     Keys.enter_like_url { Firefox.enter_as_url }
     Keys.enter_like_variable { insert "\#{#{Clipboard.get(0)}}" }
 
     Keys.enter_menu { Xiki.insert_menu }   # Redundant with C-enter on blank line
+    Keys.enter_note { Notes.enter_do_bullet }   # Redundant with C-enter on blank line
     Keys.enter_outline { Launcher.enter_outline }   # in tree, enter methods or headings
 
     Keys.enter_push { Gito.code_tree_diff(:enter=>true) }   # Commit to repos, push, etc
@@ -209,7 +209,6 @@ class KeyBindings
     Keys.enter_tree { FileTree.tree(:here=>true) }
     Keys.enter_upper { View.enter_upper }
     Keys.enter_value { Clipboard.paste }
-    Keys.enter_name { Clipboard.paste }   # For now
     # W
     Keys.enter_whitespace { Code.enter_whitespace }
     # X
@@ -295,13 +294,13 @@ class KeyBindings
         delete_non_matching_lines( Keys.input(:prompt => "Delete lines not having: ") )
       end
     }
-    Keys.do_lines_jumble { Code.randomize_lines }   # Shuffle lines
     Keys.do_linebreaks_linux { $el.set_buffer_file_coding_system :unix }
     Keys.do_line_next { Line.move :next }
+    Keys.do_lines_order { Line.do_lines_sort }
     Keys.do_line_previous { Line.move(:previous) }
-    Keys.do_lines_reverse { $el.reverse_region(region_beginning, region_end) }
+    Keys.do_lines_reverse { $el.reverse_region($el.region_beginning, $el.region_end) }
+    Keys.do_lines_shuffle { Code.randomize_lines }   # Shuffle lines
 
-    Keys.do_lines_sort { Line.do_lines_sort }
     Keys.do_lines_toggle { Line.do_lines_toggle }   # Swap next N lines
 
     Keys.do_lines_unique { Code.kill_duplicates }   # Uniqify, delete duplicates
@@ -318,6 +317,7 @@ class KeyBindings
     Keys.do_push { Gito.code_tree_diff }   # Commit to repos, push, etc
     Keys.do_query { Search.query_replace }   # do query replace
     Keys.do_run { Code.run }   # run code as ruby
+    $el.define_key :global_map, $el.kbd("C-d C-s"), :cua_set_rectangle_mark   # Keys.do_several
     Keys.do_tree { FileTree.tree(:recursive=>true) }   # draw filesystem tree for current dir or bookmark
     Keys.do_upper { Launcher.do_last_launch }
     Keys.do_viewing { Buffers.open_viewing }   # Not great fit here
