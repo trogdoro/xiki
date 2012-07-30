@@ -84,11 +84,7 @@ class XikiCommand
 
         @@initial_request = path
         xiki_process = "#{xiki_root}/etc/command/xiki_process.rb"
-        Daemons.run xiki_process, :ARGV=>['start'], :monitor=>false, :multiple=>false #, :app_name=>'xiki'
-        #         Daemons.run '../etc/command/xiki_process.rb', :ARGV=>['start'], :monitor=>false, :multiple=>false #, :app_name=>'xiki'
-        #         Daemons.run 'etc/process/xiki_process.rb', :ARGV=>['start'], :monitor=>false, :multiple=>false #, :app_name=>'xiki'
-        #         Daemons.run '../etc/process/xiki_process.rb', :ARGV=>['start'], :monitor=>false, :multiple=>false #, :app_name=>'xiki'
-        #         Daemons.run 'xiki_daemon.rb', :ARGV=>['start'], :monitor=>false, :multiple=>false #, :app_name=>'xiki'
+        Daemons.run xiki_process, :ARGV=>['start'], :monitor=>false, :multiple=>false, :dir_mode=>:normal, :dir=>"/tmp/", :log_dir=>"/tmp/", :log_output=>true
 
         # Aparently this line never gets reached
         "- Started the process, I think."
@@ -99,8 +95,6 @@ class XikiCommand
 
       rescue Exception=>e
         puts "- service couldn't start!"
-
-        #rescue ... <Errno::EACCES: Permission denied - /projects/xiki/etc/command/xiki_process.rb.pid>!
       end
     end
 
@@ -177,7 +171,7 @@ class XikiCommand
     require 'daemons'
     xiki_root = File.expand_path "#{File.dirname(__FILE__)}/../.."
     xiki_process = "#{xiki_root}/etc/command/xiki_process.rb"
-    Daemons.run(xiki_process, :ARGV=>[action])
+    Daemons.run xiki_process, :ARGV=>[action], :dir_mode=>:normal, :dir=>"/tmp/", :log_dir=>"/tmp/", :log_output=>true
     ""
   end
 

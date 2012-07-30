@@ -1,6 +1,29 @@
-## Summary
+# Summary
 This file tells how to install Xiki.  See http://xiki.org for a description of Xiki.
 
+Either install as a gem, or install from github.
+
+# Install Xiki
+
+## As a gem
+
+      $ gem install xiki
+
+## From github
+
+      $ git clone git@github.com:trogdoro/xiki.git
+      $ cd xiki
+      $ bundle install --system
+      $ cp <xiki dir>/etc/command/xiki_wrapper /usr/local/bin/xiki
+      $ chmod 755 /usr/local/bin/xiki
+
+# Verify the 'xiki' command works
+
+      $ xiki
+
+# Configure Emacs to use Xiki
+
+If you're going to use Xiki with Emacs, do these steps:
 
 ## Step 1: Download Emacs
 
@@ -16,9 +39,8 @@ This file tells how to install Xiki.  See http://xiki.org for a description of X
       $ sudo apt-get install emacs
 
 
-## Step 2: Install the EmacsRuby (el4r) gem
+## Step 2: Do extra EmacsRuby (el4r) steps
 
-      $ sudo gem install el4r
       $ gem contents el4r | grep setup.rb   # To see which dir to cd to in the next step
       $ cd /Library/Ruby/Gems/1.8/gems/el4r-1.0.4/
       $ ruby setup.rb
@@ -26,27 +48,16 @@ This file tells how to install Xiki.  See http://xiki.org for a description of X
       $ ruby -S el4r-rctool -p
       $ sudo ruby -S el4r-rctool -i
 
-## Step 3: Get Xiki from github
-- Option 1: Download as zip
-  - Click on the 'ZIP' button on http://github.com/trogdoro/xiki
-- Option 2: Clone repo
-  - git clone git@github.com:trogdoro/xiki.git
+## Step 3: Require Xiki in EmacsRuby's config
+Sample configuration:
 
+      ~/.el4r/init.rb:
+        $LOAD_PATH.unshift "/projects/xiki/lib"
+        require 'xiki'
+        Xiki.init
 
-## Step 4: Require Xiki in EmacsRuby's config
-- Sample configuration
-  - ~/.el4r/init.rb
-    | $LOAD_PATH.unshift "/projects/xiki"
-    | require 'xiki'
-    | Xiki.init
-    |
-    | KeyBindings.keys   # Use default key bindings
-    | Styles.use_xiki_color_scheme   # Use xiki's color scheme
-
-
-## Step 5: Install dependant packages
-- In the xiki dir, run:
-$ bundle install --system
+        KeyBindings.keys   # Use default key bindings
+        Styles.use_xiki_color_scheme   # Use xiki's color scheme
 
 
 ## Trouble-shooting

@@ -1183,11 +1183,9 @@ class Launcher
     path.sub! /\/$/, ''
     Console.run "rake #{path}", :dir=>dir
     nil
-
   end
 
   def self.reload_menu_dirs
-Ol.stack
     MENU_DIRS.each do |dir|
       next unless File.directory? dir
 
@@ -1318,7 +1316,7 @@ def require_menu file, options={}
     raise "File Not Found" if !File.exists?(file)
   end
 
-  stem = file[/(\w+)\./, 1]
+  stem = File.basename(file)[/\A(.*)\.[^.]+\z/, 1]
 
   # As .menu...
 

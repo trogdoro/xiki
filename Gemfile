@@ -9,3 +9,5 @@ gem 'net-ssh'
 gem 'net-ssh'
 gem 'rspec'
 gem 'memcached'
+gem 'el4r'
+

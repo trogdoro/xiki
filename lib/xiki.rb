@@ -39,8 +39,8 @@ class Xiki
         | Double-click on these lines to add the executable 'xiki' command to
         | your path:
         |
-        @$ chmod 755 #{Xiki.dir}etc/command/xiki
-        @% sudo ln -s #{Xiki.dir}etc/command/xiki /usr/local/bin/xiki
+        @$ cp #{Xiki.dir}etc/command/xiki_wrapper /usr/local/bin/xiki
+        @$ chmod 755 /usr/local/bin/xiki
         |
         | Then you can type 'xiki' on a command line outside of emacs as a
         | shortcut to opening xiki and opening menus, like so:
