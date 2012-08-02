@@ -13,7 +13,7 @@ class WebServer
       xiki_dir = File.expand_path "#{File.dirname(__FILE__)}/../.."
 
       $:.unshift "#{xiki_dir}/lib"
-      ["lib/core_ext", "lib/line", "lib/tree", "menus/bootstrap"].each{|o| require "#{xiki_dir}/#{o}"}
+      ["xiki/ol", "xiki/core_ext", "xiki/line", "xiki/tree", "../../menus/bootstrap"].each{|o| require o}
 
       txt.slice! /.+\n/
       txt = txt.unindent
@@ -243,7 +243,6 @@ class WebServer
   end
 
   def self.index
-
     no_keys = false
 
     if ENV['REQUEST_METHOD'] == "POST"
@@ -338,8 +337,6 @@ class WebServer
 
     txt = self.htmlify txt, :no_keys=>no_keys
     print txt
-
-    # print "<pre>#{ENV.keys.map{|k| "#{k}: #{ENV[k]}"}.join("\n")}</pre>"
 
   rescue Exception=>e
     puts "<pre>#{e.message}\n#{e.backtrace}</pre>"

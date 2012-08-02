@@ -16,31 +16,18 @@
 require 'rubygems'
 
 # Generate with correct path (see below)
-# xiki_dir = "/projects/xiki/"
 xiki_dir = File.expand_path "#{File.dirname(__FILE__)}/.."
-# p "xiki_dir: #{xiki_dir.inspect}"
 
-# $:.unshift xiki_dir #.sub(/\/$/, '')
 $:.unshift "#{xiki_dir}/lib" #.sub(/\/$/, '')
 
-# require "#{xiki_dir}/ol"
-require "ol"
-# Ol.line
-require "core_ext"
+require "xiki/ol"
+require "xiki/core_ext"
 
 $:.unshift "#{xiki_dir}/etc/command"
-# $:.unshift "#{xiki_dir}etc/command/stubs"
 
 require "xiki_command.rb"
-# load "xiki_command.rb"
 
 result = XikiCommand.run
 puts result if result != ""
 
 exit 0
-
-# TODO: Start with template, and when installing, change:
-  # - #!.. line to: result of: `which ruby`
-  # - xiki_dir to: Xiki.dir
-
-

@@ -1,10 +1,6 @@
-# Don't hard-code, generate with script? - or use __file path xiki env var!
-require '/projects/xiki/lib/ol'
-require 'core_ext'
-
-require 'menu'
-
-require 'launcher'
+require 'xiki/core_ext'
+require 'xiki/menu'
+require 'xiki/launcher'
 
 Xiki.init
 

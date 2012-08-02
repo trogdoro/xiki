@@ -1,4 +1,4 @@
-require "launcher"
+require 'xiki/launcher'
 
 class Merb
 

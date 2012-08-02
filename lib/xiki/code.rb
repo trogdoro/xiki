@@ -1,4 +1,4 @@
-require 'block'
+require 'xiki/block'
 require 'stringio'
 gem 'ruby2ruby'
 require 'ruby2ruby'

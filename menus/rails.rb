@@ -1,4 +1,4 @@
-require "ruby_console"
+require 'xiki/ruby_console'
 
 class Rails
 

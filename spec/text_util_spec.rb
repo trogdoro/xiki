@@ -1,5 +1,5 @@
 $:.unshift "spec/"
-require 'text_util'
+require 'xiki/text_util'
 
 describe TextUtil, "#unindent" do
   it "indents to the left" do

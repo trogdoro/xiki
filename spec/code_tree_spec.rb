@@ -1,6 +1,6 @@
 $:.unshift "spec/"
 require 'xiki'
-require 'code_tree'
+require 'xiki/code_tree'
 # require 'core_ext'
 
 describe CodeTree, "#extract_class" do

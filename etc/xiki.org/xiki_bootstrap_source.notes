@@ -77,9 +77,7 @@ bootstrap/
           - p/
             Go to
             <a href="http://github.com/trogdoro/xiki">github.com/trogdoro/xiki</a>
-            to check out the code and
-            <a href="http://github.com/trogdoro/xiki/tree/master/INSTALL.txt">install</a>
-            Xiki.
+            to check out the code and install Xiki.
         - span4/
           - h1/
             - icon/043_group

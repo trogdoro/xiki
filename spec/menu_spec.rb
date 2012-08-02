@@ -1,12 +1,12 @@
 $:.unshift "spec/"
-require 'ol'
-require 'tree'
-require 'core_ext'
-require 'mode'
+require 'xiki/ol'
+require 'xiki/tree'
+require 'xiki/core_ext'
+require 'xiki/mode'
 class Mode
   def self.define *args; end
 end
-require 'menu'
+require 'xiki/menu'
 
 describe Menu, "#split" do
   it "splits normal strings" do

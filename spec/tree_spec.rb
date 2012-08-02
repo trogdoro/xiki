@@ -1,7 +1,7 @@
 $:.unshift "spec/"
-require 'ol'
-require 'tree'
-require 'core_ext'
+require 'xiki/ol'
+require 'xiki/tree'
+require 'xiki/core_ext'
 
 describe Tree, "#traverse" do
 

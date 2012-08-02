@@ -10,7 +10,8 @@ class Mac
       @/Users/
       @/Applications/
       @/Applications/Utilities/
-      @ ~/Library/Fonts/
+      @~/Library/Fonts/
+      @/System/Library/CoreServices/
     - api/
       | Define standard mac shortcuts
       @ Mac.define_keys
@@ -30,6 +31,8 @@ class Mac
   #   Mac.keys_for_aquamacs
   #
   def self.keys_for_aquamacs
+
+    return if ! $el.boundp(:osx_key_mode_map)
 
     $el.define_key(:osx_key_mode_map, $el.kbd("A-0")) { Styles.font_size 110 }
     $el.define_key(:osx_key_mode_map, $el.kbd("A-=")) { Styles.zoom }

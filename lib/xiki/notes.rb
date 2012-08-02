@@ -1,9 +1,9 @@
-require 'styles'
-require 'line'
-require 'effects'
-require 'view'
-require 'keys'
-require 'clipboard'
+require 'xiki/styles'
+require 'xiki/line'
+require 'xiki/effects'
+require 'xiki/view'
+require 'xiki/keys'
+require 'xiki/clipboard'
 
 class Notes
 
@@ -816,32 +816,45 @@ class Notes
 
   def self.enter_do_bullet
 
-    txt = Keys.input :chars=>1, :prompt=>'Enter a character: '
-    expanded = Notes.expand_if_action_abbrev txt
-
     # If on blank line, just insert it
+    indent = ""
     if ! Line.blank?
       line = Line.value
       indent, first_char = line.match(/^( *)(.)/)[1..2]
 
       Move.to_axis
-      $el.open_line(1)
+      $el.open_line 1
     end
 
-    if txt == " "
-      View << "#{indent}- !"
-      ControlLock.disable
-      return View.column = -1
-    end
+    Line << "#{indent}- !"
+    Move.backward
 
+    txt = Keys.input :chars=>1, :prompt=>'Enter a character: '
+    expanded = Notes.expand_if_action_abbrev txt
+
+    View << (expanded || txt)
+
+    # If wasn't expanded prepare to edit
+    ControlLock.disable if ! expanded
+
+# return
     if expanded
-      View << "#{indent}- #{expanded}!"
       Line.to_beginning
     else
       View << "#{indent}- !"
       Move.backward
       View << txt
     end
+
+# return
+
+
+    #     if txt == " "
+    #       View << "#{indent}- !"
+    #       ControlLock.disable
+    #       return View.column = -1
+    #     end
+
 
     nil
   end

@@ -1,4 +1,4 @@
-require 'keys'
+require 'xiki/keys'
 
 class PauseMeansSpace
 

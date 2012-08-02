@@ -1,6 +1,6 @@
 $:.unshift "spec/"
-require 'file_tree'
-require 'core_ext'
+require 'xiki/file_tree'
+require 'xiki/core_ext'
 
 
 describe "handles?" do

@@ -342,7 +342,7 @@ class Menu
   end
 
   def self.call root, rest=nil
-    root = root.gsub /[- +]/, '_'
+    root = root.gsub /[ +]/, '_'
     menus = Launcher.menus
     block = menus[0][root] || menus[1][root]
     return if block.nil?

@@ -1,7 +1,7 @@
 $:.unshift "spec/"
-require 'line'
-require 'ol'
-require 'core_ext'
+require 'xiki/line'
+require 'xiki/ol'
+require 'xiki/core_ext'
 
 def define_vars
   @stack = [

@@ -1,9 +1,9 @@
-require 'styles'
-require 'line'
-require 'view'
+require 'xiki/styles'
+require 'xiki/line'
+require 'xiki/view'
 require 'net/http'
 require 'uri'
-require 'cursor'
+require 'xiki/cursor'
 
 # Draws a tree from a dir structure and lets you incrementally search in the tree.
 # Usage (user):

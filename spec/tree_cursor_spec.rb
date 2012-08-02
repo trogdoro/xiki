@@ -1,7 +1,7 @@
 $:.unshift "spec/"
-require 'core_ext'
-require 'tree_cursor'
-require 'ol'
+require 'xiki/core_ext'
+require 'xiki/tree_cursor'
+require 'xiki/ol'
 
 def a_aa_tree
   "

@@ -1,4 +1,4 @@
-require 'core_ext'
+require 'xiki/core_ext'
 
 class Requirer
   def self.show txt

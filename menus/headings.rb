@@ -1,6 +1,6 @@
-require 'view'
-require 'line'
-require 'effects'
+require 'xiki/view'
+require 'xiki/line'
+require 'xiki/effects'
 
 class Headings
 

@@ -1,5 +1,5 @@
-require 'location'
-require 'keys'
+require 'xiki/location'
+require 'xiki/keys'
 require 'yaml'
 
 class Bookmarks

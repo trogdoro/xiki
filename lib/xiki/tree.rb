@@ -1,4 +1,4 @@
-require 'tree_cursor'
+require 'xiki/tree_cursor'
 
 class Tree
   def self.menu

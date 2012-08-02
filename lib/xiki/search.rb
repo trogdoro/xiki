@@ -1,7 +1,7 @@
-require "hide"
-require 'control_lock'
-require 'line'
-require 'text_util'
+require 'xiki/hide'
+require 'xiki/control_lock'
+require 'xiki/line'
+require 'xiki/text_util'
 
 class Search
 
@@ -1113,7 +1113,7 @@ class Search
 
     char = Keys.input(:chars=>1, :prompt=>"Enter one char: ")
     if char == "m"
-      Launcher.open("- $x/\n  - ##\\bdef /")
+      Launcher.open("- $x/lib/xiki/\n  - ##\\bdef /")
     elsif char == "k"
       Launcher.open("- $x/key_bindings.rb\n  - ##\\bKeys\\./")
     elsif char == "l"

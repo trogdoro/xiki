@@ -1,4 +1,4 @@
-require 'text_util'
+require 'xiki/text_util'
 
 class Array
   def blank?

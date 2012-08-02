@@ -1,5 +1,5 @@
-require 'line'
-require 'ol'
+require 'xiki/line'
+require 'xiki/ol'
 
 class TextUtil
 

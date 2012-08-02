@@ -1,11 +1,11 @@
-XIKI_ROOT = File.expand_path "#{File.dirname(__FILE__)}/.."
-Dir.chdir(XIKI_ROOT)
+xiki_dir = File.expand_path "#{File.dirname(__FILE__)}/.."
+Dir.chdir xiki_dir
 
 # Used by a lot of classes
 class Xiki
   @@dir = "#{Dir.pwd}/"   # Store current dir when xiki first launches
 
-  # TODO Just use XIKI_ROOT from above?
+  # TODO Just use XIKI_DIR from above?
 
   def self.dir
     @@dir
@@ -15,16 +15,18 @@ end
 
 $el.el4r_lisp_eval '(ignore-errors (kill-buffer "Issues Loading Xiki"))' if $el
 
+# $LOAD_PATH << "#{xiki_dir}/lib"
+
 # Require some of the core files
-require 'trouble_shooting'
 require 'rubygems'
-require 'ol'
-require 'requirer'
-require 'text_util'
-Requirer.require_classes ['notes']
-require 'launcher'
-require 'mode'
-require 'menu'
+require 'xiki/trouble_shooting'
+require 'xiki/ol'
+require 'xiki/requirer'
+require 'xiki/text_util'
+Requirer.require_classes ['xiki/notes']
+require 'xiki/launcher'
+require 'xiki/mode'
+require 'xiki/menu'
 
 # Launcher.add_class_launchers classes
 class Xiki
@@ -73,6 +75,7 @@ class Xiki
         - start/
         - stop/
         - restart/
+        - log/
     - api/
       > Summary
       Here are some functions that will always be available to menu classes,
@@ -343,11 +346,10 @@ class Xiki
   def self.init
     # Get rest of files to require
 
-    classes = Dir["lib/*.rb"]
-Ol << "classes: #{classes.inspect}"
+    classes = Dir["lib/xiki/*.rb"]
     classes = classes.select{|i|
-      i !~ /xiki.rb$/ &&   # Remove self
-      i !~ /key_bindings.rb$/ &&   # Remove key_bindings
+      i !~ /\/xiki.rb$/ &&   # Remove self
+      i !~ /\/key_bindings.rb$/ &&   # Remove key_bindings
       i !~ /__/   # Remove __....rb files
     }
 
@@ -362,15 +364,13 @@ Ol << "classes: #{classes.inspect}"
 
     classes.map!{|i| i.sub(/\.rb$/, '')}.sort!
 
-Ol << "classes: #{classes.inspect}"
-
     # Require classes
     Requirer.require_classes classes
 
     # key_bindings has many dependencies, require it last
-    Requirer.require_classes ['lib/key_bindings.rb']
+    Requirer.require_classes ['lib/xiki/key_bindings.rb']
 
-    Launcher.add_class_launchers classes.map{|o| o[/\/(.+)/, 1]}
+    Launcher.add_class_launchers classes.map{|o| o[/.*\/(.+)/, 1]}
     Launcher.reload_menu_dirs
 
     Launcher.add "xiki"
@@ -395,6 +395,8 @@ Ol << "classes: #{classes.inspect}"
       response = `xiki restart`
       response = "apparently it wasn't running" if response.blank?
       response.gsub /^/, '- '
+    when "log"
+      "@/tmp/xiki_process.rb.output"
     when "start"
       result = `xiki`
       "- started!"

@@ -1,7 +1,7 @@
-require 'pause_means_space'
-require 'line'
-require 'text_util'
-require 'launcher'
+require 'xiki/pause_means_space'
+require 'xiki/line'
+require 'xiki/text_util'
+require 'xiki/launcher'
 
 # Methods for defining keyboard shortcuts
 class Keys
@@ -461,7 +461,7 @@ class Keys
     end
 
     file, line = Code.location_from_proc proc
-    file = "#{XIKI_ROOT}/#{file}" unless file =~ /^\//
+    file = "#{Xiki.dir}#{file}" unless file =~ /^\//
     Location.go(file)
     View.to_line line.to_i
     Effects.blink(:what=>:line)

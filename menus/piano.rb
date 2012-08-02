@@ -1,6 +1,6 @@
 Requirer.require_gem 'midiator', :optional=>1
 
-require "mode"
+require 'mode'
 
 class Piano
 

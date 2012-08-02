@@ -1,5 +1,5 @@
-require 'effects'
-require 'requirer'
+require 'xiki/effects'
+require 'xiki/requirer'
 
 require 'xiki'
 
@@ -653,13 +653,14 @@ class Launcher
     end
 
     Launcher.add /^[a-z]+\+[a-z+]+\/?$/ do |path|
-      Tree << %`
+      txt = %`
         | If you were told to "type #{path}", it is meant that you should
-        | "type the acronym" while holding down control. This means Meaning
+        | "type the acronym" while holding down control. This means
         | you should type:
         |
         |   #{Keys.human_readable(path)}
         `
+      Tree.<< txt, :no_slash=>1
     end
 
     # Menu launchers
@@ -948,6 +949,7 @@ class Launcher
   end
 
   def self.add_class_launchers classes
+
     classes.each do |clazz|
       next if clazz =~ /\//
 

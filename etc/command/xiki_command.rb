@@ -19,7 +19,7 @@ class XikiCommand
   # Called by the 'xiki' shell command
   def self.run
 
-    xiki_root = File.expand_path "#{File.dirname(__FILE__)}/../.."
+    xiki_dir = File.expand_path "#{File.dirname(__FILE__)}/../.."
     argv = ARGV
 
     if argv.empty?
@@ -83,7 +83,7 @@ class XikiCommand
         pid_orig = Process.pid
 
         @@initial_request = path
-        xiki_process = "#{xiki_root}/etc/command/xiki_process.rb"
+        xiki_process = "#{xiki_dir}/etc/command/xiki_process.rb"
         Daemons.run xiki_process, :ARGV=>['start'], :monitor=>false, :multiple=>false, :dir_mode=>:normal, :dir=>"/tmp/", :log_dir=>"/tmp/", :log_output=>true
 
         # Aparently this line never gets reached
@@ -94,7 +94,7 @@ class XikiCommand
         process_succeeded = true
 
       rescue Exception=>e
-        puts "- service couldn't start!"
+        puts "- service couldn't start!:#{e.message}\n#{e.backtrace.join("\n")}\n\n"
       end
     end
 
@@ -169,8 +169,8 @@ class XikiCommand
 
   def self.ctrl action
     require 'daemons'
-    xiki_root = File.expand_path "#{File.dirname(__FILE__)}/../.."
-    xiki_process = "#{xiki_root}/etc/command/xiki_process.rb"
+    xiki_dir = File.expand_path "#{File.dirname(__FILE__)}/../.."
+    xiki_process = "#{xiki_dir}/etc/command/xiki_process.rb"
     Daemons.run xiki_process, :ARGV=>[action], :dir_mode=>:normal, :dir=>"/tmp/", :log_dir=>"/tmp/", :log_output=>true
     ""
   end

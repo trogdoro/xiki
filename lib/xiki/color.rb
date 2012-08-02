@@ -1,5 +1,5 @@
-require 'effects'
-require 'styles'
+require 'xiki/effects'
+require 'xiki/styles'
 
 # Colors lines, and shows only colored lines
 class Color

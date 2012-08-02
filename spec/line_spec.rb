@@ -1,6 +1,6 @@
 $:.unshift "spec/"
-require 'line'
-require 'core_ext'
+require 'xiki/line'
+require 'xiki/core_ext'
 
 describe Line, "#without_label" do
   it "removes bullets" do

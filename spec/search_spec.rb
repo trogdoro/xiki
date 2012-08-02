@@ -1,6 +1,6 @@
 $:.unshift "spec/"
-require 'search'
-require 'core_ext'
+require 'xiki/search'
+require 'xiki/core_ext'
 
 describe Search, "#case_options" do
   it "should initialize" do

@@ -1,5 +1,5 @@
-require 'keys'
-require 'file_tree'
+require 'xiki/keys'
+require 'xiki/file_tree'
 
 # Provides copy and paste functionality
 class Clipboard
