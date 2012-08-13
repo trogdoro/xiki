@@ -6,8 +6,9 @@ gem 'httparty'
 gem 'activesupport'
 gem 'method_source'
 gem 'net-ssh'
-gem 'net-ssh'
+gem 'net-sftp'
 gem 'rspec'
 gem 'memcached'
 gem 'el4r'
 
+gem 'rspec', :group => [:development, :test]
