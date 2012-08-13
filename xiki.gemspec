@@ -32,7 +32,7 @@ Gem::Specification.new do |s|
   #     current_version = Gem::Specification::CURRENT_SPECIFICATION_VERSION
   #     s.specification_version = 3
 
-  s.add_development_dependency("rspec", ["~> 2.3.0"])
+  s.add_development_dependency "rspec"
   s.add_dependency 'ruby2ruby'
   s.add_dependency 'ParseTree'
   s.add_dependency 'httparty'
