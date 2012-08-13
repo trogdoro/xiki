@@ -1,3 +1,4 @@
+# -*- encoding : iso-8859-1 -*-
 #
 # Represents a division of a window (in emacs terms, it's a window (which is within a frame))
 #
