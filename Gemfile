@@ -10,5 +10,6 @@ gem 'net-sftp'
 gem 'rspec'
 gem 'memcached'
 gem 'el4r'
+gem 'rake'
 
 gem 'rspec', :group => [:development, :test]
