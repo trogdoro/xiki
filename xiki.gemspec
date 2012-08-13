@@ -33,5 +33,17 @@ Gem::Specification.new do |s|
   #     s.specification_version = 3
 
   s.add_development_dependency("rspec", ["~> 2.3.0"])
+  s.add_dependency 'ruby2ruby'
+  s.add_dependency 'ParseTree'
+  s.add_dependency 'httparty'
+  s.add_dependency 'activesupport'
+  s.add_dependency 'method_source'
+  s.add_dependency 'net-ssh'
+  s.add_dependency 'net-sftp'
+  s.add_dependency 'memcached'
+  s.add_dependency 'el4r'
+  s.add_dependency 'rake'
+  s.add_dependency 'daemons'
+
 
 end
