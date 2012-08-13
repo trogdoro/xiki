@@ -1,12 +1,13 @@
 # Don't hard-code, generate with script? - or use __file path xiki env var!
-require '/projects/xiki/lib/ol'
-require 'core_ext'
+require File.dirname(__FILE__) + '/../../lib/ol'
+require 'active_support/core_ext'
 
 require 'menu'
 
 require 'launcher'
 
-Xiki.init
+# this init is not needed here
+#Xiki.init
 
 # Make named pipes for input and output
 
