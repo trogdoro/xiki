@@ -1,15 +1,15 @@
 # Summary
-This file tells how to install Xiki.  See http://xiki.org for a description of Xiki.
-
-Either install as a gem, or install from github.
+This file shows how to install Xiki.  See http://xiki.org for a description of Xiki.
 
 # Install Xiki
 
+Either install as a gem, or install from github.
+
 ## As a gem
 
-      $ gem install xiki
+      $ gem install xiki --pre
 
-## From github
+## Or, from github
 
       $ git clone git@github.com:trogdoro/xiki.git
       $ cd xiki
@@ -17,76 +17,96 @@ Either install as a gem, or install from github.
       $ cp <xiki dir>/etc/command/xiki_wrapper /usr/local/bin/xiki
       $ chmod 755 /usr/local/bin/xiki
 
-# Verify the 'xiki' command works
+# Verify the 'xiki' shell command works
 
       $ xiki
 
-# Configure Emacs to use Xiki
+It should delay slightly the first time, but be fast subsequent times.
+
+# Configure your editor to use Xiki
+
+## Emacs
 
 If you're going to use Xiki with Emacs, do these steps:
 
-## Step 1: Download Emacs
+### Step 1: Download Emacs
 
-### On Mac:
-- Try Aquamacs 1.9.1 if you're new to emacs (it's more mac-like)
+#### On Mac:
+- Try Aquamacs if you're new to emacs (it's more mac-like)
   - http://aquamacs.org/download-classic.shtml
+  - works well with rvm, because it loads .bash_login
 - Or
-  - http://emacsformacosx.com/emacs-builds/Emacs-22.3-i386-10.5.7.dmg
-- Note: newer mac versions (after 22) have a bug that makes communicating with processes 1000 times slower.  Til this is fixed stick with the above versions.
+  - http://emacsformacosx.com
 
-### On Linux:
+#### On Linux:
 
       $ sudo apt-get install emacs
 
+#### On Windows:
 
-## Step 2: Do extra EmacsRuby (el4r) steps
+We just patched el4r, so there's a chance Xiki might work in windows.
 
-      $ gem contents el4r | grep setup.rb   # To see which dir to cd to in the next step
-      $ cd /Library/Ruby/Gems/1.8/gems/el4r-1.0.4/
-      $ ruby setup.rb
-      $ cd bin/
-      $ ruby -S el4r-rctool -p
-      $ sudo ruby -S el4r-rctool -i
+- Skip the 'xiki' shell command step
+- Maybe try this emacs? http://ourcomments.org/Emacs/EmacsW32.html
 
-## Step 3: Require Xiki in EmacsRuby's config
+
+### Step 2: EmacsRuby (el4r) setup
+
+      $ cd <xiki dir>
+      $ sudo bash etc/install/el4r_setup.sh
+
+If you're using rvm, the sudo may not be necessary.
+
+If you're using the xiki gem, you can paste this for the above cd:
+
+      $ cd `dirname \`gem contents xiki | grep Gemfile\``
+
+### Step 3: Require Xiki in EmacsRuby's config
 Sample configuration:
 
       ~/.el4r/init.rb:
-        $LOAD_PATH.unshift "/projects/xiki/lib"
+        $LOAD_PATH.unshift "<xiki dir>/lib"
         require 'xiki'
         Xiki.init
 
         KeyBindings.keys   # Use default key bindings
-        Styles.use_xiki_color_scheme   # Use xiki's color scheme
+        Themes.use "Default"  # Use xiki coloring
 
 
-## Trouble-shooting
-The install is a bit rough at the moment...
+Be sure to substitute "&lt;xiki dir&gt;" with the actual dir.
 
-- If you get an error (and you probably will)
-  - If you got partially through the load
-    - you will be able to use these keys to trouble-shoot:
-      - Option-l to reload xiki and .emacs
-        - also use this when you see "el4r-instance is dead"
-      - Option-e to look at the latest error
-    - It will be Command instead of Option if you're not using Aquamacs
-
-  - Or you can manually restart emacs (or reload .emacs) and look at the log
-    - Named something like: /tmp/el4r......log
+### If you get an error
+If you got partially through the load...
+- You may be able to use these keys to trouble-shoot:
+   - Option+e to look at the latest error in the log
+   - Option+l to reload xiki and .emacs
+      - also use this when you see "el4r-instance is dead"
+- If you can't use the keys, look at the log
+  - Named something like: /tmp/el4r......log
   - Go to the end and search backward for the last error
-    - probably contains ":Error:"
-
-- If you get a "can't find header dir for ruby" error
-  $ sudo apt-get install ruby1.8-dev
-
-- If you run into trouble installing EmacsRuby
-  - See: http://www.rubyist.net/~rubikitch/computer/el4r/index.en.html
-    - Click on 'Download / Install / Setup' link
+     - probably contains ":Error:"
+  - Restart emacs (or reload .emacs) manually to reload
+- See "Issues Loading Xiki" buffer (under "Window" menu bar menu)
 
 
-## Google group
-Join the google group for help with installing, or to chat about whatever or
-share your ideas:
+## Vim
+
+Vim support is very partially implemented, but should be pretty
+straight-forward to implement.  It turns out vim is very easy to
+extend using ruby.  See this file to try it out:
+
+./etc/vim/vim_status.notes
+
+## CodeMirror
+
+There's a simple prototype working, though it's not committed yet.
+
+## Other editors
+Are you in the bay area and savvy at extending your editor (vim, sublime, textmate, rubymine)?  Ping me on the google group and we'll get together and pair on making a Xiki extension for it.
+
+
+# Google group
+Join the google group for help with installing, or to chat about whatever or share your ideas:
 
   http://groups.google.com/group/xiki
 
