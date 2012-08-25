@@ -1,0 +1,32 @@
+> Try it out
+- 1) Add this line, and then restart vim
+  ~/.vimrc
+    | let $XIKI_DIR = "[xiki dir]"
+    | source [xiki dir]/etc/vim/xiki.vim
+
+- 2) Type "ip" on a blank line and double-click on it
+
+
+> If your vim version doesn't have ruby enabled
+The standard macvim download has the ruby.  Compile vim with the --enable-rubyinterp flag installed.
+
+
+> What's implemented
+Just double-clicking on one line and shelling out to 'xiki'
+and inserting the results
+
+
+> What needs to be implemented
+- Making this work for nested paths, like:
+docs/
+  - faq/
+- It needs to climb the path and pass it in to the command
+- Making it collapse when the line underneath it is indented lower
+- Making it incrementally search after commands are inserted
+  - is there a command in vim to read 1 char from the user?
+
+
+> Help out
+Join the xiki google group if you want to help implement this.
+
+If you're in the bay area, hit me up and we can meet at a coffee shop and pair on wraping it up!
