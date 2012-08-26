@@ -1,0 +1,36 @@
+$el.el4r_lisp_eval %`
+  (progn
+
+    (setq-default xiki-status3 nil) (setq-default xiki-status2 nil) (setq-default xiki-status1 nil)
+    (setq-default mode-line-format
+      (quote
+       (
+
+        " "   ; Apparently required
+
+       (:eval
+          (cond
+            ((buffer-modified-p)
+             (propertize "* " 'face 'mode-line-file))
+            (t " ")))
+
+        mode-line-frame-identification
+        "    "
+        "   "
+
+        (:eval (replace-regexp-in-string "^/projects/memorize/memorize.merb/" "$m/" default-directory)
+                             )
+        (:propertize "%b" face mode-line-file)
+
+        ":%l"   ;; Line number
+        "               "
+
+        ;; status1, status2, etc. (in mode line)
+        (:propertize xiki-status1 face quote-heading-small)
+        (:propertize xiki-status2 face quote-heading-small)
+        (:propertize xiki-status3 face dotsies-white)
+        )))
+  )
+  `
+
+
