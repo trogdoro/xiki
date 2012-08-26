@@ -39,7 +39,7 @@ class LocalStorage
     end
 
     if Keys.delete?
-      Firefox.exec "localStorage.removeItem(\"#{key}\")"  #, :jquery=>1
+      Firefox.exec "localStorage.removeItem(\"#{key}\")"
       Tree.to_parent if val
       Tree.kill_under
       View.flash "- deleted!"
@@ -51,7 +51,7 @@ class LocalStorage
     end
 
     if val.nil?   # If just key passed, show val
-      txt = Firefox.exec "localStorage[\"#{key}\"]"  #, :jquery=>1
+      txt = Firefox.exec "localStorage[\"#{key}\"]"
       return self.docs if txt.blank? && key =~ /docs\/?/
       return self.api if txt.blank? && key =~ /api\/?/
       return Tree.quote txt
@@ -60,7 +60,7 @@ class LocalStorage
     Tree.unquote! val
 
     val = ENV['txt']
-    txt = Firefox.exec "localStorage[\"#{key}\"] = #{val.inspect}"  #, :jquery=>1
+    txt = Firefox.exec "localStorage[\"#{key}\"] = #{val.inspect}"
     View.flash "- Saved!"
   end
 
