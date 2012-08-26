@@ -19,7 +19,7 @@ class Chmod
     # Arg passed, so do chmod
 
     command = "chmod #{mode} \"#{path}\""
-    command = "sudo #{command}" if ! File.writable? path
+    command = "sudo #{command}" # if ! File.writable? path
 
     Console.run command, :dir=>path
 

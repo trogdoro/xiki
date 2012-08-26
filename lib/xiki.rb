@@ -91,6 +91,7 @@ class Xiki
           | You can run this multiple times.
       - .misc/
         - .dont show welcome/
+      @web interface/
     - api/
       > Summary
       Here are some functions that will always be available to menu classes,
