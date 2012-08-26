@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = "xiki"
-  s.version = "0.5.2a"
+  s.version = "0.5.3a"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Craig Muth"]
-  s.date = "2012-07-30"
+  s.date = "2012-08-26"
   s.executables = ["xiki"]
   s.summary = "A shell console with GUI features."
   s.description = "Xiki does what shell consoles do, but lets you edit everything at any time. It's trivial to make your own commands and menus to access other tools."
@@ -40,7 +40,7 @@ Gem::Specification.new do |s|
   s.add_dependency('net-sftp')
   s.add_dependency('rspec')
   s.add_dependency('memcached')
-  s.add_dependency('trogdoro-el4r')
+  s.add_dependency('trogdoro-el4r', [">= 1.0.7"])
 
   s.add_dependency('file-tail')
   s.add_dependency('ruby_parser')

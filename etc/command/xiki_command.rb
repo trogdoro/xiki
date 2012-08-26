@@ -138,7 +138,7 @@ class XikiCommand
     txt = %`
       > Summary
       The 'xiki' shell command is mostly meant to be called by programs
-      that want to interface with xiki.  But it is sometimes useful for
+      that want to interface with Xiki.  But it is sometimes useful for
       people to call it directly.  Example usages:
 
       $ xiki ip
@@ -156,7 +156,7 @@ class XikiCommand
 
       > Service
       The 'xiki' shell command automatically runs a service in the
-      backgroundto keep things fast.
+      background to keep things fast.
 
       % xiki status
       % xiki stop
@@ -172,11 +172,12 @@ class XikiCommand
 
       $ xiki docs
 
-      > Google Group
-      Join the google group for help with installing, or just to chat or
-      share your ideas:
+      > Google Group and Twitter
+      Join the google group or follow @xiki on twitter for help with
+      installing and using, or just to chat or share your ideas:
 
       http://groups.google.com/group/xiki/
+      http://twitter.com/xiki
 
       > Troubleshooting
       Be sure to run this command to install required gems:
