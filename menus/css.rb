@@ -16,7 +16,7 @@ class Css
         result;
         `.unindent
 
-      result = Firefox.run js
+      result = Firefox.exec js
       return "> No class attributes found!" if result == '""'
       return result
     end
@@ -48,7 +48,7 @@ class Css
     txt.gsub!("\n", '\n')
     txt.gsub!('"', '\"')
     code = "$('head').append(\"<style>#{txt}</style>\")"
-    Firefox.run code  #, :jquery=>1
+    Firefox.exec code
 
     nil
   end

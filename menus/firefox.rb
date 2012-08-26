@@ -34,7 +34,7 @@ class Firefox
     - api/
       | p Firefox.value "window.title"
       |   "The Title"
-      | Firefox.run "alert('hey')"
+      | Firefox.exec "alert('hey')"
     - docs/
       > Js examples
       @js/p('hi')
@@ -81,7 +81,7 @@ class Firefox
   def self.js txt=nil
     return Tree.<<("| $('div').toggle(1300)  // Type some javascript here (to run in the browser)") if ! txt
 
-    Firefox.run txt  #, :jquery=>1
+    Firefox.exec txt
   end
 
   def self.coffee txt=nil
@@ -89,7 +89,7 @@ class Firefox
 
     txt = CoffeeScript.run_internal txt
 
-    Firefox.run txt  #, :jquery=>1
+    Firefox.exec txt
     ".flash - ran in browser!"
   end
 
@@ -104,17 +104,17 @@ class Firefox
 
     prefix = Keys.prefix_n :clear=>true
     if ! prefix
-      Firefox.run("gBrowser.reload()", :browser=>true)
+      Firefox.exec("gBrowser.reload()", :browser=>true)
     elsif prefix == 0
       # Similar to reload, but field values will reset
-      Firefox.run("document.location = document.location;")
+      Firefox.exec("document.location = document.location;")
     else
 
       tab = prefix - 1
       if tab == -1   # If 0, close tab
         self.close_tab
       else   # If number, switch to tab
-        Firefox.run("gBrowser.tabContainer.selectedIndex = #{tab}", :browser=>true)
+        Firefox.exec("gBrowser.tabContainer.selectedIndex = #{tab}", :browser=>true)
       end
 
     end
@@ -124,14 +124,14 @@ class Firefox
   def self.close_tab
     times = Keys.prefix_n :clear=>true
     (times||1).times do
-      self.run "gBrowser.removeCurrentTab();", :browser=>true
+      self.exec "gBrowser.removeCurrentTab();", :browser=>true
     end
   end
 
   def self.click
     link = Keys.input(:prompt=>'Substring of link to click on: ')
 
-    Firefox.run("
+    Firefox.exec("
       var a = $('a:contains(#{link}):first');
       var url = a.attr('href');
       if(url == '#')
@@ -142,11 +142,11 @@ class Firefox
   end
 
   def self.back
-    Firefox.run "history.back()"
+    Firefox.exec "history.back()"
   end
 
   def self.forward
-    Firefox.run "history.forward()"
+    Firefox.exec "history.forward()"
   end
 
   #     # Copied from here (and modified):
@@ -194,7 +194,7 @@ class Firefox
 
 
 
-  def self.run_block
+  def self.exec_block
 
     prefix = Keys.prefix
 
@@ -224,7 +224,7 @@ class Firefox
     return
   end
 
-  def self.run txt, options={}
+  def self.exec txt, options={}
 
     result = Firefox.mozrepl_command txt, options
 
@@ -249,7 +249,7 @@ class Firefox
   end
 
   def self.value txt
-    self.run(txt).sub(/\A"/, "").sub(/"\z/, "")
+    self.exec(txt).sub(/\A"/, "").sub(/"\z/, "")
   end
 
   def self.url url=nil, options={}
@@ -281,7 +281,7 @@ class Firefox
 
       `.unindent
 
-    result = self.run js, :browser=>true
+    result = self.exec js, :browser=>true
 
     nil
   end
@@ -313,13 +313,13 @@ class Firefox
     html.gsub! "\n", ' '
 
     code = "$('body').append(\"#{html}\")"
-    result = Firefox.run code  #, :jquery=>1
+    result = Firefox.exec code
     nil
   end
 
   def self.jso txt=nil
     return View.prompt("Add some js to output its result") if txt.nil?
-    Firefox.run txt  #, :jquery=>1
+    Firefox.exec txt
   end
 
   def self.enter_log_javascript_line
@@ -354,7 +354,7 @@ class Firefox
 
   def self.include_jquery_and_utils
 
-    Firefox.run "
+    Firefox.exec "
       var s=document.createElement('script');
       s.setAttribute('src', 'http://code.jquery.com/jquery.min.js');
       document.getElementsByTagName('head')[0].appendChild(s);
@@ -369,7 +369,7 @@ class Firefox
 
   def self.enter_as_url
     if Keys.prefix_u
-      self.run "gBrowser.tabContainer.selectedIndex += 1", :browser=>true
+      self.exec "gBrowser.tabContainer.selectedIndex += 1", :browser=>true
     end
 
     url = Firefox.value('document.location.toString()')
@@ -459,7 +459,7 @@ class Firefox
       return nil   # Text without error, so don't load
     end
 
-    self.run "
+    self.exec "
       if(! document.getElementById('jqid')){
         var s=document.createElement('script');
         s.setAttribute('src', 'http://code.jquery.com/jquery.min.js'); s.setAttribute('id', 'jqid');
@@ -510,7 +510,7 @@ class Firefox
       jQuery(\"#{selector}\").blink();
       "
 
-    txt = Firefox.run code  #, :jquery=>1
+    txt = Firefox.exec code
     nil
   end
 
@@ -531,7 +531,7 @@ Launcher.add(/^\.[\w-]+$/) do |line|
 end
 
 Menu.js do |path|
-  Applescript.run("Firefox", "activate") if Keys.prefix_u
+  Applescript.exec("Firefox", "activate") if Keys.prefix_u
   Firefox.js Tree.rest(path)
   nil
 end
@@ -545,7 +545,7 @@ Menu.jsp do |path|
   txt = Tree.leaf path
   txt = txt.strip.sub(/;\z/, '')   # Remove any semicolon at end
   code = "p(#{txt})"
-  result = Firefox.run code  #, :jquery=>1
+  result = Firefox.exec code
   nil
 end
 
@@ -559,7 +559,7 @@ Menu.length do |path|
 
   next View.prompt("Type a jquery selector to show length of result") if txt.nil?
   txt = "$(\"#{txt}\").length"
-  txt = Firefox.run txt  #, :jquery=>1
+  txt = Firefox.exec txt
 
   #   txt = Firefox.jso txt
   Tree.<< txt, :no_slash=>1
@@ -571,7 +571,7 @@ Menu.jsc do |path|   # - (js): js to run in firefox
   return View.prompt("Add some js to run and output to firebug console.") if txt.nil?
   txt = txt.strip.sub(/;\z/, '')   # Remove any semicolon at end
   code = "console.log(#{txt})"
-  Firefox.run code  #, :jquery=>1
+  Firefox.exec code
   nil
 end
 
@@ -598,7 +598,7 @@ end
 Menu.click do |path|
   nth = 0
   txt = Tree.leaf path
-  Firefox.run("$('a, *[onclick]').filter(':contains(#{txt}):eq(#{nth})').click()")  #, :jquery=>1)
+  Firefox.exec("$('a, *[onclick]').filter(':contains(#{txt}):eq(#{nth})').click()")
   nil
 end
 

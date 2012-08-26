@@ -8,7 +8,7 @@ class Sass
     css.gsub!('"', '\"')
     code = "$('head').append(\"<style>#{css}</style>\")"
 
-    Firefox.run code
+    Firefox.exec code
 
     ".flash - Loaded in browser!"
   end

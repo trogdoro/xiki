@@ -1,7 +1,7 @@
 class Cookies
   def self.menu key=nil, val=nil
 
-    txt = Firefox.run "document.cookie"
+    txt = Firefox.exec "document.cookie"
     hash = txt.split('; ').inject({}) do |acc, e|
       k, v = e.match(/(.*?)=(.*)/)[1..2]
       acc[k] = v
