@@ -1,4 +1,4 @@
-if Styles.inverse   # Black bg
+if Styles.dark_bg?   # Black bg
 
   Styles.mode_line :bg=>'333', :border=>['666', -1], :face=>'Lucida Grande', :size=>'3', :bold=>false, :fg=>'fff'
   Styles.mode_line_inactive :bg=>'666', :border=>['888', -1], :face=>'Lucida Grande', :size=>'3', :bold=>false, :fg=>'fff'

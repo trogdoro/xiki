@@ -104,7 +104,7 @@ class CodeTree
     if ! stdout.nonempty? and ! returned.nil?
       stdout = self.returned_to_s returned
     else
-      message(returned.to_s) if returned and (!returned.is_a?(String) or returned.size < 500)
+      $el.message(returned.to_s) if returned and (!returned.is_a?(String) or returned.size < 500)
     end
 
     stdout = self.draw_exception(e, code) if e

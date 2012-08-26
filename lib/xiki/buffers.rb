@@ -21,19 +21,19 @@ class Buffers
       case Keys.prefix :clear=>true
 
       # Show all by default
-      when nil, "all":  return list.map{ |b| $el.buffer_name(b) }.map{ |o| "| #{o}\n" }.join('')
+      when nil, "all";  return list.map{ |b| $el.buffer_name(b) }.map{ |o| "| #{o}\n" }.join('')
 
       # Only files (no buffers)
-      when :u:  return list.select{ |b| $el.buffer_file_name(b) }.map{ |b| "| #{$el.buffer_name(b)}\n" }.join('')
+      when :u;  return list.select{ |b| $el.buffer_file_name(b) }.map{ |b| "| #{$el.buffer_name(b)}\n" }.join('')
 
       # Only buffer without files
-      when 0:  return list.select{ |b| ! $el.buffer_file_name(b) }.map{ |b| "| #{$el.buffer_name(b)}\n" }[1..-1].join('')
+      when 0;  return list.select{ |b| ! $el.buffer_file_name(b) }.map{ |b| "| #{$el.buffer_name(b)}\n" }[1..-1].join('')
 
-      when 1:  return list.select{ |b| $el.buffer_file_name(b) }.map{ |b| $el.buffer_name(b) }[1..-1]
-      when 3:  return list.select{ |b| ! $el.buffer_file_name(b) && $el.buffer_name(b) =~ /^#/ }.map{ |b| $el.buffer_name(b) }
-      when 4:  return list.select{ |b| ! $el.buffer_file_name(b) && $el.buffer_name(b) =~ /^\*console / }.map{ |b| $el.buffer_name(b) }
-      when 6:  return list.select{ |b| $el.buffer_file_name(b) =~ /\.rb$/ }.map{ |b| $el.buffer_name(b) }
-      when 7:  return list.select{ |b| $el.buffer_file_name(b) =~ /\.notes$/ }.map{ |b| $el.buffer_name(b) }
+      when 1;  return list.select{ |b| $el.buffer_file_name(b) }.map{ |b| $el.buffer_name(b) }[1..-1]
+      when 3;  return list.select{ |b| ! $el.buffer_file_name(b) && $el.buffer_name(b) =~ /^#/ }.map{ |b| $el.buffer_name(b) }
+      when 4;  return list.select{ |b| ! $el.buffer_file_name(b) && $el.buffer_name(b) =~ /^\*console / }.map{ |b| $el.buffer_name(b) }
+      when 6;  return list.select{ |b| $el.buffer_file_name(b) =~ /\.rb$/ }.map{ |b| $el.buffer_name(b) }
+      when 7;  return list.select{ |b| $el.buffer_file_name(b) =~ /\.notes$/ }.map{ |b| $el.buffer_name(b) }
 
       end
       return
@@ -132,8 +132,8 @@ class Buffers
 
   def self.open_viewing
     case Keys.prefix
-    when nil:  Launcher.open("- Buffers.tree 25/")
-    when 0:  Launcher.open("- Buffers.tree/")
+    when nil;  Launcher.open("- Buffers.tree 25/")
+    when 0;  Launcher.open("- Buffers.tree/")
     else  Launcher.open("- Buffers.tree #{Keys.prefix}/")
     end
   end

@@ -23,7 +23,7 @@ class XikiCommand
     argv = ARGV
 
     if argv.empty?
-      puts self.usage
+      puts "#{self.usage}\n"
       @@dont_show_output = true
       argv = ['start']   # So it continues on and starts server
     elsif argv.length == 1 && ['status', 'stop', 'restart'].member?(argv[0])
@@ -38,8 +38,8 @@ class XikiCommand
     wasnt_running = false
 
     begin
-      `mkfifo -m 666 /tmp/xikirequest` if ! File.exists?("/tmp/xikirequest")   # Always create first, so they have to be pipes and can't be files
-      `mkfifo -m 666 /tmp/xikiresponse` if ! File.exists?("/tmp/xikiresponse")
+      `mkfifo -m 600 /tmp/xikirequest` if ! File.exists?("/tmp/xikirequest")   # Always create first, so they have to be pipes and can't be files
+      `mkfifo -m 600 /tmp/xikiresponse` if ! File.exists?("/tmp/xikiresponse")
 
       # Try writing to pipe...
 
@@ -126,45 +126,68 @@ class XikiCommand
         # old IO.select ["/tmp/xikiresponse"]
 
         response = response.gets   # will block if there's nothing in the pipe
-
         response.strip!
         response.gsub! "\036", "\n"   # Escape linebreaks as 036 char (record separator)
-        response = "" if @@dont_show_output
-        response
+        return "" if @@dont_show_output
+        self.add_coloring response
       end
     end
   end
 
   def self.usage
-    %`
-    > Summary
-    This command runs xiki menus, which come from simple files
-    found in ~/menus/.
+    txt = %`
+      > Summary
+      The 'xiki' shell command is mostly meant to be called by programs
+      that want to interface with xiki.  But it is sometimes useful for
+      people to call it directly.  Example usages:
 
-    > Show all menus
-    % xiki all
+      $ xiki ip
+      $ xiki docs/faq
 
-    > Examples
-    Call 'ip' menu
-    % xiki ip
-    % xiki animals
-    % xiki tables
+      > Setting up your editor
+      The most common way to use Xiki is from a text editor.  For
+      example, typing "tables" on any blank line and double-clicking on
+      it (or typing control-enter or command-enter) to browse and update
+      your mysql database.
 
-    > Open 'ip' menu in emacs
-    % xiki -e ip
+      See this file for help setting up your editor:
 
-    > Run under current dir
-    % xiki -e @git
+      $xiki/README.markdown
 
-    > Service
-    Xiki automatically runs a service in the backgroundto keep
-    things fast.
+      > Service
+      The 'xiki' shell command automatically runs a service in the
+      backgroundto keep things fast.
 
-    % xiki   # With no args, it starts the service.
-    % xiki status
-    % xiki stop
-    % xiki restart
-    `.unindent
+      % xiki status
+      % xiki stop
+      % xiki restart
+
+      > Interfaces
+      Xiki can be used from...
+      - A text editor
+      - The 'xiki' shell command
+      - The http://xiki/ url in your browser (experimental)
+
+      For more information type:
+
+      $ xiki docs
+
+      > Google Group
+      Join the google group for help with installing, or just to chat or
+      share your ideas:
+
+      http://groups.google.com/group/xiki/
+
+      > Troubleshooting
+      Be sure to run this command to install required gems:
+
+      % bundle install
+
+      Also see $xiki/README.markdown
+
+      `.unindent
+
+    self.add_coloring txt
   end
 
   def self.ctrl action
@@ -193,5 +216,56 @@ class XikiCommand
     nil
   end
 
-end
 
+  def self.add_coloring txt
+    return txt if ! STDOUT.tty?
+    txt.gsub!(/.+/) do |line|
+      case line
+      when /^(>) (.+)/
+        "#{self.heading_bracket $1} #{self.bold $2}"
+      when /^http:\/\/.+/
+        "#{self.url $&}"
+      when /^.+\/$/
+        "#{self.path $&}"
+      when /^( *- )(.*!)$/
+        "#{self.bullet $1}#{self.exclamation $2}"
+      when /^( *)(- )(.+: )(.+)/
+        "#{$1}#{self.bullet $2}#{self.label $3}#{$4}"
+      when /^( *)(- )(.+)/
+        "#{$1}#{self.bullet $2}#{$3}"
+
+      else
+        line
+      end
+    end
+
+    txt << "\n"   # Add extra linebreak, but only when in console
+    txt
+  end
+
+  def self.colorize txt, color_code
+    "\e[#{color_code}m#{txt}\e[0m"
+  end
+  def self.bullet txt
+    self.colorize txt, "1;31"   # Red # colorize("1;91")   # Red
+  end
+  def self.label txt
+    self.colorize txt, "1;33"   # Yellow
+  end
+  def self.path txt
+    colorize(txt, "1;90")
+  end
+  def self.url txt
+    colorize(txt, "1;36")   # Cyan
+  end
+  def self.heading_bracket txt
+    colorize(txt, "0;37")
+  end
+  def self.bold txt
+    colorize(txt, "1")
+  end
+  def self.exclamation txt
+    colorize(txt, "1;32")   # Green
+  end
+
+end

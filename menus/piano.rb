@@ -1,14 +1,19 @@
-Requirer.require_gem 'midiator', :optional=>1
+Requirer.require_gem 'unimidi', :optional=>1
 
-require 'mode'
+require 'xiki/mode'
+
 
 class Piano
 
   include MIDIator::Notes rescue nil
   include MIDIator::Drums rescue nil
 
+  @@unimidi = nil
+
+  @@held_down = []
+
   @@midi = nil
-  @@velocity = 126
+  @@velocity = 100
   @@tempo = 120
   @@probability = 100
   @@melodic = 0
@@ -362,6 +367,8 @@ class Piano
       end
     end
 
+    self.clear
+
     nil
   end
 
@@ -383,21 +390,18 @@ class Piano
     end
   end
 
-  def self.clear channel=1
-    self.driver.control_change 123, channel, 123
-  end
-
   def self.<< letter
     self.note letter
   end
 
   def self.letter_to_number letter, options={}
 
-    adjustment =@@mode
+    adjustment = @@mode
 
     letter.next! if @@pentatonic && (letter == "b" || letter == "e")
 
-    number = letter[0].to_i
+    number = letter[0,1].sum
+
     number = case letter
     when "a".."z";  number - 96
     when "A".."G";  number - 71
@@ -428,7 +432,6 @@ class Piano
     if @@climb == 0
       random *= ((-1) ** rand(2))   # Half of the time, make it decrease note
     end
-    # Ol << "random: #{random.inspect}"
 
     if @@melodic == 1
       track = options[:track]
@@ -448,7 +451,6 @@ class Piano
     return 0 if rand(100) > @@probability
     number
   end
-
 
   def self.note letter='a', options={}
 
@@ -486,21 +488,44 @@ class Piano
     number += 1 if options[:sharp]
     number += (@@octave * 12)
 
-    self.driver.note_on(number, channel, velocity) unless number == 0
+    channel = 143 + channel
+    @@held_down << number
+    self.unimidi.puts(channel, number, velocity) # note on message
 
-    return if options[:no_sit]
+    return if options[:no_sit]   # Don't sit if other tracks have same beat
 
     self.pause
     nil
   end
 
+  def self.unimidi
+    @@unimidi ||= UniMIDI::Output.open(0).open
+  end
+
+  def self.send channel, number, value
+
+    output = UniMIDI::Output.open(0)
+
+    output.open do |output|
+      output.puts(channel, number, 90) # note on message
+    end
+  end
+
   def self.pause
+    # Ol << "!"
     pause = @@tempo * 4
     pause = pause / 60.0
     pause = 1 / pause
     $el ? $el.sit_for(pause) : sleep(pause)
     Piano.clear
-    Piano.clear 10
+  end
+
+  def self.clear chan=1
+    chan = (chan + 143) - 16
+
+    while number = @@held_down.shift do
+      self.unimidi.puts(chan, number, 90) # note on message
+    end
   end
 
   def self.keydef letter, note, channel=1, velocity=126
@@ -620,7 +645,6 @@ class Piano
   end
 
   def self.reset
-    self.connect
 
     @@velocity = 126
     @@tempo = 120
@@ -636,7 +660,7 @@ class Piano
     @@octave = 0
     @@program = 1
     @@repeat = 1
-    @@seed = nil
+    # @@seed = nil
 
     ".flash - success!"
   end
@@ -662,13 +686,13 @@ class Piano
   def self.probability txt="50";  @@probability = txt.to_s.sub('%', '').to_i;  ".flash - updated!";  end
   def self.variation txt="2"
     @@variation = txt.to_i
-    if @@seed   # If seed set manually, just use it
-      seed = @@seed
-    else   # Else auto-generate seed
-      seed = rand 999_999_999_999_999_999_999
-    end
+    # if @@seed   # If seed set manually, just use it
+    #   seed = @@seed
+    # else   # Else auto-generate seed
+    #   seed = rand 999_999_999_999_999_999_999
+    # end
 
-    srand seed
+    # srand seed
 
     ".flash - updated!"
   end
@@ -678,7 +702,7 @@ class Piano
   def self.consistency txt="50";  @@consistency = txt.to_s.sub('%', '').to_i;  ".flash - updated!";  end
   def self.octave txt="0";  @@octave = txt.to_i;  ".flash - updated!";  end
   def self.repeat txt="4"; @@repeat = txt.to_i;  ".flash - updated!";  end
-  def self.seed txt; @@seed = txt.to_i;  ".flash - updated!";  end
+  # def self.seed txt; @@seed = txt.to_i;  ".flash - updated!";  end
 
   def self.mode txt=nil
     return @@mode if txt.nil?

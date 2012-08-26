@@ -175,21 +175,13 @@ class Color
 
     return if ! $el
 
-    # Orange path in mode line
-    # Blue path in mode line
-    #     Styles.define :mode_line_dir, :fg=>"7ce", :size=>"0", :face=>"arial", :bold=>false
-
-    Styles.define :mode_line_file, :fg=>"fff", :size=>"0", :face=>"arial", :bold=>false
-
-    if Styles.inverse
-      Styles.define :mode_line_dir, :fg=>"d93", :size=>"0", :face=>"arial", :bold=>false   # Brighter
+    if Styles.dark_bg?
 
       Styles.define :color_rb_red, :bg => "500"
       Styles.define :color_rb_orange, :bg => "442500"
       Styles.define :color_rb_yellow, :bg => "440"
       Styles.define :color_rb_green, :bg => "131"
       Styles.define :color_rb_white, :fg=>'222', :bg=>'fff', :border=>['fff', -1]
-
       Styles.define :color_rb_light, :bg => "252525"
 
       Styles.define :color_rb_blue, :bg => "005"
@@ -197,14 +189,12 @@ class Color
 
     else
 
-      Styles.define :mode_line_dir, :fg=>"ea4", :size=>"0", :face=>"arial", :bold=>false   # Brighter
-
       Styles.define :color_rb_red, :bg => "ffd5d5"
       Styles.define :color_rb_orange, :bg => "ffe5bb"
       Styles.define :color_rb_yellow, :bg => "f9f9aa"
       Styles.define :color_rb_green, :bg => "e0ffcc"
-      Styles.define :color_rb_light, :bg => "ddd"
       Styles.define :color_rb_white, :fg=>'222', :bg=>'666', :border=>['666', -1]
+      Styles.define :color_rb_light, :bg => "ddd"
 
       Styles.define :color_rb_blue, :bg => "dde5ff"
       Styles.define :color_rb_purple, :bg => "f2ddff"

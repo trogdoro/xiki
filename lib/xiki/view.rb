@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #
 # Represents a division of a window (in emacs terms, it's a window (which is within a frame))
 #
@@ -103,7 +104,7 @@ class View
 
 
   def self.enlarge height=nil
-    default_height = 3
+    default_height = 4
     small = Keys.prefix || height || default_height
     small = default_height if small == :u
 
@@ -121,10 +122,23 @@ class View
     biggest = usable_height - ((wnum-1) * (small-1))
     selected = $el.selected_window
 
-    # Do multiple times (emacs daesn't get it right he first time)
-    5.times do
-      self.enlarge_internal :up, ws, selected, biggest, small
-    end
+
+    # Remember borders, and get rid of external border temporarily (it messes up heights)
+    $el.elvar.xiki_modeline_box_tmp = Styles.attribute "mode-line", "box"
+    $el.elvar.xiki_modeline_inactive_box_tmp = Styles.attribute "mode-line-inactive", "box"
+    Styles.mode_line_inactive :border=>:nil
+    Styles.mode_line :border=>:nil
+
+    # Maybe have to redraw here?!
+    View.refresh
+
+    # Set border to 0
+
+    self.enlarge_internal :up, ws, selected, biggest, small
+
+    # Restore borders
+    $el.set_face_attribute :mode_line, nil, ':box'.to_sym, $el.elvar.xiki_modeline_box_tmp
+    $el.set_face_attribute :mode_line_inactive, nil, ':box'.to_sym, $el.elvar.xiki_modeline_inactive_box_tmp
 
     nil
   end
@@ -132,16 +146,19 @@ class View
   def self.enlarge_internal direction, ws, selected, biggest, small
     ws = ws.reverse if direction != :up
 
-    ws.each do |w|
-      # If current window, set to remaining
-      if w == selected
-        height = biggest # - 1
-        $el.set_window_text_height w, height
-      else
-        height = small - 1
-        $el.set_window_text_height w, height
+    3.times do
+      ws.each_with_index do |w, i|
+        # If current window, set to remaining
+        if w == selected
+          height = biggest
+          $el.set_window_text_height w, height
+        else  # Other small windows
+          height = small - 1
+          $el.set_window_text_height w, height
+        end
       end
     end
+
   end
 
   # Creates a new window by splitting the current one
@@ -1047,6 +1064,12 @@ class View
   end
 
   def self.kill
+
+    # To avoid "Buffer has a running process; keep the buffer? (y or n)" message
+    if process = $el.get_buffer_process(View.buffer)
+      $el.set_process_query_on_exit_flag process, nil
+    end
+
     $el.kill_this_buffer
     nil
   end
@@ -1255,7 +1278,7 @@ class View
   end
 
   def self.gsub! from, to
-    with(:save_excursion) do
+    $el.with(:save_excursion) do
       View.to_highest
       $el.replace_regexp(from, to)
     end
@@ -1402,7 +1425,7 @@ class View
     txt = txt.reverse.uniq.join
   end
 
-  def self.refresh
+  def self.refresh   # redraw
     $el.sit_for 0
   end
 
@@ -1454,7 +1477,7 @@ class View
 
     if scale = options[:scale]
       nth = 3
-      val = {0=>' ', 1=>'e', 2=>'i', 3=>'v', 4=>'ø', 5=>'ß'}[scale]
+      val = {0=>' ', 1=>'e', 2=>'i', 3=>'v', 4=>'Ã¸', 5=>'ÃŸ'}[scale]
     end
 
     key = "xiki_status#{nth}".to_sym

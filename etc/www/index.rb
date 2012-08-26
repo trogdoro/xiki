@@ -2,7 +2,7 @@
 
 print "Content-type: text/html\n\n";
 
-require "/projects/xiki/lib/ol.rb"
+require "../../lib/xiki/ol.rb"
 require "web_server"
 require "cgi"
 WebServer.index

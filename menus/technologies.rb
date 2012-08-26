@@ -1,7 +1,10 @@
 class Technologies
-  def self.menu topic=nil, heading=nil, *content
+  def self.menu topic=nil, *args
+
+    heading, content = args.partition{|o| o !~ /^\|/}
 
     content = content.any? ? content.join("/") : nil
+    heading = heading.any? ? heading.join("/") : nil
 
     # If no topic, just show all dirs
 

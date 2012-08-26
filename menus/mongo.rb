@@ -1,4 +1,4 @@
-class Mongo
+module Mongo
   def self.menu # bucket=nil
     %`
     - .collections/
@@ -35,7 +35,7 @@ class Mongo
 
   def self.run command
     command << ".forEach(printjson)" if command =~ /.find\(/
-    txt = `mongo --eval '#{command}'`
+    txt = `mongo admin --eval '#{command}'`
 
     if txt =~ /couldn't connect to server/
       raise "> Mongo isn't running. Start it?

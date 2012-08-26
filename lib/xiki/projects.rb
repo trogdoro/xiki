@@ -1,4 +1,11 @@
 class Projects
+  def self.before_menu
+    nil
+  end
+  def self.after_menu
+    nil
+  end
+
   def self.menu
     "
     - This will never be called, because of projects.menu...
@@ -7,7 +14,7 @@ class Projects
     "
   end
 
-  def self.current
+  def self.default
     # If parent is dir, return it, else return first project
     dir = FileTree.handles?(Xiki.trunk[-2]) ? "#{Dir.pwd}/" : self.default_project
   end

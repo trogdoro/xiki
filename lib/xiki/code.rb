@@ -1,10 +1,6 @@
 require 'xiki/block'
 require 'stringio'
-gem 'ruby2ruby'
-require 'ruby2ruby'
-gem 'ParseTree'
-require 'parse_tree'
-require 'parse_tree_extensions'   # required for .to_ruby
+
 class Code
 
   def self.menu
@@ -643,7 +639,7 @@ class Code
   end
 
   def self.to_ruby o
-    o.to_ruby
+    o.to_source
   end
 
   def self.isearch_just_should

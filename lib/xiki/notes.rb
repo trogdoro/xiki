@@ -254,7 +254,7 @@ class Notes
     h1_size = "+3"
 
     # Colors of "| ..." headings
-    if Styles.inverse   # If black bg
+    if Styles.dark_bg?   # If black bg
       @@h1_styles = {
         :notes_h1 =>"333",
         :notes_h1r=>"611",   # | r This will be red
@@ -316,7 +316,7 @@ class Notes
       :fg => '224'
 
 
-    if Styles.inverse   # If black and white
+    if Styles.dark_bg?   # If black and white
       label_color = "e70"
     else
       label_color = "f70"
@@ -348,28 +348,28 @@ class Notes
     Styles.define :notes_green, :fg=>"3C3", :face=>'arial black', :size=>"0", :bold=>true
 
 
-    if Styles.inverse   # If black bg
+    if Styles.dark_bg?   # If black bg
       # >>...
-      Styles.define :notes_h2, :face=>'arial', :size=>"-1", :fg=>'fff', :bg=>"333", :bold=>false
+      Styles.define :notes_h2, :face=>'arial', :size=>"-1", :fg=>'fff', :bg=>"333", :bold=>true
       Styles.define :notes_h2_pipe, :face=>'arial', :size=>"-1", :fg=>'555555', :bg=>"333333", :bold=> true
     else
       Styles.define :notes_h2, :face=>'arial', :size=>"-1", :fg=>'fff', :bg=>"999", :bold=>true
       Styles.define :notes_h2_pipe, :face=>'arial', :size=>"-1", :fg=>'bbb', :bg=>"999", :bold=>true
     end
 
-    if Styles.inverse   # If black bg
+    if Styles.dark_bg?   # If black bg
       Styles.dotted :bg=>'080808', :fg=>'111', :strike=>nil, :underline=>nil, :border=>['111', -1]
     else
       Styles.dotted :bg=>'eee', :fg=>'ddd', :strike=>nil, :underline=>nil, :border=>['ddd', -1]
     end
 
-    notes_exclamation_color = Styles.inverse ? "7c4" : "5a0"
+    notes_exclamation_color = Styles.dark_bg? ? "7c4" : "5a0"
 
     Styles.define :notes_exclamation,  # Green bold text
       :face=>'arial black', :size=>"0",
       :fg=>notes_exclamation_color, :bold=>true
 
-    Styles.notes_link :fg=>(Styles.inverse ? "9ce" : "08f")
+    Styles.notes_link :fg=>(Styles.dark_bg? ? "9ce" : "08f")
 
     Styles.shell_prompt :fg=>'#888', :bold=>1
 
@@ -440,7 +440,7 @@ class Notes
 
     Styles.apply "^hint/.+", :fade6
 
-    Styles.apply "^ *@? ?\\([%$&]\\) ", nil, :shell_prompt   # Colorize shell prompts
+    Styles.apply "^[< ]*@? ?\\([%$&]\\) ", nil, :shell_prompt   # Colorize shell prompts
 
     Styles.apply("^ *\\(|`\\)\\(.*\n\\)", nil, :quote_heading_pipe, :dotsies_experimental)
     Styles.apply("^ *\\(|~\\)\\([^\n~]+\\)\\(~?\\)", nil, :quote_heading_pipe, :dotsies, :quote_heading_pipe)
@@ -708,7 +708,7 @@ class Notes
 
     buffer_name = $el.buffer_name
     file_name = View.file_name
-    trunk = Xiki.trunk
+    path = Xiki.path rescue nil
 
     if prefix.nil?   # So 1+ or numeric prefix just grab normally
       if buffer_name == "*ol"   # Make it into "foo = bar" format
@@ -716,7 +716,7 @@ class Notes
         txt.sub!(": ", " = ") if txt
         txt ||= line[/ *- (.+?) /, 1]
 
-      elsif trunk.last =~ /(\w+)\.rb\/\| *def ([\w\.?]+)/
+      elsif path && path.last =~ /(\w+)\.rb\/\| *def ([\w\.?]+)/
         clazz = $1
         method = $2
         clazz = TextUtil.camel_case clazz if method.slice! /^self\./
@@ -734,7 +734,7 @@ class Notes
       elsif FileTree.handles?
         txt = Tree.dir
       elsif line =~ /(^ *[+-] |\/$)/   # Make it into Foo.bar format
-        txt = Xiki.trunk.last
+        txt = Xiki.path.last
       end
     end
 
@@ -814,8 +814,7 @@ class Notes
     end
   end
 
-  def self.enter_do_bullet
-
+  def self.enter_note
     # If on blank line, just insert it
     indent = ""
     if ! Line.blank?
@@ -829,32 +828,22 @@ class Notes
     Line << "#{indent}- !"
     Move.backward
 
-    txt = Keys.input :chars=>1, :prompt=>'Enter a character: '
+    txt = Keys.input :timed=>1, :prompt=>'Enter a character: '
+
     expanded = Notes.expand_if_action_abbrev txt
 
     View << (expanded || txt)
 
     # If wasn't expanded prepare to edit
-    ControlLock.disable if ! expanded
+    ControlLock.disable if expanded == txt
 
-# return
     if expanded
-      Line.to_beginning
+      # Do nothing
     else
       View << "#{indent}- !"
       Move.backward
       View << txt
     end
-
-# return
-
-
-    #     if txt == " "
-    #       View << "#{indent}- !"
-    #       ControlLock.disable
-    #       return View.column = -1
-    #     end
-
 
     nil
   end
@@ -894,25 +883,24 @@ class Notes
         "
     end
 
-    txt = File.read file
+    txt = File.open(file, 'rb') {|f| f.read}
 
-    # If just file passed, headings
+    # If just file passed, headings...
 
     if ! heading
 
       return View.open file if prefix == "open"   # If as+open, just jump there
 
+      txt = txt.split("\n")
       txt = txt.grep /^\>( .+)/
       return "| This file has no '>...' headings:\n@ #{file}" if txt.empty?
-      return txt.join('')  #.gsub /^> /, '| '
+      return txt.join("\n")  #.gsub /^> /, '| '
     end
 
-    # If just heading passed, show text under heading
-
+    # If just heading passed, show text under heading...
     heading.sub!(/^\| /, '> ')
     escaped_heading = Regexp.escape heading
     if ! content
-
       if prefix == :u || prefix == "open"   # If C-u on a heading, just jump there
         View.open file
         View.to_highest
@@ -922,6 +910,7 @@ class Notes
       end
 
       txt = self.extract_block txt, heading
+      ENV['no_slash'] = "1"
       return txt.gsub(/^/, '| ').gsub(/^\| $/, '|')
     end
 
@@ -985,10 +974,12 @@ class Notes
     "f"=>"fix",
     "b"=>"borrow",
     "i"=>"implement",
-    "d"=>"delete",
+    "d"=>"do",
+    "de"=>"delete",
     "r"=>"rename",
     "t"=>"todo",
     "e"=>"extract",
+    "er"=>"error",
     }
 
   # If the string is "t" or "i", or a few others, return "todo" or "imprement" etc. respectively.

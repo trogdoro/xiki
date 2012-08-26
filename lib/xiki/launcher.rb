@@ -1,7 +1,10 @@
 require 'xiki/effects'
 require 'xiki/requirer'
-
 require 'xiki'
+
+require 'sourcify'
+require 'ruby_parser'
+require 'file-tail'
 
 Requirer.require_gem 'activesupport', :name2=>'active_support/ordered_hash'
 Requirer.require_gem 'httparty', :optional=>1   # Not super-important
@@ -232,7 +235,9 @@ class Launcher
     # Special case to turn launchers back on
     return self.show_or_launch if line == "launcher/setup/show or launch/"
 
-    @@launchers.each do |regex, block|   # Try each potential regex match
+    # Try each potential regex match...
+
+    @@launchers.each do |regex, block|
       # If we found a match, launch it
       if line =~ regex
         group = $1
@@ -247,7 +252,8 @@ class Launcher
           rescue RelinquishException
             next   # They didn't want to handle it, keep going
           rescue Exception=>e
-            Tree.<< CodeTree.draw_exception(e, block.to_ruby), :no_slash=>true
+            # Show error and sourche of block
+            Tree.<< CodeTree.draw_exception(e, block.to_source), :no_slash=>true
           end
 
         end
@@ -256,7 +262,7 @@ class Launcher
       end
     end
 
-    # If current line is indented and not passed recursively yet, try again, passing tree
+    # If current line is indented and not passed recursively yet, try again, passing tree...
 
     if Line.value =~ /^ / && ! options[:line] && !is_root   # If indented, call .launch recursively
 
@@ -287,13 +293,15 @@ class Launcher
       return View.message "Don't know what to do with this line"
     end
 
-    # See if it matches path launcher
+    # See if it's a menu...
 
     self.set_env_vars line
 
     result = self.try_menu_launchers line, options
     self.unset_env_vars
     return if result
+
+    # Do "autocomplete" - show all menus that start with this...
 
     if line =~ /^([\w -]*)$/ || line =~ /^([\w -]*)\.\.\.\/?$/
 
@@ -320,7 +328,7 @@ class Launcher
       end
     end
 
-    # If just root line, load any unloaded launchers this completes and relaunch
+    # If just root line, load any unloaded launchers this completes and relaunch...
 
     # Failed attempt to not auto-complete if slash
       # It's tough because we still want to load!
@@ -347,6 +355,7 @@ class Launcher
     end
 
     if root = line[/^[\w -]+/]
+
       Xiki.dont_search
       # Maybe make the following print out optionally, via a 'help_last' block?
       Tree << "
@@ -363,7 +372,6 @@ class Launcher
   end
 
   def self.try_menu_launchers line, options={}
-
     # If there's a /@ in the path, cut it off
     line.sub! /.+\/@/, ''
 
@@ -390,7 +398,7 @@ class Launcher
         # remove file
 
       else   # If doesn't exist
-        View.beep "- Dir doesn't exist: #{closest_dir}"
+        Tree.<< "> Dir doesn't exist.  Create it?\n@mkdir/\n"
         return true
       end
     end
@@ -401,7 +409,7 @@ class Launcher
     if block_dot_menu = @@menus[0][root]
 
       if @@just_show
-        Ol.line "Maps to .menu file, for menu: #{root}\n - #{block_dot_menu}\n - #{block_dot_menu.to_ruby}"
+        Ol.line "Maps to .menu file, for menu: #{root}\n - #{block_dot_menu}\n - #{block_dot_menu.to_source}"
         View.flash "- Showed launcher in $o", :times=>4
         return true   # To make it stop trying to run it
       end
@@ -433,7 +441,7 @@ class Launcher
     if block_other = @@menus[1][root]   # If class menu
 
       if @@just_show
-        Ol.line << "Maps to class or other block, for menu: #{root}\n - #{block_other}\n - #{block_other.to_ruby}"
+        Ol.line << "Maps to class or other block, for menu: #{root}\n - #{block_other}\n - #{block_other.to_source}"
         View.flash "- Showed launcher in $o", :times=>4
         return true   # To make it stop trying to run it
       end
@@ -489,7 +497,7 @@ class Launcher
       condition_proc, block = launcher
       if found = condition_proc.call(list)   # If we found a match, launch it
         if @@just_show
-          Ol << condition_proc.to_ruby
+          Ol << condition_proc.to_source
         else
           block.call list[found..-1]
         end
@@ -538,7 +546,7 @@ class Launcher
       if prefix == "all"
         txt = RestTree.request("GET", url)
         txt = Tree.quote(txt) if txt =~ /\A<\w/
-        Tree.under txt, :no_slash=>1
+        Tree.under Tree.quote(txt), :no_slash=>1
         next
       end
       url.gsub! '%', '%25'
@@ -594,10 +602,20 @@ class Launcher
       line =~ /([$\/.\w\-]+):(\d+)/
       path, line = $1, $2
 
-      # If relative dir, prepend current dir
-      if path =~ /^\w/
-        path = "#{View.dir}/#{path}"
-        path.sub! "//", "/"   # View.dir sometimes ends with slash
+      if path =~ /^(\w.*)/ || path =~ /^\.\/(.+)/
+
+        path = $1
+
+        local_path = "#{View.dir}/#{path}".sub "//", "/"
+        xiki_path = "#{Xiki.dir}/#{path}".sub "//", "/"
+        if File.exists? local_path
+          path = local_path
+        elsif File.exist? xiki_path
+          path = xiki_path
+        end
+
+      else
+        return ".flash - File doesn't exist!" if ! File.exists? path
       end
 
       View.open path
@@ -994,7 +1012,7 @@ class Launcher
   #
   # Open new buffer and launch the menu in it
   #
-  # Launcher.open "computer"
+  # Launcher.open "ip"
   #
   def self.open menu, options={}
     return self.insert(menu, options) if options[:inline]
@@ -1190,7 +1208,6 @@ class Launcher
   def self.reload_menu_dirs
     MENU_DIRS.each do |dir|
       next unless File.directory? dir
-
       Files.in_dir(dir).each do |f|
         next if f !~ /^[a-z].*\..*[a-z]$/ || f =~ /__/
         path = "#{dir}/#{f}"
@@ -1337,7 +1354,7 @@ def require_menu file, options={}
     result = Menu.load_if_changed file
   rescue LoadError => e
     gem_name = Requirer.extract_gem_from_exception e.to_s
-    Requirer.show "The file #{file} wants to use the '#{gem_name}' gem.\n% sudo gem install #{gem_name}\n\n"
+    Requirer.show "The file #{file} wants to use the '#{gem_name}' gem.\n% gem install #{gem_name}\n\n"
   rescue Exception=>e
     txt = CodeTree.draw_exception e
     Requirer.show "The file #{file} had this exception:\n#{txt}\n\n"

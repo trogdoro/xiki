@@ -47,7 +47,7 @@ class Remote
       if path =~ /\/$/   # If a dir
         out = connection.exec!("ls -pa #{path}")
         out ||= ""
-        out = out.grep(/^[^#]+$/).join("")   # Weed out #...#
+        out = out.split("\n").grep(/^[^#]+$/).join("\n")   # Weed out #...#
         out.gsub!(/@/, '/')   # Change @ to /
 
         # Get rid of . and ..

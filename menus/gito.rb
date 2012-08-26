@@ -448,7 +448,7 @@ class Gito
       hash = Gito.status_to_hash(Gito.status_internal(txt))
 
       untracked = hash[:untracked].map{|i| i[1]}
-      untracked.map!{|i| "+ untracked) #{i}\n"}
+      untracked.map!{|i| "+ ignore untracked) #{i}\n"}
 
       option = is_unadded ? "- .add\n" : "- .commit/\n"
       if expand   # If showing diffs right away
@@ -673,7 +673,7 @@ class Gito
 
     siblings = Tree.siblings :include_label=>true
     # Remove "untracked (ignore)"
-    siblings = siblings.select{|i| i !~ /^. untracked \(ignore\)/}.map{|i| Line.without_label(:line=>i)}
+    siblings = siblings.select{|i| i !~ /^. ignore untracked\)/}.map{|i| Line.without_label(:line=>i)}
     siblings = self.remove_options siblings
 
     unless siblings.any?   # Error if no siblings

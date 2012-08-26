@@ -23,6 +23,7 @@ class Dotsies
 
     > See
     << dotsies tweets/
+    << youtube/use dotsies in transcript/
     `
   end
 

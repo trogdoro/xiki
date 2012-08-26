@@ -19,14 +19,14 @@ class Rails
     - .interact/
       - .rails console/
       - .sqlite console/
-      - .models/
+    - @models/
     - .setup/
       - .db/
         - .migrate/
       - .use rspec/
-    - .general/
       - .rails version/
     "
+    #     - .eval/
   end
 
   def self.menu_after txt, *args
@@ -34,18 +34,17 @@ class Rails
   end
 
   def self.menu_before *path
-
-    dir = Projects.current   # Returns dir in tree, or current project (top of projects.menu)
+    dir = Projects.default   # Returns dir in tree, or current project (top of projects.menu)
 
     # Don't intercede if already rails app or trying to generate
     return nil if ["generate", "general"].member?(path[0]) || File.exists?("#{dir}app")
 
     # If not a rails dir, give option to generate
     return "
-      | No rails app in #{dir} yet.  Generate it?
+      > No rails app in #{dir} yet.  Generate it?
       - generate/app/
 
-      | Not project-specific
+      > Non project-specific options
       - general/
       "
   end
@@ -55,7 +54,7 @@ class Rails
   end
 
   def self.use_rspec
-    dir = Projects.current
+    dir = Projects.default
 
     txt = "
       @ #{dir}
@@ -74,22 +73,13 @@ class Rails
       "
   end
 
-
-  def self.models
-    dir = Projects.current
-    dir = "#{dir}app/models/"
-
-    entries = Dir.new(dir).entries.select{|o| o =~ /^\w/}
-    entries.map{|o| "@r/#{TextUtil.camel_case o[/\w+/]}.first/"}.join("\n")
-  end
-
   def self.sqlite_console
-    Console.run "sqlite3 db/development.sqlite3", :dir=>Projects.current, :buffer=>"sqlite console"
+    Console.run "sqlite3 db/development.sqlite3", :dir=>Projects.default, :buffer=>"sqlite console"
     ".flash - opened console!"
   end
 
   def self.rails_console
-    Console.run "rails c", :dir=>Projects.current, :buffer=>"rails console"
+    Console.run "rails c", :dir=>Projects.default, :buffer=>"rails console"
     ".flash - opened console!"
   end
 
@@ -97,30 +87,30 @@ class Rails
 
     examples = "
       > Example fields
-      | id:primary_key
       | name:string
-      | description:text
+      | details:text
+      | summary:text
       | quantity:integer
       | price:decimal
-      | purchased_at:datetime
       | delivery:boolean
+      | purchased_at:datetime
       | user:references
       ".unindent
 
     case what
     when "app"
-      Console.run "rails new . --skip-bundle", :dir=>Projects.current
+      Console.run "rails new . --skip-bundle", :dir=>Projects.default
       return "- generating rails app..."
     when "model", "resource", "scaffold"
       return View.prompt "Enter a name" if ! name
       return examples if ! detail
       fields = ENV['txt'].gsub("\n", ' ').strip
-      Console.run "rails g #{what} #{name} #{fields}", :dir=>Projects.current
+      Console.run "rails g #{what} #{name} #{fields}", :dir=>Projects.default
       return "- generating #{what}..."
     when "controller"
       return View.prompt "Enter a name" if ! name
       return View.prompt "Enter an action" if ! detail
-      Console.run "rails g controller #{name} #{detail}", :dir=>Projects.current
+      Console.run "rails g controller #{name} #{detail}", :dir=>Projects.default
       return "- generating controller..."
     end
 
@@ -141,7 +131,7 @@ class Rails
     command = "rails s"
     command << " -p #{port}" if port
 
-    Console.run command, :dir=>Projects.current, :buffer=>"rails server"
+    Console.run command, :dir=>Projects.default, :buffer=>"rails server"
 
     # Check whether it's already running
     "| Rails app was already running\n- browse/"
@@ -150,11 +140,83 @@ class Rails
   end
 
   def self.command txt
-    Console.run txt, :dir=>Projects.current
+    Console.run txt, :dir=>Projects.default
   end
 
   def self.migrate
     self.command "rake db:migrate"
+  end
+
+  def self.eval *args
+
+    if args.blank?
+      return "
+        > Put some code here, to run it in the context of a controller
+        | request.methods
+        "
+    end
+
+    # Text passed, so run put in controller method and call
+
+    # Start server if necessary
+      # And install the dev controller?
+
+    txt = ENV['txt']
+
+    "- TODO) implement calling dev_controller"
+  end
+
+  def self.run_in_app txt, options={}
+
+    # If just code passed, run it...
+
+    if options[:yaml]
+      # If yaml passed, deduce code to save model, and run...
+
+      txt = "
+        txt = #{txt.inspect}
+        mods = YAML::load(txt)
+
+        mods = [mods] if ! mods.is_a?(Array)
+        mods.each do |mod|
+          mod.partial_updates = false
+
+          existing = mod.class.where :id=>mod.id
+          mod.instance_variable_set('@new_record', true) if existing.empty?
+
+          mod.save
+        end
+        "
+    end
+
+    File.open("/tmp/rails_run_tmp.txt", "w") { |f| f << txt }
+    response = HTTParty.get("http://localhost:3000/xiki_dev") rescue :exception
+
+    return "| The rails server doesn't appear to be running.  Start default server?\n@rails/start/" if response == :exception
+
+    return self.suggest_creating_controller if response.response.is_a?(Net::HTTPNotFound)
+
+    return ".flash - saved!" if options[:yaml]
+
+    txt = response.body
+    txt.gsub!(/ +$/, '')
+
+    # If is error, delete html at top
+    txt.sub!(/.+?<h1>/m, '<h1>') if txt =~ /<div id="traces">/ && txt =~ /<h1>/
+
+    # If file not found, suggest generating it
+    if txt =~ /uninitialized constant XikiDevController::(\w+)/
+      clazz = $1
+      return "
+        > Class '#{clazz}' doesn't exist.  Generate it as a model?
+        @#{Projects.default}
+          @rails/generate/model/#{clazz}
+        "
+
+    end
+
+    txt
+
   end
 
 end

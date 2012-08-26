@@ -404,8 +404,9 @@ class Menu
     return View.flash "- Menu 'root' doesn't exist!", :times=>4 if ! proc
 
     location = proc.source_location # ["./firefox.rb", 739]
-    location[0].sub! /^\.\//, Xiki.dir
-    View.open location[0]
+Ol << "location: #{location.inspect}"
+    # location[0].sub! /^\.\//, Xiki.dir
+    View.open location[0].sub(/^\.\//, Xiki.dir)
     View.line = location[1]
 
   end
@@ -625,18 +626,25 @@ class Menu
   def self.do_as_menu
     line = Line.value
 
-    # If on ^@... line and there's child on next line...
+    do_launch = false
 
-    on_subtree = line =~ /^[ +-]*@/ && Tree.has_child?
+    txt =
+      if line =~ /^ *\|/   # If on quoted line, will grab all quoted siblings and unquote
+        Tree.siblings :string=>1
+      elsif line =~ /^[ +-]*@/ && Tree.has_child?   # If on ^@... line and there's child on next line...
+        # Will grab the whole tree and move it up
+        Tree.subtree.unindent.sub(/^[ @+-]+/, '')
+      elsif
+        do_launch = true
+        Tree.path.last
+      end
 
-    txt = on_subtree ? Tree.subtree.unindent.sub(/^[ @+-]+/, '') : Tree.path.last
-
-    Keys.prefix_u ? Tree.to_root(:highest=>1) : Tree.to_root
+    Keys.prefix_u ? Tree.to_root : Tree.to_root(:highest=>1)
     Tree.kill_under
 
     Line.sub! /^([ @]*).+/, "\\1#{txt}"
 
-    return if on_subtree
+    return if ! do_launch
 
     # replace line with menu
 
@@ -701,9 +709,52 @@ class Menu
     end
   end
 
+  #
+  # Whether line exists in menu
+  #
+  # p Menu.line_exists? "menu name", /^- text to add$/
+  # p Menu.line_exists? "menu name", /^- text to (.+)$/
+  #
+  def self.line_exists? name, pattern #, options={}
+    name.gsub! /\W/, '_'
+    dir = File.expand_path "~/menus"
+    file = File.expand_path "#{dir}/#{name}.menu"
+    txt = File.read(file) rescue ""
+    txt =~ pattern ? ($1 || $&) : nil   # Return whole string or group
+  end
 
+  #
+  # Create simple .menu file if it doesn't exist, otherwise add line to it.
+  #
+  # Menu.append_line "menu name", "- text to add"
+  #
+  def self.append_line name, addition #, options={}
+
+    name.gsub! /\W/, '_'
+
+    # Default to ~/menus
+    # If menu there, create, otherwise append
+
+    # Get existing
+    dir = File.expand_path "~/menus"
+    Dir.mkdir dir if ! File.exists? dir
+
+    file = File.expand_path "#{dir}/#{name}.menu"
+    txt = File.read(file) rescue ""
+
+    if txt =~ /^#{Regexp.escape addition}$/
+      return ".flash - was already there!"
+    end
+
+    # Append to end (might be blank)
+
+    txt << "#{addition}\n"
+
+    # Save
+    File.open(file, "w") { |f| f << txt }
+
+    ".flash - updated!"
+  end
 end
 
 Menu.init   # Define mode
-
-

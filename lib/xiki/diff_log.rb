@@ -41,7 +41,7 @@ class DiffLog
 
   def self.diffs path=nil
 
-    txt = File.read @@log
+    txt = File.open(@@log, 'rb') {|f| f.read}
     txt = txt.sub(/\A- /, '').split(/^- /).reverse.uniq
 
     path ||= Tree.dir   # Pull from tree if there
@@ -201,8 +201,8 @@ class DiffLog
     diff = Console.sync "diff -U 0 \"#{patha}\" \"#{@@temp_path}\""
     return if diff.empty? || diff =~ /: No such file or directory\n/   # Fail quietly if file didn't exist
 
-    diff = self.format diff
-    return diff if options[:dont_log]
+    diff = self.format(diff) rescue nil
+    return diff if diff.nil? || options[:dont_log]
 
     File.open(@@log, "a") { |f| f << diff } unless diff.count("\n") <= 2
   end

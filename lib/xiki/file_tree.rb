@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 require 'xiki/styles'
 require 'xiki/line'
 require 'xiki/view'
@@ -164,8 +166,12 @@ class FileTree
 
   def self.grep_one_file(f, regex, indent)
     result = []
-    IO.foreach(f) do |line|
-      line.gsub!(/[\r\n\c@]+/, '')
+
+    return result if f =~ /\.(ai|icns|png|gif|jpg|gem)$/
+
+    IO.foreach(f, *Files.encoding_binary) do |line|
+      #       line.gsub!(/[\r\n\c@]+/, '')
+      line.chomp!
       if regex
         next unless line =~ regex
       end
@@ -178,7 +184,7 @@ class FileTree
     result = []
     current_line = Search.outline_goto_once   # If search_outline, we want to put cursor on that line when done
     line_found, matches_count, i = nil, 0, 0
-    IO.foreach(f) do |line|
+    IO.foreach(f, *Files.encoding_binary) do |line|
       i+=1
       line.gsub!(/[\r\n\c@]+/, '')
 
@@ -267,7 +273,7 @@ class FileTree
 
     return if ! $el
 
-    if Styles.inverse   # Bullets
+    if Styles.dark_bg?   # Bullets
       Styles.define :ls_bullet,
         :face => 'courier', :size => "+2",  # Mac
         :fg => "dd7700", :bold => true
@@ -278,9 +284,9 @@ class FileTree
     end
 
 
-    if Styles.inverse
-      Styles.define :quote_heading, :fg=>"fff", :size=>"0", :face=>"arial", :bold=>false
-      Styles.define :quote_heading2, :fg=>"fff", :size=>"-2", :face=>"arial", :bold=>false
+    if Styles.dark_bg?
+      Styles.define :quote_heading, :fg=>"fff", :size=>"0", :face=>"arial", :bold=>true
+      Styles.define :quote_heading2, :fg=>"fff", :size=>"-2", :face=>"arial", :bold=>true
       Styles.define :quote_heading_pipe, :fg=>"333", :size=>"0", :face => "verdana", :bold=>true
       Styles.define :quote_heading_bracket, :fg=>"4c4c4c", :size=>"-2", :face => "Monaco", :bold=>true
       Styles.define :quote_heading_small, :fg=>"fff", :size=>"-2", :face => "arial black", :bold=>true
@@ -297,8 +303,8 @@ class FileTree
       #       Styles.define :ls_dir, :fg => "bbb", :face => "verdana", :size => "-2", :bold => true
 
     else
-      Styles.define :quote_heading, :fg=>"444", :size=>"0", :face=>"arial", :bold=>false
-      Styles.define :quote_heading2, :fg=>"aaa", :size=>"-2", :face=>"arial", :bold=>false
+      Styles.define :quote_heading, :fg=>"444", :size=>"0", :face=>"arial", :bold=>true
+      Styles.define :quote_heading2, :fg=>"aaa", :size=>"-2", :face=>"arial", :bold=>true
       Styles.define :quote_heading_pipe, :fg=>"bbb", :size=>"0", :face => "verdana", :bold=>true
       Styles.define :quote_heading_bracket, :fg=>"bbb", :size=>"-2", :face => "Monaco", :bold=>true
       Styles.define :quote_heading_small, :fg=>"fff", :size=>"-2", :face => "arial black", :bold=>true
@@ -322,7 +328,7 @@ class FileTree
       :size => "-2",
       :bold => true
 
-    if Styles.inverse   #   | Quoted text
+    if Styles.dark_bg?   #   | Quoted text
       Styles.define :ls_quote,
         :size => "-1",
         :fg => "aaa"
@@ -425,12 +431,14 @@ class FileTree
   end
 
   def self.handles? list=nil
-    begin
-      list ||= Tree.construct_path(:list=>true)   # Use current line by default
-    rescue Exception=>e
-      return nil
+
+    if list.nil?
+      list ||= Tree.construct_path(:list=>true) rescue nil   # Use current line by default
     end
-    return 0 if self.matches_root_pattern?(Line.without_label :line=>list.first)
+
+    list = list.first if list.is_a?(Array)
+
+    return 0 if self.matches_root_pattern?(Line.without_label :line=>list)
     nil
   end
 
@@ -1103,7 +1111,7 @@ class FileTree
     if Line.blank?
 
       if prefix == :u || txt =~ /\A  +[-+]?\|[-+ ]/   # If C-u or whole thing is quoted already, unquote
-        txt = txt.grep(/\|/).join()
+        txt = txt.split("\n").grep(/\|/).join("\n")
         return $el.insert(txt.gsub(/^ *[-+]?\|([-+ ]|$)/, ""))   # Remove | ..., |+...., |<blank>, etc
       end
 
@@ -1276,7 +1284,7 @@ class FileTree
       return
     end
 
-    IO.foreach(path) do |line|
+    IO.foreach(path, *Files.encoding_binary) do |line|
       i+=1
       line.sub!(/[\r\n]+$/, '')
 
@@ -1479,9 +1487,8 @@ class FileTree
 
   def self.copy_path options={}
     Effects.blink :what=>:line
-
     # Return dir of view's file if at left margin, U, or not ^[|@-]
-    if Line !~ /^ +[|@+-]/ || Keys.prefix_u
+    if Line !~ /^ +[|@+-]/  # || Keys.prefix_u# It will never be :u, because the prefix is cleared before this is called
       path = View.file
     else
       path = Xiki.trunk.last   # Grab from wiki tree
@@ -1634,6 +1641,9 @@ class FileTree
     Effects.glow :fade_out=>1
     Line.delete
     Line.to_beginning
+
+    View.message "File deleted"
+
   end
 
   def self.move_latest_screenshot_to dest_path, dest_dir
@@ -1854,7 +1864,7 @@ class FileTree
     when 0
       # Just show path if 0+...
     when :-   # Just show # foo... comments...
-      self.enter_lines(/(^ *def |(^| )# .+\.\.\.$)/, :current_line=>current_line)
+      self.enter_lines(/(^ *def |(^| )(#|"|\/\/) .+\.\.\.$)/, :current_line=>current_line)
     when 6   # Just show # foo... comments...
       self.enter_lines(/(^ *def |self\.)/, :current_line=>current_line)
     when :u

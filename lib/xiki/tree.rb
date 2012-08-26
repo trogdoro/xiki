@@ -46,7 +46,9 @@ class Tree
 
     # Make cursor blue
     Cursor.remember :before_file_tree
-    Cursor.blue
+
+    Cursor.box
+
     error = ""
 
     pattern = ""
@@ -69,10 +71,8 @@ class Tree
 
     # While chars to search for (alpha chars etc.), narrow down list...
 
-    while (ch =~ /[ -"&-),-.\/-:<?A-~]/ &&   # Be careful editing, due to ranges (_-_)
-        (ch_raw < 67108912 || ch_raw > 67108921) && ch_raw != 67108909) ||   # If not control-<number> or C--
-        (recursive && ch_raw == 2 || ch_raw == 6) ||
-        ch == :up || ch == :down
+    while ch.is_a?(String) && (ch =~ /[ -"&-),-.\/-:<?A-~]/ &&   # Be careful editing, due to ranges (_-_)
+        (ch_raw < 67108912 || ch_raw > 67108921) && ch_raw != 67108909) # ||   # If not control-<number> or C--
 
       if ch == ' ' && pattern != ""   # If space and not already cleared out
         pattern = ''
@@ -89,12 +89,6 @@ class Tree
           Line.to_words
           break   # Otherwise, stop
         end
-      elsif ch == :up
-        Line.previous
-        Line.to_words
-      elsif ch == :down
-        Line.next
-        Line.to_words
 
       else
         if ch == "\\"  # If escape, get real char
@@ -151,13 +145,13 @@ class Tree
         else
           Line.to_beginning
         end
-
       end
 
       message = "filter... #{pattern}#{error}"
       message << "    (space for 'and')" if pattern.present?
       Message << message
       ch, ch_raw = Keys.char
+
       if ch.nil?
         return Cursor.restore(:before_file_tree)
       end
@@ -191,6 +185,19 @@ class Tree
         self.to_parent
         self.kill_under
         FileTree.dir
+      elsif ch == 'a'   # just_all
+
+        # If a quote, insert lines indented lower
+        if Line.matches(/\|/)
+          CodeTree.kill_siblings
+          self.enter_under
+        elsif FileTree.dir?  # A Dir, so do recursive search
+          $el.delete_region(Line.left(2), right)
+          FileTree.dir_recursive
+        else   # A file, so enter lines
+          $el.delete_region(Line.left(2), right)
+          FileTree.enter_lines(//)  # Insert all lines
+        end
       end
     when :return   # If return, just stop (like isearch)
       # Do nothing
@@ -198,15 +205,14 @@ class Tree
       Keys.clear_prefix
       Launcher.launch
 
-      #     when :control_return, :return, "\C-m", :control_period, :right   # If C-., go in but don't collapse siblings
-    when :control_return, "\C-m", :control_period, :right   # If C-., go in but don't collapse siblings
+    when :control_return, "\C-m", :control_period #, :right   # If C-., go in but don't collapse siblings
       Keys.clear_prefix
       Launcher.launch
     when "\t"   # If tab, hide siblings and go in
       $el.delete_region(Line.left(2), right)
       Keys.clear_prefix
       Launcher.launch
-    when :backspace, :left   # Collapse tree
+    when :backspace #, :left   # Collapse tree
       self.to_parent
       self.kill_under
       self.search(:left => Line.left, :right => Line.left(2))
@@ -299,18 +305,12 @@ class Tree
       View.create
       Launcher.launch
 
+    when "\C-e"   # Also C-a
+      return Line.to_right
+
     when "\C-a"   # Also C-a
-      # If a quote, insert lines indented lower
-      if Line.matches(/\|/)
-        CodeTree.kill_siblings
-        self.enter_under
-      elsif FileTree.dir?  # A Dir, so do recursive search
-        $el.delete_region(Line.left(2), right)
-        FileTree.dir_recursive
-      else   # A file, so enter lines
-        $el.delete_region(Line.left(2), right)
-        FileTree.enter_lines(//)  # Insert all lines
-      end
+
+      return Line.to_left
 
     when "\C-o"   # When 9 or C-o, show methods, or outline
       $el.delete_region(Line.left(2), right)   # Delete other files
@@ -320,9 +320,7 @@ class Tree
         $el.delete_region(Line.left(2), right)  # Delete other files
         View.bar
         Keys.clear_prefix
-        # Expand or open
-        Launcher.launch
-        return
+        return Launcher.launch   # Expand or open
       end
       Keys.clear_prefix
       n = ch.to_i
@@ -401,6 +399,14 @@ class Tree
 
     when "\a"   # Typed C-g
       View.beep
+    when :left
+      Move.backward
+    when :right
+      Move.forward
+    when :up
+      $el.previous_line
+    when :down
+      $el.next_line
     else
       $el.command_execute ch
     end
@@ -1146,7 +1152,8 @@ class Tree
       # Go through lines in file until end of section
       matches = ""
       found_yet = false
-      IO.foreach(path) do |l|
+
+      IO.foreach(path, *Files.encoding_binary) do |line|
         l.sub!(/[\r\n]+$/, '')
         l.gsub!("\c@", '.')   # Replace out characters that el4r can't handle
         # Swallow up until match
@@ -1170,7 +1177,8 @@ class Tree
       indent = line[/^\s*/].gsub("\t", '        ').length
       matches = ""
       found_yet = false
-      IO.foreach(path) do |l|
+
+      IO.foreach(path, *Files.encoding_binary) do |line|
         l.sub!(/[\r\n]+$/, '')
         l.gsub!("\c@", '.')   # Replace out characters that el4r can't handle
         # Swallow up until match

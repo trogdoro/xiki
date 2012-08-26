@@ -18,11 +18,15 @@ end
 
 class String
   def blank?
-    self.nil? || self.empty?
+    empty?
   end
 
   def present?
-    ! self.nil?
+    ! empty?
+  end
+
+  def any?
+    ! empty?
   end
 
   def unindent

@@ -26,6 +26,7 @@ class History
     elsif options[:prompt_for_bookmark]
       bm = Keys.input(:timed => true, :prompt => "Enter bookmark to show content for: ")
       path = Bookmarks.expand(bm, :just_bookmark => true)
+      return View.beep("- Bookmark '#{bm}' not found!") if ! path
       path = File.expand_path(path)
 
       if ! options[:all] && View.files.member?(path)

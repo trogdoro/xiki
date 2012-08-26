@@ -29,9 +29,8 @@ class Browser
   end
 
   def self.js txt, options={}
-    Firefox.run txt, options
+    Firefox.exec txt, options
   end
-
 
   def self.open_in_browser
 
@@ -40,9 +39,13 @@ class Browser
       return self.url "http://xiki/#{Tree.path}"
     end
 
-    file = FileTree.tree_path_or_this_file
-
-    return Browser.html Markdown.render(View.txt) if View.extension == "markdown"   # If .markdown, render it
+    if FileTree.handles?
+      file = Tree.construct_path
+    else
+      # Put this somewhere wher it works in file tree as well
+      return Browser.html(Markdown.render(View.txt)) if View.extension == "markdown"   # If .markdown, render it
+      file = View.file
+    end
 
     mappings = Menu.menu_to_hash "/Users/craig/menus/url_mappings.menu"
 

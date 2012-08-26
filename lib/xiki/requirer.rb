@@ -17,7 +17,7 @@ class Requirer
       gem name
       require options[:name2] || name
     rescue Exception=>e
-      self.show "Xiki #{options[:optional] ? 'optionally uses' : 'requires'} the '#{name}' gem.\n% sudo gem install #{name}\n\n"
+      self.show "Xiki #{options[:optional] ? 'optionally uses' : 'requires'} the '#{name}' gem.\n% gem install #{name}\n\n"
       raise e if options[:raise]
     end
   end
@@ -38,7 +38,7 @@ class Requirer
       rescue LoadError => e
         self.show "#{e.to_s}\n"
         gem_name = self.extract_gem_from_exception e.to_s
-        self.show "_Xiki requires the '#{gem_name}' gem.\n% sudo gem install #{gem_name}\n\n"
+        self.show "_Xiki requires the '#{gem_name}' gem.\n% gem install #{gem_name}\n\n"
       end
     end
 

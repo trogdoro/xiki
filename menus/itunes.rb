@@ -7,6 +7,7 @@ class Itunes
     - .previous/
     - .artists/
     - .songs/
+    - .current/
     - .playlist/
     - api/
       > Play a song
@@ -21,18 +22,24 @@ class Itunes
     "
   end
 
+  @@use_pipe_delimiter = "set Applescript's text item delimiters to \"|\""
+
   def self.songs name=nil
 
     # If nothing passed, list all songs
     if name.nil?
-      tracks = Applescript.run "iTunes", "get the name of every track of library playlist 1"
-      tracks = JSON[tracks.sub(/^\{(.+)\}$/, "[\\1]")]
+      tracks = Applescript.run "iTunes", "get the name of every track of library playlist 1 as string", :delimiter=>"|"
+      tracks = tracks.split("|")
       return tracks.sort.uniq.select{|o| o != "" && o !~ /^ /}.map{|o| "- #{o}/\n"}.join
       return
     end
 
     Applescript.run "iTunes", "play track \"#{name}\""
 
+  end
+
+  def self.current
+    Applescript.run "iTunes", "get name of current track"
   end
 
   def self.playlist name=nil

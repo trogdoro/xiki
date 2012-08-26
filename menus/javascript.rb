@@ -13,7 +13,9 @@ class Javascript
 
       txt << "
         function p(txt) {
-          print(JSON.stringify(txt));
+          var json = JSON.stringify(txt);
+          if(json == undefined && txt) json = txt;   // Sometimes JSON.stringify returns undefined when something there (like functions)
+          print(json);
         }";
 
       result = self.run_internal txt

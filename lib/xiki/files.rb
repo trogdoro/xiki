@@ -181,16 +181,16 @@ class Files
 
   def self.open_edited
     case Keys.prefix
-    when :u, 8:  Launcher.open("- edited/tree/")
+    when :u, 8;  Launcher.open("- edited/tree/")
     else  Launcher.open("- edited/")
     end
   end
 
   def self.open_history
     case Keys.prefix
-    when nil:  Keys.prefix = nil; Launcher.open("- Files.history/")
-    when 0:  Launcher.open("- Files.history_tree/")
-    when :u:  Launcher.open("- Files.history_tree 7/")
+    when nil;  Keys.prefix = nil; Launcher.open("- Files.history/")
+    when 0;  Launcher.open("- Files.history_tree/")
+    when :u;  Launcher.open("- Files.history_tree 7/")
     else  Launcher.open("- Files.history_tree #{Keys.prefix}/")
     end
   end
@@ -308,7 +308,7 @@ class Files
     return View.beep("- There's no file for this buffer!") if ! dest_path
 
     View.beep :times=>3
-    View.flash "- Delete CURRENT file for sure?", :times=>4
+    View.flash "- Delete CURRENT file (#{View.name})?", :times=>4
     answer = Keys.input :chars=>1, :prompt=>"- Delete current file for sure?"   #"
 
     return View.flash("- cancelled!") if answer !~ /y/i
@@ -324,6 +324,16 @@ class Files
 
     return View.kill
 
+  end
+
+  if /^1\.9/===RUBY_VERSION
+    def self.encoding_binary
+      [{:encoding => 'binary'}]
+    end
+  else
+    def self.encoding_binary
+      []
+    end
   end
 
 end

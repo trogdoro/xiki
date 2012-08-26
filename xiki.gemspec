@@ -5,7 +5,7 @@
 
 Gem::Specification.new do |s|
   s.name = "xiki"
-  s.version = "0.5.1a"
+  s.version = "0.5.2a"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Craig Muth"]
@@ -27,11 +27,27 @@ Gem::Specification.new do |s|
   s.homepage = "http://xiki.org"
   s.licenses = ["MIT"]
   s.require_paths = ["."]
-  #   s.rubygems_version = "1.8.24"
 
-  #     current_version = Gem::Specification::CURRENT_SPECIFICATION_VERSION
-  #     s.specification_version = 3
+  s.add_dependency('sourcify')
+  s.add_dependency('ruby_parser')
+  s.add_dependency('file-tail')
 
-  s.add_development_dependency("rspec", ["~> 2.3.0"])
+  s.add_dependency('httparty')
+  s.add_dependency('activesupport')
+  s.add_dependency('method_source')
+  s.add_dependency('net-ssh')
+  s.add_dependency('net-scp')
+  s.add_dependency('net-sftp')
+  s.add_dependency('rspec')
+  s.add_dependency('memcached')
+  s.add_dependency('trogdoro-el4r')
+
+  s.add_dependency('file-tail')
+  s.add_dependency('ruby_parser')
+  s.add_dependency('sourcify')
+  s.add_dependency('daemons')
+
+  # Restore if changes get merged into main el4r gem
+  #  s.add_dependency('el4r')
 
 end

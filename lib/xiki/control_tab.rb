@@ -29,11 +29,13 @@ class ControlTab
       View.layout_output :dont_highlight=>1
 
       Move.to_end
-      Search.forward "^-", :go_anyway=>1
+      Search.forward "^ *-", :go_anyway=>1
       if View.cursor == View.bottom
         Move.to_previous_paragraph
         Line.next
       end
+
+      Line.to_beginning
       Effects.blink
       Launcher.launch
       @@nine_prefix = true

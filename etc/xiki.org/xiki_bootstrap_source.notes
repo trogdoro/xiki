@@ -1,8 +1,10 @@
 > Deploy
 - /tmp/
   $ scp tmp.html xiki@xiki.org:/var/www/xiki.org/index.html
+  % scp tmp.html xiki@xiki.org:/var/www/xiki.org/screencasts/index.shtml
 
 http://xiki.org
+http://xiki.org/screencasts
 
 
 > Home page
@@ -158,6 +160,9 @@ bootstrap/
     }
 
   - h1/Screencasts
+
+  <div class="section">
+    <object width="640" height="385"><param name="movie" value="http://www.youtube.com/v/bUR_eUVcABg&hl=en_US&fs=1&rel=0"></param><param name="allowFullScreen" value="true"></param><param name="allowscriptaccess" value="always"></param><embed src="http://www.youtube.com/v/bUR_eUVcABg&hl=en_US&fs=1&rel=0" type="application/x-shockwave-flash" allowscriptaccess="always" allowfullscreen="true" width="640" height="385"></embed></object>
 
   <div class="section">
     <object width="640" height="385"><param name="movie" value="http://www.youtube.com/v/LA-lViZ8vls&hl=en_US&fs=1&rel=0"></param><param name="allowFullScreen" value="true"></param><param name="allowscriptaccess" value="always"></param><embed src="http://www.youtube.com/v/LA-lViZ8vls&hl=en_US&fs=1&rel=0" type="application/x-shockwave-flash" allowscriptaccess="always" allowfullscreen="true" width="640" height="385"></embed></object>

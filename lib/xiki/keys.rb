@@ -297,40 +297,28 @@ class Keys
   #
   # Sample usages:
   # Keys.input   # Terminated by enter
+  # Keys.input "Type something: "
   # Keys.input :chars=>1   # Just one char
-  # Keys.input :control=>1   # One char if control
   # Keys.input :timed=>1   # Terminated by pause
   # Keys.input :optional=>1   # Terminated by pause
   #   - A pause at the beginning will result in no input (nil)
   #
-  def self.input options={}
+  def self.input *args
+
+    prompt = args.shift if args[0].is_a?(String)
+
+    options = args[0] || {}
 
     return self.input_with_choices(options) if options[:choices]
 
     Cursor.remember :before_input
-    Cursor.green
+
+    # This is slow in mac emacs 23/24 :(
+    # Cursor.green
+
     Cursor.hollow
 
-    prompt = options[:prompt] || "Input: "
-
-    # Not completely implemented
-    if options[:control]
-      prompt = "todo - implement this: "
-
-      $el.elvar.inhibit_quit = true
-      # Maybe use this?
-        # Or call self.char?
-      # char = $el.char_to_string(Keys.remove_control($el.read_char(prompt))).to_s
-      c = read_char(prompt)
-      $el.elvar.inhibit_quit = nil
-      if c == 7
-        Cursor.restore :before_input
-        keyboard_quit
-      end
-
-      Cursor.restore :before_input
-      return c
-    end
+    prompt ||= options[:prompt] || "Input: "
 
     if options[:chars]
       char = $el.char_to_string(
@@ -375,7 +363,6 @@ class Keys
     Cursor.restore :before_input
 
     $el.message ""
-
     # If nothing, return nil
     keys == "" ? nil : keys
   end
@@ -392,9 +379,10 @@ class Keys
 
   def self.to_letter ch
     return nil if ch.nil?
-    if ch < 27
+    if ch == 0
+      ch = 32
+    elsif ch < 27
       ch += 96
-
     elsif 67108896 <= ch and ch <= 67108921
       ch -= 67108864
     end
@@ -496,7 +484,9 @@ class Keys
     end
 
     Cursor.remember :before_q
-    Cursor.green
+    Cursor.box
+    # This is slow in mac emacs 23/24 :(
+    # Cursor.green
 
     # Get first char and insert
     c = $el.read_char("insert text (pause to exit): ").chr
@@ -624,6 +614,7 @@ class Keys
 
   def self.bookmark_as_path options={}
     bm = options[:bm] || Keys.input(:timed=>true, :prompt=>options[:prompt]||"Enter a bookmark: ")
+
     if bm == " "   # If space, return special token
       return :space
     elsif bm == "/"   # If slash, return special token
@@ -674,7 +665,6 @@ class Keys
   end
 
   def self.char
-
     $el.elvar.inhibit_quit = true
     ch_initial = $el.read_event.to_s
     $el.elvar.inhibit_quit = nil
@@ -685,11 +675,17 @@ class Keys
         return ["meta_#{(ch_raw - 134217728).chr}".to_sym, nil]
       end
 
-      # If char is over the elisp max, try to interpret it as Meta
-      ch = $el.char_to_string(ch_raw)
       # Special check for C-. and other sequences
-      ch = :control_period if ch_raw == 67108910
-      ch = :control_slash if ch_raw == 67108911
+      ch = if ch_raw == 67108910
+        :control_period
+      elsif ch_raw >= 67108912 && ch_raw <= 67108921   # If between C-0 and C-9
+        (ch_raw - 67108864).chr
+      elsif ch_raw == 67108911
+        :control_slash
+      else
+        # If char is over the elisp max, try to interpret it as Meta
+        $el.char_to_string(ch_raw)
+      end
       return [ch, ch_raw]
 
     elsif ['left', 'right', 'up', 'down', ].member?(ch_initial)

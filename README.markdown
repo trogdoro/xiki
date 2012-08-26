@@ -7,21 +7,24 @@ Either install as a gem, or install from github.
 
 ## As a gem
 
-      $ gem install xiki --pre
+      $ sudo gem install xiki --pre
 
 ## Or, from github
 
       $ git clone git@github.com:trogdoro/xiki.git
       $ cd xiki
+      $ gem install bundler
       $ bundle install --system
       $ cp <xiki dir>/etc/command/xiki_wrapper /usr/local/bin/xiki
       $ chmod 755 /usr/local/bin/xiki
+
+If you don't have permission, to run some of the commands put "sudo" at the beginning of the command.
 
 # Verify the 'xiki' shell command works
 
       $ xiki
 
-It should delay slightly the first time, but be fast subsequent times.
+It should delay slightly the first time, but be fast subsequent times.  If you run into errors and then fix them, you'll want to run the "xiki restart" command.
 
 # Configure your editor to use Xiki
 
@@ -70,13 +73,14 @@ Sample configuration:
         Xiki.init
 
         KeyBindings.keys   # Use default key bindings
-        Themes.use "Default"  # Use xiki coloring
+        Themes.use "Default"  # Use xiki theme
 
 
 Be sure to substitute "&lt;xiki dir&gt;" with the actual dir.
 
 ### If you get an error
 If you got partially through the load...
+
 - You may be able to use these keys to trouble-shoot:
    - Option+e to look at the latest error in the log
    - Option+l to reload xiki and .emacs

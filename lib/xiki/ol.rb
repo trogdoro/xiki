@@ -82,7 +82,8 @@ class Ol
     time ||= @@last
     difference = Time.now - time[0]
     time[0] = Time.now unless no_reset
-    difference > 3
+
+    difference > 5
   end
 
   def self.<< txt
@@ -96,8 +97,6 @@ class Ol
     self.line "#{elapsed ? "(#{elapsed}) " : ''}#{now.strftime('%I:%M:%S').sub(/^0/, '')}:#{now.usec.to_s.rjust(6, '0')}", caller(0)[nth]
     @@timed_last = now
   end
-
-
 
   def self.line txt=nil, l=nil, indent="", name=nil, time=nil
     l ||= caller(0)[1]

@@ -7,23 +7,23 @@ class Cursor
     > Summary
     | Api for changing the cursor
     |
-    - Colors/
+    - colors/
       @Cursor.white
       @Cursor.red
       @Cursor.green
       @Cursor.blue
       @Cursor.color "#80f"
-    - Shapes/
+    - shapes/
       @Cursor.bar
       @Cursor.underscore
       @Cursor.hollow
       @Cursor.box
-    - Colors and Shapes/
+    - colors and shapes/
       @Cursor.red_bar
       @Cursor.green_underscore
       @Cursor.blue_hollow
       @Cursor.black_box
-    - Remembering and restoring cursor/
+    - remembering and restoring cursor/
       @Cursor.remember :a
       @Cursor.restore :a
     `
@@ -103,7 +103,6 @@ class Cursor
     before = @@remember[symbol]
     return Cursor.black_box unless before  # Black if not found
     type, color = before
-    $el.set_face_background :cursor, color
     $el.customize_set_variable :cursor_type, type
   end
 

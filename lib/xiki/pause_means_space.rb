@@ -4,7 +4,7 @@ class PauseMeansSpace
 
   def self.go
     Cursor.remember :before_q
-    Cursor.green
+    Cursor.box
 
     while(inserted = insert_until_pause)
       next if inserted == 127

@@ -1,8 +1,8 @@
 # Gets shelled out to by xiki to delegate call to a no-dependency .rb file.
 # Just gets the args passed in and requires and invokes.
 
-# TODO Don't hard-code path
-require "/projects/xiki/lib/ol.rb"
+# TODO Don't hard-code path - use __FILE__?
+# require "/projects/xiki/lib/xiki/ol.rb"
 
 file = ARGV.shift
 path = ARGV.shift

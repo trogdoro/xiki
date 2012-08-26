@@ -1,0 +1,24 @@
+Themes.use "Black BG"
+Themes.use "Shiny Blue"
+Themes.use "Path Mode Line"
+
+$el.el4r_lisp_eval %`
+  (progn
+    (tool-bar-mode -1)   ; Turn off the toolbar
+
+    (custom-set-variables
+      '(tabbar-mode nil)   ; No tabs
+      '(cua-rectangle-mark-key (kbd "<C-S-return>"))   ; No tabs
+      ;;   '(tabbar-mode t)   ; No tabs
+      ;;   '(show-paren-mode nil)
+      )
+
+    (set-face-attribute 'region nil :background "#333333" :foreground "#ffffff") ;; More mac-like selection color
+
+    (setq-default
+     frame-title-format
+     '("%b"))
+
+    (setq frame-title-format '("%b" ))
+  )
+  `

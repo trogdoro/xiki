@@ -395,7 +395,7 @@ class Line
     line = Line.value
 
     if line.blank?   # If blank line, prompt for menu
-      return Launcher.like_menu "docs/", :inline=>1
+      return Launcher.insert "docs"
 
     elsif line =~ /^(\w+\.\w+| +([+-] )?\.)/i   # If a method, grab docs from source and insert
       orig = Location.new

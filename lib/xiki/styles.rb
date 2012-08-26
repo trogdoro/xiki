@@ -4,9 +4,6 @@ class Styles
 
     '
     - .font size/
-    - .background color/
-      - white/
-      - black/
     - .list faces/
     - api/
       > Summary
@@ -31,30 +28,22 @@ class Styles
       | For styling specific text (not just a pattern):
       <<< @overlay/
     - see/
-      > List styles in current page in web browser
       <<< @css/list/
+      <<< @themes/
     '
     #       > Apply multiple fonts and groups
 
   end
 
-  def self.background_color color
-
-    $el.customize_set_variable(:background_mode_type, color == "black" ? :dark : :light)
-
+  def self.reload_styles
     Notes.define_styles
     FileTree.define_styles
-    Styles.use_xiki_color_scheme
-    Styles.define_misc_face_colors
     Color.define_styles
-
-    nil
   end
 
   def self.font_size size=nil
 
     # If nothing passed, show default sizes
-
 
     if ! size
       return "
@@ -71,7 +60,6 @@ class Styles
     Styles.define :default, :size=>size.to_i
 
     # To resize mode lines
-    Themes.use "Shiny Blue"
     Notes.define_styles
     FileTree.define_styles
 
@@ -106,13 +94,8 @@ class Styles
     nil
   end
 
-  def self.inverse_bg enable=true
-    $el.customize_set_variable(:background_mode_type, enable ? :dark : :light)
-  end
-
-  def self.inverse
-    $el.boundp(:background_mode_type) &&
-      $el.elvar.background_mode_type.to_s == 'dark'
+  def self.dark_bg?
+    Styles.attribute(:default, :background)[1..1][/[0-7]/]
   end
 
   def self.exand_colors options, keys
@@ -166,30 +149,6 @@ class Styles
     $el.el4r_lisp_eval code
   end
 
-  def self.define_misc_face_colors
-
-    if Styles.inverse
-
-      Styles.define :font_lock_comment_face, :fg=>'777'   # gray
-      Styles.define :font_lock_function_name_face, :fg=>'f50'   # orange
-      Styles.define :font_lock_type_face, :fg=>'0a1'   # green
-      Styles.define :font_lock_variable_name_face, :fg=>'fd0'   # yellow
-      Styles.define :font_lock_string_face, :fg=>'e10'   # red
-      Styles.define :font_lock_keyword_face, :fg=>'999'
-
-    else
-
-      Styles.define :font_lock_comment_face, :fg=>'aaa'   # gray
-      Styles.define :font_lock_function_name_face, :fg=>'f50'   # orange
-      Styles.define :font_lock_type_face, :fg=>'090', :bold=>nil   # green
-      Styles.define :font_lock_variable_name_face, :fg=>'00c', :bold=>1   # yellow
-      Styles.define :font_lock_string_face, :fg=>'e10', :bold=>nil   # red
-      Styles.define :font_lock_keyword_face, :fg=>'888', :bold=>1   # blue
-
-    end
-
-  end
-
   def self.apply(pattern, *styles)
     # Make back-slashes double
     pattern.gsub!("\\", '\\\\\\\\')
@@ -232,6 +191,10 @@ class Styles
     $el.el4r_lisp_eval "(face-attribute 'default :height)"
   end
 
+  #
+  # Styles.attribute "mode-line", "background"
+  # Styles.attribute "mode-line", "box"
+  #
   def self.attribute style, attribute
     $el.el4r_lisp_eval "(face-attribute '#{style} :#{attribute})"
   end
@@ -241,33 +204,6 @@ class Styles
     size = $el.el4r_lisp_eval "(face-attribute 'default :height)"
     size ||= 90
     size + relative * 5
-  end
-
-  def self.use_xiki_color_scheme
-    if Styles.inverse   # Use black
-      # Mode line (bar between windows)
-
-      $el.set_face_background :trailing_whitespace, "#333333"
-      Styles.define :default, :bg=>'111111', :fg=>'ffffff'
-      Styles.define :cursor, :bg=>'ffffff', :fg=>'000000'
-
-      Styles.define :fringe, :bg=>'111111', :fg=>'666666'
-
-      # Dark gray scheme
-      Styles.define :mode_line, :bg=>'333', :border=>['666', -1], :face=>'Lucida Grande', :size=>'3', :bold=>false, :fg=>'fff'
-      Styles.define :mode_line_inactive, :bg=>'666', :border=>['888', -1], :face=>'Lucida Grande', :size=>'3', :bold=>false, :fg=>'fff'
-
-    else
-      $el.set_face_background :trailing_whitespace, "#aaaaaa"
-      Styles.define :default, :bg=>'ffffff', :fg=>'000000'# , :height=>110
-      Styles.define :cursor, :bg=>'333333', :fg=>'ffffff'
-      Styles.define :fringe, :bg=>'ffffff', :fg=>'cccccc'   # eg border / status
-
-      Styles.define :mode_line, :fg=>'222222', :bg=>'555', :border=>['333', -1], :face=>'Lucida Grande', :size=>'3', :bold=>false
-      Styles.define :mode_line_inactive, :fg=>'999999', :bg=>'888', :border=>['666', -1], :face=>'Lucida Grande', :size=>'3', :bold=>false
-
-    end
-
   end
 
 end

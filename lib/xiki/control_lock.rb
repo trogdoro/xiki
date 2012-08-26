@@ -4,6 +4,10 @@
 class ControlLock
 
   def self.disable
-    $el.control_lock_enable if $el.boundp(:control_lock_mode_p) and $el.elvar.control_lock_mode_p
+    $el.control_lock_enable if self.enabled?
+  end
+
+  def self.enabled?
+    $el.boundp(:control_lock_mode_p) and $el.elvar.control_lock_mode_p
   end
 end

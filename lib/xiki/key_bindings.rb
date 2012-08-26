@@ -163,7 +163,6 @@ class KeyBindings
     Keys.enter_file_path { Files.enter_file }   # Given a bookmark
     Keys.enter_firefox_tabs { Launcher.insert('- Firefox.tabs/') }   # Given a bookmark
     Keys.enter_history { DiffLog.enter_from_difflog }   # Save point and go to difflog to search
-    Keys.enter_insert_1 { Notes.enter_do_bullet }    # insert date string (and time if C-u)
     Keys.enter_insert_date { View.enter_date }
     Keys.enter_insert_comment { Code.enter_insert_comment }    # insert date string (and time if C-u)
     Keys.enter_insert_new { DiffLog.enter_new }   # Enter Old: enter newly-deleted from last save
@@ -195,7 +194,7 @@ class KeyBindings
     Keys.enter_like_variable { insert "\#{#{Clipboard.get(0)}}" }
 
     Keys.enter_menu { Xiki.insert_menu }   # Redundant with C-enter on blank line
-    Keys.enter_note { Notes.enter_do_bullet }   # Redundant with C-enter on blank line
+    Keys.enter_note { Notes.enter_note }   # Redundant with C-enter on blank line
     Keys.enter_outline { Launcher.enter_outline }   # in tree, enter methods or headings
 
     Keys.enter_push { Gito.code_tree_diff(:enter=>true) }   # Commit to repos, push, etc
@@ -639,8 +638,12 @@ class KeyBindings
     $el.el4r_lisp_eval("(require 'dired)")
     $el.define_key :dired_mode_map, $el.kbd("C-o"), nil
     $el.define_key :java_mode_map, $el.kbd("C-d"), nil
-    $el.el_require :php_mode
-    $el.define_key :php_mode_map, $el.kbd("C-d"), nil
+
+    begin
+      $el.el_require :php_mode
+      $el.define_key :php_mode_map, $el.kbd("C-d"), nil
+    rescue Exception=>e
+    end
 
     # C-l in ediff mode
     $el.defun(:ediff_disable_C_l) { $el.define_key(:ediff_mode_map, $el.kbd("C-l"), nil) }

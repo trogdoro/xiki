@@ -10,13 +10,13 @@ class Xiki
   def self.dir
     @@dir
   end
-
 end
 
 $el.el4r_lisp_eval '(ignore-errors (kill-buffer "Issues Loading Xiki"))' if $el
+$el.set_process_query_on_exit_flag($el.get_buffer_process("*el4r:process*"), nil) if $el
+
 
 # $LOAD_PATH << "#{xiki_dir}/lib"
-
 # Require some of the core files
 require 'rubygems'
 require 'xiki/trouble_shooting'
@@ -30,6 +30,9 @@ require 'xiki/menu'
 
 # Launcher.add_class_launchers classes
 class Xiki
+
+  $el.elvar.xiki_loaded_once = nil if $el && ! $el.boundp(:xiki_loaded_once)
+
   def self.menu
     %`
     - .tests/
@@ -76,6 +79,18 @@ class Xiki
         - stop/
         - restart/
         - log/
+      - el4r/
+        > Configure
+        @#{Xiki.dir}
+          % sudo bash etc/install/el4r_setup.sh
+
+        - docs/
+          | This will create/update files in your home directory, which make el4r
+          | point to the version of ruby currently active.
+          |
+          | You can run this multiple times.
+      - .misc/
+        - .dont show welcome/
     - api/
       > Summary
       Here are some functions that will always be available to menu classes,
@@ -95,7 +110,7 @@ class Xiki
 
   def self.install_icon arg
 
-    emacs_dir = "/Applications/Emacs.app"
+    emacs_dir = "/Applications/Aquamacs Emacs.app"
 
     return "- Couldn't find #{emacs_dir}!" if ! File.exists?("#{emacs_dir}")
 
@@ -115,12 +130,42 @@ class Xiki
       # if change was already made, say so
 
     # TODO
-    # icon
-      # copy over
-        # cp "#{Xiki.dir}etc/shark.icns"
+
+    # 1. Copy icon into app
+    # cp "#{Xiki.dir}etc/shark.icns" "/Applications/Aquamacs Emacs.app/Contents/Resources/"
+    # - /Applications/Aquamacs Emacs.app/
+    #   - Contents/Resources/
+    #     + shark.icns
+    #     + emacs-document.icns
+
+    # 2. Update Info.plist
+    # /Applications/Aquamacs Emacs.app/Contents/
+    #   - Info.plist
+    #     |+ 		<dict>
+    #     |+ 			<key>CFBundleTypeExtensions</key>
+    #     |+ 			<array>
+    #     |+ 				<string>notes</string>
+    #     |+ 				<string>menu</string>
+    #     |+ 				<string>xiki</string>
+    #     |+ 			</array>
+    #     |+ 			<key>CFBundleTypeIconFile</key>
+    #     |+ 			<string>shark.icns</string>
+    #     |+ 			<key>CFBundleTypeName</key>
+    #     |+ 			<string>Xiki File</string>
+    #     |+ 			<key>CFBundleTypeOSTypes</key>
+    #     |+ 			<array>
+    #     |+ 				<string>TEXT</string>
+    #     |+ 				<string>utxt</string>
+    #     |+ 			</array>
+    #     |+ 			<key>CFBundleTypeRole</key>
+    #     |+ 			<string>Editor</string>
+    #     |+ 		</dict>
+
+    # 3. Tell user to drag the .app icon out of the "Applications" folder and back in
+    #   - Or google to find a command that will do the same thing
 
 
-    "- finish implementing!"
+    "- TODO: finish implementing!"
   end
 
   def self.insert_menu
@@ -344,10 +389,13 @@ class Xiki
   end
 
   def self.init
+
     # Get rest of files to require
 
-    classes = Dir["lib/xiki/*.rb"]
+    classes = Dir["./lib/xiki/*.rb"]
+
     classes = classes.select{|i|
+      i !~ /\/ol.rb$/ &&   # Don't load Ol twice
       i !~ /\/xiki.rb$/ &&   # Remove self
       i !~ /\/key_bindings.rb$/ &&   # Remove key_bindings
       i !~ /__/   # Remove __....rb files
@@ -368,7 +416,7 @@ class Xiki
     Requirer.require_classes classes
 
     # key_bindings has many dependencies, require it last
-    Requirer.require_classes ['lib/xiki/key_bindings.rb']
+    Requirer.require_classes ['./lib/xiki/key_bindings.rb']
 
     Launcher.add_class_launchers classes.map{|o| o[/.*\/(.+)/, 1]}
     Launcher.reload_menu_dirs
@@ -380,6 +428,16 @@ class Xiki
     Mode.define(:xiki, ".xiki") do
       Xiki.on_open
     end
+
+    if $el
+      # If the first time we've loaded
+      if ! $el.elvar.xiki_loaded_once && ! Menu.line_exists?("misc config", /^- dont show welcome$/) && ! View.buffer_visible?("Issues Loading Xiki")
+        Launcher.open("welcome/", :no_search=>1)
+      end
+
+      $el.elvar.xiki_loaded_once = true
+    end
+
   end
 
   def self.process action
@@ -403,4 +461,11 @@ class Xiki
     end
   end
 
+  def self.dont_show_welcome
+    Menu.append_line "misc config", "- dont show welcome"
+  end
+
+  def self.finished_loading?
+    @@finished_loading
+  end
 end

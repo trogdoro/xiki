@@ -106,6 +106,8 @@ class Console
       result = ""
       result << stdout.readlines.join('')
       result << stderr.readlines.join('')
+
+      result.force_encoding("binary") if result.respond_to? :force_encoding
       result.gsub!("\c@", '.')   # Replace out characters that el4r can't handle
       return result
 
@@ -122,6 +124,10 @@ class Console
       $el.erase_buffer if reuse_buffer
       $el.elvar.default_directory = dir if dir
       $el.shell $el.current_buffer
+
+      # Don't prompt with "buffer has a running process" when closing
+      $el.set_process_query_on_exit_flag $el.get_buffer_process($el.current_buffer), nil
+
       Move.bottom
       if command  # If nil, just open console
         $el.insert command

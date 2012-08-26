@@ -61,9 +61,9 @@ class Bookmarks
 
     # If arg is a symbol, use it as the prefix
     prefix = ""
-    if arg && arg.type == Symbol
+    if arg && arg.class == Symbol
       prefix = arg.to_s
-    elsif arg && arg.type == String
+    elsif arg && arg.class == String
       self.set(arg.sub(/^\$/, ""))
       return
     end
@@ -158,9 +158,9 @@ class Bookmarks
     #el4r_lisp_eval "(require 'bookmark)(bookmark-maybe-load-default-file)"
     # If arg is a symbol, use it as the prefix
     prefix_to_bm = ""
-    if bookmark && bookmark.type == Symbol
+    if bookmark && bookmark.class == Symbol
       prefix_to_bm = bookmark.to_s
-    elsif bookmark && bookmark.type == String
+    elsif bookmark && bookmark.class == String
       keys = bookmark
       #       return self.jump(bookmark.sub(/^\$/, ""))
     end
@@ -228,7 +228,6 @@ class Bookmarks
           end
       end
       return path if bm.nil?
-
       # If a slash, cut off filename if there is one (only dir is wanted)
       if options[:file_ok]   # Put slash back if there was one
         bm << "/" if bm !~ /\/$/ && slash.any?
@@ -301,13 +300,15 @@ class Bookmarks
     if ! path   # Print all bookmarks
       all = $el.elvar.bookmark_alist.collect { |bm|
         item = bm.to_a
-        [item[0], item[1].to_a[0][1]]
+
+        second = item[1]   # Either (filename . "/path") or ((filename . "/path") ...)
+        second = second[1].is_a?(String) ? second[1] : second[0][1]
+
+        [item[0], second]
       }
       all.each do |l|
         n, p = l
         result << "- #{n}) @#{p.sub(/\/$/,'')}\n"
-        #         puts "- #{n.ljust(7)} #{p.sub(/\/$/,'')}"
-        #puts "- #{n}: #{p}"
       end
       return result
     end

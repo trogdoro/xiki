@@ -43,6 +43,9 @@ class Effects
     "
   end
 
+  #
+  # Effects.glow :color=>:forest
+  #
   def self.glow options={}
 
     what = options[:what]
@@ -91,7 +94,7 @@ class Effects
 
     sequence.each do |i|
       $el.overlay_put over, :face, (faces[i-1] || faces[0])
-      $el.sit_for 0.02
+      $el.sit_for 0.0005
     end
 
     $el.delete_overlay over

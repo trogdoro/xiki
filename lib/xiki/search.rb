@@ -657,7 +657,6 @@ class Search
   # Search.open_file_and_method "View.path"
   #
   def self.open_file_and_method match
-
     match.sub!(/^[+-] /, '')
     match.sub!(/ .+/, '')
 
@@ -923,7 +922,7 @@ class Search
   def self.isearch_just_adjust
     self.stop
     Move.forward
-    transpose_chars 1
+    $el.transpose_chars 1
     self.to_start
   end
 
@@ -1113,7 +1112,7 @@ class Search
 
     char = Keys.input(:chars=>1, :prompt=>"Enter one char: ")
     if char == "m"
-      Launcher.open("- $x/lib/xiki/\n  - ##\\bdef /")
+      Launcher.open("- #{Xiki.dir}/\n  - ##\\bdef /")
     elsif char == "k"
       Launcher.open("- $x/key_bindings.rb\n  - ##\\bKeys\\./")
     elsif char == "l"
@@ -1283,7 +1282,7 @@ class Search
     Tree.to_parent   # Go to parent
     Tree.to_parent if Line[/^ *- ##/]
 
-    Tree.under "- \#\##{match}/", :escape=>'', :no_search=>true
+    Tree.under "- \#\##{match}/", :escape=>'', :no_search=>1, :no_slash=>1
     Launcher.launch
   end
 

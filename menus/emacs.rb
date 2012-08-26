@@ -1,7 +1,8 @@
 class Emacs
   def self.menu
     "
-    - .info/
+    - .version/
+    - .info pages/
       - Keys/
       - Prefix Keymaps/
       - Keymaps/
@@ -9,7 +10,11 @@ class Emacs
     "
   end
 
-  def self.info name
+  def self.version
+    Tree.quote $el.emacs_version
+  end
+
+  def self.info_pages name
     View.to_upper
     $el.info "(emacs)#{name}"
     nil
