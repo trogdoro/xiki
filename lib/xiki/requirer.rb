@@ -38,7 +38,7 @@ class Requirer
       rescue LoadError => e
         self.show "#{e.to_s}\n"
         gem_name = self.extract_gem_from_exception e.to_s
-        self.show "_Xiki requires the '#{gem_name}' gem.\n% gem install #{gem_name}\n\n"
+        self.show "Xiki requires the '#{gem_name}' gem.\n% gem install #{gem_name}\n\n"
       end
     end
 

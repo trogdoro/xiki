@@ -753,7 +753,7 @@ Ol << "location: #{location.inspect}"
     # Save
     File.open(file, "w") { |f| f << txt }
 
-    ".flash - updated!"
+    "- saved setting!"
   end
 end
 

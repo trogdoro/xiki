@@ -237,12 +237,10 @@ class Notes
     return if ! $el
 
     # - foo (r): <here>
-    Styles.define :notes_light_gray,
-      :fg => "bbb"
+    Styles.define :notes_light_gray, :fg => "bbb"
 
     # - foo (r): <here>
-    Styles.define :variable,
-      :face => 'verdana' #, :size => "+2"
+    Styles.define :variable, :face => 'verdana'
 
     # - foo (r): <here>
     Styles.define :notes_label_parens,

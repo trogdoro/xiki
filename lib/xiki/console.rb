@@ -371,9 +371,6 @@ class Console
       output.sub!(/\A\z/, "\n")   # Add linebreak if blank
       Keys.prefix == 1 ? output.gsub!(/^/, '|') : output.gsub!(/^/, '| ').gsub!(/^\| +$/, '|')
 
-      # Expose "!" and "- label: !" lines as commands
-      output.gsub!(/^\| \$/, '$')
-      output.gsub!(/^\| (- [\w ,-]+: \$)/, "\\1")
       output.sub! /\n*\z/, "\n"   # Guarantee exactly 1 linebreak at end
       Tree.indent(output)
 

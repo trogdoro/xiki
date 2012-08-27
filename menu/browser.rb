@@ -35,8 +35,7 @@ class Browser
   def self.open_in_browser
 
     if Keys.prefix_u   # Open as http://xiki/...
-
-      return self.url "http://xiki/#{Tree.path}"
+      return self.url "http://xiki/#{Tree.path.join("\n")}"
     end
 
     if FileTree.handles?

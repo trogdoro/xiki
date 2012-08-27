@@ -432,7 +432,7 @@ class Xiki
 
     if $el
       # If the first time we've loaded
-      if ! $el.elvar.xiki_loaded_once && ! Menu.line_exists?("misc config", /^- dont show welcome$/) && ! View.buffer_visible?("Issues Loading Xiki")
+      if ! $el.elvar.xiki_loaded_once && ! Menu.line_exists?("misc config", /^- don't show welcome$/) && ! View.buffer_visible?("Issues Loading Xiki")
         Launcher.open("welcome/", :no_search=>1)
       end
 
@@ -463,7 +463,7 @@ class Xiki
   end
 
   def self.dont_show_welcome
-    Menu.append_line "misc config", "- dont show welcome"
+    Menu.append_line "misc config", "- don't show welcome"
   end
 
   def self.finished_loading?

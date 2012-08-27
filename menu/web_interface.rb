@@ -48,10 +48,6 @@ class WebInterface
         % ruby -rubygems sinatra_server.rb
       @http://localhost:8161
       @http://xiki
-
-      - TODO: should apache mod-proxy tell them how to start it up?
-        - can I give it an error message?
-
     `
   end
 

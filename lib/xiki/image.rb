@@ -1,4 +1,6 @@
-require 'ftools'
+begin
+  require 'ftools'
+rescue Exception=>e; end
 
 class Image
   def self.menu_before *args
