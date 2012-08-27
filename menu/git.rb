@@ -107,7 +107,7 @@ class Git
     end
 
     Gito.push branch, "project - #{Dir.pwd}"
-    ".flash - pushed!"
+    ".flash - running push in shell console!"
   end
 
   def self.branch_name dir=nil
