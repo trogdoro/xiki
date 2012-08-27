@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = "xiki"
-  s.version = "0.6.0a"
+  s.version = "0.6.0"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Craig Muth"]
-  s.date = "2012-08-26"
+  s.date = "2012-08-27"
   s.executables = ["xiki"]
   s.summary = "A shell console with GUI features."
   s.description = "Xiki does what shell consoles do, but lets you edit everything at any time. It's trivial to make your own commands and menus to access other tools."

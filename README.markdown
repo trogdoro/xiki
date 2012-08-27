@@ -7,7 +7,7 @@ Either install as a gem, or install from github.
 
 ## As a gem
 
-      $ sudo gem install xiki --pre
+      $ sudo gem install xiki
 
 ## Or, from github
 
