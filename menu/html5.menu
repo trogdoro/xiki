@@ -1,0 +1,164 @@
+rectangle/
+  @html/
+    | <script src="http://code.jquery.com/jquery-latest.js"></script>
+    | <canvas height="400" width="400"></canvas>
+    | <script>
+    |   var ctx = $('canvas')[0].getContext("2d");
+    |   ctx.rect(10,10,100,80);
+    |   ctx.fill();
+    | </script>
+image/
+  @html/
+    | <script src="http://code.jquery.com/jquery-latest.js"></script>
+    | <canvas height="400" width="400"></canvas>
+    | <script>
+    |   var ctx = $('canvas')[0].getContext("2d");
+    |   var imageObj = new Image();
+    |   imageObj.onload = function(){
+    |       ctx.drawImage(imageObj, 10, 10);
+    |   };
+    |   imageObj.src = "http://www.html5canvastutorials.com/wp-content/themes/webkrunk/img/logo.png";
+    | </script>
+words/
+  @html/
+    | <script src="http://code.jquery.com/jquery-latest.js"></script>
+    | <canvas height="400" width="400"></canvas>
+    | <script>
+    |   var ctx = $('canvas')[0].getContext("2d");
+    |   ctx.font = "20pt Dotsies";
+    |   ctx.fillText("Another example", 10, 60);
+    | </script>
+arrow/
+  @html/
+    | <script src="http://code.jquery.com/jquery-latest.js"></script>
+    | <canvas height="400" width="400"></canvas>
+    | <script>
+    | var c = $('canvas')[0].getContext("2d");
+    | c.moveTo(15,2);
+    | c.lineTo(15,10); c.lineTo(0,10); c.lineTo(30,22); c.lineTo(60,10);
+    | c.lineTo(45,10); c.lineTo(45,2); c.lineTo(15,2);
+    | c.fillStyle = "orange";
+    | c.fill();
+    | c.stroke();
+    | </script>
+movement via arrow keys/
+  @html/
+    | <canvas id="canvas" width="300" height="200">
+    | </canvas>
+    |
+    | <script type="text/javascript">
+    | var canvas, ctx;
+    | var dx = 5, dy = 5;
+    | var x = 150, y = 100;
+    | var WIDTH = 300, HEIGHT = 200;
+    |
+    | function circle(x,y,r) {
+    |   ctx.beginPath();
+    |   ctx.arc(x, y, r, 0, Math.PI*2, true);
+    |   ctx.fill();
+    | }
+    |
+    | function rect(x,y,w,h) {
+    |   ctx.beginPath();
+    |   ctx.rect(x,y,w,h);
+    |   ctx.closePath();
+    |   ctx.fill();
+    |   ctx.stroke();
+    | }
+    |
+    | function clear() {
+    |   ctx.clearRect(0, 0, WIDTH, HEIGHT);
+    | }
+    |
+    | function init() {
+    |   canvas = document.getElementById("canvas");
+    |   ctx = canvas.getContext("2d");
+    |   return setInterval(draw, 10);
+    | }
+    |
+    | function doKeyDown(evt){
+    |   switch (evt.keyCode) {
+    |   case 38:  /* Up arrow was pressed */
+    |   if (y - dy > 0){
+    |   y -= dy;
+    |   }
+    |   break;
+    |   case 40:  /* Down arrow was pressed */
+    |   if (y + dy < HEIGHT){
+    |   y += dy;
+    |   }
+    |   break;
+    |   case 37:  /* Left arrow was pressed */
+    |   if (x - dx > 0){
+    |   x -= dx;
+    |   }
+    |   break;
+    |   case 39:  /* Right arrow was pressed */
+    |   if (x + dx < WIDTH){
+    |   x += dx;
+    |   }
+    |   break;
+    |   }
+    | }
+    |
+    | function draw() {
+    |   clear();
+    |   ctx.fillStyle = "white";
+    |   ctx.strokeStyle = "black";
+    |   rect(0,0,WIDTH,HEIGHT);
+    |   ctx.fillStyle = "purple";
+    |   circle(x, y, 10);
+    | }
+    |
+    | init();
+    | window.addEventListener('keydown',doKeyDown,true);
+    | </script>
+bezier curve/
+  - click to draw) @ http://www.monocubed.com/doodles/processingjs/bezier/
+  curve/
+    @html/
+      | <canvas height="400" width="400" id="myCanvas"></canvas>
+      | <script>
+      | window.onload = function(){
+      |   var canvas = document.getElementById("myCanvas");
+      |   var context = canvas.getContext("2d");
+      |   var controlX1 = 140;
+      |   var controlY1 = 10;
+      |   var controlX2 = 388;
+      |   var controlY2 = 10;
+      |   var endX = 388;
+      |   var endY = 170;
+      |
+      |   context.moveTo(188, 130);
+      |   context.bezierCurveTo(controlX1, controlY1, controlX2, controlY2, endX, endY);
+      |   context.lineWidth = 10;
+      |   context.strokeStyle = "black"; // line color
+      |   context.stroke();
+      |   context.fill();
+      |   //context.closePath();   // Ends current path so new one is started
+      | };
+      | </script>
+  cloud/
+    @html/
+      | <canvas height="300" width="450" id="myCanvas"></canvas>
+      | <script>
+      | window.onload = function(){
+      |   var canvas = document.getElementById("myCanvas");
+      |   var context = canvas.getContext("2d");
+      |
+      |   context.beginPath(); // begin custom shape
+      |   context.moveTo(170, 80);
+      |   context.bezierCurveTo(130, 100, 130, 150, 230, 150);
+      |   context.bezierCurveTo(250, 180, 320, 180, 340, 150);
+      |   context.bezierCurveTo(420, 150, 420, 120, 390, 100);
+      |   context.bezierCurveTo(430, 40, 370, 30, 340, 50);
+      |   context.bezierCurveTo(320, 5, 250, 20, 250, 50);
+      |   context.bezierCurveTo(200, 5, 150, 20, 170, 80);
+      |   context.closePath(); // complete custom shape
+      |   context.lineWidth = 5;
+      |   context.fillStyle = "#8ED6FF";
+      |   context.fill();
+      |   context.strokeStyle = "#0000ff";
+      |   context.stroke();
+      | };
+      | </script>

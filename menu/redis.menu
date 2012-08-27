@@ -1,0 +1,10 @@
+- start/
+  @ % redis-server
+- docs/
+  > Hello World
+  @ % redis-cli
+  $ set counter 100
+  $ redis-cli get counter
+  @ % incr counter
+  @ % incrby counter 10
+  @ % get counter

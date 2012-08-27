@@ -1,0 +1,12 @@
+> Do before every each use of homebrew?
+@% brew update
+
+> Install package
+@% brew install imagemagick
+
+- setup/
+  > Check to make sure things are ok
+  @% brew doctor
+
+  > Notes
+  @technologies/homebrew/

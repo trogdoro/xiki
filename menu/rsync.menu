@@ -1,0 +1,8 @@
+> Normal transfer
+$ rsync -vauz -e ssh --delete local_dir foo@foo.com:~
+
+> Dry run (don't actually transfer)
+| add --dry-run parameter
+
+> Exclude certain dirs / files
+| --exclude=public/cache/*  --exclude=wik.js --exclude=.git

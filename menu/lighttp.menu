@@ -1,0 +1,30 @@
+- install/
+  @% brew install lighttpd
+- hello world/
+  @/tmp/
+    - 1) Make config file
+    - lighttpd.conf
+      | server.document-root = "/tmp/light/"
+      |
+      | server.port = 3000
+      |
+      | mimetype.assign = (
+      |   ".html" => "text/html",
+      |   ".txt" => "text/plain",
+      |   ".jpg" => "image/jpeg",
+      |   ".png" => "image/png"
+      | )
+      |
+      | index-file.names = ( "index.html" )
+
+    - 2) Make html file
+    - light/
+      - index.html
+        | heya<hr>
+
+    - 3) Start server
+    $ lighttpd -t -f lighttpd.conf
+    % lighttpd -D -f lighttpd.conf
+
+    - 4) Go to the url
+    @http://localhost:3000/

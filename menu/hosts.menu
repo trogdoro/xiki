@@ -1,0 +1,5 @@
+@/etc/
+  $ ls -l hosts
+  - 1. make writable) % sudo chmod 777 hosts
+  - 2. edit) hosts
+  - 3. restore permissions) % sudo chmod 644 hosts

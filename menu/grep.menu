@@ -1,0 +1,14 @@
+> Grep a file
+@$ grep root /etc/group
+
+> Does not contain
+@$ grep -v root /etc/group
+
+> Regular expressions
+@$ egrep ro+t /etc/group
+
+> Docs
+@man/grep/
+
+> For a menu, see also
+<< filter/

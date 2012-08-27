@@ -1,0 +1,19 @@
++ hello world/
+  @/tmp/
+    - sinatra_hi.rb
+      | require 'sinatra'
+      |
+      | get '/' do
+      |   "Hello World!"
+      | end
+    % ruby -rubygems sinatra_hi.rb
+    @http://localhost:4567
++ notes/
+  @technologies/sinatra/
++ docs/
+  > Intro
+  @http://www.sinatrarb.com/intro
+
+> See
+<< rails/
+<< ruby/

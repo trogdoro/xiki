@@ -1,0 +1,19 @@
+> Summary
+| Shows the syntaxes of Xiki's wiki format
+
+> For headings begin with a less than character
+>> For subheadings use more
+
+- For bullets
+  - begin with spaces and hyphens
+
+For ~emphasis~ surround with tildas.
+
+| For grayed text, begin with a pipe
+|+ For green diffs, pipe plus
+|- For red diffs, pipe minus
+
++ For path style end with slash/
+
+> See
+<< markdown/
