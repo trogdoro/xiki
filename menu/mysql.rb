@@ -108,7 +108,7 @@ class Mysql
       # Whole table
 
       if ! $el || ! Keys.prefix_u
-        sql = "select * from #{table} limit 1000"
+        sql = "select * from #{table} limit 400"
         out = self.run(db, sql)
         out = "No records, create one?\n#{self.dummy_row(db, table)}" if out.blank?
         return Tree.quote out #.gsub(/^/, '| ')
@@ -118,7 +118,7 @@ class Mysql
         fields = fields.sub(/\n.+/m, '').split("\t")
         fields &= ['id', 'slug', 'name', 'partner_id']
         fields = ['*'] if fields.blank?
-        sql = "select #{fields.join ', '} from #{table} limit 1000"
+        sql = "select #{fields.join ', '} from #{table} limit 400"
         txt = Mysql.run(db, sql)
 
         return txt.gsub(/^/, '| ')

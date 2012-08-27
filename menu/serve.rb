@@ -23,7 +23,7 @@ class Serve
 
 
     if children.blank?
-      file = File.expand_path "~/menus/#{trunk[0]}.menu"
+      file = File.expand_path "~/menu/#{trunk[0]}.menu"
     else
       file = "/tmp/tmp.menu"
       File.open(file, "w") { |f| f << children }

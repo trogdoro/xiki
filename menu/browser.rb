@@ -47,7 +47,7 @@ class Browser
       file = View.file
     end
 
-    mappings = Menu.menu_to_hash "/Users/craig/menus/url_mappings.menu"
+    mappings = Menu.menu_to_hash "/Users/craig/menu/url_mappings.menu"
 
     result = nil
     mappings.each do |k, v|

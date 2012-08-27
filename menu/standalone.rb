@@ -24,7 +24,7 @@ class Standalone
     menu = "untitled"
 
     if children.blank?
-      file = File.expand_path "~/menus/#{trunk[0]}.menu"
+      file = File.expand_path "~/menu/#{trunk[0]}.menu"
       menu = trunk[0]
       children = File.read file
     end
