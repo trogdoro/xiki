@@ -20,7 +20,7 @@ class Projects
   end
 
   def self.default_project
-    txt = File.read(File.expand_path "~/menus/projects.menu") rescue nil
+    txt = File.read(File.expand_path "~/menu/projects.menu") rescue nil
     return nil if ! txt
 
     Line.without_label(:line=>txt[/.+/])

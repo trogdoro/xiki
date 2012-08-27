@@ -413,7 +413,7 @@ sharks/
 
 > UI framework
 
-~/menus/
+~/menu/
   - sharks.menu
     | start/
     | url/

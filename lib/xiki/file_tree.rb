@@ -1327,7 +1327,7 @@ class FileTree
 
   def self.file_not_found_from_template path
 
-    if path =~ /\/menus\/(.+)\.rb$/   # "
+    if path =~ /\/menu\/(.+)\.rb$/   # "
       name = $1
       View.flash "- File doesn't exist, start with this...", :times=>4
       Xiki.dont_search
@@ -1335,7 +1335,7 @@ class FileTree
       txt.gsub!(/\{\{(.+?)\}\}/) { eval $1 }   # Expand {{these}}
       return Tree.<< txt, :escape=>"| ", :no_slash=>1
 
-    elsif path =~ /^#{File.expand_path("~/menus")}\/(.+)\.menu$/   # "
+    elsif path =~ /^#{File.expand_path("~/menu")}\/(.+)\.menu$/   # "
       View.flash "- File doesn't exist, start with this...", :times=>4
       Xiki.dont_search
       txt = File.read "#{Xiki.dir}/etc/templates/menu_template.menu"

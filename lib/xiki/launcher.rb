@@ -20,8 +20,8 @@ class Launcher
     ]
 
   MENU_DIRS = [
-    "#{Xiki.dir}menus",
-    File.expand_path("~/menus"),
+    "#{Xiki.dir}menu",
+    File.expand_path("~/menu"),
     ]
 
   @@log = File.expand_path("~/.emacs.d/menu_log.notes")
@@ -338,7 +338,7 @@ class Launcher
       root = $1
       root.gsub!(/[ -]/, '_') if root
 
-      ["~/menus", Bookmarks["$x/menus"]].each do |dir|
+      ["~/menu", Bookmarks["$x/menu"]].each do |dir|
 
         matches = Dir[File.expand_path("#{dir}/#{root}*")]
 
@@ -423,7 +423,7 @@ class Launcher
       # If .menu file matched but had no output, and no other block to delegate to, say we handled it so it will stop looking
 
       if ! out
-        require_menu File.expand_path("~/menus/#{root}.rb"), :ok_if_not_found=>1
+        require_menu File.expand_path("~/menu/#{root}.rb"), :ok_if_not_found=>1
         if ! @@menus[1][root]
           Tree << "
             | This menu item does nothing yet.  You can update the .menu file to
@@ -816,7 +816,7 @@ class Launcher
     raise "No class '#{clazz || camel}' found in launcher" if clazz.nil?
 
     # reload 'path_to_class'
-    Menu.load_if_changed File.expand_path("~/menus/#{snake}.rb")
+    Menu.load_if_changed File.expand_path("~/menu/#{snake}.rb")
 
     args = path.is_a?(Array) ?
       path : Menu.split(path, :rootless=>1)

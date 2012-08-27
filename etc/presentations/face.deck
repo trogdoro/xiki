@@ -31,13 +31,13 @@ face/
 
 > Code
 
-- ~/menus/
+- ~/menu/
   + face.menu
 
 
 > Code
 
-- ~/menus/
+- ~/menu/
   + face.menu
   + face.rb
 
@@ -96,7 +96,7 @@ Browser.html ":)"
 
 - dumbed-down version
 
-- ~/menus/
+- ~/menu/
   + mood.menu
 
 
@@ -104,7 +104,7 @@ Browser.html ":)"
 
 - dumbed-down version
 
-- ~/menus/
+- ~/menu/
   + mood.menu
   + mood.rb
 
@@ -113,7 +113,7 @@ Browser.html ":)"
 
 - dumbed-down version
 
-- ~/menus/
+- ~/menu/
   - mood.menu
     | happy/
     | sad/
@@ -124,7 +124,7 @@ Browser.html ":)"
 
 - dumbed-down version
 
-- ~/menus/
+- ~/menu/
   - mood.menu
     | happy/
     | sad/
@@ -151,7 +151,7 @@ mood/
   + happy/
   + sad/
 
-- /Users/craig/menus/
+- /Users/craig/menu/
   - mood.menu
     | - happy/
     | - sad/
@@ -171,7 +171,7 @@ mood/
 
 > Other ways to make menus
 
-- /Users/craig/menus/
+- /Users/craig/menu/
   + mood.menu
   + mood.rb
 
@@ -194,7 +194,7 @@ sleep/
 
 > Other ways to make menus
 
-- /Users/craig/menus/
+- /Users/craig/menu/
   + mood.menu
   + mood.rb
 

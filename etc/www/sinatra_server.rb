@@ -27,7 +27,7 @@ def htmlify txt, options={}
     xiki_dir = File.expand_path "#{File.dirname(__FILE__)}/../.."
 
     $:.unshift "#{xiki_dir}/lib"
-    ["xiki/ol", "xiki/core_ext", "xiki/line", "xiki/tree", "../../menus/bootstrap"].each{|o| require o}
+    ["xiki/ol", "xiki/core_ext", "xiki/line", "xiki/tree", "../../menu/bootstrap"].each{|o| require o}
 
     txt.slice! /.+\n/
     txt = txt.unindent
@@ -238,7 +238,7 @@ end
 def usage
   htmlify "
     > Summary
-    This url displays xiki menus, which come from simple files found in ~/menus/.
+    This url displays xiki menus, which come from simple files found in ~/menu/.
 
     > Show all menus
     all/

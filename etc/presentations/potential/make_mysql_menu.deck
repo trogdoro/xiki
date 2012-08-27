@@ -25,7 +25,7 @@
 >> List tables
 tably
 
-/Users/craig/menus/
+/Users/craig/menu/
   - tably.rb
     | class Tably
     |   def self.menu name=nil

@@ -36,7 +36,7 @@ class Window
       return "#{View.frame_width}, #{View.frame_height}, #{$el.frame_parameter(nil, :left)}, #{$el.frame_parameter(nil, :top)}"
     end
 
-    txt = File.read(File.expand_path("#{Xiki.dir}menus/dimensions_config.menu"))
+    txt = File.read(File.expand_path("#{Xiki.dir}menu/dimensions_config.menu"))
 
     txt.sub! /\n\n.+/m, "\n"
 

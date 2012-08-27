@@ -705,8 +705,8 @@ class Code
   def self.open_related_file
     file = View.file
 
-    return View.open(file.sub /\.menu$/, '.rb') if file =~ /\/menus\/\w+\.menu$/
-    return View.open(file.sub /\.rb$/, '.menu') if file =~ /\/menus\/\w+\.rb$/
+    return View.open(file.sub /\.menu$/, '.rb') if file =~ /\/menu\/\w+\.menu$/
+    return View.open(file.sub /\.rb$/, '.menu') if file =~ /\/menu\/\w+\.rb$/
 
     View.flash "No matching file known."
 

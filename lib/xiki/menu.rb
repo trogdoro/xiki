@@ -12,7 +12,7 @@ class Menu
     - .install/
       - gem/
     - .setup/
-      - @~/menus/
+      - @~/menu/
       - .reload_menus/
     - .api/
       > Summary
@@ -139,7 +139,7 @@ class Menu
 
     Tree << "
       | Supply a few items here. Then do as+menu (type Ctrl-a Ctrl-m) to create
-      | the '#{menu}' menu. Or, just create '~/menus/#{snake}.menu' yourself.
+      | the '#{menu}' menu. Or, just create '~/menu/#{snake}.menu' yourself.
       - example item/
         - another/
       - and another/
@@ -163,11 +163,11 @@ class Menu
     Tree << %`
       | Update this sample class to your liking. Then do as+update (type
       | Ctrl-a, Ctrl-u) to create the '#{menu}' class file.
-      - @~/menus/
+      - @~/menu/
         - #{menu}.rb
           | class #{TextUtil.camel_case(menu)}
           |   def self.menu *args
-          |     "- Args Passed: \#{args.inspect}\\n- Customize me in) @ ~/menus/#{menu}.rb"
+          |     "- Args Passed: \#{args.inspect}\\n- Customize me in) @ ~/menu/#{menu}.rb"
           |   end
           | end
       - more examples) @menu/api/classes/
@@ -181,11 +181,11 @@ class Menu
     root = TextUtil.snake_case(trunk[-2][/^[\w -]+/]) if trunk.length > 1   # If nested path (due to @), grab root of parent
 
     %`
-    - @~/menus/
+    - @~/menu/
       - #{root}.rb
         | class #{TextUtil.camel_case(root)}
         |   def self.menu *args
-        |     "- args passed: \#{args.inspect}\n- Customize me in) @ ~/menus/#{menu}.rb"
+        |     "- args passed: \#{args.inspect}\n- Customize me in) @ ~/menu/#{menu}.rb"
         |   end
         | end
     `
@@ -197,7 +197,7 @@ class Menu
     root = TextUtil.snake_case(trunk[-2][/^[\w -]+/]) if trunk.length > 1   # If nested path (due to @), grab root of parent
 
     %`
-    - @~/menus/
+    - @~/menu/
       - #{root}.rb
         | class #{TextUtil.camel_case(root)}
         |   def self.menu
@@ -221,7 +221,7 @@ class Menu
     root = TextUtil.snake_case(trunk[-2][/^[\w -]+/]) if trunk.length > 1   # If nested path (due to @), grab root of parent
 
     %`
-    - @~/menus/
+    - @~/menu/
       - #{root}.rb
         | class #{TextUtil.camel_case(root)}
         |   def self.menu
@@ -306,7 +306,7 @@ class Menu
         | "- sammiches/..." etc:
         |
         - TODO: get these to expand out somehow! - maybe pass another arg to Tree.children below? - probably bad idea
-        - ~/menus/
+        - ~/menu/
           - foo.menu
             | - sammiches/
             |   - ham/
@@ -319,7 +319,7 @@ class Menu
         | don't run code themselves, they can delegate to other menus or run code,
         | like:
         |
-        - ~/menus/
+        - ~/menu/
           - foo.menu
             | - @mymenu/
             | - @MyClass.my_method
@@ -373,7 +373,7 @@ class Menu
     # Take best guess, by looking through dirs for root
     trunk = Xiki.trunk
 
-    return View.<<("- You weren't on a menu\n  | To jump to a menu's implementation, put your cursor on it\n  | (or type it on a blank line) and then do as+menu (ctrl-a ctrl-m)\n  | Or, look in one of these dirs:\n  - ~/menus/\n  - $xiki/menus/") if trunk[-1].blank?
+    return View.<<("- You weren't on a menu\n  | To jump to a menu's implementation, put your cursor on it\n  | (or type it on a blank line) and then do as+menu (ctrl-a ctrl-m)\n  | Or, look in one of these dirs:\n  - ~/menu/\n  - $xiki/menu/") if trunk[-1].blank?
 
     root = trunk[0][/^[\w _-]+/]
 
@@ -393,8 +393,8 @@ class Menu
     #     message = "
     #       - No menu found:
     #         | No \"#{root}\" menu or class file found in these dirs:
-    #         @ ~/menus/
-    #         @ $x/menus/
+    #         @ ~/menu/
+    #         @ $x/menu/
     #         ".unindent
 
     # Should be able to get it right from proc
@@ -461,7 +461,7 @@ Ol << "location: #{location.inspect}"
 
     return Tree << "| You must supply something to put under the '#{root}' menu.\n| First, add some lines here, such as these:\n- line/\n- another line/\n" if txt.empty?
 
-    path = File.expand_path "~/menus/#{root}.menu"
+    path = File.expand_path "~/menu/#{root}.menu"
 
     file_existed = File.exists? path
 
@@ -478,7 +478,7 @@ Ol << "location: #{location.inspect}"
 
     require_menu path
 
-    View.flash "- #{file_existed ? 'Updated' : 'Created'} ~/menus/#{root}.menu", :times=>3
+    View.flash "- #{file_existed ? 'Updated' : 'Created'} ~/menu/#{root}.menu", :times=>3
     nil
   end
 
@@ -717,7 +717,7 @@ Ol << "location: #{location.inspect}"
   #
   def self.line_exists? name, pattern #, options={}
     name.gsub! /\W/, '_'
-    dir = File.expand_path "~/menus"
+    dir = File.expand_path "~/menu"
     file = File.expand_path "#{dir}/#{name}.menu"
     txt = File.read(file) rescue ""
     txt =~ pattern ? ($1 || $&) : nil   # Return whole string or group
@@ -732,11 +732,11 @@ Ol << "location: #{location.inspect}"
 
     name.gsub! /\W/, '_'
 
-    # Default to ~/menus
+    # Default to ~/menu
     # If menu there, create, otherwise append
 
     # Get existing
-    dir = File.expand_path "~/menus"
+    dir = File.expand_path "~/menu"
     Dir.mkdir dir if ! File.exists? dir
 
     file = File.expand_path "#{dir}/#{name}.menu"
