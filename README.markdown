@@ -61,7 +61,7 @@ We just patched el4r, so there's a chance Xiki might work in windows.
 
 ### Step 2: EmacsRuby (el4r) setup
 
-      $ cd `xiki dir`
+      $ cd `xiki directory`
       $ sudo bash etc/install/el4r_setup.sh
 
 If you're using rvm, the sudo may not be necessary.
@@ -70,17 +70,17 @@ If you're using rvm, the sudo may not be necessary.
 Sample configuration:
 
       ~/.el4r/init.rb:
-        $LOAD_PATH.unshift "(xiki dir)/lib"
+        $LOAD_PATH.unshift "(xiki directory)/lib"
         require 'xiki'
         Xiki.init
 
         KeyBindings.keys   # Use default key bindings
         Themes.use "Default"  # Use xiki theme
 
-Be sure to substitute '(xiki dir)' with the actual dir.  If you
+Be sure to substitute '(xiki directory)' with the actual dir.  If you
 don't know it, run this command:
 
-      $ xiki dir
+      $ xiki directory
 
 ### If you get an error
 
@@ -103,7 +103,7 @@ Vim support is very partially implemented, but should be pretty
 straight-forward to implement.  It turns out vim is very easy to
 extend using ruby.  See this file to try it out:
 
-(xiki dir)/etc/vim/vim_status.notes
+(xiki directory)/etc/vim/vim_status.notes
 
 ## CodeMirror
 

@@ -988,6 +988,11 @@ class Notes
   def self.do_as_quote
     # Make this add or remove quotes
   end
+
+  def self.from_markdown_format txt
+    txt = txt.gsub(/^#+/){"#{'>' * $&.length}"}
+  end
+
 end
 
 Notes.define_styles

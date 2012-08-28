@@ -3,10 +3,6 @@ require 'redcarpet'
 
 class Markdown
 
-  def self.to_xiki_format txt
-    txt = txt.gsub(/^#+/){"#{'>' * $&.length}"}
-  end
-
   def self.render txt
     markdown = Redcarpet::Markdown.new(Redcarpet::Render::HTML, :autolink=>true, :space_after_headers=>true)
     html = markdown.render txt
