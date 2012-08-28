@@ -7,6 +7,10 @@ class WebInterface
     @http://xiki
 
     - install/
+      - warning/
+        | Beware, the web interface is currently experimental and
+        | has security holes that need to be patched (blocking)
+        | non-priveleged users from using sensitive menus.
       - Mac/
         - 1. Configure Apache/
           @/etc/apache2/other/
@@ -43,6 +47,11 @@ class WebInterface
             - Restore) @chmod/644/
         - 3. Restart Apache/
           @apache/restart/
+      - Linux/
+        The steps are the same as for the Mac, but with these
+        differences:
+        - Use the 'sites-available' dir instead of 'other'
+        - Run "a2ensite xiki" on the command line before restarting apache
     - start/
       @$xiki/etc/www/
         % ruby -rubygems sinatra_server.rb

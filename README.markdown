@@ -1,5 +1,8 @@
 # Summary
-This file shows how to install Xiki.  See http://xiki.org for a description of Xiki.
+
+This file shows how to install Xiki.  For a description of Xiki see:
+
+http://xiki.org
 
 # Install Xiki
 
@@ -13,33 +16,37 @@ Either install as a gem, or install from github.
 
       $ git clone git@github.com:trogdoro/xiki.git
       $ cd xiki
-      $ gem install bundler
-      $ bundle install --system
-      $ cp <xiki dir>/etc/command/xiki_wrapper /usr/local/bin/xiki
-      $ chmod 755 /usr/local/bin/xiki
+      $ sudo gem install bundler
+      $ sudo bundle install --system
+      $ sudo ruby etc/command/copy_xiki_command_to.rb /usr/local/bin/xiki
 
-If you don't have permission, to run some of the commands put "sudo" at the beginning of the command.
+You don't need "sudo" at the beginning if you're using rvm and your
+/usr/local/bin/ dir is writable.
 
 # Verify the 'xiki' shell command works
 
       $ xiki
 
-It should delay slightly the first time, but be fast subsequent times.  If you run into errors and then fix them, you'll want to run the "xiki restart" command.
+It should delay slightly the first time, but be fast subsequent
+times.  If you run into errors and then fix them, you'll want to
+run the "xiki restart" command.
 
 # Configure your editor to use Xiki
 
 ## Emacs
 
-If you're going to use Xiki with Emacs, do these steps:
+Emacs is the most supported editor.  Don't worry though, you don't
+have to know emacs to use it with Xiki.
 
 ### Step 1: Download Emacs
 
 #### On Mac:
+
 - Try Aquamacs if you're new to emacs (it's more mac-like)
-  - http://aquamacs.org/download-classic.shtml
-  - works well with rvm, because it loads .bash_login
+   - http://aquamacs.org/download-classic.shtml
+   - works well with rvm, because it loads .bash_login
 - Or
-  - http://emacsformacosx.com
+   - http://emacsformacosx.com
 
 #### On Linux:
 
@@ -52,33 +59,31 @@ We just patched el4r, so there's a chance Xiki might work in windows.
 - Skip the 'xiki' shell command step
 - Maybe try this emacs? http://ourcomments.org/Emacs/EmacsW32.html
 
-
 ### Step 2: EmacsRuby (el4r) setup
 
-      $ cd <xiki dir>
+      $ cd `xiki dir`
       $ sudo bash etc/install/el4r_setup.sh
 
 If you're using rvm, the sudo may not be necessary.
-
-If you're using the xiki gem, you can paste this for the above cd:
-
-      $ cd `dirname \`gem contents xiki | grep Gemfile\``
 
 ### Step 3: Require Xiki in EmacsRuby's config
 Sample configuration:
 
       ~/.el4r/init.rb:
-        $LOAD_PATH.unshift "<xiki dir>/lib"
+        $LOAD_PATH.unshift "(xiki dir)/lib"
         require 'xiki'
         Xiki.init
 
         KeyBindings.keys   # Use default key bindings
         Themes.use "Default"  # Use xiki theme
 
+Be sure to substitute '(xiki dir)' with the actual dir.  If you
+don't know it, run this command:
 
-Be sure to substitute "&lt;xiki dir&gt;" with the actual dir.
+      $ xiki dir
 
 ### If you get an error
+
 If you got partially through the load...
 
 - You may be able to use these keys to trouble-shoot:
@@ -86,12 +91,11 @@ If you got partially through the load...
    - Option+l to reload xiki and .emacs
       - also use this when you see "el4r-instance is dead"
 - If you can't use the keys, look at the log
-  - Named something like: /tmp/el4r......log
-  - Go to the end and search backward for the last error
-     - probably contains ":Error:"
-  - Restart emacs (or reload .emacs) manually to reload
+   - Named something like: /tmp/el4r......log
+   - Go to the end and search backward for the last error
+      - probably contains ":Error:"
+   - Restart emacs (or reload .emacs) manually to reload
 - See "Issues Loading Xiki" buffer (under "Window" menu bar menu)
-
 
 ## Vim
 
@@ -99,18 +103,22 @@ Vim support is very partially implemented, but should be pretty
 straight-forward to implement.  It turns out vim is very easy to
 extend using ruby.  See this file to try it out:
 
-./etc/vim/vim_status.notes
+(xiki dir)/etc/vim/vim_status.notes
 
 ## CodeMirror
 
 There's a simple prototype working, though it's not committed yet.
 
 ## Other editors
-Are you in the bay area and savvy at extending your editor (vim, sublime, textmate, rubymine)?  Ping me on the google group and we'll get together and pair on making a Xiki extension for it.
 
+Are you in the bay area and savvy at extending your editor (vim,
+sublime, textmate, rubymine)?  Ping me on the google group and
+we'll get together and pair on making a Xiki extension for it.
 
 # Google group
-Join the google group for help with installing, or to chat about whatever or share your ideas:
 
-  http://groups.google.com/group/xiki
+Join the google group for help with installing, or to chat about
+whatever or share your ideas:
+
+http://groups.google.com/group/xiki
 

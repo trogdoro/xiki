@@ -1,2 +1,2 @@
 #!/usr/bin/env ruby
-load "/projects/xiki/bin/xiki"
+load "(xiki_dir)/bin/xiki"

@@ -1,5 +1,4 @@
 require 'sinatra'
-require "/projects/xiki/lib/xiki/ol.rb"
 
 set :port, 8161
 set :bind, '127.0.0.1'
@@ -286,14 +285,11 @@ def index menu
 
   #   rescue e=>Exception
   #     puts "<pre>#{e.message}\n#{e.backtrace}</pre>"
-  #     Ol << "e: #{e.message}"
-  #     Ol << "e: #{e.backtrace}"
   #     Ol << "If we get the permission problem, provide .notes file that will run command to run xiki command once (message explaining it first)!"
   #   end
 
   # TODO: return different string when the service is down
 
-  # Ol << "Extract to new method: suggest_creating!!"
   if txt.empty?
     menu = menu.sub /\/$/, ''
 

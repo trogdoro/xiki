@@ -750,6 +750,9 @@ class Launcher
       View.to_nth orig
     else
       Move.to_window 1
+      if prefix.is_a? Fixnum
+        View.line = prefix
+      end
     end
 
     line = Line.value

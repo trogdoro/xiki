@@ -108,7 +108,7 @@ class XikiCommand
   def self.get_response
 
     # Simulate timeout error if process not running
-    process_running = `ps -e` =~ /xiki_process.rb/
+    process_running = `ps -ef` =~ /xiki_process.rb/
     if ! process_running
       raise Timeout::Error
     end
@@ -146,13 +146,17 @@ class XikiCommand
 
       > Setting up your editor
       The most common way to use Xiki is from a text editor.  For
-      example, typing "tables" on any blank line and double-clicking on
-      it (or typing control-enter or command-enter) to browse and update
-      your mysql database.
+      example, from in a text editor, typing "tables" on any blank line
+      and then double-clicking on it (or typing control-enter or
+      command-enter) to browse and update your mysql database.
 
-      See this file for help setting up your editor:
+      See the README.markdown file in the Xiki dir for help setting up
+      your editor. You can view it by typing this command or going to
+      this url:
 
-      $xiki/README.markdown
+      $ xiki readme
+
+      https://github.com/trogdoro/xiki
 
       > Service
       The 'xiki' shell command automatically runs a service in the
@@ -180,11 +184,10 @@ class XikiCommand
       http://twitter.com/xiki
 
       > Troubleshooting
-      Be sure to run this command to install required gems:
+      A couple commands to help you trouble-shoot:
 
       % bundle install
-
-      Also see $xiki/README.markdown
+      % xiki readme
 
       `.unindent
 
@@ -224,7 +227,9 @@ class XikiCommand
       case line
       when /^(>) (.+)/
         "#{self.heading_bracket $1} #{self.bold $2}"
-      when /^http:\/\/.+/
+      when /^(>>+) (.+)/
+        "#{self.heading_bracket $1} #{self.path $2}"
+      when /^ *https?:\/\/.+/
         "#{self.url $&}"
       when /^.+\/$/
         "#{self.path $&}"
@@ -251,7 +256,7 @@ class XikiCommand
     self.colorize txt, "1;31"   # Red # colorize("1;91")   # Red
   end
   def self.label txt
-    self.colorize txt, "1;33"   # Yellow
+    self.colorize txt, "1;90"   # Gray
   end
   def self.path txt
     colorize(txt, "1;90")

@@ -18,9 +18,11 @@ Gem::Specification.new do |s|
     "LICENSE",
     "README.markdown"
   ]
+
+  s.rdoc_options += %w[--exclude etc/templates/.*]
+
   files = `git ls-files`.split("\n")
 
-# TMP
   files = files.select{|o| o !~ /^etc\/xiki/}
 
   s.files = files
@@ -39,7 +41,6 @@ Gem::Specification.new do |s|
   s.add_dependency('net-scp')
   s.add_dependency('net-sftp')
   s.add_dependency('rspec')
-  s.add_dependency('memcached')
   s.add_dependency('trogdoro-el4r', [">= 1.0.7"])
 
   s.add_dependency('file-tail')
