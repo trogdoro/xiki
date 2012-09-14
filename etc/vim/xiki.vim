@@ -12,5 +12,5 @@ endfunction
 
 nmap <silent> <2-LeftMouse> :call XikiLaunch()<CR>
 imap <silent> <2-LeftMouse> <C-c>:call XikiLaunch()<CR>i
-imap <silent> <C-CR> <C-c>:call XikiLaunch()<CR>i
+imap <silent> <C-CR> <C-c>:call XikiLaunch()<CR>a
 nmap <silent> <C-CR> :call XikiLaunch()<CR>
