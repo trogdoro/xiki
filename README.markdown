@@ -48,9 +48,16 @@ have to know emacs to use it with Xiki.
 - Or
    - http://emacsformacosx.com
 
+#### On FreeBSD:
+     $ pkg add emacs
+     or
+     $ make -C /usr/ports/editors/emacs install clean
+
 #### On Linux:
 
       $ sudo apt-get install emacs
+      or
+      $ sudo yum install emacs
 
 #### On Windows:
 
