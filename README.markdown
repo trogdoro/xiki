@@ -69,7 +69,7 @@ We just patched el4r, so there's a chance Xiki might work in windows.
 ### Step 2: EmacsRuby (el4r) setup
 
       $ cd `xiki directory`
-      $ sudo bash etc/install/el4r_setup.sh
+      $ sudo sh etc/install/el4r_setup.sh
 
 If you're using rvm, the sudo may not be necessary.
 
