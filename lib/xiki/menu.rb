@@ -634,7 +634,7 @@ Ol << "location: #{location.inspect}"
       elsif line =~ /^[ +-]*@/ && Tree.has_child?   # If on ^@... line and there's child on next line...
         # Will grab the whole tree and move it up
         Tree.subtree.unindent.sub(/^[ @+-]+/, '')
-      elsif
+      else
         do_launch = true
         Tree.path.last
       end
