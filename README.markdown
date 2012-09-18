@@ -14,7 +14,7 @@ Either install as a gem, or install from github.
 
 ## Or, from github
 
-      $ git clone git@github.com:trogdoro/xiki.git
+      $ git clone https://github.com/trogdoro/xiki.git
       $ cd xiki
       $ sudo gem install bundler
       $ sudo bundle install --system
