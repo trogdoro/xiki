@@ -3,7 +3,7 @@ class Apache
     "
     - .restart/
     - conf/
-      @/etc/apache2/
+      @/usr/local/etc/apache2/
         + other/
         + httpd.conf
     - logs/
@@ -14,7 +14,7 @@ class Apache
   end
 
   def self.restart
-    Console.run "sudo apachectl restart", :dir=>"/etc/apache2/"
+    Console.run "sudo apachectl restart", :dir=>"/usr/local/etc/apache2/"
 
     "- restarting!"
   end
