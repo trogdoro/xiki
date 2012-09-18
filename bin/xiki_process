@@ -1,0 +1,9 @@
+#!/usr/bin/env ruby
+require 'rubygems'
+
+xiki_dir = File.expand_path "#{File.dirname(__FILE__)}/.."
+$:.unshift "#{xiki_dir}/lib" #.sub(/\/$/, '')
+
+require "#{xiki_dir}/etc/command/xiki_process"
+
+XikiProcess.run

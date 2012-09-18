@@ -1,4 +1,6 @@
+require 'socket'
 require 'timeout'
+require 'xiki_process'
 
 #
 # The 'xiki' shell command uses this class to run xiki menus.
@@ -9,12 +11,6 @@ require 'timeout'
 class XikiCommand
 
   @@dont_show_output = false
-  @@initial_request = nil
-  def self.pop_initial_request
-    tmp = @@initial_request
-    @@initial_request = nil   # So it doesn't loop
-    tmp
-  end
 
   # Called by the 'xiki' shell command
   def self.run
@@ -35,102 +31,26 @@ class XikiCommand
 
     return self.emacs path if flags.member?("-e")   # If -p, just prompt user to type a menu name
 
-    wasnt_running = false
+    XikiProcess.start_daemon unless XikiProcess.running?
 
+    attempts = 0
     begin
-      `mkfifo -m 600 /tmp/xikirequest` if ! File.exists?("/tmp/xikirequest")   # Always create first, so they have to be pipes and can't be files
-      `mkfifo -m 600 /tmp/xikiresponse` if ! File.exists?("/tmp/xikiresponse")
-
-      # Try writing to pipe...
-
-      open("/tmp/xikirequest", 'w+') do |out|
+      attempts += 1
+      TCPSocket.open('localhost', 22112) do |out|
         out.puts path
-        out.flush   # do this when we're done writing data
-        out.close
+
+        timeout( 3 ) do
+          response = out.gets
+          response.strip!
+          response.gsub! "\036", "\n"   # Escape linebreaks as 036 char (record separator)
+          return if @@dont_show_output
+          puts self.add_coloring response
+        end
       end
-
-      # Try reading from pipe...
-
-      response = self.get_response
-      return response
-
-    rescue Exception=>e
-
-      # If error, remember we have to start the process...
-
-      if e.is_a?(Timeout::Error) || (e.is_a?(Errno::ENOENT) && e.to_s =~ /\/tmp\/xiki/)
-        # Seems like process hasn't been started, so keep going
-        wasnt_running = true
-      else
-        Ol << "Unknown error when trying to call pipe!"
-        Ol << "#{e.to_s}\n#{e.backtrace.join "\n"}"
-        return
-      end
-    end
-
-    process_succeeded = false
-
-    if wasnt_running
-
-      # Start the process...
-
-      require 'daemons'
-
-      begin
-
-        # Shell out as async to start it instead - don't know fucking how
-
-        pid_orig = Process.pid
-
-        @@initial_request = path
-        xiki_process = "#{xiki_dir}/etc/command/xiki_process.rb"
-        Daemons.run xiki_process, :ARGV=>['start'], :monitor=>false, :multiple=>false, :dir_mode=>:normal, :dir=>"/tmp/", :log_dir=>"/tmp/", :log_output=>true
-
-        # Aparently this line never gets reached
-        "- Started the process, I think."
-      rescue SystemExit=>e
-        raise SystemExit.new if pid_orig != Process.pid   # If new process that started, just exit
-
-        process_succeeded = true
-
-      rescue Exception=>e
-        puts "- service couldn't start!:#{e.message}\n#{e.backtrace.join("\n")}\n\n"
-      end
-    end
-
-    if process_succeeded
-      puts self.get_response   # Get response first time
-    end
-
-    raise SystemExit.new
-  end
-
-  def self.get_response
-
-    # Simulate timeout error if process not running
-    process_running = `ps -ef` =~ /xiki_process.rb/
-    if ! process_running
-      raise Timeout::Error
-    end
-
-    # TODO: what if menu takes longer than 3 seconds to run?
-
-    # TODO: have process send ACK, so we can make timout short
-
-    timeout(3) do
-    #     timeout(0.5) do
-    #     timeout(1.5) do
-      open("/tmp/xikiresponse", "r+") do |response|
-
-        # old TODO Try using select here, to see if there's data avaliable
-        # old IO.select ["/tmp/xikiresponse"]
-
-        response = response.gets   # will block if there's nothing in the pipe
-        response.strip!
-        response.gsub! "\036", "\n"   # Escape linebreaks as 036 char (record separator)
-        return "" if @@dont_show_output
-        self.add_coloring response
-      end
+    rescue Exception => e
+      sleep 1
+      retry if attempts < 10
+      # Handle specific errno here
     end
   end
 
