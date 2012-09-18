@@ -2,6 +2,18 @@ require 'xiki/effects'
 require 'xiki/requirer'
 require 'xiki'
 
+# ruby_parser 2.3.1 bug hack
+# https://github.com/seattlerb/ruby_parser/issues/18
+class Regexp
+  unless defined? ONCE then
+    ONCE     = 0 # 16 # ?
+    ENC_NONE = /x/n.options
+    ENC_EUC  = /x/e.options
+    ENC_SJIS = /x/s.options
+    ENC_UTF8 = /x/u.options
+  end
+end
+
 require 'sourcify'
 require 'ruby_parser'
 require 'file-tail'
