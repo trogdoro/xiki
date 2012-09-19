@@ -14,7 +14,7 @@ Either install as a gem, or install from github.
 
 ## Or, from github
 
-      $ git clone git@github.com:trogdoro/xiki.git
+      $ git clone git://github.com/trogdoro/xiki.git
       $ cd xiki
       $ sudo gem install bundler
       $ sudo bundle install --system
@@ -81,6 +81,8 @@ Be sure to substitute '(xiki directory)' with the actual dir.  If you
 don't know it, run this command:
 
       $ xiki directory
+
+Then quit emacs and open it again.
 
 ### If you get an error
 
