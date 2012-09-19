@@ -354,6 +354,9 @@ class Menu
     "- defined!"
   end
 
+  #
+  # Menu.split("aa/|b/b/|c/c")
+  #
   def self.split path, options={}
     path = path.sub /\/$/, ''
     path = Tree.rootless path if options[:rootless]
@@ -576,10 +579,8 @@ Ol << "location: #{location.inspect}"
     return if orig == View.line
 
     # If it inserted something
-
     output = Tree.siblings :everything=>1
-
-    # return
+    # output = Tree.siblings :cross_blank_lines=>1, :everything=>1
 
     # Shouldn't this be looping like self.collapser_launcher ?
     Tree.to_parent
@@ -634,7 +635,7 @@ Ol << "location: #{location.inspect}"
       elsif line =~ /^[ +-]*@/ && Tree.has_child?   # If on ^@... line and there's child on next line...
         # Will grab the whole tree and move it up
         Tree.subtree.unindent.sub(/^[ @+-]+/, '')
-      elsif
+      else
         do_launch = true
         Tree.path.last
       end
