@@ -2,7 +2,7 @@ class TroubleShooting
   def self.keys
     return if ! $el
 
-    $el.el4r_lisp_eval '
+    $el.el4r_lisp_eval %`
       (progn
         (global-set-key (kbd "M-l") (lambda () (interactive)
           "Load .emacs (reloading EmacsRuby)"
@@ -17,11 +17,11 @@ class TroubleShooting
           (setq truncate-lines nil)
           (end-of-buffer)
           (re-search-backward "^  from ")
-          (re-search-backward "^[A-Z]")
+          (re-search-backward "^\\\\S-")
           (recenter 0)
         ))
       )
-      '
+      `
   end
 end
 TroubleShooting.keys

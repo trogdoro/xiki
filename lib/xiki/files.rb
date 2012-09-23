@@ -266,6 +266,8 @@ class Files
 
     file ||= FileTree.tree_path_or_this_file
 
+    file = File.expand_path file
+
     # Else, reveal current file
     command = "open --reveal \"#{file}\""
     $el.shell_command(command)

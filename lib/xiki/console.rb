@@ -349,13 +349,15 @@ class Console
         return Remote.command path
       end
       if FileTree.handles?(path)
-        while(path.last =~ /^\$/) do   # Remove all !foo lines from path
+        while(path.last =~ /^\$ /) do   # Remove all $ foo lines from path
           path.pop
         end
         dir = path.join('')
 
         # If starts with ./, replace with current dir
         dir.sub! /^\.\//, "#{View.dir}/"
+
+        dir = Bookmarks[dir]
 
       end
       View.to orig
@@ -364,7 +366,7 @@ class Console
     dir ||= $1 unless $1.empty?
     command = $2
 
-    return Tree.<<("- Directory doesn't exist) #{dir}") if dir && ! File.exists?(dir)
+    return Tree.<<("- Directory doesn't exist) #{dir}", :no_slash=>1) if dir && ! File.exists?(dir)
 
     if options[:sync]
       output = Console.run command, :dir=>dir, :sync=>true

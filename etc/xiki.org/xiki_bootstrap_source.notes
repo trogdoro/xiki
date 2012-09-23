@@ -32,14 +32,14 @@ bootstrap/
         - p/Xiki does what shell consoles do, but lets you edit everything at any time. It's trivial to make your own commands and menus to access other tools.
     - row/
       - span6/
-        - h1/
+        - h2/
           - icon/023_cogwheels
           Type and double-click
         - p/
           Type a word, any word. Then double click on it or type control-return (or command-return).
           For example type: git, bootstrap, mysql, mongo, rails, node, coffee, js, dom, jquery, svg, ruby code, file paths, url's, shell commands, etc.
       - span6/
-        - h1/
+        - h2/
           - icon/110_align_left
           Wiki inspired
         - p/
@@ -49,7 +49,7 @@ bootstrap/
     - container/
       - row/
         - span4/
-          - h1/
+          - h2/
             - icon/051_eye_open
             - Screencasts
           - p/
@@ -57,7 +57,7 @@ bootstrap/
             <a href="screencasts/">screencast</a>
             to see Xiki in action.
         - span4/
-          - h1/
+          - h2/
             + icon/
               - 154_show_big_thumbnails
             - Other Tools
@@ -65,7 +65,7 @@ bootstrap/
             | Create menus to access other tools just by typing.
             | If the menu doesn't exist, xiki guides you through creating it.
         - span4/
-          - h1/
+          - h2/
             - icon/160_imac
             Shell + GUI
           - p/
@@ -73,7 +73,7 @@ bootstrap/
             Commands can have nested menus. Menus are just text indented by 2 spaces. Use the mouse or keyboard, whichever you prefer.
       - row/
         - span4/
-          - h1/
+          - h2/
             - icon/012_heart
             - Code
           - p/
@@ -81,7 +81,7 @@ bootstrap/
             <a href="http://github.com/trogdoro/xiki">github.com/trogdoro/xiki</a>
             to check out the code and install Xiki.
         - span4/
-          - h1/
+          - h2/
             - icon/043_group
             - Mailing list
           - p/
@@ -89,7 +89,7 @@ bootstrap/
             <a href="http://groups.google.com/group/xiki">group page</a>
             for help getting Xiki installed, or to ask other questions or share ideas.
         - span4/
-          - h1/
+          - h2/
             - icon/108_left_indent
             Twitter
           - <p style="min-height:300px;">
@@ -148,7 +148,7 @@ bootstrap/
           - p/In Xiki, text is always editable. Command output is inserted underneath the command, nested two spaces.
 
 
-> Screencasts
+> Screencasts: index
 bootstrap/
   - project name/Xiki
   - navbar/
@@ -186,4 +186,71 @@ bootstrap/
     <object width="640" height="385"><param name="movie" value="http://www.youtube.com/v/ixtXTnypxg0&hl=en_US&fs=1&rel=0"></param><param name="allowFullScreen" value="true"></param><param name="allowscriptaccess" value="always"></param><embed src="http://www.youtube.com/v/ixtXTnypxg0&hl=en_US&fs=1&rel=0" type="application/x-shockwave-flash" allowscriptaccess="always" allowfullscreen="true" width="640" height="385"></embed></object>
 
 
+
+> Screencasts: index
+bootstrap/
+  - project name/Xiki
+  - navbar/
+    | <img src="http://xiki.org/images/bootstrap_icon.png">
+
+  - style/
+    .section {
+      padding: 30px 0 60px
+    }
+
+  - h1/Screencasts
+
+  - p/
+    | Most recent screencast:
+
+  <div class="section">
+    <object width="640" height="385"><param name="movie" value="http://www.youtube.com/v/bUR_eUVcABg&hl=en_US&fs=1&rel=0"></param><param name="allowFullScreen" value="true"></param><param name="allowscriptaccess" value="always"></param><embed src="http://www.youtube.com/v/bUR_eUVcABg&hl=en_US&fs=1&rel=0" type="application/x-shockwave-flash" allowscriptaccess="always" allowfullscreen="true" width="640" height="385"></embed></object>
+
+  - p/
+    | Past screencasts:
+  - p/
+    | <a href='face.html'>Face menu in browser</a>
+  - p/
+    | <a href='another.html'>Another</a>
+  - p/
+    | <a href='#'>Yet Another</a>
+
+
+
+> Screencasts: what if?
+bootstrap/
+  - project name/Xiki
+  - navbar/
+    | <img src="http://xiki.org/images/bootstrap_icon.png">
+
+  - style/
+    .section {
+      padding: 30px 0 60px
+    }
+
+  - h1/Screencasts
+
+  <div class="section">
+    <object width="640" height="385"><param name="movie" value="http://www.youtube.com/v/bUR_eUVcABg&hl=en_US&fs=1&rel=0"></param><param name="allowFullScreen" value="true"></param><param name="allowscriptaccess" value="always"></param><embed src="http://www.youtube.com/v/bUR_eUVcABg&hl=en_US&fs=1&rel=0" type="application/x-shockwave-flash" allowscriptaccess="always" allowfullscreen="true" width="640" height="385"></embed></object>
+
+  <div class="section">
+    <object width="640" height="385"><param name="movie" value="http://www.youtube.com/v/LA-lViZ8vls&hl=en_US&fs=1&rel=0"></param><param name="allowFullScreen" value="true"></param><param name="allowscriptaccess" value="always"></param><embed src="http://www.youtube.com/v/LA-lViZ8vls&hl=en_US&fs=1&rel=0" type="application/x-shockwave-flash" allowscriptaccess="always" allowfullscreen="true" width="640" height="385"></embed></object>
+
+  <div class="section">
+    <object width="640" height="385"><param name="movie" value="http://www.youtube.com/v/lfgLAgLorn8&hl=en_US&fs=1&rel=0"></param><param name="allowFullScreen" value="true"></param><param name="allowscriptaccess" value="always"></param><embed src="http://www.youtube.com/v/lfgLAgLorn8&hl=en_US&fs=1&rel=0" type="application/x-shockwave-flash" allowscriptaccess="always" allowfullscreen="true" width="640" height="385"></embed></object>
+
+  <div class="section">
+    <object width="640" height="385"><param name="movie" value="http://www.youtube.com/v/mumcFOk4PF4&hl=en_US&fs=1&rel=0"></param><param name="allowFullScreen" value="true"></param><param name="allowscriptaccess" value="always"></param><embed src="http://www.youtube.com/v/mumcFOk4PF4&hl=en_US&fs=1&rel=0" type="application/x-shockwave-flash" allowscriptaccess="always" allowfullscreen="true" width="640" height="385"></embed></object>
+
+  <div class="section">
+    <object width="640" height="385"><param name="movie" value="http://www.youtube.com/v/OWG_88s5YA8&hl=en_US&fs=1&rel=0"></param><param name="allowFullScreen" value="true"></param><param name="allowscriptaccess" value="always"></param><embed src="http://www.youtube.com/v/OWG_88s5YA8&hl=en_US&fs=1&rel=0" type="application/x-shockwave-flash" allowscriptaccess="always" allowfullscreen="true" width="640" height="385"></embed></object>
+
+  <h3 class="section" style="margin:130px 0 0">
+    Older screencasts from before the Xiki re-write...
+
+  <div class="section">
+    <object width="640" height="385"><param name="movie" value="http://www.youtube.com/v/6aIsQ71tDpg&hl=en_US&fs=1&rel=0"></param><param name="allowFullScreen" value="true"></param><param name="allowscriptaccess" value="always"></param><embed src="http://www.youtube.com/v/6aIsQ71tDpg&hl=en_US&fs=1&rel=0" type="application/x-shockwave-flash" allowscriptaccess="always" allowfullscreen="true" width="640" height="385"></embed></object>
+
+  <div class="section">
+    <object width="640" height="385"><param name="movie" value="http://www.youtube.com/v/ixtXTnypxg0&hl=en_US&fs=1&rel=0"></param><param name="allowFullScreen" value="true"></param><param name="allowscriptaccess" value="always"></param><embed src="http://www.youtube.com/v/ixtXTnypxg0&hl=en_US&fs=1&rel=0" type="application/x-shockwave-flash" allowscriptaccess="always" allowfullscreen="true" width="640" height="385"></embed></object>
 

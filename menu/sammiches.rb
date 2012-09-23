@@ -1,10 +1,15 @@
-class Foo
+class Sammiches
   def self.menu
     "
-    - sammiches/
+    - meat/
       - ham/
         - .buy/
-      - tofu/
+      - philly/
+        - .buy/
+    - veggie/
+      - cucumber/
+        - .buy/
+      - bark/
         - .buy/
     - .checkout/
       - cash/
@@ -12,19 +17,11 @@ class Foo
     "
   end
   def self.buy category, item
-    "- buying #{item} #{category}"
+    "- adding to cart #{item} #{category}"
   end
 
   def self.checkout kind
     "- checking out as #{kind}..."
   end
 
-  def self.admin
-    "
-    - reports/
-      - .profit/
-      - .loss/
-    - .restart_server/
-    "
-  end
 end

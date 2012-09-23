@@ -1024,6 +1024,12 @@ class Tree
     siblings
   end
 
+  #
+  # Gets position before and after sibling bounds.
+  #
+  # Tree.sibling_bounds   # Returns: start, current line start, current line end, end
+  # Tree.sibling_bounds :cross_blank_lines=>1   # Returns: top, bottom
+  #
   def self.sibling_bounds options={}
     if options[:cross_blank_lines]   # If :cross_blank_lines, just jump to parent, then use .after_children
       orig = Location.new
@@ -1108,7 +1114,7 @@ class Tree
         last_indent = line_indent
         line_indent = tree[i+1]   # Use indent of following line
         line_indent = line_indent ? (line_indent[/^ */].length / 2) : 0
-        raise "Blank lines in trees between parents and children aren't allowed." if line_indent > 0 && line_indent > last_indent
+        raise "Blank lines in trees between parents and children aren't allowed.  Also 2 consecutive blank lines isn't allowed." if line_indent > 0 && line_indent > last_indent
       else
         line_indent = line[/^ */].length / 2
         line.strip!
@@ -1466,6 +1472,10 @@ class Tree
   # Tree.children "a\n  b\n  c", "a"
   #
   def self.children tree=nil, target=nil, options={}
+
+    # Read in file, if tree looks like a file path
+    tree = File.read(File.expand_path tree) if tree !~ /\n/ && tree =~ /^~/
+
     include_subitems = options[:include_subitems]   # Include sub-items for all children
 
     return self.children_at_cursor(tree) if tree.nil? || tree.is_a?(Hash)   # tree is actually options

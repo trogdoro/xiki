@@ -258,7 +258,7 @@ class Xiki
 
       txt = File.read path
       return "- all/\n" + txt.scan(/^ *describe .*"(.+)"/).map{|o|
-        "- #{o}/"
+        "- #{o.first}/"
       }.join("\n")
     end
 

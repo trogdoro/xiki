@@ -42,7 +42,7 @@ class Piano
   def self.menu
 
     %`
-    > Pass in notes
+    > Pass in notes (start GarageBand first)
     | g cdefg c c
     - .setup/
       - .instrument/

@@ -1112,7 +1112,7 @@ class Search
 
     char = Keys.input(:chars=>1, :prompt=>"Enter one char: ")
     if char == "m"
-      Launcher.open("- #{Xiki.dir}/\n  - ##\\bdef /")
+      Launcher.open("- #{Xiki.dir}\n  - ##\\bdef /")
     elsif char == "k"
       Launcher.open("- $x/key_bindings.rb\n  - ##\\bKeys\\./")
     elsif char == "l"

@@ -210,7 +210,7 @@ class Launcher
 
     if line =~ /^ *@$/
       matches = Launcher.menu_keys
-      Tree.<< matches.sort.map{|o| "<< #{o.sub '_', ' '}/"}.join("\n"), :no_slash=>1
+      Tree.<< matches.sort.map{|o| "<< #{o.gsub '_', ' '}/"}.join("\n"), :no_slash=>1
       return
     end
 
@@ -323,7 +323,7 @@ class Launcher
 
         Line.sub! /\b$/, "..."
 
-        View.under matches.sort.map{|o| "<< #{o.sub '_', ' '}/"}.join("\n")
+        View.under matches.sort.map{|o| "<< #{o.gsub '_', ' '}/"}.join("\n")
         return
       end
     end
@@ -1086,7 +1086,9 @@ class Launcher
 
     # TODO: make generic
     # TODO: load all the adapters and construct the "rb|js" part of the regex
-    match = path.match(/(.+\/)(\w+)\.(rb|js|coffee|py|notes|menu|haml)\/(.*)/)
+
+    # Don't match if it's quoted (after a pipe)
+    match = path.match(/^([^|]+\/)(\w+)\.(rb|js|coffee|py|notes|menu|haml)\/(.*)/)
     if match
       dir, file, extension, path = match[1..4]
       # TODO: instead, call Launcher.invoke JsAdapter(dir, path), path
@@ -1095,7 +1097,7 @@ class Launcher
     end
 
     # For matches to filename instead of extensions?
-    match = path.match(/(.+\/)(Rakefile)\/(.*)/)
+    match = path.match(/^([^|]+\/)(Rakefile)\/(.*)/)
     if match
       dir, file, path = match[1..4]
       # TODO: instead, call Launcher.invoke JsAdapter(dir, path), path

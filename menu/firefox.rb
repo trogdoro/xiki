@@ -244,7 +244,7 @@ class Firefox
 
     # If brawser wasn't running, ask if they want to open it
 
-    raise "> Looks like the browser isn\'t open.  Open it?\n@app/Firefox/"
+    raise "> Looks like Firefox isn\'t open.  Open it?\n@app/Firefox/\n\nOr, maybe the MozRepl Firefox extension isn't installed and on."
 
   end
 
