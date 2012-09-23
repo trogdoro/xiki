@@ -232,7 +232,7 @@ class Mysql
   end
 
   def self.select statement, row=nil
-    table = statement[/from (.+?)( |$)/, 1]
+    table = statement[/from (.+?)( |$)/i, 1]
 
     # If just statement, run it
 
@@ -253,7 +253,7 @@ end
 
 Keys.enter_list_mysql { Launcher.insert('- Mysql.dbs/') }
 
-Launcher.add /^select \* from($|\/)/ do |path|
+Launcher.add /^select \* from($|\/)/i do |path|
   if path !~ /\//   # If just "select * from", show all tables
     next Tree.<< Mysql.run(@default_db, 'show tables'), :no_slash=>1
   end
@@ -264,10 +264,11 @@ Launcher.add /^select \* from($|\/)/ do |path|
   Deletes.backward
   Deletes.backward
   Move.to_end
+  Launcher.launch
 
 end
 
-Launcher.add(/^select /) do |path|
+Launcher.add(/^select /i) do |path|
   args = Menu.split(path)
   Tree.<< Mysql.select(*args), :no_slash=>(args.length > 1)
 end
