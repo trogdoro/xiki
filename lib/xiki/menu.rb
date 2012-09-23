@@ -13,6 +13,7 @@ class Menu
       - gem/
     - .setup/
       - @~/menu/
+      - @$x/menu/
       - .reload_menus/
     - .api/
       > Summary
@@ -67,32 +68,23 @@ class Menu
       | If you want to create a very simple menu you can do so without code,
       | by just putting the menu in a file such as ~/menu/foo.menu. See:
       |
-      << docs/how_to_create/
+      << docs/creating/
     - .docs/
-      - .How to use/
-      - .How to create/
-      - .keys/
-        > Summary
-        | Helpful keyboard shortcuts when using menus.
-        |
-        | - as+menu
-        |   - Save changes to menu (or create new one)
-        | - to+menu
-        |   - Jump to file that implements menu
-        |
+      - .using/
+      - .creating/
     '
   end
 
   def self.install *args
     Xiki.dont_search
-    Tree.quote "
+      '
       > TODO
-      - implement this.
+      | implement this.
 
-      - Should it look for installed gems with this name?
-      - Should it just show commands to do a gem install?
-        - How would it know whether it the gem has a xiki menu?
-      "
+      - Look in gem dirs for installed gems with this name
+      - Google search for xiki menu on web
+        @google/"foo.menu"
+      '
   end
 
   def self.create *args
@@ -247,82 +239,184 @@ class Menu
     `
   end
 
-  def self.how_to_use *args
-    %`
-    > Summary
-    | How to use Xiki menus.  Note this refers to the wiki-style menus, not the menu bar.
-    |
-    | All menus can be used the same way.  Just type something and double-click
-    | on it (or type Ctrl-enter while the cursor is on the line).
-    |
-    - example/
-      | 1: type "foo" on a line (the "@" isn't necessary when the line isn't indented)
-      @ foo
+  def self.using *args
+    txt = %`
+      > Summary
+      | How to use Xiki menus.  Xiki menus are menus you type, not menu bar.
       |
-      | 2: double-click on it to drill in. You can try it on the line above. It will look like this:
-      @ foo/
-      |  - sammiches/
-      |  - dranks/
+      | All xiki menus can be used the same way.  Just type something and
+      | double-click on it (or type Ctrl-enter while the cursor is on the line)
+      | to open the menu.
       |
-      | 3: double-click to drill in further. It will look like this:
-      @ foo/
-      |  - sammiches/
-      |    - ham/
-      |    - tofu/
-      |  - dranks/
-      |
-    - using the mouse/
-      | You can click on the "bullets" (the - and + at the beginnings of lines)
-      | to expand and collapse.  You can also double-click to expand and
-      | collapse.
-      |
-    - search to narrow down/
-      | When you double-click a line the cursor turns blue and you can type
-      | letters to search and narrow down the list.
-      |
-    - misc keys/
-      | - Return: stops searching and launches (expands file or dir)
-      | - Tab: like return but hides others
-      | - ;: like return but collapses path
-      |
-      | - C-g: stops searching
-      |
-      | - Arrow keys: you can use them to go up and down and expand and collapse
-      |
-    `
+      - example/
+        | 1: Type "sammiches" on a line (the "@" isn't necessary when the line
+        |    isn't indented)
+        @sammiches
+        |
+        | 2: Double-click (or Ctrl-enter) on it to open it. You can try it on
+        |    the line above.  It will look like this:
+        | @sammiches/
+        |   + meat/
+        |   + veggie/
+        |   + checkout/
+        |
+        | 3: Double-click to open items. It will look like this:
+        | @sammiches/
+        |   + meat/
+        |   + veggie/
+        |     + cucumber/
+        |     + bark/
+        |   + checkout/
+        |
+      - mouse/
+        | You can click on the "bullets" (the - and + at the beginnings of lines)
+        | to expand and collapse.  You can also double-click to expand and
+        | collapse.
+        |
+      - keyboard/
+        | You can do everything with the keyboard that you can do with the mouse.
+        | Type Ctrl-enter while your cursor is on the same line as a menu or menu
+        | item to open it.  Or, if it already has things under it, it will collapse.
+        |
+        | Right after you open a menu, some keys you type have special meaning. This
+        | is the case whether you you used the mouse or keyboard to open the menu.
+        | The cursor turns into a block to indicate this.
+        |
+        | Special keys right after opening:
+        - search to narrow down/
+          | If you type numbers and letters, it incrementally narrows down the list.
+        - opening/
+          | Return - opens menu item cursor is on
+          | Tab - opens, hiding the other items at that level
+          | Ctrl-/ - opens, moving the item onto the same line as its parent
+          | Ctrl-1, Ctrl-2, Ctr-3, etc. - opens the nth item
+          | Ctrl-G: stops searching
+          |
+      `
+
+    Tree.children txt, args
   end
 
-  def self.how_to_create *args
+  def self.creating *args
     txt = %q`
       > Summary
-      | How to make your own menus in Xiki.  Note this refers to wiki-style
-      | menus (such as this one), not the menu bar.
+      | How to make your own Xiki menus.  This is strongly encouraged!  Make
+      | a bunch of menus for all the various things you do, if you're so
+      | inclined.  You can make menus for from simple notes, to powerful
+      | CRUD interfaces etc. for controlling external tools.
       |
+      - Pretend they exist/
+        | The easiest way to create new menus is to type them and open them as
+        | though they exist.  Xiki will then guide you through turning them
+        | into actual menus.
+        |
+        | The simplest option is the first one it shows you.  You can just type
+        | menu items inline to create the menu.  For example, you could type
+        | this:
+        |
+        | milkshakes/
+        |   - chocolate/
+        |   - vanilla/
+        |
+        | And then with your cursor on one of these lines you could type
+        | Ctrl-a Ctrl-m (for "as menu") to turn it into an actual menu.  Then,
+        | the next time you type "milkshakes" and open it, it would show the
+        | menu items.  For this menu to be useful, you'll probably want to add
+        | more items underneath them, or open the items to be prompted to
+        | create a ruby class to run when they're opened in the future.
+        |
+      - Screencasts/
+        | Check out these two points in one of the xiki screencast to see
+        | creating menus in action:
+        |
+        @http://www.youtube.com/watch?v=bUR_eUVcABg#t=1m30s
+        @http://www.youtube.com/watch?v=bUR_eUVcABg#t=1m57s
+        |
       - Creating .menu files/
-        | You can make menus without code, by just put "whatever.menu" files in the
-        | "menu/" dir in your home dir.
+        | You can make menus without code, by just putting "whatever.menu" files
+        | in the "menu" dir in your home dir.
         |
-        | For example you could create a "foo.menu" file with the contents
-        | "- sammiches/..." etc:
+        | For example you could create a "drinks.menu" file, like the following.
+        | (The "|" characters aren't actually in the file).
         |
-        - TODO: get these to expand out somehow! - maybe pass another arg to Tree.children below? - probably bad idea
-        - ~/menu/
-          - foo.menu
-            | - sammiches/
-            |   - ham/
-            |   - tofu/
-            | - dranks/
-            |   - foty/
+        | ~/menu/
+        |   - drinks.menu
+        |     | - fruit/
+        |     |   - lemonade/
+        |     |   - smoothie/
+        |     | - caffeinated/
+        |     |   - coffee/
+        |     |   - tea/
+        |
+        | Then when you type drinks on a line and open it, it will look like
+        | this:
+        |
+        | drinks/
+        |   + fruit/
+        |   + caffeinated/
         |
       - Delegating/
-        | This makes a foo/ menu that you can expand.  Even though these menus
-        | don't run code themselves, they can delegate to other menus or run code,
-        | like:
+        | You can make simple menus that delegate to other things, using the
+        | "@" character.  For example:
         |
-        - ~/menu/
-          - foo.menu
-            | - @mymenu/
-            | - @MyClass.my_method
+        | ~/menu/
+        |   - foo.menu
+        |     | - @other menu/
+        |     | - @MyClass.my_method
+        |     | @$ shell command
+        |
+      - Wiki elements/
+        | You can put wiki elements in menus, like headings, paragraphs and
+        | bullet points.  Thus you can make a menu just to store notes:
+        |
+        | shopping list/
+        |   > Grocery
+        |   - Eggs
+        |   - Vodka
+        |
+        |   > Pet store
+        |   Not sure yet.  Maybe just a bunch of snakes.
+        |
+      - Creating .rb files/
+        | Create ruby files in ~/menu/ to make dynamic menus.  The .menu class
+        | method will be invoked.  Example:
+        |
+        | ~/menu/
+        |   - pie.rb
+        |     | class Pie
+        |     |   def self.menu *args
+        |     |     "
+        |     |     - fruit/
+        |     |       - apple/
+        |     |       - pumpkin/
+        |     |     - nuts/
+        |     |     "
+        |     |   end
+        |     | end
+        |
+        | To make a menu run a method, put a dot in front of it:
+        |
+        | ~/menu/
+        |   - pie.rb
+        |     | class Pie
+        |     |   def self.menu *args
+        |     |     "
+        |     |     - fruit/
+        |     |       - apple/
+        |     |       - pumpkin/
+        |     |     - .nuts/
+        |     |     "
+        |     |   end
+        |     |   def self.nuts *args
+        |     |     # Put any code here.  The string you return will be inserted
+        |     |     # into the tree.
+        |     |     "- pecan/\n- pecan/"
+        |     |   end
+        |     | end
+        |
+        |
+        > For more info, see:
+        @menu/api/
         |
       `
 
@@ -579,8 +673,8 @@ Ol << "location: #{location.inspect}"
     return if orig == View.line
 
     # If it inserted something
-    output = Tree.siblings :everything=>1
-    # output = Tree.siblings :cross_blank_lines=>1, :everything=>1
+    # output = Tree.siblings :everything=>1
+    output = Tree.siblings :cross_blank_lines=>1, :everything=>1
 
     # Shouldn't this be looping like self.collapser_launcher ?
     Tree.to_parent
