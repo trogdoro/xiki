@@ -1,0 +1,1482 @@
+> Type some shoes code here
+| Shoes.app { button "Hello World" }
+- examples/
+  - button/
+    @shoes/
+      | Shoes.app :width=>104, :height=>40 do
+      |   button("Click me!") { alert("Good job.") }
+      | end
+  - mask/
+    @shoes/
+      | Shoes.app do
+      |   background black
+      |
+      |   stack :top => 0.4, :left => 0.2 do
+      |     @stripes = stack
+      |
+      |     mask do
+      |       title "Shoes", :weight => "bold", :size => 82
+      |     end
+      |   end
+      |
+      |   animate 10 do
+      |     @stripes.clear do
+      |       20.times do |i|
+      |         strokewidth 4
+      |         stroke rgb((0.0..0.5).rand, (0.0..1.0).rand, (0.0..0.3).rand)
+      |         line 0, i * 5, 400, i * 8
+      |       end
+      |     end
+      |   end
+      | end
+  - dialogs/
+    @shoes/
+      | Shoes.app :width => 300, :height => 150, :margin => 10 do
+      |   def answer(v)
+      |     @answer.replace v.inspect
+      |   end
+      |
+      |   button "Ask" do
+      |     answer ask("What is your name?")
+      |   end
+      |   button "Confirm" do
+      |     answer confirm("Would you like to proceed?")
+      |   end
+      |   button "Open File..." do
+      |     answer ask_open_file
+      |   end
+      |   button "Save File..." do
+      |     answer ask_save_file
+      |   end
+      |   button "Open Folder..." do
+      |     answer ask_open_folder
+      |   end
+      |   button "Save Folder..." do
+      |     answer ask_save_folder
+      |   end
+      |   button "Color" do
+      |     answer ask_color("Pick a Color")
+      |   end
+      |
+      |   @answer = para "Answers appear here"
+      | end
+  - clock/
+    @shoes/
+      | #
+      | # Shoes Clock by Thomas Bell
+      | # posted to the Shoes mailing list on 04 Dec 2007
+      | #
+      | Shoes.app :height => 260, :width => 250 do
+      |   @radius, @centerx, @centery = 90, 126, 140
+      |   animate(8) do
+      |     @time = Time.now
+      |     clear do
+      |       draw_background
+      |       stack do
+      |         background black
+      |         para @time.strftime("%a"),
+      |           span(@time.strftime(" %b %d, %Y "), :stroke => "#ccc"),
+      |           strong(@time.strftime("%I:%M"), :stroke => white),
+      |           @time.strftime(".%S"), :align => "center", :stroke => "#666",
+      |             :margin => 4
+      |       end
+      |       clock_hand @time.sec + (@time.usec * 0.000001),2,30,red
+      |       clock_hand @time.min + (@time.sec / 60.0),5
+      |       clock_hand @time.hour + (@time.min / 60.0),8,6
+      |     end
+      |   end
+      |   def draw_background
+      |     background rgb(230, 240, 200)
+      |
+      |     fill white
+      |     stroke black
+      |     strokewidth 4
+      |     oval @centerx - 102, @centery - 102, 204, 204
+      |
+      |     fill black
+      |     nostroke
+      |     oval @centerx - 5, @centery - 5, 10, 10
+      |
+      |     stroke black
+      |     strokewidth 1
+      |     line(@centerx, @centery - 102, @centerx, @centery - 95)
+      |     line(@centerx - 102, @centery, @centerx - 95, @centery)
+      |     line(@centerx + 95, @centery, @centerx + 102, @centery)
+      |     line(@centerx, @centery + 95, @centerx, @centery + 102)
+      |   end
+      |   def clock_hand(time, sw, unit=30, color=black)
+      |     radius_local = unit == 30 ? @radius : @radius - 15
+      |     _x = radius_local * Math.sin( time * Math::PI / unit )
+      |     _y = radius_local * Math.cos( time * Math::PI / unit )
+      |     stroke color
+      |     strokewidth sw
+      |     line(@centerx, @centery, @centerx + _x, @centery - _y)
+      |   end
+      | end
+  - follow/
+    @shoes/
+      | trails = [[0, 0]] * 60
+      | Shoes.app :width => 200, :height => 200, :resizable => false do
+      |   nostroke
+      |   fill rgb(0x3, 0x1, 0x3, 0.6)
+      |
+      |   # animation at 100 frames per second
+      |   animate(60) do
+      |     trails.shift
+      |     trails << self.mouse[1, 2]
+      |
+      |     clear do
+      |       # change the background based on where the pointer is
+      |       background rgb(
+      |         20 + (70 * (trails.last[0].to_f / self.width)).to_i,
+      |         20 + (70 * (trails.last[1].to_f / self.height)).to_i,
+      |         51)
+      |
+      |       # draw circles progressively bigger
+      |       trails.each_with_index do |(x, y), i|
+      |         i += 1
+      |         oval :left => x, :top => y, :radius => (i*0.5), :center => true
+      |       end
+      |     end
+      |   end
+      |
+      | end
+  - tank spank/
+    @shoes/
+      | # Tankspank
+      | # kevin conner
+      | # connerk@gmail.com
+      | # version 3, 13 March 2008
+      | # this code is free, do what you like with it!
+      |
+      | $width, $height = 700, 500
+      | $camera_tightness = 0.1
+      |
+      | module Collisions
+      | 	def contains? x, y
+      | 		not (x < west or x > east or y < north or y > south)
+      | 	end
+      |
+      | 	def intersects? other
+      | 		not (other.east < west or other.west > east or
+      | 			other.south < north or other.north > south)
+      | 	end
+      | end
+      |
+      | class Building
+      | 	include Collisions
+      |
+      | 	attr_reader :west, :east, :north, :south
+      |
+      | 	def initialize(west, east, north, south)
+      | 		@west, @east, @north, @south = west, east, north, south
+      | 		@top, @bottom = 1.1 + rand(3) * 0.15, 1.0
+      |
+      | 		color = (1..3).collect { 0.2 + 0.4 * rand }
+      | 		color << 0.9
+      | 		@stroke = $app.rgb *color
+      | 		color[-1] = 0.3
+      | 		@fill = $app.rgb *color
+      | 	end
+      |
+      | 	def draw
+      | 		$app.stroke @stroke
+      | 		$app.fill @fill
+      | 		Opp.draw_opp_box(@west, @east, @north, @south, @top, @bottom)
+      | 	end
+      | end
+      |
+      | module Guidance
+      | 	def guidance_system x, y, dest_x, dest_y, angle
+      | 		vx, vy = dest_x - x, dest_y - y
+      | 		if vx.abs < 0.1 and vy.abs <= 0.1
+      | 			yield 0, 0
+      | 		else
+      | 			length = Math.sqrt(vx * vx + vy * vy)
+      | 			vx /= length
+      | 			vy /= length
+      | 			ax, ay = Math.cos(angle), Math.sin(angle)
+      | 			cos_between = vx * ax + vy * ay
+      | 			sin_between = vx * -ay + vy * ax
+      | 			yield sin_between, cos_between
+      | 		end
+      | 	end
+      | end
+      |
+      | module Life
+      | 	attr_reader :health
+      | 	def dead?
+      | 		@health == 0
+      | 	end
+      | 	def hurt damage
+      | 		@health = [@health - damage, 0].max
+      | 	end
+      | end
+      |
+      | class Tank
+      | 	include Collisions
+      | 	include Guidance
+      | 	include Life
+      | 	# ^ sounds like insurance
+      |
+      | 	@@collide_size = 15
+      | 	def west; @x - @@collide_size; end
+      | 	def east; @x + @@collide_size; end
+      | 	def north; @y - @@collide_size; end
+      | 	def south; @y + @@collide_size; end
+      |
+      | 	attr_reader :x, :y
+      |
+      | 	def initialize
+      | 		@x, @y = 0, -125
+      | 		@last_x, @last_y = @x, @y
+      | 		@tank_angle = 0.0
+      | 		@dest_x, @dest_y = 0, 0
+      | 		@acceleration = 0.0
+      | 		@speed = 0.0
+      | 		@moving = false
+      |
+      | 		@aim_angle = 0.0
+      | 		@target_x, @target_y = 0, 0
+      | 		@aimed = false
+      |
+      | 		@health = 100
+      | 	end
+      |
+      | 	def set_destination
+      | 		@dest_x, @dest_y = @target_x, @target_y
+      | 		@moving = true
+      | 	end
+      |
+      | 	def fire
+      | 		Opp.add_shell Shell.new(@x + 30 * Math.cos(@aim_angle),
+      | 			@y + 30 * Math.sin(@aim_angle), @aim_angle)
+      | 	end
+      |
+      | 	def update button, mouse_x, mouse_y
+      | 		@target_x, @target_y = mouse_x, mouse_y
+      |
+      | 		if @moving
+      | 			guidance_system @x, @y, @dest_x, @dest_y, @tank_angle do |direction, on_target|
+      | 				turn direction
+      | 				@acceleration = on_target * 0.25
+      | 			end
+      |
+      | 			distance = Math.sqrt((@dest_x - @x) ** 2 + (@dest_y - @y) ** 2)
+      | 			@moving = false if distance < 50
+      | 		else
+      | 			@acceleration = 0.0
+      | 		end
+      |
+      | 		guidance_system @x, @y, @target_x, @target_y, @aim_angle do |direction, on_target|
+      | 			aim direction
+      | 			@aimed = on_target > 0.98
+      | 		end
+      |
+      | 		integrity = @health / 100.0 # the more hurt you are, the slower you go
+      | 		@speed = [[@speed + @acceleration, 5.0 * integrity].min, -3.0 * integrity].max
+      | 		@speed *= 0.9 if !@moving
+      |
+      | 		@last_x, @last_y = @x, @y
+      | 		@x += @speed * Math.cos(@tank_angle)
+      | 		@y += @speed * Math.sin(@tank_angle)
+      | 	end
+      |
+      | 	def collide_and_stop
+      | 		@x, @y = @last_x, @last_y
+      | 		hurt @speed.abs * 3 + 5
+      | 		@speed = 0
+      | 		@moving = false
+      | 	end
+      |
+      | 	def turn direction
+      | 		@tank_angle += [[-0.03, direction].max, 0.03].min
+      | 	end
+      |
+      | 	def aim direction
+      | 		@aim_angle += [[-0.1, direction].max, 0.1].min
+      | 	end
+      |
+      | 	def draw
+      | 		$app.stroke $app.blue
+      | 		$app.fill $app.blue(0.4)
+      | 		Opp.draw_opp_rect @x - 20, @x + 20, @y - 15, @y + 15, 1.05, @tank_angle
+      | 		#Opp.draw_opp_box @x - 20, @x + 20, @y - 20, @y + 20, 1.03, 1.0
+      | 		Opp.draw_opp_rect @x - 10, @x + 10, @y - 7, @y + 7, 1.05, @aim_angle
+      | 		x, unused1, y, unused2 = Opp.project(@x, 0, @y, 0, 1.05)
+      | 		$app.line x, y, x + 25 * Math.cos(@aim_angle), y + 25 * Math.sin(@aim_angle)
+      |
+      | 		$app.stroke $app.red
+      | 		$app.fill $app.red(@aimed ? 0.4 : 0.1)
+      | 		Opp.draw_opp_oval @target_x - 10, @target_x + 10, @target_y - 10, @target_y + 10, 1.00
+      |
+      | 		if @moving
+      | 			$app.stroke $app.green
+      | 			$app.fill $app.green(0.2)
+      | 			Opp.draw_opp_oval @dest_x - 20, @dest_x + 20, @dest_y - 20, @dest_y + 20, 1.00
+      | 		end
+      | 	end
+      | end
+      |
+      | class Shell
+      | 	attr_reader :x, :y
+      |
+      | 	def initialize x, y, angle
+      | 		@x, @y, @angle = x, y, angle
+      | 		@speed = 10.0
+      | 	end
+      |
+      | 	def update
+      | 		@x += @speed * Math.cos(@angle)
+      | 		@y += @speed * Math.sin(@angle)
+      | 	end
+      |
+      | 	def draw
+      | 		$app.stroke $app.red
+      | 		$app.fill $app.red(0.1)
+      | 		Opp.draw_opp_box @x - 2, @x + 2, @y - 2, @y + 2, 1.05, 1.04
+      | 	end
+      | end
+      |
+      | class Opp
+      | 	def self.new_game
+      | 		@offset_x, @offset_y = 0, 0
+      | 		@buildings = [
+      | 			[-1000, -750, -750, -250],
+      | 			[-500, 250, -750, -250],
+      | 			[500, 1000, -750, -500],
+      | 			[750, 1250, -250, 0],
+      | 			[750, 1250, 250, 750],
+      | 			[250, 500, 0, 750],
+      | 			[-250, 0, 0, 500],
+      | 			[-500, 0, 750, 1000],
+      | 			[-1000, -500, 0, 500],
+      | 			[400, 600, -350, -150]
+      | 		].collect { |p| Building.new *p }
+      | 		@shells = []
+      | 		@boundary = [-1250, 1500, -1250, 1250]
+      | 		@tank = Tank.new
+      | 		@center_x, @center_y = $app.width / 2, $app.height / 2
+      | 	end
+      |
+      | 	def self.tank
+      | 		@tank
+      | 	end
+      |
+      | 	def self.read_input
+      | 		@input = $app.mouse
+      | 	end
+      |
+      | 	def self.update_scene
+      | 		button, x, y = @input
+      | 		x += @offset_x - @center_x
+      | 		y += @offset_y - @center_y
+      |
+      | 		@tank.update(button, x, y) if !@tank.dead?
+      | 		@buildings.each do |b|
+      | 			@tank.collide_and_stop if b.intersects? @tank
+      | 		end
+      |
+      | 		@shells.each { |s| s.update }
+      | 		@buildings.each do |b|
+      | 			@shells.reject! do |s|
+      | 				b.contains?(s.x, s.y)
+      | 			end
+      | 		end
+      | 		#collide shells with tanks -- don't need this until there are enemy tanks
+      | 		#@shells.reject! do |s|
+      | 		#	@tank.contains?(s.x, s.y)
+      | 		#end
+      |
+      | 		$app.clear do
+      | 			@offset_x += $camera_tightness * (@tank.x - @offset_x)
+      | 			@offset_y += $camera_tightness * (@tank.y - @offset_y)
+      |
+      | 			$app.background $app.black
+      | 			@center_x, @center_y = $app.width / 2, $app.height / 2
+      |
+      | 			$app.stroke $app.red(0.9)
+      | 			$app.nofill
+      | 			draw_opp_box *(@boundary + [1.1, 1.0, false])
+      |
+      | 			@tank.draw
+      | 			@shells.each { |s| s.draw }
+      | 			@buildings.each { |b| b.draw }
+      | 		end
+      | 	end
+      |
+      | 	def self.add_shell shell
+      | 		@shells << shell
+      | 		@shells.shift if @shells.size > 10
+      | 	end
+      |
+      | 	def self.project left, right, top, bottom, depth
+      | 		[left, right].collect { |x| @center_x + depth * (x - @offset_x) } +
+      | 			[top, bottom].collect { |y| @center_y + depth * (y - @offset_y) }
+      | 	end
+      |
+      | 	# here "front" and "back" push the rect into and out of the window.
+      | 	# 1.0 means your x and y units are pixels on the surface.
+      | 	# greater than that brings the box closer.  less pushes it back.  0.0 => infinity.
+      | 	# the front will be filled but the rest is wireframe only.
+      | 	def self.draw_opp_box left, right, top, bottom, front, back, occlude = true
+      | 		near_left, near_right, near_top, near_bottom = project(left, right, top, bottom, front)
+      | 		far_left, far_right, far_top, far_bottom = project(left, right, top, bottom, back)
+      |
+      | 		# determine which sides of the box are visible
+      | 		if occlude
+      | 			draw_left = @center_x < near_left
+      | 			draw_right = near_right < @center_x
+      | 			draw_top = @center_y < near_top
+      | 			draw_bottom = near_bottom < @center_y
+      | 		else
+      | 			draw_left, draw_right, draw_top, draw_bottom = [true] * 4
+      | 		end
+      |
+      | 		# draw lines for the back edges
+      | 		$app.line far_left, far_top, far_right, far_top if draw_top
+      | 		$app.line far_left, far_bottom, far_right, far_bottom if draw_bottom
+      | 		$app.line far_left, far_top, far_left, far_bottom if draw_left
+      | 		$app.line far_right, far_top, far_right, far_bottom if draw_right
+      |
+      | 		# draw lines to connect the front and back
+      | 		$app.line near_left, near_top, far_left, far_top if draw_left or draw_top
+      | 		$app.line near_right, near_top, far_right, far_top if draw_right or draw_top
+      | 		$app.line near_left, near_bottom, far_left, far_bottom if draw_left or draw_bottom
+      | 		$app.line near_right, near_bottom, far_right, far_bottom if draw_right or draw_bottom
+      |
+      | 		# draw the front, filled
+      | 		$app.rect near_left, near_top, near_right - near_left, near_bottom - near_top
+      | 	end
+      |
+      | 	def self.draw_opp_rect left, right, top, bottom, depth, angle, with_x = false
+      | 		pl, pr, pt, pb = project(left, right, top, bottom, depth)
+      | 		cos = Math.cos(angle)
+      | 		sin = Math.sin(angle)
+      | 		cx, cy = (pr + pl) / 2.0, (pb + pt) / 2.0
+      | 		points = [[pl, pt], [pr, pt], [pr, pb], [pl, pb]].collect do |x, y|
+      | 			[cx + (x - cx) * cos - (y - cy) * sin,
+      | 				cy + (x - cx) * sin + (y - cy) * cos]
+      | 		end
+      |
+      | 		$app.line *(points[0] + points[1])
+      | 		$app.line *(points[1] + points[2])
+      | 		$app.line *(points[2] + points[3])
+      | 		$app.line *(points[3] + points[0])
+      | 	end
+      |
+      | 	def self.draw_opp_oval left, right, top, bottom, depth
+      | 		pl, pr, pt, pb = project(left, right, top, bottom, depth)
+      | 		$app.oval(pl, pt, pr - pl, pb - pt)
+      | 	end
+      |
+      | 	def self.draw_opp_plane x1, y1, x2, y2, front, back, stroke_color
+      | 		near_x1, near_x2, near_y1, near_y2 = project(x1, x2, y1, y2, front)
+      | 		far_x1, far_x2, far_y1, far_y2 = project(x1, x2, y1, y2, back)
+      |
+      | 		$app.stroke stroke_color
+      |
+      | 		$app.line far_x1, far_y1, far_x2, far_y2
+      | 		$app.line far_x1, far_y1, near_x1, near_y1
+      | 		$app.line far_x2, far_y2, near_x2, near_y2
+      | 		$app.line near_x1, near_y1, near_x2, near_y2
+      | 	end
+      | end
+      |
+      | Shoes.app :width => $width, :height => $height do
+      | 	$app = self
+      |
+      | 	Opp.new_game
+      | 	@playing = true
+      |
+      | 	keypress do |key|
+      | 		if @playing
+      | 			if key == "1" or key == "z"
+      | 				Opp.tank.set_destination
+      | 			elsif key == "2" or key == "x" or key == " "
+      | 				Opp.tank.fire
+      | 			end
+      | 		else
+      | 			if key == "n"
+      | 				Opp.new_game
+      | 				@playing = true
+      | 			end
+      | 		end
+      | 	end
+      |
+      | 	click do |button, x, y|
+      | 		if @playing
+      | 			if button == 1
+      | 				Opp.tank.set_destination
+      | 			else
+      | 				Opp.tank.fire
+      | 			end
+      | 		end
+      | 	end
+      |
+      | 	game_over_count = -1
+      | 	animate(60) do
+      | 		Opp.read_input if @playing
+      | 		Opp.update_scene
+      |
+      | 		@playing = false if Opp.tank.dead?
+      | 		if !@playing
+      | 			stack do
+      | 				banner "Game Over", :stroke => white, :margin => 10
+      | 				caption "learn to drive!", :stroke => white, :margin => 20
+      | 			end
+      | 		end
+      | 	end
+      | end
+  - arc/
+    @shoes/
+      | #
+      | # a translation from a processing example
+      | # http://vormplus.be/weging/an-introduction-to-processing/
+      | #
+      | Shoes.app :width => 420, :height => 420, :resizable => false do
+      |   rotation = -(Shoes::HALF_PI / 3)
+      |   step = 20
+      |
+      |   background gray(240)
+      |   stroke gray(127)
+      |   cap :curve
+      |   nofill
+      |
+      |   10.times do |i|
+      |     strokewidth i
+      |     size = 200 + (step * i)
+      |     shape do
+      |       arc self.width / 2, self.height / 2,
+      |           size, size,
+      |           rotation * i, rotation * i + Shoes::TWO_PI - Shoes::HALF_PI
+      |     end
+      |   end
+      | end
+  - draw/
+    @shoes/
+      | Shoes.app do
+      |   background "#999"
+      |   stroke "#000"
+      |   x, y = nil, nil
+      |   motion do |_x, _y|
+      |     if x and y and (x != _x or y != _y)
+      |       append do
+      |         line x, y, _x, _y
+      |       end
+      |     end
+      |     x, y = _x, _y
+      |   end
+      | end
+  - reminder/
+    @shoes/
+      | require 'yaml'
+      |
+      | Shoes.app :title => "A Gentle Reminder",
+      |   :width => 370, :height => 560, :resizable => false do
+      |
+      |   background white
+      |   background tan, :height => 40
+      |
+      |   caption "A Gentle Reminder", :margin => 8, :stroke => white
+      |
+      |   stack :margin => 10, :margin_top => 50 do
+      |     para "You need to", :stroke => red, :fill => yellow
+      |
+      |     stack :margin_left => 5, :margin_right => 10, :width => 1.0, :height => 200, :scroll => true do
+      |       background white
+      |       border white, :strokewidth => 3
+      |       @gui_todo = para
+      |     end
+      |
+      |     flow :margin_top => 10 do
+      |       para "Remember to"
+      |       @add = edit_line(:margin_left => 10, :width => 180)
+      |       button("Add", :margin_left => 5)  { add_todo(@add.text); @add.text = '' }
+      |     end
+      |   end
+      |
+      |   stack :margin_top => 10 do
+      |     background darkgray
+      |     para strong('Completed'), :stroke => white
+      |   end
+      |
+      |   @gui_completed = stack :width => 1.0, :height => 207, :margin_right => 20
+      |
+      |
+      |   def data_path
+      |     if RUBY_PLATFORM =~ /win32/
+      |       if ENV['USERPROFILE']
+      |         if File.exist?(File.join(File.expand_path(ENV['USERPROFILE']), "Application Data"))
+      |           user_data_directory = File.join File.expand_path(ENV['USERPROFILE']), "Application Data", "GentleReminder"
+      |         else
+      |           user_data_directory = File.join File.expand_path(ENV['USERPROFILE']), "GentleReminder"
+      |         end
+      |       else
+      |         user_data_directory = File.join File.expand_path(Dir.getwd), "data"
+      |       end
+      |     else
+      |       user_data_directory = File.expand_path(File.join("~", ".gentlereminder"))
+      |     end
+      |
+      |     unless File.exist?(user_data_directory)
+      |       Dir.mkdir(user_data_directory)
+      |     end
+      |
+      |     return File.join(user_data_directory, "data.yaml")
+      |   end
+      |
+      |
+      |   def refresh_todo
+      |     @gui_todo.replace *(
+      |       @todo.map { |item|
+      |         [ item, '  ' ] + [ link('Done') { complete_todo item } ] + [ '  ' ] +
+      |             [ link('Forget it') { forget_todo item } ] + [ "\n" ]
+      |       }.flatten
+      |     )
+      |   end
+      |
+      |
+      |   def refresh
+      |     refresh_todo
+      |
+      |     @gui_completed.clear
+      |
+      |     @gui_completed.append do
+      |       background white
+      |
+      |       @completed.keys.sort.reverse.each { |day|
+      |         stack do
+      |           background lightgrey
+      |           para strong(Time.at(day).strftime('%B %d, %Y')), :stroke => white
+      |         end
+      |
+      |         stack do
+      |           inscription *(
+      |             @completed[day].map { |item|
+      |               [ item ] + [ '  ' ] + [ link('Not Done') { undo_todo day, item } ] +
+      |                   (@completed[day].index(item) == @completed[day].length - 1 ? [ '' ] : [ "\n" ])
+      |             }.flatten
+      |           )
+      |         end
+      |
+      |       }
+      |     end
+      |   end
+      |
+      |
+      |   def complete_todo(item)
+      |     day = Time.today.to_i
+      |
+      |     if @completed.keys.include? day
+      |       @completed[day] << item
+      |     else
+      |       @completed[day] = [ item ]
+      |     end
+      |
+      |     @todo.delete(item)
+      |
+      |     save
+      |
+      |     refresh
+      |   end
+      |
+      |
+      |   def undo_todo(day, item)
+      |     @completed[day].delete item
+      |
+      |     @completed.delete(day) if @completed[day].empty?
+      |
+      |     @todo << item unless @todo.include? item
+      |
+      |     save
+      |
+      |     refresh
+      |   end
+      |
+      |
+      |   def add_todo(item)
+      |     item = item.strip
+      |
+      |     return if item == ''
+      |
+      |     if @todo.include? item
+      |       alert('You have already added that to the list!')
+      |       return
+      |     end
+      |
+      |     @todo << item
+      |
+      |     save
+      |
+      |     refresh_todo
+      |   end
+      |
+      |
+      |   def forget_todo(item)
+      |     @todo.delete item
+      |
+      |     save
+      |
+      |     refresh_todo
+      |   end
+      |
+      |
+      |   def load
+      |     if File.exist?(data_path)
+      |       @todo, @completed = YAML::load(File.open(data_path, 'r'))
+      |     else
+      |       @todo = []
+      |       @completed = {}
+      |     end
+      |
+      |     refresh
+      |   end
+      |
+      |
+      |   def save
+      |     File.open(data_path, 'w') { |f|
+      |       f.write [ @todo, @completed ].to_yaml
+      |     }
+      |   end
+      |
+      |
+      |   load
+      |
+      | end
+  - vjot/
+    @shoes/
+      | NOTES = [['Welcome to the vJot Clone', <<-'END']]
+      | This sample app is a notetaker, a clone of PJ Hyett's vjot.com.
+      |
+      | Creating
+      | ----------
+      | Click "Add a New Note" and the jot will be loaded into the editor for reading or editing.
+      |
+      | Editing
+      | ---------
+      | Click a jot's title to load it.
+      |
+      | Saving
+      | --------
+      | There is no save button, the jot is saved as you edit.
+      |
+      | END
+      |
+      | Shoes.app :title => "vJot",
+      |   :width => 420, :height => 560, :resizable => false do
+      |
+      |   @note = NOTES.first
+      |   background "#C7EAFB"
+      |   stack :width => 400, :margin => 20 do
+      |     background "#eee", :curve => 12
+      |     border "#00D0FF", :strokewidth => 3, :curve => 12
+      |     stack :margin => 20 do
+      |       caption "vJot"
+      |       @title = edit_line @note[0], :width => 1.0 do
+      |         @note[0] = @title.text
+      |         load_list
+      |       end
+      |       stack :width => 1.0, :height => 200, :scroll => true do
+      |         @list = para
+      |       end
+      |       @jot = edit_box @note[1], :width => 1.0, :height => 200, :margin_bottom => 20 do
+      |         @note[1] = @jot.text
+      |       end
+      |     end
+      |   end
+      |
+      |   def load_list
+      |     @list.replace *(NOTES.map { |note|
+      |       [link(note.first) { @note = load_note(note); load_list }, "\n"]
+      |     }.flatten +
+      |       [link("+ Add a new Note") { NOTES << (@note = load_note); load_list }])
+      |   end
+      |
+      |   def load_note(note = ['New Note', ''])
+      |     @note = note
+      |     @title.text = note[0]
+      |     @jot.text = note[1]
+      |     note
+      |   end
+      |
+      |   load_list
+      | end
+  - minesweeper/
+    @shoes/
+      | #
+      | # Shoes Minesweeper by que/varyform
+      | #
+      | LEVELS = { :beginner => [9, 9, 10], :intermediate => [16, 16, 40], :expert => [30, 16, 99] }
+      |
+      | class Field
+      |   CELL_SIZE = 20
+      |   COLORS = %w(#00A #0A0 #A00 #004 #040 #400 #000)
+      |
+      |   class Cell
+      |     attr_accessor :flag
+      |     def initialize(aflag = false)
+      |       @flag = aflag
+      |     end
+      |   end
+      |
+      |   class Bomb < Cell
+      |     attr_accessor :exploded
+      |     def initialize(exploded = false)
+      |       @exploded = exploded
+      |     end
+      |   end
+      |
+      |   class OpenCell < Cell
+      |     attr_accessor :number
+      |     def initialize(bombs_around = 0)
+      |       @number = bombs_around
+      |     end
+      |   end
+      |
+      |   class EmptyCell < Cell; end
+      |
+      |   attr_reader :cell_size, :offset
+      |
+      |   def initialize(app, level = :beginner)
+      |     @app = app
+      |     @field = []
+      |     @w, @h, @bombs = LEVELS[level][0], LEVELS[level][1], LEVELS[level][2]
+      |     @h.times { @field << Array.new(@w) { EmptyCell.new } }
+      |     @game_over = false
+      |     @width, @height, @cell_size = @w * CELL_SIZE, @h * CELL_SIZE, CELL_SIZE
+      |     @offset = [(@app.width - @width.to_i) / 2, (@app.height - @height.to_i) / 2]
+      |     plant_bombs
+      |     @start_time = Time.now
+      |   end
+      |
+      |   def total_time
+      |     @latest_time = Time.now - @start_time unless game_over? || all_found?
+      |     @latest_time
+      |   end
+      |
+      |   def click!(x, y)
+      |     return unless cell_exists?(x, y)
+      |     return if has_flag?(x, y)
+      |     return die!(x, y) if bomb?(x, y)
+      |     open(x, y)
+      |     discover(x, y) if bombs_around(x, y) == 0
+      |   end
+      |
+      |   def flag!(x, y)
+      |     return unless cell_exists?(x, y)
+      |     self[x, y].flag = !self[x, y].flag unless self[x, y].is_a?(OpenCell)
+      |   end
+      |
+      |   def game_over?
+      |     @game_over
+      |   end
+      |
+      |   def render_cell(x, y, color = "#AAA", stroke = true)
+      |     @app.stroke "#666" if stroke
+      |     @app.fill color
+      |     @app.rect x*cell_size, y*cell_size, cell_size-1, cell_size-1
+      |     @app.stroke "#BBB" if stroke
+      |     @app.line x*cell_size+1, y*cell_size+1, x*cell_size+cell_size-1, y*cell_size
+      |     @app.line x*cell_size+1, y*cell_size+1, x*cell_size, y*cell_size+cell_size-1
+      |   end
+      |
+      |   def render_flag(x, y)
+      |     @app.stroke "#000"
+      |     @app.line(x*cell_size+cell_size / 4 + 1, y*cell_size + cell_size / 5, x*cell_size+cell_size / 4 + 1, y*cell_size+cell_size / 5 * 4)
+      |     @app.fill "#A00"
+      |     @app.rect(x*cell_size+cell_size / 4+2, y*cell_size + cell_size / 5,
+      |       cell_size / 3, cell_size / 4)
+      |   end
+      |
+      |   def render_bomb(x, y)
+      |     render_cell(x, y)
+      |     if (game_over? or all_found?) then # draw bomb
+      |       if self[x, y].exploded then
+      |         render_cell(x, y, @app.rgb(0xFF, 0, 0, 0.5))
+      |       end
+      |       @app.nostroke
+      |       @app.fill @app.rgb(0, 0, 0, 0.8)
+      |       @app.oval(x*cell_size+3, y*cell_size+3, 13)
+      |       @app.fill "#333"
+      |       @app.oval(x*cell_size+5, y*cell_size+5, 7)
+      |       @app.fill "#AAA"
+      |       @app.oval(x*cell_size+6, y*cell_size+6, 3)
+      |       @app.fill @app.rgb(0, 0, 0, 0.8)
+      |       @app.stroke "#222"
+      |       @app.strokewidth 2
+      |       @app.oval(x*cell_size + cell_size / 2 + 2, y*cell_size + cell_size / 4 - 2, 2)
+      |       @app.oval(x*cell_size + cell_size / 2 + 4, y*cell_size + cell_size / 4 - 2, 1)
+      |       @app.strokewidth 1
+      |     end
+      |   end
+      |
+      |   def render_number(x, y)
+      |     render_cell(x, y, "#999", false)
+      |     if self[x, y].number != 0 then
+      |       @app.nostroke
+      |       @app.para self[x, y].number.to_s, :left => x*cell_size + 3, :top => y*cell_size - 2,
+      |         :font => '13px', :stroke => COLORS[self[x, y].number - 1]
+      |     end
+      |   end
+      |
+      |   def paint
+      |     0.upto @h-1 do |y|
+      |       0.upto @w-1 do |x|
+      |         @app.nostroke
+      |         case self[x, y]
+      |           when EmptyCell then render_cell(x, y)
+      |           when Bomb then render_bomb(x, y)
+      |           when OpenCell then render_number(x, y)
+      |         end
+      |         render_flag(x, y) if has_flag?(x, y) && !(game_over? && bomb?(x, y))
+      |       end
+      |     end
+      |   end
+      |
+      |   def bombs_left
+      |     @bombs - @field.flatten.compact.reject {|e| !e.flag }.size
+      |   end
+      |
+      |   def all_found?
+      |     @field.flatten.compact.reject {|e| !e.is_a?(OpenCell) }.size + @bombs == @w*@h
+      |   end
+      |
+      |   def reveal!(x, y)
+      |     return unless cell_exists?(x, y)
+      |     return unless self[x, y].is_a?(Field::OpenCell)
+      |     if flags_around(x, y) >= self[x, y].number then
+      |       (-1..1).each do |v|
+      |         (-1..1).each { |h| click!(x+h, y+v) unless (v==0 && h==0) or has_flag?(x+h, y+v) }
+      |       end
+      |     end
+      |   end
+      |
+      |   private
+      |
+      |   def cell_exists?(x, y)
+      |     ((0...@w).include? x) && ((0...@h).include? y)
+      |   end
+      |
+      |   def has_flag?(x, y)
+      |     return false unless cell_exists?(x, y)
+      |     return self[x, y].flag
+      |   end
+      |
+      |   def bomb?(x, y)
+      |     cell_exists?(x, y) && (self[x, y].is_a? Bomb)
+      |   end
+      |
+      |   def can_be_discovered?(x, y)
+      |     return false unless cell_exists?(x, y)
+      |     return false if self[x, y].flag
+      |     cell_exists?(x, y) && (self[x, y].is_a? EmptyCell) && !bomb?(x, y) && (bombs_around(x, y) == 0)
+      |   end
+      |
+      |   def open(x, y)
+      |     self[x, y] = OpenCell.new(bombs_around(x, y)) unless (self[x, y].is_a? OpenCell) or has_flag?(x, y)
+      |   end
+      |
+      |   def neighbors
+      |     (-1..1).each do |col|
+      |       (-1..1).each { |row| yield row, col unless col==0 && row == 0 }
+      |     end
+      |   end
+      |
+      |   def discover(x, y)
+      |     open(x, y)
+      |     neighbors do |col, row|
+      |       cx, cy = x+row, y+col
+      |       next unless cell_exists?(cx, cy)
+      |       discover(cx, cy) if can_be_discovered?(cx, cy)
+      |       open(cx, cy)
+      |     end
+      |   end
+      |
+      |   def count_neighbors
+      |     return 0 unless block_given?
+      |     count = 0
+      |     neighbors { |h, v| count += 1 if yield(h, v) }
+      |     count
+      |   end
+      |
+      |   def bombs_around(x, y)
+      |     count_neighbors { |v, h| bomb?(x+h, y+v) }
+      |   end
+      |
+      |   def flags_around(x, y)
+      |     count_neighbors { |v, h| has_flag?(x+h, y+v) }
+      |   end
+      |
+      |   def die!(x, y)
+      |     self[x, y].exploded = true
+      |     @game_over = true
+      |   end
+      |
+      |   def plant_bomb(x, y)
+      |     self[x, y].is_a?(EmptyCell) ? self[x, y] = Bomb.new : false
+      |   end
+      |
+      |   def plant_bombs
+      |     @bombs.times { redo unless plant_bomb(rand(@w), rand(@h)) }
+      |   end
+      |
+      |   def [](*args)
+      |     x, y = args
+      |     raise "Cell #{x}:#{y} does not exists!" unless cell_exists?(x, y)
+      |     @field[y][x]
+      |   end
+      |
+      |   def []=(*args)
+      |     x, y, v = args
+      |     cell_exists?(x, y) ? @field[y][x] = v : false
+      |   end
+      | end
+      |
+      | Shoes.app :width => 730, :height => 450, :title => 'Minesweeper' do
+      |   def render_field
+      |     clear do
+      |       background rgb(50, 50, 90, 0.7)
+      |       flow :margin => 4 do
+      |         button("Beginner") { new_game :beginner }
+      |         button("Intermediate") { new_game :intermediate }
+      |         button("Expert") { new_game :expert }
+      |       end
+      |       stack do @status = para :stroke => white end
+      |       @field.paint
+      |       para "Left click - open cell, right click - put flag, middle click - reveal empty cells", :top => 420, :left => 0, :stroke => white,  :font => "11px"
+      |     end
+      |   end
+      |
+      |   def new_game level
+      |     @field = Field.new self, level
+      |     translate -@old_offset.first, -@old_offset.last unless @old_offset.nil?
+      |     translate @field.offset.first, @field.offset.last
+      |     @old_offset = @field.offset
+      |     render_field
+      |   end
+      |
+      |   new_game :beginner
+      |   animate(5) { @status.replace "Time: #{@field.total_time.to_i} Bombs left: #{@field.bombs_left}" }
+      |
+      |   click do |button, x, y|
+      |     next if @field.game_over? || @field.all_found?
+      |     fx, fy = ((x-@field.offset.first) / @field.cell_size).to_i, ((y-@field.offset.last) / @field.cell_size).to_i
+      |     @field.click!(fx, fy) if button == 1
+      |     @field.flag!(fx, fy) if button == 2
+      |     @field.reveal!(fx, fy) if button == 3
+      |
+      |     render_field
+      |     alert("Winner!\nTotal time: #{@field.total_time}") if @field.all_found?
+      |     alert("Bang!\nYou loose.") if @field.game_over?
+      |   end
+      | end
+  - animated shapes/
+    @shoes/
+      | Shoes.app do
+      |   background rgb(0, 0, 0)
+      |   fill rgb(255, 255, 255)
+      |   rects = [
+      |     rect(0, 0, 50, 50),
+      |     rect(0, 0, 100, 100),
+      |     rect(0, 0, 75, 75)
+      |   ]
+      |   animate(24) do |i|
+      |     rects.each do |r|
+      |       r.move((0..400).rand, (0..400).rand)
+      |     end
+      |   end
+      |   button "OK", :top => 0.5, :left => 0.5 do
+      |     quit unless confirm "You ARE sure you're OK??"
+      |   end
+      | end
+  - animated text/
+    @shoes/
+      | Shoes.app do
+      |   stack :top => 0.5, :left => 0.5 do
+      |     para "Counting up:"
+      |     l = para "0"
+      |     animate(24) do |i|
+      |       f = ['Arial 14px', 'Serif 34px', 'Monospace 18px', 'Arial 48px'][rand(3)]
+      |       l.replace "#{i}", :font => f
+      |     end
+      |     motion do |x, y|
+      |       Shoes.p [x, y]
+      |     end
+      |   end
+      | end
+  - bounce/
+    @shoes/
+      | xspeed, yspeed = 8.4, 6.6
+      | xdir, ydir = 1, 1
+      |
+      | Shoes.app do
+      |   background "#DFA"
+      |   border black, :strokewidth => 6
+      |
+      |   nostroke
+      |   @icon = image "#{DIR}/static/shoes-icon.png", :left => 100, :top => 100 do
+      |     alert "You're soooo quick."
+      |   end
+      |
+      |   x, y = self.width / 2, self.height / 2
+      |   size = @icon.size
+      |   animate(30) do
+      |     x += xspeed * xdir
+      |     y += yspeed * ydir
+      |
+      |     xdir *= -1 if x > self.width - size[0] or x < 0
+      |     ydir *= -1 if y > self.height - size[1] or y < 0
+      |
+      |     @icon.move x.to_i, y.to_i
+      |   end
+      | end
+  - calc/
+    @shoes/
+      | class Calc
+      |   def initialize
+      |     @number = 0
+      |     @previous = nil
+      |     @op = nil
+      |   end
+      |
+      |   def to_s
+      |     @number.to_s
+      |   end
+      |
+      |   (0..9).each do |n|
+      |     define_method "press_#{n}" do
+      |       @number = @number.to_i * 10 + n
+      |     end
+      |   end
+      |
+      |   def press_clear
+      |     @number = 0
+      |   end
+      |
+      |   {'add' => '+', 'sub' => '-', 'times' => '*', 'div' => '/'}.each do |meth, op|
+      |     define_method "press_#{meth}" do
+      |       if @op
+      |         press_equals
+      |       end
+      |       @op = op
+      |       @previous, @number = @number, nil
+      |     end
+      |   end
+      |
+      |   def press_equals
+      |     @number = @previous.send(@op, @number.to_i)
+      |     @op = nil
+      |   end
+      |
+      | end
+      |
+      | number_field = nil
+      | number = Calc.new
+      | Shoes.app :height => 250, :width => 200, :resizable => false do
+      |   background "#EEC".."#996", :curve => 5, :margin => 2
+      |
+      |   stack :margin => 2 do
+      |
+      |     stack :margin => 8 do
+      |       number_field = para strong(number)
+      |     end
+      |
+      |     flow :width => 218, :margin => 4 do
+      |       %w(7 8 9 / 4 5 6 * 1 2 3 - 0 Clr = +).each do |btn|
+      |         button btn, :width => 46, :height => 46 do
+      |           method = case btn
+      |             when /[0-9]/; 'press_'+btn
+      |             when 'Clr'; 'press_clear'
+      |             when '='; 'press_equals'
+      |             when '+'; 'press_add'
+      |             when '-'; 'press_sub'
+      |             when '*'; 'press_times'
+      |             when '/'; 'press_div'
+      |           end
+      |
+      |           number.send(method)
+      |           number_field.replace strong(number)
+      |         end
+      |       end
+      |     end
+      |   end
+      |
+      | end
+  - control sizes/
+    @shoes/
+      | Shoes.app :width => 360, :height => 600, :resizable => false do
+      |   stroke "#dde"
+      |   background "#f1f5ff"
+      |   13.times { |x| line 20, 142 + (30 * x), 320, 142 + (30 * x) }
+      |   11.times { |x| line 20 + (30 * x), 142, 20 + (30 * x), 502 }
+      |
+      |   stack :margin => 20 do
+      |     title "Control Sizes", :size => 16
+      |     para "This app measures various controls against a grid of lines, to be sure they size appropriately despite the platform."
+      |     stack :top => 122, :left => 40 do
+      |       button "Standard"
+      |       button "Margin: 2, Height: 28", :margin => 2, :height => 30
+      |       edit_line "Standard", :margin => 1
+      |       edit_line "Margin: 4, Height: 30", :height => 30, :margin => 4
+      |       list_box :items => ["Standard"], :choose => "Standard"
+      |       list_box :items => ["Margin: 4, Height: 32"],
+      |         :choose => "Margin: 4, Height: 32",
+      |         :height => 32, :margin => 4
+      |       progress
+      |       progress :height => 32, :margin => 4
+      |       edit_box
+      |     end
+      |   end
+      | end
+  - dictionary/
+    @shoes/
+      | Shoes.app :title => "Dictionary, powered by Definr", :width => 370, :height => 320 do
+      |   stack do
+      |     background red, :height => 60
+      |     flow :margin => 20 do
+      |       caption "Define: ", :stroke => white
+      |       @lookup = edit_line
+      |       button "Go" do
+      |         download "http://definr.com/definr/show/#{@lookup.text}" do |dl|
+      |           doc = dl.response.body.gsub('&nbsp;', ' ').
+      |               gsub(%r!(</a>|<br />|<a href.+?>)!, '').
+      |               gsub(%r!\(http://.+?\)!, '').strip
+      |           title, doc = doc.split(/\n+/, 2)
+      |           @deft.replace title
+      |           @defn.replace doc
+      |         end
+      |       end
+      |     end
+      |     stack :margin => 20 do
+      |       @deft = subtitle "", :margin => 10
+      |       @defn = para ""
+      |     end
+      |   end
+      | end
+  - pong/
+    @shoes/
+      | #
+      | # Pong in Shoes
+      | # a clone of http://billmill.org/pong.html
+      | # and shoes is at http://shoooes.net
+      | #
+      | # This is just for kicks -- I'm very fond of NodeBox as well.
+      | #
+      | # There's a slightly different approach in Shoes: rather than
+      | # redrawing the shapes, you can move the shapes around as objects.
+      | # Yeah, see, notice how @you, @comp and @ball are used.
+      | #
+      | Shoes.app :width => 400, :height => 400, :resizable => false do
+      |   paddle_size = 75
+      |   ball_diameter = 20
+      |   vx, vy = [3, 4]
+      |   compuspeed = 10
+      |   bounce = 1.2
+      |
+      |   # set up the playing board
+      |   nostroke and background white
+      |   @ball = oval 0, 0, ball_diameter, :fill => "#9B7"
+      |   @you, @comp = [app.height-4, 0].map {|y| rect 0, y, paddle_size, 4, :curve => 2}
+      |
+      |   # animates at 40 frames per second
+      |   @anim = animate 40 do
+      |
+      |     # check for game over
+      |     if @ball.top + ball_diameter < 0 or @ball.top > app.height
+      |       para strong("GAME OVER", :size => 32), "\n",
+      |         @ball.top < 0 ? "You win!" : "Computer wins", :top => 140, :align => 'center'
+      |       @ball.hide and @anim.stop
+      |     end
+      |
+      |     # move the @you paddle, following the mouse
+      |     @you.left = mouse[1] - (paddle_size / 2)
+      |     nx, ny = (@ball.left + vx).to_i, (@ball.top + vy).to_i
+      |
+      |     # move the @comp paddle, speed based on `compuspeed` variable
+      |     @comp.left +=
+      |       if nx + (ball_diameter / 2) > @comp.left + paddle_size;  compuspeed
+      |       elsif nx < @comp.left;                                  -compuspeed
+      |       else 0 end
+      |
+      |     # if the @you paddle hits the ball
+      |     if ny + ball_diameter > app.height and vy > 0 and
+      |         (0..paddle_size).include? nx + (ball_diameter / 2) - @you.left
+      |       vx, vy = (nx - @you.left - (paddle_size / 2)) * 0.25, -vy * bounce
+      |       ny = app.height - ball_diameter
+      |     end
+      |
+      |     # if the @comp paddle hits the ball
+      |     if ny < 0 and vy < 0 and
+      |         (0..paddle_size).include? nx + (ball_diameter / 2) - @comp.left
+      |       vx, vy = (nx - @comp.left - (paddle_size / 2)) * 0.25, -vy * bounce
+      |       ny = 0
+      |     elsif nx + ball_diameter > app.width or nx < 0
+      |       vx = -vx
+      |     end
+      |
+      |     @ball.move nx, ny
+      |   end
+      | end
+  - curve/
+    @shoes/
+      | #
+      | # based on the cairo curve_to example
+      | # http://www.cairographics.org/samples/curve_to/
+      | #
+      | Shoes.app do
+      |   x, y = 25.6, 128.0
+      |   x1 = 102.4; y1 = 230.4
+      |   x2 = 153.6; y2 = 25.6
+      |   x3 = 230.4; y3 = 128.0
+      |
+      |   nofill
+      |   strokewidth 10.0
+      |   shape do
+      |     move_to x, y
+      |     curve_to x1, y1, x2, y2, x3, y3
+      |   end
+      |
+      |   strokewidth 6.0
+      |   stroke rgb(1.0, 0.2, 0.2, 0.6)
+      |   shape do
+      |     move_to x, y
+      |     line_to x1, y1
+      |     move_to x2, y2
+      |     line_to x3, y3
+      |   end
+      | end
+  - downloader/
+    @shoes/
+      | Shoes.app do
+      |   background "#eee"
+      |   @list = stack do
+      |     para "Enter a URL to download:", :margin => [10, 8, 10, 0]
+      |     flow :margin => 10 do
+      |       @url = edit_line :width => -120
+      |       button "Download", :width => 120 do
+      |         @list.append do
+      |           stack do
+      |             background "#eee".."#ccd"
+      |             stack :margin => 10 do
+      |               dl = nil
+      |               para @url.text, " [", link("cancel") { dl.abort }, "]", :margin => 0
+      |               d = inscription "Beginning transfer.", :margin => 0
+      |               p = progress :width => 1.0, :height => 14
+      |               dl = download @url.text, :save => File.basename(@url.text),
+      |                 :progress => proc { |dl|
+      |                   d.text = "Transferred #{dl.transferred} of #{dl.length} bytes (#{dl.percent}%)"
+      |                   p.fraction = dl.percent * 0.01 },
+      |                 :finish => proc { |dl| d.text = "Download completed" }
+      |             end
+      |           end
+      |         end
+      |       end
+      |     end
+      |   end
+      | end
+  - editor/
+    @shoes/
+      | str, t = "", nil
+      | Shoes.app :height => 500, :width => 450 do
+      |   background rgb(77, 77, 77)
+      |   stack :margin => 10 do
+      |     para span("TEXT EDITOR", :stroke => red, :fill => white), " * USE ALT-Q TO QUIT", :stroke => white
+      |   end
+      |   stack :margin => 10 do
+      |     t = para "", :font => "Monospace 12px", :stroke => white
+      |     t.cursor = -1
+      |   end
+      |   keypress do |k|
+      |     case k
+      |     when String
+      |       str += k
+      |     when :backspace
+      |       str.slice!(-1)
+      |     when :tab
+      |       str += "  "
+      |     when :alt_q
+      |       quit
+      |     when :alt_c
+      |       self.clipboard = str
+      |     when :alt_v
+      |       str += self.clipboard
+      |     end
+      |     t.replace str
+      |   end
+      | end
+  - slide/
+    @shoes/
+      | #
+      | # mimicking the mootools demo for Fx.Slide
+      | # http://demos.mootools.net/Fx.Slide
+      | #
+      | Shoes.app do
+      |   def stop_anim
+      |     @anim.stop
+      |     @anim = nil
+      |   end
+      |   def slide_anim &blk
+      |     stop_anim if @anim
+      |     @anim = animate 30, &blk
+      |   end
+      |   def slide_out slot
+      |     slide_anim do |i|
+      |       slot.height = 150 - (i * 3)
+      |       slot.contents[0].top = -i * 3
+      |       if slot.height == 0
+      |         stop_anim
+      |         slot.hide
+      |       end
+      |     end
+      |   end
+      |   def slide_in slot
+      |     slot.show
+      |     slide_anim do |i|
+      |       slot.height = i * 6
+      |       slot.contents[0].top = slot.height - 150
+      |       stop_anim if slot.height == 150
+      |     end
+      |   end
+      |
+      |   background white
+      |   stack :margin => 10 do
+      |     para link("slide out") { slide_out @lipsum }, " | ",
+      |       link("slide in") { slide_in @lipsum }
+      |     @lipsum = stack :width => 1.0, :height => 150 do
+      |       stack do
+      |         background "#ddd"
+      |         border "#eee", :strokewidth => 5
+      |         para "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.", :margin => 10
+      |       end
+      |     end
+      |   end
+      | end
+  - timer/
+    @shoes/
+      | Shoes.app :height => 150, :width => 250 do
+      |   background rgb(240, 250, 208)
+      |   stack :margin => 10 do
+      |     button "Start" do
+      |       @time = Time.now
+      |       @label.replace "Stop watch started at #@time"
+      |     end
+      |     button "Stop" do
+      |       @label.replace "Stopped, ", strong("#{Time.now - @time}"), " seconds elapsed."
+      |     end
+      |     @label = para "Press ", strong("start"), " to begin timing."
+      |   end
+      | end
+- docs/
+  - install shoes/
+    - 1) Go here
+    @http://shoesrb.com/downloads
+
+    - 2) Download the .dmg
+    | Currently this menu is mac-only, but it should be simple
+    | to update it to support other platforms.
+
+    - 3) Drag Shoes.app to /Applications
+  - try it out/
+    Run some of the examples in this menu.
+    <<< examples/
