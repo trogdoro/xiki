@@ -26,32 +26,10 @@ class R
       txt = Rails.run_in_app txt, :yaml=>1
     else
       txt = Rails.run_in_app ENV['txt']
-      txt = Tree.quote(txt) if txt !~ /^\s+>/
+      txt = Tree.quote(txt) if txt !~ /^\s+(>|\|)/
     end
 
     txt
-  end
-
-  def self.suggest_creating_controller
-    %`
-    | This rails app may not have the xiki dev controller
-    | installed to let xiki evaluate code in it in dev mode.
-    | Create it?
-    @#{Projects.default}
-      - app/controllers/
-        - xiki_dev_controller.rb
-          | class XikiDevController < ApplicationController
-          |   def index
-          |     return render(:text=>"Disabled unless development and called locally.") if ! Rails.env.development? || request.remote_ip != "127.0.0.1"
-          |     code = File.read "/tmp/rails_run_tmp.txt"
-          |     txt = eval code
-          |     render :text=>txt.to_yaml
-          |   end
-          | end
-      - config/routes.rb
-        |+  match 'xiki_dev' => 'xiki_dev#index'
-        | end
-    `
   end
 
 end
