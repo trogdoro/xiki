@@ -19,7 +19,7 @@ endif
 
 function! XikiLaunch()
   ruby << EOF
-    xiki_dir = ENV['XIKI_DIR']  || `xiki directory`.strip! unless defined? xiki_dir
+    xiki_dir ||= ENV['XIKI_DIR']  || `xiki directory`.strip!
     ['ol', 'vim/line', 'vim/tree'].each {|o| require "#{xiki_dir}/lib/xiki/#{o}"}
     line = Line.value
     indent = line[/^ +/]
