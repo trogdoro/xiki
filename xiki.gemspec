@@ -45,6 +45,9 @@ Gem::Specification.new do |s|
   s.add_dependency('sourcify')
   s.add_dependency('daemons')
 
+  s.add_development_dependency('rake')
+  s.add_development_dependency('rspec', [" ~> 2.12.0"])
+
   # Restore if changes get merged into main el4r gem
   #  s.add_dependency('el4r')
 
