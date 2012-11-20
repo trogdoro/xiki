@@ -67,27 +67,23 @@ We just patched el4r, so there's a chance Xiki might work in windows.
 If you're using rvm, the sudo may not be necessary.
 
 ### Step 3: Require Xiki in EmacsRuby's config
-Sample configuration:
 
-      ~/.el4r/init.rb:
-        $LOAD_PATH.unshift "(xiki directory)/lib"
-        require 'xiki'
-        Xiki.init
+Add these lines to the end of ~/.el4r/init.rb and then restart emacs if you already had it open.
 
-        KeyBindings.keys   # Use default key bindings
-        Themes.use "Default"  # Use xiki theme
+    $LOAD_PATH.unshift "(xiki directory)/lib"   # <- substitute (xiki directory) with the output of "xiki directory"
+    require 'xiki'
+    Xiki.init
 
-Be sure to substitute '(xiki directory)' with the actual dir.  If you
-don't know it, run this command:
-
-      $ xiki directory
-
-Then quit emacs and open it again.
+    KeyBindings.keys   # Use default key bindings
+    Themes.use "Default"  # Use xiki theme
 
 ### If you get an error
 
 If you got partially through the load...
 
+- Try running "xiki stop"
+- Try using rvm and ruby 1.9.3
+  - Run "rvm use --default 1.9.3"
 - You may be able to use these keys to trouble-shoot:
    - Option+e to look at the latest error in the log
    - Option+l to reload xiki and .emacs
@@ -98,6 +94,9 @@ If you got partially through the load...
       - probably contains ":Error:"
    - Restart emacs (or reload .emacs) manually to reload
 - See "Issues Loading Xiki" buffer (under "Window" menu bar menu)
+- If your install via github,
+  - "bundle install" may have installed a duplicate "xiki" command
+    - if "which xiki" returns a file not in /usr/local/bin/, delete it
 
 ## Vim
 
