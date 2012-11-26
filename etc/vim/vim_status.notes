@@ -10,21 +10,20 @@
 > If your vim version doesn't have ruby enabled
 The standard macvim download has the ruby.  Compile vim with the --enable-rubyinterp flag installed.
 
-
 > What's implemented
-Just double-clicking on one line and shelling out to 'xiki'
+- Double-clicking on one line and shelling out to 'xiki'
 and inserting the results
-
-
-> What needs to be implemented
 - Making this work for nested paths, like:
 docs/
   - faq/
 - It needs to climb the path and pass it in to the command
 - Making it collapse when the line underneath it is indented lower
+
+> What needs to be done
+- Write documentation (doc/)
+- Check for Ruby and Vim versions
 - Making it incrementally search after commands are inserted
   - is there a command in vim to read 1 char from the user?
-
 
 > Help out
 Join the xiki google group if you want to help implement this.
