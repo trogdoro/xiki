@@ -130,8 +130,12 @@ class DiffLog
     end
   end
 
-  def self.format raw
-    path, file = raw.match(/--- (.+\/)(.+?)\t/)[1..2]
+  def self.format raw, options={}
+    if options[:use_other_path]
+      path, file = raw.match(/\+\+\+ (.+\/)(.+?)\t/)[1..2]
+    else
+      path, file = raw.match(/--- (.+\/)(.+?)\t/)[1..2]
+    end
 
     # Delete paths at top
     raw.sub!(/.+\n.+\n/, '')

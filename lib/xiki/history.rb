@@ -257,7 +257,6 @@ class History
   end
 
   def self.diff_with_backup
-
     if Keys.prefix_u
       $el.ediff_files Dir["#{Bookmarks['$bak']}#{View.file_name}*"].last, View.file
       return
@@ -267,11 +266,23 @@ class History
 
     return View.beep("- No backup exists in $bak/") if ! backup
 
-    diff = Console.run "diff -U 0 \"#{backup}\" \"#{$el.buffer_file_name}\"", :sync=>true
+    file = View.file
+
+    # Just jump to it
+    if Keys.prefix == 0
+      return View.open backup
+    end
+
+    # Reverse the files
+    if Keys.prefix == :-
+      file, backup = backup, file
+    end
+
+    diff = Console.run "diff -U 0 \"#{backup}\" \"#{file}\"", :sync=>true
 
     return Launcher.show "- No Differences!" if diff.blank?
 
-    diff = DiffLog.format diff
+    diff = DiffLog.format diff, :use_other_path=>1
 
     View.to_buffer("*diff with saved*")
     View.clear
