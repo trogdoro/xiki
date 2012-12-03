@@ -448,20 +448,25 @@ class View
     nil
   end
 
+  # Keys: layout+all
   def self.hide_others options={}
     if $el.elvar.current_prefix_arg || self.in_bar? || options[:all]
       return $el.delete_other_windows
     end
-    ws = self.windows_in_my_column
-    selected = $el.selected_window
-    # New height should be window minus 2 for each window
-    ws.each do |w|
-      # If current window, set to remaining
-      unless w == selected
-        $el.delete_window w
-      end
+
+    was_at_left = self.is_at_left
+
+    selected = View.current
+
+    self.windows_in_my_column.each do |w|
+      next if w == selected
+      $el.delete_window w
     end
+
+    # If wasn't at left, but at left now, go to right
+    View.to_upper if ! was_at_left && self.is_at_left
   end
+
 
   def self.next options={}
     (Keys.prefix_times || options[:times] || 1).times do
