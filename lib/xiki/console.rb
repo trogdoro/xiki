@@ -368,9 +368,15 @@ class Console
 
     return Tree.<<("- Directory doesn't exist) #{dir}", :no_slash=>1) if dir && ! File.exists?(dir)
 
+    # Run command...
+
     if options[:sync]
       output = Console.run command, :dir=>dir, :sync=>true
       output.sub!(/\A\z/, "\n")   # Add linebreak if blank
+
+      # Clean up ^H formatting
+      output.gsub!(/.\cH/, "")   # Add linebreak if blank
+
       Keys.prefix == 1 ? output.gsub!(/^/, '|') : output.gsub!(/^/, '| ').gsub!(/^\| +$/, '|')
 
       output.sub! /\n*\z/, "\n"   # Guarantee exactly 1 linebreak at end
