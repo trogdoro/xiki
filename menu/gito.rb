@@ -184,14 +184,22 @@ class Gito
     nil
   end
 
-  def self.log search, project, rev=nil, file=nil, *line
+  def self.log search, project, rev=nil, *file_and_line
+
+    prefix = Keys.prefix
+
+    line = file_and_line.pop if file_and_line.last =~ /^\|/
+    file = file_and_line.any? ? file_and_line.join('/') : nil
+
     dir = self.extract_dir project
 
     if search == :expand
       return "- implement!"
     end
 
-    if rev.nil?   # If no rev, list all revs
+    # Just /project, so list all revs...
+
+    if rev.nil?
       search = "-S'#{search}'" unless search.empty?
       txt = Console.run "git log -1000 --pretty=oneline #{search}", :sync=>true, :dir=>dir
       txt.gsub! ':', '-'
@@ -199,15 +207,30 @@ class Gito
       txt.gsub! /^- /, ''
       return txt.gsub!(/^/, '+ ')
     end
-    if file.nil?   # If no file, show files for rev
+
+    # Just /project/rev, so show files for rev...
+
+    if file.nil?
       # Rev passed, so show all diffs
       txt = Gito.diff_internal "git show --pretty=oneline --name-status #{rev}", dir
+
       txt.sub! /^.+\n/, ''   # Remove 1st line?
-      txt.gsub! /^([A-Z])\t/, "\\1) "
+      txt.gsub! /^([A-Z]+)\t/, "\\1) "
       txt.gsub! /^M\) /, ''
       return txt.split("\n").sort.map{|l| "+ #{l}\n"}.join('')
     end
-    if line.empty?   # If no line but file passed, show diff
+
+    # Just /project/rev/file, so diff...
+
+    if line.empty?
+
+      if prefix == "all" || prefix == 0
+        minus_one = prefix == 0 ? "~" : ""
+        txt = Console.run("git show #{rev}#{minus_one}:#{file}", :sync=>true, :dir=>dir)
+        ENV['no_slash'] = "1"
+        return Tree.quote txt
+      end
+
       txt = Gito.diff_internal "git show #{@@git_diff_options} --pretty=oneline #{rev} #{file}", dir
       txt.sub!(/.+?@@/m, '@@')
       txt.gsub! /^/, '|'
@@ -215,9 +238,8 @@ class Gito
       return txt
     end
 
-    # Line was passed
+    # /project/rev/file/line, so jump to file...
 
-    # Line passed, so jump to file
     project.sub! /^project - /, ''
     self.jump_to_file_in_tree project
     nil
