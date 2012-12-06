@@ -443,6 +443,9 @@ class Notes
     Styles.apply("^ *\\(|`\\)\\(.*\n\\)", nil, :quote_heading_pipe, :dotsies_experimental)
     Styles.apply("^ *\\(|~\\)\\([^\n~]+\\)\\(~?\\)", nil, :quote_heading_pipe, :dotsies, :quote_heading_pipe)
 
+    # |... invisible
+    Styles.apply("^ *\\(|\\.\\.\\.\\)\\(.*\n\\)", nil, :quote_heading_pipe, :quote_hidden)
+
   end
 
   # Startup
