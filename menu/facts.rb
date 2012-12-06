@@ -28,12 +28,14 @@ class Facts
 
     # Delete 2 controls...
 
+    indent = Line.indent
+
     View.delete Line.left(0), Line.left(2)
 
     # If finished, just say so...
 
     if Line.blank?
-      Line << "  - you're finished!\n"
+      Line << "#{indent}- you're finished!\n"
       return
     end
 
@@ -59,7 +61,7 @@ class Facts
       View.delete Line.left(0), Line.left(1)
     end
 
-    View << "#{upcoming}\n  - show answer/\n"
+    View << "#{upcoming}\n#{indent}- show answer/\n"
     Line.previous
     nil
   end
@@ -67,6 +69,8 @@ class Facts
   def self.i_was_wrong
 
     # Delete question and 2 controls...
+
+    indent = Line.indent
 
     Line.previous
     wrong_line = Line.value
@@ -77,13 +81,13 @@ class Facts
     if Line.blank?
       wrong_line.sub!(/(.+) : (.+)/, "\\1 : ?")
       View << "#{wrong_line}\n"
-      View.<< "  - show answer/\n"#, :dont_move=>1
-      wrong_line.sub! "  | ", "  |..."
+      View.<< "#{indent}- show answer/\n"
+      wrong_line.sub! "| ", "|..."
       View.<< "#{wrong_line}\n"
       Line.previous 2
       return
     end
-    wrong_line.sub! "  | ", "  |..."
+    wrong_line.sub! "| ", "|..."
 
     # Change next one to question mark...
 
@@ -106,7 +110,7 @@ class Facts
     Line.sub! "...", " "
 
     Line.next
-    View.<< "  - show answer/\n", :dont_move=>1
+    View.<< "#{indent}- show answer/\n", :dont_move=>1
 
     nil
   end
@@ -116,13 +120,14 @@ class Facts
   end
 
   def self.show_answer
+    indent = Line.indent
     Line.previous
     View.delete Line.left(1), Line.left(3)   # Delete question and control
 
     Line.sub! "...", " "   # Expose current line
 
     Line.next
-    View << "  - I was wrong/\n  - I was right/\n"
+    View << "#{indent}- I was wrong/\n#{indent}- I was right/\n"
     Line.previous 2
 
     nil
@@ -134,6 +139,8 @@ class Facts
 
     starting_out = path[0] && path[0] =~ /^\|/
     return if ! starting_out
+
+    indent = Line.indent
 
     Search.backward "^[^:]*$"   # Find line above without a colon
 
@@ -149,8 +156,9 @@ class Facts
     first = first.sub /(.+) : (.+)/, "\\1 : ?"
 
     pending = txt.join("\n")+"\n"
-    pending.gsub!(/  \| /, "  |...")
-    View.<< "#{first}\n  - show answer/\n#{pending}", :dont_move=>1
+
+    pending.gsub!(/\| /, "|...")
+    View.<< "#{first}\n#{indent}- show answer/\n#{pending}", :dont_move=>1
 
     Line.next
 
