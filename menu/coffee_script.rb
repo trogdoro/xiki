@@ -2,32 +2,22 @@ class CoffeeScript
 
   # Called by keyboard shortcut
   def self.run_block
-    # Get block contents
-    txt, left, right = View.txt_per_prefix #:prefix=>Keys.prefix
+    Block.do_as_something do |txt|
+      if Keys.prefix_u
+        self.to_js(txt)
+      else
+        txt = "p = print = console.log\n\n#{txt}"
+        self.execute(txt)
+      end
+    end
+  end
 
-    result = self.to_js txt
-    # Insert result at end of block
-    orig = Location.new
-    View.cursor = right
-    Line.to_left
-    View.insert ">>\n#{result}\n\n"
-    orig.go
+  def self.execute txt
+    Console.sync 'coffee -s', :stdin=>txt
   end
 
   def self.to_js txt
-
-    path = "/tmp/tmp.coffee"
-
-    # If txt is file path, us it
-    if txt !~ /\n/ && txt =~ /\.coffee$/
-      path = txt
-    else
-      File.open(path, "w") { |f| f << txt }   # Write to temp file
-    end
-
-    # Call js
-    result = Console.run "coffee -pc \"#{path}\"", :sync=>true
-    result.split("\n")[1..-2].join("\n")
+    Console.sync 'coffee -sc', :stdin=>txt
   end
 
 end

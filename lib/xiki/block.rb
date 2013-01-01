@@ -39,6 +39,18 @@ class Block
     $el.fill_paragraph nil
   end
 
+  #
+  # Convenience method for keys like do+as+coffee.
+  #
+  # It...
+  # 1. grabs the text from current section (or per prefix),
+  # 2. invoked the block, passing in the text
+  # 3. inserts the output (under a ">>" heading)
+  #
+  # Block.do_as_something do |txt|
+  #   CoffeeScript.execute txt
+  # end
+  #
   def self.do_as_something
 
     prefix = Keys.prefix

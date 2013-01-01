@@ -10,11 +10,11 @@ class Console
     - .tree/
     - .history/
     - api/
-      | In console (asynchronously)
+      > In console (asynchronously)
       @ Console.run "ls"
       @ Console.run "ls", :dir=>"/tmp"
 
-      | Inline (synchronously)
+      > Inline (synchronously)
       @ Console.sync "ls"
       @ Console.sync "ls", :dir=>"/etc"
     - docs/
@@ -103,6 +103,12 @@ class Console
       return command if options[:no_enter]
       profile = File.exists?(File.expand_path('~/.profile')) ? '. ~/.profile;' : ''
       stdin, stdout, stderr = Open3.popen3("#{profile}cd \"#{dir}\";#{command}")
+
+      if txt = options[:stdin]
+        stdin.puts txt
+        stdin.close
+      end
+
       result = ""
       result << stdout.readlines.join('')
       result << stderr.readlines.join('')
@@ -377,7 +383,9 @@ class Console
       # Clean up ^H formatting
       output.gsub!(/.\cH/, "")   # Add linebreak if blank
 
-      Keys.prefix == 1 ? output.gsub!(/^/, '|') : output.gsub!(/^/, '| ').gsub!(/^\| +$/, '|')
+      Keys.prefix == 0 ? output.gsub!(/^/, '|') : output.gsub!(/^/, '| ')
+
+      output.gsub!(/^\| +$/, '|')
 
       output.sub! /\n*\z/, "\n"   # Guarantee exactly 1 linebreak at end
       Tree.indent(output)
