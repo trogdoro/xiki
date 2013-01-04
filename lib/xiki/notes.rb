@@ -686,6 +686,7 @@ class Notes
     # Else, add it to top...
 
     View.to_highest
+    Line.next if Line =~ /^> .*:$/   # If at >...: line, move after it
 
     if prefix == 8
       if Line =~ /^>/
