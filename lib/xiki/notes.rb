@@ -344,6 +344,8 @@ class Notes
     Styles.define :notes_red, :fg=>"c55", :face=>'arial black', :size=>"0", :bold=>true
     Styles.define :notes_yellow, :fg=>"CC0", :face=>'arial black', :size=>"0", :bold=>true
     Styles.define :notes_green, :fg=>"3C3", :face=>'arial black', :size=>"0", :bold=>true
+    Styles.define :notes_h1_green, :fg=>"8f4", :bg=>"333", :face=>'arial', :size=>"+2", :bold=>true
+    Styles.define :notes_h1_large, :fg=>"fff", :bg=>"333", :face=>'arial', :size=>"+8", :bold=>true
 
 
     if Styles.dark_bg?   # If black bg
@@ -384,6 +386,11 @@ class Notes
     Styles.apply("^\\(>> \\)\\(.*\n\\)", nil, :notes_h2_pipe, :notes_h2)
     Styles.apply("^\\(= \\)\\(.*\n\\)", nil, :notes_h1_pipe, :notes_h1)
     Styles.apply("^\\(== \\)\\(.*\n\\)", nil, :notes_h2_pipe, :notes_h2)
+
+    # > Green!
+    Styles.apply("^\\(> \\)\\(.*!\\)\\(\n\\)", nil, :notes_h1_pipe, :notes_h1_green, :notes_h1)
+    # > Large:
+    Styles.apply("^\\(> \\)\\(.*:\\)\\(\n\\)", nil, :notes_h1_pipe, :notes_h1_large, :notes_h1)
 
     Styles.apply("^\\(>\\)\\( .+?: \\)\\(.+\n\\)", nil, :notes_h1_pipe, :notes_h1_label, :notes_h1)
 
