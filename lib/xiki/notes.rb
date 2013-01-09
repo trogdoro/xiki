@@ -9,11 +9,50 @@ class Notes
 
   LABEL_REGEX = /(?:[a-zA-Z0-9 _-]+\) )?/
 
+  def self.menu_before *args
+
+    # If @notes is nested under a menu, use that menu as the .notes filename...
+
+    # If it doesn't have a parent that's a menu, do nothing
+    path = Xiki.path rescue []
+    return if path.length < 2
+
+    # Pull out file name and path from "foo/@notes/bar"
+    root = path[-2]
+    Notes.drill "~/notes/#{root}.notes", *args
+  end
+
   def self.menu
     %`
     - api/
-      > Turn notes wiki text into html
-      @ Notes.to_html "> Heading\\njust text\\n"
+      - misc methods/
+        > Turn notes wiki text into html
+        @Notes.to_html "> Heading\\njust text\\n"
+    - docs/
+      - nesting/
+        - intro/
+          | You can nest @notes under other menus, like so:
+          @foo/
+            @notes/
+
+          | It will use ~/notes/foo.notes. This is a convenience mechanism
+          | for you to create notes that are associated with menus.
+        - example/
+          > 1. if you have a file like this
+          @~/notes/foo.notes
+            | > Bar
+            | Some notes about bar.
+            |
+            | > Baz
+            | Some notes about baz.
+
+          > 2. When you expand, it will look like this
+          @foo/
+            @notes/
+              > Bar
+              > Baz
+
+          | Then you can expand the headings and edit inline.
     `
   end
 
@@ -284,8 +323,19 @@ class Notes
     end
 
     @@h1_styles.each do |k, v|
-      pipe = v.gsub(/./) {|c| (c.to_i(16) + "3".to_i(16)).to_s(16)}
-      label = v.gsub(/./) {|c| (c.to_i(16) + "6".to_i(16)).to_s(16)}
+      pipe = v.gsub(/./) {|c|
+        hex = c.to_i(16) + 3
+        hex = 15 if hex > 15   # In case it's aleady really light
+        hex.to_s(16)
+      }
+      label = v.gsub(/./) {|c|
+        hex = c.to_i(16) + 6
+        hex = 15 if hex > 15   # In case it's aleady really light
+        hex.to_s(16)
+      }
+
+      #       label = "eee" if label == "fff"
+
       Styles.define k,
         :face=>'arial', :size=>h1_size, :fg=>'ffffff', :bg=>v, :bold=> true
       Styles.define "#{k}_pipe".to_sym, :face=>'arial', :size=>h1_size, :fg=>pipe, :bg=>v, :bold=>true
@@ -343,10 +393,9 @@ class Notes
     Styles.define :notes_blue, :fg=>"69f", :face=>'arial black', :size=>"0", :bold=>true
     Styles.define :notes_red, :fg=>"c55", :face=>'arial black', :size=>"0", :bold=>true
     Styles.define :notes_yellow, :fg=>"CC0", :face=>'arial black', :size=>"0", :bold=>true
-    Styles.define :notes_green, :fg=>"3C3", :face=>'arial black', :size=>"0", :bold=>true
+    Styles.define :notes_green, :fg=>"3c3", :face=>'arial black', :size=>"0", :bold=>true
     Styles.define :notes_h1_green, :fg=>"8f4", :bg=>"333", :face=>'arial', :size=>"+2", :bold=>true
     Styles.define :notes_h1_large, :fg=>"fff", :bg=>"333", :face=>'arial', :size=>"+8", :bold=>true
-
 
     if Styles.dark_bg?   # If black bg
       # >>...
@@ -373,6 +422,9 @@ class Notes
 
     Styles.shell_prompt :fg=>'#888', :bold=>1
 
+    bg_color = Styles.attribute(:default, :background)
+    Styles.define :quote_hidden, :fg=>bg_color #, :size=>"0"
+
   end
 
   def self.apply_styles
@@ -389,6 +441,7 @@ class Notes
 
     # > Green!
     Styles.apply("^\\(> \\)\\(.*!\\)\\(\n\\)", nil, :notes_h1_pipe, :notes_h1_green, :notes_h1)
+
     # > Large:
     Styles.apply("^\\(> \\)\\(.*:\\)\\(\n\\)", nil, :notes_h1_pipe, :notes_h1_large, :notes_h1)
 
@@ -417,13 +470,10 @@ class Notes
     Styles.apply("^\\(>>>>\\)\\(.*\n\\)", nil, :notes_h4_pipe, :notes_h4)
 
     # - bullets with labels and comments
-    Styles.apply("^[ \t]*\\([<+-]\\) \\([^/:\n]+:\\) ", nil, :ls_bullet, :notes_label)   # - hey: you
-    Styles.apply("^[ \t]*\\([<+-]<*\\) \\([^(\n]+?)\\) ", nil, :ls_bullet, :notes_label)   # - hey) you
+    Styles.apply("^[ \t]*\\([<+-][<+=-]*\\) \\([^/:\n]+:\\) ", nil, :ls_bullet, :notes_label)   # - hey: you
+    Styles.apply("^[ \t]*\\([<+-][<+=-]*\\) \\([^(\n]+?)\\)\\( \\|$\\)", nil, :ls_bullet, :notes_label)   # - hey) you
 
-    Styles.apply("^[ \t]*\\([<+=-]<*\\) \\([^(\n]+)\\)$", nil, :ls_bullet, :notes_label)   # - hey)
-    Styles.apply("^[ \t]*\\([<+=-]<*\\) \\(.+:\\)$", nil, :ls_bullet, :notes_label)   # - hey)
-
-    #     Styles.apply("^[ \t]*\\(x\\)\\( \\)\\(.+\\)", nil, :notes_label, :variable, :strike)
+    Styles.apply("^[ \t]*\\([<+-][<+=-]*\\) \\(.+:\\)$", nil, :ls_bullet, :notes_label)   # - hey)
 
     Styles.apply("^\\([ \t]*\\)\\([<+-]\\) \\(.+?:\\) +\\(|.*\n\\)", nil, :default, :ls_bullet, :notes_label, :ls_quote)
     Styles.apply("^\\([ \t]*\\)\\([<+-]\\) \\([^(\n]+?)\\) +\\(|.*\n\\)", nil, :default, :ls_bullet, :notes_label, :ls_quote)
@@ -452,6 +502,8 @@ class Notes
 
     # |... invisible
     Styles.apply("^ *\\(|\\.\\.\\.\\)\\(.*\n\\)", nil, :quote_heading_pipe, :quote_hidden)
+
+    Styles.apply "^ *|\\^.*\n", :quote_medium
 
   end
 
@@ -555,7 +607,7 @@ class Notes
     end
 
     if prefix.is_a? Fixnum   # If numeric prefix, indent by n
-      View.insert((" " * prefix) + bullet_text)
+      View.insert((" " * (prefix*2)) + bullet_text)
     else   # Get bullet indent of previous line
       prev = Line.value(0)
       prev_indent = prev[/^( *)/]
@@ -886,7 +938,7 @@ class Notes
     if ! File.exists? file
       return "
         | File doesn't exist yet, do as+update to create it:
-        @ #{file}
+        @#{file}
           | > Heading
           | Stuff
         "
