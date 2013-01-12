@@ -22,10 +22,9 @@ Gem::Specification.new do |s|
   s.rdoc_options += %w[--exclude etc/templates/.*]
 
   files = `git ls-files`.split("\n")
-
   files = files.select{|o| o !~ /^etc\/xiki/}
-
   s.files = files
+
   s.homepage = "http://xiki.org"
   s.licenses = ["MIT"]
   s.require_paths = ["."]
@@ -36,7 +35,8 @@ Gem::Specification.new do |s|
   s.add_dependency('net-ssh')
   s.add_dependency('net-scp')
   s.add_dependency('net-sftp')
-  s.add_dependency('rspec', [" ~> 2.11.0"])
+  s.add_dependency('rake')
+  s.add_dependency('rspec', [" ~> 2.12.0"])
   s.add_dependency('trogdoro-el4r', [">= 1.0.7"])
 
   s.add_dependency('sexp_processor')
@@ -47,5 +47,4 @@ Gem::Specification.new do |s|
 
   # Restore if changes get merged into main el4r gem
   #  s.add_dependency('el4r')
-
 end
