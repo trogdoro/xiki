@@ -20,7 +20,7 @@ class Mysql
       - .install/
       - config/
         > Main config file
-        @ /etc/my.cnf
+        @ /usr/local/etc/my.cnf
 
         > Example config files
         @ /usr/local/Cellar/mysql/5.5.25/support-files/

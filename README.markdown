@@ -48,9 +48,16 @@ have to know emacs to use it with Xiki.
 - Or
    - http://emacsformacosx.com
 
+#### On FreeBSD:
+     $ pkg add emacs
+     or
+     $ make -C /usr/ports/editors/emacs install clean
+
 #### On Linux:
 
       $ sudo apt-get install emacs
+      or
+      $ sudo yum install emacs
 
 #### On Windows:
 
@@ -62,7 +69,7 @@ We just patched el4r, so there's a chance Xiki might work in windows.
 ### Step 2: EmacsRuby (el4r) setup
 
       $ cd `xiki directory`
-      $ sudo bash etc/install/el4r_setup.sh
+      $ sudo sh etc/install/el4r_setup.sh
 
 If you're using rvm, the sudo may not be necessary.
 
