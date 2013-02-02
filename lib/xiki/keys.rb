@@ -129,7 +129,7 @@ class Keys
 
       | For all keyboard shortcuts, see where they're key_bindings.rb, where they're
       | defined:
-      - @$xiki/key_bindings.rb
+      - @$xiki/lib/xiki/key_bindings.rb
 
       > Keyboard shortcuts while searching
       | The seventh category, "search" has special behavior.  See:
