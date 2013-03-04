@@ -2,7 +2,7 @@ xiki_dir = File.expand_path "#{File.dirname(__FILE__)}/.."
 Dir.chdir xiki_dir
 
 # Used by a lot of classes
-class Xiki
+module Xiki
   @@dir = "#{Dir.pwd}/"   # Store current dir when xiki first launches
 
   # TODO Just use XIKI_DIR from above?
@@ -29,7 +29,7 @@ require 'xiki/mode'
 require 'xiki/menu'
 
 # Launcher.add_class_launchers classes
-class Xiki
+module Xiki
 
   $el.elvar.xiki_loaded_once = nil if $el && ! $el.boundp(:xiki_loaded_once)
 
@@ -91,7 +91,22 @@ class Xiki
           | You can run this multiple times.
       - .misc/
         - .dont show welcome/
-      @web interface/
+      - key shortcuts/
+        - enable all/
+          | Add this line to enable all xiki keys:
+          ~/.el4r/init.rb
+            | KeyBindings.keys   # Use default key bindings
+
+            > Todo: show options for more limited key mappings as well?
+            | # Only enable Control-return in all files.
+            | KeyBindings.map_control_return
+            | # Only enable Control-return in .notes files.
+            | @define_key(:notes_mode_map, kbd("<C-return>"))  { Launcher.go }
+        - minimal/
+          | Add this line to enable all xiki keys:
+          ~/.el4r/init.rb
+            | KeyBindings.minimal__
+      @web/
     - api/
       > Summary
       Here are some functions that will always be available to menu classes,
@@ -235,13 +250,13 @@ class Xiki
 
     return if self.nav_to_line   # If on line to navigate to, just navigate
 
-    # If no class, list all classes
+    # If no class, list all classes...
 
     if clazz.nil?
       return ["all/"] + Dir["#{Xiki.dir}/spec/*_spec.rb"].entries.map{|o| "#{o[/.+\/(.+)_spec\.rb/, 1]}/"}
     end
 
-    # If /class, list describes
+    # If /class, list describes...
 
     path = Bookmarks["$x/spec/#{clazz}_spec.rb"]
 
@@ -262,7 +277,7 @@ class Xiki
       }.join("\n")
     end
 
-    # If /class/describe, list tests
+    # If /class/describe, list tests...
 
     if test.nil?
 
@@ -285,13 +300,13 @@ class Xiki
 
     end
 
-    # If /class/describe/test, run test
+    # If /class/describe/test, run test...
 
     if ! quote
+
       if test == "all"   # Run all for describe
         return self.quote_spec(
           Console.run("rspec spec/#{clazz}_spec.rb -e \"#{describe}\"", sync_options.merge(:dir=>Xiki.dir))
-          #           Console.run("rspec spec", sync_options.merge(:dir=>Xiki.dir))
           )
       end
 
@@ -299,7 +314,6 @@ class Xiki
       if prefix == "open"
         return self.nav_to path, describe, test if prefix == "open"
       end
-
 
       # Run it
       command = "rspec spec/#{clazz}_spec.rb -e \"#{describe} #{test}\""
@@ -311,8 +325,6 @@ class Xiki
 
         return %`
           > Test doesn't appear to exist.  Create it?
-          | Copy this text into the file:
-
           @#{path}
             | describe #{clazz}, "##{describe}" do
             |   it "#{test}" do
@@ -423,6 +435,7 @@ class Xiki
     Launcher.reload_menu_dirs
 
     Launcher.add "xiki"
+    Launcher.add "ol"
 
     # Pull out into .define_mode
 
@@ -469,4 +482,6 @@ class Xiki
   def self.finished_loading?
     @@finished_loading
   end
+
+
 end
