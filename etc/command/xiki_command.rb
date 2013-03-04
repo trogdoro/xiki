@@ -108,7 +108,8 @@ class XikiCommand
   def self.get_response
 
     # Simulate timeout error if process not running
-    process_running = `ps -ef` =~ /xiki_process.rb/
+    process_running = `ps -A` =~ /xiki_process.rb/
+
     if ! process_running
       raise Timeout::Error
     end
@@ -187,6 +188,7 @@ class XikiCommand
       A couple commands to help you trouble-shoot:
 
       % bundle install
+      % xiki restart
       % xiki readme
 
       `.unindent
