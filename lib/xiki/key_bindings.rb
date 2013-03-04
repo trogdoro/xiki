@@ -617,7 +617,7 @@ class KeyBindings
 
     # Alternate key for C-. (probably easier to remember)
     Keys.set("<C-return>") { Launcher.launch_or_hide(:blink=>true) }
-    Keys.set("<M-return>") { Launcher.launch_or_hide(:blink=>true) }
+    Keys.set("M-RET") { Launcher.launch_or_hide(:blink=>true) }
 
     if $el.locate_library "ruby-mode"
       $el.el_require :ruby_mode
