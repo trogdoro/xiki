@@ -24,9 +24,11 @@ class ControlTab
       return
     end
 
+    # If C-9, toggle through output log...
+
     if prefix == 9 || @@nine_prefix   # Navigate to next Ol line in *ol buffer
 
-      View.layout_output :dont_highlight=>1
+      View.to_buffer "*ol"
 
       Move.to_end
       Search.forward "^ *-", :go_anyway=>1
@@ -35,10 +37,27 @@ class ControlTab
         Line.next
       end
 
+      value = Line.value
+
+      value.sub! /.+?\) ?/, ''   # Remove ...)
+      value.sub! /.+?: /, ''   # Remove ...: if there
+
+      value = "" if value =~ /!$/   # Ignore if no quote and ! at end
+
       Line.to_beginning
       Effects.blink
       Launcher.launch
       @@nine_prefix = true
+
+      # Replace or add comment if there's a value
+      if value.any?
+        value = "   # <= #{value}"
+        Line =~ /   # / ?
+          Line.sub!(/   # .*/, value) :
+          Line.<<(value)
+        Move.to_axis
+      end
+
       return
     end
 
@@ -50,6 +69,8 @@ class ControlTab
       #       @@consider_test = lambda{|b| ! buffer_name(b)[/Minibuf/] }
       #       return
       #     end
+
+    # If C-u, toggle through $f...
 
     if prefix == :u   # If U prefix (must be first alt-tab in sequence)
       # Go to last edited file, and store list
