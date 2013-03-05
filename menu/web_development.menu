@@ -8,6 +8,8 @@
 @append/
 @click/
 @bookmarklets/
+@ids/
+@css/list/
 
 docs/
   > HTML

@@ -16,18 +16,23 @@ end
 
 describe "matches_root_pattern?" do
   it "handles root" do
-    !!FileTree.matches_root_pattern?("/").should == true
-    !!FileTree.matches_root_pattern?("/hey").should == true
+    (!!FileTree.matches_root_pattern?("/")).should == true
+    (!!FileTree.matches_root_pattern?("/hey")).should == true
   end
 
   it "handles others" do
-    !!FileTree.matches_root_pattern?("~/aa").should == true
-    !!FileTree.matches_root_pattern?("./aa").should == true
+    (!!FileTree.matches_root_pattern?("~/aa")).should == true
+    (!!FileTree.matches_root_pattern?("./aa")).should == true
+  end
+
+  it "handles bookmarks" do
+    (!!FileTree.matches_root_pattern?("$aa")).should == true
+    (!!FileTree.matches_root_pattern?("$..")).should == false
   end
 
   it "declines non-file paths" do
-    !!FileTree.matches_root_pattern?("hey").should == false
-    !!FileTree.matches_root_pattern?("hey/you").should == false
+    (!!FileTree.matches_root_pattern?("hey")).should == false
+    (!!FileTree.matches_root_pattern?("hey/you")).should == false
   end
 end
 

@@ -1,16 +1,34 @@
-+ hello world/
+- hello world/
   @/tmp/
     - sinatra_hi.rb
       | require 'sinatra'
       |
       | get '/' do
-      |   "Hello World!"
+      |   "Hello Booze!"
       | end
     % ruby -rubygems sinatra_hi.rb
     @http://localhost:4567
-+ notes/
+- notes/
   @technologies/sinatra/
-+ docs/
+- hello world OO/
+  @/tmp/
+    - sinatra_oo.rb
+      | require "sinatra/base"
+      |
+      | class SinatraOo < Sinatra::Base
+      |   def say_hello
+      |     "Hello"
+      |   end
+      |
+      |   get "/hello" do
+      |     say_hello
+      |   end
+      | end
+      |
+      | SinatraOo.run!
+    % ruby -rubygems sinatra_oo.rb
+    @http://localhost:4567/hello
+- docs/
   > Intro
   @http://www.sinatrarb.com/intro
 

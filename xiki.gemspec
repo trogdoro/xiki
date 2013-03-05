@@ -44,6 +44,9 @@ Gem::Specification.new do |s|
   s.add_dependency('ruby_parser')
   s.add_dependency('sourcify')
   s.add_dependency('daemons')
+  s.add_dependency('simple-tidy')
+  s.add_dependency('nokogiri-pretty')
+  s.add_dependency('sinatra')
 
   # Restore if changes get merged into main el4r gem
   #  s.add_dependency('el4r')

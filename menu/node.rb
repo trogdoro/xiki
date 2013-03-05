@@ -9,7 +9,6 @@ class Node
         > To try out controller code
         | @node/controller/
         |   | function
-
       - node/
         > Snippets
         @technologies/node_js/
@@ -39,8 +38,8 @@ class Node
     http.createServer(function (req, res) {
 
     #{code}
-    }).listen(8161, '127.0.0.1');
-    console.log('Server running at http://127.0.0.1:8161/');
+    }).listen(1338, '127.0.0.1');
+    console.log('Server running at http://127.0.0.1:1338/');
     ".unindent
 
   end
@@ -50,7 +49,7 @@ class Node
     return "
       | // Sample controller code
       | console.log('got a request');
-      | res.end('Hello World');
+      | res.end('Hello Node World!');
       " if args.empty?
 
     code = self.wrap_controller ENV['txt']
@@ -64,7 +63,7 @@ class Node
 
     Console.run "node controller.js", :dir=>"/tmp/", :buffer=>"node"
     $el.sit_for 0.2
-    Firefox.url "http://localhost:8161"
+    Firefox.url "http://localhost:1338"
     ".flash - showing in browser!"
   end
 

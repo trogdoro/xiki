@@ -6,14 +6,7 @@ class Textile
   def self.render txt
 
     html = RedCloth.new(txt).to_html
-    html << "
-      <style type='text/css'>
-        body {
-        font-family: arial;
-        font-size: 12px;
-        }
-      </style>
-      ".unindent
+    html << Html.default_css
 
     html
   end

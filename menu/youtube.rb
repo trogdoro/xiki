@@ -2,19 +2,20 @@ class Youtube
   def self.menu
 
     "
-    > Type some words to search youtube
-    | Dancing Cats
+    | Type words to search youtube
 
     - url with start time/
-      @ http://www.youtube.com/watch?v=XkYcWzBCEb8#t=2m51s
+      @http://www.youtube.com/watch?v=XkYcWzBCEb8#t=2m51s
     - use dotsies in transcript/
       @css/
-        | .cptime, .cptext{
-        |   font-weight: 300;
-        | }
-        | .cptext{
+        | .caption-line-text{
         |   font-family: dotsies;
         |   padding-left: 1px;
+        | }
+        | .caption-line-highlight{
+        |   font-family: dotsies;
+        |   padding-left: 1px;
+        |   font-weight: normal;
         | }
 
     > Notes
