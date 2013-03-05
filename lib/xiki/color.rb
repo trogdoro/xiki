@@ -106,16 +106,19 @@ class Color
       #       Hide.search
       #       return
     when "n"   # to next marker
-      #       Keys.prefix_times do
-      pos = $el.next_overlay_change(View.cursor)
-      #       end
-      # If no overlay, may be at end, so continue on
-      pos = $el.next_overlay_change(pos) unless $el.overlays_at(pos)
-      return View.to(pos)
+      Keys.prefix_times do
+        pos = $el.next_overlay_change(View.cursor)
+        pos = $el.next_overlay_change(pos) unless $el.overlays_at(pos)
+        View.to(pos)
+      end
+      return
     when "p"   # to next marker
-      pos = $el.previous_overlay_change(View.cursor)
-      pos = $el.previous_overlay_change(pos-2) if $el.overlays_at(pos-2)
-      return View.to pos
+      Keys.prefix_times do
+        pos = $el.previous_overlay_change(View.cursor)
+        pos = $el.previous_overlay_change(pos-2) if $el.overlays_at(pos-2)
+        View.to pos
+      end
+      return
     when "d"
       overlays = $el.overlays_at($el.next_overlay_change($el.point_at_bol - 1))
       return View.beep "- No highlights after cursor!" if ! overlays
