@@ -1,5 +1,6 @@
 > With headers
 @ $ curl -i http://google.com
+
 > Only headers
 @ $ curl -I http://google.com
 

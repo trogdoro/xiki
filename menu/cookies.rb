@@ -2,6 +2,9 @@ class Cookies
   def self.menu key=nil, val=nil
 
     txt = Firefox.exec "document.cookie"
+
+    return "- no cookies set!" if txt == '""'
+
     hash = txt.split('; ').inject({}) do |acc, e|
       k, v = e.match(/(.*?)=(.*)/)[1..2]
       acc[k] = v

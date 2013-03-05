@@ -70,5 +70,8 @@
   Some of the more complicated menus that have editor dependencies
   will only be partially functional in the browser.
 
+> See
+@api/
+
 > From the shell console, you can type stuff like this:
 $ xiki docs/Introduction

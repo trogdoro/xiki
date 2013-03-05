@@ -4,6 +4,9 @@ class Browser
     - .url/
     - .reload/
     - .tabs/
+    - see/
+      <@ web development/
+      <@ firefox/
     - api/
       | This class lets you choose a default browser.
       |
@@ -23,9 +26,12 @@ class Browser
     Firefox.url url, options
   end
 
-
   def self.html html
     Firefox.html html
+  end
+
+  def self.append html
+    Firefox.append html
   end
 
   def self.js txt, options={}

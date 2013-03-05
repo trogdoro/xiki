@@ -28,12 +28,13 @@ class Dom
   end
 
   def self.menu_before *args
-    return nil if args.any?
+
+    return nil if args.any?   # Return if there are args
 
     # If no args, delegate to dom path
 
     result = self.dom *args
-    result + ["docs/"]
+    result + "\n- docs/"
   end
 
   def self.menu_after output, *args
@@ -45,7 +46,6 @@ class Dom
   end
 
   def self.dom *args
-
     # If starts with ##, delegate to search...
 
     if args[0] =~ /^##(.+)/
@@ -139,7 +139,7 @@ class Dom
     if kids =~ /\Ahtml::/
       kids = kids.sub(/\Ahtml::/, '').strip
       return prefix == "all" ?
-        kids.gsub(/^/, '| ') :
+        Tree.quote(kids) :
         self.tidy(kids, raw_args)
     end
 
@@ -152,7 +152,7 @@ class Dom
       counts[k] += 1
       k.replace "#{k}:#{counts[k]}" unless k =~ /#/ || counts[k] == 1
     end
-    kids.map{|o| "#{o}/"}
+    kids.map{|o| "- #{o}/"}.join("\n")
   end
 
 

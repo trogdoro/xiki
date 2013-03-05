@@ -1,13 +1,19 @@
 require "cgi"
 
-class Google
+module Google
   def self.menu *args
     if args.empty?   # If no path, pull from history
-      return Launcher.last "google", :exclude_path=>1, :quoted=>1
+      return ".prompt Type search string"
     end
-    txt = CGI.escape ENV['txt']
+    txt = ENV['txt'].dup
+    txt.gsub! "\n", ' '
+    txt = CGI.escape txt
 
-    $el.browse_url "http://www.google.com/search?q=#{txt}"
+    url = "http://www.google.com/search?q=#{txt}"
+
+    Keys.prefix_u ?
+      Browser.url(url):
+      $el.browse_url(url)
     nil
   end
 
