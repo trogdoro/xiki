@@ -4,12 +4,13 @@ class History
   # Unused
   def self.menu
     "
-    - menus) @log/
-
     > Files
     - .unsaved files/
-    - @edited/
-    - @files/history/
+    << @edited/
+    << @files/history/
+
+    > See
+    << @log/
     "
   end
 
@@ -168,6 +169,8 @@ class History
       end
     end
 
+    txt = "#{txt}| Key shortcut: open+not+saved\n"
+
     txt
   end
 
@@ -262,21 +265,28 @@ class History
       return
     end
 
-    backup = Dir["#{Bookmarks['$bak']}#{View.file_name}*"].last
+    backup = Dir["#{Bookmarks['$bak']}#{View.file_name}.????-??-??.??-??"].last   # "
 
     return View.beep("- No backup exists in $bak/") if ! backup
 
     file = View.file
 
-    # Just jump to it
-    if Keys.prefix == 0
-      return View.open backup
+    # Replace current version with last
+    if Keys.prefix == 8
+      return if ! View.confirm "Replace current file with backup?"
+      txt = File.read backup
+      line = View.line
+      View.kill_all
+      View << txt
+      View.line = line
+      return
     end
 
+    # Just jump to it
+    return View.open backup if Keys.prefix == 0
+
     # Reverse the files
-    if Keys.prefix == :-
-      file, backup = backup, file
-    end
+    file, backup = backup, file if Keys.prefix == :-
 
     diff = Console.run "diff -U 0 \"#{backup}\" \"#{file}\"", :sync=>true
 
