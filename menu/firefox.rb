@@ -11,6 +11,9 @@ require "rexml/document"
 class Firefox
 
   @@log_unique_token = "aa"
+  @@jquery_url = "http://code.jquery.com/jquery.min.js"
+  #   @@jquery_url = "http://xiki.loc/assets/js/jquery.js"
+
 
   def self.menu
     %`
@@ -79,7 +82,7 @@ class Firefox
   end
 
   def self.js txt=nil
-    return Tree.<<("| $('div').toggle(1300)  // Type some javascript here (to run in the browser)") if ! txt
+    return Tree.<<("| $('h1').toggle(1000)  // Type some javascript here (to run in the browser)") if ! txt
 
     Firefox.exec txt
   end
@@ -283,6 +286,8 @@ class Firefox
 
     result = self.exec js, :browser=>true
 
+    $el.browse_url(url) if result =~ /^!!! TypeError: gBrowser is null/
+
     nil
   end
 
@@ -356,7 +361,7 @@ class Firefox
 
     Firefox.exec "
       var s=document.createElement('script');
-      s.setAttribute('src', 'http://code.jquery.com/jquery.min.js');
+      s.setAttribute('src', '#{@@jquery_url}');
       document.getElementsByTagName('head')[0].appendChild(s);
 
       var s=document.createElement('script');
@@ -462,7 +467,7 @@ class Firefox
     self.exec "
       if(! document.getElementById('jqid')){
         var s=document.createElement('script');
-        s.setAttribute('src', 'http://code.jquery.com/jquery.min.js'); s.setAttribute('id', 'jqid');
+        s.setAttribute('src', '#{@@jquery_url}'); s.setAttribute('id', 'jqid');
         document.getElementsByTagName('head')[0].appendChild(s);
 
         var s=document.createElement('script');
@@ -518,13 +523,22 @@ end
 
 Menu.ffo :class=>'Firefox.object'
 
-Launcher.add(/^#[\w-]+$/) do |line|
-  Line.delete :br
-  View.insert "dom/#{line}/"
-  Launcher.launch
+# Make #foo replace look for css id
+Launcher.add(/^#[\w]/) do |line|
+  args = line.split("/")
+  txt = Dom.dom(*args)
+
+  Tree << txt
 end
 
-Launcher.add(/^\.[\w-]+$/) do |line|
+# Make .foo replace look for css style
+Launcher.add(/^\.[\w]/) do |line|
+  args = line.split("/")
+  txt = Dom.dom(*args)
+  Tree << txt
+end
+
+Launcher.add(/^##[\w-].+/) do |line|
   Line.delete :br
   View.insert "dom/#{line}/"
   Launcher.launch
@@ -561,7 +575,6 @@ Menu.length do |path|
   txt = "$(\"#{txt}\").length"
   txt = Firefox.exec txt
 
-  #   txt = Firefox.jso txt
   Tree.<< txt, :no_slash=>1
   nil
 end
@@ -577,6 +590,7 @@ end
 
 Menu.jso do |path|   # - (js): js to run in firefox
   txt = Firefox.jso Tree.rest(path)
+  txt = Tree.quote txt
   Tree.<< txt, :no_slash=>1
   nil
 end
@@ -603,5 +617,6 @@ Menu.click do |path|
 end
 
 Menu.append do |path|
-  Firefox.append Tree.rest(path)
+  txt = Tree.rest path
+  Firefox.append txt
 end
