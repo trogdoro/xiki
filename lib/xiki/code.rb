@@ -88,6 +88,7 @@ class Code
       left, right = options[:left], options[:right]
       txt = View.txt left, right
     elsif prefix.is_a?(Fixnum) && 0 <= prefix && prefix <= 7
+      file, line = View.file, Line.number(left)
       txt, left, right = View.txt_per_prefix nil, :blink=>1, :remove_heading=>1
     else
       case prefix
@@ -97,12 +98,13 @@ class Code
         # These were superceded by .txt_per_prefix apparently
 
       when 8   # Put into file and run in console
-        File.open("/tmp/tmp.rb", "w") { |f| f << Notes.get_block("^>").text }
+        File.open("/tmp/tmp.rb", "w") { |f| f << Notes.current_section("^>").text }
         return Console.run "ruby -I. /tmp/tmp.rb", :dir=>View.dir
       when 9   # Pass whole file as ruby
         return Console.run("ruby #{View.file_name}", :buffer => "*console ruby")
       else   # Move this into ruby - block.rb?
         ignore, left, right = View.block_positions "^>"
+        file, line = View.file, Line.number(left)
       end
 
       txt = View.txt(:left=>left, :right=>right).to_s
@@ -126,9 +128,9 @@ class Code
     orig.go
 
     # Eval the code
-    returned, out, exception = self.eval txt
+    returned, out, exception = self.eval txt, file, line
     begin
-      if returned.any?
+      if returned != nil and returned != ""
         returned = returned.to_s[0..49]
         returned << "..." if returned.length == 50
         Message << returned
@@ -147,8 +149,10 @@ class Code
     end
 
     if exception
-      backtrace = exception.backtrace[0..8].join("\n").gsub(/^/, '  ') + "\n"
-      View.insert "- error: #{exception.message}\n- backtrace:\n#{backtrace}".gsub(/^/, '  ')
+      backtrace = exception.backtrace[0..8].join("\n").gsub(/^/, '  @') + "\n"
+      error = CodeTree.format_exception_message_for_tree exception.message
+      View.insert ">>\n"
+      View.insert "- error:#{error}\n- backtrace:\n#{backtrace}".gsub(/^/, '  ')
     end
 
     orig.go   # Move cursor back to where we started
@@ -199,15 +203,16 @@ class Code
   end
 
   # Evaluates a string, and returns the output and the stdout string generated
-  def self.eval code
+  def self.eval code, file=nil, line=nil
     return ['- Warning: nil passed to Code.eval!', nil, nil] if code.nil?
+
     # Capture stdout output (saving old stream)
     orig_stdout = $stdout;  $stdout = StringIO.new
     stdout = nil
     exception = nil
     begin   # Run code
       # Good place to debug
-      returned = $el.instance_eval(code, __FILE__, __LINE__)
+      returned = $el.instance_eval(code, file||__FILE__, line||__LINE__)
     rescue Exception => e
       exception = e
     end
@@ -225,11 +230,19 @@ class Code
 
     if View.file =~ /\/xiki\//
       if View.file =~ /\/spec\//   # If in spec, open corresponding file
-        View.open View.file.sub('/spec/', '/').sub(/_spec\.rb/, '.rb')
+
+        path = View.file
+        path.sub! "/spec/", "/lib/xiki/"   # "/projects/xiki/lib/xiki/spec/code_spec.rb"
+        path.sub! "_spec.rb", ".rb"
+
+        View.open path
       else   # Otherwise, open file corresponding spec
 
         method = Code.grab_containing_method :name=>1
-        path = View.file.sub(/(.+)\/(.+)/, "\\1/spec/\\2").sub(/\.rb/, '_spec.rb')
+        path = View.file
+        path.sub! "/lib/xiki/", "/spec/"   # "/projects/xiki/lib/xiki/spec/code_spec.rb"
+        path.sub! ".rb", '_spec.rb'
+
         View.open path
 
         View.recenter_under "^ *describe .+##{method}[^_a-zA-Z0-9]"
@@ -609,26 +622,27 @@ class Code
     end
 
     if Keys.prefix_u?
-      View.insert 'Ol << "!"'
-      return Move.backward 2
+      View.insert 'Ol["!"]'
+      return Move.backward 3
     end
 
-    View.insert "Ol.line"
+    View.insert "Ol[]"
     Line.to_left
   end
 
   def self.enter_log_output
     orig = Location.new
     View.layout_output
+    View.to_bottom
+    Line.previous
 
-    output = Line.value[/: (.+)/, 1]
+    output = Line.value[/\) (.+)/, 1]
+    output.sub! /: /, " = "
     orig.go
 
     return View.flash("- Not found!") if output.nil?
 
-    Move.to_end
-    View.insert_line
-    View << "# #{output}"
+    View << output
     Line.to_beginning
   end
 
@@ -775,6 +789,7 @@ class Code
   # Searches upward for "def..." and returns the line
   def self.grab_containing_method options={}
     orig = Location.new
+    Move.to_end
     Search.backward "^  def "
     txt = Line.value
     orig.go
@@ -841,9 +856,7 @@ class Code
 
   end
 
-  #
   # Grabs /foo/bar.rb:123 pattern from line, and jumps to file / line.
-  #
   def self.open_as_file
     return if Line.value !~ /(\/.+?):(\d+)/
 

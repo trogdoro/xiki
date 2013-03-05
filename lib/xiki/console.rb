@@ -11,12 +11,12 @@ class Console
     - .history/
     - api/
       > In console (asynchronously)
-      @ Console.run "ls"
-      @ Console.run "ls", :dir=>"/tmp"
+      @Console.run "ls"
+      @Console.run "ls", :dir=>"/tmp"
 
       > Inline (synchronously)
-      @ Console.sync "ls"
-      @ Console.sync "ls", :dir=>"/etc"
+      @Console.sync "ls"
+      @Console.sync "ls", :dir=>"/etc"
     - docs/
       You can run shell commands by typing things like this...
 

@@ -75,7 +75,7 @@ class CodeTree
       return View.flash($1) if(message =~ /\A\.flash (.+)/)
     end
 
-    backtrace = exception.backtrace[0..8].join("\n").gsub(/^/, '  ') + "\n"
+    backtrace = exception.backtrace[0..8].join("\n").gsub(/^/, '  @') + "\n"
 
     # If path in message, move it to the stack trace
     if message =~ /(.+\d:in `.+'): (.+)/m
@@ -83,14 +83,17 @@ class CodeTree
       backtrace = "  #{path}\n#{backtrace}"
     end
 
-    message = message =~ /\n/ ?
-      "\n"+message.strip.gsub(/^/, "  | ").gsub(/^( +\|) ([+-])/, "\\1\\2") :
-      " #{message}"
+    message = self.format_exception_message_for_tree message
 
     txt = ""
     txt << "- tried to run: #{code}\n" if code
     txt << "- error:#{message}\n- backtrace:\n#{backtrace}"
     txt
+  end
+
+  def self.format_exception_message_for_tree message
+    return " #{message}" if message !~ /\n/
+    "\n"+message.strip.gsub(/^/, "  | ").gsub(/^( +\|) ([@+-])/, "\\1\\2")
   end
 
   def self.run code, options={}
@@ -99,17 +102,24 @@ class CodeTree
     orig = Location.new
     orig_left = $el.point
 
-    returned, stdout, e = Code.eval(code)  # Eval code
+    returned, stdout, e = Code.eval code, View.file, Line.number
+
     # If no stdout (and something was returned), print return value
     if ! stdout.nonempty? and ! returned.nil?
       stdout = self.returned_to_s returned
-    else
-      $el.message(returned.to_s) if returned and (!returned.is_a?(String) or returned.size < 500)
+
+    # What was printed out wasn't overly useful, and causes a flicker in emacs 24
+      # (Due to the minibuffer quickly growing then shrinking).
+      # TODO: probably make it only print out if output is single-line?
+      # Or maybe add "..." if multi-line
+      #     else
+      #       $el.message(returned.to_s) if returned and (!returned.is_a?(String) or returned.size < 500)
     end
 
     stdout = self.draw_exception(e, code) if e
 
     buffer_changed = b != View.buffer   # Remember whether we left the buffer
+
     # Insert output if there was any
     if stdout.nonempty?
       # Pull out flags
@@ -158,6 +168,8 @@ class CodeTree
         Tree.search(:left=>left, :right=>right, :recursive_quotes=>true)
         return
       end
+
+      return Line.to_beginning :down=>1 if stdout =~ /\n  - error:\n    \| expected: /   # unit test output
 
       # If script didn't move us (line or buffer), do incremental search
       if !options[:no_search] && !buffer_changed && $el.point == orig_left
@@ -365,7 +377,7 @@ class CodeTree
       left2 = Line.left prefix + 1
     elsif prefix == :u
       right2 = left2
-    elsif prefix == :uu
+    elsif prefix == :uu || prefix == :-
       right1 = left1
     end
 
