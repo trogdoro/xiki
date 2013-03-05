@@ -21,3 +21,10 @@ Styles.mode_line_file(
   :face=>"arial",
   :bold=>true
   )
+
+Styles.mode_line_dim(
+  :fg=>"bce",
+  :face=>"arial",
+  :bold=>false
+  )
+

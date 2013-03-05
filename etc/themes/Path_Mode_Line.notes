@@ -1,7 +1,7 @@
 $el.el4r_lisp_eval %`
   (progn
 
-    (setq-default xiki-status3 nil) (setq-default xiki-status2 nil) (setq-default xiki-status1 nil)
+    (setq-default xiki-status1 nil) (setq-default xiki-status2 nil) (setq-default xiki-status3 nil) (setq-default xiki-status4 nil)
     (setq-default mode-line-format
       (quote
        (
@@ -26,9 +26,10 @@ $el.el4r_lisp_eval %`
         "               "
 
         ;; status1, status2, etc. (in mode line)
-        (:propertize xiki-status1 face quote-heading-small)
-        (:propertize xiki-status2 face quote-heading-small)
-        (:propertize xiki-status3 face dotsies-white)
+        xiki-status1
+        (:propertize xiki-status2 face mode-line-file)
+        (:propertize xiki-status3 face mode-line-dim)
+        (:propertize xiki-status4 face dotsies-white)
         )))
   )
   `
