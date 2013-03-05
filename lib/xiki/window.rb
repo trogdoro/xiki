@@ -36,7 +36,9 @@ class Window
       return "#{View.frame_width}, #{View.frame_height}, #{$el.frame_parameter(nil, :left)}, #{$el.frame_parameter(nil, :top)}"
     end
 
-    txt = File.read(File.expand_path("#{Xiki.dir}menu/dimensions_config.menu"))
+
+    txt = File.read(File.expand_path("~/menu/dimensions_config.menu")) rescue nil
+    txt ||= File.read(File.expand_path("#{Xiki.dir}menu/dimensions_config.menu"))
 
     txt.sub! /\n\n.+/m, "\n"
 
@@ -48,12 +50,13 @@ class Window
     # If just presets/, list all presets
 
     if ! preset
-      return txt.map { |o|
+      txt = txt.map { |o|
         o = o.match(/(\w.+?)\/(.+)/)
         next if ! o
         "#{o[1]}--#{o[2]}"
         "- #{o[1]}/\n"
       }.join("")
+      return "#{txt}@dimensions config/\n"
     end
 
     # If preset passed, apply it

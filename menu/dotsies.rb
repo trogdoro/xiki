@@ -9,7 +9,7 @@ class Dotsies
     - .browse/
     - api/
       > HTML to include in web page
-      | <link href='http://xiki.org/dotsies.css' rel='stylesheet' type='text/css'>
+      | <link href='http://dotsies.org/dotsies.css' rel='stylesheet' type='text/css'>
       | <style> .dotsies {font-family:Dotsies} </style>
     - docs/
       > Summary
@@ -36,6 +36,14 @@ class Dotsies
       :ls_dir=>"verdana",
       :notes_exclamation=>"arial black",
       :notes_h1=>"arial",
+      :notes_h1_green=>"arial",
+      :notes_h0=>"arial",
+      :notes_bullet_parens=>"arial",
+      :notes_label=>"arial black",
+      :quote_heading=>"arial",
+
+      :ls_search=>"verdana",
+
     }
 
     if Styles.attribute(:default, :family) =~ /dotsies/

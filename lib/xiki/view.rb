@@ -201,7 +201,7 @@ class View
     return self.show_txt(options[:txt], :name=>path) if options[:txt]
 
     # Pull off line number if there
-    path.sub!(/(.+?:\d+).*/, "\\1")
+    path = path.sub(/(.+?:\d+).*/, "\\1")
     line_number = path.slice!(/:\d+$/)
 
     # Open after bar if in bar
@@ -252,9 +252,17 @@ class View
   # Saves the configuration
   def self.restore name=nil
     name ||= Keys.input(:optional => true)   # Get single key from user if no param
-    name ||= "0"   # Set to "0" if user entered nothing
-    # Todo: if "l", winner_undo
-    if(name == "l")
+    name ||= "0"   # Set to "0" if user waited too long and entered nothing
+    if(name == "o")   # Todo: if "o", just show $t and $o
+      View.hide_others :all=>1
+      View.open "$t"
+      View.create
+      Code.open_log_view
+      View.previous
+      return
+    end
+
+    if(name == "l")   # Todo: if "l", winner_undo
       $el.winner_undo
       return
     end
@@ -362,11 +370,9 @@ class View
     end
     $el.delete_other_windows
 
-    $el.split_window_horizontally 48   # Width of bar
-    #     $el.split_window_horizontally 28   # Width of bar
-
-    #     split_window_horizontally 32   # Width of bar
-    #     split_window_horizontally 54   # Width of bar
+    # Width of bar (layout+todo etc.)
+    $el.split_window_horizontally 48
+    #     $el.split_window_horizontally 28
 
     $el.other_window 1
     o = nil
@@ -410,9 +416,8 @@ class View
     if self.bar?
       buffer = $el.selected_window
       $el.select_window $el.frame_first_window
-      #       enlarge_window (31 - window_width), true
-      #       enlarge_window (48 - window_width), true
 
+      # Width of bar (balance)
       $el.enlarge_window((42 - $el.window_width), true)
       #       $el.enlarge_window((22 - $el.window_width), true)
 
@@ -466,7 +471,6 @@ class View
     # If wasn't at left, but at left now, go to right
     View.to_upper if ! was_at_left && self.is_at_left
   end
-
 
   def self.next options={}
     (Keys.prefix_times || options[:times] || 1).times do
@@ -566,15 +570,23 @@ class View
 
     # Go to first window not on left margin
     self.list.each do |w|
-      if self.edges(w)[0] != 0  # Window is at left of frame
+      if self.left_edge(w) != 0  # Window is at left of frame
         $el.select_window(w)
         break
       end
     end
   end
 
+  def self.is_at_left
+    self.left_edge == 0
+  end
+
+  def self.edges view=nil
+    view ||= self.current
+    $el.window_edges(view).to_a
+  end
+
   def self.left_edge view=nil
-    view ||= $el.selected_window  # Default to current view
     self.edges(view)[0]
   end
 
@@ -751,7 +763,9 @@ class View
   end
 
   def self.extension
-    View.file[/\.(\w+)$/, 1]
+    file = View.file
+    return nil if ! file
+    file[/\.(\w+)$/, 1]
   end
 
   def self.file_or_buffer
@@ -1001,6 +1015,10 @@ class View
     $el.frame_parameter(nil, :vertical_scroll_bars) ? true : nil
   end
 
+  def self.stem
+    Files.file_name.sub(/\.[^.]+$/, '')
+  end
+
   def self.name
     $el.buffer_name
   end
@@ -1039,6 +1057,7 @@ class View
   end
 
   def self.mode
+    return :notes if Notes.enabled?
     $el.elvar.major_mode.to_s.gsub('-','_').to_sym
   end
 
@@ -1112,11 +1131,14 @@ class View
   end
 
   # Toggle full-screen mode
-  def self.dimensions_full
-    if $el.frame_parameter(nil, :fullscreen)   # If fullscreen on turn it off
-      $el.set_frame_parameter(nil, :fullscreen, nil)
-    else   # Else, turn it on
+  #
+  # View.dimensions_full
+  # View.dimensions_full :force=>1   # Always sets to full, even if already full
+  def self.dimensions_full options={}
+    if options[:force] || ! $el.frame_parameter(nil, :fullscreen)   # If fullscreen on turn it off
       self.fullscreen_on
+    else   # Else, turn it on
+      $el.set_frame_parameter(nil, :fullscreen, nil)
     end
   end
 
@@ -1134,20 +1156,28 @@ class View
   end
 
   def self.insert_line
-
     orig_indent = Line.indent
-    n = Keys.prefix   # Check for numeric prefix
+    prefix = Keys.prefix :clear=>1   # Check for numeric prefix
 
-    if n == 0
-      n = nil
+    if prefix == 0
+      prefix = nil
       Line.previous
     end
 
     Move.to_end if Line.before_cursor =~ /^ +$/   # If at awkward position, move
 
-    indent_txt = n ?
-      (" " * n) :
-      Line[/^[ |$~&%@\/\\#+!-]+/] || ""   # No numeric prefix, so just grab this line's opening indent text
+    line = Line.value
+
+    indent_txt =
+      if prefix.is_a?(Fixnum)   # Make indent specific number
+        " " * (prefix*2)
+      elsif prefix == :u   # Use prefix chars from previous line
+        line[/^[ |$~&%@\/\\#+!-]*/]
+      elsif Notes.enabled?
+        line[/^[ |!$%+-]*/]
+      else
+        Line[/^ */] || ""
+      end
 
     Deletes.delete_whitespace if ! Line.at_left? && ! Line.at_right?
 
@@ -1178,11 +1208,6 @@ class View
 
     end
     Effects.blink
-  end
-
-  def self.edges view=nil
-    view ||= self.current
-    $el.window_edges(view).to_a
   end
 
   def self.layout_right nth=nil
@@ -1223,6 +1248,7 @@ class View
   end
 
   def self.layout_output options={}
+
     # If current line has Ol., grab line and path
 
     prefix = Keys.prefix
@@ -1231,14 +1257,16 @@ class View
       prefix = nil
     end
 
-    View.layout_files if ! View.bar?   # If not already showing bar, do it first, so it shows up on left
+    if prefix != :u   # Assume it's already showing if up+layout+output
+      View.layout_files if ! View.bar?   # If not already showing bar, do it first, so it shows up on left
+    end
 
     found = prefix != :u && ! options[:dont_highlight] && Line =~ /^ *Ol\b/ && OlHelper.source_to_output(View.file, Line.number)
 
-    orig = nil
+    put_value_here = nil
     if prefix == :-   # If want to keep cursor where it is
       return View.flash("- Not found!") if ! found
-      orig = Location.new
+      put_value_here = Location.new
     end
 
     Code.open_log_view options
@@ -1258,8 +1286,11 @@ class View
       Effects.blink(:what=>:line)
     end
 
-    if orig
-      return orig.go
+    if put_value_here
+      val = Line[/: (.*)/, 1]
+      put_value_here.go
+      Line << "   # #{val}"
+      return
     end
 
   end
@@ -1271,13 +1302,22 @@ class View
   end
 
   def self.to_relative
-    if Keys.prefix == 0
-      $el.goto_char window_end - 1
-      Line.to_left
+    prefix = Keys.prefix
+
+    if prefix == :u   # Go to line at middle of view
+      top = Line.number($el.window_start)
+      bottom = Line.number($el.window_end)
+      View.line = top + ((bottom - top) / 2)
       return
     end
+
+    if prefix.is_a?(Fixnum) && prefix <= 0
+      View.line = Line.number($el.window_end) - (-prefix+2)
+      return
+    end
+
     $el.goto_char $el.window_start
-    ((Keys.prefix || 1) -1).times do
+    ((prefix || 1) -1).times do
       Line.next
     end
   end
@@ -1444,7 +1484,8 @@ class View
   # View.status "aa"
   # View.status nil
   # View.status "bb", :nth=>2
-  # View.status "dotsies", :nth=>3
+  # View.status "dim", :nth=>3
+  # View.status "dotsies", :nth=>4
   # View.status :scale=>5
   # View.status :scale=>1
   # View.status :scale=>0
@@ -1458,6 +1499,7 @@ class View
         @View.status 'aa'
         @View.status :scale=>5
         @View.status 'abc', :nth=>3
+        @View.status 'dim', :nth=>4
         "
     end
 
@@ -1497,6 +1539,19 @@ class View
     $el.buffer_size
   end
 
+  def self.new_file
+    View.to_buffer "untitled.notes"
+    $el.rename_uniquely
+    Notes.mode
+    View >> "\n"
+  end
+
+  def self.confirm message="Are you sure?"
+    View.flash "- #{message}", :times=>1
+    choice = Keys.input :prompt=>"#{message} (type 'y' for yes)", :chars=>1
+
+    return choice =~ /[ym]/i
+  end
 end
 
 View.init
