@@ -94,6 +94,9 @@ describe TextUtil, "#snake_case" do
     hi = "HiYou"
     TextUtil.snake_case! hi
     hi.should == "hi_you"
+
+    TextUtil.snake_case("core+platform").should == "core_platform"
+
   end
 end
 
@@ -105,6 +108,7 @@ describe TextUtil, "#camel_case" do
     TextUtil.camel_case("/CorePlatform").should == "CorePlatform"
     TextUtil.camel_case("core platform").should == "CorePlatform"
     TextUtil.camel_case("core-platform").should == "CorePlatform"
+    TextUtil.camel_case("core/platform").should == "CorePlatform"
   end
 end
 

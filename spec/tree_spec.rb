@@ -564,7 +564,7 @@ end
 
 describe Tree, "#children" do
 
-  it "shows shallowest items when blank path" do
+  it "shows 2nd-level items when blank path" do
     Tree.children("
       - a/
       - .b/
@@ -639,6 +639,17 @@ describe Tree, "#children" do
       ", "").should == "
       <= a/
       + b/
+      ".unindent
+  end
+
+  it "leaves trailing spaces for quoted lines" do
+    Tree.children("
+      - a/
+        | b 
+        | c
+      ", "a").should == "
+      | b     
+      | c
       ".unindent
   end
 

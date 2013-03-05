@@ -51,7 +51,7 @@ class TextUtil
 
   # TextUtil.snake_case("hi there")   # -> hi_there
   def self.snake_case s
-    s.gsub(/[ -]/, '_').
+    s.gsub(/[ +-]/, '_').
       gsub(/([a-z0-9])([A-Z])/) {"#{$1}_#{$2}"}.downcase.
       gsub(/[^\w]/, "").
       gsub(/__+/, "_")
@@ -80,7 +80,7 @@ class TextUtil
       s = s.gsub(/([A-Z][A-Z]+)/) {"#{$1.capitalize}"}
     end
 
-    s.gsub(/[ -]/, '_').
+    s.gsub(/[ \/-]/, '_').
       gsub(/_([a-z]+)/) {"#{$1.capitalize}"}.
       sub(/(.)/) {$1.upcase}.
       gsub("_", "").

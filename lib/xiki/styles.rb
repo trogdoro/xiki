@@ -10,20 +10,20 @@ class Styles
       | How to use the Styles class.  You can change the color and font of text.
       | You define styles, then make them apply to the text that matches
       | regular expression.
-      |
+
       > Define
       | Styles.define :red, :bg => "d77"
-      |
+
       > Apply
       | Styles.apply "apply", :red
-      |
+
       > Define more complex font
       | Styles.define :blueish,
       |   :fg => "99e",
       |   :face => "verdana",
       |   :size => 90,
       |   :bold => true
-      |
+
       > See
       | For styling specific text (not just a pattern):
       <<< @overlay/
@@ -69,7 +69,8 @@ class Styles
   def self.zoom options={}
 
     increment = options[:out] ? -10 : 10
-    increment *= 10 if Keys.prefix_u
+
+    increment *= 5 if Keys.prefix_u || options[:up]
 
     height = self.height
     height += increment
@@ -165,12 +166,14 @@ class Styles
   def self.init
     return if ! $el
 
-    # Make 'arial black' work in Linux
+    # Make 'arial black' work in old linuxes
     $el.el4r_lisp_eval %`
       (custom-set-variables
         '(face-font-family-alternatives '(
           ("arial black" "arial" "DejaVu Sans")
           ("arial" "DejaVu Sans")
+          ("courier" "Monospace")
+
           ("verdana" "DejaVu Sans")
           ;("verdana" "arial")
           ))

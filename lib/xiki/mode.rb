@@ -9,7 +9,8 @@ class Mode
 
   def self.menu
     "
-    - Put something here.
+    - docs/
+      | Put @mode under a file to change the mode.
     "
   end
 

@@ -31,7 +31,7 @@ class Cursor
   end
 
   def self.bar
-    $el.el4r_lisp_eval "(customize-set-variable 'cursor-type '(bar . 2))"
+    $el.el4r_lisp_eval "(customize-set-variable 'cursor-type '(bar . 4))"
     nil
   end
   def self.box
@@ -47,7 +47,10 @@ class Cursor
     nil
   end
 
-  def self.color color
+  def self.color color=nil
+
+    return $el.face_background(:cursor) if color.nil?
+
     $el.set_face_background :cursor, color
     nil
   end

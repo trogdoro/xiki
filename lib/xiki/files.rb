@@ -113,6 +113,17 @@ class Files
     $el.shell_command command
   end
 
+  # Name of file without path or extension
+  #
+  # Files.stem
+  def self.stem options={}
+    self.file_name.sub(/\.[^.]+$/, '')
+  end
+
+
+  # Name of file without path
+  #
+  # Files.file_name
   def self.file_name options={}
     if options[:path]
       return $el.buffer_file_name || $el.dired_get_filename #'no_dir

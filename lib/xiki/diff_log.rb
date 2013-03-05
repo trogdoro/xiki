@@ -247,8 +247,9 @@ class DiffLog
     result
   end
 
-  def self.do_compare_with
-    prefix = Keys.prefix :clear=>1
+  def self.do_compare_with prefix=nil
+
+    prefix ||= Keys.prefix :clear=>1
 
     # up+ means compare buffers in first two views
 

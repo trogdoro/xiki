@@ -472,14 +472,24 @@ class Tree
   end
 
 
-  #
+  # Gets block of quoted text at cursor.
+  def self.quoted
+    self.leaf "|"
+  end
+
+  # Gets block of quoted text at root of tree.
+  def self.quoted_at_root
+    orig = Location.new
+    Tree.to_root
+    Line.next
+    txt = Tree.quoted
+    orig.go
+    txt
+  end
+
   # If foo/bar line, returns bar.
-  # If pipe-quoted returns siblings as multi-line string (assuming current
-  # line is pipe-quoted).
   #
-  # Tree.leaf "hey/you"
-  # Tree.leaf "| hii"   # Would get siblings also if line cursor is on had siblings
-  #
+  # Tree.leaf("hey/you").should == "me"
   def self.leaf path, options={}
     if path =~ /(?:^\||\/\|) ?(.*)/   # If has ^| or /|, grab siblings
       # We should probably verify that the current line is the same as the path too? (in case cursor moved to other quoted tree?)
@@ -735,8 +745,19 @@ class Tree
     self.minus_to_plus if Line.matches(/(^\s*[+-] [a-z]|\/$)/)
   end
 
-  # Mapped to Enter when on a FileTree buffer.  Opens file cursor is on in the tree.
-  # It assumes the path to a dir is on the current line.
+  # Climbs ancestors to determine the path.  Assumes cursor is on a tree,
+  # indented by 2 space increments.
+  #
+  # Examples:
+  # a/
+  #   @b/
+  #     c/
+  #       p Tree.construct_path
+  #         => "b/c/p Tree.construct_path"
+  #       p Tree.construct_path :list=>1
+  #         => ["b/", "c/", "p Tree.construct_path :list=>1"]
+  #       p Tree.construct_path :all=>1, :slashes=>1
+  #         => "a/@b/c/p Tree.construct_path :all=>1"
   def self.construct_path options={}
     begin
       path = []
@@ -896,6 +917,9 @@ class Tree
     txt.replace self.unquote(txt)
   end
 
+  # Removes | chars at beginning
+  #
+  # Tree.unquote "| a\n|\n| b"
   def self.unquote txt
     txt.gsub(/^\| ?/, '')
   end
@@ -1097,7 +1121,6 @@ class Tree
     else
       Tree.search options.merge(:number_means_enter=>true)
     end
-
   end
 
   # Iterate through each line in the tree
@@ -1117,7 +1140,7 @@ class Tree
         raise "Blank lines in trees between parents and children aren't allowed.  Also 2 consecutive blank lines isn't allowed." if line_indent > 0 && line_indent > last_indent
       else
         line_indent = line[/^ */].length / 2
-        line.strip!
+        line.sub! /^ +/, ''
       end
 
       branch[line_indent] = line
@@ -1635,6 +1658,8 @@ class Tree
 
   #
   # Returns subtree rooted at cursor.
+  #
+  # Improvement: should this just delegate to .siblings instead?
   #
   def self.subtree
 

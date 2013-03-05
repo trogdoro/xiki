@@ -103,6 +103,6 @@ Launcher.add(/^.*(- )?GET \/.+/) do
 
   result = RestTree.request "GET", url
 
-  result = result.grep(/#{regex}/i).join
+  result = result.split("\n").grep(/#{regex}/i).join("\n")
   Tree.under result, :no_slash=>1
 end

@@ -224,6 +224,8 @@ class Move
       $el.re_search_forward "^ +[+-]? ?[a-zA-Z_-].+[^\/\n]$"
       Line.to_words
     end
+  rescue Exception=>e
+    # Do nothing, because there may be no junior
   end
 
   # Moves cursor to left of line:
