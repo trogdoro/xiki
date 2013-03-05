@@ -8,6 +8,8 @@ class Bookmarks
     %`
     - .list/
     - .tree/
+    - .options/
+      - .persist/
     - .api/
       | > Summary
       | Some of the common ways to use the Bookmarks class programatically.
@@ -19,7 +21,7 @@ class Bookmarks
       @p Bookmarks["$tm/hi.txt"]
       |
       > Where Emacs stores bookmarks
-      @ ~/.emacs.bmk
+      @~/.emacs.bmk
       |
       - .elisp/
         | > Save unsaved bookmarks to ~/.emacs.bmk
@@ -342,6 +344,11 @@ class Bookmarks
   def self.open_quick
     bookmark = Keys.input :timed=>1, :prompt=>"Enter a quick bookmark to jump to:"
     Bookmarks.go("q#{bookmark}")
+  end
+
+  def self.persist
+    $el.bookmark_save
+    ".flash - persisted bookmarks!"
   end
 
 end

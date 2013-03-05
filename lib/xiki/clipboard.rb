@@ -190,6 +190,10 @@ class Clipboard
     Clipboard.copy("0")
   end
 
+  def self.copy_name
+    Clipboard.set("0", Files.stem)
+  end
+
   def self.diff_1_and_2
     # Compare clipboard 1 with 2
     # Unquote if several spaces and |
