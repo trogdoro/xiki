@@ -657,8 +657,9 @@ class Search
   # Search.open_file_and_method "View.path"
   #
   def self.open_file_and_method match
-    match.sub!(/^[+-] /, '')
-    match.sub!(/ .+/, '')
+
+    match.sub!(/^[+-] /, '')   # Foo.hi("you")
+    match.sub!(/[( ].+/, '')   # Foo.hi
 
     if match =~ /(.+)[.#](.+)/
       match, method = $1, $2   # split off, and open
@@ -746,20 +747,25 @@ class Search
   #     ! elvar.isearch_success
   #   end
 
-  def self.forward search, options={}
+  def self.forward target, options={}
     View.to_highest if options[:from_top]
 
     orig = View.cursor
-    found = $el.re_search_forward search, nil, (options[:go_anyway] ? 1 : true)
+
+    found = options[:not_regex] ?
+      $el.search_forward(target, nil, (options[:go_anyway] ? 1 : true)) :
+      $el.re_search_forward(target, nil, (options[:go_anyway] ? 1 : true))
+
     View.cursor = orig if options[:dont_move]
-    View.cursor = self.left if options[:beginning] && View.cursor != View.bottom
+
+    View.cursor = self.left if options[:beginning] && found && View.cursor != View.bottom
 
     found
   end
 
-  def self.backward search, options={}
+  def self.backward target, options={}
     orig = View.cursor
-    found = $el.re_search_backward search, nil, (options[:go_anyway] ? 1 : true)
+    found = $el.re_search_backward target, nil, (options[:go_anyway] ? 1 : true)
     View.cursor = orig if options[:dont_move]
     found
   end
@@ -883,7 +889,7 @@ class Search
 
   end
 
-  def self.isearch_have_output
+  def self.isearch_have_output options={}
 
     return self.isearch_have_output_javascript if View.extension == "js"
 
@@ -896,7 +902,11 @@ class Search
       return
     end
 
-    View.insert "Ol << \"#{match}: \#{#{match}.inspect}\""
+    txt = options[:no_label] ?
+      "Ol[#{match}]" :
+      "Ol[#{match.inspect}, #{match}]"
+
+    View.insert txt
   end
 
   def self.isearch_have_output_javascript
@@ -1306,7 +1316,6 @@ class Search
     self.move_to path, match, options
   end
 
-
   def self.move_to_files match
     match_with_path = FileTree.snippet :txt=>match
     match_with_path = ">\n- #{match_with_path}"
@@ -1349,7 +1358,7 @@ class Search
       View.open path
     end
 
-    # Maybe extract to .insert_in_section ?
+    # Maybe extract to .insert_in_section ? ...
     View.to_highest
 
     line_occupied = ! Line.blank?
@@ -1437,6 +1446,17 @@ class Search
   def self.outline_goto_once; @@outline_goto_once; end
   def self.outline_goto_once= txt; @@outline_goto_once = txt; end
 
+  # Mapped to up+to+outline
+  #
+  # Outline that includes path to root.  Like...
+  #
+  # - /tmp/
+  #   - foo.rb
+  #     |   def a
+  #     |   def b
+  #     |     while true
+  #     |       c;
+  #     |       d;
   def self.deep_outline txt, line
     txt = txt.split "\n"
     target_i = line
@@ -1553,11 +1573,8 @@ class Search
     View << "#{match}\n\n"
   end
 
-  #
   # Query replaces from "1" clipboard to "2" clipboard, etc.
-  #
   # Search.query_replace_nth "1", "2"
-  #
   def self.query_replace_nth n1, n2
 
     if Keys.up?   # If up+, grab line from last diff
@@ -1568,4 +1585,7 @@ class Search
     Search.query_replace Clipboard.get(n1), Clipboard.get(n2)
   end
 
+  def self.quote_elisp_regex txt
+    $el.regexp_quote txt
+  end
 end
