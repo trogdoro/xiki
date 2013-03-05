@@ -10,7 +10,10 @@ function! XikiLaunch()
 EOF
 endfunction
 
-nmap <silent> <2-LeftMouse> :call XikiLaunch()<CR>
 imap <silent> <2-LeftMouse> <C-c>:call XikiLaunch()<CR>i
+nmap <silent> <2-LeftMouse> :call XikiLaunch()<CR>
 imap <silent> <C-CR> <C-c>:call XikiLaunch()<CR>i
 nmap <silent> <C-CR> :call XikiLaunch()<CR>
+imap <silent> <C-@> <C-c>:call XikiLaunch()<CR>i
+nmap <silent> <C-@> :call XikiLaunch()<CR>
+
