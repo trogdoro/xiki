@@ -1,8 +1,7 @@
 require 'xiki/view'
 require 'xiki/effects'
 
-class Maps
-
+class Map
   def self.menu *args
 
     # If no arg, prompt to type something
@@ -13,6 +12,5 @@ class Maps
 
     Firefox.url "http://maps.google.com/maps?q=#{ENV['txt'].gsub "\n", ", "}"
     nil
-
   end
 end
