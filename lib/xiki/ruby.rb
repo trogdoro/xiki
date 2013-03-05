@@ -54,4 +54,21 @@ class Ruby
   def self.re_index_fast_ri
     Console.run "fastri-server -b"
   end
+
+  # Ruby mode shortcuts custom+next and custom+previous
+  #
+  # To use them, add this line:
+  # ~/.el4r/init.rb
+  #   | Ruby.keys
+  def self.keys
+    Keys.custom_next(:ruby_mode_map) {
+      Move.to_end
+      Search.forward "^ *def ", :beginning=>1
+    }
+
+    Keys.custom_previous(:ruby_mode_map) {
+      Search.backward "^ *def "
+    }
+  end
+
 end
