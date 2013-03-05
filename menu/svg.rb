@@ -40,11 +40,14 @@ class Svg
       - attributes instead of style/
         @svg/
           | <circle cx="100" cy="50" r="40" stroke="black" stroke-width="5" fill="red" />
-      - shrink it down/
-        @svg/
-          | <g transform="scale(0.3)">
-          |   <polygon points="60,20 300,80 120,240" style="fill:orange;stroke:red; stroke-width:10" />
-          | </g>
+      - transforms/
+        - shrink it down/
+          @svg/
+            | <g transform="scale(0.3)">
+            |   <polygon points="60,20 300,80 120,240" style="fill:orange;stroke:red; stroke-width:10" />
+            | </g>
+        - inline rotate/
+            |   <path transform="rotate(0.548268, 281, 199.5)" id="svg_1" d="m251,155l74,-3l-38,95l-50,-26l14,-66z" stroke-linecap="round" stroke-linejoin="round" stroke-width="12" stroke="#000000" fill="none"/>
       - css/
         @svg/
           | <defs>
@@ -97,13 +100,21 @@ class Svg
     nil
   end
 
-  def self.render xml
+  def self.render xml, options={}
     Browser.html %`<!DOCTYPE html><html><body>
-      <svg xmlns="http://www.w3.org/2000/svg" version="1.1" height="400" width="500">
+      <svg xmlns="http://www.w3.org/2000/svg" version="1.1" height="#{options[:height] || "400"}" width="#{options[:width] || "500"}">
       #{xml}
       </svg>
       </body></html>
       `.unindent
+  end
+
+  def self.append xml
+    Browser.js %`
+      $("svg").append('#{xml}');
+      $("body").html($("body").html());
+      `.unindent
+    nil
   end
 
   # Scale numeric values according to default font size

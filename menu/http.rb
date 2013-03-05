@@ -5,7 +5,7 @@ class Http
     # If as+open, just jump to the log
     return View.open Launcher.log_file if Keys.open?
 
-    # If no url's, list them all
+    # If no url's, list them all...
 
     if url.blank?
       txt = Launcher.last "http", :exclude_path=>1
