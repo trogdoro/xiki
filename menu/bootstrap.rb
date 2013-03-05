@@ -1,4 +1,8 @@
 class Bootstrap
+
+  @@assets = "http://twitter.github.com/bootstrap/assets"
+  #   @@assets = "http://xiki.loc/assets"
+
   def self.menu_after *args
     return if args[0]   # If menu outputted something, just return
 
@@ -6,68 +10,71 @@ class Bootstrap
   end
 
   def self.menu
+    clazz = self.to_s.downcase
+
     %`
     <= .make a page/
     - examples/
       - layouts/
         - hello world/
-          - @bootstrap/
+          - @#{clazz}/
             - project name/Sharkathon
-            - h1/Sharks
+            - h2/Sharks
             - p/They have fins and other cool stuff.
         - hero unit/
-          - @bootstrap/
+          - @#{clazz}/
             - project name/Sharkathon
             - hero/
               - h1/Sharks
               - p/They have fins and other cool stuff.
-            - h1/Do you?
-            - p/Didn't think so.
+
+            > Do you?
+            Lorem Ipsum Dolor...
         - 2 columns/
-          - @bootstrap/
+          - @#{clazz}/
             - row/
               - span6/
-                - h1/random
+                - h2/random
                 - p/lorem ipsum...
               - span6/
-                - h1/random
+                - h2/random
                 - p/ipsum dolor...
         - 3 columns/
-          - @bootstrap/
+          - @#{clazz}/
             - row/
               - span4/
-                - h1/random
+                - h2/random
                 - p/lorem ipsum...
               - span4/
-                - h1/random
+                - h2/random
                 - p/ipsum dolor...
               - span4/
-                - h1/random
+                - h2/random
                 - p/dolor sit...
         - with icons/
-          - @bootstrap/
+          - @#{clazz}/
             - hero/
               - h1/Sharks
               - p/lorem...
             - row/
               - span6/
-                - h1 icon/random
+                - h2 icon/random
                 - p/ipsum dolor sit...
               - span6/
-                - h1 icon/random
+                - h2 icon/random
                 - p/dolor sit lorem...
             - row/
               - span4/
-                - h1 icon/random
+                - h2 icon/random
                 - p/lorem ipsum...
               - span4/
-                - h1 icon/random
+                - h2 icon/random
                 - p/ipsum dolor...
               - span4/
-                - h1 icon/random
+                - h2 icon/random
                 - p/sit lorem...
         - shorthand/
-          - @bootstrap/
+          - @#{clazz}/
             - hero/
               > Shorthand
               p/Lines starting with ">" at left margin will have rows and spans auto-wrapped around them.
@@ -84,11 +91,11 @@ class Bootstrap
             > o random
             lorem...
         - with styled hero/
-          - @bootstrap/
+          - @#{clazz}/
             - hero/
               - h1/Sharks
               - p/lorem...
-            - h1/random
+            - h2/random
             - p/sit lorem ipsum dolor...
             - style/
               | .hero-unit {
@@ -98,16 +105,16 @@ class Bootstrap
               |   border-radius: 20px;
               | }
         - modified navbar/
-          - @bootstrap/
+          - @#{clazz}/
             - navbar/
               | <img src="http://xiki.org/images/bootstrap_icon.png">
               | <style>.navbar .container { padding: 1px 30px 0px; }</style>
-            - h1/random
+            - h2/random
             - p/sit lorem ipsum dolor...
       - components/
         - buttons/
-          - @bootstrap/
-            - h1/Buttons
+          - @#{clazz}/
+            - h2/Buttons
             - p/
               <a class="btn" href="">Hi</a>
               <a class="btn btn-primary" href="">Hi</a>
@@ -124,17 +131,17 @@ class Bootstrap
               <a class="btn disabled" href="">Hi</a>
         - icons/
           - with headings/
-            - @bootstrap/
+            - @#{clazz}/
               p/
                 - h3/random
-                - h1 icon/Info
-                - h1 icon/Info
+                - h2 icon/Info
+                - h2 icon/Info
               p/
                 - h3/Specific
-                - h1/
+                - h2/
                   - icon/043_group
                   Info
-                - h1/
+                - h2/
                   - icon/051_eye_open
                   Info
           - all/
@@ -158,7 +165,7 @@ class Bootstrap
               <a class="btn btn-danger" href=""><i class="icon-music"></i> Music</a>
         - forms/
           - basics/
-            - @bootstrap/
+            - @#{clazz}/
               | <form class="well">
               |   <label>Label name</label>
               |   <input type="text" class="span3" placeholder="Type something?">
@@ -169,13 +176,13 @@ class Bootstrap
               |   <button type="submit" class="btn">Submit</button>
               | </form>
           - search/
-            - @bootstrap/
+            - @#{clazz}/
               | <form class="well form-search">
               |   <input type="text" class="input-medium search-query">
               |   <button type="submit" class="btn">Search</button>
               | </form>
           - inline/
-            - @bootstrap/
+            - @#{clazz}/
               | <form class="well form-inline">
               |   <input type="text" class="input-small" placeholder="Email">
               |   <input type="password" class="input-small" placeholder="Password">
@@ -185,7 +192,7 @@ class Bootstrap
               |   <button type="submit" class="btn">Sign in</button>
               | </form>
           - horizontal/
-            - @bootstrap/
+            - @#{clazz}/
               | <form class="form-horizontal">
               |   <fieldset>
               |     <legend>Legend text</legend>
@@ -199,7 +206,7 @@ class Bootstrap
               |   </fieldset>
               | </form>
         - code/
-          - @bootstrap/
+          - @#{clazz}/
             - pre/
               | class Clam
               |   def hi
@@ -208,7 +215,7 @@ class Bootstrap
               | end
             - p/Hey <code>you</code> there.
         - carousel/
-          - @bootstrap/
+          - @#{clazz}/
             - <div id="myCarousel" class="carousel slide">
               - <div class="carousel-inner">
                 <div class="active item">
@@ -231,13 +238,14 @@ class Bootstrap
       | Expand the 'container' menu to build, or start with the
       | 'example' menu.
       |
-      | @bootstrap/
-      |   h1/Example Heading
+      | @#{clazz}/
+      |   h2/Example Heading
 
       > Bootstrap site
       @http://twitter.github.com/bootstrap/
-      @http://twitter.github.com/bootstrap/base-css.html
-      @http://twitter.github.com/bootstrap/examples.html
+        - javascript.html
+        - base-css.html
+        - getting-started.html#examples
     `
   end
 
@@ -246,14 +254,14 @@ class Bootstrap
   @@tags = {
     "container"=>"div class='container'",
     "row"=>"div class='row'",
-    "hero"=>"div class='hero-unit'",
-    "h1 icon"=>"h1",
+    "hero"=>"div class='hero-unit' id='hero'",
+    "h2 icon"=>"h2",
   }
 
   @@filler = {
     "project name"=>"Welcome",
-    "h1"=>"random",
-    "h1 icon"=>"random",
+    "h2"=>"random",
+    "h2 icon"=>"random",
     "p"=>"lorem ipsum...",
   }
 
@@ -299,7 +307,7 @@ class Bootstrap
       orig.go
       txt = txt.unindent
 
-      txt = self.process txt
+      txt = self.render txt
 
       return Browser.html txt
     end
@@ -323,9 +331,9 @@ class Bootstrap
     elsif args == ['row']
       ['span4/', 'span6/', 'span12/']
     elsif args == ['hero']
-      ['h1/Info', 'p/lorem ipsum...']
+      ['h1/random', 'p/lorem ipsum...']
     else
-      ['h1/random', 'p/lorem ipsum...', 'h1 icon/random', 'icon/']
+      ['h2/random', 'p/lorem ipsum...']
     end
 
   end
@@ -335,15 +343,15 @@ class Bootstrap
   end
 
   #
-  # If any >... lines at left margin, interpret them as h1's and assume
+  # If any >... lines at left margin, interpret them as h2's and assume
   # we want to auto-wrap in row/spanN/ items.
   #
-  # If any >... lines indented, just wrap in h1.
+  # If any >... lines indented, just wrap in h2.
   #
   def self.expand_wiki_headings txt
 
     # Always simply wrap >... lines that are indented...
-    txt.gsub! /( +)> /, "\\1h1/"
+    txt.gsub! /( +)> /, "\\1h2/"
 
     return if txt !~ /^> /   # If no >... lines at left margin, we're done (because only they have are meant to be wrapped)
 
@@ -355,12 +363,12 @@ class Bootstrap
 
     # Preprocess to see how many spans there will be for each row...
 
-    no_h1_yet = true
+    no_h2_yet = true
     lines.each do |l|
       if l =~ /^> /   # If >..., increase count in hash
         row_hash[row_i] += 1
-        no_h1_yet = false
-      elsif no_h1_yet   # Leave items before first >... alone
+        no_h2_yet = false
+      elsif no_h2_yet   # Leave items before first >... alone
         next
       elsif l =~ /^$/
         row_i += 1
@@ -368,21 +376,21 @@ class Bootstrap
       end
     end
 
-    # Go through each, wrapping and adding h1/ and p/
+    # Go through each, wrapping and adding h2/ and p/ ...
 
     txt.replace ""
 
-    no_h1_yet = true
+    no_h2_yet = true
     row_i = 0
     lines.each do |l|
       if l =~ /^> (\w )?(.+)/   # If >..., increase count in hash
         icon, heading = $1, $2
         width = 12 / row_hash[row_i]
-        txt << "row/\n" if no_h1_yet   # If first unindented >..., add initial row
-        no_h1_yet = false
-        next txt.<< "  span#{width}/\n    h1 #{icon.strip}/#{heading}\n" if icon
-        txt << "  span#{width}/\n    h1/#{heading}\n"
-      elsif no_h1_yet   # Leave items before first >... alone
+        txt << "row/\n" if no_h2_yet   # If first unindented >..., add initial row
+        no_h2_yet = false
+        next txt.<< "  span#{width}/\n    h2 #{icon.strip}/#{heading}\n" if icon
+        txt << "  span#{width}/\n    h2/#{heading}\n"
+      elsif no_h2_yet   # Leave items before first >... alone
         txt << "#{l}\n"
         next
       elsif l =~ /^$/
@@ -427,9 +435,9 @@ class Bootstrap
         "<div class='span#{number}'>"
     end
 
-    # Add random icons in <h1 icon> tags.
+    # Add random icons in <h2 icon> tags.
 
-    @html.gsub!(/<h1 (\w+)>/) { |o| "<h1> #{Bootstrap.icon_tag @@icons[rand(93)]}" }
+    @html.gsub!(/<h2 (\w+)>/) { |o| "<h2> #{Bootstrap.icon_tag @@icons[rand(93)]}" }
 
     # Make all lines within <icon> tags become icons.
 
@@ -472,14 +480,12 @@ class Bootstrap
     @html
   end
 
-
-
   def self.icon_tag name
-    "<img class='bs-icon' src='http://www.freeiconsweb.com/Icons-show/glyphicons_free-png/glyphicons_#{name}.png'>"
+    "<img class='bs-icon' src='http://xiki.loc/images/icons/glyphicons_#{name}.png'>"
   end
 
   def wrap_html_page
-    navbar = @navbar || "        <a class='brand' href='#'>#{@project_name}</a>"
+    navbar = @navbar || "        <a class='brand' id='brand' href='#'>#{@project_name}</a>"
 
     result = %`
       <!DOCTYPE html>
@@ -490,14 +496,14 @@ class Bootstrap
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
           <!-- Le styles -->
-          <link href="http://twitter.github.com/bootstrap/assets/css/bootstrap.css" rel="stylesheet">
+          <link href="#{@@assets}/css/bootstrap.css" rel="stylesheet">
           <style>
             body {
               padding-top: 60px; /* 60px to make the container go all the way to the bottom of the topbar */
               padding-bottom: 40px;
             }
           </style>
-          <link href="http://twitter.github.com/bootstrap/assets/css/bootstrap-responsive.css" rel="stylesheet">
+          <link href="#{@@assets}/css/bootstrap-responsive.css" rel="stylesheet">
 
           <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
           <!--[if lt IE 9]>
@@ -505,7 +511,7 @@ class Bootstrap
           <![endif]-->
 
           <!-- Le fav and touch icons -->
-          <link rel="shortcut icon" href="http://twitter.github.com/bootstrap/assets/ico/favicon.ico">
+          <link rel="shortcut icon" href="#{@@assets}/ico/favicon.ico">
         </head>
 
         <body>
@@ -542,8 +548,8 @@ class Bootstrap
           <!-- Le javascript
           ================================================== -->
           <!-- Placed at the end of the document so the pages load faster -->
-          <script src="http://twitter.github.com/bootstrap/assets/js/jquery.js"></script>
-          <script src="http://twitter.github.com/bootstrap/assets/js/bootstrap.js"></script>
+          <script src="#{@@assets}/js/jquery.js"></script>
+          <script src="#{@@assets}/js/bootstrap.js"></script>
 
       #{@scripts}
 
@@ -554,7 +560,7 @@ class Bootstrap
     result
   end
 
-  def self.process txt
+  def self.render txt
     bootstrap = Bootstrap.new txt
     bootstrap.to_html
     bootstrap.wrap_html_page
