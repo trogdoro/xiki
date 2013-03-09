@@ -31,7 +31,7 @@ describe Remote, "#save_file" do
   before(:each) do
     $el = mock 'el'
     $el.stub!(:buffer_modified_p).and_return false
-    View = mock 'View'
+    stub_const("View", mock('View'))
     View.stub!(:path).and_return '/tmp/remote_rb/tmp,hey.txt'
     View.stub!(:file)#.and_return '/tmp/remote_rb/tmp,hey.txt'
     View.stub!(:beep)#.and_return '/tmp/remote_rb/tmp,hey.txt'
