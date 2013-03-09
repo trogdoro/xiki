@@ -1,7 +1,6 @@
 $:.unshift "spec/"
 require 'xiki'
 require 'xiki/code_tree'
-# require 'core_ext'
 
 describe CodeTree, "#extract_class" do
   context "extracing methods" do
@@ -67,7 +66,6 @@ describe CodeTree, "#extract_class" do
       "Wiki.menu('hey')",
       ".pages"])
     code.should == "Wiki.pages()"
-  #     assert_equal("Wiki.pages()", code)
   end
 
   it "should ignore parent when child is root" do
@@ -82,12 +80,4 @@ describe CodeTree, "#extract_class" do
       ".send_invite_emails :date=>'2010-02-17'", "- Hey\n- You"])
     code.should == "ProtoNight.send_invite_emails( {:date=>'2010-02-17'}, \"Hey\n- You\")"
   end
-
-  #   # Should get class from parent
-  #   def test_with_params
-  #     code = CodeTree.determine_code_from_path(["Foo.menu/", ".php(10)/", "mt"])
-  #     assert_equal("Foo.php(10, 'mt')", code)
-  #   end
-
 end
-
