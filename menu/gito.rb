@@ -252,6 +252,9 @@ class Gito
   def self.git_diff_one_file
 
     repos = self.git_path   # Get root of repos
+
+    Launcher.open "- not in a repository!", :no_launch=>1 if ! repos
+
     relative = View.file.sub(/^#{repos}/, '')   # Split off root from relative path
     relative.sub! /^\//, ''
 
@@ -307,7 +310,7 @@ class Gito
 
     View.open("#{dir}/#{file}")
     View.to_line(line.to_i + (inbetween - 1))
-    Color.colorize :l
+    Color.mark "light"
   end
 
   def self.styles_define
@@ -393,7 +396,7 @@ class Gito
     project.sub(/.+? - /, '').sub(/\/$/, '')
   end
 
-  def self.status project, file=nil
+  def self.status_raw project, file=nil
     dir = self.extract_dir project
 
     if file
@@ -464,16 +467,14 @@ class Gito
 
   def self.git_diff_or_diff_unadded is_unadded, expand, dir, file, line
     if file.nil?   # If launching .diff/.diff_unadded directly (not a file)
-
       txt = Console.run "git status", :dir=>dir, :sync=>true
-
       hash = Gito.status_to_hash(Gito.status_internal(txt))
 
       untracked = hash[:untracked].map{|i| i[1]}
       untracked.map!{|i| "+ ignore untracked) #{i}\n"}
 
       option = is_unadded ? "- .add\n" : "- .commit/\n"
-      if expand   # If showing diffs right away
+      if expand == :expand   # If showing diffs right away
         txt = Gito.diff_internal "git diff --patience --relative #{self.git_diff_options}#{is_unadded ? '' : ' HEAD'}", dir
 
         if txt =~ /^fatal: ambiguous argument 'HEAD': unknown revision/
@@ -488,6 +489,7 @@ class Gito
       else   # If just showing list of files
         txt = self.status_hash_to_bullets hash, is_unadded
       end
+
 
       # Add labels back
       if is_unadded   # If unadded, add labels from added (if they exist there)
@@ -534,9 +536,7 @@ class Gito
 
     txt = (hash[:unadded].map{|i| "+ #{i[1]}\n"} +
       hash[:added].map{|i| "+ #{i[1]}\n"}).sort.uniq.join('')
-
   end
-
 
   def self.format_diff_command command, project, line=nil
     dir = self.extract_dir project
@@ -571,6 +571,9 @@ class Gito
 
     prefix = Keys.prefix :clear=>true
     expand = prefix == :uu ? "" : ", :expand"
+
+    options[:enter] = true if prefix == :-
+
 
     # If C-u, use new gitt menu
     if prefix != :u
@@ -636,7 +639,7 @@ class Gito
   def self.svn_diff expand, dir, file, line, children
     if file.nil?   # If launching .commit directly (no file)
 
-      if expand
+      if expand == :expand
         txt = Console.run("svn diff #{file}", :sync => true, :dir => dir)
 
         txt.gsub!(/^===+\n/, '')

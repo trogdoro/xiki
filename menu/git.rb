@@ -38,6 +38,7 @@ class Git
       - github/
         @ % git remote add origin git@github.com:trogdoro/foo.git
     - .status/
+    - .status raw/
     - .docs/
     "
   end
@@ -53,7 +54,24 @@ class Git
     "
   end
 
-  def self.status
+  def self.do_status
+    dir = Keys.bookmark_as_path :prompt=>"Enter a bookmark to show git status: "
+
+    menu = "
+      #{dir}
+        - @git/
+          + status/
+    ".unindent.strip
+    Launcher.open(menu)
+
+    nil
+  end
+
+  def self.status *args
+    self.diff({:expand=>false}, *args)
+  end
+
+  def self.status_raw
 
     # Limit to just file, if nested under file - different command?!
     file = Tree.file
@@ -120,6 +138,11 @@ class Git
       return View.prompt "Type a commit message."
     end
 
+    # If 1st param is hash, pull off and handle separately
+    if args[0].is_a? Hash
+      options = args.shift
+    end
+
     path, quote = nil, nil
     if args.any?
       args = args.join "/"
@@ -128,7 +151,9 @@ class Git
         args
     end
 
-    Gito.diff :expand, "project - #{Dir.pwd}", path, quote
+    expand = options && options[:expand] == false ? :noexpand : :expand
+
+    Gito.diff expand, "project - #{Dir.pwd}", path, quote
     nil
   end
 
