@@ -788,68 +788,65 @@ class Tree
     #   - this method will be reusable from vim, etc.
 
 
-    # TODO as separate commit: no need to wrap begin, just do def...rescue...end
+    path = []
+    orig = $el.point
 
-    begin
-      path = []
-      orig = $el.point
+    # Expand :raw option if there, which is shortcut for other options
+    options.merge!(:list=>1, :all=>1, :keep_hashes=>1) if options.delete(:raw)
 
-      # Expand :raw option if there, which is shortcut for other options
-      options.merge!(:list=>1, :all=>1, :keep_hashes=>1) if options.delete(:raw)
+    # Until we're at a root...
 
-      # Until we're at a root...
+    line = Line.value
+
+    clean = self.clean_path line, options
+    while(line =~ /^ / && (options[:all] || clean !~ /^@/))
+      line =~ /^  ( *)(.*)/
+      spaces, item = $1, $2
+      item = clean unless options[:labels]   # Removes labels and maybe ## and **
+      if item != ""   # If item wasn't completely cleaned away
+        path.unshift item  # Add item to list
+      end
+
+      # Back up to next parent...
+
+      $el.search_backward_regexp "^#{spaces}[^\t \n]"
+
+      # If ignoring Ol lines, keep searching until not on one
+      if options[:ignore_ol]
+        while Line =~ /^[# ]*Ol\b/
+          $el.search_backward_regexp "^#{spaces}[^\t \n]"
+        end
+      end
 
       line = Line.value
-
       clean = self.clean_path line, options
-      while(line =~ /^ / && (options[:all] || clean !~ /^@/))
-        line =~ /^  ( *)(.*)/
-        spaces, item = $1, $2
-        item = clean unless options[:labels]   # Removes labels and maybe ## and **
-        if item != ""   # If item wasn't completely cleaned away
-          path.unshift item  # Add item to list
-        end
+    end
 
-        # Back up to next parent...
+    # Add root of tree
+    root = line.sub(/^ +/, '')
+    root = self.clean_path(root, options) unless options[:labels]
+    root.slice! /^@ ?/
+    path.unshift root
 
-        $el.search_backward_regexp "^#{spaces}[^\t \n]"
+    # At this point, items are broken up by line...
 
-        # If ignoring Ol lines, keep searching until not on one
-        if options[:ignore_ol]
-          while Line =~ /^[# ]*Ol\b/
-            $el.search_backward_regexp "^#{spaces}[^\t \n]"
-          end
-        end
-
-        line = Line.value
-        clean = self.clean_path line, options
-      end
-
-      # Add root of tree
-      root = line.sub(/^ +/, '')
-      root = self.clean_path(root, options) unless options[:labels]
-      root.slice! /^@ ?/
-      path.unshift root
-
-      # At this point, items are broken up by line...
-
-      0.upto(path.length-2) { |i|
-        path[i].sub!(/$/, '/') if path[i] !~ /\/$/
-      } if options[:slashes]
+    0.upto(path.length-2) { |i|
+      path[i].sub!(/$/, '/') if path[i] !~ /\/$/
+    } if options[:slashes]
 
 
-      $el.goto_char orig
-      if options[:indented]
-        indentify_path path
-      elsif options[:list]
-        path
-      else
-        path.join
-      end
+    $el.goto_char orig
+    if options[:indented]
+      indentify_path path
+    elsif options[:list]
+      path
+    else
+      path.join
+    end
 
     rescue Exception=>e
-      raise ".construct_path couldn't construct the path - is this a well-formed tree\?: #{e}"
-    end
+    raise ".construct_path couldn't construct the path - is this a well-formed tree\?: #{e}"
+
   end
 
   #
