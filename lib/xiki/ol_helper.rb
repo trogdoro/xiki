@@ -1,9 +1,10 @@
 class OlHelper
-  def self.source_to_output file, line
 
+  # Finds last instance of file:line in /tmp/out_ol.notes.lines
+  def self.source_to_output file, line
     target = "#{file}:#{line}\n"
 
-    lines = IO.readlines("/tmp/output_ol.notes.lines").reverse
+    lines = IO.readlines("/tmp/out_ol.notes.lines").reverse
 
     lines_total = lines.length
 
@@ -32,11 +33,17 @@ class OlHelper
 
     path, line = line.split(':')
 
+
+    if ! File.exists? path
+      View.flash "- file \"#{path}\" not found!"
+      raise "- file \"#{path}\" not found!"   # This throws an error, but at least blocks it from opening a blank file
+    end
+
     View.open path
     View.to_line line.to_i
 
     if prefix == 0
-      View.layout_output
+      View.layout_outlog
       Line.next
     end
   end

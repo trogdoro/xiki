@@ -6,6 +6,7 @@ class ControlTab
   @@edited = nil
 
   @@switch_index = 0
+  @@dash_prefix_buffer = nil
 
   # Primary method.  Is mapped to C-tab and does the switching.
   def self.go
@@ -13,55 +14,45 @@ class ControlTab
     prefix = Keys.prefix :clear=>1
 
     first_tab_in_sequence = Keys.before_last !~ /\btab$/   # If first tab, clear edited
-    @@edited = @@dash_prefix = @@nine_prefix = nil if first_tab_in_sequence
+    @@edited = @@dash_prefix = @@ol_prefix = @@color_prefix = @@difflog_prefix = nil if first_tab_in_sequence
 
     if prefix == :- || @@dash_prefix   # Go to next quote in $f
-      View.layout_files :no_blink=>1
-      Move.to_quote
+
+      if @@dash_prefix_buffer
+        View.to_buffer @@dash_prefix_buffer   # => "files.notes"
+      else
+        View.layout_files :no_blink=>1
+      end
+
+      found = Move.to_quote
+
+      if ! found
+        View.to_highest   # to beginning of file
+        Move.to_quote
+      end
+
       Effects.blink
-      Launcher.launch
       @@dash_prefix = true
+
+
+      options = {:no_recenter=>1}
+
+      # Go to other view (leave index visible) if no bar or not in bar
+      options[:other_view] = 1 if !View.bar? || !View.is_at_left
+
+
+      FileTree.launch options
       return
     end
 
-    # If C-9, toggle through output log...
+    # If C-1, C-7, C-8, C-9, step through in special ways...
 
-    if prefix == 9 || @@nine_prefix   # Navigate to next Ol line in *ol buffer
+    return self.go_in_outlog(prefix) if [9, 99, 1, 11].member?(prefix) || @@ol_prefix
+    return self.go_in_color(prefix) if [8, 88].member?(prefix) || @@color_prefix
+    return self.go_in_difflog(prefix) if [7, 77].member?(prefix) || @@difflog_prefix
 
-      View.to_buffer "*ol"
 
-      Move.to_end
-      Search.forward "^ *-", :go_anyway=>1
-      if View.cursor == View.bottom
-        Move.to_previous_paragraph
-        Line.next
-      end
-
-      value = Line.value
-
-      value.sub! /.+?\) ?/, ''   # Remove ...)
-      value.sub! /.+?: /, ''   # Remove ...: if there
-
-      value = "" if value =~ /!$/   # Ignore if no quote and ! at end
-
-      Line.to_beginning
-      Effects.blink
-      Launcher.launch
-      @@nine_prefix = true
-
-      # Replace or add comment if there's a value
-      if value.any?
-        value = "   # <= #{value}"
-        Line =~ /   # / ?
-          Line.sub!(/   # .*/, value) :
-          Line.<<(value)
-        Move.to_axis
-      end
-
-      return
-    end
-
-      #     if prefix == 9   # If __ prefix, just burry buffer
+      #     if prefix == 9   # Just burry buffer
       #       $el.bury_buffer
       #       # Store original order, and windows originally opened
       #       @@original = buffer_list.to_a   # Hide evidence that we were on top (lest it restore us)
@@ -69,6 +60,7 @@ class ControlTab
       #       @@consider_test = lambda{|b| ! buffer_name(b)[/Minibuf/] }
       #       return
       #     end
+
 
     # If C-u, toggle through $f...
 
@@ -79,28 +71,30 @@ class ControlTab
       $el.find_file @@edited.shift
 
       return
-    elsif @@edited   # Subsequent alt-tab
+    elsif @@edited   # Subsequent up+Control+Tab
       $el.find_file @@edited.shift
       return
     end
 
-    # If this was the first tab in this sequence
+    # If this was the first tab in this sequence ...
+
     if first_tab_in_sequence# || last_was_modeline_click
 
       # Store original order, and windows originally opened
       @@original = $el.buffer_list.to_a
       @@open_windows = $el.window_list.collect {|b| $el.window_buffer b}
 
-      # Check for prefix, and store correct test for files to go through accordingly
+      # Based on prefix, store correct check for files to go through accordingly...
+
       case prefix
-      when 0   # Non-files
+      when 0   # Handled above - tabs through outlog lines
         @@consider_test = lambda{|b| ! $el.buffer_file_name(b) && ! $el.buffer_name(b)[/Minibuf/]}
       when 1   # Only files
         @@consider_test = lambda{|b| $el.buffer_file_name(b)}
         #       when 3   # ...css
         #         @@consider_test = lambda{|b| buffer_name(b) =~ /\.(css|sass)/}
-      when 2   # .notes files
-        @@consider_test = lambda{|b| $el.buffer_file_name(b) =~ /\.deck$/}
+      when 2   # Non-files
+        @@consider_test = lambda{|b| ! $el.buffer_file_name(b) && ! $el.buffer_name(b)[/Minibuf/]}
       when 3   # ...css
         @@consider_test = lambda{|b| $el.buffer_name(b) =~ /^#/}
       when 4   # haml.html files
@@ -114,7 +108,6 @@ class ControlTab
           next if name == "*ol"
           true
         }
-        #         @@consider_test = lambda{|b| buffer_name(b) =~ /^(\*console|\*merb) /i}
       when 6   # Ruby files only
         @@consider_test = lambda{|b| $el.buffer_file_name(b) =~ /\.rb$/}
       when 68   # controller
@@ -123,12 +116,17 @@ class ControlTab
         @@consider_test = lambda{|b| $el.buffer_file_name(b) =~ /\/app\/models\//}
       when 67   # Tests
         @@consider_test = lambda{|b| $el.buffer_file_name(b) =~ /_(spec|test)\.rb$/}
-      when 7   # .notes files
-        @@consider_test = lambda{|b| $el.buffer_file_name(b) =~ /\.notes$/}
-      when 8   # Anything (just like no arg)
-        @@consider_test = lambda{|b| ! $el.buffer_name(b)[/Minibuf/] }
+
+        #       when 7   # .notes files
+        #         @@consider_test = lambda{|b| $el.buffer_file_name(b) =~ /\.notes$/}
+
+        #       when 8   # Non-files
+        #         @@consider_test = lambda{|b| ! $el.buffer_file_name(b) && ! $el.buffer_name(b)[/Minibuf/]}
         #       when 9   # js
         #         @@consider_test = lambda{|b| buffer_file_name(b) =~ /\.js$/}
+
+        # when 7, 8, 9   # Handled above
+
       else   # Anything (except minibuffer)
         @@consider_test = lambda{|b| ! $el.buffer_name(b)[/Minibuf/] }
       end
@@ -139,15 +137,147 @@ class ControlTab
       # Go to next eligible buffer
       self.move_to_next
 
-      $el.switch_to_buffer(@@original[@@switch_index])
-
     # If we've been typing tabs
     else
       self.restore_original_order   # Restore order up to this buffer
       self.move_to_next   # Point to next eligible buffer
-      $el.switch_to_buffer(@@original[@@switch_index])  # Switch to eligible
-
     end
+
+    $el.switch_to_buffer(@@original[@@switch_index])   # Switch to eligible
+  end
+
+  def self.go_in_color prefix
+    @@color_prefix ||= prefix   # Remember to call this for subsequent tabs
+
+    # If 88, search in all buffers...
+
+    if @@color_prefix == 88
+
+      # This only gets called the 1st tab in the sequence (subsequent ones are routed to Dash+Tab)
+
+      Launcher.open 'color/mark/show/'
+
+      return if View.txt =~ /^  - no marks found!/
+
+      path = Tree.construct_path.sub(/\|.*/, '')   # Get filename we're on
+
+      # Don't show buffers for now
+
+      # If file we're going to is currently shown
+      if View.file_visible? path
+        # Don't split
+      else   # Else, split!
+        View.create :u
+      end
+
+      FileTree.launch :no_recenter=>1
+
+      @@color_prefix, @@dash_prefix = nil, true
+
+      return
+    end
+
+    # 8+Tab, so just go to next in this view...
+
+    found = Color.next
+
+    if ! found   # Try again if went to bottom without finding
+      View.to_highest
+      Color.next
+    end
+  end
+
+  def self.go_in_difflog prefix
+    @@difflog_prefix ||= prefix   # Remember prefix if passed in
+
+
+    if prefix   # If first tab in sequence
+
+      if View.buffer_visible? "difflog.notes"   # If already visible, just go there
+        was_open = true
+        View.to_buffer "difflog.notes"
+      else   # Otherwise, open it and go to bottom
+        DiffLog.open
+      end
+
+      Search.backward "^  - "
+      first_diff_file = Tree.construct_path
+
+      Move.to_quote
+
+      # If 1st diff isn't todo.notes, and difflog not already open!
+      if ! View.file_visible?(first_diff_file) && ! was_open
+        View.create
+        View.recenter(View.line - View.number_of_lines)
+        View.previous
+        FileTree.launch
+      else
+        FileTree.launch :other_view=>1
+      end
+
+    else   # Subsequent times tabbed
+
+      View.to_buffer "difflog.notes"
+
+      Search.backward "^  - "
+
+      if @@difflog_prefix == 77   # User wants distinct files, grab line and search for file that's not this!
+        was_here_already = Line.value
+
+        while Line.value == was_here_already && View.cursor != 1 do
+          Search.backward "^  - "
+        end
+
+      else   # Otherwise, last file is fine
+        Search.backward "^  - "
+      end
+
+      Move.to_quote
+
+      # If cursor at top of view, scroll down
+
+      if View.scroll_position <= 2
+        View.recenter -8
+      end
+
+      FileTree.launch :other_view=>1
+    end
+  end
+
+
+  def self.go_in_outlog prefix
+
+    @@ol_prefix ||= prefix   # Remember prefix if passed in
+
+    View.to_buffer "*ol"
+    Move.to_end
+
+    target = @@ol_prefix == 1 ? "^ *-.*!$" : "^ *-"
+
+    Search.forward target, :go_anyway=>1, :beginning=>true
+    if View.cursor == View.bottom
+      Move.to_previous_paragraph
+      Search.forward target, :go_anyway=>1, :beginning=>true
+    end
+
+    value = @@ol_prefix == 99 ? Ol.grab_value(Line.value) : nil
+
+    Effects.blink
+    Color.mark "green" if @@ol_prefix == 11
+    Launcher.launch
+
+    # Replace or add comment if there's a value
+    if value.any?
+      Ol.update_value_comment value
+    end
+
+    Color.mark "green" if @@ol_prefix == 11
+
+    return
+  end
+
+  def self.dash_prefix_buffer= txt
+    @@dash_prefix_buffer = txt
   end
 
   def self.restore_original_order

@@ -889,9 +889,9 @@ class Search
 
   end
 
-  def self.isearch_have_output options={}
+  def self.isearch_have_outlog options={}
 
-    return self.isearch_have_output_javascript if View.extension == "js"
+    return self.isearch_have_outlog_javascript if View.extension == "js"
 
     match = self.stop
     self.to_start
@@ -902,14 +902,16 @@ class Search
       return
     end
 
+    method = options[:method]
+
     txt = options[:no_label] ?
-      "Ol[#{match}]" :
-      "Ol[#{match.inspect}, #{match}]"
+      "Ol#{method} #{match}" :
+      "Ol#{method} #{match.inspect}, #{match}"
 
     View.insert txt
   end
 
-  def self.isearch_have_output_javascript
+  def self.isearch_have_outlog_javascript
     match = self.stop
     self.to_start
     View.insert "p(\"#{match}: \" + #{match});"
@@ -1122,7 +1124,7 @@ class Search
 
     char = Keys.input(:chars=>1, :prompt=>"Enter one char: ")
     if char == "m"
-      Launcher.open("- #{Xiki.dir}\n  - ##\\bdef /")
+      Launcher.open("- #{Xiki.dir}\n  - ##^ *def /")
     elsif char == "k"
       Launcher.open("- $x/key_bindings.rb\n  - ##\\bKeys\\./")
     elsif char == "l"
@@ -1134,8 +1136,8 @@ class Search
   end
 
   def self.isearch_restart path, options={}
-    self.stop
-    term = Search.last_search
+
+    term = self.stop
 
     if path == "$t"   # If $t, open bar
       View.layout_todo
@@ -1143,7 +1145,7 @@ class Search
     elsif path == "$f"
       View.layout_files
     elsif path == "$o"
-      View.layout_output
+      View.layout_outlog
       options[:reverse] = true
     elsif path == "$d"
       View.open "$d"
@@ -1261,7 +1263,10 @@ class Search
     ! $el.elvar.isearch_forward
   end
 
-  def self.isearch_clipboard
+  # During search, copy to the clipboard.
+  # If no search, does "search+commands" - shows shell commands
+  # recently run in a directory.
+  def self.isearch_copy
     txt = Search.stop
 
     if txt.nil?   # If nothing searched for yet
@@ -1270,6 +1275,11 @@ class Search
       self.copy txt
       Location.as_spot('clipboard')
     end
+  end
+
+  # Search for what's in the clipboard
+  def self.isearch_like_clipboard
+
   end
 
   def self.isearch_pause_or_resume
@@ -1587,5 +1597,12 @@ class Search
 
   def self.quote_elisp_regex txt
     $el.regexp_quote txt
+  end
+
+  def self.isearch_just_special
+    match = self.stop
+    found = Search.forward "[^\t-~]"   # => 1434703
+    View.flash("- no special char found", :times=>3) if ! found
+    nil
   end
 end
