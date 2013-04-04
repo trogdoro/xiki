@@ -2,13 +2,16 @@ require 'xiki/effects'
 require 'xiki/requirer'
 require 'xiki'
 
-require 'sourcify'
+require 'sourcify'   # slow - (0.144676)
 require 'ruby_parser'
 require 'file-tail'
 
 Requirer.require_gem 'activesupport', :name2=>'active_support/ordered_hash'
 Requirer.require_gem 'httparty', :optional=>1   # Not super-important
-Requirer.require_gem 'haml', :optional=>1
+
+Requirer.require_gem 'haml', :optional=>1   # slow - (0.136328)
+# autoload(:Haml, "haml")
+
 
 class Launcher
 
@@ -48,13 +51,13 @@ class Launcher
     - .setup/
       > Toggle Temporarily just showing the launcher that matched
       - .show or launch/
+    - .registered/
+      - menu files/
+      - menu classes/
     - docs/
       > Summary
-      Launcher is the class that handles "launching" things (double-clicking on a
-      line, or typing Ctrl-enter).
-
-      > See
-      @launcher/api/
+      | Launcher is the class that handles "launching" things (double-clicking
+      | on a line, or typing Ctrl-enter).
     - api/
       > Open menu in new buffer
       @ Launcher.open "computer"
@@ -67,6 +70,20 @@ class Launcher
     `
   end
 
+  def self.registered kind=nil
+
+    if kind == "menu files"
+      keys = Launcher.menus[0].keys
+      return keys.map{|o| "@#{o}/"}.join("\n")
+    elsif kind == "menu classes"
+      keys = Launcher.menus[1].keys
+      return keys.map{|o| "@#{o}/"}.join("\n")
+    end
+
+    raise "- .registered doesn't know #{kind}!"
+  end
+
+
   def self.show_or_launch
     @@just_show = ! @@just_show
     View.flash "- Will #{@@just_show ? 'just show' : 'actually launch'}!"
@@ -77,7 +94,7 @@ class Launcher
 
     paths = IO.readlines self.log_file
 
-    # If nothing passed, just list all roots
+    # /..., so list all roots
 
     if path.blank?
       paths.map!{|o| o.sub /\/.+/, '/'}   # Cut off after path
@@ -88,7 +105,7 @@ class Launcher
 
     # Root passed, so show all matches
 
-    paths = paths.select{|o| o =~ /^- #{Notes::LABEL_REGEX}#{path}\/./}
+    paths = paths.select{|o| o =~ /^- #{Notes::LABEL_REGEX}#{path}./}
 
     bullet = options[:quoted] ? "|" : "-"
 
@@ -96,7 +113,7 @@ class Launcher
       paths.each{|o| o.sub! /^- (#{Notes::LABEL_REGEX})#{path}\//, "#{bullet} \\1"}
       paths = paths.select{|o| o != "#{bullet} "}
     else
-      paths = paths.map{|o| o.sub /^- #{Notes::LABEL_REGEX}/, '\\0@'}
+      paths = paths.map{|o| o.sub /^- #{Notes::LABEL_REGEX}/, '@'}
     end
     paths = paths.reverse.uniq
     paths.delete_if{|o| o == "| \n"}
@@ -359,8 +376,8 @@ class Launcher
       Xiki.dont_search
       # Maybe make the following print out optionally, via a 'help_last' block?
       Tree << "
-        | There's no \"#{root}\" menu yet. Create it? You can start by adding items
-        | right here, or you can create a class.
+        | There's no \"#{root}\" menu yet. Create it? You can start by
+        | adding items right here, or you can create a class.
         <= @menu/create/here/
         <= @menu/create/class/
         <= @menu/install/gem/
@@ -455,17 +472,21 @@ class Launcher
       return true
     end
 
+    #
+    # @Unified > Kind of cool that it tries class if capital *after* it
+    # tries for registered menus.  Probably do this after refactor as well.
+    #
+
     # If uppercase, try invoking on in-memory class
     if root_orig =~ /^[A-Z]/
 
       if @@just_show
-        Ol.line << "Maps to in-memory class for: #{root}"
+        Ol["Maps to in-memory class for: #{root}"]
         View.flash "- Showed launcher in $o", :times=>4
         return true   # To make it stop trying to run it
       end
 
       begin
-
         lam = lambda do |path|
           Launcher.invoke root_orig, path
         end
@@ -510,7 +531,7 @@ class Launcher
   def self.init_default_launchers
 
     self.add(/^\$ /) do |l|   # $ shell command inline (sync)
-      Console.launch :sync=>true
+      Console.launch :sync=>true, :path=>l
     end
 
     self.add /^%( |$)/ do   # % shell command (async)
@@ -563,20 +584,26 @@ class Launcher
       Code.launch_dot_at_end line
     end
 
-    self.add(/^p /) do |line|
-      CodeTree.run line
+
+    # Various lines that mean run as ruby
+    # p ...
+    # puts ...
+    # etc.
+    self.add(/^(p|y|pp|puts|Ol) /) do |line|
+      CodeTree.run line, :quote=>1
     end
 
-    self.add(/^ *pp /) do |line|
-      CodeTree.run line
+    self.add(/^(ap) /) do |line|
+      CodeTree.run line, :quote=>1
     end
 
-    self.add(/^ *puts /) do |line|
-      CodeTree.run line
-    end
-
-    self.add(/^ *print\(/) do |line|
+    self.add(/^print\(/) do |line|
       Javascript.launch
+    end
+
+    self.add(/^pg /) do |line|
+      line.sub! /^pg /, ''
+      CodeTree.run "puts JSON.pretty_generate(#{line})"
     end
 
     self.add(/^ *$/) do |line|  # Empty line
@@ -632,22 +659,41 @@ class Launcher
     end
 
     self.add(/^ *(Ol\.line|Ol << )/) do
-      View.layout_output :called_by_launch=>1
+      View.layout_outlog :called_by_launch=>1
     end
 
-    # Example code in method comments
-    #   /tmp/foo.rb
-    #     class Foo
-    #       # Control-enter to run this line
-    #       # Foo.bar
-    #       def self.bar
-    Launcher.add /^class (\w+)\/\#.+/ do |path|
+    # Example code in method comments, such as:
+    #   @/tmp/foo.rb
+    #     | class Foo
+    #     |   # C-return to run this example:
+    #     |   # Foo.bar
+    #     |   def self.bar
+    # p 1 + 2
+    # 1.should == 2
+    # rails/
+    #   generate/
+    #   start/
+    Launcher.add /^class (\w+).+\/\#.+/ do |path|
       # Remove comment and run
-      txt = Line.value.sub /^ +# /, ''
-      result = Code.eval(txt)
-      next Tree.<<(CodeTree.draw_exception(result[2], txt), :no_search=>1) if result[2]
-      next Tree.<< result[0].to_s, :no_slash=>1 if result[0]   # Returned value
-      Tree.<< result[1].to_s, :no_slash=>1 if result[1].any?   # Stdout
+      txt = Line.value
+
+      comment_indent, txt = txt.match(/^( +# )(.+)/)[1..2]
+
+      result = Code.eval txt, View.file, Line.number(left)
+      if result[2]
+        result = CodeTree.draw_exception(result[2], txt)
+        result.strip!
+        result.gsub! /^/, "#{comment_indent}  "
+        Line.<< "\n#{result}", :dont_move=>1
+        next
+      end
+
+      result = result[0] || result[1]
+      next if ! result
+
+      result = result.to_s
+      result.gsub! /^/, "#{comment_indent}  "
+      Line.<< "\n#{result}", :dont_move=>1
     end
 
     Launcher.add /^class (\w+)\/def self.menu\/(.+)/ do |path|
@@ -681,7 +727,7 @@ class Launcher
       Tree.<< txt, :no_slash=>1
     end
 
-    # Menu launchers
+    # Some menu launchers...
 
     Launcher.add "log" do # |path|
       Launcher.log# Tree.rootless(path)
@@ -691,7 +737,7 @@ class Launcher
       Launcher.last path
     end
 
-    # ...Tree classes
+    # Proc Launchers (obsolete now that climbed path is passed to regex's)...
 
     # RestTree
     condition_proc = proc {|list| RestTree.handles? list}
@@ -702,7 +748,7 @@ class Launcher
     # FileTree
     condition_proc = proc {|list| FileTree.handles? list}
     Launcher.add condition_proc do |list|
-      FileTree.launch list
+      FileTree.launch
     end
 
     # CodeTree
@@ -738,7 +784,21 @@ class Launcher
   end
 
   def self.do_last_launch options={}
+
+    # Clear out time of last log, so it always shows heading
+    Ol.clear_pause
+
     orig = View.index
+
+    # If *ol buffer open, grab line number so we can restore it after
+    ol_cursor_position = nil
+    if View.buffer_visible? "*ol"
+      View.to_buffer "*ol"
+      ol_cursor_position = Line.number if ! View.at_bottom
+    end
+
+    # File.open("/tmp/simple.log", "a") { |f| f << "final ol_cursor_position: #{ol_cursor_position}\n" }
+
 
     CLEAR_CONSOLES.each do |buffer|
       View.clear buffer
@@ -746,7 +806,7 @@ class Launcher
 
     prefix = Keys.prefix :clear=>true
 
-    if prefix ==:u || options[:here]
+    if prefix ==:u || options[:here] || prefix ==:uu
       View.to_nth orig
     else
       Move.to_window 1
@@ -760,12 +820,19 @@ class Launcher
     # Go to parent and collapse, if not at left margin, and buffer modified (shows we recently inserted)
     if ! Color.at_cursor.member?("color-rb-light")   #&& line !~ /^ *[+-] /  # and not a bullet
       if line =~ /^ /
-        Tree.to_parent
+        prefix ==:uu ?
+          Tree.to_parent(:u) :
+          Tree.to_parent
       end
       Tree.kill_under
     end
-
     Launcher.launch_or_hide :blink=>true, :no_search=>true
+
+    if ol_cursor_position
+      View.to_buffer "*ol"
+      View.line = ol_cursor_position
+    end
+
     View.to_nth orig
   end
 
@@ -796,6 +863,10 @@ class Launcher
       end
   end
 
+  # Superceded by Invoker.invoke after Unified refactor
+
+  # Invokes the .menu method in a class
+  # Should this be in another class?  Maybe menu.rb - maybe invoker.rb?
   def self.invoke clazz, path, options={}
 
     default_method = "menu"
@@ -818,11 +889,12 @@ class Launcher
 
     raise "No class '#{clazz || camel}' found in launcher" if clazz.nil?
 
+    # TODO: Unified: comment out for now - just comment out since we're doing no caching
     # reload 'path_to_class'
     Menu.load_if_changed File.expand_path("~/menu/#{snake}.rb")
 
     args = path.is_a?(Array) ?
-      path : Menu.split(path, :rootless=>1)
+      path : Menu.split(path, :return_path=>1)
 
     # Call .menu_before if there...
 
@@ -848,12 +920,12 @@ class Launcher
     txt = options[:tree]
 
     # Call .menu with no args to get child menus or route to other method...
-
     if txt.nil?
       method = clazz.method(default_method) rescue nil
       if method && method.arity == 0
         menu_arity = 0
         code = "#{camel}.#{default_method}"
+
         returned, out, exception = Code.eval code
         return CodeTree.draw_exception exception, code if exception
         txt = CodeTree.returned_to_s returned   # Convert from array into string, etc.
@@ -862,14 +934,12 @@ class Launcher
 
     # Error if no menu method or file
     if method.nil? && txt.nil? && ! args.find{|o| o =~ /^\./}
-
       cmethods = clazz.methods - Class.methods
       return cmethods.sort.map{|o| ".#{o}/"}
     end
 
 
     # If got routable menu text, use it to route (get children or dotify)...
-
     if txt
       txt = txt.unindent if txt =~ /\A[ \n]/
       raise "#{code} returned nil, but is supposed to return something when it takes no arguments" if txt.nil?
@@ -896,8 +966,8 @@ class Launcher
       # If .menu_hidden exists, dotify based on its output as well...
       method = clazz.method("menu_hidden") rescue nil
       if method
-        returned, out, exception = Code.eval "#{camel}.menu_hidden"
 
+        returned, out, exception = Code.eval "#{camel}.menu_hidden"
         if returned && returned.is_a?(String)
           returned = returned.unindent
           Tree.dotify! returned, args
@@ -906,7 +976,6 @@ class Launcher
 
     end
     # Else, continue on to run it based on routified path
-
 
     # TODO: Maybe extract this out into .dotified_to_ruby ?
 
@@ -918,12 +987,17 @@ class Launcher
     action.gsub! /[ -]/, '_'
     action.gsub! /[^\w.]/, ''
 
+
     # Call .menu_after if appropriate...
 
-    if action == ".menu" && txt == nil && menu_arity == 0
+    if action == ".menu" && txt.nil? && menu_arity == 0
       return self.invoke_menu_after clazz, txt, args
     end
 
+
+    # .menu has args, so invoke it with them...
+
+    args_orig = args
     args = variables.map{|o| "\"#{CodeTree.escape o}\""}.join(", ")
 
     # TODO: use adapter here, so we can call .js file?
@@ -934,6 +1008,8 @@ class Launcher
     code = "#{camel}#{action.downcase} #{args}".strip
 
     txt, out, exception = Code.eval code
+
+    txt_orig = txt
     txt = CodeTree.returned_to_s(txt)   # Convert from array into string, etc.
     self.unset_env_vars
 
@@ -941,7 +1017,7 @@ class Launcher
 
     return CodeTree.draw_exception exception, code if exception
 
-    txt = self.invoke_menu_after clazz, txt, args
+    txt = self.invoke_menu_after clazz, txt_orig, args_orig
 
     self.unset_env_vars
 
@@ -997,11 +1073,9 @@ class Launcher
     File.open(@@log, "a") { |f| f << "#{path}\n" } rescue nil
   end
 
-  #
   # Insert menu right here and launch it
   #
-  # Launcher.open "computer"
-  #
+  # Launcher.insert "computer"
   def self.insert txt, options={}
     View.insert txt
     $el.open_line(1)
@@ -1043,7 +1117,7 @@ class Launcher
 
     dir = options[:dir] and txt = "- #{dir.sub /\/$/, ''}/\n  - #{txt}"
 
-    View << txt
+    View << "#{txt.strip}"
 
     $el.open_line 1
 
@@ -1054,9 +1128,12 @@ class Launcher
     end
 
     if options[:no_launch]
-      View.to_highest
+      # Go to 2nd line (or first, if only one line (and linebreak))
+      View.line = View.number_of_lines > 2 ? 2 : 1
       return
     end
+
+    return Launcher.go_unified if options[:unified]
 
     Launcher.launch options
   end
@@ -1232,11 +1309,9 @@ class Launcher
   # Menu.like_menu "htm"
   #
   def self.like_menu item, options={}
-
-    # return
     return if item.nil?
 
-    menu = Keys.input :timed=>true, :prompt=>"Enter menu to pass '#{item}' to (space if menu): "
+    menu = Keys.input :timed=>true, :prompt=>"Enter menu to pass '#{item}' to (space it's the menu): "
 
     return self.open(item, options) if menu == " "   # Space means text is the menu
 
@@ -1245,13 +1320,13 @@ class Launcher
     end
 
     if matches.length == 1
-      return self.open("- #{matches[0]}/#{item}", options)
+      return self.open("#{matches[0]}/#{item}", options)
     end
 
     self.open(matches.map{|o| "- #{o}/#{item}\n"}.join(''), options.merge(:choices=>1))
     right = View.cursor
     Move.to_previous_paragraph
-    # return
+
     Tree.search :left=>View.cursor, :right=>right
   end
 
@@ -1282,8 +1357,9 @@ class Launcher
     Launcher.launch
   end
 
+  # Shortcut for passing "outline" prefix and launching.
   def self.enter_outline
-    return FileTree.enter_lines if Line.blank?   # Prompts for bookmark
+    return FileTree.enter_lines if Line.blank?   # Prompts for bookmark to insert if blank line
 
     # If there's a numeric prefix, add it
     Keys.add_prefix "outline"
@@ -1291,20 +1367,16 @@ class Launcher
   end
 
   def self.set_env_vars path
-
     return if ! $el
-
-    # TODO: I guess they'll need to be set from somewhere else as well?
 
     ENV['prefix'] = Keys.prefix.to_s
 
     args = path.is_a?(Array) ?
-      path : Menu.split(path, :rootless=>1)
+      path : Menu.split(path, :return_path=>1)
 
-    # ?? If any has ^|, then make sure current line has slash
+    # If line not quoted, just use single line
 
-    quoted = args.find{|o| o =~ /^\|( |$)/}
-
+    quoted = args.find{|o| o =~ /^\|/}
     if ! quoted
       return ENV['txt'] = args[-1]
     end
@@ -1332,6 +1404,68 @@ class Launcher
   def self.unset_env_vars
     ENV['prefix'] = nil
     ENV['txt'] = nil
+  end
+
+  # Thin wrapper around how .launch_or_hide is called from key shortcuts.
+  def self.go
+    Ol.clear_pause
+    Launcher.launch_or_hide :blink=>true
+  end
+
+  def self.go_unified
+    Ol.clear_pause
+
+    # If no prefixes and children exist, collapse
+    if ! Keys.prefix and ! Line.blank? and Tree.children?
+      Tree.minus_to_plus
+      Tree.kill_under
+      return
+    end
+
+    # Else, launch
+    self.launch_unified
+  end
+
+  # While implementing, mapped to Command+Return.
+  # After refactor, map to Ctrl+Return as well.
+  def self.launch_unified
+
+    path = Tree.path_unified
+
+    options = {:editor=>"emacs"}
+    prefix = Keys.prefix
+    options[:prefix] = prefix if prefix
+
+    txt = Expander.expand path, options
+
+    return if txt == nil
+
+    return if self.intercept_instructions txt
+
+    # Pull certain options out if passed by implementation, meant to control how it's inserted
+    insert_options = (options.select {|key, value| [:no_slash].include?(key) })
+
+    # Automatically repress slash if were on ^... or |... line
+    insert_options[:no_slash] = 1 if options[:args] && options[:args].last =~ /^[>|]/
+
+
+    Tree.<< txt, insert_options
+  end
+
+  # Called by .launch_unified to do appriate thing if result starts
+  # with @open/, @flash/, or something else that instructs the editor to
+  # take an action.
+  def self.intercept_instructions txt
+    if txt =~ /\A@open\/(.*)/
+      View.open $1
+      return true
+    end
+    if txt =~ /\A@flash\/(.*)/
+      View.flash $1
+      return true
+    end
+
+    nil
   end
 end
 
