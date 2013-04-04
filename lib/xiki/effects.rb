@@ -94,7 +94,7 @@ class Effects
 
     sequence.each do |i|
       $el.overlay_put over, :face, (faces[i-1] || faces[0])
-      $el.sit_for 0.0005
+      $el.sit_for 0.007
     end
 
     $el.delete_overlay over

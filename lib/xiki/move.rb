@@ -12,8 +12,6 @@ class Move
     if prefix.is_a? Fixnum   # If U, reverse
       indent = prefix   # If numeric, make that be the indent
     else
-      direction_down = ! direction_down if line =~ /^ *(end|\]|\}|\))$/   # If end of block, reverse direction
-
       if prefix == :u   # If U, reverse
         direction_down = false
       else
@@ -123,9 +121,8 @@ class Move
   def self.to_column n=nil
 
     prefix = Keys.prefix :clear=>1
-
     # If dash+, go to specific char
-    if prefix == :-
+    if prefix == :- && ! n   # Don't prompt if called with a param
       return View.cursor = Keys.input(:prompt=>"Point to go to: ", :timed=>1).to_i
     end
 
@@ -207,11 +204,15 @@ class Move
       View.to_relative
     end
 
+    found = nil
     (times||1).times do
       Line.next if Line.matches(/^ *\|/)
-      $el.re_search_forward "^ *|"
+      found = Search.forward "^ *|"
+      return nil if ! found
       $el.backward_char
     end
+
+    found
 
     # If on a quote, move off
   end

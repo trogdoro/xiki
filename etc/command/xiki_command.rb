@@ -1,4 +1,5 @@
 require 'timeout'
+# require 'xiki/environment'
 
 #
 # The 'xiki' shell command uses this class to run xiki menus.
@@ -266,19 +267,19 @@ class XikiCommand
     self.colorize txt, "1;90"   # Gray
   end
   def self.path txt
-    colorize(txt, "1;90")
+    self.colorize txt, "1;90"
   end
   def self.url txt
-    colorize(txt, "1;36")   # Cyan
+    self.colorize txt, "1;36"   # Cyan
   end
   def self.heading_bracket txt
-    colorize(txt, "0;37")
+    self.colorize txt, "0;37"
   end
   def self.bold txt
-    colorize(txt, "1")
+    self.colorize txt, "1"
   end
   def self.exclamation txt
-    colorize(txt, "1;32")   # Green
+    self.colorize txt, "1;32"   # Green
   end
 
 end

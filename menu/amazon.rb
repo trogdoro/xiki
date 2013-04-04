@@ -10,7 +10,8 @@ class Amazon
 
     # If arg, look it up
 
-    line.gsub! ' ', '+'
+    line = CGI.escape line
+
     Firefox.url "http://www.amazon.com/s?field-keywords=#{line}"
     nil
   end

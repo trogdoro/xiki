@@ -1,3 +1,4 @@
+# Blue bg, dark blue path
 Styles.mode_line(
   :bg=>'6483af',
   :border=>['6483af', 3],
@@ -7,6 +8,7 @@ Styles.mode_line(
   :fg=>'001122'
   )
 
+# Inactive has light gray bg, medium gray path
 Styles.mode_line_inactive(
   :bg=>'bbbbbb',
   :border=>['bbbbbb', 3],
@@ -16,6 +18,7 @@ Styles.mode_line_inactive(
   :fg=>'555555'
   )
 
+# White file stem
 Styles.mode_line_file(
   :fg=>"fff",
   :face=>"arial",

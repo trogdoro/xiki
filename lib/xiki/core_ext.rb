@@ -8,11 +8,15 @@ end
 
 class NilClass
   def empty?
-    self.nil?
+    true
   end
 
   def blank?
-    self.nil?
+    true
+  end
+
+  def any?
+    false
   end
 end
 
@@ -31,5 +35,8 @@ class String
 
   def unindent
     TextUtil.unindent(to_s)
+  end
+  def unindent!
+    self.replace TextUtil.unindent(to_s)
   end
 end

@@ -11,6 +11,7 @@ class History
 
     > See
     << @log/
+    << @last/
     "
   end
 
@@ -169,7 +170,7 @@ class History
       end
     end
 
-    txt = "#{txt}| Key shortcut: open+not+saved\n"
+    txt = "#{txt}- keys/\n  | Key shortcut: open+not+saved\n"
 
     txt
   end

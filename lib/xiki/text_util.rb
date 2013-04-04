@@ -37,6 +37,9 @@ class TextUtil
 
     txt.gsub!(/^\s+/) { |t| t.gsub("\t", '        ') }   # Untab indent
 
+    # Does nothing if any subsequent line (not first) isn't indented
+    return txt if txt[/.*?\n(.*)/m, 1] =~ /^[^\s\n]/
+
     # If 1st line has no indent and 2nd line has indent (at least 3 spaces)
     if txt !~ /\A / and txt =~ /\A.+\n(   +)/
       indent = $1   # Indent left by 2nd indent

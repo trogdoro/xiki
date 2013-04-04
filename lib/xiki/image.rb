@@ -44,7 +44,7 @@ class Image
 
     unique_tmp_file = "#{tmp_dir}#{File.basename(file).sub /.+\./, "\\0#{rand(99999)}."}"
 
-    File.copy file, unique_tmp_file
+    FileUtils.copy file, unique_tmp_file
 
     Notes.enter_junior if options[:enter_junior]
 

@@ -29,6 +29,10 @@ class Line
     self.value[regex, index]
   end
 
+  def self.strip
+    self.value.strip
+  end
+
   def self.value n=1, options={}
     eol = "(point-at-eol #{n})"
 
@@ -228,6 +232,11 @@ class Line
     self.matches /^\s*[+-] /, line
   end
 
+  # Line number from a cursor position.
+  #
+  # Line.number 0   # => 1
+  # Line.number 20   # => 3
+  # Line.number View.bottom   # => 439
   def self.number pos=nil
     $el.xiki_line_number pos || $el.point
   end

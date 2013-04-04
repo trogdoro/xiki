@@ -2,84 +2,83 @@ $:.unshift "spec/"
 require 'xiki/text_util'
 
 describe TextUtil, "#unindent" do
+
+
   it "indents to the left" do
-    before =
+    TextUtil.unindent(
       "  hey
           you
-      ".gsub(/^      /, '')
-    after =
+      ".gsub(/^      /, '')).should ==
       "hey
         you
       ".gsub(/^      /, '')
-    TextUtil.unindent(before).should == after
   end
 
   it "doesn't delete blank lines" do
-    before =
+    TextUtil.unindent(
       "  hey
 
           you
-      ".gsub(/^      /, '')
-    after =
+      ".gsub(/^      /, '')).should ==
       "hey
 
         you
       ".gsub(/^      /, '')
-    TextUtil.unindent(before).should == after
   end
 
   it "works when inital linebreak" do
-    before =
+    TextUtil.unindent(
       "
         hey
           you
-      ".gsub(/^      /, '')
-    after =
+      ".gsub(/^      /, '')).should ==
       "hey
         you
       ".gsub(/^      /, '')
-    TextUtil.unindent(before).should == after
   end
 
   it "works when tabs exist" do
-    before =
+    TextUtil.unindent(
       "\they
       \tyou
-      ".gsub(/^      /, '')
-    after =
+      ".gsub(/^      /, '')).should ==
       "hey
       you
       ".gsub(/^      /, '')
-    TextUtil.unindent(before).should == after
   end
 
   it "works when space on 2nd line" do
-    before =
+    TextUtil.unindent(
       "Dev Todo
              * Ad
              * 70:
-             ".gsub(/^      /, '')
-    after =
+             ".gsub(/^      /, '')).should ==
       "Dev Todo
       * Ad
       * 70:
       ".gsub(/^      /, '')
-    TextUtil.unindent(before).should == after
   end
 
   it "shouldn't change if only 2 spaces over" do
-    before =
+    TextUtil.unindent(
+      "Dev Todo
+        * Ad
+        * 70:
+      ".gsub(/^      /, '')).should ==
       "Dev Todo
         * Ad
         * 70:
       ".gsub(/^      /, '')
-    after =
-      "Dev Todo
-        * Ad
-        * 70:
-      ".gsub(/^      /, '')
-    TextUtil.unindent(before).should == after
+  end
 
+  it "does nothing when subsequent line not indented" do
+    shouldnt_change = "[
+          1,
+          2,
+          3
+      ]
+      ".gsub(/^      /, '')
+    TextUtil.unindent(shouldnt_change).should == shouldnt_change
   end
 end
 
