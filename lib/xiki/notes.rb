@@ -13,17 +13,42 @@ class Notes
 
     # If @notes is nested under a menu, use that menu as the .notes filename...
 
-    # If it doesn't have a parent that's a menu, do nothing
+    # 3 main scenarios
+    # foo/@notes/   - .menu_before assumes ~/note/foo.notes is the file
+    # foo/@notes/list/   - just let .menu handle it
+    # notes/list/        - just let .menu handle it
+
     path = Xiki.path rescue []
-    return if path.length < 2
+
+    # Assume menu handled it if
+
+    # Take over and assume ~/notes/ancestor.notes if we're nested, and no args or 1st arg is a quoted heading
+    take_over = path.length >= 2 && !args[0] || args[0] =~ /^>/
+    return if ! take_over
 
     # Pull out file name and path from "foo/@notes/bar"
     root = path[-2]
-    Notes.drill "~/notes/#{root}.notes", *args
+    root.sub! /\/$/, ''
+
+    notes_dir = File.expand_path("~/notes")
+
+    # Can we just pass Notes.drill the stem?  Is it smart enough to look for index, etc?
+
+    notes_path =
+      if File.exists?(found = "#{notes_dir}/#{root}/index.notes")
+        found
+      elsif File.exists?(found = "#{notes_dir}/#{root}/#{root}.notes")
+        found
+      elsif File.exists?(found = "#{notes_dir}/#{root}.notes")
+        found   # Internally, .drill will ask them to create it, I think
+      end
+
+    Notes.drill found, *args
   end
 
   def self.menu
     %`
+    - .list/
     - api/
       - misc methods/
         > Turn notes wiki text into html
@@ -56,6 +81,10 @@ class Notes
     `
   end
 
+  def self.list *args
+    Notes.drill "~/notes/", *args
+  end
+
   def self.block regex="^> "
     left, after_header, right = View.block_positions regex
     View.txt after_header, right
@@ -79,25 +108,26 @@ class Notes
   end
 
   def self.archive
-    block = get_block
+    block = self.current_section
     block.archive
   end
 
   def self.show_text
-    block = get_block
+    block = self.current_section
     block.show_text
   end
 
   def self.hide_text
-    block = get_block
+    block = self.current_section
     block.hide_text
   end
 
   def self.to_block up=false
-
-    regex = self.heading_regex Keys.prefix
-
     prefix = Keys.prefix :clear=>1
+
+    kind = :h1
+    kind = :h0 if prefix == :u
+    regex = self.heading_regex kind
 
     times = prefix.is_a?(Fixnum) ? prefix : 1
 
@@ -115,22 +145,55 @@ class Notes
     end
   end
 
-  def self.heading_regex prefix=nil
-    prefix == :u ?
-      "^[>=]\\{1,2\\}\\( \\|$\\)" :
-      "^[>=]\\( \\|$\\)"
+  #
+  # Returns type of heading (:h1, :h2, etc.) given a key
+  # argument.  Assumes h0 if you're on a >...: line.
+  #
+  # Notes.heading_kind
+  #
+  def self.heading_kind kind=nil
+    line_override = Line.value if kind.nil?   # Only use heading like current line if none was passed
+
+    if kind == :h2 || kind == :uu || line_override =~ /^>>( |$)/
+      :h2
+    elsif kind == :h0 || line_override =~ /^> .*:$/
+      :h0
+    else   # Probably nil or 1
+      :h1
+    end
+  end
+
+  #
+  # :match_only_self - return regex that only matches same type of heading
+  #
+  def self.heading_regex kind=nil, options={}
+    kind = self.heading_kind kind
+    if kind == :h1
+      options[:match_only_self] ?
+        "^[>=]\\( .*[^\n:]$\\| ?$\\)" :
+        "^[>=]\\( \\|$\\)"
+    elsif kind == :h2
+      "^[>=]\\{1,2\\}\\( \\|$\\)"
+    elsif kind == :h0
+      "^> .*:$"
+    end
   end
 
   def self.move_block up=false
-    regex = self.heading_regex Keys.prefix
+    prefix = Keys.prefix :clear=>1
+    kind = self.heading_kind
+    times = Keys.prefix_times prefix
+    regex = self.heading_regex kind#, :match_only_self=>1
 
-    times = Keys.prefix_times
+    if kind == :h0
+      regex = self.heading_regex :h0
+      prefix = 0
+    end
 
     orig = Location.new
+    block = self.current_section prefix
+    block.blink if kind == :h0 || kind == :h2
 
-    prefix = Keys.prefix :clear=>1
-
-    block = get_block prefix == :u ? 2 : 1
     block.delete_content
 
     if up
@@ -148,15 +211,11 @@ class Notes
         Search.forward move_regex, :go_anyway=>true
       end
       Move.to_axis
-
       View.insert block.content
-
       Search.backward move_regex
     end
-    moved_block = get_block regex
-
     times == 1 ?
-      moved_block.fade_in :
+      self.current_section(regex).fade_in :
       orig.go
   end
 
@@ -177,7 +236,7 @@ class Notes
   end
 
   def self.cut_block no_clipboard=false
-    block = get_block Keys.prefix
+    block = self.current_section Keys.prefix
 
     block.blink
 
@@ -189,7 +248,7 @@ class Notes
 
   def self.copy_block
     prefix = Keys.prefix
-    block = get_block prefix == :u ? 2 : 1
+    block = self.current_section prefix == :u ? 2 : 1
     block.blink
     Clipboard.set("0", Keys.prefix_u ? block.text : block.content)
   end
@@ -197,7 +256,7 @@ class Notes
   def self.move_block_to_top no_clipboard=false
 
     prefix_u = Keys.prefix_u :clear=>true
-    block = get_block
+    block = self.current_section
 
     if prefix_u
       line = View.line_number
@@ -218,13 +277,12 @@ class Notes
       View.cursor = orig_right
       Line.next
     else
-      View.to_line 2
+      View.to_line 1
     end
 
-    moved_block = get_block
+    moved_section = self.current_section
 
-    moved_block.fade_in unless prefix_u
-
+    moved_section.fade_in unless prefix_u
   end
 
   def self.keys
@@ -395,15 +453,18 @@ class Notes
     Styles.define :notes_yellow, :fg=>"CC0", :face=>'arial black', :size=>"0", :bold=>true
     Styles.define :notes_green, :fg=>"3c3", :face=>'arial black', :size=>"0", :bold=>true
     Styles.define :notes_h1_green, :fg=>"8f4", :bg=>"333", :face=>'arial', :size=>"+2", :bold=>true
-    Styles.define :notes_h1_large, :fg=>"fff", :bg=>"333", :face=>'arial', :size=>"+8", :bold=>true
+    Styles.define :notes_h0, :fg=>"fff", :bg=>"333", :face=>'arial', :size=>"+8", :bold=>true
+    Styles.define :notes_h0_green, :fg=>"8f4", :bg=>"333", :face=>'arial', :size=>"+8", :bold=>true
 
     if Styles.dark_bg?   # If black bg
       # >>...
       Styles.define :notes_h2, :face=>'arial', :size=>"-1", :fg=>'fff', :bg=>"333", :bold=>true
       Styles.define :notes_h2_pipe, :face=>'arial', :size=>"-1", :fg=>'555555', :bg=>"333333", :bold=> true
+      Styles.define :notes_h0_pipe, :face=>'arial', :size=>"+8", :fg=>'666666', :bg=>"333333", :bold=> true
     else
       Styles.define :notes_h2, :face=>'arial', :size=>"-1", :fg=>'fff', :bg=>"999", :bold=>true
       Styles.define :notes_h2_pipe, :face=>'arial', :size=>"-1", :fg=>'bbb', :bg=>"999", :bold=>true
+      Styles.define :notes_h0_pipe, :face=>'arial', :size=>"+8", :fg=>'bbb', :bg=>"999", :bold=>true
     end
 
     if Styles.dark_bg?   # If black bg
@@ -436,14 +497,14 @@ class Notes
 
     Styles.apply("^\\(> \\)\\(.*\n\\)", nil, :notes_h1_pipe, :notes_h1)
     Styles.apply("^\\(>> \\)\\(.*\n\\)", nil, :notes_h2_pipe, :notes_h2)
-    Styles.apply("^\\(= \\)\\(.*\n\\)", nil, :notes_h1_pipe, :notes_h1)
-    Styles.apply("^\\(== \\)\\(.*\n\\)", nil, :notes_h2_pipe, :notes_h2)
 
     # > Green!
     Styles.apply("^\\(> \\)\\(.*!\\)\\(\n\\)", nil, :notes_h1_pipe, :notes_h1_green, :notes_h1)
 
     # > Large:
-    Styles.apply("^\\(> \\)\\(.*:\\)\\(\n\\)", nil, :notes_h1_pipe, :notes_h1_large, :notes_h1)
+    Styles.apply("^\\(> \\)\\(.*:\\)\\(\n\\)", nil, :notes_h0_pipe, :notes_h0, :notes_h1)
+
+    Styles.apply("^\\(> \\)\\(.*!:\\)\\(\n\\)", nil, :notes_h0_pipe, :notes_h0_green, :notes_h0)
 
     Styles.apply("^\\(>\\)\\( .+?: \\)\\(.+\n\\)", nil, :notes_h1_pipe, :notes_h1_label, :notes_h1)
 
@@ -497,14 +558,14 @@ class Notes
 
     Styles.apply "^[< ]*@? ?\\([%$&]\\) ", nil, :shell_prompt   # Colorize shell prompts
 
-    Styles.apply("^ *\\(|`\\)\\(.*\n\\)", nil, :quote_heading_pipe, :dotsies_experimental)
-    Styles.apply("^ *\\(|~\\)\\([^\n~]+\\)\\(~?\\)", nil, :quote_heading_pipe, :dotsies, :quote_heading_pipe)
+    # Make |~... lines be Dotsies
+    #     Styles.apply("^ *\\(|~\\)\\([^\n~]+\\)\\(~?\\)", nil, :quote_heading_pipe, :dotsies, :quote_heading_pipe)
+    Styles.apply("\\(^\\| \\)\\(|~\\)\\([^\n~]+\\)\\(~?\\)", nil, :quote_heading_pipe, :quote_heading_pipe, :dotsies, :quote_heading_pipe)
 
     # |... invisible
     Styles.apply("^ *\\(|\\.\\.\\.\\)\\(.*\n\\)", nil, :quote_heading_pipe, :quote_hidden)
 
     Styles.apply "^ *|\\^.*\n", :quote_medium
-
   end
 
   # Startup
@@ -519,7 +580,7 @@ class Notes
 
     $el.defun(:notes_mouse_double_click, :interactive => "e") do |e|
       next Launcher.insert "h" if Line =~ /^$/   # If blank line, launch history
-      Launcher.launch_or_hide(:blink=>true)
+      Launcher.go
     end
 
     $el.defun(:notes_mouse_toggle, :interactive => "e") do |e|
@@ -587,12 +648,10 @@ class Notes
     indent = Line.indent indent
 
     if line.present?   # If non-blank line
-      Move.to_end if line =~ /^ / && View.column <= indent.length   # If just entered a bullet, go to end first
+      column = View.column
 
-      Move.to_end if line =~ /^[+-] / && View.column <= 2   # If just entered a bullet, go to end first
-
-      # If at beginning of line, just insert bullet
-      return View.insert "- " if View.column == 0 && bullet_text == "- " && line !~ /^ /
+      Move.to_end if line =~ /^ / && column <= indent.length   # If just entered a bullet, go to end first
+      Move.to_end if line =~ /^>/ || Line.at_left?   # If line is heading, or if at beginning of the line
 
       if View.cursor != Line.right
         Deletes.delete_whitespace
@@ -645,14 +704,12 @@ class Notes
   end
 
   def self.mouse_toggle
-    #Launcher.launch_or_hide(:blink=>true)
 
     # If next line is indented more, kill children
     # If starts with plus or minus, and on plus or minus, launch
     if Line.matches(/^\s*[+-]/) and View.char =~ /[+-]/
       plus_or_minus = Tree.toggle_plus_and_minus
       if ! Tree.children?
-        #plus_or_minus == '+'   # If +, expand (launch
 
         if FileTree.dir? or ! FileTree.handles?   # If on a dir or code_tree
           Launcher.launch
@@ -667,16 +724,16 @@ class Notes
     end
   end
 
-  # Returns an instance of BlockNotes representing the block the point is currently in
-  #   def self.get_block regex="^[|>]\\( \\|$\\)"
-  def self.get_block regex=nil
-    regex ||= self.heading_regex
-
-    regex = self.heading_regex if regex == 1
-    regex = self.heading_regex(:u) if regex == 2 || regex == :u
+  #
+  # Returns an instance of Section representing the block the point
+  # is currently in.
+  #
+  #   def self.current_section regex="^[|>]\\( \\|$\\)"
+  def self.current_section regex=nil
+    regex = self.heading_regex if ! regex || ! regex.is_a?(String)
 
     left, after_header, right = View.block_positions regex
-    NotesBlock.new(left, after_header, right)
+    Section.new(left, after_header, right)
   end
 
   def self.to_html txt
@@ -807,7 +864,7 @@ class Notes
   end
 
 
-  class NotesBlock
+  class Section
 
     attr_accessor :left, :after_header, :right
     attr_accessor :header, :text
@@ -909,21 +966,99 @@ class Notes
     nil
   end
 
-  def self.drill file, heading=nil, *content
+  def self.drill_split args
+    items = [[], [], []]   # file, heading, content
+
+    items_index = 0   # Increase it as we move through
+    args.each do |arg|
+      # If content, they'll always be content
+      next items[2] << arg if items_index == 2
+
+      items_index = 1 if arg =~ /^> /   # If >..., bump up to headings
+      items_index = 2 if arg =~ /^\| /   # If |..., bump up to content
+
+      items[items_index] << arg
+    end
+
+    items
+  end
+
+
+  #   def self.drill file, heading=nil, *content
+
+  #
+  # Makes .notes file navigable as tree.
+  #
+  # Example usage:
+  #
+  # - /projects/xiki/menu/
+  #   - accounts.rb
+  #     | class Accounts
+  #     |   def self.menu *args
+  #     |     Notes.drill '$accounts', *args
+  #     |   end
+  #     | end
+  #
+  def self.drill file, *args
 
     prefix = Keys.prefix :clear=>true
-    content = content.any? ? content.join('/') : nil
-
-    file_orig = file.dup
     file = Bookmarks[file]
 
-    # If bookmark wasn't found, complain
-    if file =~ /^\$(\w+)/
+    # *args examples:
+    # args = ["> Arrays", "| [1, 2]"]
+    # args = ["tech", "ruby", "> Arrays", "| [1, 2]"]
+
+    # Divide up path.  Could look like...
+    # dir/dir/> heading/| contents
+
+    # Pull off contents if any (quoted lines)
+
+    file_items, heading, content = Notes.drill_split args
+
+    heading = heading.any? ? heading.join("/") : nil
+    content = content.any? ? content.join("/") : nil
+
+    file << file_items.join("/")+"/" if file_items.any?
+
+
+    # Check for whether foo.notes or foo/foo.notes exists for this path...
+
+
+    if file =~ /\/$/ && File.exists?(found = file.sub(/\/$/, ".notes"))
+      file = found
+    end
+
+    if file =~ /\/$/ && File.exists?(found = file.sub(/\/$/, "/index.notes"))
+      file = found
+    end
+
+    # Somewhere in here, make it look for index.html files as well
+
+    if file_items.any? && File.exists?(found = "#{file}#{file_items[-1]}.notes")
+      file = found
+    end
+
+    # If it's a dir, show dirs inside...
+
+    if File.directory? file
+
+      # If no topic, just show all dirs
+
+      entries = Dir.new(file).entries
+      entries = entries.select{|o| o =~ /^\w/}
+      entries.each{|o| o.sub! /\..+/, ''}
+      return entries.map{|o| "#{o}/"}
+    end
+
+
+    # If a file...
+
+    if file =~ /^\$(\w+)/   # If bookmark that wasn't found, complain
       bm = $1
       return "| Set the following bookmark first. Then you'll be able to use this menu to\n| browse the file. The file should have '> ...' headings.\n\n@ $#{bm}\n"
     end
 
-    # If docs/, output docs string...
+    # docs/, so output docs string...
 
     if heading == "docs"
       message = "
@@ -946,10 +1081,9 @@ class Notes
 
     txt = File.open(file, 'rb') {|f| f.read}
 
-    # If just file passed, headings...
+    # /, so show just headings...
 
     if ! heading
-
       return View.open file if prefix == "open"   # If as+open, just jump there
 
       txt = txt.split("\n")
@@ -958,9 +1092,11 @@ class Notes
       return txt.join("\n")  #.gsub /^> /, '| '
     end
 
-    # If just heading passed, show text under heading...
     heading.sub!(/^\| /, '> ')
     escaped_heading = Regexp.escape heading
+
+    # /> Heading, so show text under heading...
+
     if ! content
       if prefix == :u || prefix == "open"   # If C-u on a heading, just jump there
         View.open file
@@ -975,7 +1111,7 @@ class Notes
       return txt.gsub(/^/, '| ').gsub(/^\| $/, '|')
     end
 
-    # If content passed
+    # /> Heading/| content, so navigate to heading and recenter...
 
     # If C-4, grab text and save it to file / update
     if prefix == "update"
@@ -986,11 +1122,8 @@ class Notes
       index += heading.length
 
       before = txt[0..index]
-
       after = txt[index..-1].sub(/.*?^>( |$)/m, ">\\1")
-
       content = Tree.siblings :string=>1
-
       txt = "#{before}#{content}#{after}"
 
       DiffLog.save_diffs :patha=>file, :textb=>txt
@@ -1032,15 +1165,18 @@ class Notes
   end
 
   @@single_letter_abbrev = {
-    "f"=>"fix",
     "b"=>"borrow",
-    "i"=>"implement",
+    "c"=>"create",
     "d"=>"do",
     "de"=>"delete",
-    "r"=>"rename",
-    "t"=>"todo",
     "e"=>"extract",
     "er"=>"error",
+    "f"=>"fix",
+    "i"=>"implement",
+    "p"=>"pass",
+    "r"=>"rename",
+    "t"=>"todo",
+    "u"=>"update",
     }
 
   # If the string is "t" or "i", or a few others, return "todo" or "imprement" etc. respectively.
@@ -1054,6 +1190,13 @@ class Notes
 
   def self.from_markdown_format txt
     txt = txt.gsub(/^#+/){"#{'>' * $&.length}"}
+  end
+
+  #
+  # Returns whether notes mode is enabled.
+  #
+  def self.enabled?
+    $el.current_local_map == $el.elvar.notes_mode_map
   end
 
 end
