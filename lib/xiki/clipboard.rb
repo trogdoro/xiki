@@ -5,21 +5,57 @@ require 'xiki/file_tree'
 class Clipboard
 
   # Stores things user copies
-  @@hash = {}
-  @@hash_by_first_letter = {}
+  @@hash ||= {}
+  @@hash_by_first_letter ||= {}
 
   def self.menu
-    "
+    %`
     - .log/
-    "
+    - docs/
+      - main clipboard/
+        | The "0" clipboard is where things are stored when you do these
+        | shortcuts:
+        - as+clipboard
+        - search+copy
+
+        | (They're also put in the OS clipboard for convenience.)
+      - numbered clipboards/
+        | You can type these shortcuts use the numbered clipboards
+        - as+1
+        - as+2
+        - enter+2
+        - do+1   # Does search and replace from the "1" to "2" clipboard
+      - other clipboards/
+        | You can type these shortcuts use other letters
+        - as+variable+a   # Stores in "a"
+        - as+variable+b
+        - enter+variable+b
+        - search+like+variable+b
+    - see/
+      <@ replace/
+    `
   end
 
-  def self.log
-    result = ""
-    @@hash_by_first_letter.keys.sort.each do |k|
-      result << "| #{@@hash_by_first_letter[k]}\n"
+  def self.log key=nil
+
+    # /log/, so show keys...
+
+    if ! key
+      result = ""
+      keys = @@hash.keys.sort! {|a, b| a.sub(/[!-\/]/, '~') <=> b.sub(/[!-\/]/, '~') }   # Move numbers to top
+      keys.each do |k|
+        val = Tree.quote @@hash[k]
+        val.gsub! /^/, '  '
+        result << "| #{k}\n"
+      end
+      return result.empty? ? "- Nothing was copied yet!" : result
     end
-    result.empty? ? "- Nothing was copied yet!" : result
+
+    # /log/foo, so show value...
+
+    line = Line.value.sub(/^ *\| /, "")
+
+    Tree.quote @@hash[line]
   end
 
   def self.copy loc=nil, txt=nil
@@ -262,6 +298,14 @@ class Clipboard
   def self.as_line many=nil
     prefix = Keys.prefix :clear=>true
 
+    # If Dash+, copy Foo.bar from quoted line
+    if prefix == :-
+      txt = Ruby.quote_to_method_invocation
+      View.flash "- copied #{txt}"
+      return Clipboard.set("0", txt)
+    end
+
+    # If up+, copy path of file tree cursor is on, or otherwise the current view's
     return FileTree.copy_path if prefix == :u
 
     many ||= prefix || 1
