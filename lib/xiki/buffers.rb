@@ -16,34 +16,57 @@ class Buffers
     "
   end
 
+  # Mapped to open+current and @current
+  # Open list of buffers
   def self.current *name
-    if name.empty?  # If no buffer passed in, show list
-      case Keys.prefix :clear=>true
+    prefix = Keys.prefix :clear=>true
+
+    # /, so show list of buffers...
+
+    if name.empty?
+      case prefix
 
       # Show all by default
-      when nil, "all";  return list.map{ |b| $el.buffer_name(b) }.map{ |o| "| #{o}\n" }.join('')
+      when nil, "all"
+
+        return result = Buffers.list.map do |b|
+          modified = $el.buffer_file_name(b) && $el.buffer_modified_p(b) ? "+" : " "
+          "|#{modified}#{$el.buffer_name(b)}\n"
+        end.join('')
 
       # Only files (no buffers)
-      when :u;  return list.select{ |b| $el.buffer_file_name(b) }.map{ |b| "| #{$el.buffer_name(b)}\n" }.join('')
+      when :u
+        return self.list.select{ |b| $el.buffer_file_name(b) }.map{ |b| "| #{$el.buffer_name(b)}\n" }.join('')
 
       # Only buffer without files
-      when 0;  return list.select{ |b| ! $el.buffer_file_name(b) }.map{ |b| "| #{$el.buffer_name(b)}\n" }[1..-1].join('')
+      when 0;
+        return self.list.select{ |b| ! $el.buffer_file_name(b) }.map{ |b| "| #{$el.buffer_name(b)}\n" }[1..-1].join('')
 
-      when 1;  return list.select{ |b| $el.buffer_file_name(b) }.map{ |b| $el.buffer_name(b) }[1..-1]
-      when 3;  return list.select{ |b| ! $el.buffer_file_name(b) && $el.buffer_name(b) =~ /^#/ }.map{ |b| $el.buffer_name(b) }
-      when 4;  return list.select{ |b| ! $el.buffer_file_name(b) && $el.buffer_name(b) =~ /^\*console / }.map{ |b| $el.buffer_name(b) }
-      when 6;  return list.select{ |b| $el.buffer_file_name(b) =~ /\.rb$/ }.map{ |b| $el.buffer_name(b) }
-      when 7;  return list.select{ |b| $el.buffer_file_name(b) =~ /\.notes$/ }.map{ |b| $el.buffer_name(b) }
+        # Only files, already handled with :u
+        #       when 1;  return self.list.select{ |b| $el.buffer_file_name(b) }.map{ |b| $el.buffer_name(b) }[1..-1]
+
+      when 3;  return self.list.select{ |b| ! $el.buffer_file_name(b) && $el.buffer_name(b) =~ /^#/ }.map{ |b| $el.buffer_name(b) }
+      when 4;  return self.list.select{ |b| ! $el.buffer_file_name(b) && $el.buffer_name(b) =~ /^\*console / }.map{ |b| $el.buffer_name(b) }
+      when 6;  return self.list.select{ |b| $el.buffer_file_name(b) =~ /\.rb$/ }.map{ |b| $el.buffer_name(b) }
+      when 7;  return self.list.select{ |b| $el.buffer_file_name(b) =~ /\.notes$/ }.map{ |b| $el.buffer_name(b) }
 
       end
       return
     end
 
-    # If a buffer name passed, get whole line and escape it
+    # /foo, so jump to or delete buffer...
 
-    name = Line.without_indent
+    name = name[0]
+    name.sub! /^\|./, ''
 
-    name.sub! /^\| /, ''
+    # If as+delete, just delete buffer, and line
+    if prefix == "delete"
+      Buffers.delete name
+      View.flash "- deleted!", :times=>1
+      Line.delete
+      return
+    end
+
 
     # Switch to buffer
     View.to_after_bar if View.in_bar?
@@ -160,6 +183,7 @@ class Buffers
     View.to_buffer name
   end
 
+  # Return contents of a buffer
   def self.txt name
     $el.with(:save_window_excursion) do
       $el.switch_to_buffer name
