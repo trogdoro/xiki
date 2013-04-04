@@ -571,6 +571,19 @@ class Console
     end
   end
 
+  def self.shell_command_per_prompt prompt, options
+    dir, command = options[:dir], options[:command]
+
+    case prompt
+    when "$"
+      return Tree.quote Console.sync command, :dir=>dir
+    when "%"
+      return Console.run command, :dir=>dir
+    when "&"
+      return Iterm.run("cd #{dir}\n#{command}")
+    end
+  end
+
 end
 
 Keys.custom_history(:shell_mode_map) { Console.custom_history }

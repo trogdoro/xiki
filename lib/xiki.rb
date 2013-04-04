@@ -191,6 +191,18 @@ module Xiki
 
     prefix = Keys.prefix
 
+    if prefix == :u   # Insert @last to see recent menu names and drill in.
+      Line << "$#{Keys.input :timed=>1}//"
+      Launcher.go_unified
+      return
+    end
+
+    if prefix == :-   # Insert @last to see recent menu names and drill in.
+      Line << "last/"
+      Launcher.launch
+      return
+    end
+
     # If line not blank, usually indent after
 
     Line.<<("\n#{indent}  @") if ! blank
@@ -208,11 +220,16 @@ module Xiki
 
   def self.open_menu
 
-    return Launcher.open("- last/") if Keys.prefix_u
+    prefix = Keys.prefix :clear=>1
+
+    return Launcher.open("- last/") if prefix == :u
 
     input = Keys.input(:timed=>true, :prompt=>"Start typing a menu that might exist (or type 'all'): ")
     View.to_buffer "menu"
     Notes.mode
+
+    View.rename_uniquely
+
     View.kill_all
     View << "#{input}\n"
     View.to_highest
@@ -359,10 +376,12 @@ module Xiki
     View.to_highest
     searches.each { |s| Search.forward "[\"']#{$el.regexp_quote s}[\"']" }
     Move.to_axis
-    Color.colorize :l
+    Color.mark "light"
     nil
   end
 
+  # TODO: remove this, since it just delegates to .path.
+  # Make callers call .path instead.
   def self.trunk options={}
     self.path options
   end
@@ -481,6 +500,107 @@ module Xiki
 
   def self.finished_loading?
     @@finished_loading
+  end
+
+
+
+
+
+  # > Unified Refactor > In progress...
+
+
+
+  # > Scenarios
+  # | Xiki.children "/tmp/", "a"   # /tmp/a... file
+  # | Xiki.children "/tmp/", "a/b"   # /tmp/a... file with path "b"
+  # | Xiki.children "/tmp/", ["a", "b"]   # /tmp/a... file with path "b"
+  # | Xiki.children "/tmp//a"   # .children "/tmp/", "a"
+  # | Xiki.children "a"   # .children "~/menu/", "a"  # (or wherever in MENU_PATH "a" is first found)
+  # | Xiki.children "a/b"   # .children "~/menu/", "a/b"  # (or wherever in MENU_PATH "a" is first found)
+  # | Xiki.children "a/\n  b/", "a"   # "b/"
+  # | Xiki.children "/tmp/"   # delegate to file tree
+  # | Xiki.children "/tmp/a.menu//"   # recurse to "/tmp//a/" ?
+  # | Xiki.children "/tmp/foo.rb"   # delegate to file tree   ____________really?
+  # | Xiki.children "/tmp//foo", args   # recurse to Xiki.children "/tmp/", ["foo"] + args
+  # | Xiki.children Bar, "a"   # delegate to something else (whatever internal class will handle this, without worrying about dirs and .notes files, probably)
+  # |   # or, will there be a case where notes text needs to be passed in
+  # |     # programatically, or by grabbing .notes file from the disk?
+  #
+  # > For @?
+  # | Xiki.children "/tmp/@rails"   # recurse to Xiki.children ["/tmp/", "rails"]   # then recurse to Xiki.children "rails", :ancestors=>["/tmp/"]
+  #
+  # | Xiki.children "/tmp/@rails"   # recurse to Xiki.children ["/tmp/", "rails"]   # then recurse to Xiki.children "rails", :ancestors=>["/tmp/"]
+  #
+  # | Xiki.children "/tmp/@rails", "a"   # recurse to Xiki.children ["/tmp/", ["rails", "a"]]   # ___?
+  #
+  # > Ancestors vs multiple sources (not implemented yet)
+  # | Xiki.children array   # Ancestors (eg ["/tmp/d", "rails"])
+  # | Xiki.children array, string   # Multiple sources (eg ["~/menus1/", "~/menus2/"], "foo")   # could be confused with: Xiki.children ancestors, path, so maybe one has to be an option
+  #
+  # > More thought
+  # @/docs/todo/
+  #   - todo.notes
+  #     | > Unified > best idea for menus!:
+
+
+  # Part of xiki @unified refactor
+  def self.children
+    # > TODO: delegate to one of these maybe
+    # - Which one?
+    # Tree.children2
+    # Menu.children2
+    # Launcher.children2
+    # Tree[]
+    # Menu[]
+    # Launcher[]
+    Menu.children2
+  end
+
+  def self.[] *args
+    Expander.expand *args
+    #     Menu.children2
+  end
+
+  def self.expand *args
+    Expander.expand *args
+    #     Menu.children2
+  end
+
+  # Make pull in menu, to be accessible as class
+  # Also define global 'xiki_require' for convenience
+  def self.require
+    "TODO"
+  end
+
+  # Make pull in menu, to be accessible via Xiki[]
+  # Also define global 'xiki_register' for convenience
+  #
+  # Registers "foo" menu as...
+  # Xiki.register "foo"   # class named "Foo" (assumes it's loaded)
+  # Xiki.register "/tmp/foo.menu"
+  # Xiki.register "/tmp/foo/"   # this dir
+  #
+  # Xiki.register "/tmp/foo//"   # adds dir to MENU_PATH (makes all menus in the dir be exectable)
+  def self.register
+    "TODO"
+  end
+
+  def self.def *args, &block
+    Expander.def *args, &block
+  end
+
+  #   def self.defs *args
+  #     Expander.defs *args
+  #   end
+
+
+  # Just a placeholder for now
+  def self.caching
+
+    # Think through guard strategy - probably gurad just builds one big file upon updates, and xiki checks only that file's mod date, and reloads (if Xiki.caching = :optimized
+    # clear cache when updated by guard -
+
+    "TODO"
   end
 
 

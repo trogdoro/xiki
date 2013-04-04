@@ -77,6 +77,8 @@ class Code
   def self.run options={}
     prefix = Keys.prefix
 
+    Ol.clear_pause
+
     if prefix == :uu
       path = Tree.construct_path
 
@@ -189,7 +191,7 @@ class Code
     $el.re_search_backward "^  from "
     $el.re_search_backward "^[A-Z]"
     $el.recenter 0
-    Color.colorize :r
+    Color.mark "red"
   end
 
   def self.enter_ruby_log
@@ -202,8 +204,20 @@ class Code
     $el.indent_region(left, right)
   end
 
+  # Thin wrapper, but will probably need to conditionally not call $el.instance_eval
+  def self.simple_eval code, file=nil, line=nil, options={}
+
+    if options[:global] || ! $el
+      Object.module_eval code, file||__FILE__, line||__LINE__
+    else
+      $el.instance_eval code, file||__FILE__, line||__LINE__
+    end
+
+  end
+
   # Evaluates a string, and returns the output and the stdout string generated
-  def self.eval code, file=nil, line=nil
+  def self.eval code, file=nil, line=nil, options={}
+
     return ['- Warning: nil passed to Code.eval!', nil, nil] if code.nil?
 
     # Capture stdout output (saving old stream)
@@ -211,8 +225,19 @@ class Code
     stdout = nil
     exception = nil
     begin   # Run code
-      # Good place to debug
-      returned = $el.instance_eval(code, file||__FILE__, line||__LINE__)
+
+      # TODO: Try always doing what :global does
+      #   - see if it breaks
+
+      returned =
+        if code.is_a? Proc
+          Object.module_eval &code
+        elsif options[:global] || ! $el
+          Object.module_eval code, file||__FILE__, line||__LINE__
+        else
+          $el.instance_eval code, file||__FILE__, line||__LINE__
+        end
+
     rescue Exception => e
       exception = e
     end
@@ -555,24 +580,33 @@ class Code
     View.insert "Ol.stack"
   end
 
-  def self.enter_log_console
-    View.insert "console.log();"
-    Move.backward 2
+  def self.enter_log_thing txt
+    Line.to_left   # AA - beginning of line (A's default)
+    $el.open_line(1) unless Line.blank?
+    View.insert txt
+    Line.to_beginning
   end
 
   def self.open_log_view options={}
+
     prefix = Keys.prefix :clear=>true
     prefix = nil if options[:called_by_launch]
-    orig = View.current if prefix == :u
+
+    orig = View.current if prefix == :u   # up+layout+output means to go back
 
     file = Ol.file_path
 
     buffer = "*ol"
 
-    # If already open, just go to it
+    # If already visible, just go to it
     if View.buffer_visible?(buffer)
+
       View.to_buffer(buffer)
-      return if self.clear_and_go_back orig
+
+      self.clear_and_go_back orig
+
+      # If already visible, always just go to it.  Why was this not happening before?
+      return
     end
 
     # If 2 or more windows open
@@ -589,7 +623,8 @@ class Code
       end
     end
 
-    # If buffer open, just switch to it
+
+    # If buffer open (but not visible), just switch to it
     if View.buffer_open? buffer
       View.to_buffer buffer
       return if self.clear_and_go_back orig
@@ -613,7 +648,9 @@ class Code
 
     return Firefox.enter_log_javascript_line if View.extension == "js"
 
-    $el.open_line(1) unless Line.blank?
+    Move.to_axis if ! Line.at_right?
+
+    $el.open_line(1) unless Line.value.strip.blank?
 
     # Javascript
     if Tree.construct_path(:all=>1, :slashes=>1) =~ /<script/
@@ -626,13 +663,13 @@ class Code
       return Move.backward 3
     end
 
-    View.insert "Ol[]"
-    Line.to_left
+    View.insert "Ol()"
+    Line.to_words
   end
 
-  def self.enter_log_output
+  def self.enter_log_out
     orig = Location.new
-    View.layout_output
+    View.layout_outlog
     View.to_bottom
     Line.previous
 
@@ -653,7 +690,10 @@ class Code
   end
 
   def self.to_ruby o
-    o.to_source
+    o.source
+    # Fails?
+      # Does o.source work in ruby 1.8.7?  Do I care?  Maybe fall back to it.
+    #     o.to_source
   end
 
   def self.isearch_just_should

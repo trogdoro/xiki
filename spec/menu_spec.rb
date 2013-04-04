@@ -2,27 +2,22 @@ $:.unshift "spec/"
 require 'xiki/ol'
 require 'xiki/tree'
 require 'xiki/core_ext'
-require 'xiki/mode'
-class Mode
-  def self.define *args; end
-end
 require 'xiki/menu'
 
-describe Menu, "#split" do
+describe :Menu, "#split" do
   it "splits normal strings" do
     Menu.split("bb").should == ["bb"]
     Menu.split("aa/bb").should == ["aa", "bb"]
     Menu.split("aa/|bb").should == ["aa", "|bb"]
   end
 
-  it "handles :rootless option" do
-    Menu.split("bb", :rootless=>1).should == []
-    Menu.split("aa/bb", :rootless=>1).should == ["bb"]
+  it "handles :return_path option" do
+    Menu.split("bb", :return_path=>1).should == []
   end
 
   it "handles trailing slashes" do
     Menu.split("dom/body/").should == ["dom", "body"]
-    Menu.split("dom/body/", :rootless=>1).should == ["body"]
+    Menu.split("dom/body/", :return_path=>1).should == ["body"]
   end
 
   it "handles pipes" do
@@ -30,8 +25,8 @@ describe Menu, "#split" do
     Menu.split("aa/|b/b/|c/c").should == ["aa", "|b/b", "|c/c"]
   end
 
-  it "handles :rootless with pipes" do
-    Menu.split("dom/| </div>", :rootless=>1).should == ["| </div>"]
+  it "handles :return_path with pipes" do
+    Menu.split("dom/| </div>", :return_path=>1).should == ["| </div>"]
   end
 end
 

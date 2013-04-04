@@ -159,7 +159,7 @@ class Menu
         - #{menu}.rb
           | class #{TextUtil.camel_case(menu)}
           |   def self.menu *args
-          |     "- Args Passed: \#{args.inspect}\\n- Customize me in) @ ~/menu/#{menu}.rb"
+          |     "- sample item/\\n- Args Passed: \#{args.inspect}\\n- Customize me in) @~/menu/#{menu}.rb"
           |   end
           | end
       - more examples) @menu/api/classes/
@@ -177,7 +177,7 @@ class Menu
       - #{root}.rb
         | class #{TextUtil.camel_case(root)}
         |   def self.menu *args
-        |     "- args passed: \#{args.inspect}\n- Customize me in) @ ~/menu/#{menu}.rb"
+        |     "- sample item/\\n- Args passed: \#{args.inspect}\\n- Customize me in) @~/menu/#{menu}.rb"
         |   end
         | end
     `
@@ -429,6 +429,9 @@ class Menu
     nil
   end
 
+  # Eval the menu path, and return the output (delegates to .call)
+  # Examples:
+  # @menu/api/other/With a string/
   def self.[] path
     path, rest = path.split '/', 2
 
@@ -436,24 +439,48 @@ class Menu
   end
 
   def self.call root, rest=nil
-    root = root.gsub /[ +]/, '_'
+    root = root.gsub /[ +-]/, '_'
     menus = Launcher.menus
     block = menus[0][root] || menus[1][root]
     return if block.nil?
     Tree.output_and_search block, :line=>"#{root}/#{rest}", :just_return=>1
   end
 
+  # TODO: After Unified, don't use this any more for defining methods.
   def self.method_missing *args, &block
     Launcher.method_missing *args, &block
     "- defined!"
   end
 
-  #
-  # Menu.split("aa/|b/b/|c/c")
-  #
+  # Menu.split("aa/|b/b/|c/c").should == ["aa", "|b/b", "|c/c"]
+  # Menu.split("aa/|b/b/|c/c", :return_path=>1)
+  # Menu.split("a/b/@c/d/", :outer=>1).should == ["a/b/", "c/d/"]
   def self.split path, options={}
+
+    # :outer means split based on @'s...
+
+    if options[:outer]
+
+      # If /|... quote, pull it off during split, so quoted "@" won't mean ancestor
+      # Deal with quoted | a/@b - split off \| before and add back to last after!"]
+      quoted = nil
+      if found = path =~ /\/\|/
+        path = path.dup
+        quoted = path.slice!(found..-1)
+      end
+
+      path = path.split /\/@ ?/
+      (path.length-1).times {|i| path[i].sub! /$/, '/'}   # Add slashes back
+
+      path[-1] << quoted if quoted
+
+      return path
+    end
+
+    # Split based on /...
+
     path = path.sub /\/$/, ''
-    path = Tree.rootless path if options[:rootless]
+    path = Tree.rootless path if options[:return_path]
 
     return [] if path.empty?
 
@@ -466,26 +493,71 @@ class Menu
     result += groups[1..-1].map{|o| "|#{o}"}
   end
 
+  # Probably make this supercede to_menu.
+  # Note this works for patterns as well as menus.
+  def self.to_menu_unified
+    path = Tree.path_unified
+    options = Expander.expander path
+
+    source = Tree.source options
+
+    return View.flash "- no source found!" if ! source
+
+    # If was a string, just show it
+    return Launcher.open(source, :no_launch=>1) if source.is_a?(String)
+
+    # If [file, line] open and jump to line
+    View.open source[0]
+    View.line = source[1] if source[1]
+  end
+
   def self.to_menu
+
+    prefix = Keys.prefix
+    return self.to_menu_unified if prefix == :uu
+
+    # Get root...
+
+    line = Line.without_label
+
     # Take best guess, by looking through dirs for root
-    trunk = Xiki.trunk
-
+    trunk = Xiki.path
     return View.<<("- You weren't on a menu\n  | To jump to a menu's implementation, put your cursor on it\n  | (or type it on a blank line) and then do as+menu (ctrl-a ctrl-m)\n  | Or, look in one of these dirs:\n  - ~/menu/\n  - $xiki/menu/") if trunk[-1].blank?
-
     root = trunk[0][/^[\w _-]+/]
 
-    root = trunk[-1][/^[\w _-]+/] if ! Keys.prefix_u
+    # Go to ancestor menu, or leaf menu?...
+
+    # Go to leaf menu if cursor is on it, otherwise go to root
+    root = trunk[-1][/^[\w _-]+/] if line =~ /^@/
 
     root.gsub!(/[ -]/, '_') if root
-
     root.downcase!
+
+    # Try looking in each menu dir!...
 
     (["#{Xiki.dir}lib/"]+Launcher::MENU_DIRS).reverse.each do |dir|
       next unless File.directory? dir
       file = Dir["#{dir}/#{root}.*"]
       next unless file.any?
-      return View.open file[0]
+
+      View.open file[0]
+
+      # Found, so try to find line we were on
+
+      if line
+        cursor = View.cursor
+        View.to_highest
+        line = Search.quote_elisp_regex line
+        line.sub! /^(- |\\\+ )/, "[+-] \\.?"   # match if + instead of -, or dot after bullet
+        found = Search.forward line
+        Line.to_beginning
+        View.cursor = cursor if ! found
+      end
+
+      return   # Break out of loop, since we found it
     end
+
+    # Try dynamically-loaded procs!...
 
     #     message = "
     #       - No menu found:
@@ -501,7 +573,7 @@ class Menu
     return View.flash "- Menu 'root' doesn't exist!", :times=>4 if ! proc
 
     location = proc.source_location # ["./firefox.rb", 739]
-Ol << "location: #{location.inspect}"
+
     # location[0].sub! /^\.\//, Xiki.dir
     View.open location[0].sub(/^\.\//, Xiki.dir)
     View.line = location[1]
@@ -568,6 +640,8 @@ Ol << "location: #{location.inspect}"
 
       DiffLog.save_diffs :patha=>path, :textb=>txt
     end
+
+    txt = txt.unindent
 
     File.open(path, "w") { |f| f << txt }
 
@@ -717,31 +791,36 @@ Ol << "location: #{location.inspect}"
   #     "TODO"
   #   end
 
-  # Moves item to root of tree (replacing tree), then launches.
+  # Moves item to root of tree (replacing tree), then launches (if appropriate).
   def self.do_as_menu
+    prefix = Keys.prefix :clear=>1   # Check for numeric prefix
+    launch = false
     line = Line.value
 
-    do_launch = false
 
     txt =
-      if line =~ /^ *\|/   # If on quoted line, will grab all quoted siblings and unquote
+      if line =~ /^ +\| +def (self\.)?(\w+)/   # If on a quoted method, construct Foo.bar
+        Ruby.quote_to_method_invocation
+      elsif line =~ /^ *\|/   # If on quoted line, will grab all quoted siblings and unquote
         Tree.siblings :string=>1
       elsif line =~ /^[ +-]*@/ && Tree.has_child?   # If on ^@... line and there's child on next line...
         # Will grab the whole tree and move it up
         Tree.subtree.unindent.sub(/^[ @+-]+/, '')
       else
-        do_launch = true
+        launch = true
         Tree.path.last
       end
 
-    Keys.prefix_u ? Tree.to_root : Tree.to_root(:highest=>1)
+    Tree.to_root(:highest=>1)
+
+    #     Keys.prefix_u ? Tree.to_root : Tree.to_root(:highest=>1)
+    launch = false if prefix == :u
+
     Tree.kill_under
 
     Line.sub! /^([ @]*).+/, "\\1#{txt}"
 
-    return if ! do_launch
-
-    # replace line with menu
+    return if ! launch
 
     Launcher.launch
   end
@@ -751,7 +830,7 @@ Ol << "location: #{location.inspect}"
   #   - a different use of the "Menu" class
   # TODO move them into menu_bar.rb ?
 
-  def self.add_menu *name
+  def self.add_menubar_menu *name
     menu_spaces = name.join(' ').downcase
     menu_dashes = name.join('-').downcase
     name = name[-1]
@@ -767,7 +846,7 @@ Ol << "location: #{location.inspect}"
     $el.elvar.menu_bar_final_items = menu.push(name.downcase.to_sym)
   end
 
-  def self.add_item menu, name, function
+  def self.add_menubar_item menu, name, function
 
     menu_spaces = menu.join(' ').downcase
     lisp = "
@@ -788,7 +867,7 @@ Ol << "location: #{location.inspect}"
       Notes.mode
     end
 
-    add_menu ROOT_MENU
+    add_menubar_menu ROOT_MENU
 
     menus = [
       [ROOT_MENU, 'To'],
@@ -800,7 +879,7 @@ Ol << "location: #{location.inspect}"
       [ROOT_MENU, 'Search']
     ]
     menus.reverse.each do |tuple|
-      add_menu tuple[0], tuple[1]
+      add_menubar_menu tuple[0], tuple[1]
     end
   end
 
@@ -850,6 +929,272 @@ Ol << "location: #{location.inspect}"
 
     "- saved setting!"
   end
+
+
+
+  # Unified refactor from here on down...
+
+
+
+  # Examples: "ip"=><instance>, "tables"=>"/etc/menus/tables"
+  @@defs ||= {}
+
+  #   def self.menu
+  #     "
+  #     > TODO: add docs here
+  #     - todo
+  #     > See
+  #     << menu path/
+  #     << defs/
+  #     "
+  #   end
+
+
+  def self.expands? options
+
+    # If no name, maybe an inline menufied path, so set sources...
+
+    if ! options[:name]
+      if options[:menufied]
+        self.root_sources_from_dir options
+        return true
+      end
+      return false   # Can't handle if wasn't inline and no :name
+    end
+
+    # See if name is directly defined...
+
+    if implementation = @@defs[options[:name]]
+
+      if implementation.is_a? String
+        options[:menufied] = implementation
+        self.root_sources_from_dir options
+        return true
+      end
+
+      kind =
+        if implementation.is_a? Proc
+          :proc
+        elsif implementation.is_a? Class
+          :class
+        end
+      raise "Don't know how to deal with: #{implementation.inspect}" if ! kind
+
+      options[kind] = implementation
+      return true
+    end
+
+    # Try to look name up in PATH env...
+
+    return true if self.root_sources_from_path_env(options)[:sources]   # Found it if we created :sources
+
+
+      #
+      # > Discussion of future caching
+      # TODO: cache output of .root_sources_from_path_env outputs whet it starts to take up time
+      # - clear cache when updated by guard - think through guard strategy - probably gurad just builds one big file upon updates, and xiki checks only that file's mod date, and reloads (if Xiki.caching = :optimized
+      # caching - punt for now
+      # - if :all, store hash with output of .root_sources_from_path_env for each name
+      # - if :optimized, check date of /tmp/xiki_path_env_dir_cache
+      # - if :off (maybe rails dev mode - not worth setting up guard)
+      #
+
+    nil   # We couldn't find anything, so continue onto patterns
+
+  end
+
+  # Expand thing (represented by the hash) like a menu.  Could be a block, or
+  # menufied (has sources).
+  def self.expand options
+
+    # Get simple invocations out of the way (block or class)...
+
+    # If it's a proc, just call
+    return options[:proc].call(options[:items] || [], options) if options[:proc]
+
+    # If it's a class, just call (or, wait, need to include .menu file - probably no)
+    raise "TODO: implement dealing with a class" if options[:class]
+
+    if ! options[:menufied]   # Assume Menu.expands? should have pulled this out for now
+      raise "Can't do anything if no menufied and no name: #{options.inspect}" if ! options[:name]
+
+      implementation = @@defs[options[:name]]
+
+      raise "Can't do anything if no implentation: #{options.inspect}" if ! implentation
+      raise "Don't know how to expand #{implementation}." if ! implementation.is_a? String
+    end
+
+
+    # It's a string...
+
+    # Must be either
+      # menufied path? (starts with slash)
+      # menu name
+      # either: could have items
+
+    return self.expand_menufied options
+  end
+
+
+  # Does actual invocation.  Finds all sources and delegates to handlers.
+  def self.expand_menufied options
+
+    # Probably do caching here, when we get to that point
+
+    # Update :sources to have rest of sources from :containing_dir
+    self.climb_sources options
+
+    # Delegates to handlers according to source extensions
+    self.handle options
+  end
+
+
+  # Climbs down menu source dir according to path, to find source files
+  # eligible to handle the path.
+  #
+  # Menu.climb_sources(:menufied=>"/tmp/foo/a/b", :items=>["a"])
+  #   => sources: [["foo/", "foo.rb"], ["a/", "a.rb"]]
+  def self.climb_sources options
+
+    path, items, menufied, sources = options[:path], options[:items], options[:menufied], options[:sources]
+
+    sources.pop   # Remove :incomplete, since we're going to grab them all for this path
+
+    # For each item...
+
+    climbed_path = "#{menufied}"
+    (items||[]).each do |item|
+
+      break if sources[-1][0] !~ /\/$/   # If last source climbed doesn't have a dir
+
+      # If there is a dir for it, grab files and dir that match
+
+      climbed_path << "/#{item}"
+      found = self.source_glob climbed_path
+
+      break if ! found   # Stop if none found
+      sources << found
+    end
+
+    options[:last_source_dir] = Menu.source_path options
+
+    # Create :args, having :items that weren't sources
+    if items
+      args = items[sources.length-1..-1]
+      options[:args] = args if args.any?
+    end
+    options
+  end
+
+  def self.handle options
+    sources = options[:sources][-1]
+
+    ex = {}   # {"/"=>"a/", "rb"=>"a.rb"}
+    sources.each do |source|
+      ex[source[/\w+$|\/$/]] = source
+    end
+
+    # TODO: Optimize this - use hash lookup for each extension
+    #   Wait until we figure out final-ish way to register handlers
+    #   Somehow sort keys based on below order
+
+    [
+      RubyHandler,
+      MenuHandler,
+      NotesHandler,
+      HtmlHandler,
+      BoostrapHandler,
+      TxtHandler,
+      PythonHandler,
+      JavascriptHandler,
+      CoffeeHandler,
+      DirHandler,
+    ].each do |handler|
+      handler.handle options, ex
+    end
+
+    return options[:output] if options[:output]
+
+    # If we get through everything and just a dir...
+
+    raise "couldn't handle:\n#{options.ai}"
+    nil
+  end
+
+  def self.defs
+    @@defs
+  end
+
+  # Return the MENU_PATH environment var, plus ~/menu2/ and $x/menu2.
+  # Menu.menu_path_env_dirs
+  def self.menu_path_env_dirs
+    # Worry about this later
+    # How many times called? - memo-ize this based on MENU_PATH value
+    list = (ENV['MENU_PATH'] || "").split ":"
+    list += [File.expand_path("~/menu2"), Bookmarks["$x/menu2"]]
+    list.uniq
+  end
+
+  def self.root_sources_from_dir options
+    found = self.source_glob options[:menufied]
+
+    raise "Couldn't find source for: #{options}" if ! found
+
+    options[:sources] = [found, :incomplete]
+  end
+
+
+  # Finds the first dir in MENU_PATH that has this menu.
+  #
+  # Menu.root_sources_from_path_env(:name=>"dd")[:sources]
+  # Menu.root_sources_from_path_env(:name=>"drdr")[:sources]   # multi-level
+  # Menu.root_sources_from_path_env(:name=>"red")[:sources]   # none
+  def self.root_sources_from_path_env options
+
+    name = options[:name]
+    env_dirs = self.menu_path_env_dirs
+
+    # For each dir in path env...
+
+    env_dirs.each do |dir|
+
+      # Grab sources if they exist...
+
+      menufied = "#{dir}/#{name}"
+      found = self.source_glob menufied
+
+      next if ! found
+
+      options[:sources] = [found, :incomplete]
+      options[:menufied] = menufied
+
+      return options
+
+    end
+    options
+  end
+
+
+  def self.source_glob dir
+    list = Dir.glob ["#{dir}/", "#{dir}.*", "#{dir}/index.*"]
+    return nil if list.empty?
+
+    containing_dir_length = dir[/.*\//].length
+    list.each{|o| o.slice! 0..containing_dir_length-1}   # Chop off paths
+    list
+  end
+
+  # Constructs path for nth source in :sources.
+  # Menu.source_path :menufied=>"/tmp/drdr", :sources=>[["drdr/", "drdr.rb"]]
+  # Menu.source_path :menufied=>"/tmp/drdr", :sources=>[["drdr/", "drdr.rb"], ["a/", "a.rb"]]
+  def self.source_path options, nth=-2   # Default to last
+    menufied = options[:menufied]
+
+    path = "#{File.dirname menufied}/#{options[:sources][0..nth].map{|o| o[0]}.join("")}"
+
+    path.sub /^\/\/+/, "/"   # Extraneous leading slash can be added when at root (File.dirname adds one, etc.)
+  end
+
 end
 
 Menu.init   # Define mode

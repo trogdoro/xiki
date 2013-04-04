@@ -188,14 +188,12 @@ class View
     View.to_highest
   end
 
-  #
   # Opens file (or whatever) from the path (can contain $bookmarks), just
   # moving to or exposing its view if it's already open.
   # By default it will open in 2nd view if we're in the bar view.
   #
   # View.open "/etc/paths"
   # View.open "hello", :txt=>"> Hi\nMessage to show in new buffer."
-  #
   def self.open path, options={}
 
     return self.show_txt(options[:txt], :name=>path) if options[:txt]
@@ -220,14 +218,42 @@ class View
       return nil
     end
 
-    if expanded   # Handle opening in other window
+    # Open it in appropriate view...
+
+    # If :other_view and not already visible, and other views in our column
+    if options[:other_view] && ! View.file_visible?(expanded) && View.windows_in_my_column.length > 1
+      # If we're at the top, go to next
+      Keys.clear_prefix
+
+      View.windows_in_my_column.index(View.current) == 0 ?
+        View.next : View.previous
+      # Else go to previous
+      # possibly move to a window...
+      # Do nothing if already visible
+    end
+
+
+    if expanded
       if options[:same_view]
         $el.find_file expanded
-      elsif expanded == $el.buffer_file_name   # If already there
-        # do nothing
-      elsif ( ( $el.window_list.collect {|b| $el.window_buffer b} ).collect {|u| $el.buffer_file_name u} ).member?(expanded)   # If already displayed, move to its window
-        $el.find_file_other_window expanded
-      else   # If not visible, just open it
+      elsif expanded == $el.buffer_file_name
+
+        # If already there, do nothing...
+
+      elsif ( ( $el.window_list.collect {|b| $el.window_buffer b} ).collect {|u| $el.buffer_file_name u} ).member?(expanded)
+
+        # If already displayed, just move to where it is...
+
+        $el.find_file_other_window expanded   # This function reuses the window it's already open in
+      else
+
+        # If not visible, just open it...
+
+        if File.directory? expanded   # If a dir, open it in new buffer
+          expanded = FileTree.add_slash_maybe expanded
+          return Launcher.open expanded
+        end
+
         $el.find_file expanded
       end
     end
@@ -277,6 +303,10 @@ class View
 
   def self.list_names
     self.list.map{|v| $el.buffer_name $el.window_buffer(v)}
+  end
+
+  def self.visible_files
+    self.files :visible=>1
   end
 
   def self.files options={}
@@ -698,7 +728,7 @@ class View
 
   def self.to_highest
     prefix = Keys.prefix
-    return self.to_line(prefix) if(prefix)   # If prefix, go to that line
+    return self.to_line(prefix) if prefix.is_a?(Fixnum)   # If prefix, go to that line
     self.to_top
   end
 
@@ -803,6 +833,10 @@ class View
       member?(name)
   end
 
+  def self.file_visible? path
+    View.visible_files.member? path
+  end
+
   def self.wrap on_or_off=:on
     $el.elvar.truncate_lines = on_or_off.to_sym == :off
   end
@@ -874,6 +908,7 @@ class View
     end
 
     $el.recenter n
+    $el.message ""   # So stupid C-l C-l doesn't show at the bottom
   end
 
   #
@@ -1150,6 +1185,11 @@ class View
     $el.set_frame_parameter nil, :fullscreen, :fullboth
   end
 
+  def self.line_at_top
+    Line.number self.start
+  end
+
+
   # Line at top of visible part of view
   def self.start
     $el.window_start
@@ -1171,7 +1211,7 @@ class View
     indent_txt =
       if prefix.is_a?(Fixnum)   # Make indent specific number
         " " * (prefix*2)
-      elsif prefix == :u   # Use prefix chars from previous line
+      elsif prefix == :u || prefix == :-   # Use prefix chars from previous line
         line[/^[ |$~&%@\/\\#+!-]*/]
       elsif Notes.enabled?
         line[/^[ |!$%+-]*/]
@@ -1180,6 +1220,11 @@ class View
       end
 
     Deletes.delete_whitespace if ! Line.at_left? && ! Line.at_right?
+
+    # If C--, move to end of previous line, so it goes before
+    if prefix == :-
+      Move.to_end -1
+    end
 
     Line.to_right if Line.at_left?
 
@@ -1247,21 +1292,22 @@ class View
     Effects.blink(:what=>:line) unless options[:no_blink]
   end
 
-  def self.layout_output options={}
-
-    # If current line has Ol., grab line and path
-
+  def self.layout_outlog options={}
     prefix = Keys.prefix
 
     if options[:called_by_launch]
       prefix = nil
     end
 
-    if prefix != :u   # Assume it's already showing if up+layout+output
+    # If current line has Ol., grab line and path
+
+    # If already showing, just go to it
+
+    if ! View.buffer_visible?("*ol")
       View.layout_files if ! View.bar?   # If not already showing bar, do it first, so it shows up on left
     end
 
-    found = prefix != :u && ! options[:dont_highlight] && Line =~ /^ *Ol\b/ && OlHelper.source_to_output(View.file, Line.number)
+    found = prefix != :u && ! options[:dont_highlight] && Line =~ /^ *Ol\b/ && OlHelper.source_to_output(View.file, Line.number)   # => nil
 
     put_value_here = nil
     if prefix == :-   # If want to keep cursor where it is
@@ -1282,14 +1328,17 @@ class View
     end
 
     if found
-      Color.colorize :l
+      Color.mark "light"
       Effects.blink(:what=>:line)
     end
 
     if put_value_here
-      val = Line[/: (.*)/, 1]
+
+      value = Ol.grab_value Line.value
+
       put_value_here.go
-      Line << "   # #{val}"
+      Ol.update_value_comment value
+
       return
     end
 
@@ -1304,11 +1353,15 @@ class View
   def self.to_relative
     prefix = Keys.prefix
 
-    if prefix == :u   # Go to line at middle of view
+    if prefix == :u   # up+ means go to middle
       top = Line.number($el.window_start)
       bottom = Line.number($el.window_end)
       View.line = top + ((bottom - top) / 2)
       return
+    end
+
+    if prefix == :uu   # up+up+ means go to bottom
+      prefix = -1
     end
 
     if prefix.is_a?(Fixnum) && prefix <= 0
@@ -1349,9 +1402,12 @@ class View
     todo_orig.go
     orig.go
 
+    line << "\n" if prefix == :u
+
     View.insert line
   end
 
+  # Number of lines from the top of the view we are.
   def self.scroll_position
     $el.line_number_at_pos($el.point) - $el.line_number_at_pos($el.window_start)
   end
@@ -1552,6 +1608,22 @@ class View
 
     return choice =~ /[ym]/i
   end
+
+  def self.rename_uniquely
+    $el.rename_uniquely
+  end
+
+  def self.number_of_lines
+    Line.number View.bottom
+  end
+
+  # Whether text in this view matches the regex
+  # p View =~ /text/   # => 283
+  # p View =~ /z{3}/   # => nil
+  def self.=~ regex
+    self.txt =~ regex
+  end
+
 end
 
 View.init

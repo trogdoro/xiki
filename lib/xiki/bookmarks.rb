@@ -170,8 +170,10 @@ class Bookmarks
     # Use input from user or "default"
     keys ||= Keys.input(:timed => true, :prompt => "Enter bookmark to jump to: ") || "0"
 
-    # Open file or jump to if already open
-    path = $el.bookmark_get_filename( "#{prefix_to_bm}#{keys}" )
+    # If ".", delegate to FileTree.tree, since it knows how to hilight the current file
+    return FileTree.tree :bm=>keys if keys =~ /^[.\/]$/
+
+    path = Bookmarks["$#{prefix_to_bm}#{keys}"]
 
     if path.nil?   # If not found, try buffer in bookmarks.yml
 
@@ -182,6 +184,15 @@ class Bookmarks
     end
 
     prefix = Keys.prefix
+
+    # If up+, open bookmark as menu
+    if prefix == :u
+      Launcher.open "$#{keys}//", :unified=>1
+      return
+    elsif prefix == :uu   # Jump up one level if up+up+
+      path = File.dirname path
+    end
+
     if prefix==9  # If 9, open in bar
       View.bar
       self.jump "#{prefix_to_bm}#{keys}"
@@ -189,7 +200,7 @@ class Bookmarks
       Location.go path, :stay_in_bar => true
     end
 
-    if options[:point] or prefix == :u   # Go to actual point
+    if options[:point] or prefix == :-   # Go to actual point
       return self.jump("#{prefix_to_bm}#{keys}")
     end
   end
@@ -204,7 +215,9 @@ class Bookmarks
     self.expand(path)
   end
 
+  # Expands bookmark to file
   def self.expand path, options={}
+
     if options[:just_bookmark]   # If only a bookmark, just expand it
       return $el.bookmark_get_filename(path)
     end
@@ -278,7 +291,15 @@ class Bookmarks
     return path
   end
 
-  # Remove file from the end (if not dir)
+  # Remove file from the end (if not dir).
+  # Bookmarks.dir_only "/tmp/foo.txt"
+  #   /tmp
+  # Bookmarks.dir_only "/tmp/"
+  #   /tmp/
+  #
+  # Similar to ruby's File.dirname, but which doesn't recognize dir paths:
+  # File.dirname "/tmp/a/"
+  #   /tmp
   def self.dir_only path
     path.sub(/\/[^\/]+\.[^\/]+$/, '')
   end
@@ -321,10 +342,6 @@ class Bookmarks
   end
 
   def self.tree
-    #     paths = elvar.bookmark_alist.collect {|bm|
-    #       bm.to_a[1].to_a[0][1]
-    #     }.select{|path| path =~ /^\/.+\w$/}
-
     paths = $el.elvar.bookmark_alist.collect {|bm|
       ary = bm.to_a
       key = ary[0]
@@ -343,7 +360,7 @@ class Bookmarks
 
   def self.open_quick
     bookmark = Keys.input :timed=>1, :prompt=>"Enter a quick bookmark to jump to:"
-    Bookmarks.go("q#{bookmark}")
+    self.go("q#{bookmark}")
   end
 
   def self.persist

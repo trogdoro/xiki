@@ -3,6 +3,8 @@ require 'xiki/ol'
 require 'xiki/tree'
 require 'xiki/core_ext'
 
+require './spec/spec_helper'
+
 describe Tree, "#traverse" do
 
   it "goes through each item" do
@@ -174,8 +176,10 @@ describe Tree, "#traverse" do
 end
 
 
-describe Tree, "#dotify" do
-
+# Old distructive way, before Unified refactor.
+# TODO: port these tests over to describe #dotify below.
+#   (first few are already done.)
+describe Tree, "#dotify!" do
   it "adds dot to path when dot in tree" do
     tree = "
       - .a/
@@ -209,7 +213,6 @@ describe Tree, "#dotify" do
     Tree.dotify!(tree, path)
     path.should == [".sample", ".delete"]
   end
-
 
   it "adds dot when same name as other leaf" do
     tree = "
@@ -271,7 +274,52 @@ describe Tree, "#dotify" do
     Tree.dotify! tree, path
     path.should == [".a"]
   end
+end
 
+describe Tree, "#dotify" do
+  it "dot in tree" do
+    tree = "
+      - .a/
+        - aa/
+      - b/
+      ".unindent
+
+    path = ["a"]
+    Tree.dotify(tree, path).should == [true]
+    path.should == ["a"]
+  end
+
+  it "dot one level deep" do
+    tree = "
+      - sample/
+        - .delete/
+      ".unindent
+
+    path = ["sample", "delete"]
+    Tree.dotify(tree, path).should == [nil, true]
+    path.should == ["sample", "delete"]
+  end
+
+  it "dots at multiple levels" do
+    tree = "
+      - .sample/
+        - .delete/
+      ".unindent
+
+    path = ["sample", "delete"]
+    Tree.dotify(tree, path).should == [true, true]
+    path.should == ["sample", "delete"]
+  end
+
+  it "dot in 2nd item" do
+    tree = "
+      - sample/
+      - .delete/
+      ".unindent
+
+    path = ["delete"]
+    Tree.dotify(tree, path).should == [true]
+  end
 end
 
 
@@ -284,8 +332,8 @@ describe Tree, "#leaf" do
   end
 
   it "grabs siblings when pipe" do
-    Line.should_receive(:value).and_return "| bb"
-    Tree.should_receive(:siblings).any_number_of_times.and_return(["| aa", "| bb"])
+    mock(Line).value {"| bb"}
+    stub(Tree).siblings {["| aa", "| bb"]}
     Tree.leaf("| bb").should == "aa\nbb\n"
   end
 
@@ -294,19 +342,19 @@ describe Tree, "#leaf" do
   end
 
   it "grabs siblings when slash after pipe" do
-    Line.should_receive(:value).and_return "| b/b"
-    Tree.should_receive(:siblings).any_number_of_times.and_return(["| aa", "| b/b"])
+    mock(Line).value {"| b/b"}
+    stub(Tree).siblings {["| aa", "| b/b"]}
     Tree.leaf("| b/b").should == "aa\nb/b\n"
   end
 
   it "grabs siblings when slash pipe" do
-    Line.should_receive(:value).and_return "| bb / hey"
-    Tree.should_receive(:siblings).and_return ["| aa", "| bb / hey"]
+    mock(Line).value {"| bb / hey"}
+    stub(Tree).siblings {["| aa", "| bb / hey"]}
     Tree.leaf("| bb / hey").should == "aa\nbb / hey\n"
   end
 
   it "uses line from path when slash pipe and not on the pipe line" do
-    Line.should_receive(:value).and_return "- red herring"
+    mock(Line).value {"- red herring"}
     Tree.leaf("aa/|b/b").should == "b/b"
   end
 end
@@ -648,7 +696,7 @@ describe Tree, "#children" do
         | b 
         | c
       ", "a").should == "
-      | b     
+      | b 
       | c
       ".unindent
   end
@@ -962,5 +1010,129 @@ describe Tree, "#to_html" do
       hi
       ".unindent
   end
+end
+
+describe Tree, "#construct_path" do
+  before :each do
+    $el = Object.new
+    stub($el).point.times(1) {100}
+  end
+
+  it "handles one line" do
+    # Simulates:
+    # a/
+
+    mock(Line).value.times(1) {"a/"}
+    mock($el).goto_char(100)
+
+    Tree.construct_path.should == "a/"
+  end
+
+  it "handles nesting one level" do
+    # Simulates:
+    # a/
+    #   b/
+
+    mock(Line).value.times(1) {"  b/"}
+    mock(Line).value.times(1) {"a/"}
+    mock($el).search_backward_regexp(anything)
+
+    mock($el).goto_char(100)
+    Tree.construct_path.should == "a/b/"
+  end
+
+  it "stops when stop sign" do
+    # Simulates:
+    # a/
+    #   @b/
+
+    mock(Line).value.times(1) {"  @b/"}
+    mock($el).goto_char(100)
+    Tree.construct_path.should == "b/"
+  end
+
+  it "returns list" do
+    # Simulates:
+    # a/
+    #   b/
+
+    mock(Line).value.times(1) {"  b/"}
+    mock(Line).value.times(1) {"a/"}
+    mock($el).search_backward_regexp(anything)
+
+    mock($el).goto_char(100)
+    Tree.construct_path(:list=>1).should == ["a/", "b/"]
+  end
+
+  it "returns a list when stop" do
+    # Simulates:
+    # a/
+    #   @b/
+
+    mock(Line).value.times(1) {"  @b/"}
+    mock($el).search_backward_regexp(anything)
+    mock(Line).value.times(1) {"a/"}
+    mock($el).goto_char(100)
+
+    Tree.construct_path(:all=>1, :list=>1).should == ["a/", "@b/"]
+  end
+
+  it "handles when stop, slashes and list" do
+    # Simulates:
+    # a/
+    #   @b/
+
+    mock(Line).value.times(1) {"  @b/"}
+    mock($el).search_backward_regexp(anything)
+    mock(Line).value.times(1) {"a/"}
+    mock($el).goto_char(100)
+
+    Tree.construct_path(:all=>1, :slashes=>1).should == "a/@b/"
+  end
+
+  it "leaves double slashes" do
+    # What should it return when this?...
+    # a//
+    #   @b/
+
+    mock(Line).value.times(1) {"  @b/"}
+    mock($el).search_backward_regexp(anything)
+    mock(Line).value.times(1) {"a//"}
+    mock($el).goto_char(100)
+
+    Tree.construct_path(:all=>1, :slashes=>1).should == "a//@b/"
+
+  end
+
+  it "returns new raw format that menus can get via yield" do
+    $el.point
+    pending "Don't know what it should look like"
+
+
+    # What should it return when this?...
+    # a/
+    #   b/@c/
+    #     d/
+  end
+end
+
+describe Tree, "#join_to_subpaths" do
+  it "handles one line" do
+    Tree.join_to_subpaths(["a/", "@b/", "c/"]).should == ["a/", "b/c/"]
+  end
+
+  it "tests a bunch of other stuff, once we're comfortable with making this the official way of delimiting @'s and dealing with trailing slashes"
+
+    # Paths we should handle:
+    # ["a/", "b/"].should == ["a/b/"]
+    # ["a/b/", "c/"].should == ["a/b/c/"]
+    # ["a/@b/"].should == ["a/", "b/"]
+    # ["/tmp/@b/"].should == ["/tmp/", "b/"]
+    # ["/tmp@b/"].should == ["/tmp", "b/"]
+    # ["a", "b", "@c/", "d/", "p Tree.path_unified options={}"]
+
+    # Shouldn't split these:
+    # ["a@b/"]
+
 
 end

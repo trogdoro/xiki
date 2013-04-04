@@ -286,8 +286,9 @@ class FileTree
 
 
     if Styles.dark_bg?
-      Styles.define :quote_heading, :fg=>"fff", :size=>"2", :face=>"arial", :bold=>true
-      Styles.define :quote_heading2, :fg=>"fff", :size=>"-2", :face=>"arial", :bold=>true
+      Styles.define :quote_heading_h0, :fg=>"fff", :size=>"+8", :face=>"arial", :bold=>true
+      Styles.define :quote_heading_h1, :fg=>"fff", :size=>"2", :face=>"arial", :bold=>true
+      Styles.define :quote_heading_h2, :fg=>"fff", :size=>"-2", :face=>"arial", :bold=>true
       Styles.define :quote_heading_pipe, :fg=>"444", :size=>"0", :face => "verdana", :bold=>true
       Styles.define :quote_heading_bracket, :fg=>"4c4c4c", :size=>"-2", :face => "Monaco", :bold=>true
       Styles.define :quote_heading_small, :fg=>"fff", :size=>"-2", :face => "arial black", :bold=>true
@@ -304,8 +305,9 @@ class FileTree
       #       Styles.define :ls_dir, :fg => "bbb", :face => "verdana", :size => "-2", :bold => true
 
     else
-      Styles.define :quote_heading, :fg=>"444", :size=>"2", :face=>"arial", :bold=>true
-      Styles.define :quote_heading2, :fg=>"aaa", :size=>"-2", :face=>"arial", :bold=>true
+      Styles.define :quote_heading_h0, :fg=>"444", :size=>"+8", :face=>"arial", :bold=>true
+      Styles.define :quote_heading_h1, :fg=>"444", :size=>"2", :face=>"arial", :bold=>true
+      Styles.define :quote_heading_h2, :fg=>"aaa", :size=>"-2", :face=>"arial", :bold=>true
       Styles.define :quote_heading_pipe, :fg=>"bbb", :size=>"0", :face => "verdana", :bold=>true
       Styles.define :quote_heading_bracket, :fg=>"bbb", :size=>"-2", :face => "Monaco", :bold=>true
       Styles.define :quote_heading_small, :fg=>"fff", :size=>"-2", :face => "arial black", :bold=>true
@@ -402,9 +404,15 @@ class FileTree
 
     Styles.apply('\\(https?\\|file\\)://[a-zA-Z0-9\/.~_:?%&=|+!-#-]+', :notes_link)   # Url
 
+
+    # :... lines (quotes)
+    Styles.apply("^ *\\(:\\)\\($\\| .*\n\\)", nil, :quote_heading_pipe, :ls_quote)
+
+
     # |... lines (quotes)
 
-    Styles.apply("^ *\\(|\\)\\( *\\)", nil, :quote_heading_pipe, :ls_quote)
+    # Is this one adding anything?
+    #     Styles.apply("^ *\\(|\\)\\( *\\)", nil, :quote_heading_pipe, :ls_quote)
 
     Styles.apply("^ *\\(|\\)\\(.*\n\\)", nil, :quote_heading_pipe, :ls_quote)
 
@@ -413,14 +421,15 @@ class FileTree
     Styles.apply("[+-])\\(.*?\\)([+-]", nil, :ls_quote)   # quoted lines: between diffs
 
     # | >... headings
-    Styles.apply("^ *\\(|\\)\\( \\)\\(>\\)\\(\n\\| .*\n\\)", nil, :quote_heading_pipe, :ls_quote, :quote_heading_bracket, :quote_heading)
+    Styles.apply("^ *\\(|\\)\\( \\)\\(>\\)\\(\n\\| .*\n\\)", nil, :quote_heading_pipe, :ls_quote, :quote_heading_bracket, :quote_heading_h1)
     Styles.apply("^ *\\(|\\)\\( \\)\\(>>\\)\\(\n\\| .*\n\\)", nil, :quote_heading_pipe, :ls_quote, :quote_heading_bracket, :quote_heading_small)
 
     #    >... headings (indented)
-    Styles.apply("^ +\\(> ?\\)\\(\n\\|.*\n\\)", nil, :quote_heading_bracket, :quote_heading)
+    Styles.apply("^ +\\(> ?\\)\\(.*\n\\)", nil, :quote_heading_bracket, :quote_heading_h1)
 
-    #    >>... headings (indented)
-    Styles.apply("^ +\\(>>\\)\\(\n\\| .*\n\\)", nil, :quote_heading_bracket, :quote_heading2)
+    #    >>
+    Styles.apply("^ +\\(>>\\)\\(.*\n\\)", nil, :quote_heading_bracket, :quote_heading_h2)
+    Styles.apply("^ +\\(> ?\\)\\(.*:\n\\)", nil, :quote_heading_bracket, :quote_heading_h0)
 
 
     # |+... diffs
@@ -472,16 +481,15 @@ class FileTree
     path = options[:path] || Tree.construct_path(:list=>true)
     path_orig = path
 
+    # Split off quoted |... string if there...
+
     if path.is_a?(Array)
-      # Pull off search string if exists
-      search_string = path.pop[/\|(.*)/, 1] if path.last =~ /^\|/
-      search_string.sub! /^[ +-]/, '' if search_string   # Should start with space or -|+
-      # Discard rest of |... lines
-      path = path.grep(/^[^|]/).join('')
+      quote_string = path.pop[/\|(.*)/, 1] if path.last =~ /^\|/
+      quote_string.sub! /^[ +-]/, '' if quote_string   # Should start with space or -|+
+      path = path.grep(/^[^|]/).join('')   # Discard rest of |... lines
     else
-      # Split off |... if it's there (search string)
       path =~ /(.*?)-?\+?\|(.*)/
-      path, search_string = $1, $2 if $2
+      path, quote_string = $1, $2 if $2
     end
 
     # Pull number off end of path if there
@@ -511,7 +519,7 @@ class FileTree
       return self.delete_file
     when "all"
       Keys.clear_prefix
-      search_string ?   # If quote, enter lines under
+      quote_string ?   # If quote, enter lines under
         Tree.enter_under :
         self.enter_lines(//)   # If file, enter all lines
       return
@@ -519,29 +527,33 @@ class FileTree
       if prefix =~ /\boutline\b/
         prefix = Keys.prefix_n
         Keys.clear_prefix
-        return self.drill_quotes_or_enter_lines path, search_string, :prefix=>prefix
+        return self.drill_quotes_or_enter_lines path, quote_string, :prefix=>prefix
       end
     end
 
-    # If numeric prefix, jump to nth window
-    if (! options[:ignore_prefix]) and Keys.prefix_n and Keys.prefix != 7
+    # If numeric prefix, jump to nth window...
 
+    if (! options[:ignore_prefix]) and Keys.prefix_n and Keys.prefix != 7
       # If number larger than number of windows, open new one first
       if Keys.prefix_n > View.list.size
         View.to_nth(View.list.size - 1)
         View.create
       end
       View.to_nth(Keys.prefix_n - 1)
-
     end
+
+    # If there was a quoted string, remember the column...
 
     column = View.column
-    if search_string
+    if quote_string
       column -= (Line.value[/^.*?\|./] || '').length
       column = 0 if column < 0
+
+      ControlTab.dash_prefix_buffer = View.name
     end
 
-    # Open or go to file
+
+    # Open or go to file...
 
     if remote
       self.remote_file_contents(path)   # Get text from server and insert
@@ -550,48 +562,61 @@ class FileTree
 
       # See if it exists, and store contents if not?
 
-      options[:same_view] ? View.open(path, :same_view=>true) : Location.go(path)
-      Effects.blink(:what=>:line) unless line_number || search_string || path =~ /\.xiki$/
+      # TODO: why are we using Location.go - isn't it just delegating to View.open?
+        # Does it do extra stuff?  Maybe goes somewhere if dir?
+          # Try just calling View.open instead!
+
+      if options[:other_view]
+        View.open path, {:other_view=>1}.merge(prefix == :- ? {:no_recenter=>1} : {})
+      else
+        options[:same_view] ? View.open(path, :same_view=>true) : Location.go(path)
+      end
+      Effects.blink(:what=>:line) unless line_number || quote_string || path =~ /\.xiki$/
     end
 
-    return unless line_number || search_string
+    return unless line_number || quote_string
 
     if line_number   # If line number, go to it
       $el.goto_line line_number.to_i
+      View.column = column
       Effects.blink(:what=>:line)
-    elsif search_string   # Else, search for |... string if it passed
+    elsif quote_string
+
+      # Search for quoted |... string if it passed...
+
       Hide.reveal if View.hidden?
 
       Move.top
       # Search for exact line match
-      found = Search.forward "^#{$el.regexp_quote(search_string)}$"
+      found = Search.forward "^#{$el.regexp_quote(quote_string)}$"
 
       unless found   # If not found, search for substring of line, but with a break at the end
         Move.top
         # :beginning
-        found = Search.forward "#{$el.regexp_quote(search_string)}\\([^_a-zA-Z0-9\n]\\|$\\)", :beginning=>true
-        #         found = $el.search_forward_regexp("#{$el.regexp_quote(search_string)}\\([^_a-zA-Z0-9\n]\\|$\\)", nil, true)
+        found = Search.forward "#{$el.regexp_quote(quote_string)}\\([^_a-zA-Z0-9\n]\\|$\\)", :beginning=>true
       end
       unless found   # If not found, search for substring of line
         Move.top
-        found = $el.search_forward_regexp "#{$el.regexp_quote(search_string)}", nil, true
+        found = $el.search_forward_regexp "#{$el.regexp_quote(quote_string)}", nil, true
       end
       unless found   # If not found, search for it stripped
         Move.top
-        found = $el.search_forward_regexp "#{$el.regexp_quote(search_string.strip)}", nil, true
+        found = $el.search_forward_regexp "#{$el.regexp_quote(quote_string.strip)}", nil, true
       end
       unless found   # If not found, suggest creating or show error
 
-        return if self.suggest_creating search_string
+        return if self.suggest_creating quote_string
 
         View.beep
-        View.message "Didn't find: \"#{search_string.strip}\"", :beep=>1
+        View.message "Didn't find: \"#{quote_string.strip}\"", :beep=>1
         return
-
       end
 
       $el.beginning_of_line
-      $el.recenter(0) unless prefix_was_u
+
+      $el.recenter(0) unless prefix_was_u || options[:no_recenter]
+      View.column = column
+
       Effects.blink(:what=>:line)
 
       dir, name = path.match(/(.+\/)(.+)/)[1..2]
@@ -599,15 +624,14 @@ class FileTree
       return if original_file == "search_log.notes"
 
       # Add to log
-      Search.append_log dir, "- #{name}\n    | #{search_string}"
+      Search.append_log dir, "- #{name}\n    | #{quote_string}"
     end
-    View.column = column
 
   end
 
-  def self.suggest_creating search_string
+  def self.suggest_creating quote_string
 
-    if search_string =~ /^ *def self\.(.+)/   # If it's a method, suggest creating it
+    if quote_string =~ /^ *def self\.(.+)/   # If it's a method, suggest creating it
       Code.suggest_creating_method View.file, $1
       return true
     end
@@ -624,6 +648,7 @@ class FileTree
   end
 
   def self.save_quoted path
+
     txt = Tree.siblings :quotes=>1
 
     if txt[0] !~ /^\|/
@@ -635,7 +660,7 @@ class FileTree
     dir = File.dirname path
 
     if ! File.exists? dir
-      View.flash "- Dir doesn\'t exist. Create it?"
+      View.flash "- Dir doesn\'t exist. Create it?", :times=>4
 
       key = Keys.input :chars=>1, :prompt=>"Create the \"#{dir}\" directory? "
       return if key != "y"
@@ -643,7 +668,8 @@ class FileTree
       `mkdir -p "#{dir}"`
     end
 
-    txt = txt.map{|o| "#{o.sub /^\| ?/, ''}\n"}.join('')
+    txt = txt.map{|o| "#{o.sub /^\|.?/, ''}\n"}.join('')
+
     DiffLog.save_diffs :patha=>path, :textb=>txt
 
     File.open(path, "w") { |f| f << txt }
@@ -691,7 +717,7 @@ class FileTree
 
     return Tree.<<("> Error\n| You haven't changed any lines (since you last saved).", :no_slash=>1) if added.blank? && deleted.blank?
 
-    return Tree.<<("> Error\n| You\'ve deleted #{deleted.length} lines but added #{added.length} (since you last saved).\n| It\'s unclear what you\'re trying to do.", :no_slash=>1) if added.any? && added.length != deleted.length
+    return Tree.<<("> Message from as+update\n| You\'ve deleted #{deleted.length} lines but added #{added.length} (since you last saved).\n| It\'s unclear what you\'re trying to do.", :no_slash=>1) if added.any? && added.length != deleted.length
     operation = added.any? ? :moves : :deletes
 
     operations = self.operations_via_diffs added, deleted
@@ -950,6 +976,7 @@ class FileTree
   # Insert all files in dirs within a dir, and allow user to
   # incremental search therein.
   def self.dir_recursive
+
     $el.beginning_of_line
     line = Line.value
     left = $el.point
@@ -960,8 +987,9 @@ class FileTree
 
     # Get tree
     t = self.new
+    dir = Bookmarks.expand(dir)
     dir.sub!(/\/$/, '')
-    t.traverse Bookmarks.expand(dir)
+    t.traverse dir
 
     # Adjust indent
     result_indent = t.res[/^ */]   # Get indent of first line
@@ -974,6 +1002,27 @@ class FileTree
     self.select_next_file
     Tree.search(:recursive => true, :left => left, :right => right)
   end
+
+  # New Unified way to show list of dirs.
+  def self.expand_dir_recursively options
+
+    dir = options[:file_path]
+
+    indent = ""
+
+    # Get tree
+    t = self.new
+    dir.sub!(/\/$/, '')
+    t.traverse Bookmarks.expand(dir)
+
+    # Adjust indent
+    result_indent = t.res[/^ */]   # Get indent of first line
+    txt = t.res.gsub(/^#{result_indent}/, "")
+
+    return txt
+  end
+
+
 
   def self.dir_one_level options={}
 
@@ -1033,10 +1082,50 @@ class FileTree
     if options[:focus]
       Search.forward "^ +\\+ #{options[:focus]}$"
       Line.to_beginning
-      Color.colorize :l
+      Color.mark "light"
     end
 
     Tree.search(:left=>left, :right=>right, :always_search=>true)
+
+  end
+
+  # New Unified way to show one dir.
+  def self.expand_one_dir options
+
+    dir = options[:file_path]
+
+    dirs, files = self.files_in_dir dir   # Get dirs and files in it
+
+    if files.empty? && dirs.empty?
+      if ! File.exists? dir   # If doesn't exist, show message
+        return "
+          - @mkdir/
+          | ...dir '#{dir}' doesn't exist.  Create it?
+          ".unindent
+      end
+      return "@flash/- Directory is empty"
+    end
+
+    # Add bullets and slashes
+    dirs.collect!{|i| i.sub(/.*\/(.+)/, "+ \\1/")}
+    files.collect!{|i| i.sub(/.*\/(.+)/, "+ \\1")}
+
+    # Move .notes files to top
+    files = files.select{|i| i =~ /\.notes$/} + files.select{|i| i !~ /\.notes$/}
+
+    both = options[:date_sort] || options[:size_sort] ?
+      files + dirs : dirs + files
+    result = both.join("\n") + "\n"
+
+
+    # TODO How to deal with focus? - return option telling them line to put cursor on - or, maybe, make that happen somehow on the other side of the call?
+    #     if options[:focus]
+    #       Search.forward "^ +\\+ #{options[:focus]}$"
+    #       Line.to_beginning
+    #       Color.mark "light"
+    #     end
+
+    result
 
   end
 
@@ -1169,8 +1258,6 @@ class FileTree
 
   # Expand if dir, or open if file
   def self.launch options={}
-
-    #Tree.plus_to_minus_maybe
     line = Line.value
 
     indent = Line.indent
@@ -1189,21 +1276,11 @@ class FileTree
     elsif line =~ /^[^|\n]* (\*\*|##)/   # *foo or ## means do grep
       self.grep_syntax indent
     elsif self.dir?   # if has slash - foo/ is a dir (if no | before)
-
-      # If is bookmark, delegate to wrapper / driller__
-      #       if without_label =~ /@?\$/
-
-      #   # Use this instead
-
-      # Ol << "delegate to wrapper!"
-      #         return
-      #       end
-      # Ol << "line: #{line.inspect}"
-
       self.dir
     else
-      self.open
-    end
+      options[:other_view] = 1 if Keys.prefix == :-
+      self.open options
+    end   # => {:no_recenter=>1}
   end
 
   # Grabs matching lines in file and starts hide search
@@ -1226,6 +1303,11 @@ class FileTree
   #
   # Called by to+outline and enter+outline, (others?).
   #
+  # ...and @outline________
+  #
+  # > Don't insert, just return
+  # p FileTree.enter_lines /foo/, :just_return=>1, :path=>View.file
+  #
   def self.enter_lines pattern=nil, options={}
     $xiki_no_search = false
 
@@ -1243,9 +1325,14 @@ class FileTree
 
     if Line.blank?   # If blank line, get bookmark and enter into current file
 
-      bm = Keys.input(:timed => true, :prompt => "Enter bookmark to show outline for: ")
-      path = Bookmarks.expand(bm, :just_bookmark => true)
-      path = File.expand_path(path)
+      path =
+        if options[:path]
+          options[:path]
+        else
+          bm = Keys.input(:timed => true, :prompt => "Enter bookmark to show outline for: ")
+          File.expand_path Bookmarks.expand(bm, :just_bookmark => true)
+        end
+
         #Files.directory? Bookmarks.expand("h", :just_bookmark=>true)
 
       # If it's a dir, delegate to Open Tree
@@ -1254,7 +1341,7 @@ class FileTree
         return
       end
 
-      View.insert "- " + self.filename_to_next_line(path)
+      View.insert "" + self.filename_to_next_line(path)
       $el.open_line 1
     end
 
@@ -1270,12 +1357,13 @@ class FileTree
     path = Bookmarks.expand(path)
     indent = Line.indent   # get indent
 
+
     # If image, insert it
     return self.enter_image path if extension =~ /^(jpg|jpeg|png|gif)$/i
 
     # Get matches from file
     matches = ""
-    indent_more = options[:path] ? '' : '  '
+    indent_more = '  '
 
     if path =~ /^\/\w+@/
       contents = Remote.file_contents path
@@ -1308,6 +1396,10 @@ class FileTree
 
       matches_count+=1
     end
+
+    matches = matches.split("\n").uniq.join("\n")+"\n" if options[:unique]
+
+    return matches if options[:just_return]
 
     Tree.insert_quoted_and_search matches, :line_found=>line_found
   end
@@ -1364,20 +1456,44 @@ class FileTree
     end
 
     # If no templates matched
-    View.flash "- File doesn't exist", :times=>1
+    View.flash "- File doesn't exist!", :times=>2
     Tree.<< "|", :no_slash=>1
     Move.to_end
     View << ' '
   end
 
   # Mapped to shortcuts that displays the trees
+  # enter+tree, do+tree
   def self.tree options={}
+
     prefix = Keys.prefix :clear=>true
-    options.merge!(:recursive=>1) if prefix == :u
+
+    options.merge!(:recursive=>1) if prefix == :u   # If up+, expand dir recursively
+
+    if prefix == :uu   # If up+up+, insert /the/path//
+      Line << "#{Bookmarks["$#{Keys.input(:timed=>1)}"]}/"
+      Launcher.go_unified
+      return
+    end
+
     $xiki_no_search = false
-    bm = Keys.input(:timed=>true, :prompt=>"Enter bookmark to show tree of: ")
+
+    bm = options[:bm] || Keys.input(:timed=>true, :prompt=>"Enter bookmark to show tree of: ")
+
     options.merge!(:focus=>View.file_name) if bm == "."
-    dir = Keys.bookmark_as_path(:bm=>bm)
+    dir = Keys.bookmark_as_path :bm=>bm, :include_file=>1
+
+    # If file, delegate to FileTree.enter_lines...
+
+    if File.file? dir
+      return FileTree.enter_lines nil, :path=>dir
+    end
+
+    # If dir, delegate to .ls...
+
+    # Put back slash if was dir
+      dir = Bookmarks.dir_only dir
+      dir << "/" unless dir =~ /\/$/
 
     return if dir == :bookmark_doesnt_exist
 
@@ -1410,7 +1526,6 @@ class FileTree
     if self.is_remote?(dir)
       self.remote_files_in_dir(dir)
     else
-
       all = Dir.glob("#{dir}*", File::FNM_DOTMATCH).
         select {|i| i !~ /\/\.(\.*|svn|git)$/}.   # Exclude some dirs (exclude entensions here too?)
         select {|i| i !~ /\/\.#/}.sort
@@ -1520,8 +1635,8 @@ class FileTree
   def self.grep_syntax indent
     Tree.plus_to_minus_maybe
     dir = Tree.construct_path
-    raw = Tree.construct_path(:raw => true, :list => true)
 
+    raw = Tree.construct_path(:labels=>true, :list=>true)
     files = contents = nil
     if raw.join('') =~ /\*\*(.+)##(.+)/  # *foo means search in files
       files, contents = $1, $2.sub!(/\/$/, '')
@@ -1893,6 +2008,47 @@ class FileTree
   def self.skip_dirs dir, skip_these
     dir = Bookmarks[dir].sub /\/$/, ''
     (@skip ||= {})[dir] = skip_these
+  end
+
+
+  def self.expands? options
+    options[:file_path] ? true : false
+  end
+
+  def self.expand options
+
+    file_path = options[:file_path]
+
+    # If it's a $... shell command...
+    if file_path =~ %r"^(/[\w./ -]+/)([$%&]) (.+)"   # If /foo// or //foo
+      options.merge!(:dir=>$1, :prompt=>$2, :command=>$3)
+      return self.expand_shell options
+    end
+
+    # If it's a file...
+
+    if File.file? file_path
+      # If emacs, return telling it to open?
+      return "@open/#{file_path}" if options[:editor]
+      # If API, return contents?
+      return File.read file_path
+    end
+
+    # If it's a dir...
+
+    # TODO: maybe deprecate C-8 prefix for this, only make it enter+all ("all")
+    prefix = options[:prefix]
+    if prefix == 8 || prefix == "all"
+      Ol["Do recursively!"]
+      return self.expand_dir_recursively options
+    end
+
+    self.expand_one_dir options
+  end
+
+  def self.expand_shell options
+    options[:no_slash] = 1
+    Console.shell_command_per_prompt options[:prompt], options
   end
 
 end

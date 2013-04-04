@@ -86,7 +86,16 @@ class CodeTree
     message = self.format_exception_message_for_tree message
 
     txt = ""
-    txt << "- tried to run: #{code}\n" if code
+    if code
+      code = code.strip
+      if code =~ /\n/   # If multi-line, quote it
+        code = "\n#{Tree.quote(code).gsub /^/, '  '}"
+      else
+        code = " #{code}"
+      end
+
+      txt << "- tried to run:#{code}\n"
+    end
     txt << "- error:#{message}\n- backtrace:\n#{backtrace}"
     txt
   end
@@ -145,6 +154,8 @@ class CodeTree
       # Move what they printed over to left margin initally, in case they haven't
       stdout = TextUtil.unindent(stdout)
       stdout.sub!(/\n\n\z/, "\n")   # Remove any double linebreaks at end
+
+      stdout = Tree.quote stdout if options[:quote]
 
       stdout.gsub!(/^/, "#{indent}  ")
 
