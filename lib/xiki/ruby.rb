@@ -2,26 +2,22 @@ class Ruby
   def self.menu
     "
     - .classes/
-    - .re_index_fast_ri/
-    - .docs/
-      > Ruby docs
-      @$ qri -h
-
-      > Eval code
-      | Evaluate the ruby code on adjascent lines, until a '> ...' heading.
-      @eval
-      puts('hi')
     - @eval/
     - @technologies/ruby/
-    - language docs/
-      > Listing and categories of gems
-      @ https://www.ruby-toolbox.com/
+    - links/
+      > Core docs
+      @http://ruby-doc.org/core-1.9.3/
+      > Which gems are hot by categories
+      @https://www.ruby-toolbox.com/
+    - see/
+      > Interactive docs
+      @ri/
     "
   end
 
   def self.classes clazz=nil, method=nil
 
-    # If no params, show list of classes
+    # /classes/, so show list of classes...
 
     if clazz.nil?
       result = []
@@ -33,7 +29,7 @@ class Ruby
       return result.sort.join
     end
 
-    # If just class, show methods
+    # /classes/Class, so show methods...
 
     if method.nil?
       result = ""
@@ -44,15 +40,11 @@ class Ruby
       return result
     end
 
-    # If method passed, lookup method's doc
+    # /classes/Class/method, so lookup method's doc
 
     method = "##{method}" unless method =~ /^::/
-    command = "qri #{clazz}#{method}"
+    command = "ri --format=rdoc #{clazz}#{method}"
     Console[command].gsub(/\C-[.+?m/, '').gsub(/^/, '| ').gsub(/^\| +$/, '|')
-  end
-
-  def self.re_index_fast_ri
-    Console.run "fastri-server -b"
   end
 
   # Ruby mode shortcuts custom+next and custom+previous
@@ -62,13 +54,24 @@ class Ruby
   #   | Ruby.keys
   def self.keys
     Keys.custom_next(:ruby_mode_map) {
+      column = View.column
       Move.to_end
-      Search.forward "^ *def ", :beginning=>1
+      Search.forward "^ *\\(def\\|it\\) ", :beginning=>1, :go_anyway=>1
+      View.column = column
     }
 
     Keys.custom_previous(:ruby_mode_map) {
-      Search.backward "^ *def "
+      column = View.column
+      Move.to_axis
+      Search.backward "^ *\\(def\\|it\\) ", :go_anyway=>1
+      View.column = column
     }
+  end
+
+  # Makes "Foo.bar" string from quoted method line.
+  def self.quote_to_method_invocation txt=nil
+    path ||= Tree.construct_path
+    path.sub(/.+?(\w+)\.rb.+def (self\.)?([\w?]+).*/){"#{TextUtil.camel_case $1}.#{$3}"}
   end
 
 end
