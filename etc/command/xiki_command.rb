@@ -99,7 +99,12 @@ class XikiCommand
     end
 
     if process_succeeded
-      puts self.get_response   # Get response first time
+      begin
+        puts self.get_response   # Get response first time
+      rescue Timeout::Error => e
+        warn "expected xiki_process.rb to respond after we started it, but it is not responding" 
+        raise
+      end
     end
 
     raise SystemExit.new
