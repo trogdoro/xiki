@@ -7,6 +7,8 @@ class Dotsies
       - .all views/
       - .web browser/
     - .browse/
+    - misc/
+      @dotsies ascii art/
     - api/
       > HTML to include in web page
       | <link href='http://dotsies.org/dotsies.css' rel='stylesheet' type='text/css'>
@@ -38,12 +40,11 @@ class Dotsies
       :notes_h1=>"arial",
       :notes_h1_green=>"arial",
       :notes_h0=>"arial",
+      :notes_h0_green=>"arial",
       :notes_bullet_parens=>"arial",
       :notes_label=>"arial black",
-      :quote_heading=>"arial",
-
+      :quote_heading_h1=>"arial",
       :ls_search=>"verdana",
-
     }
 
     if Styles.attribute(:default, :family) =~ /dotsies/

@@ -13,14 +13,14 @@ class Gems
 
   def self.list name=nil
 
-    # If nothing passed, list noames
+    # /..., so list noames
 
     if name.nil?
       gem_list = Console.sync("gem list")
       return gem_list.gsub(/ \(.+/, "").gsub(/.+/, "- \\0/")
     end
 
-    # If just name, list versions
+    # /fooo, so list versions...
 
     txt = Console.sync("gem list #{name}")
     versions = txt[/\((.+)\)/, 1]

@@ -227,7 +227,7 @@ class Mysql
   def self.save db, table, row
     fields = self.fields db, table
     row = row.sub(/^\| /, '').split("\t")
-    txt = fields.map{|o| o[0]}.map_with_index{|o, i| "#{o}='#{row[i]}'"}.join(", ")
+    txt = fields.map{|o| o[0]}.each_with_index.map{|o, i| "#{o}='#{row[i]}'"}.join(", ")
     self.run db, "INSERT INTO #{table} SET #{txt} ON DUPLICATE KEY UPDATE #{txt}"
   end
 
@@ -251,8 +251,6 @@ class Mysql
   end
 end
 
-Keys.enter_list_mysql { Launcher.insert('- Mysql.dbs/') }
-
 Launcher.add /^select \* from($|\/)/i do |path|
   if path !~ /\//   # If just "select * from", show all tables
     next Tree.<< Mysql.run(@default_db, 'show tables'), :no_slash=>1
@@ -274,11 +272,11 @@ Launcher.add(/^select /i) do |path|
 end
 
 Launcher.add "tables" do |path|
-  Mysql.tables *Menu.split(path, :rootless=>1)
+  Mysql.tables *Menu.split(path, :return_path=>1)
 end
 
 Launcher.add "dbs" do |path|
-  Mysql.dbs *Menu.split(path, :rootless=>1)
+  Mysql.dbs *Menu.split(path, :return_path=>1)
 end
 
 Launcher.add "rows" do |path|

@@ -2,10 +2,11 @@ class Youtube
   def self.menu
 
     "
-    | Type words to search youtube
-
+    | Put words here to search on youtube
     - url with start time/
       @http://www.youtube.com/watch?v=XkYcWzBCEb8#t=2m51s
+      | Or, with end time:
+      @http://www.youtube.com/v/bUR_eUVcABg?start=15&end=20&version=3&autoplay=1
     - use dotsies in transcript/
       @css/
         | .caption-line-text{
@@ -17,9 +18,7 @@ class Youtube
         |   padding-left: 1px;
         |   font-weight: normal;
         | }
-
-    > Notes
-    @technologies/youtube/
+    @notes/
     "
   end
 

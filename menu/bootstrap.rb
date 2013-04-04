@@ -271,18 +271,23 @@ class Bootstrap
     # Less interesting ones - don't show
 
     '100_font', '101_italic', '102_bold', '103_text_underline', '104_text_strike', '105_text_height', '106_text_width', '107_text_resize', '108_left_indent', '109_right_indent', '110_align_left', '111_align_center', '112_align_right', '113_justify', '114_list', '115_text_smaller', '116_text_bigger', '117_embed', '118_embed_close', '119_adjust', '120_message_full', '121_message_empty', '122_message_in', '123_message_out', '124_message_plus', '125_message_minus', '126_message_ban', '127_message_flag', '128_message_lock', '129_message_new', '130_inbox', '131_inbox_plus', '132_inbox_minus', '133_inbox_lock', '134_inbox_in', '135_inbox_out', '136_computer_locked', '137_computer_service', '138_computer_proces', '139_phone', '140_database_lock', '141_database_plus', '142_database_minus', '143_database_ban', '144_folder_open', '145_folder_plus', '146_folder_minus', '147_folder_lock', '148_folder_flag', '149_folder_new', '150_check', '151_edit', '152_new_window', '153_more_windows', '154_show_big_thumbnails', '155_show_thumbnails', '156_show_thumbnails_with_lines', '157_show_lines', '158_playlist', '159_picture', '160_imac', '161_macbook', '162_ipad', '163_iphone', '164_iphone_transfer', '165_iphone_exchange', '166_ipod', '167_ipod_shuffle', '168_ear_plugs', '169_albums', '170_step_backward', '171_fast_backward', '172_rewind', '173_play', '174_pause', '175_stop', '176_forward', '177_fast_forward', '178_step_forward', '179_eject', '180_facetime_video', '181_download_alt', '182_mute', '183_volume_down', '184_volume_up', '185_screenshot', '186_move', '187_more', '188_brightness_reduce', '189_brightness_increase', '190_circle_plus', '191_circle_minus', '192_circle_remove', '193_circle_ok', '194_circle_question_mark', '195_circle_info', '196_circle_exclamation_mark', '197_remove', '198_ok', '199_ban',
-
-
   ]
 
   @@random = ["Info", "Facts", "B. S.", "Why?", "History", "Traits", "Story", "What?", "Happy"]
   @@random_index = 0
 
-  def self.make_a_page
+  # Render txt as html.
+  # Bootstrap.render "h1/foo"
+  def self.render txt
+    bootstrap = Bootstrap.new txt
+    bootstrap.to_html
+    bootstrap.wrap_html_page
+  end
 
+  def self.make_a_page
     siblings = Tree.siblings :cross_blank_lines=>1
 
-    # If just 3 siblings, contiune as usual
+    # If just 3 siblings, continue as usual
 
     # If more siblings
     CodeTree.do_kill_indented
@@ -335,7 +340,6 @@ class Bootstrap
     else
       ['h2/random', 'p/lorem ipsum...']
     end
-
   end
 
   def initialize txt
@@ -403,6 +407,8 @@ class Bootstrap
 
   end
 
+
+  # Used internally by .render.  Turn text in @txt into html.
   def to_html
 
     # Pre-process the text
@@ -558,12 +564,6 @@ class Bootstrap
       `.gsub(/^      /, '')
 
     result
-  end
-
-  def self.render txt
-    bootstrap = Bootstrap.new txt
-    bootstrap.to_html
-    bootstrap.wrap_html_page
   end
 
 end

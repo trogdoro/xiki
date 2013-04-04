@@ -1,11 +1,13 @@
 class Encoding
-  def self.menu *args
+  def self.menu
     "
     - current: #{$el.elvar.buffer_file_coding_system.to_s}
     - .dos/
     - .raw unix/
     - .iso unix/
     - .utf8/
+    - see/
+      <@ specials/
     "
   end
 
