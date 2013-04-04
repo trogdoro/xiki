@@ -1,0 +1,5 @@
+- yell/
+  ! "ah" * 5
+- calculate/
+  ! a = 2
+  ! a ** 3

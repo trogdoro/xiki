@@ -1,0 +1,32 @@
+> Demo menus:
+| Simple menus to toy around with basic use cases
+
+> Basics
+>> .menu method
+- mentor/
+>> MENU constant
+- constable/
+>> .menu file
+- film/
+>> dotifying (routing)
+- dotty/
+
+> Advanced
+>> .menu_hidden
+| With self.menu, and MENU...
+- hidein/
+- hideout/
+>> .menu_before
+| Also with menu method and file...
+- beef/
+- beefm/
+- beeff/
+>> embedded !... code
+- embassy/
+
+> Menuless Mode
+>> all methods are fair game
+- menuless/
+>> instance methods
+- todo!
+- menuless object/
