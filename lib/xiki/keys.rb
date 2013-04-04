@@ -1,7 +1,6 @@
 require 'xiki/pause_means_space'
 require 'xiki/line'
 require 'xiki/text_util'
-require 'xiki/launcher'
 
 # Methods for defining keyboard shortcuts
 class Keys
@@ -10,22 +9,8 @@ class Keys
 
   def self.menu
     %`
+    - .log/
     - .history/
-    - .api/
-      > Map C-c C-a
-      | Keys.CA { View.insert "foo" }
-
-      > Map C-d C-h
-      | Keys.do_hi { Line << "hey there" }
-
-      > Map M-x (in shell mode)
-      | Keys._X(:shell_mode_map) { View.insert "foooo" }
-
-      > Get user input
-      | - A String
-      |   - puts Keys.input(:prompt => "Name: ")
-      | - Just one char
-      |   - puts Keys.input :chars=>1
     - docs/
       - Summary/
         > Xiki Shortcuts
@@ -134,6 +119,41 @@ class Keys
       > Keyboard shortcuts while searching
       | The seventh category, "search" has special behavior.  See:
       - @search/docs/
+    - .api/
+      - define/
+        > Defining key shortcuts
+        - acronym/
+          > Define Control-d Control-h usyng an "acronym"
+          | Keys.do_hi { Line << "hey there" }
+
+          | The acronym is "do hi".  Acronyms makes it easy to remember both
+          | the keys to type, and what they do.  This is the recommended way
+          | to define keys in Xiki.
+        - basic/
+          > Define Control-d Control-h
+          | Keys.DH { View << "foo" }
+        - specific files/
+          > Map Control d Control-h only in .rb files
+          | Keys.do_hi(:ruby_mode_map) { View << "foooo" }
+        - meta/
+          > Map M-z
+          | Keys._z { View << "foooo" }
+      - input/
+        > Get input from the user
+        - a string/
+          @Keys.input
+          @Keys.input :prompt=>"Name: "
+        - timed/
+          | Collects input until user pauses
+          @Keys.input :timed=>1
+          | Same, but returns nothing if user doesn't begin right away
+          @p Keys.input :optional=>1
+        - just one char/
+          @Keys.input :chars=>1
+      - history/
+        > Get the history of keys typed
+        @Keys.log
+        @Keys.log :raw=>1   # Raw char codes
     `
   end
 
@@ -176,7 +196,6 @@ class Keys
   # Handles Keys.to_foo etc.
 
   def self.method_missing(meth, *args, &block)
-
     return if ! $el
 
     # Accept it if block but no args
@@ -237,7 +256,7 @@ class Keys
 
     # Define key
     begin
-      $el.define_key map, keys, &block
+      self.define_key map, keys_raw, keys, &block
       "- key was defined: #{keys_raw}"
     rescue Exception => e
       return if map != :global_map || meth !~ /([A-Z])([A-Z]?)./   # Only global map and 2 control keys
@@ -248,8 +267,10 @@ class Keys
       prefix = $el.kbd(prefix)
 
       begin   # If it appears to be a prefix key (already defined)
-        $el.global_unset_key(prefix)
-        $el.define_key map, keys, &block
+        $el.global_unset_key prefix
+        #         $el.define_key map, keys, &block
+        self.define_key map, keys_raw, keys, &block
+        #         self.define_key map, keys, &block
 
       rescue Exception => e
         Ol << "e (inner): #{e.inspect}"
@@ -377,15 +398,25 @@ class Keys
     options[:choices].find{|i| i.first =~ /^#{c}/}[1]
   end
 
-  def self.to_letter ch
+  def self.to_letter ch, options=nil
+    verbose = options && options[:verbose]
     return nil if ch.nil?
     if ch == 0
+      verbose = nil if verbose
       ch = 32
     elsif ch < 27
+      verbose = "C-" if verbose
       ch += 96
-    elsif 67108896 <= ch and ch <= 67108921
+    elsif 67108896 <= ch and ch <= 67108925
+      verbose = "C-" if verbose
       ch -= 67108864
+    elsif 134217825 <= ch and ch <= 134217850
+      verbose = "M-" if verbose
+      ch -= 134217728
+    else
+      verbose = nil if verbose
     end
+    return "#{verbose}#{ch.chr}"
     ch.chr
   end
 
@@ -433,9 +464,10 @@ class Keys
 
     code = Code.to_ruby(proc)
     code.gsub! 'proc { ', ''
+    code.sub! /.*{(.+)}.*/, "\\1"
     code.gsub! ' }', ''
-
     code.gsub! '(:blink => (true))', ''
+    code.strip!
 
     View << code
   end
@@ -612,6 +644,16 @@ class Keys
     $el.elvar.current_prefix_arg = nil
   end
 
+  # Prompts for input of bookmark name, then returns its file path.
+  # If bookmark is to a file, it returns the enclosing dir.
+  # Keys.bookmark_as_path :bm=>"."
+  #   /projects/xiki/lib/xiki/
+  # Keys.bookmark_as_path :bm=>"n"
+  #   ~/notes/
+  # Keys.bookmark_as_path :bm=>"ru"
+  #   ~/notes/ruby/
+  # Keys.bookmark_as_path :bm=>"ru", :include_file=>1
+  #   ~/notes/ruby/ruby.notes
   def self.bookmark_as_path options={}
     bm = options[:bm] || Keys.input(:timed=>true, :prompt=>options[:prompt]||"Enter a bookmark: ")
 
@@ -633,7 +675,7 @@ class Keys
       return dir
     end
 
-    dir = Bookmarks.expand bm, :just_bookmark=>true
+    dir = Bookmarks.expand "$#{bm}"
     if dir.nil?   # If no dir, return nil
       View.beep "- Bookmark '#{bm}' doesn't exist."
       return :bookmark_doesnt_exist
@@ -647,19 +689,20 @@ class Keys
 
   end
 
-  def self.prefix_times
-    prefix = self.prefix
-    case prefix
-    when nil, :u, :uu, :uuu
-      1
-    else
-      prefix
-    end
+  def self.prefix_times prefix=self.prefix, &block
+    result = case prefix
+      when nil, :u, :uu, :uuu
+        1
+      else
+        prefix
+      end
+    result.times{ block.call } if block
+    result
   end
 
-  def self.add_menu_items
+  def self.add_menubar_items
     @@key_queue.reverse.each do |i|
-      Menu.add_item [Menu::ROOT_MENU, i[0]], i[1], "#{i[0].downcase}-#{i[1].downcase.gsub(' ', '-')}"
+      Menu.add_menubar_item [Menu::ROOT_MENU, i[0]], i[1], "#{i[0].downcase}-#{i[1].downcase.gsub(' ', '-')}"
     end
     @@key_queue = []
   end
@@ -690,6 +733,9 @@ class Keys
 
     elsif ['left', 'right', 'up', 'down', ].member?(ch_initial)
       return [ch_initial.to_sym, 0]   # Arbitrary indicator for arrow keys
+
+    elsif ch_initial == "A-return"
+      return [:meta_return, 13]
 
     elsif ch_initial == "C-return"
       return [:control_return, 13]
@@ -746,5 +792,39 @@ class Keys
     txt.split(/[^a-z]/i).map{|o| "Control-#{o[/./].upcase}"}.join(" ")
   end
 
-end
 
+
+  private
+
+  def self.define_key map, keys_raw, keys, &block
+    $el.define_key map, keys, &block
+    self.define_key_extra map, keys_raw, &block
+  end
+
+  # Maybe define key again, if it starts with C-i for compatibility with control-lock.
+  def self.define_key_extra map, keys_raw, &block
+    return if keys_raw !~ /\bC-i\b/
+
+    keys_raw = keys_raw.gsub /\bC-i\b/, "C-<tab>"
+    wrapper = lambda { block.call }
+
+    $el.define_key map, $el.kbd(keys_raw), &wrapper
+  end
+
+  def self.log options={}
+
+    codes = $el.recent_keys.to_a.reverse
+
+    if ! options[:raw]   # Unless they wanted it raw
+      codes = codes[0..30]   # Only show a few
+      # Turn into letters
+      codes = codes.map{|o| Keys.to_letter o, :verbose=>1 }
+
+      codes = codes.map{|o| "- #{o}\n" }.join("")
+      codes.gsub!(/  $/, " space")
+    end
+
+    codes
+  end
+
+end

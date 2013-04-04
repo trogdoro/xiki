@@ -13,7 +13,8 @@ class KeyBindings
     self.isearch
     self.misc
 
-    Keys.add_menu_items
+    Keys.add_menubar_items
+
   end
 
   def self.as_keys
@@ -80,7 +81,11 @@ class KeyBindings
     Keys.open_a_shell { Console.open }
     Keys.open_as_tail { Files.open_tail }
     Keys.open_bookmark { Bookmarks.go }
+
+
     Keys.open_current { Launcher.open("- current/") }   # open buffer list
+
+
     Keys.open_diffs { DiffLog.open }   # shows diffs of what you've edited
     Keys.open_edited { Files.open_edited }   # show recently edited files
     Keys.open_file { Files.open }
@@ -91,7 +96,7 @@ class KeyBindings
     Keys.open_in_os { Files.open_in_os }
     Keys.open_in_right { View.open_in_right }
     Keys.open_in_window { Files.open_in_window }   # Expose file in OS folder
-    Keys.open_just { Files.open_just }
+    Keys.open_just { Files.open_just }   # TODO: When we fix @current/ to show these (try running as-is and see how it uses the old code-tree)
     Keys.open_key { Keys.jump_to_code }   # jump to ruby code of key definition
     Keys.open_list_appointments { View.bar; Launcher.open("- Agenda.menu/") }
     Keys.open_list_bookmarks { Launcher.open("bookmarks/list/") }
@@ -106,19 +111,25 @@ class KeyBindings
     Keys.open_log_list { Git.show_log_one_file }   # Show git diffs o 1 file
 
     #     Keys.open_list_styles { list_faces_display }
-    Keys.open_last_output { Ol.open_last_output }   # Show git diffs for a bookmark
+    Keys.open_last_outlog { Ol.open_last_outlog }   # Show git diffs for a bookmark
     Keys.open_log_push { Gito.show_log }   # Show git diffs for a bookmark
     Keys.open_last_screenshot { Files.open_last_screenshot }
     #     Keys.open_like_text { txt = View.txt; View.to_buffer "txt"; View << txt }
     #     Keys.open_log_tree { Rails.tree_from_log }
     Keys.open_list_databases { Launcher.open('- Couch.databases/') }
     #     Keys.open_list_models { Launcher.open("- Merb.models/") }
-    Keys.open_list_javascript { Launcher.open("- technologies/javascript/") }
-    Keys.open_list_names { Clipboard.list }
-    Keys.open_list_ruby { Launcher.open("- technologies/ruby/") }
-    Keys.open_list_technologies { Launcher.open("- technologies/") }   # open first hyperlink on page
-    Keys.open_last_urls { Launcher.open "- last/urls/" }
+    #     Keys.open_list_javascript { Launcher.open("javascript/@notes/") }
+    Keys.open_list_javascript { View.beep "- Changed to: open+menu+JN!" }
+    #     Keys.open_list_names { Clipboard.list }
+    Keys.open_list_notes { Launcher.open("@notes/list/") }
+
+    #     Keys.open_list_ruby { Launcher.open("ruby/@notes/") }
+    Keys.open_list_ruby { View.beep "- Changed to: open+menu+RN!" }
+
+    Keys.open_list_technologies { Launcher.open("technologies/") }   # open first hyperlink on page
+    Keys.open_last_urls { Launcher.open "last/urls/" }
     Keys.open_menu { Xiki.open_menu }   # Open all menus and show them
+    Keys.open_new_file { View.new_file }
     Keys.open_not_saved { Launcher.open("- history/unsaved files/") }
     # O: defined above - mapped to what C-o does by default
     Keys.open_point { Bookmarks.go(nil, :point => true) }
@@ -128,7 +139,15 @@ class KeyBindings
     Keys.open_repository_list { Gito.show_log_one_file }   # Show git diffs o 1 file
     # S
     Keys.open_search { Search.outline_search }   # hide search via outline
+
+
+
+    # TODO: bring this back, for opening dir tree when bookmark is to file? - or make that up+open+bookmark?
     Keys.open_tree { FileTree.tree }   # draw a tree, prompting for bookmark tag
+    #     Keys.open_tree { View.beep "- Changed to: open+bookmark!" }
+
+
+
     Keys.open_up { View.show_dir }   # open enclosing dir
     Keys.open_visualize { Code.do_list_ancestors }   # show currently open files and buffers
     Keys.open_windows { View.restore }   # open window configuration by name
@@ -156,12 +175,17 @@ class KeyBindings
     #   - ideas: embed, emit, entry
     Keys.EE { Line.to_right }   # EE - end of line (E's default)
     Keys.enter_all { Launcher.enter_all }
-    Keys.enter_bullet { Notes.bullet }
+    Keys.enter_bookmark { FileTree.tree(:here=>true) }
+
     Keys.enter_clipboard { Clipboard.paste("0") }   # paste
-    Keys.enter_docs { Line.enter_docs }
+
+    #     Keys.enter_docs { Line.enter_docs }   # Maybe restore this, but haven't been using it
+    # Or, make this be "enter+from+difflog?"
+    Keys.enter_diff { DiffLog.enter_from_difflog }
+
     # E: defined above - mapped to what C-e does by default
     Keys.enter_file_path { Files.enter_file }   # Given a bookmark
-    Keys.enter_firefox_tabs { Launcher.insert('- Firefox.tabs/') }   # Given a bookmark
+    Keys.enter_firefox_tabs { Launcher.insert('browser/tabs/') }   # Given a bookmark
     Keys.enter_history { DiffLog.enter_from_difflog }   # Save point and go to difflog to search
     Keys.enter_insert_date { View.enter_date }
     Keys.enter_insert_comment { Code.enter_insert_comment }    # insert date string (and time if C-u)
@@ -174,38 +198,34 @@ class KeyBindings
     Keys.enter_insert_words { PauseMeansSpace.go }
     Keys.enter_junior { Notes.enter_junior }
     Keys.enter_key { Keys.insert_code }
-    Keys.enter_last_commands {
-      bm = Keys.input(:timed => true, :prompt => "bookmark to show commands for (space for currently open): ")
-      return Launcher.insert("- Console.tree/") if bm == " "
-      Launcher.insert("- Console.history \"$#{bm}\"/")
-    }
+    Keys.enter_log_1 { View << "Ol[1]" }
+    Keys.enter_log_check { View << "Ol[\"check!\"]" }
+
     Keys.enter_list_databases { Launcher.insert('- Couch.databases/') }
     Keys.enter_like_edits { Search.enter_like_edits }
     Keys.enter_log_javascript { Firefox.enter_log_javascript_line }
     Keys.enter_log_stack { Code.enter_log_stack }
     Keys.enter_log_line { Code.enter_log_line }
-    Keys.enter_log_output { Code.enter_log_output }
-    #     Keys.enter_last_log { Launcher.insert(Keys.prefix_u ? "- last/" : "- log/") }
-    #     Keys.enter_last_launched { Launcher.enter_last_launched }
-    Keys.enter_list_ruby { Launcher.insert("technologies/ruby/") }
-    #     Keys.enter_like_test { Specs.enter_as_rspec }
+    Keys.enter_log_out { Code.enter_log_out }
+    #     Keys.enter_list_ruby { Launcher.insert("technologies/ruby/") }
+
     Keys.enter_log_time { Code.enter_log_time }
     Keys.enter_like_url { Firefox.enter_as_url }
     Keys.enter_like_variable { insert "\#{#{Clipboard.get(0)}}" }
 
-    Keys.enter_menu { Xiki.insert_menu }   # Redundant with C-enter on blank line
-    Keys.enter_note { Notes.enter_note }   # Redundant with C-enter on blank line
+    Keys.enter_menu { Xiki.insert_menu }
+    Keys.enter_note { Notes.enter_note }
     Keys.enter_outline { Launcher.enter_outline }   # in tree, enter methods or headings
 
-    Keys.enter_push { Gito.code_tree_diff(:enter=>true) }   # Commit to repos, push, etc
+    #     Keys.enter_push { Gito.code_tree_diff(:enter=>true) }   # Commit to repos, push, etc
+    Keys.enter_point { Notes.bullet }   # Commit to repos, push, etc
     Keys.enter_quote { FileTree.enter_quote }
     Keys.enter_row { View.insert_line }
 
     #     Keys.enter_search { Search.enter_search }
     Keys.enter_snippet { Snippet.insert }
 
-    #Keys.enter_spot { Location.enter_at_spot }   # enter selected text at spot
-    Keys.enter_tree { FileTree.tree(:here=>true) }
+    #     Keys.enter_tree { FileTree.tree(:here=>true) }
     Keys.enter_upper { View.enter_upper }
     Keys.enter_value { Clipboard.paste }
     # W
@@ -213,7 +233,6 @@ class KeyBindings
     # X
     # Y
     # Z
-    #Keys.E0 { Clipboard.paste("0") }   # Enter 0: paste from "0" tag
     Keys.E1 { Clipboard.paste(1) }   # Enter 1
     Keys.E2 { Clipboard.paste(2) }   # Enter 2
     Keys.E3 { Clipboard.paste(3) }
@@ -230,7 +249,7 @@ class KeyBindings
     #     Keys.do_as_camelcase { Clipboard.do_as_camel_case }   # change word to camel case (LikeThat)
     Keys.do_as_execute { Console.do_as_execute }   # Run shell command on tree
     Keys.do_as_html { Firefox.do_as_html }
-    Keys.do_as_browser { Firefox.run_block }
+    Keys.do_as_browser { Firefox.exec_block }
     Keys.do_as_javascript { Javascript.run }
     #     Keys.do_as_launched { Launcher.do_as_launched }
     #     Keys.do_as_php { Php.run }
@@ -254,7 +273,7 @@ class KeyBindings
 
     Keys.do_code_indent { Code.indent }
     Keys.do_count_matches {  View.count_matches }
-    Keys.do_copy_next { Files.copy }   # copy file to next view
+    Keys.do_copy_name { Clipboard.copy_name }   # Copy file name (without extension and path)
     Keys.do_colors_off { $el.font_lock_mode }   # toggles
     Keys.do_clean_quotes { Files.do_clean_quotes }   # Fix special chars
 
@@ -263,14 +282,18 @@ class KeyBindings
     Keys.do_compare_saved { DiffLog.compare_with_saved }
 
     Keys.do_copy_to { FileTree.copy_to }
+    Keys.do_compare_views { DiffLog.do_compare_with :u }
     Keys.do_compare_with { DiffLog.do_compare_with }
     Keys.DC1 { Clipboard.diff_1_and_2 }   # Compare contents of clipboards "1" and "2"
+
     # D: defined above - mapped to what C-d does by default
-    Keys.do_expand { $el.dabbrev_expand nil }   # expand abbreviation
+    # Probably rename this to not "expand", now that that is kind of the new word for "launch"
+    Keys.do_expand { $el.dabbrev_expand nil }   # expand abbreviation / autocomplete
     Keys.do_forward { $el.kill_word(Keys.prefix || 1) }   # delete word forward
+
     # H
     # G: leave unmapped for escape
-    Keys.do_here { Launcher.do_last_launch :here=>1 }
+    Keys.do_here { Launcher.do_last_launch :here=>1 }   # collapse current menu and run again
     Keys.do_indent { Code.indent_to }
     Keys.do_job { Macros.run }   # do last macro
     Keys.do_kill_all { Effects.blink :what=>:all; View.kill_all }   # kill all text in buffer
@@ -280,9 +303,9 @@ class KeyBindings
     Keys.do_kill_paragraph { View.kill_paragraph }   # kill all text in buffer
     Keys.do_kill_rest { CodeTree.kill_rest }   # kill adjacent lines at same indent as this one
     Keys.do_kill_siblings { CodeTree.kill_siblings }   # kill adjacent lines at same indent as this one
-    Keys.do_kill_trailing { View.gsub!(/ +$/, "") }   # Deletes trailing whitespace
+    Keys.do_kill_trailing { View.gsub!(/[ 	]+$/, "") }   # Deletes trailing whitespace
     Keys.do_list_ancestors { View.beep "- Changed to: do+visibility!" }   # Moved to do+visibility
-    Keys.do_load_browser { Firefox.reload }
+    Keys.do_load_browser { Browser.reload }
     Keys.do_last_command { Console.do_last_command }
     Keys.do_line_duplicate { Line.duplicate_line }
     Keys.do_load_file { Files.do_load_file }   # U prefix will auto-update / auto-refresh to relflect changes
@@ -293,12 +316,12 @@ class KeyBindings
         delete_non_matching_lines( Keys.input(:prompt => "Delete lines not having: ") )
       end
     }
+    Keys.do_lines_jumble { Code.randomize_lines }   # Shuffle lines
     Keys.do_linebreaks_linux { $el.set_buffer_file_coding_system :unix }
     Keys.do_line_next { Line.move :next }
-    Keys.do_lines_order { Line.do_lines_sort }
     Keys.do_line_previous { Line.move(:previous) }
     Keys.do_lines_reverse { $el.reverse_region($el.region_beginning, $el.region_end) }
-    Keys.do_lines_shuffle { Code.randomize_lines }   # Shuffle lines
+    Keys.do_lines_sort { Line.do_lines_sort }
 
     Keys.do_lines_toggle { Line.do_lines_toggle }   # Swap next N lines
 
@@ -308,18 +331,21 @@ class KeyBindings
     Keys.do_name_buffer { Buffers.rename }
     Keys.do_notes_colors { FileTree.apply_styles; Notes.apply_styles; FileTree.apply_styles_at_end }
     Keys.do_number_enter { Incrementer.enter }
-    Keys.do_name_files { FileTree.rename_file }
+    Keys.do_name_file { FileTree.rename_file }
     Keys.do_number_increment { Incrementer.increment }
+    Keys.do_number_one { Incrementer.start }
     Keys.do_next_paragraph { Code.do_next_paragraph }   # Move line to start of next paragraph
-    Keys.do_number_start { Incrementer.start }
+    Keys.do_name_search { Search.do_name_search }
     Keys.do_outline { History.open_current :outline=>true, :prompt_for_bookmark=>true }
     Keys.do_push { Gito.code_tree_diff }   # Commit to repos, push, etc
     Keys.do_query { Search.query_replace }   # do query replace
     Keys.do_run { Code.run }   # run code as ruby
-    $el.define_key :global_map, $el.kbd("C-d C-s"), :cua_set_rectangle_mark   # Keys.do_several
+    Keys.do_status { Git.do_status }
+
     Keys.do_tree { FileTree.tree(:recursive=>true) }   # draw filesystem tree for current dir or bookmark
     Keys.do_upper { Launcher.do_last_launch }
-    Keys.do_viewing { Buffers.open_viewing }   # Not great fit here
+    # V
+    $el.define_key :global_map, $el.kbd("C-d C-v"), :cua_set_rectangle_mark   # Keys.do_vertical, do+vertical
     Keys.do_whitespace { Deletes.delete_whitespace }   # delete blank lines
     # X
     Keys.do_you { $el.delete_char $el.elvar.current_prefix_arg || 1 }   # Delete character
@@ -406,9 +432,9 @@ class KeyBindings
     Keys.layout_jump { View.shift }
     Keys.layout_kill { View.kill }
     # L: defined above - mapped to what C-d does by default
-    Keys.layout_marker { Color.colorize }   # colorize line, etc
+    Keys.layout_mark { Launcher.open('color/mark/', :bar_is_fine=>1, :first_letter=>1) }   # colorize line, etc
     Keys.layout_next { View.next(:blink=>true) }   # next view
-    Keys.layout_output { View.layout_output }
+    Keys.layout_outlog { View.layout_outlog }
     Keys.layout_previous { View.previous(:blink=>true) }
     # Q
     Keys.layout_right { View.to_upper(:blink=>true) }   # Go to view to the right
@@ -444,7 +470,7 @@ class KeyBindings
     Keys.search_bookmark { Search.bookmark }
     # B: leave unmapped for back
 
-    Keys.search_clipboard { Search.isearch_clipboard }   # Clipboard (copy)
+    Keys.search_copy { Search.isearch_copy }   # Clipboard (copy)
 
     Keys.search_delete { Search.isearch_delete }   # Delete
     Keys.search_enter { Search.enter }   # Enter: insert clipboard, replacing match
@@ -458,11 +484,12 @@ class KeyBindings
     Keys.search_have_edges { Search.just_edges }   # Delete everything but chars at edges of match
     Keys.search_have_files { View.beep "- Changed to: search+have+navigation!" }
     Keys.search_have_highest { Search.isearch_restart :top }
-    Keys.search_have_javascript { Search.isearch_have_output_javascript }
+    Keys.search_have_javascript { Search.isearch_have_outlog_javascript }
     Keys.search_have_line { Search.have_line }   # copy line back to search start
+    Keys.search_have_mock { Search.isearch_have_outlog :method=>".mock" }
     Keys.search_have_nav { Search.isearch_move_to "$f" }
 
-    Keys.search_have_output { Search.isearch_have_output }
+    Keys.search_have_outlog { Search.isearch_have_outlog }
     Keys.search_have_push { Gito.search_just_push }   # When search match
 
     Keys.search_have_right { Search.have_right }
@@ -488,11 +515,12 @@ class KeyBindings
     Keys.search_just_menu { Search.just_menu }
     #     Keys.search_just_mark { Search.just_marker }
     Keys.search_just_next { Search.isearch_restart :next }
-    Keys.search_just_output { Search.isearch_restart "$o" }
+    Keys.search_just_outlog { Search.isearch_restart "$o" }
     Keys.search_just_previous { Search.isearch_restart :previous }
     Keys.search_just_query { Search.isearch_query_replace :match }   # replace
     Keys.search_just_right { Search.isearch_restart :right }   # Search in top-right view
-    Keys.search_just_search { Search.isearch_just_search }   # Add "##search" line in tree for match
+    #     Keys.search_just_search { Search.isearch_just_search }   # Add "##search" line in tree for match
+    Keys.search_just_special { Search.isearch_just_special }   # Add "##search" line in tree for match
     Keys.search_just_todo { Search.isearch_restart "$t" }   # isearch for this string in $t
 
     Keys.search_just_variable { Search.isearch_just_surround_with_char '#{', '}' }
@@ -511,7 +539,7 @@ class KeyBindings
     Keys.search_like_delete { Search.like_delete }   # Delete all lines that contain the match
     Keys.search_like_file { Search.isearch_open }
     Keys.search_like_menu { Launcher.search_like_menu }
-    Keys.search_like_output { Search.isearch_have_output :string=>1 }
+    Keys.search_like_outlog { Search.isearch_have_outlog :no_label=>1 }
     Keys.search_line_pull { Search.isearch_move_line }
     Keys.search_like_quote { Search.isearch_google :quote=>true }
     Keys.search_like_repository { Gito.search_repository }   # When not searching
@@ -605,6 +633,25 @@ class KeyBindings
 
   end
 
+  def self.map_control_return
+
+    # Aquamacs-specific: make cua not map C-return key
+    $el.define_key(:cua_global_keymap, $el.kbd("<C-return>"), nil) if $el.boundp(:cua_global_keymap)
+
+    Keys.set("<C-return>") { Launcher.go }   # control-return, control-enter
+  end
+
+  def self.map_command_return
+    return if ! $el.boundp(:osx_key_mode_map)
+
+    $el.define_key(:osx_key_mode_map, $el.kbd("<A-return>")) { Launcher.go }
+  end
+
+  # Not called by default
+  def self.map_meta_return
+    Keys.set("<M-return>") { Launcher.go }   # command-return, command-enter
+  end
+
   def self.misc
 
     $el.define_key :global_map, $el.kbd("C-S-v"), :scroll_down
@@ -613,11 +660,11 @@ class KeyBindings
     Keys.B { Move.backward }
     Keys.F { Move.forward }
     Keys.Q { Keys.timed_insert }
-    Keys.set("C-.") { Launcher.launch_or_hide(:blink=>true) }
 
-    # Alternate key for C-. (probably easier to remember)
-    Keys.set("<C-return>") { Launcher.launch_or_hide(:blink=>true) }
-    Keys.set("<M-return>") { Launcher.launch_or_hide(:blink=>true) }
+    # These keys "launch" things (same thing as double-clicking)
+    Keys.set("C-.") { Launcher.go }   # control period
+    self.map_command_return
+    self.map_control_return
 
     if $el.locate_library "ruby-mode"
       $el.el_require :ruby_mode
@@ -656,6 +703,7 @@ class KeyBindings
     Keys.set("M--") { Styles.zoom :out=>1 }
 
     View.sensible_defaults
+
   end
 
 end
