@@ -21,7 +21,8 @@ class KeyBindings
     # A: as...
     # Use A prefix for: remembering, saving
 
-    Keys.AA { Line.to_left }   # AA - beginning of line (A's default)
+    Keys.as_axis { Line.to_left }   # AA - beginning of line (A's emacs default)
+    #     Keys.AA { Line.to_left }   # AA - beginning of line (A's emacs default)
     Keys.as_bookmark { Bookmarks.save }   # remember bookmark
     Keys.as_clipboard { Clipboard.as_clipboard }   #
     #     Keys.as_directory { FileTree.copy_path }   # copy dir to clipboard from tree
@@ -68,7 +69,7 @@ class KeyBindings
     # O: open...
     # Use O prefix for: opening, jumping to files
 
-    Keys.OO { $el.open_line $el.elvar.current_prefix_arg || 1 }   # OO - open line (O's default)
+    #     Keys.OO { $el.open_line $el.elvar.current_prefix_arg || 1 }   # OO - open line (O's emacs default)
     Keys.open_a_calendar { $el.calendar }
     #Keys.OAD { Svn.jump_to_diff }
     Keys.open_as_file { Code.open_as_file }
@@ -131,7 +132,7 @@ class KeyBindings
     Keys.open_menu { Xiki.open_menu }   # Open all menus and show them
     Keys.open_new_file { View.new_file }
     Keys.open_not_saved { Launcher.open("- history/unsaved files/") }
-    # O: defined above - mapped to what C-o does by default
+    Keys.open_over { $el.open_line $el.elvar.current_prefix_arg || 1 }   # OO - open line (O's emacs default)
     Keys.open_point { Bookmarks.go(nil, :point => true) }
     Keys.open_quick { Bookmarks.open_quick }   # like OB but uses different temporary namespace
     Keys.open_related_test { Code.open_related_rspec }
@@ -173,7 +174,7 @@ class KeyBindings
     # TODO find different word?
     #   - Because "enter" can be confused with the enter key?
     #   - ideas: embed, emit, entry
-    Keys.EE { Line.to_right }   # EE - end of line (E's default)
+    #     Keys.EE { Line.to_right }   # EE - end of line (E's emacs default)
     Keys.enter_all { Launcher.enter_all }
     Keys.enter_bookmark { FileTree.tree(:here=>true) }
 
@@ -182,8 +183,7 @@ class KeyBindings
     #     Keys.enter_docs { Line.enter_docs }   # Maybe restore this, but haven't been using it
     # Or, make this be "enter+from+difflog?"
     Keys.enter_diff { DiffLog.enter_from_difflog }
-
-    # E: defined above - mapped to what C-e does by default
+    Keys.enter_end { Line.to_right }   # EE - end of line (E's emacs default)
     Keys.enter_file_path { Files.enter_file }   # Given a bookmark
     Keys.enter_firefox_tabs { Launcher.insert('browser/tabs/') }   # Given a bookmark
     Keys.enter_history { DiffLog.enter_from_difflog }   # Save point and go to difflog to search
@@ -245,7 +245,7 @@ class KeyBindings
     # Use D prefix for: things that modify text or execute code
 
     #     Keys.D { insert "Apparently this is necessary to remap C-d" }
-    Keys.DD { $el.delete_char $el.elvar.current_prefix_arg || 1 }   # DD - delete character (D's default)
+    #     Keys.DD { $el.delete_char $el.elvar.current_prefix_arg || 1 }   # DD - delete character (D's emacs default)
     #     Keys.do_as_camelcase { Clipboard.do_as_camel_case }   # change word to camel case (LikeThat)
     Keys.do_as_execute { Console.do_as_execute }   # Run shell command on tree
     Keys.do_as_html { Firefox.do_as_html }
@@ -286,7 +286,7 @@ class KeyBindings
     Keys.do_compare_with { DiffLog.do_compare_with }
     Keys.DC1 { Clipboard.diff_1_and_2 }   # Compare contents of clipboards "1" and "2"
 
-    # D: defined above - mapped to what C-d does by default
+    Keys.do_delete { $el.delete_char $el.elvar.current_prefix_arg || 1 }   # DD - delete character (D's emacs default)
     # Probably rename this to not "expand", now that that is kind of the new word for "launch"
     Keys.do_expand { $el.dabbrev_expand nil }   # expand abbreviation / autocomplete
     Keys.do_forward { $el.kill_word(Keys.prefix || 1) }   # delete word forward
@@ -372,7 +372,7 @@ class KeyBindings
 
     $el.el4r_lisp_eval(%Q`(global-set-key (kbd "C-\'") \'repeat)`)
 
-    Keys.TT { $el.transpose_chars $el.elvar.current_prefix_arg }   # TT - toggle character (T's default)
+    #     Keys.TT { $el.transpose_chars $el.elvar.current_prefix_arg }   # TT - toggle character (T's emacs default)
     Keys.to_axis { Move.to_axis }   # to beginning of file
     Keys.to_backward { $el.backward_word(Keys.prefix || 1) }   # move backward one word
     Keys.to_column { Move.to_column }   # to x coordinate - ie column
@@ -391,7 +391,7 @@ class KeyBindings
     Keys.to_quote { Move.to_quote }   # move to next ...|... quote
     Keys.to_row { Move.to_line }   # go to nth line, relative to top of window
     Keys.to_spot { Location.to_spot }
-    # T: defined above - mapped to what C-t does by default
+    Keys.to_toggle { $el.transpose_chars $el.elvar.current_prefix_arg }   # TT - toggle character (T's emacs default)
     Keys.to_up { Tree.to_parent }   # to parent (last line indented less)
     Keys.to_visible { View.to_relative }   # go to nth line, relative to top of window
     Keys.to_words { Line.to_beginning }   # move to start of words on line
@@ -417,7 +417,7 @@ class KeyBindings
     # L: layout...
     # Use L prefix for: adjusting the layout, changing what is visible
 
-    Keys.LL { View.recenter }   # LL - recenter (L's default)
+    #     Keys.LL { View.recenter }   # LL - recenter (L's emacs default)
     Keys.layout_all { View.hide_others }
     Keys.layout_balance { 3.times { View.balance } }   # balance windows
     Keys.layout_create { View.create }   # open new view
@@ -431,7 +431,7 @@ class KeyBindings
     Keys.layout_indent { Hide.hide_by_indent }   # only show lines indented less than x
     Keys.layout_jump { View.shift }
     Keys.layout_kill { View.kill }
-    # L: defined above - mapped to what C-d does by default
+    Keys.layout_look { View.recenter }   # LL - recenter (L's emacs default)
     Keys.layout_mark { Launcher.open('color/mark/', :bar_is_fine=>1, :first_letter=>1) }   # colorize line, etc
     Keys.layout_next { View.next(:blink=>true) }   # next view
     Keys.layout_outlog { View.layout_outlog }

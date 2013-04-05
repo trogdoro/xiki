@@ -1393,7 +1393,7 @@ class View
     View.line = prefix if prefix.is_a? Fixnum
 
     line = Line.value
-    if prefix == :u
+    if prefix == :u || prefix == :uu
       Line.delete
 
       orig.line -= 1 if Bookmarks['$t'] == orig.file   # If in $t, adjust position by how much is deleted
@@ -1402,7 +1402,7 @@ class View
     todo_orig.go
     orig.go
 
-    line << "\n" if prefix == :u
+    line << "\n" if prefix == :uu
 
     View.insert line
   end
