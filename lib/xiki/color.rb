@@ -283,7 +283,9 @@ Ol.stack 3
         face = $el.overlay_get(o, :face)
         created_at = $el.overlay_get(o, :created_at)
         next unless created_at && line.any? && face.any?
-        hash[created_at] = [file, line, face.to_s]
+        face = face.to_s
+        next if face == "color-rb-light"
+        hash[created_at] = [file, line, face]
       end
     end
 

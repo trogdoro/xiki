@@ -47,7 +47,7 @@ class Move
 
   def self.to_next_paragraph options={}
     prefix = Keys.prefix :clear=>1
-    if prefix == :u   # If C-u, just go to end
+    if prefix == :u || prefix == :uu   # If C-u, just go to end
       if Line.blank?
         Line.value(2) =~ /./ ?   # If on blank line but next line has stuff, just move down
           Line.next :
@@ -55,6 +55,8 @@ class Move
       end
 
       Search.forward "^[ \t]*$", :go_anyway=>1
+
+      Line.previous if prefix == :uu
 
       Move.to_axis
       return

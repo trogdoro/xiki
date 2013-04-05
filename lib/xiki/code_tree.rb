@@ -155,7 +155,7 @@ class CodeTree
       stdout = TextUtil.unindent(stdout)
       stdout.sub!(/\n\n\z/, "\n")   # Remove any double linebreaks at end
 
-      stdout = Tree.quote stdout if options[:quote]
+      stdout = Tree.quote stdout if options[:quote] && ! e
 
       stdout.gsub!(/^/, "#{indent}  ")
 
@@ -180,7 +180,8 @@ class CodeTree
         return
       end
 
-      return Line.to_beginning :down=>1 if stdout =~ /\n  - error:\n    \| expected: /   # unit test output
+      # error or unit test output
+      return Line.to_beginning :down=>1 if e || stdout =~ /\n  - error:\n    \| expected: /
 
       # If script didn't move us (line or buffer), do incremental search
       if !options[:no_search] && !buffer_changed && $el.point == orig_left

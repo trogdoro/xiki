@@ -105,3 +105,51 @@ end
 #        |".gsub(/^ *\|/, '')
 #     assert_equal after, FileTree.move_dir_to_junior_internal(before)
 #   end
+
+
+
+describe "#extract_filters" do
+  it "one file filter" do
+    file_path = "/projects/foo/**ls/"
+    FileTree.extract_filters(file_path).should == ["**ls/"]
+    file_path.should == "/projects/foo/"
+  end
+
+  it "one content filter" do
+    file_path = "/projects/foo/##hey/"
+    FileTree.extract_filters(file_path).should == ["##hey/"]
+    file_path.should == "/projects/foo/"
+  end
+
+  it "grabs two at end" do
+    file_path = "/projects/foo/**index/##hey/"
+    FileTree.extract_filters(file_path).should == ["**index/", "##hey/"]
+    file_path.should == "/projects/foo/"
+  end
+
+  it "removes two" do
+    file_path = "/projects/foo/**index/##hey/foo"
+    FileTree.extract_filters(file_path).should == nil
+    file_path.should == "/projects/foo/foo"
+  end
+
+  it "grabs one at end and removes both" do
+    file_path = "/projects/##hey/foo/##hey/"
+    FileTree.extract_filters(file_path).should == ["##hey/"]
+    file_path.should == "/projects/foo/"
+  end
+
+  it "removes when quote exists" do
+    file_path = "/projects/foo/##hey/di/index.txt/| Hey from index"
+    FileTree.extract_filters(file_path).should == nil
+    file_path.should == "/projects/foo/di/index.txt/| Hey from index"
+  end
+
+  it "removes one but leaves one in quote" do
+    file_path = "/projects/foo/##hey/di/index.txt/| Hey from index/##hi/"
+    FileTree.extract_filters(file_path).should == nil
+    file_path.should == "/projects/foo/di/index.txt/| Hey from index/##hi/"
+  end
+
+end
+

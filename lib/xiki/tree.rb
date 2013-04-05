@@ -780,7 +780,6 @@ class Tree
 
   def self.construct_path options={}
 
-
     # 2013-03-20 TODO: rewrite this to separate out
     # - 1) Raw retrieval of each line into list
     #   - probably always get whole path (never stop upon @... lines)
@@ -892,7 +891,7 @@ class Tree
     # Ignore "##"
     path.sub!(/^([^|\n-]*)##.+/, "\\1") unless options[:keep_hashes]
     # Ignore "**"
-    path.sub!(/^([^|\n-]*)\*\*.+/, "\\1")
+    path.sub!(/^([^|\n-]*)\*\*.+/, "\\1") unless options[:keep_hashes]
     path
   end
 

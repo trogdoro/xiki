@@ -85,7 +85,7 @@ class FileTree
 
     # Process dirs
     entries.each{ |f|
-      next unless FileTest.directory?(f)
+      next unless File.directory?(f)
       cleaned = clean f
       @res += "#{cleaned.sub(/(^ *)/, "\\1- ")}/\n"
       traverse f
@@ -93,7 +93,7 @@ class FileTree
 
     # Process files
     entries.each{ |f|
-      next unless FileTest.file?(f)
+      next unless File.file?(f)
       cleaned = clean f
       @res += "#{cleaned.sub(/(^ *)/, "\\1+ ")}\n"
     }
@@ -101,8 +101,8 @@ class FileTree
   end
 
   def self.grep dir, regex, options={}
-
-    raw = options[:raw]
+    # args when ## => ["/projects/foo/", "hey", {}]
+    # args when ** => ["/projects/foo/", nil, {:files=>"index"}]
 
     # Expand out bookmark (if there is one)
     dir = Bookmarks.expand(dir)
@@ -111,12 +111,6 @@ class FileTree
 
     # Turn regex into a regex, if a string
     regex = Regexp.new(regex, Regexp::IGNORECASE) if regex.is_a? String
-
-    unless raw
-      View.bar if options[:bar]
-      View.to_buffer "*tree grep";  View.dir = dir
-      View.clear;  Notes.mode
-    end
 
     @@indent_count = dir.count('/') - 1
     @@indent = "  " * @@indent_count
@@ -132,18 +126,9 @@ class FileTree
 
     list = t.list
     Tree.clear_empty_dirs! list
-    if raw
-      return list
-    end
-    if list.size == 0
-      View.insert "> Note\n- No Results Found!\n"
-    else
-      View.insert(list.join("\n") + "\n")
-    end
 
-    View.to_top
-    $el.highlight_regexp(regex, :ls_quote_highlight) if regex
-    $el.re_search_forward "|"
+    list
+
   end
 
   def self.grep_with_hashes path, regex, prepend='##'
@@ -180,7 +165,7 @@ class FileTree
     result
   end
 
-  def self.outline_search(f, regex, indent)
+  def self.outline_search f, regex, indent
     result = []
     current_line = Search.outline_goto_once   # If search_outline, we want to put cursor on that line when done
     line_found, matches_count, i = nil, 0, 0
@@ -224,7 +209,7 @@ class FileTree
 
     # Process dirs
     entries.each{ |f|
-      next unless FileTest.directory?(f)
+      next unless File.directory?(f)
       cleaned = clean(f, @@indent)
       @list << "#{cleaned.sub(/(^ *)/, "\\1- ")}/"
       grep_inner f, regex
@@ -234,7 +219,7 @@ class FileTree
 
     # Process files
     entries.each do |f|
-      next unless FileTest.file?(f)
+      next unless File.file?(f)
 
       # If matching filename, skip if no match
       if file_regex
@@ -1086,12 +1071,10 @@ class FileTree
     end
 
     Tree.search(:left=>left, :right=>right, :always_search=>true)
-
   end
 
   # New Unified way to show one dir.
   def self.expand_one_dir options
-
     dir = options[:file_path]
 
     dirs, files = self.files_in_dir dir   # Get dirs and files in it
@@ -1273,7 +1256,7 @@ class FileTree
       Console.launch_async
     elsif without_label =~ /^ *&( |$)/   # % shell command in iterm
       Console.launch_async :iterm=>1
-    elsif line =~ /^[^|\n]* (\*\*|##)/   # *foo or ## means do grep
+    elsif line =~ /^[^|\n]* (\*\*|##)/   # **foo or ## means do grep
       self.grep_syntax indent
     elsif self.dir?   # if has slash - foo/ is a dir (if no | before)
       self.dir
@@ -1536,8 +1519,8 @@ class FileTree
         all = all.sort{|a,b| File.size(b) <=> File.size(a)}
       end
 
-      dirs = all.select{|i| FileTest.directory?(i)}#.sort
-      files = all.select{|i| FileTest.file?(i)}#.sort
+      dirs = all.select{|i| File.directory?(i)}#.sort
+      files = all.select{|i| File.file?(i)}#.sort
       [dirs, files]
     end
   end
@@ -1638,6 +1621,7 @@ class FileTree
 
     raw = Tree.construct_path(:labels=>true, :list=>true)
     files = contents = nil
+
     if raw.join('') =~ /\*\*(.+)##(.+)/  # *foo means search in files
       files, contents = $1, $2.sub!(/\/$/, '')
     elsif raw.last =~ /\*\*(.+)/  # *foo means search in files
@@ -1646,26 +1630,38 @@ class FileTree
       contents = $1.sub!(/\/$/, '')
       if raw[-2] =~ /\*\*(.+)/   # If prev is **, use it
         files = $1
-      elsif raw[-2] =~ /(.+[^\/])$/   # If prev line is file, just show matches
+      elsif raw[-2] =~ /(.+[^\/])$/
+
+        # If file.foo/##, search in the one file...
+
         contents = Regexp.new(contents, Regexp::IGNORECASE)
         list = self.outline_search(Bookmarks.expand(dir), contents, "  ")
       end
     end
+
+
     files.sub!(/\/$/, '') if files
-    options = {:raw => true}
+    options = {}
     options.merge!({:files => files}) if files
 
     unless list   # If not already gotten
       Search.append_log dir, "- ###{contents}/"
+
+      # Do actual search...
+
       list = self.grep dir, contents, options
       list.shift   # Pull off first dir, so they'll be relative
     end
     Line.to_next
+
     left = $el.point
     tree = list.join("\n") + "\n"
     View.insert tree.gsub(/^/, indent)
     right = $el.point
     $el.goto_char left
+
+    # Do appropriate incremental search...
+
     if Line.matches(/^\s*$/)  # Do nothing
     elsif Line.matches(/^\s+\|/)
       if Search.outline_goto_once   # If we want to go back to a line
@@ -2016,10 +2012,15 @@ class FileTree
   end
 
   def self.expand options
-
     file_path = options[:file_path]
 
+    # If ##foo/ or **foo/ filter at end (removing all as we check)...
+
+    filters_at_end = self.extract_filters file_path   # Removes ## and ** filters, returning any that were at the end
+    return self.expand_filter filters_at_end, options if filters_at_end
+
     # If it's a $... shell command...
+
     if file_path =~ %r"^(/[\w./ -]+/)([$%&]) (.+)"   # If /foo// or //foo
       options.merge!(:dir=>$1, :prompt=>$2, :command=>$3)
       return self.expand_shell options
@@ -2049,6 +2050,59 @@ class FileTree
   def self.expand_shell options
     options[:no_slash] = 1
     Console.shell_command_per_prompt options[:prompt], options
+  end
+
+
+  # FileTree.extract_filters("/projects/foo/##hey/")
+  def self.extract_filters file_path
+
+    patterns_at_end = []
+
+    # While a (rightmost) filter exists
+    while file_path =~ %r"^([^|]*/)((##|\*\*)[^|]+?/)"
+
+      start, filter = $1.length, $2
+
+      # If it was at end, store it so we can do filter, and ignore the rest
+      if start + filter.length == file_path.length
+        patterns_at_end.unshift filter
+      end
+
+      # Delete it
+      file_path.slice! start, filter.length
+    end
+
+    patterns_at_end.any? ? patterns_at_end : nil
+  end
+
+
+  def self.expand_filter filters, options
+
+    raise "We're not yet set up to handle multiple ## or ** filters of the same type.  Should be easy though, just run both regex's as you grep." if filters.length > 2
+
+    file_path = options[:file_path]
+
+    content_filter, file_filter = nil, nil
+    filters.each do |filter|
+      is_content_filter = filter =~ /^##/
+      filter = filter[/^..(.+).$/, 1]
+      is_content_filter ?
+        content_filter = filter :
+        file_filter = filter
+    end
+
+    if File.file? file_path.sub(/\/$/, '')
+      return self.outline_search(file_path.sub(/\/$/, ''), /#{content_filter}/i, "  ").join("\n")
+    end
+
+    options = {}
+    options.merge!({:files => file_filter}) if file_filter
+
+    list = self.grep file_path, content_filter, options
+
+    list.shift   # Pull off first dir, so they'll be relative
+    list = list.join "\n"   # + "\n"
+    list
   end
 
 end
