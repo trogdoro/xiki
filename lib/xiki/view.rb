@@ -1025,6 +1025,8 @@ class View
   def self.delete left=nil, right=nil
     return Line.delete if left == :line
 
+    left, right = [left.begin, left.end] if left.is_a?(Range)
+
     # Default to deleting region
     left, right = View.range if left.nil?
 
@@ -1623,6 +1625,57 @@ class View
   def self.=~ regex
     self.txt =~ regex
   end
+
+
+  # Jump to line in file that most closely matches the quote.
+  # The quote can be just a line in the file.  We try to find
+  # match with the exact indent, then secondarily try to find
+  # line with different indent (since the indent of quoted
+  # lines isn't strict).
+  def self.to_quote quote
+
+    quote = $el.regexp_quote quote
+
+
+    View.to_highest
+
+    # Search for exact line match
+    found = Search.forward "^#{quote}$"
+
+    unless found   # If not found, search for substring of line, but with a break at the end
+      Move.top
+      # :beginning
+      found = Search.forward "#{quote}\\([^_a-zA-Z0-9\n]\\|$\\)", :beginning=>true
+    end
+    unless found   # If not found, search for substring of line
+      Move.top
+      found = $el.search_forward_regexp "#{quote}", nil, true
+    end
+    unless found   # If not found, search for it stripped
+      Move.top
+      found = $el.search_forward_regexp "#{$el.regexp_quote(quote.strip)}", nil, true
+    end
+
+    Line.to_beginning
+
+    found
+
+  end
+
+
+  # Shelved for now, in favor if having editor handle all <<,<=,<@ bullets.
+  #   def self.delete_parent times=1
+  #     times.times do
+  #       Move.to_end
+  #       Line.sub! /\/$/, ''   # Kill slash if at end
+  #       right = View.cursor
+  #       # Delete back to the previous slash
+  #       Search.backward "/"
+  #       Move.forward
+  #       View.delete View.cursor..right
+  #     end
+  #   end
+
 
 end
 

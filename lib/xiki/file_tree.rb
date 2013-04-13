@@ -165,11 +165,30 @@ class FileTree
     result
   end
 
-  def self.outline_search f, regex, indent
+
+  # Used by new Unified code.
+  # Searches through a single file for a pattern.  If no pattern, defaults
+  # to the pattern appropriate for the file extension.
+  #
+  # FileTree.filter_one_file "/tmp/foo.txt", regex, indent, options={}
+
+
+  def self.filter_one_file file, regex=nil, options={}
+
+    # Default pattern based on file extension
+    regex ||= /#{self.outline_pattern File.extname(file).sub(".", '')}/
+
+    indent = options[:indent] || ""
+
     result = []
-    current_line = Search.outline_goto_once   # If search_outline, we want to put cursor on that line when done
+
+    # If search_outline, we want to put cursor on that line when done
+    # Remove .outline_goto_once part of line after Unified refactor is done
+
+    current_line = options[:current_line] || Search.outline_goto_once
+
     line_found, matches_count, i = nil, 0, 0
-    IO.foreach(f, *Files.encoding_binary) do |line|
+    IO.foreach(file, *Files.encoding_binary) do |line|
       i+=1
       line.gsub!(/[\r\n\c@]+/, '')
 
@@ -180,10 +199,19 @@ class FileTree
       if regex
         next unless line =~ regex
       end
-      result << "#{indent}| #{line}"
+
+      # Don't show space after quote for blank lines.
+      line.sub! /^ > $/, ' >'
+      line = line == "" ? "" : " #{line}"
+
+      result << "#{indent}|#{line}"
       matches_count+=1
     end
-    Search.outline_goto_once = line_found
+
+    if line_found   # If line we were on was found, remember it so we can hililght it when we show the outline
+      options[:line_found] = line_found
+      Search.outline_goto_once = line_found   # Remove after Unified refactor
+    end
     result
   end
 
@@ -274,33 +302,38 @@ class FileTree
       Styles.define :quote_heading_h0, :fg=>"fff", :size=>"+8", :face=>"arial", :bold=>true
       Styles.define :quote_heading_h1, :fg=>"fff", :size=>"2", :face=>"arial", :bold=>true
       Styles.define :quote_heading_h2, :fg=>"fff", :size=>"-2", :face=>"arial", :bold=>true
-      Styles.define :quote_heading_pipe, :fg=>"444", :size=>"0", :face => "verdana", :bold=>true
-      Styles.define :quote_heading_bracket, :fg=>"4c4c4c", :size=>"-2", :face => "Monaco", :bold=>true
+      Styles.define :quote_heading_pipe, :fg=>"444", :size=>"0", :face => "xiki", :bold=>true
+
+      Styles.define :quote_heading_bracket, :fg=>"4c4c4c", :size=>"-2", :face=>"arial black", :bold=>true
+
       Styles.define :quote_heading_small, :fg=>"fff", :size=>"-2", :face => "arial black", :bold=>true
 
       Styles.define :diff_line_number, :bold => true, :size => "-2", :fg => "444444"
-      Styles.define :diff_red, :bg => "400", :fg => "ee3333", :size => "-1"
-      Styles.define :diff_green, :bg => "130", :fg => "44dd33", :size => "-1"
+      Styles.define :diff_red, :bg=>"400", :fg=>"ee3333", :size=>"-1"
+      Styles.define :diff_red_pipe, :bg=>"400", :fg=>"772222", :size=>"0", :face=>"xiki"
+      Styles.define :diff_green, :bg=>"130", :fg=>"44dd33", :size=>"-1"
+      Styles.define :diff_green_pipe, :bg=>"130", :fg=>"227719", :size=>"0", :face=>"xiki"
       Styles.define :diff_small, :fg => "222", :size => "-11"
 
       Styles.tree_keys :fg=>"#fff", :underline=>nil
 
       # dir/
       Styles.define :ls_dir, :fg => "888", :face => "verdana", :size => "-1", :bold => true
-      #       Styles.define :ls_dir, :fg => "bbb", :face => "verdana", :size => "-2", :bold => true
 
     else
       Styles.define :quote_heading_h0, :fg=>"444", :size=>"+8", :face=>"arial", :bold=>true
       Styles.define :quote_heading_h1, :fg=>"444", :size=>"2", :face=>"arial", :bold=>true
       Styles.define :quote_heading_h2, :fg=>"aaa", :size=>"-2", :face=>"arial", :bold=>true
-      Styles.define :quote_heading_pipe, :fg=>"bbb", :size=>"0", :face => "verdana", :bold=>true
-      Styles.define :quote_heading_bracket, :fg=>"bbb", :size=>"-2", :face => "Monaco", :bold=>true
+      Styles.define :quote_heading_pipe, :fg=>"bbb", :size=>"0", :face => "xiki", :bold=>true
+      Styles.define :quote_heading_bracket, :fg=>"bbb", :size=>"-2", :face=>"arial black", :bold=>true
       Styles.define :quote_heading_small, :fg=>"fff", :size=>"-2", :face => "arial black", :bold=>true
 
-      Styles.define :diff_line_number, :bold => true, :size => "-2", :fg => "ccc"
-      Styles.define :diff_red, :bg => "ffdddd", :fg => "cc4444", :size => "-1"
-      Styles.define :diff_green, :bg => "ddffcc", :fg => "337744", :size => "-1"
-      Styles.define :diff_small, :fg => "ddd", :size => "-11"
+      Styles.define :diff_line_number, :bold=>true, :size=>"-2", :fg=>"ccc"
+      Styles.define :diff_red, :bg=>"ffdddd", :fg=>"cc4444", :size=>"-1"
+      Styles.define :diff_red_pipe, :bg=>"ffdddd", :fg=>"cc4444", :size=>"0", :face=>"xiki"
+      Styles.define :diff_green, :bg=>"ddffcc", :fg=>"337744", :size=>"-1"
+      Styles.define :diff_green_pipe, :bg=>"ddffcc", :fg=>"337744", :size=>"0", :face=>"xiki"
+      Styles.define :diff_small, :fg=>"ddd", :size=>"-11"
 
       Styles.tree_keys :fg=>"#ff0", :underline=>1
 
@@ -346,7 +379,7 @@ class FileTree
     # Must go before quotes - if it goes after, it supercedes them
     Styles.apply("\\(~\\)\\(.+?\\)\\(~\\)", nil, :quote_heading_bracket, :notes_label, :quote_heading_bracket)
 
-    Styles.apply("\\(https?\\|file\\)://[a-zA-Z0-9\/.~_:-]+", :notes_link)   # blue-ify url's
+    Styles.apply("\\(https?\\|file\\)://[a-zA-Z0-9\/.~_:;,-]+", :notes_link)   # blue-ify url's
 
     # - bullets
     Styles.apply("^[ \t]*\\([+=-]\\)\\( \\)", nil, :ls_bullet, :variable)
@@ -387,7 +420,7 @@ class FileTree
     # Put this one back?
     #     Styles.apply("^[ +-]*\\([^|\n]+/\\)$", nil, :ls_dir)   # Dirs with bullets
 
-    Styles.apply('\\(https?\\|file\\)://[a-zA-Z0-9\/.~_:?%&=|+!-#-]+', :notes_link)   # Url
+    Styles.apply('\\(https?\\|file\\)://[a-zA-Z0-9\/.~_:;,?%&=|+!-#-]+', :notes_link)   # Url
 
 
     # :... lines (quotes)
@@ -419,9 +452,9 @@ class FileTree
 
     # |+... diffs
     Styles.apply("^ +\\(:[0-9]+\\)$", nil, :ls_quote)
-    Styles.apply("^ *\\(|\\+.*\\)", nil, :diff_green)   # whole lines
-    Styles.apply("^ *\\(|\-.*\\)", nil, :diff_red)
-    Styles.apply("^ *\\(|@@ .*\n\\)", nil, :diff_line_number)
+    Styles.apply("^ *\\(|\\+\\)\\(.*\\)", nil, :diff_green_pipe, :diff_green, :face=>"xiki")   # whole lines
+    Styles.apply("^ *\\(|\-\\)\\(.*\\)", nil, :diff_red_pipe, :diff_red)
+    Styles.apply("^ *\\(|\\)\\(@@ .*\n\\)", nil, :quote_heading_pipe, :diff_line_number)
 
     #Styles.apply('^[ -]*\\([ a-zA-Z0-9\/_\.$-]*\\w/\\)$', nil, :ls_dir)  # Most dirs
     Styles.apply('^ *\\(//?\\)$', nil, :ls_dir)  # /
@@ -453,10 +486,14 @@ class FileTree
     item =~ %r"^(~/|\.\.?/|\$\w)"
   end
 
+  # Remove this after Unified refactor?
+  #
   # Open the line in the tree that the cursor is on.  This is probably
   # be mapped to C-. .
   # TODO: remove ignore_prefix, and just use Keys.clear_prefix
   def self.open options={}
+    # Ol["deprecated after Unified refactor"]
+    # raise "deprecated after Unified refactor - shouldn't be used!"
 
     # If passed just a dir, open it in new view
     return self.ls :dir=>options if options.is_a? String
@@ -571,23 +608,8 @@ class FileTree
 
       Hide.reveal if View.hidden?
 
-      Move.top
-      # Search for exact line match
-      found = Search.forward "^#{$el.regexp_quote(quote_string)}$"
+      found = View.to_quote quote_string
 
-      unless found   # If not found, search for substring of line, but with a break at the end
-        Move.top
-        # :beginning
-        found = Search.forward "#{$el.regexp_quote(quote_string)}\\([^_a-zA-Z0-9\n]\\|$\\)", :beginning=>true
-      end
-      unless found   # If not found, search for substring of line
-        Move.top
-        found = $el.search_forward_regexp "#{$el.regexp_quote(quote_string)}", nil, true
-      end
-      unless found   # If not found, search for it stripped
-        Move.top
-        found = $el.search_forward_regexp "#{$el.regexp_quote(quote_string.strip)}", nil, true
-      end
       unless found   # If not found, suggest creating or show error
 
         return if self.suggest_creating quote_string
@@ -1283,15 +1305,15 @@ class FileTree
     end
   end
 
-  #
+
   # Called by to+outline and enter+outline, (others?).
   #
   # ...and @outline________
   #
   # > Don't insert, just return
   # p FileTree.enter_lines /foo/, :just_return=>1, :path=>View.file
-  #
   def self.enter_lines pattern=nil, options={}
+
     $xiki_no_search = false
 
     # If prefix is 6, delegate to Git to enter methods by date
@@ -1363,6 +1385,8 @@ class FileTree
       self.file_not_found_from_template(path)
       return
     end
+
+    # Go through file and extract pattern...
 
     IO.foreach(path, *Files.encoding_binary) do |line|
       i+=1
@@ -1635,7 +1659,7 @@ class FileTree
         # If file.foo/##, search in the one file...
 
         contents = Regexp.new(contents, Regexp::IGNORECASE)
-        list = self.outline_search(Bookmarks.expand(dir), contents, "  ")
+        list = self.filter_one_file Bookmarks.expand(dir), contents, :indent=>"  "
       end
     end
 
@@ -2026,25 +2050,66 @@ class FileTree
       return self.expand_shell options
     end
 
+    # If quoted line, pull it off into :quote...
+
+    if quote = Path.extract_quote(file_path)
+      options[:quote] = quote
+    end
+
     # If it's a file...
 
     if File.file? file_path
-      # If emacs, return telling it to open?
-      return "@open/#{file_path}" if options[:editor]
-      # If API, return contents?
+      options[:no_slash] = 1
+
+      return self.filter_one_file(file_path).join("\n") if options[:prefix] == "outline"
+
+      return Tree.quote File.read(file_path, *Files.encoding_binary) if options[:prefix] == "all"
+
+      # If editor, tell it to open the file...
+
+      if options[:client] =~ /^editor\//
+        txt = "@open file/#{file_path}"
+        txt << "/|#{options[:quote]}" if options[:quote]   # If a quote, pass line number after a colon!
+        return txt
+      end
+
+      # If API, return contents...
       return File.read file_path
+      # If not editor, |... will be ignored for now.  Any reasons would api pass this in?  Probably to create non-existant files?  Maybe grab lines indented under it?  Maybe return line number of it?
     end
 
-    # If it's a dir...
 
-    # TODO: maybe deprecate C-8 prefix for this, only make it enter+all ("all")
-    prefix = options[:prefix]
-    if prefix == 8 || prefix == "all"
-      Ol["Do recursively!"]
-      return self.expand_dir_recursively options
+    # If a dir...
+
+    if File.directory? file_path
+
+      # TODO: maybe deprecate C-8 prefix for this, only make it enter+all ("all")
+      prefix = options[:prefix]
+      if prefix == 8 || prefix == "all"
+        return self.expand_dir_recursively options
+      end
+
+      return self.expand_one_dir options
     end
 
-    self.expand_one_dir options
+    # Else, confirm and save the file...
+
+
+
+
+    # TODO: If quote and file doesn't exist, create it - how to grab all lines?!"
+
+    # - Get from editor: confirmation from user and __
+    #   - Short term way > do now
+    #     - View.confirm
+    #     - Just grab lines
+    #   - Long term way > do later
+    #     - if ! options[:prompt_response]
+    #       - return @/prompt/Are you sure you want to create?
+    #     - if :prompt_response says they're ok with saving, do it
+    #       - __
+
+    #     raise "Don't know to handle #{file_path}" if ! File.directory? file_path
   end
 
   def self.expand_shell options
@@ -2092,7 +2157,7 @@ class FileTree
     end
 
     if File.file? file_path.sub(/\/$/, '')
-      return self.outline_search(file_path.sub(/\/$/, ''), /#{content_filter}/i, "  ").join("\n")
+      return self.filter_one_file(file_path.sub(/\/$/, ''), /#{content_filter}/i, :indent=>"  ").join("\n")
     end
 
     options = {}

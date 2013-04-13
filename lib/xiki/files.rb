@@ -309,8 +309,12 @@ class Files
 
   def self.open_nth nth
     View.layout_files :no_blink=>1
-    View.to_highest
-    nth.times { Move.to_quote }
+
+    if nth != 0
+      View.to_highest
+      nth.times { Move.to_quote }
+    end
+
     Effects.blink
     Launcher.launch
   end
