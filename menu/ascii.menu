@@ -1,6 +1,6 @@
 - table/
   - all/
-    | Binary      Dec:Oct   Hex   Abbr               Name
+    | Binary    Dec:Oct     Hex   Abbr               Name
     | 000 0000    0:000     00    NUL    ^@    \0    Null character
     | 000 0001    1:001     01    SOH    ^A          Start of Header
     | 000 0010    2:002     02    STX    ^B          Start of Text
@@ -137,7 +137,7 @@
     | 111 1110    126:176   7E    ~
   - subsets/
     - control/
-      | Binary      Dec:Oct   Hex   Abbr               Name
+      | Binary    Dec:Oct     Hex   Abbr               Name
       | 000 0000    0:000     00    NUL    ^@    \0    Null character
       | 000 0001    1:001     01    SOH    ^A          Start of Header
       | 000 0010    2:002     02    STX    ^B          Start of Text
@@ -172,7 +172,7 @@
       | 001 1110    30:036    1E    RS     ^^[j]       Record Separator
       | 001 1111    31:037    1F    US     ^_          Unit Separator
     - punctuation/
-      | Binary      Dec:Oct   Hex   Glyph
+      | Binary     Dec:Oct    Hex   Glyph
       | 010 0000    32:040    20    Space
       | 010 0001    33:041    21    !
       | 010 0010    34:042    22    "
@@ -212,7 +212,7 @@
       | 111 1101    125:175   7D    }
       | 111 1110    126:176   7E    ~
     - numbers/
-      | Binary      Dec:Oct   Hex   Glyph
+      | Binary     Dec:Oct    Hex   Glyph
       | 011 0000    48:060    30    0
       | 011 0001    49:061    31    1
       | 011 0010    50:062    32    2
@@ -224,7 +224,7 @@
       | 011 1000    56:070    38    8
       | 011 1001    57:071    39    9
     - letters/
-      | Binary      Dec:Oct   Hex   Glyph
+      | Binary     Dec:Oct    Hex   Glyph
       | 100 0001    65:101    41    A
       | 100 0010    66:102    42    B
       | 100 0011    67:103    43    C
@@ -280,7 +280,7 @@
       | 111 1010    122:172   7A    z
   - groups/
     - control/
-      | Binary      Dec:Oct   Hex   Abbr               Name
+      | Binary    Dec:Oct     Hex   Abbr               Name
       | 000 0000    0:000     00    NUL    ^@    \0    Null character
       | 000 0001    1:001     01    SOH    ^A          Start of Header
       | 000 0010    2:002     02    STX    ^B          Start of Text
@@ -315,7 +315,7 @@
       | 001 1110    30:036    1E    RS     ^^[j]       Record Separator
       | 001 1111    31:037    1F    US     ^_          Unit Separator
     - numbers and most punctuation/
-      | Binary      Dec:Oct   Hex   Glyph
+      | Binary     Dec:Oct    Hex   Glyph
       | 010 0000    32:040    20    Space
       | 010 0001    33:041    21    !
       | 010 0010    34:042    22    "
@@ -350,7 +350,7 @@
       | 011 1110    62:076    3E    >
       | 011 1111    63:077    3F    ?
     - capital and misc/
-      | Binary      Dec:Oct   Hex   Glyph
+      | Binary     Dec:Oct    Hex   Glyph
       | 100 0000    64:100    40    @
       | 100 0001    65:101    41    A
       | 100 0010    66:102    42    B
@@ -385,7 +385,7 @@
       | 101 1110    94:136    5E    ^
       | 101 1111    95:137    5F    _
     - lower case and misc/
-      | Binary      Dec:Oct   Hex   Glyph
+      | Binary     Dec:Oct    Hex   Glyph
       | 110 0000    96:140    60    `
       | 110 0001    97:141    61    a
       | 110 0010    98:142    62    b
@@ -418,6 +418,12 @@
       | 111 1100    124:174   7C    |
       | 111 1101    125:175   7D    }
       | 111 1110    126:176   7E    ~
+  - escaping in urls and html/
+    > Using caret as an example...
+    | Binary     Dec:Oct    Hex   Glyph
+    | 101 1110    94:136    5E    ^
+    | in html:  &#94;
+    | in url:              %5E
 - see/
   > Show chars codes in a file
   <@ specials/

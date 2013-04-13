@@ -24,6 +24,7 @@ class Window
       - low/
       - .colorized/
       - .scroll bars/
+      - .dotsies/
     - .scroll bars/
     "
   end
@@ -131,6 +132,10 @@ class Window
     #     View.scroll_bars = false
     View.kill if View.name == "@window/visibility/"
     nil
+  end
+
+  def self.dotsies
+    Dotsies.all_views
   end
 
 end

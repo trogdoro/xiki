@@ -20,7 +20,7 @@ class RubyHandler
   end
 
   def self.handle_class file, code, options
-    Invoker.invoke file, options[:args], options.merge(:code=>code)
+    Invoker.invoke file, options[:args], options.merge!(:code=>code)
   end
 
   def self.handle_script file, code, options

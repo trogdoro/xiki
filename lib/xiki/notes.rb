@@ -223,12 +223,19 @@ class Notes
     Line.start
     orig = Line.value
 
-    times = Keys.prefix_u? ? 1 : (Keys.prefix || 1)
+    prefix = Keys.prefix
+    times = Keys.prefix_n || 1
     times.times { $el.insert ">" }
     View.insert " " # unless times > 1
 
-    if options[:extra_space] || Keys.prefix_u?   # If U create blank lines.
+    if options[:extra_space] || prefix == :u   # If up+, create blank lines.
       View.insert("\n"*4, :dont_move=>1)
+      return
+    end
+
+    if options[:extra_space] || prefix == :-
+      View.insert("\n"*2, :dont_move=>1)
+      View.<< "!:", :dont_move=>1
       return
     end
 
@@ -345,7 +352,7 @@ class Notes
       :size => "-2",
       :face => 'arial'
 
-    # |...
+    # >...
     h1_size = "+3"
 
     # Colors of "| ..." headings
@@ -403,7 +410,7 @@ class Notes
     Styles.define :notes_h1_agenda_pipe, :face => 'arial', :size => h1_size, :fg => '88cc88', :bg => '336633', :bold =>  true
     Styles.define :notes_h1_agenda, :face => 'arial', :size => h1_size, :fg => 'ffffff', :bg => '336633', :bold => true
 
-    # |||...
+    # >>>...
     Styles.define :notes_h3,
       :face => 'arial', :size => "-1",
       :fg => '999',#, :bg => "9999cc",
@@ -412,7 +419,7 @@ class Notes
       :face => 'arial', :size => "-1",
       :fg => '333'
 
-    # ||||...
+    # >>>>...
     Styles.define :notes_h4,
       :face => 'arial', :size => "-3",
       :fg => '55b',
@@ -559,8 +566,8 @@ class Notes
     Styles.apply "^[< ]*@? ?\\([%$&]\\) ", nil, :shell_prompt   # Colorize shell prompts
 
     # Make |~... lines be Dotsies
-    #     Styles.apply("^ *\\(|~\\)\\([^\n~]+\\)\\(~?\\)", nil, :quote_heading_pipe, :dotsies, :quote_heading_pipe)
-    Styles.apply("\\(^\\| \\)\\(|~\\)\\([^\n~]+\\)\\(~?\\)", nil, :quote_heading_pipe, :quote_heading_pipe, :dotsies, :quote_heading_pipe)
+    Styles.apply("^ *\\(|~\\)\\([^\n~]+\\)\\(~?\\)", nil, :quote_heading_pipe, :dotsies, :quote_heading_pipe)
+    #     Styles.apply("\\(^\\| \\)\\(|~\\)\\([^\n~]+\\)\\(~?\\)", nil, :quote_heading_pipe, :quote_heading_pipe, :dotsies, :quote_heading_pipe)
 
     # |... invisible
     Styles.apply("^ *\\(|\\.\\.\\.\\)\\(.*\n\\)", nil, :quote_heading_pipe, :quote_hidden)
@@ -1174,6 +1181,7 @@ class Notes
     "f"=>"fix",
     "i"=>"implement",
     "p"=>"pass",
+    "po"=>"port",
     "r"=>"rename",
     "t"=>"todo",
     "u"=>"update",

@@ -41,6 +41,16 @@ class Color
           | go to next color : layout+mark+next
           | go to previous color : layout+mark+previous
           | iterate through marked lines : 8+Tab
+      - color meanings/
+        > Lose convention for color meanings
+        | light : temporary mark (removed when other in file, and not shown in layout+mark+show)
+        | red : causing a problem
+        | orange : todo
+        | yellow : needs fixing
+        | green : found
+        | blue : borrow from this
+        | purple : misc
+        | white : very important
     - api/
       > Make current line be red, yellow, or blue
       @Color.mark "red"
