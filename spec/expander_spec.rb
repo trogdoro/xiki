@@ -2,7 +2,6 @@ $:.unshift "spec/"
 
 %w"xiki/core_ext xiki/ol xiki/menu xiki/file_tree xiki/bookmarks".each {|o| require o}
 
-
 # TODO: move this into spec_helper, and make it get real xiki dir?
 # module Xiki
 #   def self.dir; end
@@ -79,6 +78,11 @@ describe Expander, "#parse" do
       {:file_path=>"/tmp/a/b"}
   end
 
+  it "handles file path with spaces" do
+    Expander.parse("/tmp/a/b c").should ==
+      {:file_path=>"/tmp/a/b c"}
+  end
+
   it "handles menufied paths" do
     Expander.parse("/tmp/a//").should ==
       {:menufied=>"/tmp/a"}
@@ -104,6 +108,11 @@ describe Expander, "#parse" do
   it "handles names" do
     Expander.parse("a").should ==
       {:name=>"a", :path => "a"}
+  end
+
+  it "handles name when space" do
+    Expander.parse("a b").should ==
+      {:name=>"a_b", :path => "a b"}
   end
 
   it "handles name with items" do

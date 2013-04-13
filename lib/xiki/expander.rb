@@ -88,7 +88,6 @@ class Expander
   # Expander.parse("/tmp").should == {:file_path=>"/tmp"}
   # Expander.parse(:foo=>"bar").should == {:foo=>"bar"}
   def self.parse *args
-
     options = args[-1].is_a?(Hash) ? args.pop : {}   # Extract options if there
 
     # Just return if input has already been parsed into a hash
@@ -108,7 +107,7 @@ class Expander
 
     # If non-string add and return...
 
-    return options.merge!(:name=>thing.to_s) if thing.is_a? Symbol
+    return options.merge!(:name=>Menu.format_name(thing.to_s)) if thing.is_a? Symbol
     return options.merge!(:class=>thing) if thing.is_a? Class
 
     raise "Don't know how to deal with #{thing.class} #{thing.inspect}" if ! thing.is_a? String
@@ -121,7 +120,7 @@ class Expander
 
     if thing =~ /^[\w _-]+(\/.*|$)/
       items = Menu.split thing
-      options[:name] = items.shift
+      options[:name] = Menu.format_name items.shift
       options[:items] ||= items if items.any?   # Don't over-write if already there
 
       # Store original path, since it could be a pattern
@@ -179,14 +178,17 @@ class Expander
 
     # Figure out what type of expander to use, and set some more attributes along the way
     options = self.expander options
+
     expander = options[:expander]
 
-    return "- TODO: apparently no menu defined - how to handle this?: #{options.inspect}" if ! expander
+    if ! expander
+      options[:no_slash] = true
+      return "- No menu defined: #{options.inspect}"
+    end
 
     txt = expander.expand options
 
     return nil if txt == :none
-
     return txt
   end
 
@@ -199,7 +201,7 @@ class Expander
     options = args[0]   # Probably a single options hash
     options = self.parse(*args) if ! args[0].is_a?(Hash)   # If not just a hash, assume they want us to parse
 
-    [Menu, FileTree, Pattern].each do |clazz|
+    [PrePattern, Menu, FileTree, Pattern, MenuSuggester].each do |clazz|
       break options[:expander] = clazz if clazz.expands?(options)
     end
 
@@ -222,7 +224,18 @@ class Expander
     end
   end
 
-  # Xiki.def(:abc) { "some code" }
+  # Defines menus so they can later be called with Expander.expand.
+  # Note that menus in a MENU_PATH dir don't need to be def'ed.
+  #
+  # Xiki.def(:abc){ "some code" }
+  #
+  # > Future plans for how you'll be able to define menus
+  # - "pre" pattern menus
+  #   | Xiki.def(:pre=>1, :view=>"*ol"){...}
+  # - normal pattern menus (without a regex)
+  #   | Xiki.def(:view=>"*ol"){...}
+  #   | Xiki.def(:token1=>"select"){...}   # optimized via hash lookup
+  #   | Xiki.def(/^select/, :token1=>"select"){...}   # optimized via hash, with pattern that runs after
   def self.def *args, &block
 
     # Maybe know by the "/" at end that it was called via a menu?
@@ -231,33 +244,47 @@ class Expander
 
     options = args[-1].is_a?(Hash) ? args.pop : {}   # Extract options if there
 
-    if args[0].is_a? Symbol
-      options[:name] = args.shift.to_s
-    elsif args[0].is_a? Regexp
-      options[:regexp] = args.shift
-    elsif args[0].is_a? String
-      # If a file path, grab name from
-      if args[0] =~ %r"^/"
+    implementation = block || args[0]
 
+    # If symbol, just treat as string
+    args[0] = args[0].to_s if args[0].is_a? Symbol
+
+    # Menu if symbol or string...
+
+    if args[0].is_a? String
+      kind = Menu
+
+      name = nil
+
+      # If a file path, grab name from it
+      if args[0] =~ %r"^/"
         # Remove slashes and extension from end
         # For now, the decision is to ignore the extension at define time
         args[0].sub! /(\.\w+)?\/*$/, ''
-
-        options[:name] = args[0][%r"([^\/]+)/*$"]   # "
-
-      else
+        name = args[0][%r"([^\/]+)/*$"]   # "
+      else   # Must be normal foo/... menu path
         # If name has "+", delegate to key shortcut...
         return self.delegate_to_keys args, block if args[0] =~ /\+/
-
-        options[:name] = args[0]   # Assume just raw menu name
+        name = args[0]   # Assume just raw menu name
       end
+
+      Menu.defs[name || "no_key"] = implementation
+
+    elsif args[0].is_a? Regexp
+      Pattern.defs[args[0]] = implementation
+    else
+
+      # For now, assume just one key is passed in, like...
+      # options   # => {:view=>"*ol"}
+      key, val = options.to_a[0]   # => [:view, "*ol"]
+      PrePattern.defs[key] = {val=>implementation}
+
+      # Result should look like...
+      #   PrePattern.defs=>{
+      #     :view=>{
+      #       "*ol"=>implementation
+
     end
-
-    implementation = block || args[0]
-
-    options[:regexp] ?
-      Pattern.defs[options[:regexp]] = implementation :
-      Menu.defs[options[:name] || "no_key"] = implementation
 
     nil
   end
