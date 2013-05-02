@@ -1,7 +1,5 @@
 $:.unshift "spec/"
 
-%w"xiki/core_ext".each {|o| require o}
-
 require 'xiki/invoker'
 
 require './spec/spec_helper'
