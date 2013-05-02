@@ -118,6 +118,11 @@ class Ol
 
     path = name ? "/tmp/#{name}_ol.notes" : self.file_path
 
+    l_raw = l.dup
+
+    # If l is array (it's the whole trace), use only first for now
+    l = l[0].dup if l.is_a?(Array)
+
     if l.nil?   # If Ol.log "foo" called directly (probably never happens
       return self.line(txt, caller(0)[1])
     end
@@ -135,32 +140,22 @@ class Ol
 
     root_offset_indent = ""
     if @@roots.any?
-      root_offset = self.nesting_match caller(0)[3..-1]   # Omit Ol calls
+
+      # If they passed in a trace, use it instead of this one
+      trace = l_raw.is_a?(Array) ?
+        l_raw :
+        caller(0)[3..-1]   # Omit Ol calls
+
+      root_offset = self.nesting_match trace
       root_offset_indent = "  " * (root_offset||0)
 
       # Add this to @@roots if none found
       regex = self.nesting_match_regexp l
+      txt = "#{txt}"
       @@roots << regex if ! root_offset && ! @@roots.member?(regex) && ! (options && options[:leave_root])
     else
+      txt = "#{txt}"
       root_offset_indent = ""
-    end
-
-    if l.is_a?(Array)   # If an array of lines was passed
-      result = ""
-      result_lines = ""
-      if heading
-        result << heading
-        result_lines << "\n\n"
-      end
-      l.each_with_index do |o, i|
-        next unless o
-        h = Ol.parse_line(o)
-        result << "#{'  '*i}#{self.extract_label(h)}#{i+1 == l.size ? " #{txt}" : ''}\n"
-        result_lines << "#{h[:path]}:#{h[:line]}\n"
-      end
-      self.write_to_file path, result
-      self.write_to_file_lines path, result_lines
-      return txt
     end
 
     # Remove trailing linebreaks
@@ -171,6 +166,7 @@ class Ol
       # add on label
       if txt =~ /\n/   # If multi-line
         txt.gsub!(/^/, "  #{root_offset_indent}| ")
+        txt.gsub!(/^( +\|) $/, "\\1")
         txt = "#{root_offset_indent}#{label}\n#{txt}"
       else
         txt = "#{root_offset_indent}#{label}#{txt.any? ? " #{txt}" : ""}"
@@ -239,9 +235,44 @@ class Ol
     self.line txt, caller(0)[1]
   end
 
+  def self.ap *args
+    caption = args.shift if args.length > 1   # If 2 args, 1st is caption
+    txt = args.shift
 
-  def self.ai txt
-    self.line txt.ai, caller(0)[1]
+    if txt.is_a?(String)   # If string, show as multi-line (not inspect)
+      txt = txt.dup
+    else
+      txt = txt.ai
+
+      txt.gsub!(/^  /, "")
+      if txt.count("\n") == 2   # If only one item in hash or array
+        txt.gsub! "\n", ""   # Leave brackets, so it's obvious what it is
+      else
+        txt.sub!(/\A[\[{]\n/, '')
+        txt.sub!(/\n[\]}]\z/, '')
+      end
+    end
+
+    self.line txt, caller(0)[1], nil, nil, nil, :caption=>caption
+  end
+
+
+  def self.yaml *args
+    txt = args.shift
+    txt = txt.to_yaml
+
+    txt.sub! /.+\n/, ''   # Remove 1st line - it's ---...
+    txt.gsub!(/[:-] $/, "")
+
+    self.line txt, caller(0)[1] #, nil, nil, nil, :caption=>caption
+  end
+
+
+  def self.xi *args
+    txt = args.shift
+    txt = Xi txt
+
+    self.line txt, caller(0)[1] #, nil, nil, nil, :caption=>caption
   end
 
 
@@ -259,6 +290,9 @@ class Ol
 
     l_raw = l.dup
 
+    # If l is array (it's the whole trace), use only first here
+    l = l[0].dup if l.is_a?(Array)
+
     l.sub! /^\(eval\)/, 'eval'   # So "(" doesn't mess up the label
     l.sub!(/ in <.+/, '')
 
@@ -266,14 +300,17 @@ class Ol
 
     options ||= {}
     if h[:clazz]
-      self.log "#{txt}", l_raw, name, time, options.merge(:label=>self.extract_label(h))
+      self.log txt.to_s, l_raw, name, time, options.merge(:label=>self.extract_label(h))
     else
       display = l.sub(/_html_haml'$/, '')
       display.sub! /.*\//, ''   # Chop off path (if evalled)
       display.sub! /:in `eval'$/, ''
       display.sub!(/.+(.{18})/, "...\\1")   # Concat if really long
 
-      self.log txt, l_raw, name, time, options.merge(:label=>"- #{display})")
+      label = "- #{display})"
+      label << " #{options[:caption]}" if options[:caption]
+      self.log txt.to_s, l_raw, name, time, options.merge(:label=>label)
+
     end
     nil
   end
@@ -300,14 +337,46 @@ class Ol
   end
 
   # Logs short succinct stack trace
-  def self.stack n=6, nth=1
+  def self.ancestors n=6, nth=1
     ls ||= caller(0)[nth..(n+nth)]
 
-    self.line "stack...", ls.shift, ""
+    self.line "ancestors...", ls.shift, ""
 
-    ls.each do |l|
-      self.line nil, l, "    ", nil, nil, :leave_root=>1
+    ls.each_with_index do |l, i|
+      self.line (i+1).to_s, l, "    ", nil, nil, :leave_root=>1
     end
+
+    nil
+  end
+
+  # Logs stack with indenting, like:
+  # Foo.a)
+  #   Boo.b)
+  #     Coo.c) ...stack
+  def self.stack n=3, nth=1
+    ls ||= caller(0)[nth..-1]
+
+    #     dots = nil
+    n.downto(1) do |i|
+      #       dots = "." * (i+1)
+      #       dots = "|" * (i+1)
+      i == n ?
+      #         self.line(dots, ls[i..-1], nil, nil, nil, :leave_root=>1) :
+      #         self.line(dots, ls[i..-1])
+      #         self.line("...", ls[i..-1], nil, nil, nil, :leave_root=>1) :
+      #         self.line("...", ls[i..-1])
+      #         self.line(nil, ls[i..-1], nil, nil, nil, :leave_root=>1) :
+      #         self.line(nil, ls[i..-1])
+
+        self.line("|||", ls[i..-1], nil, nil, nil, :leave_root=>1) :
+        self.line("|||", ls[i..-1])
+    end
+
+    #     self.line "|", ls[0..-1], nil, nil, nil, :leave_root=>1
+    #     self.line ".", ls[0..-1], nil, nil, nil, :leave_root=>1
+    #     self.line "...stack", ls[0..-1], nil, nil, nil, :leave_root=>1
+
+    self.line "|||", ls[0..-1], nil, nil, nil, :leave_root=>1
 
     nil
   end
@@ -368,20 +437,18 @@ class Ol
   def self.nesting_match stack, roots=nil
     roots ||= @@roots   # Param is for specs to over-ride
 
-    File.open("/tmp/simple.log", "a") { |f| f << "stack: #{stack}\n" }
-    File.open("/tmp/simple.log", "a") { |f| f << "roots2: #{roots}\n" }
-
     limit = 22
     limit = (stack.length-1) if stack.length <= limit
 
-    # Don't have indenting if recursion?
+    # Don't have indenting if recursion.
     # This might cause weirdness!
-    roots.each{|root| return 0 if root =~ stack[0]}
+    #     roots.each{|root| return 0 if root =~ stack[0]}
 
     # We sure we want to go backwards?!
     #     limit.downto(0) do |i|
     # Start with parent and then go lower, so we find the closest
-    1.upto(limit) do |i|
+    #     1.upto(limit) do |i|
+    limit.downto(1) do |i|
       roots.each{|root| return i if root =~ stack[i]}
     end
     nil
@@ -391,6 +458,8 @@ class Ol
   # p ("/tmp/a.rb:45:in `speak'" =~ Ol.nesting_match_regexp("/tmp/a.rb:46:in `speak'")).should == 0
   # p Ol.nesting_match_regexp("aa:45:bb").should == /^aa:[0-9]+:bb$/
   def self.nesting_match_regexp txt
+    # File.open("/tmp/simple.log", "a") { |f| f << ".nesting_match_regexp: #{txt}\n" }
+    # File.open("/tmp/simple.log", "a") { |f| f << "stack: #{caller(0)[2..5].join("\n")}\n" }
     txt = "^#{Regexp.quote txt}$"
     txt.sub! /:[0-9]+:/, ":[0-9]+:"
     Regexp.new(txt)
