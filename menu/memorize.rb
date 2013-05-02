@@ -1,0 +1,2 @@
+class Memorize < Facts
+end

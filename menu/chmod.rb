@@ -8,7 +8,7 @@ class Chmod
       mode = sprintf("%o", base_10_number)[/...$/]
       return "
         - original) #{mode}/
-        > Suggestions:
+        > Suggestions
         - no restrictions) 777/
         - normal) 644/
         - executable) 755/

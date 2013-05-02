@@ -1,0 +1,129 @@
+> Menu doesn't exist yet
+| Create it?  Make your menu by creating one of these...
+- text file/
+  @~/menu2/<name>.txt
+    | Change this text to something useful.
+    | It will be the content of your menu.
+- items/
+  @~/menu2/<name>.menu
+    | - dogs/
+    |   - hot/
+    | - cats/
+  - with wiki elements/
+    @~/menu2/<name>.menu
+      | > Heading
+      | - Bullet point
+      | @http://google.com/
+  - .directions/
+  - creating inline/
+    | As a shortcut for creating or updating a menu, you can just
+    | type some items in place.  For example, double-click on '<name>'
+    | above to collapse, then add some items kind of like this:
+    |
+    | <name>/
+    |   - dogs/
+    |     - pugs/
+    |   - cats/
+    |
+    | To save, with your cursor on the menu or one of the items, type
+    | as+menu (meaning Control+A, Control+M).
+- notes/
+  @~/menu2/<name>.notes
+    | > A heading
+    | Stuff under headings appears
+    | after you expand.
+    |
+    | > Another heading
+    | You can put anything under the headings.
+- code/
+  @~/menu2/<name>.rb
+    | # Change this code to something useful.
+    | a = "la"
+    | a * 3
+  - ruby class/
+    @~/menu2/<name>.rb
+      | class <Name>
+      |   def self.menu
+      |     "
+      |     hello
+      |     "
+      |   end
+      | end
+    - .directions/
+  - other languages/
+    - python/
+      @~/menu2/<name>.py
+        | # Change this code to something useful.
+        | a = "la"
+        | print(a)
+    - js/
+      @~/menu2/<name>.js
+        | # Change this code to something useful.
+        | a = "la"
+        | print(a)
+    - coffeescript/
+      @~/menu2/<name>.coffee
+        | # Change this code to something useful.
+        | a = "la"
+        | console.log(a)
+  - combinations/
+    - ruby class with menu method/
+    - ruby class with embedded menu/
+    - menu file and menu file/
+  - plain ruby object/
+    | Will use class or instance methods.
+  - programatic/
+    - block/
+    - pattern/
+    - load from disk/
+    - menu with other stuff/
+  - menu with nested code/
+    @~/menu2/<name>.menu
+      | - add stuff/
+      |   ! 1 + 2
+      | - add numbers from path/
+      |   ! raise "Pass 2 numbers in this path, like\n- 11/22/"
+      |   ! args[0] + args[1]
+      - todo: fix bug where returning number makes it fail!
+      - todo: get the above param stuff to work!
+  - .directions/
+- more/
+  - redirect/
+    | Makes one menu redirect to another.  Useful for creating menus
+    | that just serve as shortcuts.
+    @~/menu2/<name>.menu
+      | <<< foo/
+  - wrap other menu/
+    - by name/
+      @~/menu2/<name>.rb
+        | Xiki["tables/foo//", options[:items]]
+    - by bookmark/
+      @~/menu2/<name>.rb
+        | Xiki["$tm//", options[:items]]
+  - directories/
+    - show a simple example (dir of dirs)
+    - other stuff/
+      - show example with a few different types nested
+        - hey.rb
+        - hey.menu
+        - hey.notes
+      - explain that you can have anything nested!
+  - index files/
+    - explain they work like index.html files, and do the work for their containing directory
+    - so you can optionally have a dir a menu that contains all the files
+    - show one example
+    - show example of 2 equivalent versions
+  - multiple files/
+    - show 2 files with same name that work together
+      - don't need to be nested in a directory
+  - old/
+    - is this still relevant?
+    > Docs
+    @menus/docs/creating/
+- todo/
+  > Add these menus
+  - with menu_after
+  - with menu_before
+  - cooperating
+    - with MENU and methods
+    - with foo.menu and methods

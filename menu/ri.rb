@@ -34,7 +34,7 @@ class Ri
     # Make it in the form of Class.foo
     txt = args.select{|o| o !~ /^\./}.map{|o| o.sub(/^\|/, '').strip}.join "."
 
-    txt = `ri --format=rdoc #{txt}`
+    txt = `ri --format=rdoc "#{txt}"`
 
     txt = Tree.quote txt
 

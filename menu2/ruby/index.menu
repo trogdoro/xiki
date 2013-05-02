@@ -1,0 +1,3 @@
+- .classes/
+- load path/
+  ! $LOAD_PATH.map{|o| "@#{o}/\n"}.join("")

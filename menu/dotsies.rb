@@ -44,6 +44,7 @@ class Dotsies
       :notes_bullet_parens=>"arial",
       :notes_label=>"arial black",
       :quote_heading_h1=>"arial",
+      :quote_heading_h1_green=>"arial",
       :ls_search=>"verdana",
     }
 
