@@ -5,7 +5,13 @@ require 'xiki/text_util'
 # Methods for defining keyboard shortcuts
 class Keys
 
-  @@key_queue =[]  # For defining menus (must be done in reverse)
+  @@key_queue = []   # For defining menus (must be done in reverse)
+  @@source ||= {}   # Stores source for new unified key defs
+
+  def self.source
+    @@source
+  end
+
 
   def self.menu
     %`
@@ -474,6 +480,17 @@ class Keys
 
   def self.jump_to_code
     keys = $el.read_key_sequence("Type some keys, to jump to the corresponding code: ")
+
+    # If was defined with unified, pull from Keys.source
+
+    letters = Keys.sequence_to_string keys
+    if source = Keys.source[letters]
+      file, line = source.split ':'
+      Location.go file
+      View.to_line line.to_i
+      return
+    end
+
     proc = self.proc_from_key keys
     if proc.nil?
       $el.beep
@@ -482,7 +499,7 @@ class Keys
 
     file, line = Code.location_from_proc proc
     file = "#{Xiki.dir}#{file}" unless file =~ /^\//
-    Location.go(file)
+    Location.go file
     View.to_line line.to_i
     Effects.blink(:what=>:line)
   end
@@ -812,7 +829,6 @@ class Keys
   end
 
   def self.log options={}
-
     codes = $el.recent_keys.to_a.reverse
 
     if ! options[:raw]   # Unless they wanted it raw
@@ -827,4 +843,7 @@ class Keys
     codes
   end
 
+  def self.sequence_to_string keys
+    keys.split('').map{|o| Keys.to_letter(o.sum).upcase}.join('')
+  end
 end

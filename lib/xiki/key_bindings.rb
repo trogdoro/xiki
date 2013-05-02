@@ -84,7 +84,7 @@ class KeyBindings
     Keys.open_bookmark { Bookmarks.go }
 
 
-    Keys.open_current { Launcher.open("- current/") }   # open buffer list
+    Keys.open_current { Launcher.open("current/") }   # open buffer list
 
 
     Keys.open_diffs { DiffLog.open }   # shows diffs of what you've edited
@@ -141,13 +141,8 @@ class KeyBindings
     # S
     Keys.open_search { Search.outline_search }   # hide search via outline
 
-
-
-    # TODO: bring this back, for opening dir tree when bookmark is to file? - or make that up+open+bookmark?
-    Keys.open_tree { FileTree.tree }   # draw a tree, prompting for bookmark tag
-    #     Keys.open_tree { View.beep "- Changed to: open+bookmark!" }
-
-
+    # Bring this back, for opening dir tree when bookmark is to file? - or make that up+open+bookmark?
+    #     Keys.open_tree { FileTree.tree }   # draw a tree, prompting for bookmark tag
 
     Keys.open_up { View.show_dir }   # open enclosing dir
     Keys.open_visualize { Code.do_list_ancestors }   # show currently open files and buffers
@@ -162,7 +157,7 @@ class KeyBindings
     Keys.O1 { Files.open_nth 1 };  Keys.O2 { Files.open_nth 2 };  Keys.O3 { Files.open_nth 3 };  Keys.O4 { Files.open_nth 4 };  Keys.O5 { Files.open_nth 5 }
     Keys.O6 { Files.open_nth 6 };  Keys.O7 { Files.open_nth 7 };  Keys.O8 { Files.open_nth 8 };  Keys.O9 { Files.open_nth 9 }
 
-    Keys.O0 { View.open("$0") }   # Open 0: open bookmarked file tagged with "0"
+    Keys.O0 { Files.open_nth 0 }   # Open 0: open line in $f that cursor is on
 
     Keys.O8 { History.open_current :all => true, :prompt_for_bookmark => true }   # Like do_outline, but inserts all
   end
@@ -184,23 +179,25 @@ class KeyBindings
     # Or, make this be "enter+from+difflog?"
     Keys.enter_diff { DiffLog.enter_from_difflog }
     Keys.enter_end { Line.to_right }   # EE - end of line (E's emacs default)
-    Keys.enter_file_path { Files.enter_file }   # Given a bookmark
+    Keys.enter_file_path { Files.enter_file }            # Given a bookmark
     Keys.enter_firefox_tabs { Launcher.insert('browser/tabs/') }   # Given a bookmark
-    Keys.enter_history { DiffLog.enter_from_difflog }   # Save point and go to difflog to search
+    Keys.enter_history { DiffLog.enter_from_difflog }         # Save point and go to difflog to search
     Keys.enter_insert_date { View.enter_date }
-    Keys.enter_insert_comment { Code.enter_insert_comment }    # insert date string (and time if C-u)
-    Keys.enter_insert_new { DiffLog.enter_new }   # Enter Old: enter newly-deleted from last save
+    Keys.enter_insert_comment { Code.enter_insert_comment }      # insert date string (and time if C-u)
+    Keys.enter_insert_new { DiffLog.enter_new }           # Enter Old: enter newly-deleted from last save
     Keys.enter_insert_ruby { code = Keys.input(:prompt=>"Enter ruby code to eval and insert results: "); View.insert(eval(code).to_s)}
     Keys.enter_insert_search { Search.enter_insert_search }
 
     Keys.enter_insert_old { DiffLog.enter_old }   # Enter Old: enter newly-deleted from last save
 
     Keys.enter_insert_words { PauseMeansSpace.go }
+
     Keys.enter_junior { Notes.enter_junior }
     Keys.enter_key { Keys.insert_code }
     Keys.enter_log_1 { View << "Ol[1]" }
     Keys.enter_log_check { View << "Ol[\"check!\"]" }
 
+    Keys.enter_log_ancestors { Code.enter_log_ancestors }
     Keys.enter_list_databases { Launcher.insert('- Couch.databases/') }
     Keys.enter_like_edits { Search.enter_like_edits }
     Keys.enter_log_javascript { Firefox.enter_log_javascript_line }
@@ -223,7 +220,7 @@ class KeyBindings
     Keys.enter_row { View.insert_line }
 
     #     Keys.enter_search { Search.enter_search }
-    Keys.enter_snippet { Snippet.insert }
+    Keys.enter_source { Snippet.insert }
 
     #     Keys.enter_tree { FileTree.tree(:here=>true) }
     Keys.enter_upper { View.enter_upper }
@@ -261,7 +258,8 @@ class KeyBindings
     Keys.do_as_wrap { Block.do_as_wrap }
     Keys.do_as_quote { Notes.do_as_quote }
     Keys.do_as_xul { Firefox.do_as_xul }
-    Keys.do_backward { $el.backward_kill_word(Keys.prefix || 1) }   # delete word backward
+    # B
+    Keys.do_backward { View.beep "- Changed to: up+H!" }   # delete word backward
     Keys.do_code_align { Code.do_code_align }   # Based on input character, all matches line up
     Keys.do_click_back { Firefox.back }
     Keys.do_create_directory { FileTree.do_create_dir }
@@ -374,11 +372,13 @@ class KeyBindings
 
     #     Keys.TT { $el.transpose_chars $el.elvar.current_prefix_arg }   # TT - toggle character (T's emacs default)
     Keys.to_axis { Move.to_axis }   # to beginning of file
-    Keys.to_backward { $el.backward_word(Keys.prefix || 1) }   # move backward one word
+    # B
+    Keys.to_backward { View.beep "- Changed to: up+back!" }   # move backward one word
     Keys.to_column { Move.to_column }   # to x coordinate - ie column
     # D
     Keys.to_end { Move.to_end }   # To end of line
-    Keys.to_forward { $el.forward_word(Keys.prefix || 1) }   # move forward one word
+    # F
+    Keys.to_forward { View.beep "- Changed to: up+forward!" }   # move forward one word
     Keys.to_highest { View.to_highest }   # to beginning of file
     Keys.to_indent { Move.to_indent }
     Keys.to_junior { Move.to_junior }
@@ -391,7 +391,9 @@ class KeyBindings
     Keys.to_quote { Move.to_quote }   # move to next ...|... quote
     Keys.to_row { Move.to_line }   # go to nth line, relative to top of window
     Keys.to_spot { Location.to_spot }
-    Keys.to_toggle { $el.transpose_chars $el.elvar.current_prefix_arg }   # TT - toggle character (T's emacs default)
+
+    Keys.to_toggle { View.toggle }   # TT - toggle character (T's emacs default)
+
     Keys.to_up { Tree.to_parent }   # to parent (last line indented less)
     Keys.to_visible { View.to_relative }   # go to nth line, relative to top of window
     Keys.to_words { Line.to_beginning }   # move to start of words on line
@@ -421,8 +423,7 @@ class KeyBindings
     Keys.layout_all { View.hide_others }
     Keys.layout_balance { 3.times { View.balance } }   # balance windows
     Keys.layout_create { View.create }   # open new view
-
-    Keys.layout_dimensions { Launcher.open('- window/dimensions/presets/', :bar_is_fine=>1, :first_letter=>1) }
+    Xiki.def "layout+dimensions", "dimensions/", :letter=>1
 
     Keys.layout_expand { View.enlarge }
     # F
@@ -432,8 +433,8 @@ class KeyBindings
     Keys.layout_jump { View.shift }
     Keys.layout_kill { View.kill }
     Keys.layout_look { View.recenter }   # LL - recenter (L's emacs default)
-    Keys.layout_mark { Launcher.open('color/mark/', :bar_is_fine=>1, :first_letter=>1) }   # colorize line, etc
-    Keys.layout_next { View.next(:blink=>true) }   # next view
+    Xiki.def "layout+mark", "mark/", :letter=>1
+    Xiki.def("layout+next"){ View.next(:blink=>true) }
     Keys.layout_outlog { View.layout_outlog }
     Keys.layout_previous { View.previous(:blink=>true) }
     # Q
@@ -441,8 +442,7 @@ class KeyBindings
     Keys.layout_search { Keys.prefix_u? ? Search.find_in_buffers(Keys.input(:prompt=>"Search all open files for: ")) : Hide.search }
     Keys.layout_todo { View.layout_todo }   # show bar on left with the quick bookmark named "-t"
     Keys.layout_uncover { Hide.reveal }   # Reveal all hidden text
-    # V
-    Keys.layout_visibility { Launcher.open('- window/visibility/', :bar_is_fine=>1, :first_letter=>1) }
+    Xiki.def "layout+visibility", "window/visibility/", :letter=>1
     Keys.layout_wrap { $el.toggle_truncate_lines }   # wrap lines
     # X
     # Y
@@ -478,7 +478,7 @@ class KeyBindings
     Keys.search_g { Search.cancel }   # Stop searching
     # have_...
     $el.define_key :isearch_mode_map, $el.kbd("C-h"), nil
-    Keys.search_have_append { Search.isearch_move_to "$t", :append=>1 }
+    Keys.search_have_after { Search.isearch_move_to "$t", :append=>1 }
     Keys.search_have_bullet { Search.have_label }
     Keys.search_have_case { Search.isearch_have_case }
     Keys.search_have_edges { Search.just_edges }   # Delete everything but chars at edges of match
@@ -587,8 +587,8 @@ class KeyBindings
     $el.define_key(:isearch_mode_map, $el.kbd("C-`")) { Search.isearch_just_surround_with_char "~" }
 
     $el.define_key(:isearch_mode_map, $el.kbd("C-j C-/")) { Search.isearch_just_comment }
-    $el.define_key(:isearch_mode_map, $el.kbd("C-j C-=")) { Search.just_increment }
-    $el.define_key(:isearch_mode_map, $el.kbd("C-j C--")) { Search.just_increment(:decrement=>true) }
+    $el.define_key(:isearch_mode_map, $el.kbd("C-j C-=")) { Search.just_increment }   # search+just+Plus
+    $el.define_key(:isearch_mode_map, $el.kbd("C-j C--")) { Search.just_increment(:decrement=>true) }   # search+just+Minus
 
     $el.define_key(:isearch_mode_map, $el.kbd("C-9")) { Search.isearch_just_surround_with_char '(', ')' }
     $el.define_key(:isearch_mode_map, $el.kbd("C-j C-9")) { Search.isearch_just_surround_with_char '[', ']'}
@@ -662,7 +662,7 @@ class KeyBindings
     Keys.Q { Keys.timed_insert }
 
     # These keys "launch" things (same thing as double-clicking)
-    Keys.set("C-.") { Launcher.go }   # control period
+    Keys.set("C-.") { Launcher.go_unified }   # control period
     self.map_command_return
     self.map_control_return
 
