@@ -208,8 +208,8 @@ class Move
 
     found = nil
     (times||1).times do
-      Line.next if Line.matches(/^ *\|/)
-      found = Search.forward "^ *|"
+      Line.next if Line.matches(/^ *(\||:[ +-])/)
+      found = Search.forward "^ *\\(|\\|:[ +-]\\)"
       return nil if ! found
       $el.backward_char
     end

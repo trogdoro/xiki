@@ -51,9 +51,18 @@ class Snippet
   end
 
   def self.insert
+
+    line = Line.value
+
+    if ! line.blank?
+      Keys.prefix = "source"
+      Launcher.launch_unified
+      return
+    end
+
     View << "@" if Line =~ /^ /
 
-    Launcher.insert("snippet/")
+    Launcher.insert("snippet/", :not_unified=>1)   # Until we port to unified
   end
 
   def self.docs

@@ -324,11 +324,7 @@ class Files
     dest_path = View.file
     return View.beep("- There's no file for this buffer!") if ! dest_path
 
-    View.beep :times=>3
-    View.flash "- Delete CURRENT file (#{View.name})?", :times=>4
-    answer = Keys.input :chars=>1, :prompt=>"- Delete current file for sure?"   #"
-
-    return View.flash("- cancelled!") if answer !~ /y/i
+    return unless View.confirm message="Delete current file (#{View.name})?", :times=>4
 
     command = "rm \"#{dest_path}\""
 

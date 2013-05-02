@@ -1,4 +1,6 @@
 $:.unshift "spec/"
+require './spec/spec_helper'
+
 require 'xiki'
 require 'xiki/code_tree'
 # require 'core_ext'

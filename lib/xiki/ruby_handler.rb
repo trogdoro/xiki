@@ -1,13 +1,13 @@
 class RubyHandler
   def self.handle options, ex
 
-    return if ! ex['rb'] || options[:output]
-
+    return if ! ex['rb'] || options[:output] || options[:halt]
     stem = ex['rb']
     clazz_name = TextUtil.camel_case stem[/\w+/]
 
     file = "#{options[:last_source_dir]}#{stem}"
     code = File.read file
+
     options.merge! :dot_menu_file=>"#{options[:last_source_dir]}#{ex['menu']}"
     txt =
       if code =~ /^ *class #{clazz_name}/   # Maybe check for actual class name
@@ -27,7 +27,7 @@ class RubyHandler
     # Pass in args and options?
     code = "args = #{(options[:args]||[]).inspect}\noptions = #{options.inspect}\n#{code}"
 
-    returned, out, exception = Code.eval code, file, 3
+    returned, out, exception = Code.eval code, file, -1
 
     txt =
       if exception

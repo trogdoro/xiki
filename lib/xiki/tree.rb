@@ -1,6 +1,14 @@
 require 'xiki/tree_cursor'
 
+# Class for manipulating tree-like strings.  Nesting is done by 2-space
+# indenting. Primary methods:
+# - .children
+# - .traverse
 class Tree
+
+  # Eventually make this class have no editor dependencies
+  # - That is, View or $el
+
   def self.menu
     "
     - api/
@@ -56,7 +64,7 @@ class Tree
 
     ch = nil
 
-    if options[:first_letter]
+    if options[:letter]
       ch, ch_raw = self.first_letter lines
       return if ! ch
     end
@@ -177,7 +185,7 @@ class Tree
       Move.backward
       CodeTree.kill_siblings
       Keys.clear_prefix
-      Launcher.launch
+      Launcher.launch_unified
 
     when "\C-j"
       ch = Keys.input :chars=>1
@@ -210,20 +218,20 @@ class Tree
     when :return   # Step in one level
 
       Keys.clear_prefix
-      Launcher.launch
+      Launcher.launch_unified
 
-    when :control_return, "\C-m", :control_period #, :right   # If C-., go in but don't collapse siblings
+    when :control_return, "\C-m" #, :right   # If C-., go in but don't collapse siblings
       Keys.clear_prefix
-      Launcher.launch
+      Launcher.launch_unified
 
-    when :meta_return
+    when :meta_return, :control_period
       Keys.clear_prefix
-      Launcher.go_unified
+      Launcher.launch_unified
 
     when "\t"   # If tab, hide siblings and go in
       $el.delete_region(Line.left(2), right)
       Keys.clear_prefix
-      Launcher.launch
+      Launcher.launch_unified
 
     when :backspace#, :control_slash   # Collapse this item and keep searching
       self.to_parent
@@ -237,7 +245,7 @@ class Tree
 
       if line =~ /^<+=? /
         Keys.clear_prefix
-        Launcher.launch
+        Launcher.launch_unified
         return
       end
 
@@ -258,7 +266,7 @@ class Tree
           Line.to_beginning
         end
         View.delete(View.cursor, right)
-        return Launcher.launch
+        return Launcher.launch_unified
       end
 
       $el.delete_region(Line.left(2), right)  # Delete other files
@@ -270,8 +278,8 @@ class Tree
         $el.delete_char 2
       end
 
-      Launcher.launch if line =~ /\/$/   # Only launch if it can expand
-
+      # For now, always launch when C-/
+      Launcher.launch_unified   # if line =~ /\/$/   # Only launch if it can expand
 
     when "#"   # Show ##.../ search
       self.stop_and_insert left, right, pattern
@@ -315,7 +323,7 @@ class Tree
       $el.delete_region(Line.left(2), right)
       Keys.clear_prefix
       View.create
-      Launcher.launch
+      Launcher.launch_unified
 
     when "\C-e"   # Also C-a
       return Line.to_right
@@ -327,13 +335,14 @@ class Tree
     when "\C-o"   # When 9 or C-o, show methods, or outline
       $el.delete_region(Line.left(2), right)   # Delete other files
       return FileTree.drill_quotes_or_enter_lines self.construct_path.sub(/\|.*/, ''), Line.=~(/^ *\|/)
-    when "1".."9"
-      if ch == "7" and ! View.bar?   # Open in bar
-        $el.delete_region(Line.left(2), right)  # Delete other files
-        View.bar
-        Keys.clear_prefix
-        return Launcher.launch   # Expand or open
-      end
+    when "1".."9"   # If number, go to nth
+      #       if ch == "7" and ! View.bar?   # Open in bar
+      #         $el.delete_region(Line.left(2), right)  # Delete other files
+      #         View.bar
+      #         Keys.clear_prefix
+      #         return Launcher.launch   # Expand or open
+      #       end
+
       Keys.clear_prefix
       n = ch.to_i
 
@@ -369,11 +378,11 @@ class Tree
         View.insert "#{nth}\n"
         $el.previous_line
         if options[:number_means_enter]   # If explicitly supposed to enter
-          Launcher.launch
+          Launcher.launch_unified
         elsif FileTree.dir?   # If a dir, go into it
-          Launcher.launch
+          Launcher.launch_unified
         else
-          Launcher.launch
+          Launcher.launch_unified
           return
 
           Line.to_beginning
@@ -446,6 +455,7 @@ class Tree
     Message << "type 1st letter... "
     ch, ch_raw = Keys.char
     letterized = $el.char_to_string(Keys.remove_control ch_raw).to_s
+    Message << ""   # Clear it so it doesn't stay around after
     Overlay.delete_all
 
     if ch_raw == 7   # C-g
@@ -456,7 +466,7 @@ class Tree
       Cursor.restore :before_file_tree
       Line.next letters[letterized][0] - 1
       CodeTree.kill_siblings
-      Launcher.launch
+      Launcher.launch_unified
       return nil
     end
 
@@ -786,9 +796,8 @@ class Tree
     # - 2) Processing list into other form
     #   - this method will be reusable from vim, etc.
 
-
     path = []
-    orig = $el.point
+    orig = View.cursor
 
     # Expand :raw option if there, which is shortcut for other options
     options.merge!(:list=>1, :all=>1, :keep_hashes=>1) if options.delete(:raw)
@@ -834,7 +843,7 @@ class Tree
     } if options[:slashes]
 
 
-    $el.goto_char orig
+    View.cursor = orig
     if options[:indented]
       indentify_path path
     elsif options[:list]
@@ -843,7 +852,8 @@ class Tree
       path.join
     end
 
-    rescue Exception=>e
+  rescue Exception=>e
+    View.cursor = orig
     raise ".construct_path couldn't construct the path - is this a well-formed tree\?: #{e}"
 
   end
@@ -1015,16 +1025,18 @@ class Tree
   # Any lines indented *more* than the current line won't affect the bounds, but will be
   # filtered out.
   #
-  # p Tree.siblings   # Doesn't include current line
+  # p Tree.siblings              # Doesn't include current line
   # p Tree.siblings :string=>1   # As string, not list
-  # p Tree.siblings :all=>1   # Includes current line
-  # p Tree.siblings :everything=>1   # Includes current line and all children (returns string)
+  # p Tree.siblings :all=>1      # Includes current line
+  # p Tree.siblings :everything=>1          # Includes current line and all children (returns string)
   # p Tree.siblings :cross_blank_lines=>1   # Includes current line, and crosses single blank lines (returns string)
+  # p Tree.siblings :quotes=>1, :string=>1  # Consecutive |... lines as string, with pipes removed
+  # p Tree.siblings :quotes=>":", :string=>1  # Consecutive :... lines as string, with pipes removed
   #
     # sample chile
   #
   def self.siblings options={}
-    return self.siblings(:all=>true).join("\n").gsub(/^ *\| ?/, '')+"\n" if options[:string] && ! options[:cross_blank_lines] && ! options[:before] && ! options[:after]
+    return self.siblings(:all=>true).join("\n").gsub(/^ *\| ?/, '')+"\n" if options[:string] && ! options[:cross_blank_lines] && ! options[:before] && ! options[:after] && ! options[:quotes]
 
     if options[:cross_blank_lines]
       left1, right2 = self.sibling_bounds :cross_blank_lines=>1
@@ -1034,21 +1046,24 @@ class Tree
       left1, right1, left2, right2 = self.sibling_bounds# options
     end
 
+    quote = options[:quotes].is_a?(String) ? options[:quotes] : '\\|'
+
     # Combine and process siblings
     if options[:all] || options[:everything]
       siblings = View.txt(options.merge(:left=>left1, :right=>right2))
 
     elsif options[:quotes]   # Only grab contiguous quoted lines
+
       above = View.txt(options.merge(:left=>left1, :right=>right1))
       found = true
-      above = above.split("\n").reverse.select{|o| found && o =~ /^ *\|/ or found = false}.reverse.join("\n")
+      above = above.split("\n").reverse.select{|o| found && o =~ /^ *#{quote}/ or found = false}.reverse.join("\n")
       above << "\n" if above.any?
 
       middle = View.txt(options.merge(:left=>right1, :right=>left2))
 
       below = View.txt(options.merge(:left=>left2, :right=>right2))
       found = true
-      below = below.split("\n").select{|o| found && o =~ /^ *\|/ or found = false}.join("\n")
+      below = below.split("\n").select{|o| found && o =~ /^ *#{quote}/ or found = false}.join("\n")
       below << "\n" if below.any?
 
       siblings = "#{above}#{middle}#{below}"  #.strip
@@ -1074,7 +1089,7 @@ class Tree
     siblings.gsub! /^ +/, ''   # Remove indents
 
     if options[:string]   # Must have :before or :after option also if it got here
-      return siblings.gsub /^\| ?/, ''
+      return siblings.gsub /^#{quote} ?/, ''
     end
 
     siblings = siblings.split("\n")
@@ -1412,7 +1427,22 @@ class Tree
     treea.txt
   end
 
+
+  # Puts this line on same line as its parent line.
+  # Not sophisticated enough to deal with parent being on same line with
+  # other item.
+  #
+  # a/b/
+  #   Tree.collapse
+  #       =>
+  # a/b/Tree.collapse
+  #
+  # a/b/
+  #   Tree.collapse :replace_parent=>1
+  #       =>
+  # Tree.collapse
   def self.collapse options={}
+
     # If at root or end of line, go to next
     Line.next if Line !~ /^ / || Line.at_right?
     CodeTree.kill_siblings
@@ -1480,15 +1510,13 @@ class Tree
 
     return if !output.respond_to?(:blank?) || output.blank? # rescue nil
 
-
     if output.is_a?(String) && $el && output.strip =~ /\A<<< (.+)\/\z/
       Tree.replace_item $1
-      Launcher.launch
+      Launcher.launch_unified
       return true
     end
 
     # TODO: move some of this crap into the else block above (block_or_string is proc)
-
 
     if $el
       buffer_changed = buffer_orig != View.buffer   # Remember whether we left the buffer
@@ -1548,6 +1576,7 @@ class Tree
     output
   end
 
+  # Port to use Tree.path_unified
   def self.closest_dir
     dir = Xiki.trunk.reverse.find{|o| FileTree.matches_root_pattern? o}
 
@@ -1823,7 +1852,6 @@ class Tree
     nil
   end
 
-
   def self.path__new options={}
     return path.join if options[:string]
     path
@@ -1840,14 +1868,31 @@ class Tree
     path = path.split(/\/@ ?/)
   end
 
-
   # Post-unified way of grabbing the path for menus.  Maybe make this
   # replace .path?
   def self.path_unified options={}
-    raw = Tree.construct_path :raw=>1
+    raw = self.construct_path :raw=>1
+
+    return raw if raw == [""]
+
+    # Go through each line from tree, and escape |... and :... lines
+
+    raw.each do |item|
+      if item =~ /^\|.(.+)/
+        item.replace Path.escape item
+      end
+    end
+
+    # If :... grab siblings and merge together (but only if last line)
+    if raw[-1] =~ /^:/
+      txt = Tree.siblings :quotes=>":", :string=>1
+      txt = Path.escape txt
+      raw[-1] = txt
+    end
+
+
     self.join_to_subpaths raw
   end
-
 
   # Goes from [a/, @b/, c/] to [a/, b/c/]
   # Tree.join_to_subpaths(["a/", "@b/", "c/"]).should == ["a/", "b/c/"]
@@ -1856,22 +1901,18 @@ class Tree
     # Temporary implementation...
 
     # Step 1. Join to "a/@b/c"...
-    # TODO: be smarter about this - don't add if last item in file path
-      # Or maybe go directly to list of subpaths, instead of these 2 steps
-        # Otherwise, we'll have to go through twice, tracking whether dir, to know whether to add trailing slash
+    # Maybe be more indirect about this? - maybe go directly to list of subpaths, instead of these 2 steps.
+    # Do thing where we don't require slash before @ when file path? (probably not worth it)
     path = self.join_path path
 
-
     # Step 2. Split to "a/", "b/c/"...
-    path = self.split_to_subpaths path
+    path = Path.split path, :outer=>1
 
     path
   end
 
 
-  # Goes from [a b c] to "abc"
-
-  # Goes from [a/, @b/, c/] to a/@b/c
+  # Goes from [a b c] to "abc".
   # Tree.join_path(["a/", "@b/", "c/"]).should == "a/@b/c/"
   #
   #   Possibly also from [a/, b/c/] to a/@b/c ?
@@ -1881,20 +1922,8 @@ class Tree
     path.join ""
   end
 
-
-  # Goes from "abc" to [a bc]
-
-  # Goes from a/@b/c to "a/", "b/c/"
-  # Tree.split_to_subpaths("a/@b/c/").should == ["a/", "b/c/"]
-  def self.split_to_subpaths path
-    path = path.split(/\/@ ?/)   # => ["a", "b/c/"]
-    # Hackish - specs won't pass yet
-    self.add_slashes_except_last path   # => ["a/", "b/c/"]
-    path
-  end
-
-
-  # Pre-unified way of grabbing the path for menus
+  # Deprecated.  After Unified refactor, delete this and replace it with implementation of .path_unified.
+  # Pre-unified way of grabbing the path for menus.
   def self.path options={}
     path = Tree.construct_path :all=>1, :slashes=>1
     return path if options[:string]
@@ -2067,30 +2096,55 @@ class Tree
 
   # Returns the best source file path (and sometimes line number) from
   # options passed in.  The options have usually been parsed and
-  # pre-expanded by Expander, ie. Expander.parse, Expander.expander.
+  # pre-expanded by Expander, ie. Expander.parse, Expander.expanders.
   #
   # This method is used by to+menu and @source.
   #
   # Tree.source(:menufied=>"/projects/xiki/spec/fixtures/menu/ddm")
   # Tree.source(:proc=>proc{1}) #> ["/projects/xiki/lib/xiki/tree.rb", 2104]
-  def self.source options
+  def self.source options, method_options={}
+
+    tree, locations = "", []
 
     # TODO: Use this if :sources exists, otherwise use below
     if options[:sources]
       Menu.climb_sources options
+
       tree = "#{options[:last_source_dir]}\n"
       options[:sources][-1].each do |source|
+
+        next if source =~ /\/index/   # Don't add foo/index.... files, because files in dir will be shown anyway
+
         tree << "  + #{source}\n"
       end
 
-      return tree
+      if options[:sources].length == 1 && tree =~ /\A.+\n.+[^\/]\n\z/   # If just has 1 item that's a file, jump to it
+        tree = nil
+        locations << ["#{options[:last_source_dir]}#{options[:sources][0][0]}"]
+      end
+
     end
 
-    return options[:proc].source_location if options[:proc]
-    return [options[:menufied]] if options[:menufied]
-    return options[:file_path] if options[:file_path]
+    locations << options[:proc].source_location if options[:proc]
+    locations << [options[:file_path]] if options[:file_path]
 
-    nil
+    expanders = options[:expanders]
+
+    expanders.each do |expander|
+      next if ! expander.is_a? Hash
+      locations << expander[:proc].source_location if expander[:proc]
+    end
+
+    # If tree and no locations, just return it
+    return tree if tree.any? && locations.empty?
+
+    # If one location, just return it
+    return locations[0] if ! tree.any? && locations.length == 1
+
+    return nil if locations.blank? && tree.blank?
+
+    # Merge locations into tree when both
+    "#{tree}#{locations.inspect}\n- improve this!"
   end
 
 end

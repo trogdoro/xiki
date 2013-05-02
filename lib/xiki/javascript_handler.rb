@@ -1,6 +1,6 @@
 class JavascriptHandler
   def self.handle options, ex
-    return if ! ex['js'] || options[:output]
+    return if ! ex['js'] || options[:output] || options[:halt]
 
     source = "#{options[:last_source_dir]}#{ex['js']}"
     txt = Console.run "js \"#{source}\"", :sync=>true

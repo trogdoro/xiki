@@ -66,6 +66,8 @@ class CodeTree
     if exception.is_a? RuntimeError
       # If it was in the format of tree output, just show it
 
+      message = message.unindent if message =~ /^\s/
+
       # Some messages start with "path:line:...: " at beginning again
 
       message.sub!(/.+?: /, '') if message =~ /in `/

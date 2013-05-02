@@ -8,7 +8,11 @@ class Search
   SPECIAL_ORDER = "X!='\"[]{}<>_-+*@#\\/!$X"
 
   @@case_options = nil
+
+  # Deprecated?  Has to do with moving cursor to line.  But why can't we just pass it in?  Try doing that.
   @@outline_goto_once = nil
+  def self.outline_goto_once; @@outline_goto_once; end
+  def self.outline_goto_once= txt; @@outline_goto_once = txt; end
 
   @@log = File.expand_path("~/.emacs.d/search_log.notes")
 
@@ -291,7 +295,7 @@ class Search
 
     left, right = self.left, self.right
 
-    txt = self.match(left, right)# if options[:match]
+    txt = self.match(left, right)
 
     # Make it do special clear if nothing found (to avoid weird isearch error)
     if txt.nil?
@@ -1373,7 +1377,11 @@ class Search
 
     line_occupied = ! Line.blank?
 
-    Notes.to_block if options[:append]
+    if options[:append]
+      Notes.to_block
+      Line.previous
+      line_occupied = true
+    end
 
     View.insert match
 
@@ -1452,9 +1460,6 @@ class Search
     Search.isearch txt
     nil
   end
-
-  def self.outline_goto_once; @@outline_goto_once; end
-  def self.outline_goto_once= txt; @@outline_goto_once = txt; end
 
   # Mapped to up+to+outline
   #

@@ -1,16 +1,15 @@
 $:.unshift "spec/"
 
-%w"xiki/core_ext xiki/ol xiki/menu xiki/file_tree xiki/bookmarks".each {|o| require o}
+require './spec/spec_helper'
 
-# TODO: move this into spec_helper, and make it get real xiki dir?
-# module Xiki
-#   def self.dir; end
-# end
+Dir["./lib/xiki/*_handler.rb"].each{|o|
+  require o.sub("./lib/", "")
+}
+
+%w"path code tree menu menu_suggester pre_pattern pattern file_tree bookmarks".each {|o| require "xiki/#{o}"}
 
 require 'xiki/expander'
 require 'xiki/pattern'
-
-require './spec/spec_helper'
 
 # describe Expander, "#expand" do
 describe Expander, "#extract_ancestors" do
@@ -29,7 +28,7 @@ describe Expander, "#extract_ancestors" do
   it "ignores quoted path" do
     args = "a/| a/@b/", {}
     Expander.extract_ancestors *args
-    args.should == ["a/| a/@b/", {}]
+    args.should == ["b/", {:ancestors=>["a/| a/"]}]
   end
 end
 
@@ -68,11 +67,6 @@ describe Expander, "#parse" do
       {:file_path=>"/tmp/a/b/"}
   end
 
-  it "just passes through when input already a hash" do
-    Expander.parse(:foo=>"bar").should ==
-      {:foo=>"bar"}
-  end
-
   it "handles file paths" do
     Expander.parse("/tmp/a/b").should ==
       {:file_path=>"/tmp/a/b"}
@@ -81,6 +75,11 @@ describe Expander, "#parse" do
   it "handles file path with spaces" do
     Expander.parse("/tmp/a/b c").should ==
       {:file_path=>"/tmp/a/b c"}
+  end
+
+  it "just passes through when input already a hash" do
+    Expander.parse(:foo=>"bar").should ==
+      {:foo=>"bar"}
   end
 
   it "handles menufied paths" do
@@ -93,16 +92,16 @@ describe Expander, "#parse" do
       {:menufied=>"/tmp/a", :items=>["b"]}
   end
 
+  it "handles filesystem root menufied path" do
+    Expander.parse("//").should ==
+      {:menufied=>"/"}
+  end
+
   it "handles name that looks kind of menufied" do
     Expander.parse("a/http://notmenufied.com/").should ==
       {:name=>"a", :items=>["http:", "", "notmenufied.com"],
        :path=>"a/http://notmenufied.com/"
       }
-  end
-
-  it "handles filesystem root menufied path" do
-    Expander.parse("//").should ==
-      {:menufied=>"/"}
   end
 
   it "handles names" do
@@ -127,7 +126,7 @@ describe Expander, "#parse" do
 
   it "handles name with quoted slash" do
     Expander.parse("a/| foo/yau").should ==
-      {:name=>"a", :items=>["| foo/yau"], :path => "a/| foo/yau"}
+      {:name=>"a", :items=>["| foo", "yau"], :path => "a/| foo/yau"}
   end
 
   it "handles patterns" do
@@ -141,13 +140,18 @@ describe Expander, "#parse" do
   end
 
   it "handles name with list of items" do
-    Expander.parse("a", ["a", "b"]).should ==
-      {:name=>"a", :items=>["a", "b"], :path => "a"}
+    Expander.parse("a", ["b", "c"]).should ==
+      {:name=>"a", :items=>["b", "c"], :path => "a/b/c"}
   end
 
   it "handles symbol with list of items" do
-    Expander.parse(:a, ["a", "b"]).should ==
-      {:name=>"a", :items=>["a", "b"]}
+    Expander.parse(:a, ["b", "c"]).should ==
+      {:name=>"a", :items=>["b", "c"]}
+  end
+
+  it "merges path with item and list of items" do
+    Expander.parse("a/b", ["c", "d"]).should ==
+      {:name=>"a", :items=>["b", "c", "d"], :path=>"a/b/c/d"}
   end
 
   it "handles ancestors in string" do
@@ -172,20 +176,26 @@ describe Expander, "#parse" do
       {:name=>"a", :items=>["b"], :path => "a/b/"}
   end
 
+  it "recognizes escaped slashes" do
+    Expander.parse("echo/a;/b").should == {
+      :items => ["a/b"],
+      :name => "echo",
+      :path => "echo/a;/b"
+    }
+  end
 end
-
 
 describe Expander, "#expand method" do
   before(:each) do
-    stub_menu_path_env_dirs   # Has to be before each for some reason
+    stub_menu_path_dirs   # Has to be before each for some reason
   end
 
-  it "expands when no path" do
+  it "expands menu when no path" do
     Expander.def(:echo) { |path| path.inspect }
     Expander.expand("echo").should == '[]'
   end
 
-  it "expands when path" do
+  it "expands menu when path" do
     Expander.def(:echo) { |path| path.inspect }
     Expander.expand("echo/a").should == '["a"]'
   end
@@ -198,7 +208,7 @@ describe Expander, "#expand method" do
   end
 
   it "expands menu in MENU_PATH" do
-    Expander.expand("dd").should == "+ a/\n+ b/\n+ cccc/"
+    Expander.expand("dd").should == "+ a/\n+ b/\n+ cccc/\n+ craig/\n+ keith/\n"
   end
 
   it "expands plain file path" do
@@ -208,5 +218,4 @@ describe Expander, "#expand method" do
   it "expands menufied path" do
     Expander.expand("#{Xiki.dir}spec/fixtures/menu/dr//").should == "+ a/\n+ b/\n"
   end
-
 end

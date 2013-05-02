@@ -764,6 +764,7 @@ class Launcher
     end
   end
 
+  # Deprecated after Unified
   def self.file_and_mode_hooks
     if View.mode == :dired_mode
       filename = $el.dired_get_filename
@@ -826,7 +827,19 @@ class Launcher
       end
       Tree.kill_under
     end
-    Launcher.launch_or_hide :blink=>true, :no_search=>true
+
+    Effects.blink
+
+    # If on >... line, just eval section as ruby...
+
+    if line =~ /^>/
+      Code.run
+      return
+    end
+
+    prefix == :- ?
+      Launcher.launch(:no_search=>true) :
+      Launcher.launch_unified(:no_search=>true)
 
     if ol_cursor_position
       View.to_buffer "*ol"
@@ -892,6 +905,7 @@ class Launcher
     # TODO: Unified: comment out for now - just comment out since we're doing no caching
     # reload 'path_to_class'
     Menu.load_if_changed File.expand_path("~/menu/#{snake}.rb")
+
 
     args = path.is_a?(Array) ?
       path : Menu.split(path, :return_path=>1)
@@ -1079,7 +1093,10 @@ class Launcher
   def self.insert txt, options={}
     View.insert txt
     $el.open_line(1)
-    Launcher.launch options
+
+    return Launcher.launch options if options[:not_unified]
+
+    Launcher.launch_unified options
   end
 
   def self.show menu, options={}
@@ -1094,7 +1111,7 @@ class Launcher
   def self.open menu, options={}
     return self.insert(menu, options) if options[:inline]
 
-    $el.sit_for 0.25 if options[:delay] || options[:first_letter]   # Delay slightly, (avoid flicking screen when they type command quickly)
+    $el.sit_for 0.25 if options[:delay] || options[:letter]   # Delay slightly, (avoid flicking screen when they type command quickly)
 
     View.to_after_bar if View.in_bar? && !options[:bar_is_fine]
 
@@ -1133,9 +1150,12 @@ class Launcher
       return
     end
 
+    # Deprecated
     return Launcher.go_unified if options[:unified]
 
-    Launcher.launch options
+    return Launcher.launch options if options[:not_unified]
+
+    Launcher.launch_unified options
   end
 
   def self.method_missing *args, &block
@@ -1337,7 +1357,7 @@ class Launcher
 
   def self.as_update
     Keys.prefix = "update"
-    Launcher.launch :leave_bullet=>1
+    Launcher.launch_unified :leave_bullet=>1
   end
 
   def self.as_delete
@@ -1354,7 +1374,7 @@ class Launcher
     return FileTree.enter_lines(/.*/) if Line.blank?
 
     Keys.prefix = "all"
-    Launcher.launch
+    Launcher.launch_unified
   end
 
   # Shortcut for passing "outline" prefix and launching.
@@ -1363,7 +1383,7 @@ class Launcher
 
     # If there's a numeric prefix, add it
     Keys.add_prefix "outline"
-    Launcher.launch
+    Launcher.launch_unified
   end
 
   def self.set_env_vars path
@@ -1416,7 +1436,7 @@ class Launcher
     Ol.clear_pause
 
     # If no prefixes and children exist, collapse
-    if ! Keys.prefix and ! Line.blank? and Tree.children?
+    if ! Keys.prefix && ! Line.blank? && Tree.children? && View.name != "*ol"
       Tree.minus_to_plus
       Tree.kill_under
       return
@@ -1428,45 +1448,108 @@ class Launcher
 
   # While implementing, mapped to Command+Return.
   # After refactor, map to Ctrl+Return as well.
-  def self.launch_unified
+  def self.launch_unified insert_options={}
+
+    line = Line.value
+
+    return if self.bullet_prefix_handling line
 
     path = Tree.path_unified
 
-    options = {:editor=>"emacs"}
-    prefix = Keys.prefix
-    options[:prefix] = prefix if prefix
+    options = {:client=>"editor/emacs"}
+    if prefix = Keys.prefix; options[:prefix] = prefix; end
+    if view = View.name; options[:target_view] = view; end
+
+    if line =~ /^ *\|/
+      options[:txt] = Tree.siblings :quotes=>1, :string=>1
+    end
 
     txt = Expander.expand path, options
 
     return if txt == nil
 
-    return if self.intercept_instructions txt
+    return if self.process_directives txt
 
     # Pull certain options out if passed by implementation, meant to control how it's inserted
-    insert_options = (options.select {|key, value| [:no_slash].include?(key) })
+
+    options.each{|k, v| insert_options[k] = v if [:no_slash].include?(k)}
 
     # Automatically repress slash if were on ^... or |... line
-    insert_options[:no_slash] = 1 if options[:args] && options[:args].last =~ /^[>|]/
+    insert_options[:no_slash] = 1 if options[:args] && options[:args].last =~ /(^[>|:]|\n)/
 
+    return if txt.blank?
 
     Tree.<< txt, insert_options
   end
 
   # Called by .launch_unified to do appriate thing if result starts
-  # with @open/, @flash/, or something else that instructs the editor to
+  # with @open file/, @flash/, or something else that instructs the editor to
   # take an action.
-  def self.intercept_instructions txt
-    if txt =~ /\A@open\/(.*)/
-      View.open $1
+  def self.process_directives txt
+
+    # Shelved for now
+    #     if txt =~ /\A@back up\/(.*)/   # Means delete backward in tree - probably find a better name
+    #       txt = $1
+
+    if txt =~ /\A@open file\/(.*)/
+      txt = $1
+
+      # if |..., pull off line and go to it
+      quote = Path.extract_quote(txt)
+
+      if line_number = Path.extract_line_number(txt)
+        line_number = line_number.to_i
+
+        # Before we open, calculate difference between cursor's line and :... line number
+        if char = Line[/^ +\|([+-])/, 1]
+          siblings = Tree.siblings :before=>1
+          line_number += siblings.select{|o| o =~ /^\|#{Regexp.escape char}/}.length
+        end
+      end
+
+      View.open txt
+
+      if line_number
+        View.line = line_number
+      elsif quote
+        View.to_quote quote.sub(/./, '')   # 1st char of quote is a redundant space or + or something else
+      end
       return true
     end
+
     if txt =~ /\A@flash\/(.*)/
       View.flash $1
+      return true
+    end
+    if txt =~ /\A@prompt\/(.*)/
+      View.prompt $1
       return true
     end
 
     nil
   end
+
+  # Special editor-specific handling for <<, <=, and <@ bullets.
+  # Also when more <'s, like <<< and <<= etc.
+  def self.bullet_prefix_handling line
+    arrow_bullet = line[/^ +(<[<=@]+) /, 1]
+
+    return nil if ! arrow_bullet   # Not handled
+
+    key = arrow_bullet.sub /<+/, '<'
+
+    case key
+    when "<"
+      Menu.collapser_launcher
+    when "<="
+      Menu.replacer_launcher
+    when "<@"
+      Menu.root_collapser_launcher
+    end
+
+    true   # We handled it
+  end
+
 end
 
 def require_menu file, options={}

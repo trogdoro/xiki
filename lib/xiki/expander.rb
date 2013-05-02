@@ -84,10 +84,16 @@ class Expander
   end
 
   # Called by .expand.  Breakes path into a hash of properties.
+  # It extracts properties that can be deduced by the path alone.
+  # Not until the .expand methods of the individual expanders
+  # will we add stuff to the hash based on definitions or menu
+  # dirs.
+  #
   # Expander.parse("a").should == {:name=>"a"}
   # Expander.parse("/tmp").should == {:file_path=>"/tmp"}
   # Expander.parse(:foo=>"bar").should == {:foo=>"bar"}
   def self.parse *args
+
     options = args[-1].is_a?(Hash) ? args.pop : {}   # Extract options if there
 
     # Just return if input has already been parsed into a hash
@@ -101,6 +107,7 @@ class Expander
       options[:ancestors] = ancestors if ancestors.any?
       thing = thing[-1]
     end
+
 
     # If 2nd arg is array, it's a list of args
     options[:items] = args.shift if args[0].is_a? Array
@@ -119,12 +126,19 @@ class Expander
     # If menu-like, extract menu and items and return...
 
     if thing =~ /^[\w _-]+(\/.*|$)/
-      items = Menu.split thing
-      options[:name] = Menu.format_name items.shift
-      options[:items] ||= items if items.any?   # Don't over-write if already there
+      path_items = Path.split thing   # Split into items
 
-      # Store original path, since it could be a pattern
-      options[:path] = thing
+      options[:name] = Menu.format_name path_items.shift   # First arg is name, so pull it off
+
+      # Store original path, since it could be a pattern, and set items extracted from path...
+
+      if ! options[:items]
+        options[:path] = thing   # Store original path, since it could be a pattern that just looks like a menu
+        options[:items] = path_items if path_items.any?
+      else   # If already items (2nd arg was an array)
+        options[:path] = ([thing] + options[:items]).join("/")   # Make path string include 2nd arg items
+        options[:items] = path_items + options[:items] if path_items.any?   # Prepend any path items 2nd arg items
+      end
 
       return options
     end
@@ -137,19 +151,20 @@ class Expander
 
     # It's file-ish, so either file or menufied ("//")
 
-
     # If menufied (has "//"), parse and return...
 
     if thing =~ %r"^(/[\w./ -]+|)//(.*)"   # If /foo// or //foo
       menufied, items = $1, $2
       menufied.sub! /\.\w+$/, ''
+
       menufied = "/" if menufied.blank?
 
       options[:menufied] = menufied
+      raise "didn't anticipate expanders yet" if options[:expanders]
 
       # Grab args
 
-      items = Menu.split(items)
+      items = Path.split items
       options[:items] = items if items.any?
 
       return options
@@ -177,32 +192,46 @@ class Expander
     options = self.parse *args
 
     # Figure out what type of expander to use, and set some more attributes along the way
-    options = self.expander options
 
-    expander = options[:expander]
+    self.expanders options
 
-    if ! expander
+    expanders = options[:expanders]
+
+    if ! expanders || expanders.length == 0
       options[:no_slash] = true
-      return "- No menu defined: #{options.inspect}"
+      return "@flash/- can't launch empty line!" if options[:path]
+      return "- No menu or pattern defined: #{options.inspect}"
     end
 
-    txt = expander.expand options
 
-    return nil if txt == :none
-    return txt
+    options[:expanders_index] = 0
+    options.delete :halt   # Any :halt from .expanders was only meant to stop looking for more expanders
+
+    expanders.each do |expander|
+      expander = expander[:expander] if expander.is_a?(Hash)   # For patterns, :expanders has {:expander=>Pattern, ...}
+      expander.expand options
+
+      break if expander == Menu && options[:output]   # Always stop going after MenuExpander, if it had output
+
+      break if options[:halt]   # Possibly .expands? didn't halt but .expand did
+      options[:expanders_index] += 1
+    end
+
+    options[:output]
   end
 
 
   # Adds :expander=>TheClass to options that says it .expands? this path (represented by the options).
-  # Expander.expander(:name=>"foo").should == "guess"
-  # Expander.expander(:file_path=>"/tmp/").should == {:file_path=>"/tmp/", :expander=>FileTree}
-  # Expander.expander("a").should == "guess"
-  def self.expander *args
+  # Expander.expanders(:name=>"foo").should == "guess"
+  # Expander.expanders(:file_path=>"/tmp/").should == {:file_path=>"/tmp/", :expander=>FileTree}
+  # Expander.expanders("a").should == "guess"
+  def self.expanders *args
     options = args[0]   # Probably a single options hash
     options = self.parse(*args) if ! args[0].is_a?(Hash)   # If not just a hash, assume they want us to parse
 
     [PrePattern, Menu, FileTree, Pattern, MenuSuggester].each do |clazz|
-      break options[:expander] = clazz if clazz.expands?(options)
+      clazz.expands? options
+      break if options[:halt]
     end
 
     options
@@ -215,7 +244,7 @@ class Expander
   # Args are changed to: "b/", {:ancestors=>["a/"]}
   def self.extract_ancestors path, options={}
 
-    path_new = Menu.split path, :outer=>1   # Split off @'s
+    path_new = Path.split path, :outer=>1   # Split off @'s
 
     # If ancestors, pass as options?
     if path_new.length > 1
@@ -249,10 +278,10 @@ class Expander
     # If symbol, just treat as string
     args[0] = args[0].to_s if args[0].is_a? Symbol
 
-    # Menu if symbol or string...
-
     if args[0].is_a? String
       kind = Menu
+
+      # Menu if symbol or string...
 
       name = nil
 
@@ -263,15 +292,32 @@ class Expander
         args[0].sub! /(\.\w+)?\/*$/, ''
         name = args[0][%r"([^\/]+)/*$"]   # "
       else   # Must be normal foo/... menu path
-        # If name has "+", delegate to key shortcut...
-        return self.delegate_to_keys args, block if args[0] =~ /\+/
-        name = args[0]   # Assume just raw menu name
+        return self.delegate_to_keys args, options, block if args[0] =~ /\+/   # If name has "+", delegate to key shortcut
+        name = args[0].scan(/\w+/)[-1]   # Might be a menufied path
       end
 
       Menu.defs[name || "no_key"] = implementation
 
     elsif args[0].is_a? Regexp
-      Pattern.defs[args[0]] = implementation
+
+      # Pattern (or PrePattern) if 1st arg is a regexp...
+
+      if options.delete :pre
+        patterns = PrePattern.defs
+      else
+        patterns = Pattern.defs
+      end
+
+      keys = []
+      options.each do |k, v|
+        keys += [k, v]
+      end
+
+      keys.<< :global if keys.empty?
+      keys += [args[0], implementation]
+
+      Xi.hset patterns, *keys
+
     else
 
       # For now, assume just one key is passed in, like...
@@ -321,17 +367,25 @@ class Expander
     path   # No match, so return unchanged
   end
 
-  def self.delegate_to_keys args, block
+  def self.delegate_to_keys args, options, block
 
     # If 2 args and 2nd is string, wrap block based on enter+ other
     if args.length == 2 && args[1].is_a?(String)
+      options.merge! :bar_is_fine=>1
       block = args[0] =~ /^enter\+/ ?
-        lambda{ Launcher.insert args[1] } :
-        lambda{ Launcher.open args[1] }
+        lambda{ Launcher.insert args[1], options } :
+        lambda{ Launcher.open args[1], options }
     end
 
     args[0].gsub! '+', '_'
     Keys.method_missing args[0], &block
+
+    # Store where it was defined for open+key, else we won't know (have to climb stack to do this)
+
+    definer = caller(0)[3]
+    keys = Keys.words_to_letters args[0]
+    Keys.source[keys] = definer
+
     nil
   end
 

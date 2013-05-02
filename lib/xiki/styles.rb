@@ -174,6 +174,8 @@ class Styles
           ("arial" "DejaVu Sans")
           ("courier" "Monospace")
 
+          ("xiki" "verdana")
+
           ("verdana" "DejaVu Sans")
           ;("verdana" "arial")
           ))

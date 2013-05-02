@@ -1,0 +1,24 @@
+gem 'redcarpet'
+require 'redcarpet'
+
+class MarkdownHandler
+  def self.handle options, ex
+    return if ! ex['markdown'] || options[:output] || options[:halt]
+
+    txt = options[:output] = File.read "#{options[:last_source_dir]}#{ex['markdown']}"
+    html = self.render txt
+
+    Browser.html html
+
+    options[:output] = "@flash/- showing in browser!"
+  end
+
+  def self.render txt
+    markdown = Redcarpet::Markdown.new(Redcarpet::Render::HTML, :autolink=>true, :space_after_headers=>true)
+    html = markdown.render txt
+    html << Html.default_css
+
+    html
+  end
+
+end

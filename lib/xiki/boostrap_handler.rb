@@ -1,6 +1,6 @@
 class BoostrapHandler
   def self.handle options, ex
-    return if ! ex['boostrap'] || options[:output]
+    return if ! ex['boostrap'] || options[:output] || options[:halt]
 
     txt = File.read "#{options[:last_source_dir]}#{ex['boostrap']}"
 

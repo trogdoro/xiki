@@ -802,7 +802,10 @@ class Notes
     # Else, add it to top...
 
     View.to_highest
-    Line.next if Line =~ /^> .*:$/   # If at >...: line, move after it
+
+    if prefix == 6   # Only move under existing >...: header if 6+
+        Line.next if Line =~ /^> .*:$/   # If at >...: line, move after it
+    end
 
     if prefix == 8
       if Line =~ /^>/
@@ -982,7 +985,7 @@ class Notes
       next items[2] << arg if items_index == 2
 
       items_index = 1 if arg =~ /^> /   # If >..., bump up to headings
-      items_index = 2 if arg =~ /^\| /   # If |..., bump up to content
+      items_index = 2 if arg =~ /^\|/   # If |..., bump up to content
 
       items[items_index] << arg
     end
@@ -990,8 +993,6 @@ class Notes
     items
   end
 
-
-  #   def self.drill file, heading=nil, *content
 
   #
   # Makes .notes file navigable as tree.
@@ -1019,6 +1020,8 @@ class Notes
     # dir/dir/> heading/| contents
 
     # Pull off contents if any (quoted lines)
+
+    # This file_items stuff might not be necessary after the unified refactor.  Delegating to the expander should take care of dirs.
 
     file_items, heading, content = Notes.drill_split args
 
@@ -1118,19 +1121,23 @@ class Notes
       return txt.gsub(/^/, '| ').gsub(/^\| $/, '|')
     end
 
-    # /> Heading/| content, so navigate to heading and recenter...
+    # /> Heading/| content, so navigate or save...
 
     # If C-4, grab text and save it to file / update
     if prefix == "update"
-      # Update difflog
-
-      # Grab before and after
+      # Extract parts from the file that won't change
       index = txt.index /^#{escaped_heading}$/
       index += heading.length
 
       before = txt[0..index]
-      after = txt[index..-1].sub(/.*?^>( |$)/m, ">\\1")
-      content = Tree.siblings :string=>1
+
+      after = txt[index..-1]   # Part we're replacing and everything afterward
+      heading_after = after =~ /^> /
+      after = heading_after ? after[heading_after..-1] : ""   # If no heading, we replace all
+
+      # Find heading, if there is one
+
+      content = Tree.siblings :string=>1   # Content we're saving
       txt = "#{before}#{content}#{after}"
 
       DiffLog.save_diffs :patha=>file, :textb=>txt
@@ -1144,8 +1151,8 @@ class Notes
       return
     end
 
-    # Navigate to heading, then content
-
+    # navigate to heading and put cursor on line...
+    # return
     View.open file
     View.to_highest
     Search.forward "^#{$el.regexp_quote heading}$"

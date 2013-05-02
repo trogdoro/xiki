@@ -1,4 +1,4 @@
-class Menu
+module Menu
 
   def self.menu
     '
@@ -452,6 +452,10 @@ class Menu
     "- defined!"
   end
 
+  # Deprecated after Unified refactor.
+  # Superceded by Path.split
+  #
+  # Menu.split("a/b").should == ["a", "b"]
   # Menu.split("aa/|b/b/|c/c").should == ["aa", "|b/b", "|c/c"]
   # Menu.split("aa/|b/b/|c/c", :return_path=>1)
   # Menu.split("a/b/@c/d/", :outer=>1).should == ["a/b/", "c/d/"]
@@ -497,16 +501,22 @@ class Menu
   # Note this works for patterns as well as menus.
   def self.to_menu_unified
     path = Tree.path_unified
-    options = Expander.expander path
+    options = Expander.expanders path
 
     source = Tree.source options
 
     return View.flash "- no source found!" if ! source
 
-    # If was a string, just show it
-    return Launcher.open(source, :no_launch=>1) if source.is_a?(String)
+    # If was a string, show tree in new view...
 
-    # If [file, line] open and jump to line
+    if source.is_a?(String)
+      Launcher.open(source, :no_launch=>1)
+      Launcher.enter_all   # Show dir recursively, or file contents in tree
+      return
+    end
+
+    # Must be [file, line], so open and jump to line...
+
     View.open source[0]
     View.line = source[1] if source[1]
   end
@@ -514,7 +524,7 @@ class Menu
   def self.to_menu
 
     prefix = Keys.prefix
-    return self.to_menu_unified if prefix == :uu
+    return self.to_menu_unified if prefix != :u
 
     # Get root...
 
@@ -608,6 +618,7 @@ class Menu
 
     root = TextUtil.snake_case(root).sub(/^_+/, '')
 
+    # TODO: Update this for new text after Unified (possibly there probably won't be any text)
     if Line.value(2) =~ /^ +\| Supply a few items here/   # If sample text, remove
       Line.next
       while Line.=~(/^ +\| /)
@@ -630,7 +641,7 @@ class Menu
 
     return Tree << "| You must supply something to put under the '#{root}' menu.\n| First, add some lines here, such as these:\n- line/\n- another line/\n" if txt.empty?
 
-    path = File.expand_path "~/menu/#{root}.menu"
+    path = File.expand_path "~/menu2/#{root}.menu"
 
     file_existed = File.exists? path
 
@@ -647,9 +658,7 @@ class Menu
 
     View.cursor = orig if orig
 
-    require_menu path
-
-    View.flash "- #{file_existed ? 'Updated' : 'Created'} ~/menu/#{root}.menu", :times=>3
+    View.flash "- #{file_existed ? 'Updated' : 'Created'} ~/menu2/#{root}.menu", :times=>3
     nil
   end
 
@@ -661,7 +670,6 @@ class Menu
     recent = File.mtime(file)
 
     if previous == nil
-      #       require file
       load file
       @@loaded_already[file] = recent
       return
@@ -673,13 +681,13 @@ class Menu
     @@loaded_already[file] = recent
   end
 
-  def self.collapser_launcher
 
+  # Collapse tree one level.  Assumes line has arrows
+  def self.collapser_launcher
     line = Line.value
     arrows = line[/<+/].length
     arrows -= 1 if arrows > 1   # Make "<<" go back just 1, etc.
 
-    #     line.sub! /(^ +)= /, "\\1< "   # Temporarily get "=" to work too
     line = Line.without_label :line=>line
 
     skip = line.empty? && arrows - 1
@@ -706,8 +714,7 @@ class Menu
     end
 
     Line << line unless skip
-    Launcher.launch
-
+    Launcher.launch_unified
   end
 
   def self.root_collapser_launcher
@@ -732,7 +739,7 @@ class Menu
     old << "@" if old =~ /^ /   # If any indent, @ is needed
     View << "#{old}#{line}"
 
-    Launcher.launch
+    Launcher.launch_unified
   end
 
   def self.replacer_launcher
@@ -741,7 +748,7 @@ class Menu
     # Run in place, grab output, then move higher and show output
 
     orig = View.line
-    Launcher.launch :no_search=>1
+    Launcher.launch_unified :no_search=>1
 
     # If didn't move line, assume it had no output, and it's collapse things itself
     return if orig == View.line
@@ -755,9 +762,6 @@ class Menu
     Tree.to_parent
     Tree.kill_under :no_plus=>1
     Tree << output
-
-    # TODO: do search now, after insterted?
-
   end
 
   def self.menu_to_hash txt
@@ -822,7 +826,7 @@ class Menu
 
     return if ! launch
 
-    Launcher.launch
+    Launcher.launch_unified
   end
 
 
@@ -932,7 +936,13 @@ class Menu
 
 
 
+
+
+
   # Unified refactor from here on down...
+  # TODO: Probably extract from here on down into MenuExpander!
+
+
 
 
 
@@ -949,7 +959,7 @@ class Menu
   #     "
   #   end
 
-
+  # Adds to :expanders if :name is backed by a menu.
   def self.expands? options
 
     # If no name, maybe an inline menufied path, so set sources...
@@ -957,19 +967,26 @@ class Menu
     if ! options[:name]
       if options[:menufied]
         self.root_sources_from_dir options
-        return true
+        (options[:expanders] ||= []).push self
+        return
       end
-      return false   # Can't handle if wasn't inline and no :name
+      return   # Can't handle if wasn't inline and no :name
     end
 
     # See if name is directly defined...
 
     if implementation = @@defs[options[:name]]
-
       if implementation.is_a? String
+        implementation = Bookmarks[implementation]
+        # If file, remove any extension
+        if File.file? implementation
+          implementation.sub! /\.\w+$/, ''
+        end
+
         options[:menufied] = implementation
+
         self.root_sources_from_dir options
-        return true
+        return (options[:expanders] ||= []).push self
       end
 
       kind =
@@ -981,12 +998,12 @@ class Menu
       raise "Don't know how to deal with: #{implementation.inspect}" if ! kind
 
       options[kind] = implementation
-      return true
+      return (options[:expanders] ||= []).push self
     end
 
     # Try to look name up in PATH env...
 
-    return true if self.root_sources_from_path_env(options)[:sources]   # Found it if we created :sources
+    (options[:expanders] ||= []).push(Menu) if self.root_sources_from_path_env(options)[:sources]   # Found it if we created :sources
 
 
       #
@@ -1010,7 +1027,7 @@ class Menu
     # Get simple invocations out of the way (block or class)...
 
     # If it's a proc, just call
-    return options[:proc].call(options[:items] || [], options) if options[:proc]
+    return options[:output] = options[:proc].call(options[:items] || [], options) if options[:proc]
 
     # If it's a class, just call (or, wait, need to include .menu file - probably no)
     raise "TODO: implement dealing with a class" if options[:class]
@@ -1086,53 +1103,71 @@ class Menu
     options
   end
 
+  @@handlers = nil
+  @@handlers_order = nil
+  def self.handlers
+    @@handlers ||= {
+      "*"=>[ConfLoadingHandler],   # This should always run
+      "conf"=>ConfHandler,   # This should always run
+      "rb"=>RubyHandler,
+      "menu"=>MenuHandler,
+      "notes"=>NotesHandler,
+      "html"=>HtmlHandler,
+      "markdown"=>MarkdownHandler,
+      "boostrap"=>BoostrapHandler,
+      "txt"=>TxtHandler,
+      "py"=>PythonHandler,
+      "js"=>JavascriptHandler,
+      "coffee"=>CoffeeHandler,
+      "/"=>DirHandler,
+      }
+  end
+
+  def self.handlers_order
+    @@handlers_order ||= self.handlers.inject({}){|hash, kv| hash[kv[0]] = hash.length; hash}
+  end
+
+  # Go through :sources and call appropriate handler for each
   def self.handle options
     sources = options[:sources][-1]
 
+    # Make 'ex' map from extensions to source files
+
     ex = {}   # {"/"=>"a/", "rb"=>"a.rb"}
     sources.each do |source|
-      ex[source[/\w+$|\/$/]] = source
+      key = source[/\w+$|\/$/]
+      ex[key] = source if key
     end
 
     # TODO: Optimize this - use hash lookup for each extension
     #   Wait until we figure out final-ish way to register handlers
     #   Somehow sort keys based on below order
 
-    [
-      RubyHandler,
-      MenuHandler,
-      NotesHandler,
-      HtmlHandler,
-      BoostrapHandler,
-      TxtHandler,
-      PythonHandler,
-      JavascriptHandler,
-      CoffeeHandler,
-      DirHandler,
-    ].each do |handler|
+    self.handlers_order   # Ensure @@ vars are set
+
+    # Always run "*" handlers
+    @@handlers["*"].each do |handler|
       handler.handle options, ex
     end
 
-    return options[:output] if options[:output]
+    extensions = ex.keys.sort{|a, b| (@@handlers_order[a]||100000) <=> (@@handlers_order[b]||100000)}   # Sort by order in hash (it has the correct priority)
+
+    extensions.each do |o|
+      handler = @@handlers[o]
+      next if ! handler
+      handler.handle options, ex
+    end
+
+    return options[:output] if options[:output] || options[:halt]
 
     # If we get through everything and just a dir...
 
-    raise "couldn't handle:\n#{options.ai}"
+    options[:output] = "@flash/- no output!"
     nil
   end
 
   def self.defs
     @@defs
-  end
-
-  # Return the MENU_PATH environment var, plus ~/menu2/ and $x/menu2.
-  # Menu.menu_path_env_dirs
-  def self.menu_path_env_dirs
-    # Worry about this later
-    # How many times called? - memo-ize this based on MENU_PATH value
-    list = (ENV['MENU_PATH'] || "").split ":"
-    list += [File.expand_path("~/menu2"), Bookmarks["$x/menu2"]]
-    list.uniq
   end
 
   def self.root_sources_from_dir options
@@ -1152,12 +1187,10 @@ class Menu
   def self.root_sources_from_path_env options
 
     name = options[:name]
-    env_dirs = self.menu_path_env_dirs
 
     # For each dir in path env...
 
-    env_dirs.each do |dir|
-
+    Xiki.menu_path_dirs.each do |dir|
       # Grab sources if they exist...
 
       menufied = "#{dir}/#{name}"
@@ -1173,7 +1206,6 @@ class Menu
     end
     options
   end
-
 
   def self.source_glob dir
     list = Dir.glob ["#{dir}/", "#{dir}.*", "#{dir}/index.*"]
@@ -1193,6 +1225,10 @@ class Menu
     path = "#{File.dirname menufied}/#{options[:sources][0..nth].map{|o| o[0]}.join("")}"
 
     path.sub /^\/\/+/, "/"   # Extraneous leading slash can be added when at root (File.dirname adds one, etc.)
+  end
+
+  def self.format_name name
+    name.gsub(/[ -]/, '_').downcase
   end
 
 end

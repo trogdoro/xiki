@@ -1,9 +1,7 @@
 $:.unshift "spec/"
-require 'xiki/ol'
-require 'xiki/tree'
-require 'xiki/core_ext'
-
 require './spec/spec_helper'
+
+%w"xiki/tree xiki/path".each {|o| require o}
 
 describe Tree, "#traverse" do
 
@@ -1117,8 +1115,16 @@ describe Tree, "#construct_path" do
 end
 
 describe Tree, "#join_to_subpaths" do
-  it "handles one line" do
+  it "leaves list boundaries only for at signs" do
     Tree.join_to_subpaths(["a/", "@b/", "c/"]).should == ["a/", "b/c/"]
+  end
+
+  it "it doesn't split escaped at sign" do
+    Tree.join_to_subpaths(["a/", "b/;@ip/"]).should == ["a/b/;@ip/"]
+  end
+
+  it "it doesn't split at sign after escaped slash" do
+    Tree.join_to_subpaths(["a/", "b;/@ip/"]).should == ["a/b;/@ip/"]
   end
 
   it "tests a bunch of other stuff, once we're comfortable with making this the official way of delimiting @'s and dealing with trailing slashes"
@@ -1133,6 +1139,5 @@ describe Tree, "#join_to_subpaths" do
 
     # Shouldn't split these:
     # ["a@b/"]
-
-
 end
+

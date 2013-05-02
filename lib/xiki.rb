@@ -199,7 +199,7 @@ module Xiki
 
     if prefix == :-   # Insert @last to see recent menu names and drill in.
       Line << "last/"
-      Launcher.launch
+      Launcher.launch_unified
       return
     end
 
@@ -215,7 +215,7 @@ module Xiki
 
     View << input
 
-    Launcher.launch
+    Launcher.launch_unified
   end
 
   def self.open_menu
@@ -233,7 +233,7 @@ module Xiki
     View.kill_all
     View << "#{input}\n"
     View.to_highest
-    Launcher.launch
+    Launcher.launch_unified
   end
 
   def self.menus
@@ -257,8 +257,7 @@ module Xiki
     txt.
       gsub(/^/, '| ').
       gsub(/ +$/, '').
-      gsub(/^\|(        )([+-])/) {|o| "|#{$2 == '-' ? '+' : '-'}#{$1}"}   # Make "expected" be green
-
+      gsub(/^\|(        )([+-])/) {|o| "|#{$2}#{$1}"}   # Make extra be green, missing be red
   end
 
   def self.tests clazz=nil, describe=nil, test=nil, quote=nil
@@ -376,7 +375,8 @@ module Xiki
     View.to_highest
     searches.each { |s| Search.forward "[\"']#{$el.regexp_quote s}[\"']" }
     Move.to_axis
-    Color.mark "light"
+    # Maybe restore this, but have option to only mark if not yet marked - Color.mark "light", :if_clear=>1
+    #     Color.mark "light"
     nil
   end
 
@@ -464,7 +464,9 @@ module Xiki
 
     if $el
       # If the first time we've loaded
-      if ! $el.elvar.xiki_loaded_once && ! Menu.line_exists?("misc config", /^- don't show welcome$/) && ! View.buffer_visible?("Issues Loading Xiki")
+
+      # TODO: after we namespace Xiki classes into 'Menu', remove the "::" and it will use Xiki::Menu, since we're in the Menu module
+      if ! $el.elvar.xiki_loaded_once && ! ::Menu.line_exists?("misc config", /^- don't show welcome$/) && ! View.buffer_visible?("Issues Loading Xiki")
         Launcher.open("welcome/", :no_search=>1)
       end
 
@@ -601,6 +603,32 @@ module Xiki
     # clear cache when updated by guard -
 
     "TODO"
+  end
+
+  def self.menu_path_custom_dir
+    File.expand_path("~/menu2")
+  end
+  def self.menu_path_core_dir
+    Bookmarks["$x/menu2"]
+  end
+  # Return the MENU_PATH environment var, plus ~/menu2/ and $x/menu2.
+  def self.menu_path_dirs
+    # Worry about this later
+    # How many times called? - memo-ize this based on MENU_PATH value
+    list = (ENV['MENU_PATH'] || "").split ":"
+    list = [self.menu_path_custom_dir, list, self.menu_path_core_dir].flatten
+    list.uniq
+
+    # TODO:
+    #   - When user hasn't set MENU_PATH
+    #     - auto-add ~/menu to the beginning
+    #   - Else
+    #     - assume user has added ~/menu (or the equivalent) to the beginning
+  end
+
+  def self.menuish_parent options
+    ancestors = options[:ancestors]
+    ancestors && ancestors[-1][/^([\w ]+)\/$/, 1]
   end
 
 

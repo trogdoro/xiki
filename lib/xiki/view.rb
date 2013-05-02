@@ -1216,7 +1216,7 @@ class View
       elsif prefix == :u || prefix == :-   # Use prefix chars from previous line
         line[/^[ |$~&%@\/\\#+!-]*/]
       elsif Notes.enabled?
-        line[/^[ |!$%+-]*/]
+        line[/^[ :|!$%+-]*/]
       else
         Line[/^ */] || ""
       end
@@ -1604,9 +1604,13 @@ class View
     View >> "\n"
   end
 
-  def self.confirm message="Are you sure?"
-    View.flash "- #{message}", :times=>1
+  def self.confirm message="Are you sure?", options={}
+    View.beep :times=>3 if options[:beep]
+
+    View.flash "- #{message}", :times=>(options[:times]||2)
     choice = Keys.input :prompt=>"#{message} (type 'y' for yes)", :chars=>1
+
+    View.message ""   # Make sure to clear the message out
 
     return choice =~ /[ym]/i
   end
@@ -1636,7 +1640,6 @@ class View
 
     quote = $el.regexp_quote quote
 
-
     View.to_highest
 
     # Search for exact line match
@@ -1658,6 +1661,10 @@ class View
 
     Line.to_beginning
 
+    if quote =~ /^(> | *def )/
+      View.recenter_top
+    end
+
     found
 
   end
@@ -1675,6 +1682,17 @@ class View
   #       View.delete View.cursor..right
   #     end
   #   end
+
+
+  def self.toggle
+    prefix = Keys.prefix :clear=>true
+
+    return $el.transpose_words(1) if prefix == :u
+
+    return $el.transpose_paragraphs(1) if prefix == :-
+
+    $el.transpose_chars 1 # $el.elvar.current_prefix_arg
+  end
 
 
 end

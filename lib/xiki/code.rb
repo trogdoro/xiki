@@ -217,7 +217,6 @@ class Code
 
   # Evaluates a string, and returns the output and the stdout string generated
   def self.eval code, file=nil, line=nil, options={}
-
     return ['- Warning: nil passed to Code.eval!', nil, nil] if code.nil?
 
     # Capture stdout output (saving old stream)
@@ -578,6 +577,10 @@ class Code
   def self.enter_log_stack
     return View.insert "p_stack()" if View.extension == "js"
     View.insert "Ol.stack"
+  end
+
+  def self.enter_log_ancestors
+    View.insert "Ol.ancestors"
   end
 
   def self.enter_log_thing txt

@@ -1,10 +1,12 @@
 require 'rr'
+require 'awesome_print'
+
+%w"xiki/core_ext xiki/ol".each {|o| require o}
 
 # RSpec::Runner.configure do |config|
 RSpec.configure do |config|
   config.mock_with :rr
 end
-
 
 module Xiki
   def self.dir
@@ -12,9 +14,18 @@ module Xiki
   end
 end
 
-def stub_menu_path_env_dirs
+def stub_menu_path_dirs
   xiki_dir = Xiki.dir
 
   list = ["#{xiki_dir}spec/fixtures/menu", "#{xiki_dir}menu2"]
-  stub(Menu).menu_path_env_dirs {list}
+  stub(Xiki).menu_path_dirs {list}
 end
+
+
+# Put this here until we can put it in a better place
+#  - Maybe so it'll be used by main xiki and conf
+AwesomePrint.defaults = {
+  :indent => -2,   # left-align hash keys
+  :index => false,
+  :multiline => true,
+}
