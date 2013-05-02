@@ -277,7 +277,7 @@ class FileTree
     t = self.new
     dir.sub!(/\/$/, '')
     t.traverse dir
-    View.insert "- #{dir}/\n"
+    View.insert "#{dir}/\n"
 
     result_indent = t.res[/^ */]   # Get indent of first line
     View.insert t.res.gsub(/^#{result_indent}/, "  ")
@@ -303,16 +303,18 @@ class FileTree
       Styles.define :quote_heading_h1, :fg=>"fff", :size=>"2", :face=>"arial", :bold=>true
       Styles.define :quote_heading_h2, :fg=>"fff", :size=>"-2", :face=>"arial", :bold=>true
       Styles.define :quote_heading_pipe, :fg=>"444", :size=>"0", :face => "xiki", :bold=>true
+      Styles.define :quote_heading_h1_green, :fg=>"8f4", :size=>"2", :face=>"arial", :bold=>true
 
       Styles.define :quote_heading_bracket, :fg=>"4c4c4c", :size=>"-2", :face=>"arial black", :bold=>true
-
       Styles.define :quote_heading_small, :fg=>"fff", :size=>"-2", :face => "arial black", :bold=>true
 
       Styles.define :diff_line_number, :bold => true, :size => "-2", :fg => "444444"
       Styles.define :diff_red, :bg=>"400", :fg=>"ee3333", :size=>"-1"
-      Styles.define :diff_red_pipe, :bg=>"400", :fg=>"772222", :size=>"0", :face=>"xiki"
+      Styles.define :diff_red_pipe, :bg=>"400", :fg=>"771111", :size=>"0", :face=>"xiki", :bold=>true
+
       Styles.define :diff_green, :bg=>"130", :fg=>"44dd33", :size=>"-1"
-      Styles.define :diff_green_pipe, :bg=>"130", :fg=>"227719", :size=>"0", :face=>"xiki"
+      Styles.define :diff_green_pipe, :bg=>"130", :fg=>"117719", :size=>"0", :face=>"xiki", :bold=>true
+
       Styles.define :diff_small, :fg => "222", :size => "-11"
 
       Styles.tree_keys :fg=>"#fff", :underline=>nil
@@ -325,14 +327,16 @@ class FileTree
       Styles.define :quote_heading_h1, :fg=>"444", :size=>"2", :face=>"arial", :bold=>true
       Styles.define :quote_heading_h2, :fg=>"aaa", :size=>"-2", :face=>"arial", :bold=>true
       Styles.define :quote_heading_pipe, :fg=>"bbb", :size=>"0", :face => "xiki", :bold=>true
+      Styles.define :quote_heading_h1_green, :fg=>"8f4", :size=>"2", :face=>"arial", :bold=>true
+
       Styles.define :quote_heading_bracket, :fg=>"bbb", :size=>"-2", :face=>"arial black", :bold=>true
       Styles.define :quote_heading_small, :fg=>"fff", :size=>"-2", :face => "arial black", :bold=>true
 
       Styles.define :diff_line_number, :bold=>true, :size=>"-2", :fg=>"ccc"
       Styles.define :diff_red, :bg=>"ffdddd", :fg=>"cc4444", :size=>"-1"
-      Styles.define :diff_red_pipe, :bg=>"ffdddd", :fg=>"cc4444", :size=>"0", :face=>"xiki"
+      Styles.define :diff_red_pipe, :bg=>"ffdddd", :fg=>"cc4444", :size=>"0", :face=>"xiki", :bold=>true
       Styles.define :diff_green, :bg=>"ddffcc", :fg=>"337744", :size=>"-1"
-      Styles.define :diff_green_pipe, :bg=>"ddffcc", :fg=>"337744", :size=>"0", :face=>"xiki"
+      Styles.define :diff_green_pipe, :bg=>"ddffcc", :fg=>"337744", :size=>"0", :face=>"xiki", :bold=>true
       Styles.define :diff_small, :fg=>"ddd", :size=>"-11"
 
       Styles.tree_keys :fg=>"#ff0", :underline=>1
@@ -399,23 +403,24 @@ class FileTree
 
     # Slash after almost anything
 
-    Styles.apply("^[ <=+-]*@?\\([~$#a-zA-Z0-9_,? ().:@'-]*[^ \n]\/\\)", nil, :ls_dir)
+    # foo/ lines
+    Styles.apply("^[ <=+-]*@?\\([~$#a-zA-Z0-9_,?* ().:;@'-]*[^ \n]\/\\)", nil, :ls_dir)
 
     # Covers paths in files by themselves
-    Styles.apply("^[ <=+-]*\\([@~$a-zA-Z0-9_,? ().:<-]*\/[@\#'$a-zA-Z0-9_,? ().:\/<-]+\/\\)", nil, :ls_dir)   # Paths with multiple slashes
+    Styles.apply("^[ <=+-]*\\([@~$a-zA-Z0-9_,*? ().:;<-]*\/[@\#'$a-zA-Z0-9_,*? ().:;\/<-]+\/\\)", nil, :ls_dir)   # Paths with multiple slashes
 
 
 
 
     # < next) menus/
-    Styles.apply("^[ \t]*[<+-][<+=-]* [a-zA-Z0-9_,? ().:-]+?[:)] \\(\[.@a-zA-Z0-9 ]+\/\\)", nil, :ls_dir)   # label, one word, slash
-    Styles.apply("^[ \t]*[<+-][<+=-]* [a-zA-Z0-9_,? ().:-]+?[:)] \\([.@a-zA-Z0-9 ]+\/[.@a-zA-Z0-9 \/]+\/\\)", nil, :ls_dir)   # label, one word, path, slash
+    Styles.apply("^[ \t]*[<+-][<+=-]* [a-zA-Z0-9_,? ().:;-]+?[:)] \\(\[.@a-zA-Z0-9 ]+\/\\)", nil, :ls_dir)   # label, one word, slash
+    Styles.apply("^[ \t]*[<+-][<+=-]* [a-zA-Z0-9_,? ().:;-]+?[:)] \\([.@a-zA-Z0-9 ]+\/[.@a-zA-Z0-9 \/]+\/\\)", nil, :ls_dir)   # label, one word, path, slash
 
 
 
     # Bullets
     Styles.apply("^[ \t]*[+-] [^(\n]+?) \\(.+/\\)$", nil, :ls_dir)   # - hey) /what/
-    Styles.apply("^[ \t]*[+-] [a-zA-Z0-9_,? ().:-]+?: \\(.+/\\)$", nil, :ls_dir)   # - hey: /what/
+    Styles.apply("^[ \t]*[+-] [a-zA-Z0-9_,? ().:;-]+?: \\(.+/\\)$", nil, :ls_dir)   # - hey: /what/
 
     # Put this one back?
     #     Styles.apply("^[ +-]*\\([^|\n]+/\\)$", nil, :ls_dir)   # Dirs with bullets
@@ -439,21 +444,27 @@ class FileTree
     Styles.apply("[+-])\\(.*?\\)([+-]", nil, :ls_quote)   # quoted lines: between diffs
 
     # | >... headings
-    Styles.apply("^ *\\(|\\)\\( \\)\\(>\\)\\(\n\\| .*\n\\)", nil, :quote_heading_pipe, :ls_quote, :quote_heading_bracket, :quote_heading_h1)
+
+    Styles.apply("^ *\\(|\\|:\\)\\( \\)\\(>\\)\\(\n\\| .*\n\\)", nil, :quote_heading_pipe, :ls_quote, :quote_heading_bracket, :quote_heading_h1)
+
     Styles.apply("^ *\\(|\\)\\( \\)\\(>>\\)\\(\n\\| .*\n\\)", nil, :quote_heading_pipe, :ls_quote, :quote_heading_bracket, :quote_heading_small)
+    # | >...! headings
+    Styles.apply("^ *\\(|\\)\\( \\)\\(>\\)\\(.*!\n\\)", nil, :quote_heading_pipe, :ls_quote, :quote_heading_bracket, :quote_heading_h1_green)
 
     #    >... headings (indented)
     Styles.apply("^ +\\(> ?\\)\\(.*\n\\)", nil, :quote_heading_bracket, :quote_heading_h1)
+    Styles.apply("^ +\\(> ?\\)\\(.*!\n\\)", nil, :quote_heading_bracket, :quote_heading_h1_green)
 
     #    >>
     Styles.apply("^ +\\(>>\\)\\(.*\n\\)", nil, :quote_heading_bracket, :quote_heading_h2)
     Styles.apply("^ +\\(> ?\\)\\(.*:\n\\)", nil, :quote_heading_bracket, :quote_heading_h0)
 
-
     # |+... diffs
     Styles.apply("^ +\\(:[0-9]+\\)$", nil, :ls_quote)
-    Styles.apply("^ *\\(|\\+\\)\\(.*\\)", nil, :diff_green_pipe, :diff_green, :face=>"xiki")   # whole lines
-    Styles.apply("^ *\\(|\-\\)\\(.*\\)", nil, :diff_red_pipe, :diff_red)
+    Styles.apply("^ *\\(|\\+\\|:\\+\\)\\(.*\\)", nil, :diff_green_pipe, :diff_green, :face=>"xiki")   # whole lines
+
+    Styles.apply("^ *\\(|-\\|:-\\)\\(.*\\)", nil, :diff_red_pipe, :diff_red)
+
     Styles.apply("^ *\\(|\\)\\(@@ .*\n\\)", nil, :quote_heading_pipe, :diff_line_number)
 
     #Styles.apply('^[ -]*\\([ a-zA-Z0-9\/_\.$-]*\\w/\\)$', nil, :ls_dir)  # Most dirs
@@ -654,13 +665,14 @@ class FileTree
     return Tree.enter_under   # Only leafs, so show them
   end
 
+  # Deprecated after Unified.
+  # Make sure it's not used anywhere, then delete!
   def self.save_quoted path
 
     txt = Tree.siblings :quotes=>1
 
     if txt[0] !~ /^\|/
       # TODO: also check that it's a tree
-      #     return View.flash("- All siblings should be quoted - (make this more flexible?)")
       return self.move_or_delete_via_diffs
     end
 
@@ -684,6 +696,50 @@ class FileTree
     View.flash "- Saved!"
   end
 
+  # New Unified way to save a file
+  def self.save path, options
+
+    # If no prefix, prompt to save (file must not exist since we were called)
+    if options[:prefix] != "update"
+      return if ! View.confirm "Create file #{path} ?"
+    end
+
+    txt = Tree.siblings(:quotes=>1, :string=>1)
+
+    # Eventually... do what if client !~ ^editor?
+
+    # Bring this back at some point:
+    # This is that thing where you can move or delete files in a file tree, and
+    # do as+update to have it look at diff with saved and have it move and delete
+    # the actual files accordingly.
+    #   # Will probably have to check options[:path] or something
+    #     if txt[0] !~ /^\|/
+    #       # TODO: also check that it's a tree
+    #       return self.move_or_delete_via_diffs
+    #     end
+
+    dir = File.dirname path
+
+    if ! File.exists? dir
+      View.flash "- Dir doesn\'t exist. Create it?", :times=>4
+      return if ! View.confirm "Create the \"#{dir}\" directory?"
+
+      `mkdir -p "#{dir}"`
+    end
+
+    DiffLog.save_diffs :patha=>path, :textb=>txt
+    File.open(path, "w") { |f| f << txt }
+
+    "@flash/- saved!"
+
+    # - Possible long-term better solution > do later
+    #   - if ! options[:prompt_response]
+    #     - return @/prompt/Are you sure you want to create?
+    #   - if :prompt_response says they're ok with saving, do it
+    #     - __
+
+  end
+
   def self.operations_via_diffs added, deleted
     tmp_path = "/tmp/saved.txt"
     operations = [[], []]
@@ -691,7 +747,6 @@ class FileTree
     file = View.file
     $el.with(:with_temp_buffer) do
       $el.insert_file file
-      #       Ol << "View.txt(1, 150): #{View.txt(1, 150)}"
       deleted.each do |line_number|
         View.line = line_number
         path = Tree.construct_path
@@ -881,7 +936,7 @@ class FileTree
         Tree.search(:left => Line.left, :right => Line.left(2))
         return
       end
-      bullet = "+ "
+      bullet = ""
 
       bullet = "" if line =~ /^[ @]+$/
       bullet = "@" if line =~ /^ +$/
@@ -1533,6 +1588,7 @@ class FileTree
     if self.is_remote?(dir)
       self.remote_files_in_dir(dir)
     else
+      dir = FileTree.add_slash_maybe dir
       all = Dir.glob("#{dir}*", File::FNM_DOTMATCH).
         select {|i| i !~ /\/\.(\.*|svn|git)$/}.   # Exclude some dirs (exclude entensions here too?)
         select {|i| i !~ /\/\.#/}.sort
@@ -2032,22 +2088,28 @@ class FileTree
 
 
   def self.expands? options
-    options[:file_path] ? true : false
+    return unless options[:file_path]
+    (options[:expanders] ||= []).push self
   end
 
   def self.expand options
+
+    prefix = options[:prefix]
+
     file_path = options[:file_path]
+    Path.unescape! file_path
 
     # If ##foo/ or **foo/ filter at end (removing all as we check)...
 
-    filters_at_end = self.extract_filters file_path   # Removes ## and ** filters, returning any that were at the end
-    return self.expand_filter filters_at_end, options if filters_at_end
+    filters_at_end = self.extract_filters! file_path   # Removes ## and ** filters, returning any that were at the end
+
+    return options[:output] = self.expand_filter(filters_at_end, options) if filters_at_end
 
     # If it's a $... shell command...
 
     if file_path =~ %r"^(/[\w./ -]+/)([$%&]) (.+)"   # If /foo// or //foo
       options.merge!(:dir=>$1, :prompt=>$2, :command=>$3)
-      return self.expand_shell options
+      return options[:output] = self.expand_shell(options)
     end
 
     # If quoted line, pull it off into :quote...
@@ -2056,60 +2118,70 @@ class FileTree
       options[:quote] = quote
     end
 
+    if line_number = Path.extract_line_number(file_path)
+      Ol "line_number", line_number
+      options[:line_number] = line_number
+    end
+
     # If it's a file...
 
     if File.file? file_path
       options[:no_slash] = 1
 
-      return self.filter_one_file(file_path).join("\n") if options[:prefix] == "outline"
+      return options[:output] = self.filter_one_file(file_path).join("\n") if prefix == "outline"
 
-      return Tree.quote File.read(file_path, *Files.encoding_binary) if options[:prefix] == "all"
+      return options[:output] = Tree.quote(File.read(file_path, *Files.encoding_binary)) if prefix == "all"
+      return options[:output] = self.save(file_path, options) if prefix == "update" && options[:quote]
 
       # If editor, tell it to open the file...
 
       if options[:client] =~ /^editor\//
         txt = "@open file/#{file_path}"
+        txt << "/:#{options[:line_number]}" if options[:line_number]   # If a quote, pass line number after a colon!
         txt << "/|#{options[:quote]}" if options[:quote]   # If a quote, pass line number after a colon!
-        return txt
+        return options[:output] = txt
       end
 
       # If API, return contents...
-      return File.read file_path
+      return options[:output] = File.read(file_path)
       # If not editor, |... will be ignored for now.  Any reasons would api pass this in?  Probably to create non-existant files?  Maybe grab lines indented under it?  Maybe return line number of it?
     end
-
 
     # If a dir...
 
     if File.directory? file_path
-
       # TODO: maybe deprecate C-8 prefix for this, only make it enter+all ("all")
-      prefix = options[:prefix]
       if prefix == 8 || prefix == "all"
-        return self.expand_dir_recursively options
+        return options[:output] = self.expand_dir_recursively(options)
       end
 
-      return self.expand_one_dir options
+      return options[:output] = self.expand_one_dir(options)
     end
 
-    # Else, confirm and save the file...
+    # File doesn't exist...
 
+    if options[:file_path] =~ /\/$/
+      return options[:output] = "
+        @mkdir/
+        | ...dir '#{file_path}' doesn't exist.  Create it?
+        ".unindent
+    end
 
+    # Quote means to create the file (with or without "update" prefix)...
 
+    return options[:output] = self.save(file_path, options) if options[:quote]
 
-    # TODO: If quote and file doesn't exist, create it - how to grab all lines?!"
+    # File path (no quote)...
 
-    # - Get from editor: confirmation from user and __
-    #   - Short term way > do now
-    #     - View.confirm
-    #     - Just grab lines
-    #   - Long term way > do later
-    #     - if ! options[:prompt_response]
-    #       - return @/prompt/Are you sure you want to create?
-    #     - if :prompt_response says they're ok with saving, do it
-    #       - __
+    # If enter+all, do what?
+    return options[:output] = "@flash/- file doesn't exist!" if prefix == "all" || prefix == "outline"
 
-    #     raise "Don't know to handle #{file_path}" if ! File.directory? file_path
+    options[:output] = "@open file/#{file_path}"   # So just open the new file
+
+    # What about when :client !~ ^editor
+    # - can probably assume there won't be an update prefix
+    #   - so, what will it do?  Maybe it'll send a multiline string if it wants to save?  Probably worry about this later?
+
   end
 
   def self.expand_shell options
@@ -2119,7 +2191,7 @@ class FileTree
 
 
   # FileTree.extract_filters("/projects/foo/##hey/")
-  def self.extract_filters file_path
+  def self.extract_filters! file_path
 
     patterns_at_end = []
 
