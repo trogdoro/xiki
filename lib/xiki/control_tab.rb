@@ -155,7 +155,7 @@ class ControlTab
 
       # This only gets called the 1st tab in the sequence (subsequent ones are routed to Dash+Tab)
 
-      Launcher.open 'color/mark/show/'
+      Launcher.open 'mark/show/'
 
       return if View.txt =~ /^  - no marks found!/
 
