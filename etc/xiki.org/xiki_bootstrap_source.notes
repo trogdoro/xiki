@@ -1,7 +1,7 @@
 > Deploy
 - /tmp/
   $ scp tmp.html xiki@xiki.org:/var/www/xiki.org/index.html
-  % scp tmp.html xiki@xiki.org:/var/www/xiki.org/screencasts/index.shtml
+  $ scp tmp.html xiki@xiki.org:/var/www/xiki.org/screencasts/index.shtml
 
 http://xiki.org
 http://xiki.org/screencasts
@@ -14,22 +14,27 @@ http://xiki.org/screencasts
 bootstrap/
   - project name/Xiki
   - navbar/
-    | <img src="http://xiki.org/images/bootstrap_icon.png">
+    | <img src="/images/bootstrap_icon.png">
   - container/
     - hero/
       - <div id="the_carousel" class="carousel slide" style="width:319px; float:left;">
         <div class="carousel-inner">
-          <div class="active item"><img src="http://xiki.org/images/sharktopus.png" style="margin-top:"></div>
-          <div class="item"><img src="http://xiki.org/images/demo.png"></div>
-          <div class="item"><img src="http://xiki.org/images/demo2.png"></div>
-          <div class="item"><img src="http://xiki.org/images/demo3.png"></div>
+          <div class="active item"><img src="/images/sharktopus.png" style="margin-top:"></div>
+          <div class="item"><img src="/images/demo.png"></div>
+          <div class="item"><img src="/images/demo2.png"></div>
+          <div class="item"><img src="/images/demo3.png"></div>
         <a class="carousel-control left" href="#the_carousel" data-slide="prev">&lsaquo;</a>
         <a class="carousel-control right" href="#the_carousel" data-slide="next">&rsaquo;</a>
       - <div style="min-height:290px;">
         - <h1 style="margin-top:10px;">
           | Xiki: A shell console with GUI features.
           |# Like a shell console, but better.
-        - p/Xiki does what shell consoles do, but lets you edit everything at any time. It's trivial to make your own commands and menus to access other tools.
+        - p/
+          Xiki does what shell consoles do, but lets you edit everything at any time. It's trivial to make your own commands and menus to access other tools.
+        - <p style="font-size:14px; text-align:top;">
+          | Donate to Xiki: <iframe style="border:0; margin:0 0 0 10px; padding:0; vertical-align:middle;"
+          |   src="https://www.gittip.com/xiki/widget.html"
+          |   width="48pt" height="22pt"></iframe>
     - row/
       - span6/
         - h2/
@@ -45,7 +50,7 @@ bootstrap/
         - p/
           Everything is editable text. Type commands anywhere. Edit the output. (Vs. typing commands at the bottom, and read-only output.) Intermix menus, headings, bullet points, wherever you want.
           <b>Xiki</b> == e<b>x</b>ecutable w<b>iki</b>.
-  - <div style="background: transparent url('http://xiki.org/images/waves.png') repeat-x 0px 0px;">
+  - <div style="background: transparent url('/images/waves.png') repeat-x 0px 0px;">
     - container/
       - row/
         - span4/
@@ -115,7 +120,15 @@ bootstrap/
       |   $('#the_carousel').carousel('cycle');
       |   // .carousel({interval: 3200})
       | });
-
+    - script/
+      |   var _gaq = _gaq || [];
+      |   _gaq.push(['_setAccount', 'UA-1258428-5']);
+      |   _gaq.push(['_trackPageview']);
+      |   (function() {
+      |     var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      |     ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      |     var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+      |   })();
 
 
 >> Old swimming shark
@@ -160,34 +173,46 @@ bootstrap/
     }
 
   - h1/Screencasts
+  | <div class="section">
+  |   <object width="640" height="385"><param name="movie" value="http://www.youtube.com/v/bUR_eUVcABg&hl=en_US&fs=1&rel=0"></param><param name="allowFullScreen" value="true"></param><param name="allowscriptaccess" value="always"></param><embed src="http://www.youtube.com/v/bUR_eUVcABg&hl=en_US&fs=1&rel=0" type="application/x-shockwave-flash" allowscriptaccess="always" allowfullscreen="true" width="640" height="385"></embed></object>
+  |
+  | <div class="section">
+  |   <iframe width="640" height="385" src="http://www.youtube.com/embed/QqOrQN0bxNE" frameborder="0" allowfullscreen></iframe>
+  |
+  | <div class="section">
+  |   <object width="640" height="385"><param name="movie" value="http://www.youtube.com/v/LA-lViZ8vls&hl=en_US&fs=1&rel=0"></param><param name="allowFullScreen" value="true"></param><param name="allowscriptaccess" value="always"></param><embed src="http://www.youtube.com/v/LA-lViZ8vls&hl=en_US&fs=1&rel=0" type="application/x-shockwave-flash" allowscriptaccess="always" allowfullscreen="true" width="640" height="385"></embed></object>
+  |
+  | <div class="section">
+  |   <object width="640" height="385"><param name="movie" value="http://www.youtube.com/v/lfgLAgLorn8&hl=en_US&fs=1&rel=0"></param><param name="allowFullScreen" value="true"></param><param name="allowscriptaccess" value="always"></param><embed src="http://www.youtube.com/v/lfgLAgLorn8&hl=en_US&fs=1&rel=0" type="application/x-shockwave-flash" allowscriptaccess="always" allowfullscreen="true" width="640" height="385"></embed></object>
+  |
+  | <div class="section">
+  |   <object width="640" height="385"><param name="movie" value="http://www.youtube.com/v/mumcFOk4PF4&hl=en_US&fs=1&rel=0"></param><param name="allowFullScreen" value="true"></param><param name="allowscriptaccess" value="always"></param><embed src="http://www.youtube.com/v/mumcFOk4PF4&hl=en_US&fs=1&rel=0" type="application/x-shockwave-flash" allowscriptaccess="always" allowfullscreen="true" width="640" height="385"></embed></object>
+  |
+  | <div class="section">
+  |   <object width="640" height="385"><param name="movie" value="http://www.youtube.com/v/OWG_88s5YA8&hl=en_US&fs=1&rel=0"></param><param name="allowFullScreen" value="true"></param><param name="allowscriptaccess" value="always"></param><embed src="http://www.youtube.com/v/OWG_88s5YA8&hl=en_US&fs=1&rel=0" type="application/x-shockwave-flash" allowscriptaccess="always" allowfullscreen="true" width="640" height="385"></embed></object>
+  |
+  | <h3 class="section" style="margin:130px 0 0">
+  |   Older screencasts from before the Xiki re-write...
+  |
+  | <div class="section">
+  |   <object width="640" height="385"><param name="movie" value="http://www.youtube.com/v/6aIsQ71tDpg&hl=en_US&fs=1&rel=0"></param><param name="allowFullScreen" value="true"></param><param name="allowscriptaccess" value="always"></param><embed src="http://www.youtube.com/v/6aIsQ71tDpg&hl=en_US&fs=1&rel=0" type="application/x-shockwave-flash" allowscriptaccess="always" allowfullscreen="true" width="640" height="385"></embed></object>
+  |
+  | <div class="section">
+  |   <object width="640" height="385"><param name="movie" value="http://www.youtube.com/v/ixtXTnypxg0&hl=en_US&fs=1&rel=0"></param><param name="allowFullScreen" value="true"></param><param name="allowscriptaccess" value="always"></param><embed src="http://www.youtube.com/v/ixtXTnypxg0&hl=en_US&fs=1&rel=0" type="application/x-shockwave-flash" allowscriptaccess="always" allowfullscreen="true" width="640" height="385"></embed></object>
 
-  <div class="section">
-    <object width="640" height="385"><param name="movie" value="http://www.youtube.com/v/bUR_eUVcABg&hl=en_US&fs=1&rel=0"></param><param name="allowFullScreen" value="true"></param><param name="allowscriptaccess" value="always"></param><embed src="http://www.youtube.com/v/bUR_eUVcABg&hl=en_US&fs=1&rel=0" type="application/x-shockwave-flash" allowscriptaccess="always" allowfullscreen="true" width="640" height="385"></embed></object>
-
-  <div class="section">
-    <object width="640" height="385"><param name="movie" value="http://www.youtube.com/v/LA-lViZ8vls&hl=en_US&fs=1&rel=0"></param><param name="allowFullScreen" value="true"></param><param name="allowscriptaccess" value="always"></param><embed src="http://www.youtube.com/v/LA-lViZ8vls&hl=en_US&fs=1&rel=0" type="application/x-shockwave-flash" allowscriptaccess="always" allowfullscreen="true" width="640" height="385"></embed></object>
-
-  <div class="section">
-    <object width="640" height="385"><param name="movie" value="http://www.youtube.com/v/lfgLAgLorn8&hl=en_US&fs=1&rel=0"></param><param name="allowFullScreen" value="true"></param><param name="allowscriptaccess" value="always"></param><embed src="http://www.youtube.com/v/lfgLAgLorn8&hl=en_US&fs=1&rel=0" type="application/x-shockwave-flash" allowscriptaccess="always" allowfullscreen="true" width="640" height="385"></embed></object>
-
-  <div class="section">
-    <object width="640" height="385"><param name="movie" value="http://www.youtube.com/v/mumcFOk4PF4&hl=en_US&fs=1&rel=0"></param><param name="allowFullScreen" value="true"></param><param name="allowscriptaccess" value="always"></param><embed src="http://www.youtube.com/v/mumcFOk4PF4&hl=en_US&fs=1&rel=0" type="application/x-shockwave-flash" allowscriptaccess="always" allowfullscreen="true" width="640" height="385"></embed></object>
-
-  <div class="section">
-    <object width="640" height="385"><param name="movie" value="http://www.youtube.com/v/OWG_88s5YA8&hl=en_US&fs=1&rel=0"></param><param name="allowFullScreen" value="true"></param><param name="allowscriptaccess" value="always"></param><embed src="http://www.youtube.com/v/OWG_88s5YA8&hl=en_US&fs=1&rel=0" type="application/x-shockwave-flash" allowscriptaccess="always" allowfullscreen="true" width="640" height="385"></embed></object>
-
-  <h3 class="section" style="margin:130px 0 0">
-    Older screencasts from before the Xiki re-write...
-
-  <div class="section">
-    <object width="640" height="385"><param name="movie" value="http://www.youtube.com/v/6aIsQ71tDpg&hl=en_US&fs=1&rel=0"></param><param name="allowFullScreen" value="true"></param><param name="allowscriptaccess" value="always"></param><embed src="http://www.youtube.com/v/6aIsQ71tDpg&hl=en_US&fs=1&rel=0" type="application/x-shockwave-flash" allowscriptaccess="always" allowfullscreen="true" width="640" height="385"></embed></object>
-
-  <div class="section">
-    <object width="640" height="385"><param name="movie" value="http://www.youtube.com/v/ixtXTnypxg0&hl=en_US&fs=1&rel=0"></param><param name="allowFullScreen" value="true"></param><param name="allowscriptaccess" value="always"></param><embed src="http://www.youtube.com/v/ixtXTnypxg0&hl=en_US&fs=1&rel=0" type="application/x-shockwave-flash" allowscriptaccess="always" allowfullscreen="true" width="640" height="385"></embed></object>
+  - script/
+    |   var _gaq = _gaq || [];
+    |   _gaq.push(['_setAccount', 'UA-1258428-5']);
+    |   _gaq.push(['_trackPageview']);
+    |   (function() {
+    |     var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    |     ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    |     var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    |   })();
 
 
 
-> Screencasts: index
+> OLD > Screencasts: index
 bootstrap/
   - project name/Xiki
   - navbar/
@@ -217,7 +242,7 @@ bootstrap/
 
 
 
-> Screencasts: what if?
+> OLD > Screencasts: what if?
 bootstrap/
   - project name/Xiki
   - navbar/
