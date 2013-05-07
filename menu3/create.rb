@@ -1,3 +1,5 @@
+# Used by web interface when it creates a new menu?
+# It looks like the html form posts to it.
 class Create
   def self.menu name
 
