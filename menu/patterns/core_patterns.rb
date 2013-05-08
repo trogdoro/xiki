@@ -1,4 +1,4 @@
-load "#{Xiki.dir}menu2/mysql/index.rb"   # Necessary since it's lazy loaded
+load "#{Xiki.dir}menu/mysql/index.rb"   # Necessary since it's lazy loaded
 Xiki::Menu::Mysql.def_patterns
 
 # $... shell command lines when not under dir

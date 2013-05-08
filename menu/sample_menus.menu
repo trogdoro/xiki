@@ -1,16 +1,16 @@
 > Menu doesn't exist yet
 | Create it?  Make your menu by creating one of these...
 - text file/
-  @~/menu2/<name>.txt
+  @~/menu/<name>.txt
     | Change this text to something useful.
     | It will be the content of your menu.
 - items/
-  @~/menu2/<name>.menu
+  @~/menu/<name>.menu
     | - dogs/
     |   - hot/
     | - cats/
   - with wiki elements/
-    @~/menu2/<name>.menu
+    @~/menu/<name>.menu
       | > Heading
       | - Bullet point
       | @http://google.com/
@@ -28,7 +28,7 @@
     | To save, with your cursor on the menu or one of the items, type
     | as+menu (meaning Control+A, Control+M).
 - notes/
-  @~/menu2/<name>.notes
+  @~/menu/<name>.notes
     | > A heading
     | Stuff under headings appears
     | after you expand.
@@ -36,12 +36,12 @@
     | > Another heading
     | You can put anything under the headings.
 - code/
-  @~/menu2/<name>.rb
+  @~/menu/<name>.rb
     | # Change this code to something useful.
     | a = "la"
     | a * 3
   - ruby class/
-    @~/menu2/<name>.rb
+    @~/menu/<name>.rb
       | class <Name>
       |   def self.menu
       |     "
@@ -52,17 +52,17 @@
     - .directions/
   - other languages/
     - python/
-      @~/menu2/<name>.py
+      @~/menu/<name>.py
         | # Change this code to something useful.
         | a = "la"
         | print(a)
     - js/
-      @~/menu2/<name>.js
+      @~/menu/<name>.js
         | # Change this code to something useful.
         | a = "la"
         | print(a)
     - coffeescript/
-      @~/menu2/<name>.coffee
+      @~/menu/<name>.coffee
         | # Change this code to something useful.
         | a = "la"
         | console.log(a)
@@ -78,7 +78,7 @@
     - load from disk/
     - menu with other stuff/
   - menu with nested code/
-    @~/menu2/<name>.menu
+    @~/menu/<name>.menu
       | - add stuff/
       |   ! 1 + 2
       | - add numbers from path/
@@ -91,14 +91,14 @@
   - redirect/
     | Makes one menu redirect to another.  Useful for creating menus
     | that just serve as shortcuts.
-    @~/menu2/<name>.menu
+    @~/menu/<name>.menu
       | <<< foo/
   - wrap other menu/
     - by name/
-      @~/menu2/<name>.rb
+      @~/menu/<name>.rb
         | Xiki["tables/foo//", options[:items]]
     - by bookmark/
-      @~/menu2/<name>.rb
+      @~/menu/<name>.rb
         | Xiki["$tm//", options[:items]]
   - directories/
     - show a simple example (dir of dirs)

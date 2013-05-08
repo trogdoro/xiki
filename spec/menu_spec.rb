@@ -64,7 +64,7 @@ describe :Menu, "#root_sources_from_path_env" do
     options = {:name=>"path", :path=>"path/"}
     Menu.root_sources_from_path_env options
     options.should == {
-      :menufied => "/projects/xiki/menu2/path",
+      :menufied => "/projects/xiki/menu/path",
       :name => "path",
       :path => "path/",
       :sources => [["path.menu"], :incomplete]
@@ -75,7 +75,7 @@ describe :Menu, "#root_sources_from_path_env" do
     options = {:name=>"menu_path", :path=>"menu path/"}
     Menu.root_sources_from_path_env options
     options.should == {
-      :menufied => "/projects/xiki/menu2/menu_path",
+      :menufied => "/projects/xiki/menu/menu_path",
       :name => "menu_path",
       :path => "menu path/",
       :sources => [["menu_path.rb"], :incomplete]
@@ -96,7 +96,7 @@ describe :Menu, "#expands?" do
       :name      => "path",
       :path      => "path/",
       :sources   => [["path.menu"], :incomplete ],
-      :menufied  => "/projects/xiki/menu2/path",
+      :menufied  => "/projects/xiki/menu/path",
       :expanders => [Menu]
     }
   end

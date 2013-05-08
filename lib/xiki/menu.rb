@@ -641,7 +641,7 @@ module Menu
 
     return Tree << "| You must supply something to put under the '#{root}' menu.\n| First, add some lines here, such as these:\n- line/\n- another line/\n" if txt.empty?
 
-    path = File.expand_path "~/menu2/#{root}.menu"
+    path = File.expand_path "~/menu/#{root}.menu"
 
     file_existed = File.exists? path
 
@@ -658,7 +658,7 @@ module Menu
 
     View.cursor = orig if orig
 
-    View.flash "- #{file_existed ? 'Updated' : 'Created'} ~/menu2/#{root}.menu", :times=>3
+    View.flash "- #{file_existed ? 'Updated' : 'Created'} ~/menu/#{root}.menu", :times=>3
     nil
   end
 

@@ -17,7 +17,8 @@ class ConfLoadingHandler
 
     user_conf = Xiki.menu_path_dirs[0]
 
-    user_conf = "/Users/craig/menu2/conf/#{options[:name]}.conf"
+    user_conf = "~/menu/conf/#{options[:name]}.conf"
+    user_conf = File.expand_path user_conf
     user_conf = File.file?(user_conf) ? File.read(user_conf) : ""
 
     user_conf = self.parse user_conf

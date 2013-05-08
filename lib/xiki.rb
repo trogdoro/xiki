@@ -532,12 +532,12 @@ module Xiki
   end
 
   def self.menu_path_custom_dir
-    File.expand_path("~/menu2")
+    File.expand_path("~/menu")
   end
   def self.menu_path_core_dir
-    Bookmarks["$x/menu2"]
+    Bookmarks["$x/menu"]
   end
-  # Return the MENU_PATH environment var, plus ~/menu2/ and $x/menu2.
+  # Return the MENU_PATH environment var, plus ~/menu/ and $x/menu.
   def self.menu_path_dirs
     # Worry about this later
     # How many times called? - memo-ize this based on MENU_PATH value

@@ -17,7 +17,7 @@ end
 def stub_menu_path_dirs
   xiki_dir = Xiki.dir
 
-  list = ["#{xiki_dir}spec/fixtures/menu", "#{xiki_dir}menu2"]
+  list = ["#{xiki_dir}spec/fixtures/menu", "#{xiki_dir}menu"]
   stub(Xiki).menu_path_dirs {list}
 end
 

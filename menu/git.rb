@@ -1,6 +1,8 @@
 module Xiki::Menu
   class Git
 
+    @@git_diff_options = '-U2'
+
     MENU = "
       - .diff/
       - .log/
