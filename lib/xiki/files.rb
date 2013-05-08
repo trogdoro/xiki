@@ -316,7 +316,7 @@ class Files
     end
 
     Effects.blink
-    Launcher.launch
+    Launcher.launch_unified
   end
 
   def self.delete_current_file

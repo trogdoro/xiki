@@ -21,8 +21,8 @@ class KeyBindings
     # A: as...
     # Use A prefix for: remembering, saving
 
-    Keys.as_axis { Line.to_left }   # AA - beginning of line (A's emacs default)
-    #     Keys.AA { Line.to_left }   # AA - beginning of line (A's emacs default)
+    Keys.as_axis { Line.to_left }   # C-a C-a - beginning of line (C-a by default in emacs)
+    #     $el.define_key :global_map, $el.kbd("C-a C-a"), :beginning_of_line
     Keys.as_bookmark { Bookmarks.save }   # remember bookmark
     Keys.as_clipboard { Clipboard.as_clipboard }   #
     #     Keys.as_directory { FileTree.copy_path }   # copy dir to clipboard from tree
@@ -105,26 +105,20 @@ class KeyBindings
     #     Keys.open_last_error { Code.show_el4r_error }
     Keys.open_list_faces { Styles.list_faces }
     #     Keys.open_list_flashes { Launcher.open "- view/flashes/" }
-    #     Keys.open_list_faces { list_faces_display }
     Keys.open_lisp_info { $el.info "elisp" }   # Open manual
 
-    #     Keys.open_log_list { Launcher.open(Keys.prefix_u ? "- last/" : "- log/") }   # Show git diffs o 1 file
-    Keys.open_log_list { Git.show_log_one_file }   # Show git diffs o 1 file
+    Xiki.def "open+list+log", ".@git/log/"   # Show git diffs o 1 file
 
-    #     Keys.open_list_styles { list_faces_display }
     Keys.open_last_outlog { Ol.open_last_outlog }   # Show git diffs for a bookmark
-    Keys.open_log_push { Gito.show_log }   # Show git diffs for a bookmark
+    Keys.open_log_push { Git.show_log }   # Show git diffs for a bookmark
     Keys.open_last_screenshot { Files.open_last_screenshot }
-    #     Keys.open_like_text { txt = View.txt; View.to_buffer "txt"; View << txt }
     #     Keys.open_log_tree { Rails.tree_from_log }
     Keys.open_list_databases { Launcher.open('- Couch.databases/') }
     #     Keys.open_list_models { Launcher.open("- Merb.models/") }
-    #     Keys.open_list_javascript { Launcher.open("javascript/@notes/") }
     Keys.open_list_javascript { View.beep "- Changed to: open+menu+JN!" }
     #     Keys.open_list_names { Clipboard.list }
-    Keys.open_list_notes { Launcher.open("@notes/list/") }
+    Xiki.def("open+list+notes", "notes/list/")
 
-    #     Keys.open_list_ruby { Launcher.open("ruby/@notes/") }
     Keys.open_list_ruby { View.beep "- Changed to: open+menu+RN!" }
 
     Keys.open_list_technologies { Launcher.open("technologies/") }   # open first hyperlink on page
@@ -137,7 +131,6 @@ class KeyBindings
     Keys.open_quick { Bookmarks.open_quick }   # like OB but uses different temporary namespace
     Keys.open_related_test { Code.open_related_rspec }
     Keys.open_related_file { Code.open_related_file }
-    Keys.open_repository_list { Gito.show_log_one_file }   # Show git diffs o 1 file
     # S
     Keys.open_search { Search.outline_search }   # hide search via outline
 
@@ -151,8 +144,6 @@ class KeyBindings
     Keys.open_xiki_help { Launcher.open("- Help.menu/") }   #
     # Y
     # Z
-
-    #     Keys.O0 {}   # Open 0: open bookmarked file tagged with "0"
 
     Keys.O1 { Files.open_nth 1 };  Keys.O2 { Files.open_nth 2 };  Keys.O3 { Files.open_nth 3 };  Keys.O4 { Files.open_nth 4 };  Keys.O5 { Files.open_nth 5 }
     Keys.O6 { Files.open_nth 6 };  Keys.O7 { Files.open_nth 7 };  Keys.O8 { Files.open_nth 8 };  Keys.O9 { Files.open_nth 9 }
@@ -178,7 +169,8 @@ class KeyBindings
     #     Keys.enter_docs { Line.enter_docs }   # Maybe restore this, but haven't been using it
     # Or, make this be "enter+from+difflog?"
     Keys.enter_diff { DiffLog.enter_from_difflog }
-    Keys.enter_end { Line.to_right }   # EE - end of line (E's emacs default)
+    Keys.enter_end { Line.to_right }   # C-e C-e - end of line (C-e by default in emacs)
+    #     $el.define_key :global_map, $el.kbd("C-e C-e"), :end_of_line
     Keys.enter_file_path { Files.enter_file }            # Given a bookmark
     Keys.enter_firefox_tabs { Launcher.insert('browser/tabs/') }   # Given a bookmark
     Keys.enter_history { DiffLog.enter_from_difflog }         # Save point and go to difflog to search
@@ -212,9 +204,10 @@ class KeyBindings
 
     Keys.enter_menu { Xiki.insert_menu }
     Keys.enter_note { Notes.enter_note }
+    Xiki.def("enter+note"){ Notes.enter_note }
     Keys.enter_outline { Launcher.enter_outline }   # in tree, enter methods or headings
 
-    #     Keys.enter_push { Gito.code_tree_diff(:enter=>true) }   # Commit to repos, push, etc
+    #     Keys.enter_push { Git.code_tree_diff(:enter=>true) }   # Commit to repos, push, etc
     Keys.enter_point { Notes.bullet }   # Commit to repos, push, etc
     Keys.enter_quote { FileTree.enter_quote }
     Keys.enter_row { View.insert_line }
@@ -275,7 +268,7 @@ class KeyBindings
     Keys.do_colors_off { $el.font_lock_mode }   # toggles
     Keys.do_clean_quotes { Files.do_clean_quotes }   # Fix special chars
 
-    Keys.do_compare_repository { Gito.diff_one_file }
+    Xiki.def("do+compare+repository"){ Git.do_compare_repository }
 
     Keys.do_compare_saved { DiffLog.compare_with_saved }
 
@@ -335,7 +328,8 @@ class KeyBindings
     Keys.do_next_paragraph { Code.do_next_paragraph }   # Move line to start of next paragraph
     Keys.do_name_search { Search.do_name_search }
     Keys.do_outline { History.open_current :outline=>true, :prompt_for_bookmark=>true }
-    Keys.do_push { Gito.code_tree_diff }   # Commit to repos, push, etc
+    #     Keys.do_push { Git.code_tree_diff }   # Commit to repos, push, etc
+    Xiki.def("do+push"){ Git.do_push }   # Commit to repos, push, etc
     Keys.do_query { Search.query_replace }   # do query replace
     Keys.do_run { Code.run }   # run code as ruby
     Keys.do_status { Git.do_status }
@@ -467,7 +461,9 @@ class KeyBindings
   # Control keys during isearch
   def self.isearch
     Keys.search_axis { Search.to_left }
-    Keys.search_bookmark { Search.bookmark }
+
+
+    Xiki.def("search+bookmark"){ Search.bookmark }
     # B: leave unmapped for back
 
     Keys.search_copy { Search.isearch_copy }   # Clipboard (copy)
@@ -490,7 +486,7 @@ class KeyBindings
     Keys.search_have_nav { Search.isearch_move_to "$f" }
 
     Keys.search_have_outlog { Search.isearch_have_outlog }
-    Keys.search_have_push { Gito.search_just_push }   # When search match
+    Keys.search_have_push { Git.search_just_push }   # When search match
 
     Keys.search_have_right { Search.have_right }
     Keys.search_have_spot { Search.insert_at_spot }
@@ -542,7 +538,7 @@ class KeyBindings
     Keys.search_like_outlog { Search.isearch_have_outlog :no_label=>1 }
     Keys.search_line_pull { Search.isearch_move_line }
     Keys.search_like_quote { Search.isearch_google :quote=>true }
-    Keys.search_like_repository { Gito.search_repository }   # When not searching
+    Keys.search_like_repository { Git.search_repository }   # When not searching
 
     Keys.search_like_synonyms { Search.search_thesaurus }
     #     Keys.search_like_timer { Search.search_like_timer }

@@ -895,8 +895,8 @@ module Menu
   #
   def self.line_exists? name, pattern #, options={}
     name.gsub! /\W/, '_'
-    dir = File.expand_path "~/menu"
-    file = File.expand_path "#{dir}/#{name}.menu"
+    dir = File.expand_path "~/menu3"
+    file = File.expand_path "#{dir}/#{name}.menu3"
     txt = File.read(file) rescue ""
     txt =~ pattern ? ($1 || $&) : nil   # Return whole string or group
   end
@@ -1162,7 +1162,14 @@ module Menu
 
     # If we get through everything and just a dir...
 
-    options[:output] = "@flash/- no output!"
+    # Old (we're kind of handling this in the invoker now):
+    # Maybe we don't need to show no output?
+    # - If we do, probably go back to using :silent_output option
+    #   - This means .menu_after has to set :silent_output=>1 to avoid seeing "no output"
+    #     - Does it necessarily?
+    #       - No, we could probably auto-set it when menu_after returns something!
+    #     options[:output] = "@flash/- no output!"
+
     nil
   end
 

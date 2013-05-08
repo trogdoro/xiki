@@ -465,8 +465,8 @@ class Search
       return
     end
 
-    match.gsub!(/([#()*+?^$\[\]|.])/, "\\\\\\1")
-    match.gsub! "\\+", "."   # Change + to . to help when searching for key shortcuts
+    match.gsub!(/([#()*+?^$\[\]\/|.])/, "\\\\\\1")
+    #     match.gsub! "\\+", "."   # Change + to . to help when searching for key shortcuts
 
     # Search in bookmark
     FileTree.grep_with_hashes bm, match

@@ -14,6 +14,9 @@ class Invoker
     args ||= []
     menu_found = nil   # Possible values: nil, :constant, :file, :method (if :method, it overwrites the previous value, which is fine)
 
+    action_method = nil
+    some_method_ran = false
+
     code, clazz_name, dot_menu_file = options[:code], options[:clazz_name], options[:dot_menu_file]
 
     # Load class...
@@ -37,6 +40,7 @@ class Invoker
     method = clazz.method(:menu_before) rescue nil
 
     if method
+      some_method_ran = true
       code = proc{ method.call(*args) {options} }
       returned, out, exception = Code.eval code
 
@@ -58,6 +62,7 @@ class Invoker
     end
 
     txt = nil
+
     # If MENU|foo.menu, do routing (get children or dotify)...
 
     dotified = []
@@ -81,7 +86,9 @@ class Invoker
     menu_hidden = clazz.const_defined? "MENU_HIDDEN"
     if menu_hidden
       returned = clazz.const_get "MENU_HIDDEN"
-      dotified = Tree.dotify returned.unindent, args
+
+      # Only do dotifying if not already done?
+      dotified = Tree.dotify returned.unindent, args, dotified
     end
 
     # If MENU|foo.menu not found or didn't handle path, call routed method or otherwise .menu with args...
@@ -124,6 +131,7 @@ class Invoker
           end
 
         if action_method   # Method exists, so call it
+          some_method_ran = true
           menu_found = :method
 
           # Call action...
@@ -131,7 +139,7 @@ class Invoker
           code = proc{ action_method.call(*variables) {options} }
           txt, out, exception = Code.eval code
 
-          txt = CodeTree.returned_to_s(txt)   # Convert from array into string, etc.
+          txt = CodeTree.returned_to_s(txt) if txt   # Convert from array into string, etc.
           txt = txt.unindent if txt =~ /\A[ \n]/
 
           if exception
@@ -155,21 +163,24 @@ class Invoker
     # Call .menu_after if it exists...
 
     method = clazz.method(:menu_after) rescue nil
-    return txt if method.nil?
+    if method
+      some_method_ran = true
 
-    # It exists
+      code = proc{ method.call(txt, *args) {options} }
+      returned, out, exception = Code.eval code
 
-    code = proc{ method.call(txt, *args) {options} }
-    returned, out, exception = Code.eval code
-
-    return CodeTree.draw_exception exception, code if exception
-    if returned
-      returned.unindent! if returned =~ /\A[ \n]/
-      txt = returned
+      return CodeTree.draw_exception exception, code if exception
+      if returned
+        returned.unindent! if returned =~ /\A[ \n]/
+        txt = returned
+      end
     end
 
     if ! txt
-      raise "no menu or class method found for this menu!"
+      return nil if some_method_ran   # Only say "no output" if didn't call .menu, .menu_before|_after, or other action
+
+      # For now, let's try not doing this
+      txt = "@flash/- no output!"
     end
 
     txt

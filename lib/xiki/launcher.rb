@@ -22,9 +22,10 @@ class Launcher
     "*console app",
     ]
 
+  # Deprecated after unified
   MENU_DIRS = [
-    "#{Xiki.dir}menu",
-    File.expand_path("~/menu"),
+    "#{Xiki.dir}menu3",
+    File.expand_path("~/menu3"),
     ]
 
   @@log = File.expand_path("~/.emacs.d/menu_log.notes")
@@ -209,6 +210,7 @@ class Launcher
     Tree.kill_under
   end
 
+  # Deprecated in favor of .launch_unified
   # Call the appropriate launcher if we find one, passing it line
   def self.launch options={}
 
@@ -355,7 +357,7 @@ class Launcher
       root = $1
       root.gsub!(/[ -]/, '_') if root
 
-      ["~/menu", Bookmarks["$x/menu"]].each do |dir|
+      ["~/menu3", Bookmarks["$x/menu3"]].each do |dir|
 
         matches = Dir[File.expand_path("#{dir}/#{root}*")]
 
@@ -440,7 +442,7 @@ class Launcher
       # If .menu file matched but had no output, and no other block to delegate to, say we handled it so it will stop looking
 
       if ! out
-        require_menu File.expand_path("~/menu/#{root}.rb"), :ok_if_not_found=>1
+        require_menu File.expand_path("~/menu3/#{root}.rb"), :ok_if_not_found=>1
         if ! @@menus[1][root]
           Tree << "
             | This menu item does nothing yet.  You can update the .menu file to
@@ -557,6 +559,7 @@ class Launcher
       orig.go
     end
 
+    # Deprecated
     self.add(/^(http|file).?:\/\/.+/) do |path|
       Launcher.append_log "- http/#{path}"
 
@@ -904,7 +907,7 @@ class Launcher
 
     # TODO: Unified: comment out for now - just comment out since we're doing no caching
     # reload 'path_to_class'
-    Menu.load_if_changed File.expand_path("~/menu/#{snake}.rb")
+    Menu.load_if_changed File.expand_path("~/menu3/#{snake}.rb")
 
 
     args = path.is_a?(Array) ?
@@ -1103,11 +1106,9 @@ class Launcher
     self.open menu, options.merge(:no_launch=>1)
   end
 
-  #
   # Open new buffer and launch the menu in it
   #
   # Launcher.open "ip"
-  #
   def self.open menu, options={}
     return self.insert(menu, options) if options[:inline]
 
@@ -1367,7 +1368,8 @@ class Launcher
 
   def self.as_open
     Keys.prefix = "open"
-    Launcher.launch
+    #     Launcher.launch
+    Launcher.launch_unified
   end
 
   def self.enter_all
@@ -1449,22 +1451,33 @@ class Launcher
   # While implementing, mapped to Command+Return.
   # After refactor, map to Ctrl+Return as well.
   def self.launch_unified insert_options={}
-
     line = Line.value
 
     return if self.bullet_prefix_handling line
 
-    path = Tree.path_unified
-
     options = {:client=>"editor/emacs"}
+
+    begin
+      path = Tree.path_unified
+    rescue Exception=>e
+      # Maybe make this be WellformedTreeException
+      if e.is_a?(RuntimeError) && e.message =~ /well-formed tree/
+        path = ""
+        options[:not_well_formed] = 1
+      end
+    end
+
     if prefix = Keys.prefix; options[:prefix] = prefix; end
     if view = View.name; options[:target_view] = view; end
 
-    if line =~ /^ *\|/
-      options[:txt] = Tree.siblings :quotes=>1, :string=>1
-    end
+    #     # Stopping doing this - anyone still relying on it?!
+    #     # - Fix conf!
+    #     if line =~ /^ *\|/
+    #       options[:txt] = Tree.siblings :quotes=>1, :string=>1
+    #     end
 
     txt = Expander.expand path, options
+
 
     return if txt == nil
 
@@ -1472,14 +1485,24 @@ class Launcher
 
     # Pull certain options out if passed by implementation, meant to control how it's inserted
 
-    options.each{|k, v| insert_options[k] = v if [:no_slash].include?(k)}
+    options.each{|k, v| insert_options[k] = v if [:no_slash, :no_search].include?(k)}
 
     # Automatically repress slash if were on ^... or |... line
     insert_options[:no_slash] = 1 if options[:args] && options[:args].last =~ /(^[>|:]|\n)/
 
+    self.jump_line_number insert_options, options
+
     return if txt.blank?
 
     Tree.<< txt, insert_options
+
+    nil
+  end
+
+  def self.jump_line_number insert_options, options
+    if jump_line_number = options[:jump_line_number]
+      insert_options[:line_found] = jump_line_number
+    end
   end
 
   # Called by .launch_unified to do appriate thing if result starts

@@ -318,6 +318,27 @@ describe Tree, "#dotify" do
     path = ["delete"]
     Tree.dotify(tree, path).should == [true]
   end
+
+  it "works when a space" do
+    tree = "
+      - .delete it/
+      ".unindent
+
+    path = ["delete it"]
+    Tree.dotify(tree, path).should == [true]
+  end
+
+  it "works when a underscore and space" do
+    tree = "
+      - .delete_it/
+      ".unindent
+
+    path = ["delete it"]
+    Tree.dotify(tree, path).should == [true]
+  end
+
+  # TODO: also work when they erroneously put "_" in the menu?
+
 end
 
 

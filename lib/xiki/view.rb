@@ -1024,6 +1024,7 @@ class View
   #
   def self.delete left=nil, right=nil
     return Line.delete if left == :line
+    left, right = [self.cursor, self.cursor+1] if left == :char
 
     left, right = [left.begin, left.end] if left.is_a?(Range)
 
@@ -1434,13 +1435,10 @@ class View
       Time.now.strftime("%Y-%m-%d")
   end
 
-  #
   # Makes message glow at end of line, and adds "/", like
   #
   # foo/Type something here
   # View.prompt
-  # @ View.prompt/
-  #
   def self.prompt message="Type something here", options={}
     ControlLock.disable
 

@@ -587,7 +587,7 @@ class Notes
 
     $el.defun(:notes_mouse_double_click, :interactive => "e") do |e|
       next Launcher.insert "h" if Line =~ /^$/   # If blank line, launch history
-      Launcher.go
+      Launcher.go_unified
     end
 
     $el.defun(:notes_mouse_toggle, :interactive => "e") do |e|
@@ -959,6 +959,11 @@ class Notes
     txt = Keys.input :timed=>1, :prompt=>'Enter a character: '
 
     expanded = Notes.expand_if_action_abbrev txt
+
+    if ["borrow"].member?(expanded)   # If "borrow", change ! to :
+      View.delete :char
+      View.<< ":", :dont_move=>1
+    end
 
     View << (expanded || txt)
 

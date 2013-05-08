@@ -20,6 +20,7 @@ class Mark
     return if ! Color.colors_by_name[args[0]]   # Only continue if arg is an existing color
 
     Color.mark args[0]
+    nil
   end
 
   def self.next

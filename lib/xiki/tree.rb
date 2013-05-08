@@ -674,13 +674,13 @@ class Tree
   def self.kill_under options={}
 
     # Get indent
-    orig = Line.left
+    orig = View.cursor
     left = Line.left(Keys.prefix_u? ? 1 : 2)
 
     self.after_children options
 
     View.delete(left, View.cursor)
-    View.to orig
+    View.cursor = orig
   end
 
   #
@@ -978,11 +978,11 @@ class Tree
     if options[:leave_headings]
       return TextUtil.unindent(txt).gsub(/^([^>])/, "| \\1").gsub(/^\| $/, '|')
     end
-
-
     TextUtil.unindent(txt).gsub(/^/, "| ").gsub(/^\| $/, '|')
+  end
 
-    #     TextUtil.unindent(txt).gsub(/^([^|@>+-])/, "| \\1").gsub(/^\| $/, '|')
+  def self.colons txt, options={}
+    TextUtil.unindent(txt).gsub(/^/, ": ").gsub(/^: $/, ':')
   end
 
   def self.insert_quoted_and_search matches, options={}
@@ -995,7 +995,6 @@ class Tree
     $el.goto_char left
     if options[:line_found] && options[:line_found] > 0
       Line.next(options[:line_found]-1)
-      Color.mark "light"
     end
 
     Line.to_words
@@ -1320,8 +1319,9 @@ class Tree
 
 
   # New way - just creates boolean array (not touching path).
-  def self.dotify tree, target
-    boolean_array = []
+  def self.dotify tree, target, boolean_array=[]
+
+    tree = tree.gsub "_", ' '
 
     target_flat = target.join "/"
 
@@ -1565,7 +1565,6 @@ class Tree
     # Move to :line_found if any
     if options[:line_found] && options[:line_found] > 0
       Line.next(options[:line_found])
-      Color.mark "light"
     end
 
     if !error_happened && !$xiki_no_search &&!options[:no_search] && !buffer_changed && !moved
@@ -1577,12 +1576,13 @@ class Tree
   end
 
   # Port to use Tree.path_unified
-  def self.closest_dir
-    dir = Xiki.trunk.reverse.find{|o| FileTree.matches_root_pattern? o}
+  def self.closest_dir path=nil
+    path ||= Tree.path_unified
+
+    dir = path.reverse.find{|o| FileTree.matches_root_pattern? o}
 
     dir = Bookmarks[dir]
     return nil if dir.nil?
-
     File.expand_path dir
   end
 

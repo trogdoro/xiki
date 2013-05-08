@@ -28,7 +28,6 @@ class Pattern
           end
 
         end
-
       end
     end
     nil
@@ -106,36 +105,8 @@ class Pattern
     raise "Don't yet know how to handle pattern for something with an implement other than a proc: #{options.inspect}"
   end
 
-
-  # Defines all the default patterns.  $... for shell commands, etc.
-  def self.default_patterns
-
-    return if ! Xiki.respond_to?(:def) || ! defined?(Expander)
-
-    # $... shell command lines when not under dir
-    Xiki.def(/^([$%&]) (.+)/) do |path, options|
-      match = options[:expanders].find{|o| o[:match]}[:match]
-      prompt, command = match[1..2]
-      options[:command] = command
-
-      Console.shell_command_per_prompt prompt, options
-    end
-
-
-    # Special launching for *ol
-    Xiki.def(//, :pre=>1, :target_view=>"*ol") do |path, options|
-      options[:halt] = 1
-      OlHelper.launch
-      Effects.blink(:what=>:line)
-      nil
-    end
-
-    load "#{Xiki.dir}menu2/mysql/index.rb"   # Necessary since it's lazy loaded
-    Xiki::Menu::Mysql.def_patterns
-
-  end
 end
 
 
 # TODO: Unified > probably move this to ~/xiki/... somewhere
-Pattern.default_patterns
+# Pattern.default_patterns

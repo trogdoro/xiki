@@ -199,10 +199,10 @@ class Expander
 
     if ! expanders || expanders.length == 0
       options[:no_slash] = true
-      return "@flash/- can't launch empty line!" if options[:path]
-      return "- No menu or pattern defined: #{options.inspect}"
+      return "@flash/- Your indenting looks messed up!" if options[:not_well_formed]
+      return "@flash/- Can't launch empty line!" if options[:path].blank?
+      return "@flash/- No menu or pattern defined!"
     end
-
 
     options[:expanders_index] = 0
     options.delete :halt   # Any :halt from .expanders was only meant to stop looking for more expanders
@@ -370,11 +370,29 @@ class Expander
   def self.delegate_to_keys args, options, block
 
     # If 2 args and 2nd is string, wrap block based on enter+ other
-    if args.length == 2 && args[1].is_a?(String)
+    if args.length == 2 && menu.is_a?(String)
       options.merge! :bar_is_fine=>1
-      block = args[0] =~ /^enter\+/ ?
-        lambda{ Launcher.insert args[1], options } :
-        lambda{ Launcher.open args[1], options }
+
+      menu = args[1]
+
+      block =
+        if args[0] =~ /^enter\+/
+          lambda{ Launcher.insert menu, options }
+        elsif menu =~ /^@/   # If menu is @foo..., prompt for bookmark and nest under result
+          lambda{
+            file = Keys.bookmark_as_path :include_file=>1, :prompt=>"Enter a bookmark: "
+            Launcher.open "#{file}\n  #{menu}", options
+          }
+        elsif menu =~ /^\.@/   # If menu is .@foo..., nest under current file
+          menu.sub! /^\./, ''
+          lambda{
+            bm = Keys.input :optional=>1, :prompt=>"Enter bookmark, or pause for current file."   # Terminated by pause
+            file = bm ? Keys.bookmark_as_path(:bm=>bm, :include_file=>1) : View.file
+            Launcher.open "#{file}\n  #{menu}", options
+          }
+        else
+          lambda{ Launcher.open menu, options }
+        end
     end
 
     args[0].gsub! '+', '_'

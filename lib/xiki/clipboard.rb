@@ -309,7 +309,6 @@ class Clipboard
     return FileTree.copy_path if prefix == :u
 
     many ||= prefix || 1
-    Move.to_axis
     left = Line.left
     right = Line.left(many+1)
     line = View.txt(left, right)

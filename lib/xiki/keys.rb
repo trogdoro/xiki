@@ -319,7 +319,6 @@ class Keys
     end
   end
 
-  #
   # Gets input from user.
   #
   # Sample usages:
@@ -329,7 +328,6 @@ class Keys
   # Keys.input :timed=>1   # Terminated by pause
   # Keys.input :optional=>1   # Terminated by pause
   #   - A pause at the beginning will result in no input (nil)
-  #
   def self.input *args
 
     prompt = args.shift if args[0].is_a?(String)
@@ -339,9 +337,6 @@ class Keys
     return self.input_with_choices(options) if options[:choices]
 
     Cursor.remember :before_input
-
-    # This is slow in mac emacs 23/24 :(
-    # Cursor.green
 
     Cursor.hollow
 
@@ -354,12 +349,15 @@ class Keys
       return char
     end
 
-    # If simple un-timed input, just get string and return it
+    # If simple un-timed input, just get string and return it...
+
     unless options[:timed] || options[:optional]
       Cursor.restore :before_input
       c = $el.read_string(prompt, options[:initial_input])
       return c
     end
+
+    # :timed or :optional option...
 
     keys = ""
 
@@ -663,14 +661,14 @@ class Keys
 
   # Prompts for input of bookmark name, then returns its file path.
   # If bookmark is to a file, it returns the enclosing dir.
-  # Keys.bookmark_as_path :bm=>"."
+  # Keys.bookmark_as_path   # If user typed "ru"...
+  #   /notes/ruby/
+  # Keys.bookmark_as_path :include_file=>1   # If user typed "ru"...
+  #   /notes/ruby/index.notes
+  # Keys.bookmark_as_path :prompt=>"Enter something"   # Show message
+  # Keys.bookmark_as_path :bm=>"ru"   # Don't prompt
+  # Keys.bookmark_as_path :bm=>"."   # Current dir works
   #   /projects/xiki/lib/xiki/
-  # Keys.bookmark_as_path :bm=>"n"
-  #   ~/notes/
-  # Keys.bookmark_as_path :bm=>"ru"
-  #   ~/notes/ruby/
-  # Keys.bookmark_as_path :bm=>"ru", :include_file=>1
-  #   ~/notes/ruby/ruby.notes
   def self.bookmark_as_path options={}
     bm = options[:bm] || Keys.input(:timed=>true, :prompt=>options[:prompt]||"Enter a bookmark: ")
 

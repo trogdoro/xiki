@@ -152,7 +152,7 @@ class FileTree
   def self.grep_one_file(f, regex, indent)
     result = []
 
-    return result if f =~ /\.(ai|icns|png|gif|jpg|gem)$/
+    return result if f =~ /\.(ai|icns|png|gif|jpg|gem|ttf)$/
 
     IO.foreach(f, *Files.encoding_binary) do |line|
       #       line.gsub!(/[\r\n\c@]+/, '')
@@ -160,7 +160,9 @@ class FileTree
       if regex
         next unless line =~ regex
       end
-      result << "#{indent}| #{line}"
+      result.<< line == "" ?
+        "#{indent}|" :
+        "#{indent}| #{line}"
     end
     result
   end
@@ -2093,7 +2095,6 @@ class FileTree
   end
 
   def self.expand options
-
     prefix = options[:prefix]
 
     file_path = options[:file_path]
@@ -2161,10 +2162,7 @@ class FileTree
     # File doesn't exist...
 
     if options[:file_path] =~ /\/$/
-      return options[:output] = "
-        @mkdir/
-        | ...dir '#{file_path}' doesn't exist.  Create it?
-        ".unindent
+      return options[:output] = self.suggest_mkdir(file_path)
     end
 
     # Quote means to create the file (with or without "update" prefix)...
@@ -2184,29 +2182,40 @@ class FileTree
 
   end
 
+  def self.suggest_mkdir file_path
+    "
+      @mkdir/
+      | Dir '#{file_path}' doesn't exist.  Create it?
+      ".unindent
+  end
+
+
   def self.expand_shell options
     options[:no_slash] = 1
     Console.shell_command_per_prompt options[:prompt], options
   end
 
 
+  # Removes all ##.../ and **.../ strings.  Returns those that
+  # are at the end.
+  #
   # FileTree.extract_filters("/projects/foo/##hey/")
   def self.extract_filters! file_path
-
     patterns_at_end = []
+
+    # Treat \/ as part not a slash delimiter (gsub it to 021 temporarily)
+    file_path.gsub!("\\/", "\021")
 
     # While a (rightmost) filter exists
     while file_path =~ %r"^([^|]*/)((##|\*\*)[^|]+?/)"
-
       start, filter = $1.length, $2
 
       # If it was at end, store it so we can do filter, and ignore the rest
       if start + filter.length == file_path.length
-        patterns_at_end.unshift filter
+        patterns_at_end.unshift filter.gsub("\021", "\\/")
       end
 
-      # Delete it
-      file_path.slice! start, filter.length
+      file_path.slice! start, filter.length   # Delete it
     end
 
     patterns_at_end.any? ? patterns_at_end : nil
@@ -2241,6 +2250,27 @@ class FileTree
     list = list.join "\n"   # + "\n"
     list
   end
+
+  # Return whether path is file-like or dir-like
+  # Looks at the actual item on disk unless :no_look.
+  #
+  # FileTree.examine("/tmp")
+  #   [true, :dir]   # Exists and is a dir
+  # FileTree.examine("/tempizzle/what.txt")
+  #   [false, :dir]    # Doesn't exist, but looks like a file path (has an extension)
+  def self.examine path
+    exists = File.exists? path
+
+    kind =
+      if exists
+        File.file?(path) ? :file : :directory
+      else
+        path =~ /\.\w+\/?/ ? :file : :directory
+      end
+
+    [exists, kind]
+  end
+
 
 end
 FileTree.define_styles

@@ -80,7 +80,7 @@ class Console
       dir = Bookmarks.expand(dir)
       # If relative dir, make current dir be on end of current
       dir = "#{$el.elvar.default_directory}/#{dir}" unless dir =~ /^\//
-      dir.gsub!(/\/\/+/, '/')
+      dir = dir.gsub(/\/\/+/, '/')
 
       # If file, but not dir, try backing up to the dir
       raise "- Directory '#{dir}' doesn't exist!" if ! File.exists? dir
@@ -576,7 +576,9 @@ class Console
 
     case prompt
     when "$"
-      return Tree.quote Console.sync command, :dir=>dir
+      txt = Tree.quote Console.sync command, :dir=>dir
+      txt.gsub!(/^\| /, "|") if options[:prefix] == 0
+      return txt
     when "%"
       return Console.run command, :dir=>dir
     when "&"

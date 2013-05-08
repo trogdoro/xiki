@@ -151,5 +151,11 @@ describe "#extract_filters" do
     file_path.should == "/projects/foo/di/index.txt/| Hey from index/##hi/"
   end
 
+  it "treats backslash as escape" do
+    file_path = "/projects/foo/##\\/bar/"
+    FileTree.extract_filters!(file_path).should == ["##\\/bar/"]
+    file_path.should == "/projects/foo/"
+  end
+
 end
 
