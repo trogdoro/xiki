@@ -100,22 +100,29 @@ class Color
 
   def self.next
     View.kill if View.name == "@mark/"
+
+    column = View.column
     pos = nil
     Keys.prefix_times do
       pos = $el.next_overlay_change(View.cursor)
       pos = $el.next_overlay_change(pos) unless $el.overlays_at(pos)
       View.to(pos)
     end
+    View.column = column
     pos != View.bottom
   end
 
   def self.previous
     View.kill if View.name == "@mark/"
+    column = View.column
+    Move.to_axis   # So we don't "find" the line we're already on
     Keys.prefix_times do
       pos = $el.previous_overlay_change(View.cursor)
       pos = $el.previous_overlay_change(pos-2) if $el.overlays_at(pos-2)
       View.to pos
     end
+    View.column = column
+
   end
 
   def self.clear_light
