@@ -169,7 +169,7 @@ class Ol
         txt.gsub!(/^( +\|) $/, "\\1")
         txt = "#{root_offset_indent}#{label}\n#{txt}"
       else
-        txt = "#{root_offset_indent}#{label}#{txt.any? ? " #{txt}" : ""}"
+        txt = "#{root_offset_indent}#{label}#{txt =~ /./ ? " #{txt}" : ""}"
       end
     else
       txt.gsub!("\n", "\n  #{root_offset_indent}")
@@ -343,7 +343,7 @@ class Ol
     self.line "ancestors...", ls.shift, ""
 
     ls.each_with_index do |l, i|
-      self.line (i+1).to_s, l, "    ", nil, nil, :leave_root=>1
+      self.line((i+1).to_s, l, "    ", nil, nil, :leave_root=>1)
     end
 
     nil
@@ -429,7 +429,7 @@ class Ol
       Line.previous   # <= 1
     end
 
-    Launcher.launch
+    Launcher.launch_unified
   end
 
 

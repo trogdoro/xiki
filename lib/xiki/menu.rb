@@ -590,6 +590,8 @@ module Menu
 
   end
 
+
+  # Deprecated?
   def self.external menu, options={}
 
     View.message ""
@@ -602,7 +604,7 @@ module Menu
       View.message ""
       View.prompt "Type anything", :timed=>1, :times=>2 #, :color=>:rainbow
 
-      Launcher.launch
+      Launcher.launch_unified
     else
       Launcher.open menu, options
     end

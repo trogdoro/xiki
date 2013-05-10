@@ -15,7 +15,7 @@ Xiki.def(%r"^(http|file).?://") do |path, options|
 
   # Todo: make this work when no editor
 
-  Launcher.append_log "- http/#{path}"
+  Launcher.append_log path
 
   prefix = Keys.prefix
   Keys.clear_prefix

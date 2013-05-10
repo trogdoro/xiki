@@ -719,7 +719,7 @@ class Notes
       if ! Tree.children?
 
         if FileTree.dir? or ! FileTree.handles?   # If on a dir or code_tree
-          Launcher.launch
+          Launcher.launch_unified
         else   # If on a file in a FileTree
           FileTree.enter_lines
         end

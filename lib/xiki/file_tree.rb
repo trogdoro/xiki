@@ -1313,7 +1313,7 @@ class FileTree
     indent = Line.indent
     Move.to_end
     View.insert "\n#{indent}  - ###{Clipboard["0"]}/"
-    Launcher.launch
+    Launcher.launch_unified
   end
 
   # Remove the following lines indented more than the current one
@@ -1381,7 +1381,7 @@ class FileTree
     end
 
     # If dir, delegate to C-. (they meant to just open it)
-    return Launcher.launch if self.dir?
+    return Launcher.launch_unified if self.dir?
 
     Tree.plus_to_minus
 
@@ -2062,7 +2062,7 @@ class FileTree
     when 7
       Move.to_end
       View << "\n    @info"
-      Launcher.launch
+      Launcher.launch_unified
     when 8
       Launcher.enter_all
     when 0
@@ -2098,6 +2098,7 @@ class FileTree
     prefix = options[:prefix]
 
     file_path = options[:file_path]
+
     Path.unescape! file_path
 
     # If ##foo/ or **foo/ filter at end (removing all as we check)...
@@ -2120,7 +2121,6 @@ class FileTree
     end
 
     if line_number = Path.extract_line_number(file_path)
-      Ol "line_number", line_number
       options[:line_number] = line_number
     end
 

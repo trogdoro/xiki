@@ -855,7 +855,7 @@ class Search
   def self.enter_like_edits
     Notes.enter_junior
     View << "@edits/"
-    Launcher.launch
+    Launcher.launch_unified
   end
 
   def self.enter_search bm=nil, input=nil
@@ -865,7 +865,7 @@ class Search
       indent = Line.indent
       Line.to_right
       View.insert "\n#{indent}  - ###{input}/"
-      Launcher.launch
+      Launcher.launch_unified
       return
     end
 
@@ -1307,7 +1307,7 @@ class Search
     Tree.to_parent if Line[/^ *- ##/]
 
     Tree.under "- \#\##{match}/", :escape=>'', :no_search=>1, :no_slash=>1
-    Launcher.launch
+    Launcher.launch_unified
   end
 
   def self.isearch_enter_and_next

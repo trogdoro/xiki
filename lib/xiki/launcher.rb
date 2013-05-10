@@ -28,6 +28,7 @@ class Launcher
     File.expand_path("~/menu3"),
     ]
 
+  # TODO: put this in better place - search notes for "emacs.d"
   @@log = File.expand_path("~/.emacs.d/menu_log.notes")
 
   # Use @launcher/options/show or launch/ to enable.
@@ -121,6 +122,7 @@ class Launcher
     paths.join
   end
 
+  # Called by menu to show log contents, with newest first.
   def self.log
 
     lines = IO.readlines self.log_file
@@ -213,6 +215,10 @@ class Launcher
   # Deprecated in favor of .launch_unified
   # Call the appropriate launcher if we find one, passing it line
   def self.launch options={}
+
+    # Committed on purpose, to draw attention to unported stuff.
+    Ol.stack 2
+    Ol["old .launch is deprecated!!!!!!"]
 
     # Add linebreak at end if at end of file and none
     Line.<<("\n", :dont_move=>1) if Line.right == View.bottom
@@ -617,7 +623,7 @@ class Launcher
     self.add(/^\*$/) do |line|  # *... buffer
       Line.sub! /.+/, "all"
 
-      Launcher.launch
+      Launcher.launch_unified
     end
 
     self.add(/^\*./) do |line|  # *... buffer
@@ -731,14 +737,6 @@ class Launcher
     end
 
     # Some menu launchers...
-
-    Launcher.add "log" do # |path|
-      Launcher.log# Tree.rootless(path)
-    end
-
-    Launcher.add "last" do |path|
-      Launcher.last path
-    end
 
     # Proc Launchers (obsolete now that climbed path is passed to regex's)...
 
@@ -1363,12 +1361,11 @@ class Launcher
 
   def self.as_delete
     Keys.prefix = "delete"
-    Launcher.launch
+    Launcher.launch_unified
   end
 
   def self.as_open
     Keys.prefix = "open"
-    #     Launcher.launch
     Launcher.launch_unified
   end
 

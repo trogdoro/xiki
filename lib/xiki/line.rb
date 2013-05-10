@@ -430,7 +430,7 @@ class Line
     end
 
     Line.add_slash :txt=>"docs/", :unless_blank=>1
-    Launcher.launch
+    Launcher.launch_unified
   end
 
 end

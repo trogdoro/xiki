@@ -264,7 +264,7 @@ class ControlTab
 
     Effects.blink
     Color.mark "green" if @@ol_prefix == 11
-    Launcher.launch
+    Launcher.launch_unified
 
     # Replace or add comment if there's a value
     if value.any?
