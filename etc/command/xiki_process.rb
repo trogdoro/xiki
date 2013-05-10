@@ -24,7 +24,7 @@ class XikiProcess
 
           menu_output =
             begin
-              Menu[path]
+              Xiki[path]
             rescue Exception=>e
               "#{e.message}\n#{e.backtrace.join("\n")}"
             end
