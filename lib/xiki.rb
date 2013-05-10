@@ -323,13 +323,18 @@ module Xiki
     View.dir = "/tmp/"
 
     View.<< "- #{name}/\n", :dont_move=>1
-    Launcher.launch
+    Launcher.launch_unified
 
   end
 
-  # Deprecated (at least in part) by Unified
   # Invoked by environment when Xiki starts up
-  def self.init
+  #
+  # Xiki.init
+  # Xiki.init :minimal=>1   # Don't do yaml or awesome_print conf that might interfere with some ruby environments (for embedded case).
+  def self.init options={}
+
+    # TODO: A lot of this is deprecated after the Unified refactor
+    #  - Stop loading the old menus soon!
 
     # Get rest of files to require
 
@@ -383,6 +388,10 @@ module Xiki
     end
 
     self.unified_init
+    if ! options[:minimal]
+      self.awesome_print_setup
+      self.yaml_setup
+    end
   end
 
   # Invoked by environment when Xiki starts up.
@@ -557,5 +566,25 @@ module Xiki
     ancestors && ancestors[-1][/^([\w ]+)\/$/, 1]
   end
 
+  def self.yaml_setup
+    Kernel.require 'yaml'
+    YAML::ENGINE.yamler='syck'
+  end
+
+  def self.awesome_print_setup
+    begin
+      gem "awesome_print"
+    rescue Exception=>e
+      return   # If it's not installed, move on silently
+    end
+
+    Kernel.require "awesome_print"
+    AwesomePrint.defaults = {
+      #   :indent => 2,   # right-align hash keys
+      :indent => -2,   # left-align hash keys
+      :index => false,
+      :multiline => true,
+    }
+  end
 
 end
