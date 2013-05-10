@@ -72,8 +72,13 @@ describe Path, "#split" do
     Path.split("bb", :return_path=>1).should == []
   end
 
-  it "handles trailing slashes" do
+  it "doesn't add extra item when trailing slashes" do
     Path.split("dom/body/").should == ["dom", "body"]
+    Path.split("dom/body/", :return_path=>1).should == ["body"]
+  end
+
+  it "adds extra item when trailing slashes if :trailing" do
+    Path.split("a/b/", :trailing=>1).should == ["a", "b", ""]
     Path.split("dom/body/", :return_path=>1).should == ["body"]
   end
 
@@ -109,7 +114,9 @@ end
 
 describe Path, "#extract_quote" do
   it "extracts pipe quote" do
-    Path.extract_quote("/hey/| quote").should == " quote"
+    path = "/hey/| quote"
+    Path.extract_quote(path).should == " quote"
+    path.should == "/hey"
   end
 
   it "extracts pipe followed by plus" do
@@ -131,6 +138,13 @@ describe Path, "#extract_quote" do
   it "does not extract colon with word and no space" do
     Path.extract_quote("/hey/:quote").should == nil
   end
+
+  it "removes both but returns just last when multiple" do
+    path = "/hey/| quote/| another"
+    Path.extract_quote(path).should == " another"
+    path.should == "/hey"
+  end
+
 end
 
 describe Path, "#extract_line_number" do
@@ -146,5 +160,15 @@ describe Path, "#extract_line_number" do
     path = "/hey/:22"
     Path.extract_line_number(path).should == "22"
     path.should == "/hey"
+  end
+end
+
+describe Path, "#join" do
+  it "joins path with 2 items" do
+    Path.join(["a", "b"]).should == "a/b"
+  end
+
+  it "joins and escapes slashes" do
+    Path.join(["a/a", "b"]).should == "a;/a/b"
   end
 end

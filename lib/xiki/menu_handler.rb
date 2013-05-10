@@ -4,17 +4,16 @@ class MenuHandler
     file = "#{options[:last_source_dir]}#{ex['menu']}"
     txt = File.read file
 
-    path = (options[:args]||[]).join "/"
+    path = Path.join(options[:args]||[])
 
-    txt = Tree.children txt, path
-    self.eval_when_exclamations txt
+    txt = Tree.children txt, path, options
+    self.eval_when_exclamations txt, options
 
     options[:output] = txt
   end
 
   # If started with !, eval code...
-  def self.eval_when_exclamations txt
-
+  def self.eval_when_exclamations txt, options={}
     return if Keys.prefix == "source"
 
     return if txt !~ /^! /
@@ -22,6 +21,10 @@ class MenuHandler
     # TODO: to tighten up, only do this if all lines start with "!"
 
     code = txt.gsub /^! /, ''
+
+    exclamations_args = options[:exclamations_args] || []
+    code = "args = #{exclamations_args.inspect}\n#{code}"
+
     returned, out, exception = Code.eval code
 
     txt.replace(

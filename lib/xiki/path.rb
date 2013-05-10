@@ -10,7 +10,11 @@ class Path
     found ||= path =~ %r"/:([ +-].*)"   # Colons followed by only certain chars are quotes
     return if ! found
 
-    path.slice!(found..-1).sub(/../, '')
+    path = path.slice!(found..-1).sub(/../, '')
+
+    path.sub! %r".+/\|", ""   # Remove ancestor quotes if multiple
+
+    path
   end
 
   def self.extract_line_number path
@@ -86,7 +90,8 @@ class Path
 
       # If slash and not escaped, make new item
       if c == "/" && ! last_was_escape
-        result << "" unless i+1 == path.length
+        is_last_char = i+1 == path.length
+        result << "" if ! is_last_char || options[:trailing]
       elsif c == "0" && last_was_escape
         result[-1] << "\n"
       elsif c == ";"
@@ -136,6 +141,11 @@ class Path
 
     result
 
+  end
+
+  # Joins path array into a string, being sure to re-escape slashes
+  def self.join array
+    array.map{|o| Path.escape o}.join "/"
   end
 
 end

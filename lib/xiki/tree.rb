@@ -401,7 +401,7 @@ class Tree
 
       #       CodeTree.kill_siblings
       Tree.collapse :replace_parent=>1
-      return Launcher.launch
+      return Launcher.launch_unified
 
 
     # when "/"   # Append selected dir to parent dir
@@ -496,6 +496,11 @@ class Tree
 
   # Gets block of quoted text at cursor.
   def self.quoted
+    self.leaf "|"
+  end
+
+  # Return text consecutive quoted lines
+  def self.txt
     self.leaf "|"
   end
 
@@ -974,6 +979,7 @@ class Tree
     txt.gsub(/^\| ?/, '')
   end
 
+  # Add "| " to the beginnig of each line.
   def self.quote txt, options={}
     if options[:leave_headings]
       return TextUtil.unindent(txt).gsub(/^([^>])/, "| \\1").gsub(/^\| $/, '|')
@@ -1356,8 +1362,11 @@ class Tree
   def self.target_match path, target
     pi, ti = 0, 0
 
+    # Step through a character at a time
     while true
       pathi, targeti = path[pi], target[ti]
+
+      # If we reached the end of one of the strings, return something...
 
       if pathi.nil? || targeti.nil?
         return :same if pathi.nil? && targeti.nil?   # Handles a, a and a/, a/
@@ -1366,8 +1375,12 @@ class Tree
 
         return :shorter if pathi && (pathi.chr == "/" || path[pi-1].chr == "/" || pi == 0)
         return :longer if targeti && (targeti.chr == "/" || target[ti-1].chr == "/" || ti == 0)
-        return nil   # At end of one, but no match
+
+        # At end of one, but no match
+        return Path.split(path[0..pi], :trailing=>1).length-1   # Count up items in one of the paths
       end
+
+      # If we reached the end of one of the strings, return something...
 
       # If chars equal, increment
       if pathi == targeti
@@ -1384,11 +1397,10 @@ class Tree
         ti = target.index("/", ti+1) || target.length
         next
       end
-
+      # Ol["!"]
       break   # Not found
     end
-
-    nil
+    return Path.split(path[0..pi], :trailing=>1).length-1   # Count up items in one of the paths
   end
 
 
@@ -1601,6 +1613,8 @@ class Tree
   #
   def self.children tree=nil, target=nil, options={}
 
+    exclamations_normal = options[:exclamations_normal]
+
     # Read in file, if tree looks like a file path
     tree = File.read(File.expand_path tree) if tree !~ /\n/ && tree =~ /^~/
 
@@ -1620,14 +1634,29 @@ class Tree
 
     found = -1 if target.empty?
 
-    @@under_preexpand = false   # Will include sub-items of only some children
+    # All items under @... or item with no slash will be expanded shown ("preexpanded")
+    @@under_preexpand = false
 
     self.traverse tree do |branch, path|
       blank = branch[-1].nil?
 
       if ! found
         target_match = Tree.target_match path, target
-        next unless target_match == :shorter || target_match == :same
+
+        if ! exclamations_normal && branch[-1] =~ /^! / &&
+          target_match == branch.length - 1   # Only match overreaching path with !... when it matched so far
+
+          item = branch[-1]
+          result << "#{item}\n"  # Output
+
+          options[:exclamations_args] = Path.split(target)[branch.length-1..-1]
+
+          found = branch.length - 2   # Pretend like parent matched
+          next
+        end
+
+        next if target_match != :shorter && target_match != :same # &&   # If we found where patch matched
+
         found = branch.length - 1   # Found, remember indent
 
       else
@@ -1664,6 +1693,7 @@ class Tree
           #           end
 
           next if current_indent > found
+          # Probably doesn't need to continue on, but whatever
           # No longer beneath found item
           found = nil
           @@under_preexpand = false

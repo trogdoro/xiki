@@ -822,6 +822,70 @@ describe Tree, "#children" do
       ".unindent
   end
 
+  it "returns nil when nothing under item" do
+    Tree.children("
+      - a/
+        - b/
+      ", "a/b/").should == nil
+  end
+
+  it "returns nil when path too deep" do
+    Tree.children("
+      - a/
+        - b/
+      ", "a/b/c/").should == nil
+  end
+
+  it "returns exclamations" do
+    Tree.children("
+      - a/
+        ! b
+        ! c
+      ", "a/").should == "! b\n! c\n"
+  end
+
+  it "returns path and exclamations when deeper path but exclamations" do
+    options = {}
+    Tree.children("
+      - a/
+        ! b
+        ! c
+      ", "a/arg", options).should == "! b\n! c\n"
+    options[:exclamations_args].should == ["arg"]
+  end
+
+  it "returns empty args and exclamations when path to exclamations" do
+    options = {}
+    Tree.children("
+      - a/
+        ! b
+        ! c
+      ", "a", options).should == "! b\n! c\n"
+    options[:exclamations_args].should == nil
+  end
+
+  it "returns only exclamations under one item" do
+    options = {}
+    Tree.children("
+      - a/
+        ! aa
+      - b/
+        ! bb
+      ", "a", options).should == "! aa\n"
+    options[:exclamations_args].should == nil
+  end
+
+  it "doesn't treat exclamations as special when :exclamations_normal" do
+    options = {:exclamations_normal=>1}
+    Tree.children("
+      - a/
+        ! b
+        ! c
+      ", "a/arg", options).should == nil
+    options[:exclamations_args].should == nil
+  end
+
+
 end
 
 describe Tree, "#children_old" do
@@ -921,12 +985,12 @@ describe Tree, "#target_match" do
   end
 
   it "doesn't match when path has dot" do
-    Tree.target_match("a", ".a").should == nil
-    Tree.target_match("aa/bb", ".aa/bb").should == nil
+    Tree.target_match("a", ".a").should == 0
+    Tree.target_match("aa/bb", ".aa/bb").should == 0
   end
 
   it "doesn't match when ends with substring" do
-    Tree.target_match("aa", "a").should == nil
+    Tree.target_match("aa", "a").should == 0
   end
 
   it "matches when target is longer" do
@@ -947,6 +1011,11 @@ describe Tree, "#target_match" do
 
   it "recognizes match when star" do
     Tree.target_match("a/*/aa/", "a/zzzz").should == :shorter
+  end
+
+  it "return the count of items that did match upon failure" do
+    Tree.target_match("a/b/", "a/z/").should == 1
+    Tree.target_match("a/b/c/", "a/b/z/").should == 2
   end
 
 end

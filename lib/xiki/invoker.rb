@@ -77,7 +77,7 @@ class Invoker
       if ! txt || txt == "- */\n"
         dotified = Tree.dotify menu_text, args
       elsif menu_found == :constant || menu_found == :file   # If there was autput from MENU or foo.menu, eval !... lines
-        MenuHandler.eval_when_exclamations txt
+        MenuHandler.eval_when_exclamations txt, options
       end
     end
 
