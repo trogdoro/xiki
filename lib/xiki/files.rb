@@ -157,12 +157,6 @@ class Files
     Buffers.tree times
   end
 
-  def self.history # *path
-    paths = history_array#[0..400]
-    paths.map!{|i| i.sub(/(.+\/)(.+)/, "- @\\1\n  - \\2")}
-    paths.join("\n")
-  end
-
   def self.history_array
     $el.elvar.recentf_list.to_a
   end

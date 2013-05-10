@@ -7,10 +7,8 @@ module Xiki::Menu
       "
 
     MENU = "
-      > Todo > port
       - @tables/
       - @dbs/
-      - @columns/
       - .setup/
         - .start/
         - .start in background/
@@ -32,14 +30,18 @@ module Xiki::Menu
           > Example config files
           @ /usr/local/Cellar/mysql/5.5.25/support-files/
             - **cnf/
-      - misc commands/
-        > Drop db
-        @ % mysqladmin -u root drop foo
-        |
-        > Others
-        @ technologies/mysql/
-      > Or just type some sql here
-      | show tables
+      - docs/
+        - misc commands/
+          > Drop db
+          @ % mysqladmin -u root drop foo
+          |
+          > Others
+          @ technologies/mysql/
+        - old/
+          - @columns/
+          > Or just type some sql here
+          | show tables
+      @conf/
       "
 
 

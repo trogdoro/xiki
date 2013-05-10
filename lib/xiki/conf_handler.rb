@@ -8,9 +8,10 @@ class ConfHandler
 
     # Handle crud when expanding ~/menu/conf/foo...
 
-    name = options[:items] ? options[:items][0] : nil
+    name, txt = options[:items] # if options[:items]
 
-    options[:output] = self.txt name, options[:txt]
+    # TODO: remove Tree.txt editor dependency
+    options[:output] = self.txt name, (txt ? Tree.txt : nil)
   end
 
   def self.txt name, content=nil

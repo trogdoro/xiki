@@ -588,6 +588,7 @@ class Keys
   end
 
   def self.prefix options={}
+    return nil if ! $el
     pre = $el.elvar.current_prefix_arg
     return nil unless pre
 

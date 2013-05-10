@@ -34,7 +34,8 @@ module Xiki::Menu
 
       # /foo/... or /foo/|content...
 
-      ConfHandler.txt name, content ? options[:txt] : nil
+      # TODO: remove Tree.txt editor dependency
+      ConfHandler.txt name, content ? Tree.txt : nil
     end
 
 

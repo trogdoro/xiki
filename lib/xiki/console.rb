@@ -5,6 +5,7 @@ class Console
   @@log = File.expand_path("~/.emacs.d/console_log.notes")
 
   def self.menu
+    # All of this is deprecated, I think?
     %`
     - .log/
     - .tree/

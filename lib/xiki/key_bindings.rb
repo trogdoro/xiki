@@ -91,7 +91,7 @@ class KeyBindings
     Keys.open_edited { Files.open_edited }   # show recently edited files
     Keys.open_file { Files.open }
     # G: leave unmapped for escape
-    Keys.open_history { Launcher.open("- files/history/") }   # show recently viewed files
+    Xiki.def("open+history", "recent files/")
     Keys.open_in_browser { Browser.open_in_browser }
     Keys.open_in_left { View.open_in_bar }
     Keys.open_in_os { Files.open_in_os }
@@ -125,7 +125,7 @@ class KeyBindings
     Keys.open_last_urls { Launcher.open "last/urls/" }
     Keys.open_menu { Xiki.open_menu }   # Open all menus and show them
     Keys.open_new_file { View.new_file }
-    Keys.open_not_saved { Launcher.open("- history/unsaved files/") }
+    Xiki.def("open+not+saved", "not saved/")
     Keys.open_over { $el.open_line $el.elvar.current_prefix_arg || 1 }   # OO - open line (O's emacs default)
     Keys.open_point { Bookmarks.go(nil, :point => true) }
     Keys.open_quick { Bookmarks.open_quick }   # like OB but uses different temporary namespace
@@ -346,7 +346,7 @@ class KeyBindings
       input = Keys.input(:timed => true)
       $el.with(:save_window_excursion) do
         Bookmarks.go(".#{input}")
-        Launcher.launch
+        Launcher.launch_unified
       end
     }
     Keys.set("C-d C-/") { Code.comment }
