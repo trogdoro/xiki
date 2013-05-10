@@ -160,6 +160,7 @@ class Expander
       menufied = "/" if menufied.blank?
 
       options[:menufied] = menufied
+      options[:path] = thing
       raise "didn't anticipate expanders yet" if options[:expanders]
 
       # Grab args
@@ -187,7 +188,6 @@ class Expander
   # Expander.expand "ip"   # => "192.0.0.1"
   # @expander/docs/expanding/
   def self.expand *args
-
     # Set break path down into attributes
     options = self.parse *args
 
@@ -217,6 +217,7 @@ class Expander
       options[:expanders_index] += 1
     end
 
+    Launcher.append_log(options[:path]) if options[:path] && options[:expanders].find{|o| o == Menu} && ! options[:dont_log]
     options[:output]
   end
 
