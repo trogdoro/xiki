@@ -1,5 +1,6 @@
 class Http
   def self.menu *args
+    yield[:dont_log] = 1
     url = args.blank? ? nil : args.join('/')
 
     # If as+open, just jump to the log

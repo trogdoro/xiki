@@ -1,12 +1,11 @@
 class Tail
-  #   def self.menu *args
 
   def self.ongoing
     dir = Tree.dir :file=>1
     Console.run "tail -f \"#{dir}\""
   end
 
-  def self.in
+  def self.dir
     dir = Tree.dir :file=>1
     Tree.quote `tail "#{dir}"`
   end
@@ -21,11 +20,10 @@ class Tail
     Tree.quote `tail -n #{count} "#{dir}"`
   end
 
-  def self.menu
-    "
-    - .in/
-    - 3/
+  MENU = "
     - .ongoing/
+    - 3/
+    - .dir/
     - .docs/
       > Shows the first 10 lines inline
       << in/
@@ -36,6 +34,5 @@ class Tail
       > Opens a shell and keeps showing updates
       << ongoing/
     "
-  end
 
 end
