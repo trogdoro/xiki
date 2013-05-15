@@ -3,8 +3,8 @@ require 'socket'
 
 gem 'simple-tidy'
 require 'simple-tidy'
-gem 'nokogiri-pretty'
-require 'nokogiri-pretty'
+# gem 'nokogiri-pretty'
+# require 'nokogiri-pretty'
 
 require "rexml/document"
 

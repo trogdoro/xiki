@@ -121,10 +121,10 @@
     - is this still relevant?
     > Docs
     @menus/docs/creating/
-- todo/
-  > Add these menus
-  - with menu_after
-  - with menu_before
-  - cooperating
-    - with MENU and methods
-    - with foo.menu and methods
+  - todo/
+    > Add these menus
+    - with menu_after
+    - with menu_before
+    - cooperating
+      - with MENU and methods
+      - with foo.menu and methods

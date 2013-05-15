@@ -581,6 +581,7 @@ class Console
     when "$"
       txt = Tree.quote Console.sync command, :dir=>dir
       txt.gsub!(/^\| /, "|") if options[:prefix] == 0
+      txt.gsub!(/.\cH/, "")   # Add linebreak if blank
       return txt
     when "%"
       return Console.run command, :dir=>dir
