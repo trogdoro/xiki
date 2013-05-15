@@ -40,3 +40,45 @@ Xiki.def(//, :pre=>1, :target_view=>"*ol") do |path, options|
   Effects.blink(:what=>:line)
   nil
 end
+
+
+# !... lines (at left margin)
+Xiki.def(/^! /) do
+  code = Tree.siblings(:all=>1).select{|o| o =~ /^! /}.join("\n")
+  code.gsub! /^! /, ''
+
+  line_number = View.line
+
+  lines_above = Tree.siblings(:before=>1).select{|o| o =~ /^! /}
+  line_number -= lines_above.length
+
+
+  returned, out, exception = Code.eval code, View.file, line_number
+  returned ||= out   # Use output if nothing returned
+  returned = returned.to_s if returned
+  returned
+end
+
+
+# Various lines that mean run as ruby
+# p ...
+# puts ...
+# etc.
+
+Xiki.def(/^(p|y|pp|puts|Ol) /) do |line|
+  CodeTree.run line, :quote=>1
+end
+
+Xiki.def(/^(ap) /) do |line|
+  CodeTree.run line, :quote=>1
+end
+
+Xiki.def(/^print\(/) do |line|
+  Javascript.launch
+end
+
+Xiki.def(/^pg /) do |line|
+  line.sub! /^pg /, ''
+  CodeTree.run "puts JSON.pretty_generate(#{line})"
+end
+

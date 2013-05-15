@@ -546,7 +546,7 @@ class Notes
     Styles.apply("^\\([ \t]*\\)\\([<+-]\\) \\(.+?:\\) +\\(|.*\n\\)", nil, :default, :ls_bullet, :notes_label, :ls_quote)
     Styles.apply("^\\([ \t]*\\)\\([<+-]\\) \\([^(\n]+?)\\) +\\(|.*\n\\)", nil, :default, :ls_bullet, :notes_label, :ls_quote)
 
-    Styles.apply("^ +\\(!.*\n\\)", nil, :ls_quote)   # ^!... for commands
+    Styles.apply("^ *\\(!.*\n\\)", nil, :ls_quote)   # ^!... for code
 
     # exclamation! / todo
     Styles.apply("^[ \t]*\\([<+-]\\) \\(.*!\\)$", nil, :ls_bullet, :notes_exclamation)

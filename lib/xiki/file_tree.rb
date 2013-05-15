@@ -447,11 +447,11 @@ class FileTree
 
     # | >... headings
 
-    Styles.apply("^ *\\(|\\|:\\)\\( \\)\\(>\\)\\(\n\\| .*\n\\)", nil, :quote_heading_pipe, :ls_quote, :quote_heading_bracket, :quote_heading_h1)
+    Styles.apply("^ *\\(|\\|:\\)\\( ?\\)\\(>\\)\\(\n\\| .*\n\\)", nil, :quote_heading_pipe, :ls_quote, :quote_heading_bracket, :quote_heading_h1)
 
     Styles.apply("^ *\\(|\\)\\( \\)\\(>>\\)\\(\n\\| .*\n\\)", nil, :quote_heading_pipe, :ls_quote, :quote_heading_bracket, :quote_heading_small)
     # | >...! headings
-    Styles.apply("^ *\\(|\\)\\( \\)\\(>\\)\\(.*!\n\\)", nil, :quote_heading_pipe, :ls_quote, :quote_heading_bracket, :quote_heading_h1_green)
+    Styles.apply("^ *\\(|\\)\\( ?\\)\\(>\\)\\(.*!\n\\)", nil, :quote_heading_pipe, :ls_quote, :quote_heading_bracket, :quote_heading_h1_green)
 
     #    >... headings (indented)
     Styles.apply("^ +\\(> ?\\)\\(.*\n\\)", nil, :quote_heading_bracket, :quote_heading_h1)
@@ -584,7 +584,7 @@ class FileTree
       column -= (Line.value[/^.*?\|./] || '').length
       column = 0 if column < 0
 
-      ControlTab.dash_prefix_buffer = View.name
+      ControlTab.dash_prefix_buffer = View.name   # Remember where we were so subsequent 8+Tab can continue on from here
     end
 
 
@@ -1802,28 +1802,34 @@ class FileTree
     txt =~ /^[^,|\n]*\/$/
   end
 
-  def self.delete_file
+  # Restructuring for Unified...
+  def self.delete_file path
 
     #     in_file_being_deleted = Line !~ /^[ +-]/ || Keys.prefix_u
 
     # If not on tree, must want to delete this file
     #     if in_file_being_deleted
-    #       dest_path = View.file
+    #       path = View.file
     #     else
-    dest_path = Tree.construct_path
+    #     path = Tree.construct_path
     #     end
 
-    dest_path = View.expand_path dest_path
+    #     path = View.expand_path path
 
-    return View.flash("- File doesn't exist: #{dest_path}", :times=>5) if ! File.exists?(dest_path)
+
+  # Still has dependencies on editor.  First step for if we want to delete
+  # from a non-editor client - make below editor lines just not run when
+  # not :client =~ ^editor\b.
+
+    return View.flash("- File doesn't exist: #{path}", :times=>5) if ! File.exists?(path)
 
     View.flash "- Delete file for sure?"
-    answer = Keys.input :chars=>1, :prompt=>"For sure delete?: #{dest_path}"   #"
+    answer = Keys.input :chars=>1, :prompt=>"For sure delete?: #{path}"   #"
 
     return unless answer =~ /y/i
 
-    executable = File.directory?(dest_path) ? "rm -r" : "rm"
-    command = "#{executable} \"#{dest_path}\""
+    executable = File.directory?(path) ? "rm -r" : "rm"
+    command = "#{executable} \"#{path}\""
 
     result = Console.run command, :sync=>true
     if (result||"").any?
@@ -1832,7 +1838,7 @@ class FileTree
       return
     end
 
-    #     return View.kill if in_file_being_deleted
+    # Eventually only do if :client =~ ^editor\b
 
     Tree.kill_under
     Effects.glow :fade_out=>1
@@ -2101,6 +2107,12 @@ class FileTree
 
     Path.unescape! file_path
 
+    # If as+delete...
+
+    if prefix == "delete"
+      return self.delete_file file_path
+    end
+
     # If ##foo/ or **foo/ filter at end (removing all as we check)...
 
     filters_at_end = self.extract_filters! file_path   # Removes ## and ** filters, returning any that were at the end
@@ -2117,6 +2129,7 @@ class FileTree
     # If quoted line, pull it off into :quote...
 
     if quote = Path.extract_quote(file_path)
+      ControlTab.dash_prefix_buffer = View.name
       options[:quote] = quote
     end
 
@@ -2271,6 +2284,33 @@ class FileTree
     [exists, kind]
   end
 
+  # Returns html version of a file tree
+  def self.to_html txt
+    folder = '<img src="http://wiki.oni2.net/w/images/0/0c/Folder_icon-Mac.jpg" class="icon">'
+    file = '<img src="http://wiki.oni2.net/w/images/1/11/Generic_file_icon-Mac.jpg" class="icon">'
+
+    # - dir/
+    txt.gsub! /^( *)[+-]( .+\/)$/, "\\1#{folder}<span class='folder'>\\2</span>"
+    # |...
+    txt.gsub! /^( *)(\| ?)(.*)$/, "\\1<span style='color:#ddd; font-weight:bold;'>\\2</span><span class='quote'>\\3</span>"
+    # - hey.txt
+    txt.gsub! /^( *)([+-])(.+)/, "\\1#{file}<span class='arial'>\\3</span>"
+
+    txt = "<pre>\n#{txt}\n</pre>\n"
+    txt << %`
+      <style>
+        .arial {font-family: arial;}
+        .icon {padding: 0 3px 0 0; vertical-align: middle;}
+        .quote { font-family: monaco; color:#666; font-size:11px; }
+        .folder {
+          font-weight: bold;
+          font-family: arial;
+          /* padding: 0 0 0 2px; */
+        }
+      </style>
+      `.unindent
+    txt
+  end
 
 end
 FileTree.define_styles
