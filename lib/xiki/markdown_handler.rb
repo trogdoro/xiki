@@ -1,5 +1,5 @@
-gem 'redcarpet'
-require 'redcarpet'
+# gem 'redcarpet'
+# require 'redcarpet'
 
 class MarkdownHandler
   def self.handle options

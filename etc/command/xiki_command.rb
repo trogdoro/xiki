@@ -114,7 +114,8 @@ class XikiCommand
   def self.get_response
 
     # Simulate timeout error if process not running
-    process_running = `ps -A` =~ /xiki_process.rb/
+    #     process_running = `ps -A` =~ /xiki_process.rb/
+    process_running = `ps x` =~ /xiki_process.rb/
 
     if ! process_running
       raise Timeout::Error
@@ -125,8 +126,8 @@ class XikiCommand
     # TODO: have process send ACK, so we can make timout short
 
     timeout(3) do
-    #     timeout(0.5) do
-    #     timeout(1.5) do
+      #     timeout(0.5) do
+      #     timeout(1.5) do
       open("/tmp/xikiresponse", "r+") do |response|
 
         # old TODO Try using select here, to see if there's data avaliable
