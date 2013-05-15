@@ -490,7 +490,7 @@ class Console
       result << "#{l}" if match
     end
 
-    "@ #{dir}\n"+result.reverse.uniq.join("\n")+"\n"
+    "@#{dir}\n"+result.reverse.uniq.join("\n")+"\n"
 
   end
 
@@ -518,13 +518,13 @@ class Console
 
   def self.search_last_commands
     bm = Keys.input(:timed => true, :prompt => "bookmark to show commands for (space for currently open): ")
-    return Launcher.open("- console/tree/") if bm == " "
+    return Launcher.open("console/tree/") if bm == " "
     if bm == "8"
       Console.log; View.to_bottom; Search.isearch nil, :reverse=>true
       return
     end
 
-    Launcher.open("- console/history/$#{bm}/")
+    Launcher.open("console/history/$#{bm}/")
   end
 
   def self.tree *args
@@ -574,6 +574,8 @@ class Console
 
   def self.shell_command_per_prompt prompt, options
     dir, command = options[:dir], options[:command]
+
+    self.append_log command, dir, "#{prompt} "
 
     case prompt
     when "$"

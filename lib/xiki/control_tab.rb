@@ -179,11 +179,12 @@ class ControlTab
 
     # 8+Tab, so just go to next in this view...
 
+    column = View.column
     found = Color.next
 
     if ! found   # Try again if went to bottom without finding
       View.to_highest
-      Color.next
+      Color.next :column=>column
     end
   end
 

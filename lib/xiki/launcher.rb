@@ -865,15 +865,16 @@ class Launcher
 
     menu =
       if bm == "8" || bm == " "
-        "- search/launched/"
+        "nav history/"
       elsif bm == "."
-        "- Search.launched '#{View.file}'/"
-      elsif bm == "3"
-        "- Search.launched '#'/"
-      elsif bm == ";" || bm == ":" || bm == "-"
-        "- Search.launched ':'/"
+        "nav history/#{View.file}/"
+      elsif bm == "3"   # Means show only searches
+        # Make it not do weird search behavior where it jumps down
+        "nav history/#/"
+      elsif bm == ";" || bm == ":" || bm == "-"   # What does this mean?
+        "nav history/:/"
       else
-        "- search/launched/$#{bm}/"
+        "nav history/$#{bm}/"
       end
   end
 
@@ -1489,6 +1490,7 @@ class Launcher
 
     self.jump_line_number insert_options, options
 
+    txt = txt.to_s if txt
     return if txt.blank?
 
     Tree.<< txt, insert_options

@@ -492,17 +492,18 @@ class Search
     Launcher.open Launcher.last_launched_menu
   end
 
-  def self.launched bm=nil
+  def self.launched *arg
+    arg = arg.any? ? arg.join("/") : nil
 
     txt = File.read @@log
     txt = txt.sub(/\A- /, '').split(/^- /).reverse.uniq
-    if bm && bm == "#"
+    if arg && arg == "#"
       txt = txt.select{|o| o =~ /^  - ##/}
-    elsif bm && bm == ":"
+    elsif arg && arg == ":"
       txt = txt.select{|o| o =~ /^    - [^#].*: /}
-    elsif bm
+    elsif arg
 
-      path = Bookmarks[bm]
+      path = Bookmarks[arg]
 
       if File.file? path   # File
         regex = /^#{Regexp.escape File.dirname path}\/\n  - #{Regexp.escape File.basename path}/
@@ -1549,7 +1550,7 @@ class Search
 
     return if match   # If there was a match, just stop
 
-    Launcher.open("- log/") if match.nil?
+    Launcher.open("log/") if match.nil?
   end
 
   def self.just_bookmark
