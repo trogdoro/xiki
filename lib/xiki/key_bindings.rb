@@ -14,7 +14,6 @@ class KeyBindings
     self.misc
 
     Keys.add_menubar_items
-
   end
 
   def self.as_keys
@@ -215,8 +214,9 @@ class KeyBindings
     #     Keys.enter_search { Search.enter_search }
     Keys.enter_source { Snippet.insert }
 
+    Xiki.def("enter+todo"){ View.enter_upper }
     #     Keys.enter_tree { FileTree.tree(:here=>true) }
-    Keys.enter_upper { View.enter_upper }
+    Xiki.def("enter+upper"){ View.beep "- Changed to: enter+todo - make this be enter+under? (like enter+quote, but not a quote)!" }
     Keys.enter_value { Clipboard.paste }
     # W
     Keys.enter_whitespace { Code.enter_whitespace }
@@ -378,7 +378,7 @@ class KeyBindings
     Keys.to_junior { Move.to_junior }
     Keys.to_kind { Move.to_other_bracket }   # to matching bracket, etc
     Keys.to_lowest { View.to_bottom }   # move to end
-    Keys.to_menu { Menu.to_menu }   # to matching bracket, etc
+    Xiki.def("to+menu"){ Menu.to_menu }
     Keys.to_next { Move.to_next_paragraph }   # to next paragraph
     Keys.to_outline { FileTree.to_outline }
     Keys.to_previous { Move.to_previous_paragraph }   # to beginning of previous paragraph
@@ -466,7 +466,7 @@ class KeyBindings
     Xiki.def("search+bookmark"){ Search.bookmark }
     # B: leave unmapped for back
 
-    Keys.search_copy { Search.isearch_copy }   # Clipboard (copy)
+    Xiki.def("search+copy"){ Search.isearch_copy }   # Clipboard (copy) or search+commands (if no search)
 
     Keys.search_delete { Search.isearch_delete }   # Delete
     Keys.search_enter { Search.enter }   # Enter: insert clipboard, replacing match
@@ -625,7 +625,8 @@ class KeyBindings
     $el.el4r_lisp_eval(%`(defun isearch-m () (interactive)
       (if (eq (process-status el4r-process) 'run) (el4r-ruby-eval "Search.isearch_m") (isearch-exit)))
       `.unindent)
-    $el.define_key :isearch_mode_map, $el.kbd("C-m"), :isearch_m   # Hide: hide non-matching
+
+    $el.define_key :isearch_mode_map, $el.kbd("C-m"), :isearch_m   # search+menu (done in a really safe way, so Return in isearch doesn't break when el4r goes down)
 
   end
 
