@@ -41,7 +41,18 @@ class Browser
   def self.open_in_browser
 
     if Keys.prefix_u   # Open as http://xiki/...
-      return self.url "http://xiki/#{Tree.path.join("\n")}"
+      path = Tree.path.join("\n")
+      path.gsub! ' ', '-'
+
+      url = "http://xiki/#{path}"
+
+      # If it's a dir, use @dtail
+      url = "http://xiki/dtail/#{path}" if File.directory? path
+
+      # If it's a file, put "@" at beginning so sinatra doesn't fuck it up
+      url = "http://xiki/@#{path}" if File.file? path
+
+      return self.url url
     end
 
     if FileTree.handles?
@@ -73,10 +84,6 @@ class Browser
 
   def self.tabs
     Firefox.tabs
-  end
-
-  def self.url *args
-    Firefox.url args.join "/"
   end
 
   def self.reload
