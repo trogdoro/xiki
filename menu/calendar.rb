@@ -1,7 +1,6 @@
 class Calendar
   def self.menu month=nil
     Xiki.dont_search
-    #     $xiki_no_search = true
     return "jan/\nfeb/\nmar/\napr/\nmay/\njun/\njul/\naug/\nsep/\noct/\nnov/\ndec/" if month == "year"
 
     now = Time.now

@@ -25,7 +25,7 @@ Either install as a gem, or install from github.
       $ git checkout v1.0     # Only required temporarily, until the branch is merged in
       $ sudo gem install bundler   # <- no "sudo" if using rvm
       $ sudo bundle                # <- no "sudo" if using rvm
-      $ ruby etc/command/copy_xiki_command_to.rb /usr/bin/xiki   # or /usr/local/bin/xiki if using rvm
+      $ sudo ruby etc/command/copy_xiki_command_to.rb /usr/bin/xiki   # or /usr/local/bin/xiki and no "sudo" if using rvm
 
 ## Verify the 'xiki' shell command works
 

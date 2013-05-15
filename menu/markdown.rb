@@ -28,24 +28,24 @@ class Markdown
     Styles.apply("^\\(#### \\)\\(.*\n\\)", nil, :notes_h4_pipe, :notes_h4)
   end
 
-  def self.menu *args
+  def self.menu txt=nil
 
     # If nothing passed, show example markdown
     return "
       > Render the markdown wiki format in the browser
-      | # Heading
-      | ## Small Heading
-      |
-      |     Code is indented
-      |     four or more spaces.
-      |
-      | - Bullet
-      |    - Another (indented 3 spaces each)
-      |
-      | A normal sentence.
-      " if args.blank?
+      : # Heading
+      : ## Small Heading
+      :
+      :     Code is indented
+      :     four or more spaces.
+      :
+      : - Bullet
+      :    - Another (indented 3 spaces each)
+      :
+      : A normal sentence.
+      " if ! txt
 
-    html = self.render(ENV['txt'])
+    html = self.render txt
 
     Browser.html html
 

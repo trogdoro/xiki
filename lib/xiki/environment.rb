@@ -1,11 +1,27 @@
 class Environment
 
   # Will return either :osx, :linux, :windows, or :unknown.
+  # Environment.os
   def self.os
 
-    # TODO: find a better way to do this
-    return :osx if File.directory?("/Applications/")
-    return :linux if File.directory?("/etc/")
+    return :osx if RUBY_PLATFORM =~ /darwin/i
+    return :unix if RUBY_PLATFORM =~ /linux|solaris/i
+    return :windows if RUBY_PLATFORM =~ /mswin/i
+
+    #     if RUBY_PLATFORM =~ /darwin/i
+    #       { :os => "unix", :implementation => "macosx" }
+    #     elsif RUBY_PLATFORM =~ /linux/i
+    #       { :os => "unix", :implementation => "linux" }
+    #     elsif RUBY_PLATFORM =~ /cygwin/i
+    #       { :os => "unix", :implementation => "cygwin" }
+    #     elsif RUBY_PLATFORM =~ /mingw/i
+    #       { :os => "win32", :implementation => "mingw" }
+    #     elsif RUBY_PLATFORM =~ /mswin/i
+    #       { :os => "win32", :implementation => "mswin" }
+    #     elsif RUBY_PLATFORM =~ /solaris/i
+    #       { :os => "unix", :implementation => "solaris" }
+    #     else
+    #       { :os => "unknown", :implementation => "unknown" }
 
     :unknown
   end
