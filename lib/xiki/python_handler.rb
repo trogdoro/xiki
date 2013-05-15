@@ -1,10 +1,11 @@
 class PythonHandler
-  def self.handle options, ex
-    return if ! ex['py'] || options[:output] || options[:halt]
+  def self.handle options
+    source = options[:ex]['py']
+    return if ! source || options[:output] || options[:halt]
 
     # Better api call for this?  Maybe pass 'ex' in through options as well, so we don't need the param.
 
-    source = "#{options[:last_source_dir]}#{ex['py']}"
+    source = "#{options[:last_source_dir]}#{source}"
     code = File.read source
     code = "args = #{(options[:args]||[]).inspect}\n#{code}"
 

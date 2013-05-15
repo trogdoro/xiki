@@ -2,10 +2,11 @@ gem 'redcarpet'
 require 'redcarpet'
 
 class MarkdownHandler
-  def self.handle options, ex
-    return if ! ex['markdown'] || options[:output] || options[:halt]
+  def self.handle options
+    source = options[:ex]['markdown']
+    return if ! source || options[:output] || options[:halt]
 
-    txt = options[:output] = File.read "#{options[:last_source_dir]}#{ex['markdown']}"
+    txt = options[:output] = File.read "#{options[:last_source_dir]}#{source}"
     html = self.render txt
 
     Browser.html html

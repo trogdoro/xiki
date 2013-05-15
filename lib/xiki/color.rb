@@ -98,7 +98,7 @@ class Color
     nil
   end
 
-  def self.next
+  def self.next options={}
     View.kill if View.name == "@mark/"
 
     column = View.column
@@ -108,7 +108,7 @@ class Color
       pos = $el.next_overlay_change(pos) unless $el.overlays_at(pos)
       View.to(pos)
     end
-    View.column = column
+    View.column = options[:column] || column
     pos != View.bottom
   end
 

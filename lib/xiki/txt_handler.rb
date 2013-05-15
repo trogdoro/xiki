@@ -1,8 +1,9 @@
 class TxtHandler
-  def self.handle options, ex
-    return if ! ex['txt'] || options[:output] || options[:halt]
+  def self.handle options
+    source = options[:ex]['txt']
+    return if ! source || options[:output] || options[:halt]
 
-    txt = File.read "#{options[:last_source_dir]}#{ex['txt']}"
+    txt = File.read "#{options[:last_source_dir]}#{source}"
 
     if options[:client] =~ /^web\//
       txt = "<pre>#{txt}</pre>"

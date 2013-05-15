@@ -1,10 +1,11 @@
 class DirHandler
-  def self.handle options, ex
+  def self.handle options
 
+    source = options[:ex]['/']
     # This will soon be refactored to be called by hash
-    return if ! ex['/'] || options[:output] || options[:halt]
+    return if ! source || options[:output] || options[:halt]
 
-    items = Dir.new("#{options[:last_source_dir]}#{ex['/']}").entries.grep /^[^.]/
+    items = Dir.new("#{options[:last_source_dir]}#{source}").entries.grep /^[^.]/
 
     items.delete "default.conf"   # ignore default conf
 

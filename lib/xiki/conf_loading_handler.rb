@@ -1,5 +1,5 @@
 class ConfLoadingHandler
-  def self.handle options, ex
+  def self.handle options
 
     # Always try loading options[:conf] (from /index.conf or ~/menu/conf/foo.conf...
 

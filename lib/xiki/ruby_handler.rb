@@ -1,14 +1,14 @@
 class RubyHandler
-  def self.handle options, ex
+  def self.handle options
 
-    return if ! ex['rb'] || options[:output] || options[:halt]
-    stem = ex['rb']
-    clazz_name = TextUtil.camel_case stem[/\w+/]
+    source = options[:ex]['rb']
+    return if ! source || options[:output] || options[:halt]
+    clazz_name = TextUtil.camel_case source[/\w+/]
 
-    file = "#{options[:last_source_dir]}#{stem}"
+    file = "#{options[:last_source_dir]}#{source}"
     code = File.read file
 
-    options.merge! :dot_menu_file=>"#{options[:last_source_dir]}#{ex['menu']}"
+    options.merge! :dot_menu_file=>"#{options[:last_source_dir]}#{options[:ex]['menu']}"
     txt =
       if code =~ /^ *class #{clazz_name}/   # Maybe check for actual class name
         options.merge! :clazz_name=>clazz_name

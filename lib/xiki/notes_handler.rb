@@ -1,7 +1,9 @@
 class NotesHandler
-  def self.handle options, ex
-    return if ! ex['notes'] || options[:output] || options[:halt]
-    path = "#{options[:last_source_dir]}#{ex['notes']}"
+  def self.handle options
+    source = options[:ex]['notes']
+
+    return if ! options[:ex] || options[:output] || options[:halt]
+    path = "#{options[:last_source_dir]}#{source}"
 
     txt = Notes.drill path, *options[:args]||[]
 

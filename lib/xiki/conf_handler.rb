@@ -1,10 +1,12 @@
 class ConfHandler
-  def self.handle options, ex
+  def self.handle options
 
     # When expanding foo/@conf, ~/menu/conf/index.rb will take over
 
+    source = options[:ex]['conf']
+
     return if options[:output] || options[:halt]   # Do nothing if something already handled
-    return if ! ex['conf'] || ex.length > 1   # Only intercede for crud if they're launching a .conf and nothing else
+    return if ! source || options[:ex].length > 1   # Only intercede for crud if they're launching a .conf and nothing else
 
     # Handle crud when expanding ~/menu/conf/foo...
 
