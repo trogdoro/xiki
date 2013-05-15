@@ -1,7 +1,9 @@
 class Bootstrap
 
-  @@assets = "http://twitter.github.com/bootstrap/assets"
-  #   @@assets = "http://xiki.loc/assets"
+  @@relative = ""
+  #   @@relative = "http://xiki.loc"
+  @@assets = "#{@@relative}/assets"
+  #   @@assets = "http://twitter.github.com/bootstrap/assets"
 
   def self.menu_after *args
     return if args[0]   # If menu outputted something, just return
@@ -9,20 +11,17 @@ class Bootstrap
     self.content *args[1..-1]
   end
 
-  def self.menu
-    clazz = self.to_s.downcase
-
-    %`
+  MENU = %`
     <= .make a page/
     - examples/
       - layouts/
         - hello world/
-          - @#{clazz}/
+          - @#{self.to_s.downcase}/
             - project name/Sharkathon
             - h2/Sharks
             - p/They have fins and other cool stuff.
         - hero unit/
-          - @#{clazz}/
+          - @#{self.to_s.downcase}/
             - project name/Sharkathon
             - hero/
               - h1/Sharks
@@ -31,7 +30,7 @@ class Bootstrap
             > Do you?
             Lorem Ipsum Dolor...
         - 2 columns/
-          - @#{clazz}/
+          - @#{self.to_s.downcase}/
             - row/
               - span6/
                 - h2/random
@@ -40,7 +39,7 @@ class Bootstrap
                 - h2/random
                 - p/ipsum dolor...
         - 3 columns/
-          - @#{clazz}/
+          - @#{self.to_s.downcase}/
             - row/
               - span4/
                 - h2/random
@@ -52,7 +51,7 @@ class Bootstrap
                 - h2/random
                 - p/dolor sit...
         - with icons/
-          - @#{clazz}/
+          - @#{self.to_s.downcase}/
             - hero/
               - h1/Sharks
               - p/lorem...
@@ -74,7 +73,7 @@ class Bootstrap
                 - h2 icon/random
                 - p/sit lorem...
         - shorthand/
-          - @#{clazz}/
+          - @#{self.to_s.downcase}/
             - hero/
               > Shorthand
               p/Lines starting with ">" at left margin will have rows and spans auto-wrapped around them.
@@ -91,7 +90,7 @@ class Bootstrap
             > o random
             lorem...
         - with styled hero/
-          - @#{clazz}/
+          - @#{self.to_s.downcase}/
             - hero/
               - h1/Sharks
               - p/lorem...
@@ -105,7 +104,7 @@ class Bootstrap
               |   border-radius: 20px;
               | }
         - modified navbar/
-          - @#{clazz}/
+          - @#{self.to_s.downcase}/
             - navbar/
               | <img src="http://xiki.org/images/bootstrap_icon.png">
               | <style>.navbar .container { padding: 1px 30px 0px; }</style>
@@ -113,7 +112,7 @@ class Bootstrap
             - p/sit lorem ipsum dolor...
       - components/
         - buttons/
-          - @#{clazz}/
+          - @#{self.to_s.downcase}/
             - h2/Buttons
             - p/
               <a class="btn" href="">Hi</a>
@@ -131,7 +130,7 @@ class Bootstrap
               <a class="btn disabled" href="">Hi</a>
         - icons/
           - with headings/
-            - @#{clazz}/
+            - @#{self.to_s.downcase}/
               p/
                 - h3/random
                 - h2 icon/Info
@@ -165,7 +164,7 @@ class Bootstrap
               <a class="btn btn-danger" href=""><i class="icon-music"></i> Music</a>
         - forms/
           - basics/
-            - @#{clazz}/
+            - @#{self.to_s.downcase}/
               | <form class="well">
               |   <label>Label name</label>
               |   <input type="text" class="span3" placeholder="Type something?">
@@ -176,13 +175,13 @@ class Bootstrap
               |   <button type="submit" class="btn">Submit</button>
               | </form>
           - search/
-            - @#{clazz}/
+            - @#{self.to_s.downcase}/
               | <form class="well form-search">
               |   <input type="text" class="input-medium search-query">
               |   <button type="submit" class="btn">Search</button>
               | </form>
           - inline/
-            - @#{clazz}/
+            - @#{self.to_s.downcase}/
               | <form class="well form-inline">
               |   <input type="text" class="input-small" placeholder="Email">
               |   <input type="password" class="input-small" placeholder="Password">
@@ -192,7 +191,7 @@ class Bootstrap
               |   <button type="submit" class="btn">Sign in</button>
               | </form>
           - horizontal/
-            - @#{clazz}/
+            - @#{self.to_s.downcase}/
               | <form class="form-horizontal">
               |   <fieldset>
               |     <legend>Legend text</legend>
@@ -206,7 +205,7 @@ class Bootstrap
               |   </fieldset>
               | </form>
         - code/
-          - @#{clazz}/
+          - @#{self.to_s.downcase}/
             - pre/
               | class Clam
               |   def hi
@@ -215,7 +214,7 @@ class Bootstrap
               | end
             - p/Hey <code>you</code> there.
         - carousel/
-          - @#{clazz}/
+          - @#{self.to_s.downcase}/
             - <div id="myCarousel" class="carousel slide">
               - <div class="carousel-inner">
                 <div class="active item">
@@ -238,7 +237,7 @@ class Bootstrap
       | Expand the 'container' menu to build, or start with the
       | 'example' menu.
       |
-      | @#{clazz}/
+      | @#{self.to_s.downcase}/
       |   h2/Example Heading
 
       > Bootstrap site
@@ -247,7 +246,6 @@ class Bootstrap
         - base-css.html
         - getting-started.html#examples
     `
-  end
 
   @@bg = ['#eee', '#555', '#999', '#9D261D', '#369', '#096']
 
@@ -321,7 +319,7 @@ class Bootstrap
     if filler = @@filler[last]
       Line.add_slash :txt=>filler, :left=>1
     elsif last == "icon"
-      @@icons
+      @@icons.map{|o| "- #{o}\n"}.join('')
     elsif last == 'style'
       "
       | .hero-unit {
@@ -346,12 +344,10 @@ class Bootstrap
     @txt = txt
   end
 
-  #
   # If any >... lines at left margin, interpret them as h2's and assume
   # we want to auto-wrap in row/spanN/ items.
   #
   # If any >... lines indented, just wrap in h2.
-  #
   def self.expand_wiki_headings txt
 
     # Always simply wrap >... lines that are indented...
@@ -487,7 +483,8 @@ class Bootstrap
   end
 
   def self.icon_tag name
-    "<img class='bs-icon' src='http://xiki.loc/images/icons/glyphicons_#{name}.png'>"
+    #     "<img class='bs-icon' src='http://xiki.loc/images/icons/glyphicons_#{name}.png'>"
+    "<img class='bs-icon' src='#{@@relative}/images/icons/glyphicons_#{name}.png'>"
   end
 
   def wrap_html_page
