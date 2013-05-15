@@ -34,13 +34,27 @@ class MenuSuggester
       end
     end
 
-    # No completions, so suggest creating menu...
+    # No completions or existing menu, so suggest creating via samples (@sample_menus)...
 
-    txt = Expander.expand "sample menus", options[:items]
-    txt.gsub! "<name>", name
-    txt.gsub! "<Name>", TextUtil.camel_case(name)
-    options[:output] = txt
-    nil
+    txt = Expander.expand "sample menus", options[:items]   # Will handle if no items or a sample menu item
+
+    if txt
+      txt.gsub! "<name>", name
+      txt.gsub! "<Name>", TextUtil.camel_case(name)
+      options[:output] = txt
+      return
+    end
+
+    # User had items that weren't in @sample
+
+    # Non-existant items were created, so suggest making a new menu out of them...
+    if options[:client] =~ /^editor\b/
+      options[:output] = "
+        > Make this into a menu?
+        | Create a new '#{options[:name]}' menu with these items?
+        @as menu/
+        "
+    end
 
     # Shelved for now
     #     return "@back up/1/#{name}...\n#{completions}"
@@ -54,7 +68,7 @@ class MenuSuggester
 
     result = []
     Menu.defs.keys.each do |key|
-      result << key.sub("_", ' ') if key =~ /^#{name}/
+      result << key.gsub("_", ' ') if key =~ /^#{name}/
     end
 
     # Check MENU_PATH menus...
@@ -62,7 +76,7 @@ class MenuSuggester
     Xiki.menu_path_dirs.each do |dir|
       start = "#{dir}/#{name}*"
       Dir.glob(start).each do |match|
-        result << File.basename(match, ".*").sub("_", ' ')
+        result << File.basename(match, ".*").gsub("_", ' ')
       end
     end
     result

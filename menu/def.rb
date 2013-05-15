@@ -14,6 +14,6 @@ class Def
     View.insert txt.gsub(/^/, '  '), :dont_move=>1
     Move.to_end
 
-    nil
+    ""
   end
 end

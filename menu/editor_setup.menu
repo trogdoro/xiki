@@ -1,0 +1,12 @@
+> Directions for installing and Xiki-enable an editor
+<< aquamacs setup/
+<< emacs setup/
+<< vim setup/
+
+Suggest more by tweeting to @xiki.
+
+in the works/
+  > These editors may be supported at some point
+  @sublime setup/
+  @rubymine setup/
+  | Tweet to @xiki if you know (or want to learn) how to extend these editors, to make a Xiki plugin.  Let's remote-pair on it!

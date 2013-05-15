@@ -10,7 +10,6 @@ class CodeTree
     @menus << item unless @menus.member? item
   end
 
-  # Mapped to C-.
   def self.launch options={}
     line = Line.without_indent
 
@@ -88,7 +87,10 @@ class CodeTree
     message = self.format_exception_message_for_tree message
 
     txt = ""
-    if code
+
+    if code.is_a? Proc
+      txt << "- tried to run:#{code.to_s}\n"
+    elsif code.is_a? String
       code = code.strip
       if code =~ /\n/   # If multi-line, quote it
         code = "\n#{Tree.quote(code).gsub /^/, '  '}"

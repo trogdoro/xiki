@@ -1023,7 +1023,6 @@ class Tree
     View.under txt, :after=>1
   end
 
-  #
   # Returns group of lines close to current line that are indented at the same level.
   # The bounds are determined by any lines indented *less* than the current line (including
   # blank lines).  In this context, lines having only spaces are not considered blank.
@@ -1221,7 +1220,7 @@ class Tree
       flattened.map!{|o| o ? o.sub(/^[+-] /, '') : nil } if ! options[:no_bullets]   # Might have side-effects if done twice
       flattened = flattened.join('')#.gsub(/[.:]/, '')   # Why were :'s removed??
 
-      block.call [branch_dup, flattened]
+      block.call [branch_dup, flattened, i+1]
 
       indent = line_indent
     end
@@ -1604,13 +1603,11 @@ class Tree
   end
 
 
-  #
   # Extracts children from tree arg and target (path) arg.
   #
   # Or, if no tree passed in, delegates to Tree.children_at_cursor
   #
   # Tree.children "a\n  b\n  c", "a"
-  #
   def self.children tree=nil, target=nil, options={}
 
     exclamations_normal = options[:exclamations_normal]
@@ -1637,11 +1634,13 @@ class Tree
     # All items under @... or item with no slash will be expanded shown ("preexpanded")
     @@under_preexpand = false
 
-    self.traverse tree do |branch, path|
+    self.traverse tree do |branch, path, i|
       blank = branch[-1].nil?
 
       if ! found
         target_match = Tree.target_match path, target
+
+        # If target path is deeper than path with !... children, grab them as output...
 
         if ! exclamations_normal && branch[-1] =~ /^! / &&
           target_match == branch.length - 1   # Only match overreaching path with !... when it matched so far
@@ -1651,12 +1650,14 @@ class Tree
 
           options[:exclamations_args] = Path.split(target)[branch.length-1..-1]
 
+          options[:children_line] = i-1
           found = branch.length - 2   # Pretend like parent matched
           next
         end
 
         next if target_match != :shorter && target_match != :same # &&   # If we found where patch matched
 
+        options[:children_line] = i
         found = branch.length - 1   # Found, remember indent
 
       else

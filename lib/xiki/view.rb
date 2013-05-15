@@ -1058,6 +1058,7 @@ class View
   end
 
   def self.name
+    return nil if ! $el
     $el.buffer_name
   end
 

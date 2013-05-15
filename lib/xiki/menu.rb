@@ -87,86 +87,6 @@ module Menu
       '
   end
 
-  def self.create *args
-    type = args[0]
-
-    return self.create_here if type == "here"
-    return self.create_class if type == "class"
-    return self.create_more(*args.drop(1)) if type == "more"
-
-    "- unknown option #{type} passed to .create!"
-  end
-
-  def self.create_here
-
-    # TODO: Handle various use cases
-      # "menu/create/here/" at left margin
-      # "@menu/create/here/" nested
-      # "menu/create/\n  here/" at left margin
-      # "@menu/create/\n  here/" nested
-
-    trunk = Xiki.trunk
-    if wrapper = trunk[-2]   # If @menu/create/here is nested
-      menu = Tree.root wrapper
-    else   # If put it under a fake menu
-
-      # What?  This is if it's not nested? - is this used?
-
-      # TODO: Go to left margin and remove menu...
-
-      Tree.to_root
-
-      Tree.kill_under
-      menu = "foo"
-      Line.sub! /([ +-]*).*/, "\\1#{menu}/"
-      # Insert it wherever we are
-    end
-    Xiki.dont_search
-
-    name_text = menu == "foo" ?
-      "and change '#{menu}' to something" :
-      "to go under the '#{menu}' menu"
-
-    snake = TextUtil.snake_case menu
-
-    Tree << "
-      | Supply a few items here. Then do as+menu (type Ctrl-a Ctrl-m) to create
-      | the '#{menu}' menu. Or, just create '~/menu/#{snake}.menu' yourself.
-      - example item/
-        - another/
-      - and another/
-      "
-
-    nil
-
-  end
-
-  def self.create_class
-    trunk = Xiki.trunk
-    if wrapper = trunk[-2]
-      # Just do in-line
-      menu = TextUtil.snake_case Tree.root(wrapper)
-    else
-      menu = 'foo'
-    end
-
-    Xiki.dont_search
-
-    Tree << %`
-      | Update this sample class to your liking. Then do as+update (type
-      | Ctrl-a, Ctrl-u) to create the '#{menu}' class file.
-      - @~/menu/
-        - #{menu}.rb
-          | class #{TextUtil.camel_case(menu)}
-          |   def self.menu *args
-          |     "- sample item/\\n- Args Passed: \#{args.inspect}\\n- Customize me in) @~/menu/#{menu}.rb"
-          |   end
-          | end
-      - more examples) @menu/api/classes/
-      `
-    nil
-  end
-
   def self.simple_class *args
     root = 'foo'
     trunk = Xiki.trunk
@@ -499,7 +419,13 @@ module Menu
 
   # Probably make this supercede to_menu.
   # Note this works for patterns as well as menus.
-  def self.to_menu_unified
+  def self.to_menu
+
+    return self.to_menu_old if Keys.prefix_u
+
+    item = Line.without_label
+    item = Path.split(item)[-1]   # Grab last item (in case multiple items on the same line separated by slashes)
+
     path = Tree.path_unified
     options = Expander.expanders path
 
@@ -515,20 +441,30 @@ module Menu
       return
     end
 
-    # Must be [file, line], so open and jump to line...
+    # Must be [file, line_number], so open and jump to line...
 
-    View.open source[0]
-    View.line = source[1] if source[1]
+    file, line_number = source
+
+    View.open file
+    return View.line = line_number if line_number
+
+    # Try to find string we were on when key was pressed
+    if item
+      orig = View.cursor
+      View.to_highest
+      item = Search.quote_elisp_regex item
+      item.sub! /^(- |\\\+ )/, "[+-] \\.?"   # match if + instead of -, or dot after bullet
+      found = Search.forward item
+      Item.to_beginning
+      View.cursor = orig if ! found
+    end
   end
 
-  def self.to_menu
-
-    prefix = Keys.prefix
-    return self.to_menu_unified if prefix != :u
-
-    # Get root...
+  def self.to_menu_old
 
     line = Line.without_label
+
+    # Get root...
 
     # Take best guess, by looking through dirs for root
     trunk = Xiki.path
@@ -620,16 +556,6 @@ module Menu
 
     root = TextUtil.snake_case(root).sub(/^_+/, '')
 
-    # TODO: Update this for new text after Unified (possibly there probably won't be any text)
-    if Line.value(2) =~ /^ +\| Supply a few items here/   # If sample text, remove
-      Line.next
-      while Line.=~(/^ +\| /)
-        Line.delete
-      end
-      Line.previous
-      orig = nil
-    end
-
     Tree.after_children
     right = View.cursor
     View.cursor = left
@@ -639,7 +565,11 @@ module Menu
     txt = View.txt left, right
     txt.sub! /.+\n/, ''
     txt.gsub! /^  /, ''
-    txt.unindent
+
+    # Remove help text that prompts you to create the menu with the items (if exists)
+    txt.sub! /^ +> Make this into a menu\?\n +\| Create the .+\n.+\n/, ''
+    # Remove help text that prompts you to update menus
+    txt.sub! /^ +> Update this menu\?\n +\| Save changes.+\n.+\n.+\n/, ''
 
     return Tree << "| You must supply something to put under the '#{root}' menu.\n| First, add some lines here, such as these:\n- line/\n- another line/\n" if txt.empty?
 
@@ -1116,7 +1046,7 @@ module Menu
       "notes"=>NotesHandler,
       "html"=>HtmlHandler,
       "markdown"=>MarkdownHandler,
-      "boostrap"=>BoostrapHandler,
+      "bootstrap"=>BootstrapHandler,
       "txt"=>TxtHandler,
       "py"=>PythonHandler,
       "js"=>JavascriptHandler,
@@ -1133,10 +1063,13 @@ module Menu
   def self.handle options
     sources = options[:sources][-1]
 
+    raise "no sources?" if ! sources
+
     # Make 'ex' map from extensions to source files
 
-    ex = {}   # {"/"=>"a/", "rb"=>"a.rb"}
-    sources.each do |source|
+    options[:ex] = ex = {}   # {"/"=>"a/", "rb"=>"a.rb"}
+    sources.each_with_index do |source, i|
+      options[:source_index] = i
       key = source[/\w+$|\/$/]
       ex[key] = source if key
     end
@@ -1149,7 +1082,7 @@ module Menu
 
     # Always run "*" handlers
     @@handlers["*"].each do |handler|
-      handler.handle options, ex
+      handler.handle options
     end
 
     extensions = ex.keys.sort{|a, b| (@@handlers_order[a]||100000) <=> (@@handlers_order[b]||100000)}   # Sort by order in hash (it has the correct priority)
@@ -1157,20 +1090,20 @@ module Menu
     extensions.each do |o|
       handler = @@handlers[o]
       next if ! handler
-      handler.handle options, ex
+      handler.handle options
     end
 
     return options[:output] if options[:output] || options[:halt]
 
-    # If we get through everything and just a dir...
-
-    # Old (we're kind of handling this in the invoker now):
-    # Maybe we don't need to show no output?
-    # - If we do, probably go back to using :silent_output option
-    #   - This means .menu_after has to set :silent_output=>1 to avoid seeing "no output"
-    #     - Does it necessarily?
-    #       - No, we could probably auto-set it when menu_after returns something!
-    #     options[:output] = "@flash/- no output!"
+    if options[:client] =~ /^editor\b/ && sources.find{|o| o =~ /\.menu$/}
+      options[:output] = "
+        > Update this menu?
+        | Save changes you made to this menu?  Alternately you can type
+        | as+menu as a shortcut (meaning type Ctrl+a Ctrl+m).
+        @as menu/
+        "
+      options[:no_slash] = 1
+    end
 
     nil
   end

@@ -25,8 +25,9 @@
     |     - pugs/
     |   - cats/
     |
-    | To save, with your cursor on the menu or one of the items, type
-    | as+menu (meaning Control+A, Control+M).
+    | To save, simply double-click on one of the items and you'll be
+    | prompted to save.  Or, with your cursor on the menu or one of
+    | the items, type as+menu (meaning Control+A, Control+M).
 - notes/
   @~/menu/<name>.notes
     | > A heading
@@ -96,7 +97,7 @@
   - wrap other menu/
     - by name/
       @~/menu/<name>.rb
-        | Xiki["tables/foo//", options[:items]]
+        | Xiki["tables/foo//", args]
     - by bookmark/
       @~/menu/<name>.rb
         | Xiki["$tm//", options[:items]]
