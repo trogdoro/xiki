@@ -20,16 +20,16 @@ class Mark
     return if ! Color.colors_by_name[args[0]]   # Only continue if arg is an existing color
 
     Color.mark args[0]
-    nil
+    ""
   end
 
   def self.next
     Color.next
-    nil
+    ""
   end
   def self.previous
     Color.previous
-    nil
+    ""
   end
 
   def self.outline
@@ -52,7 +52,7 @@ class Mark
 
     Launcher.open txt, :no_launch=>1
 
-    nil
+    ""
   end
 
 
@@ -105,7 +105,7 @@ class Mark
     Tree.to_parent :u
     Move.to_quote
 
-    nil
+    ""
   end
 
   def self.delete
@@ -131,7 +131,7 @@ class Mark
       end
     end
 
-    nil
+    ""
   end
 end
 

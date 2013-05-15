@@ -115,11 +115,12 @@ module Xiki::Menu
     end
 
     def self.make_sample_files
+      dir = Tree.closest_dir yield[:ancestors]
 
-      Dir.mkdir "d" rescue nil
+      Dir.mkdir "#{dir}/d" rescue nil
 
       txt = "hello\nhi again\n"
-      ["a.txt", "b.txt", "d/aa.txt"].each { |path| File.open(path, "w") { |f| f << txt } }
+      ["a.txt", "b.txt", "d/aa.txt"].each { |path| File.open("#{dir}/#{path}", "w") { |f| f << txt } }
 
       "
       | Created these files:
@@ -128,7 +129,6 @@ module Xiki::Menu
       | - d/
       |   - aa.txt
       "
-
     end
 
     def self.if_not_repository branch
@@ -158,7 +158,8 @@ module Xiki::Menu
     end
 
     def self.add
-      self.add_internal "project - #{Tree.closest_dir}"
+      dir = Tree.closest_dir yield[:ancestors]
+      self.add_internal dir
     end
 
     def self.commit message=nil
@@ -472,7 +473,11 @@ module Xiki::Menu
 
         txt << untracked.join("")
 
-        txt = "| There were no differences. Try modifying a file first.\n" if ! txt.any?
+        return "
+          | There were no differences. Try modifying a file first.
+          | Or, to create a few sample files:
+          @git/setup/make sample files/
+          ".unindent if ! txt.any?
         return option + txt + "- add/\n- delete/\n- revert/\n"
       end
 
@@ -553,8 +558,7 @@ module Xiki::Menu
       siblings.select{|o| o !~ /^(commit|delete|revert|add)\// && o !~ /^\|/ }
     end
 
-    def self.add_internal project
-      dir = self.extract_dir project
+    def self.add_internal dir
 
       siblings = Tree.siblings
       # Error if no siblings
@@ -563,7 +567,9 @@ module Xiki::Menu
       end
 
       siblings = self.remove_options siblings
-      Console.run("git add #{siblings.join(' ')}", :dir=>dir)
+      command = "git add #{siblings.join("\\\n  ")}"
+
+      Console.run command, :dir=>dir
     end
 
     def self.commit_internal message, dir
@@ -574,10 +580,10 @@ module Xiki::Menu
       siblings = self.remove_options siblings
 
       unless siblings.any?   # Error if no siblings
-        return ".flash - You didn't provide any files to commit (on lines next to this menu, with no blank lines)"
+        return "@flash/- Provide some files (on lines next to this menu, with no blank lines, and no 'ignore untracked' label!"
       end
 
-      Console.run "git commit -m \"#{message}\" #{siblings.join(' ')}", :dir=>dir#, :no_enter=>true
+      Console.run "git commit -m \"#{message}\" #{siblings.join("\\\n  ")}", :dir=>dir#, :no_enter=>true
     end
 
     def self.revert project  #, file=nil
@@ -635,6 +641,14 @@ module Xiki::Menu
       |
       | /tmp/myproject/
       |   @git/
+      "
+    end
+
+    def self.create
+      dir = Tree.closest_dir yield[:ancestors]
+      result = Console.sync 'git init', :dir=>dir
+      "
+      | #{result.strip}
       "
     end
 
