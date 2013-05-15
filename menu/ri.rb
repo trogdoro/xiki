@@ -1,6 +1,5 @@
 class Ri
-  def self.menu
-    %`
+  MENU = %`
       > Type class or method here.  Examples...
       | String
       | File.new
@@ -24,7 +23,6 @@ class Ri
       - build index first/
         @% rvm docs generate-ri
       `
-  end
 
   def self.menu_after output, *args
     return if output
