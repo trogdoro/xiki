@@ -1,2 +1,0 @@
-class Memorize < Facts
-end

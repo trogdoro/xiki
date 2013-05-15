@@ -1,6 +1,5 @@
-class Facts
-  def self.menu
-    "
+class Memorize
+  MENU = "
     > Example
     | France : Paris
     | England : London
@@ -14,15 +13,12 @@ class Facts
       | way to digest and review facts.
       | Double-click on one of to lines to begin.
     "
-  end
 
-  def self.menu_hidden
-    "
+  MENU_HIDDEN = "
     - .show answer/
     - .I was wrong/
     - .I was right/
     "
-  end
 
   def self.i_was_right
 
@@ -154,7 +150,6 @@ class Facts
     txt = txt.sort_by{ rand }
     first = txt[0]
     first = first.sub /(.+) : (.+)/, "\\1 : ?"
-
     pending = txt.join("\n")+"\n"
 
     pending.gsub!(/\| /, "|...")

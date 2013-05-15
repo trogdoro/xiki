@@ -1,2 +1,0 @@
-class Questions < Facts
-end
