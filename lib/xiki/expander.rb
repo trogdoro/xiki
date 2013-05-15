@@ -188,10 +188,12 @@ class Expander
   # Expander.expand "ip"   # => "192.0.0.1"
   # @expander/docs/expanding/
   def self.expand *args
-    # Set break path down into attributes
+
+    # Break path down into attributes...
+
     options = self.parse *args
 
-    # Figure out what type of expander to use, and set some more attributes along the way
+    # Figure out what type of expander (to use and set some more attributes along the way)...
 
     self.expanders options
 
@@ -203,6 +205,8 @@ class Expander
       return "@flash/- Can't launch empty line!" if options[:path].blank?
       return "@flash/- No menu or pattern defined!"
     end
+
+    # Delegate to one or more expanders...
 
     options[:expanders_index] = 0
     options.delete :halt   # Any :halt from .expanders was only meant to stop looking for more expanders

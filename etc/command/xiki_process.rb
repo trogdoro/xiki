@@ -33,6 +33,8 @@ class XikiProcess
             menu_output = ""
           end
 
+          menu_output = menu_output.to_s
+
           menu_output.gsub! "\n", "\036"   # Escape linebreaks as 036 char (record separator)
           response.puts menu_output
           response.flush

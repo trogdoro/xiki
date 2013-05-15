@@ -1,8 +1,13 @@
 # Summary
 
-This file shows how to install Xiki.  For a description of Xiki see:
+This file shows how to install Xiki.  Xiki is like a shell console with GUI features.  It has a web interface, but rens best from a Xiki-enabled text interface.  It has menus for quickly getting started with using various tools and libraries.  Also you can easily create your own menus.
 
-http://xiki.org
+See http://xiki.org
+
+# Install Ruby 1.9.3
+
+On ubuntu, do: $ sudo apt-get install ruby1.9.3.
+On the mac, install rvm and the do: $ rvm install ruby-1.9.3
 
 # Install Xiki
 
@@ -10,18 +15,16 @@ Either install as a gem, or install from github.
 
 ## As a gem
 
-      $ sudo gem install xiki
+      $ gem install xiki --pre
 
 ## Or, from github
 
       $ git clone git://github.com/trogdoro/xiki.git
       $ cd xiki
-      $ sudo gem install bundler
-      $ sudo bundle install --system
-      $ sudo ruby etc/command/copy_xiki_command_to.rb /usr/local/bin/xiki
-
-You don't need "sudo" at the beginning if you're using rvm and your
-/usr/local/bin/ dir is writable.
+      $ cd checkout v1.0     # Only required temporarily, until the branch is merged in
+      $ sudo gem install bundler   # <- no "sudo" if using rvm
+      $ sudo bundle                # <- no "sudo" if using rvm
+      $ ruby etc/command/copy_xiki_command_to.rb /usr/bin/xiki   # or /usr/local/bin/xiki if using rvm
 
 # Verify the 'xiki' shell command works
 
@@ -31,95 +34,17 @@ It should delay slightly the first time, but be fast subsequent
 times.  If you run into errors and then fix them, you'll want to
 run the "xiki restart" command.
 
-# Configure your editor to use Xiki
+# Bring up the Xiki web interface
 
-## Emacs
+      $ xiki web/start
 
-Emacs is the most supported editor.  Don't worry though, you don't
-have to know emacs to use it with Xiki.
+Then follow the instructions you see (it tells you to go to http://localhost:8161).
 
-### Step 1: Download Emacs
-
-#### On Mac:
-
-- Try Aquamacs if you're new to emacs (it's more mac-like)
-   - http://aquamacs.org/download-classic.shtml
-   - works well with rvm, because it loads .bash_login
-- Or
-   - http://emacsformacosx.com
-
-#### On Linux:
-
-      $ sudo apt-get install emacs
-
-#### On Windows:
-
-We just patched el4r, so there's a chance Xiki might work in windows.
-
-- Skip the 'xiki' shell command step
-- Maybe try this emacs? http://ourcomments.org/Emacs/EmacsW32.html
-
-### Step 2: EmacsRuby (el4r) setup
-
-      $ cd `xiki directory`
-      $ sudo bash etc/install/el4r_setup.sh
-
-If you're using rvm, the sudo may not be necessary.
-
-### Step 3: Require Xiki in EmacsRuby's config
-
-Add these lines to the end of ~/.el4r/init.rb and then restart emacs if you already had it open.
-
-    $LOAD_PATH.unshift "(xiki directory)/lib"   # <- substitute (xiki directory) with the output of "xiki directory"
-    require 'xiki'
-    Xiki.init
-
-    KeyBindings.keys   # Use default key bindings
-    Themes.use "Default"  # Use xiki theme
-
-### If you get an error
-
-If you got partially through the load...
-
-- Try running "xiki stop"
-- Try using rvm and ruby 1.9.3
-  - Run "rvm use --default 1.9.3"
-- You may be able to use these keys to trouble-shoot:
-   - Option+e to look at the latest error in the log
-   - Option+l to reload xiki and .emacs
-      - also use this when you see "el4r-instance is dead"
-- If you can't use the keys, look at the log
-   - Named something like: /tmp/el4r......log
-   - Go to the end and search backward for the last error
-      - probably contains ":Error:"
-   - Restart emacs (or reload .emacs) manually to reload
-- See "Issues Loading Xiki" buffer (under "Window" menu bar menu)
-- If your install via github,
-  - "bundle install" may have installed a duplicate "xiki" command
-    - if "which xiki" returns a file not in /usr/local/bin/, delete it
-
-## Vim
-
-Vim support is very partially implemented, but should be pretty
-straight-forward to implement.  It turns out vim is very easy to
-extend using ruby.  See this file to try it out:
-
-(xiki directory)/etc/vim/vim_status.notes
-
-## CodeMirror
-
-There's a simple prototype working, though it's not committed yet.
-
-## Other editors
-
-Are you in the bay area and savvy at extending your editor (vim,
-sublime, textmate, rubymine)?  Ping me on the google group and
-we'll get together and pair on making a Xiki extension for it.
-
-# Google group
+# Getting help
 
 Join the google group for help with installing, or to chat about
 whatever or share your ideas:
 
 http://groups.google.com/group/xiki
 
+Or tweet to @xiki.

@@ -70,7 +70,7 @@ class Invoker
     if menu_text
 
       menu_text = menu_text.unindent if menu_text =~ /\A[ \n]/
-      txt = Tree.children menu_text, args
+      txt = Tree.children menu_text, args, options
 
       # If there was output use it, otherwise try routing (dotifying)
 
@@ -180,7 +180,7 @@ class Invoker
       return nil if some_method_ran   # Only say "no output" if didn't call .menu, .menu_before|_after, or other action
 
       # For now, let's try not doing this
-      txt = "@flash/- no output!"
+      txt = "@flash/- no output!" if options[:client] =~ /^editor\b/
     end
 
     txt
