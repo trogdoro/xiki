@@ -2,6 +2,10 @@ require 'daemons'
 require 'net/http'
 class Web
 
+  MENU_HIDDEN = "
+    - .stop/
+    "
+
   # What was this doing?
   def self.menu_after output, *path
     return if output
@@ -20,19 +24,19 @@ class Web
 
     status = Console.sync "ruby -rubygems sinatra_control.rb start", :dir=>"#{Xiki.dir}etc/www/sinatra_server.rb"
 
-    if status =~ /^error/i
+    # If not one of the 2 statuses we expect, error out...
+
+    if status != "" and status !~ /^pid-file for killed process/
       return "
-        > Already running...
+        > Error...
         #{Tree.quote status.strip}
         ".unindent +
-        self.urls_message +
+        #self.urls_message +
         "
-        > Try stopping
-        @web/control/stop/
+        > Try stopping if already running
+        $ xiki web/control/stop/
         ".unindent
     end
-
-    status = Tree.quote(status) if status.any?
 
     "> Started...\n#{self.urls_message}"
   end
@@ -41,14 +45,14 @@ class Web
     "
     Go to this url in your web browser:
       http://localhost:8161
-    Or, if you've setup apache per @web/setup/apache/, go to:
+    Or, if you've set up apache per @web/setup/apache/, go to:
       http://xiki
     ".unindent
   end
 
   def self.stop
     output = Console.sync "ruby -rubygems sinatra_control.rb stop", :dir=>"#{Xiki.dir}etc/www/sinatra_server.rb"
-    Tree.quote output
+    "> Stopping...\n#{Tree.quote output}"
   end
   def self.restart
     output = Console.sync "ruby -rubygems sinatra_control.rb restart", :dir=>"#{Xiki.dir}etc/www/"

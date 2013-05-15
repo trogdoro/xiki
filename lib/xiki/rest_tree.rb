@@ -92,17 +92,3 @@ class RestTree
   end
 
 end
-
-
-Launcher.add(/^.*(- )?GET \/.+/) do
-  line = Line.without_label
-
-  regex, url = /GET \/(.+?)\/ (.+)/.match(line)[1..2]
-  url = "http://#{url}" unless url =~ %r"http://"
-  url.gsub! ' ', '+'
-
-  result = RestTree.request "GET", url
-
-  result = result.split("\n").grep(/#{regex}/i).join("\n")
-  Tree.under result, :no_slash=>1
-end

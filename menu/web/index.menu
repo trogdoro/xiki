@@ -63,9 +63,9 @@
   | The Xiki web interface lets you use Xiki menus via a web browser.
 
   > Example Menus
-  | @ip/
-  | @animals/
-  | @dbs/
+  @ip/
+  @animals/
+  @dbs/
 
   > Getting Started
   | You can create menus with any plain text editor, and access them via the web interface.

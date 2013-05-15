@@ -59,7 +59,7 @@ class Browser
       file = Tree.construct_path
     else
       # Put this somewhere wher it works in file tree as well
-      return Browser.html(Markdown.render(View.txt)) if View.extension == "markdown"   # If .markdown, render it
+      return Browser.html(self.markdown_render View.txt) if View.extension == "markdown"   # If .markdown, render it
       file = View.file
     end
 
@@ -80,6 +80,11 @@ class Browser
     end
 
     self.url file
+  end
+
+  def self.markdown_render txt
+    require "#{Xiki.dir}menu/markdown.rb" if ! defined? Markdown
+    Markdown.render txt
   end
 
   def self.tabs

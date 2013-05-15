@@ -11,7 +11,7 @@ Xiki.def(/^([$%&]) (.+)/) do |path, options|
 end
 
 # Url's
-Xiki.def(%r"^(http|file).?://") do |path, options|
+Xiki.def(%r"^(https?://[^/]|file://)") do |path, options|
 
   # Todo: make this work when no editor
 
@@ -82,3 +82,37 @@ Xiki.def(/^pg /) do |line|
   CodeTree.run "puts JSON.pretty_generate(#{line})"
 end
 
+
+# GET http://foo.com
+#  and
+# GET /regex/ http://foo.com
+Xiki.def(/^(- )?GET /) do |path, options|
+  url = path.sub(/^GET /, '')
+
+  regex = url.slice! %r"^/.+?/ "
+
+  url = "http://#{url}" unless url =~ %r"http://"
+  url.gsub! ' ', '+'
+
+  html = RestTree.request "GET", url
+
+  if regex
+    regex = regex[%r"/(.*)/ $", 1]   # "
+    html = html.split("\n").grep(/#{regex}/i).join("\n")
+  end
+
+  html = Tree.quote(html) if html !~ /^[>|] / && html !~ /\A.+\/$/
+  html
+end
+
+# http:/foo.com (only one slash means show result)
+# Xiki.def(%r"^http:/.+") do |url, options|
+Xiki.def(%r"^http:(/|///)[^/]") do |url, options|
+  url.sub! %r"/+", "//"
+  url.gsub! ' ', '+'
+
+  html = RestTree.request "GET", url
+
+  html = Tree.quote(html) if html !~ /^[>|] / && html !~ /\A.+\/$/
+  html
+end
