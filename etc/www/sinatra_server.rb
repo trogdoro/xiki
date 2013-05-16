@@ -18,7 +18,8 @@ class SinatraServer < Sinatra::Base
   set :bind, '127.0.0.1'
 
   get %r{^/_reload$} do
-    load "/projects/xiki/etc/www/sinatra_server.rb"
+    xiki_directory = File.expand_path "#{File.dirname(__FILE__)}/../.."
+    load "#{xiki_directory}/etc/www/sinatra_server.rb"
     ".flash - done"
   end
 
@@ -35,9 +36,9 @@ class SinatraServer < Sinatra::Base
     if txt =~ /\A<\w/
       return txt
     elsif txt =~ /\A@html\/\n  /
-      xiki_dir = File.expand_path "#{File.dirname(__FILE__)}/../.."
+      xiki_directory = File.expand_path "#{File.dirname(__FILE__)}/../.."
 
-      $:.unshift "#{xiki_dir}/lib"
+      $:.unshift "#{xiki_directory}/lib"
       ["xiki/tree"].each{|o| require o}
 
       txt.slice! /.+\n/
@@ -48,9 +49,9 @@ class SinatraServer < Sinatra::Base
 
     elsif txt =~ /\A@bootstrap\/\n  /
 
-      xiki_dir = File.expand_path "#{File.dirname(__FILE__)}/../.."
+      xiki_directory = File.expand_path "#{File.dirname(__FILE__)}/../.."
 
-      $:.unshift "#{xiki_dir}/lib"
+      $:.unshift "#{xiki_directory}/lib"
       # Probably remove menu3 from the path
       ["xiki/ol", "xiki/core_ext", "xiki/line", "xiki/tree", "../../menu3/bootstrap"].each{|o| require o}
 
@@ -267,16 +268,15 @@ class SinatraServer < Sinatra::Base
 
   end
 
-
+  # Handles /
   def default
     txt = `xiki web/docs/`
     htmlify txt
   end
 
-
+  # Handles most requests
   def index menu
     no_keys = false
-
     if ENV['REQUEST_METHOD'] == "POST"
       cgi = CGI.new
       post_txt = cgi['txt']
