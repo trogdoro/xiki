@@ -69,10 +69,10 @@
 
   > Getting Started
   | You can create menus with any plain text editor, and access them via the web interface.
-  | create menus manually/
+  @create menus manually/
 
   | Eventually you'll probably want to Xiki-enable an editor.  Using Xiki from an editor is the primary way to use it.
-  | @editor setup/
+  @editor setup/
 
   > Show all menus
   | @all/
