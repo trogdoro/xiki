@@ -1,6 +1,5 @@
 class Gems
-  def self.menu
-    "
+  MENU = "
     - .list/
       - */
         - */
@@ -9,7 +8,6 @@ class Gems
           - .uninstall/
     - .environment/
     "
-  end
 
   def self.list name=nil
 
@@ -27,12 +25,6 @@ class Gems
     versions = versions.split ", "
 
     return versions.map{|o| "#{o}/"}
-
-
-    #     # If version passed, show options
-    #     "
-    #     - nothing at this point/
-    #     "
 
   end
 

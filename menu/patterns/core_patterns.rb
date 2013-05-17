@@ -65,7 +65,7 @@ end
 # puts ...
 # etc.
 
-Xiki.def(/^(p|y|pp|puts|Ol) /) do |line|
+Xiki.def(/^(p|y|pp|puts|Ol|Ol\.ap) /) do |line|
   CodeTree.run line, :quote=>1
 end
 

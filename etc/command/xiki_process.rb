@@ -1,3 +1,8 @@
+require 'xiki/ol'
+
+require "active_support"
+require "active_support/time"
+
 require 'xiki/core_ext'
 require 'xiki/menu'
 require 'xiki/launcher'
