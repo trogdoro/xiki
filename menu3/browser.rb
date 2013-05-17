@@ -40,8 +40,22 @@ class Browser
 
   def self.open_in_browser
 
-    if Keys.prefix_u   # Open as http://xiki/...
-      path = Tree.path.join("\n")
+    path = Tree.path.join("\n")
+
+    prefix = Keys.prefix
+    line = Line.value
+    use_tree_at_cursor = line =~ /(^ *[|+-]|\/$)/   # If ends in slash or bullet or quote
+    use_tree_at_cursor = nil if prefix == :u   # If C-u, always use the surrounding file
+
+    # If Dash+, open in browser with "//" on end (as menufied)
+    if prefix == :-
+      use_tree_at_cursor = true
+      path.sub! /\.\w+$/, ''   # remove extension
+      path = "@#{path}"
+      path.sub! /\/?$/, "//"
+    end
+
+    if use_tree_at_cursor   # Open as http://xiki/...
       path.gsub! ' ', '-'
 
       url = "http://xiki/#{path}"
