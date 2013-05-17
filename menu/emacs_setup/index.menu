@@ -30,6 +30,14 @@ update el4rrc/
   !
   ! File.open(File.expand_path("~/.el4rrc.rb"), "w") { |f| f << txt }
   ! "- Created the ~/.el4rrc.rb file."
+update initrb/
+  ! txt = File.read("#{Xiki.dir}menu/emacs_setup/initrb_default.txt")
+  ! txt.sub!("{{xiki_dir}}", Xiki.dir)
+  !
+  ! el4r_dir = File.expand_path("~/.el4r")
+  ! Dir.mkdir(el4r_dir) if ! File.exists?(el4r_dir)
+  ! File.open("#{el4r_dir}/init.rb", "w") { |f| f << txt }
+  ! "- Created the ~/.el4r/init.rb file."
 
 > TODO
 - finish!
