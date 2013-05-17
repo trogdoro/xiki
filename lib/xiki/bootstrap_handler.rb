@@ -7,10 +7,10 @@ class BootstrapHandler
 
     txt = File.read "#{options[:last_source_dir]}#{source}"
 
-    if options[:client] == :web
-      txt = Bootstrap.render txt
+    if options[:client] == "web"
+      require "#{Xiki.dir}menu/bootstrap.rb" if ! defined? Xiki::Menu::Bootstrap
+      txt = Xiki::Menu::Bootstrap.render txt
     end
-
     options[:output] = txt
   end
 end

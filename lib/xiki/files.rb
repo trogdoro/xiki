@@ -142,10 +142,15 @@ class Files
   end
 
   def self.open_tail
-    bm = Keys.input(:timed=>true, :prompt=>"Enter bookmark of file to tail (or period for current file): ")
-    file = (bm == ".") ?
-      View.file :
-      Bookmarks["$#{bm}"]
+    file = Tree.file :at_cursor=>1
+
+    # If cursor is on a file tree, use it...
+
+    if ! file || Keys.prefix_u
+      bm = Keys.input(:timed=>true, :prompt=>"Enter bookmark of file to tail (or period for current file): ")
+      file = (bm == ".") ? View.file : Bookmarks["$#{bm}"]
+    end
+
     Console.run "tail -f #{file}", :buffer => "*tail of #{file}"
   end
 

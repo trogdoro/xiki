@@ -33,14 +33,16 @@ Either install as a gem, or install from github.
 
 It should delay slightly the first time, but be fast subsequent
 times.  If you run into errors and then fix them, you'll want to
-run the "xiki stop" command.  Also take a look at the process log
-for errors (/tmp/xiki_process.rb.output).
+run the "xiki stop" command.  See the process log for
+trouble-shooting (/tmp/xiki_process.rb.output).
 
 ## Bring up the Xiki web interface
 
       $ xiki web/start
 
 Then follow the instructions you see (it tells you to go to http://localhost:8161).
+
+See the web log for trouble-shooting (/tmp/xiki_web.output).
 
 ## Getting help
 

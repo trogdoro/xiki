@@ -455,7 +455,7 @@ module Menu
       item = Search.quote_elisp_regex item
       item.sub! /^(- |\\\+ )/, "[+-] \\.?"   # match if + instead of -, or dot after bullet
       found = Search.forward item
-      Item.to_beginning
+      Move.to_axis
       View.cursor = orig if ! found
     end
   end

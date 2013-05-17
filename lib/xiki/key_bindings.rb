@@ -79,7 +79,7 @@ class KeyBindings
     Keys.open_as_2 { FileTree.open_as_upper(:second) }
     Keys.open_as_root { Files.open_sudo }
     Keys.open_a_shell { Console.open }
-    Keys.open_as_tail { Files.open_tail }
+    Xiki.def("open+as+tail"){ Files.open_tail }
     Keys.open_bookmark { Bookmarks.go }
 
 

@@ -1848,18 +1848,21 @@ class Tree
   end
 
   # Returns the dir or file that a @menu is nested under.
+  # If cursor is on a file path, return just it.
   #
   # Tree.file
   # Tree.file :require=>1   # Shows message if not nested under something
   # Tree.file :require=>'dir'   # Shows message if not nested under a dir
   # Tree.file :require=>'file'   # Shows message if not nested under a file
+  # Tree.file :at_cursor=>1   # Returns path only if cursor is on a file
   def self.file options={}
     path = self.path
 
     # If tree we're in is a file tree, they probably just wanted that
 
     return Bookmarks[path[-1]] if FileTree.handles? path[-1]
-    # Just return it if we're under a dir
+
+    return nil if options[:at_cursor]
 
     dir = path[-2]
 

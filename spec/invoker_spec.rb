@@ -22,3 +22,45 @@ describe Invoker, "#actionify" do
     Invoker.actionify(["act", "act2", "b"], [true, true, nil]).should == ["act2", ["b"]]
   end
 end
+
+describe Invoker, "#extract_ruby_package" do
+  it "no module" do
+    Invoker.extract_ruby_package("
+      class Foo
+      end
+      ".unindent).should == nil
+  end
+
+  it "extracts one module" do
+    Invoker.extract_ruby_package("
+      module Modern
+        class Foo
+        end
+      end
+      ".unindent).should == "Modern"
+  end
+
+  it "extracts two modules" do
+    Invoker.extract_ruby_package("
+      module Modern
+        module Modest
+          class Foo
+          end
+        end
+      end
+      ".unindent).should == "Modern::Modest"
+  end
+
+  it "isn't confused by stuff after start of class" do
+    Invoker.extract_ruby_package("
+      module Modern
+        # stuff
+        class Foo
+        end
+        module Herring
+        end
+      end
+      ".unindent).should == "Modern"
+  end
+
+end

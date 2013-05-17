@@ -49,16 +49,18 @@ class SinatraServer < Sinatra::Base
 
     elsif txt =~ /\A@bootstrap\/\n  /
 
+      # Maybe move this to inside Expander. Convert to html
+      # if :client=>"web"
+
       xiki_directory = File.expand_path "#{File.dirname(__FILE__)}/../.."
 
       $:.unshift "#{xiki_directory}/lib"
-      # Probably remove menu3 from the path
-      ["xiki/ol", "xiki/core_ext", "xiki/line", "xiki/tree", "../../menu3/bootstrap"].each{|o| require o}
+      ["xiki/ol", "xiki/core_ext", "xiki/line", "xiki/tree", "../../menu/bootstrap"].each{|o| require o}
 
       txt.slice! /.+\n/
       txt = txt.unindent
 
-      txt = Bootstrap.render txt
+      txt = Xiki::Menu::Bootstrap.render txt
 
       return txt
     end
@@ -294,7 +296,7 @@ class SinatraServer < Sinatra::Base
 
     menu.sub! /^@/, ''
     menu.gsub! /-/, ' '
-    command = "xiki '#{menu}'"
+    command = "xiki -cweb '#{menu}'"
     txt = `#{command}`
 
     #   rescue e=>Exception
@@ -350,9 +352,10 @@ class SinatraServer < Sinatra::Base
     end
 
     # Html-ify and print output...
-
-    html = htmlify txt, :no_keys=>no_keys
-    html
+    if txt !~ /^\s+<.+>$/
+      txt = htmlify txt, :no_keys=>no_keys
+    end
+    txt
 
   rescue Exception=>e
     "<pre>#{e.message}\n#{e.backtrace}</pre>"

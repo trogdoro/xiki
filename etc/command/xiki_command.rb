@@ -19,7 +19,6 @@ class XikiCommand
 
   # Called by the 'xiki' shell command
   def self.run
-
     xiki_dir = File.expand_path "#{File.dirname(__FILE__)}/../.."
     argv = ARGV
 
@@ -35,6 +34,9 @@ class XikiCommand
     path = path.join ' '
 
     return self.emacs path if flags.member?("-e")   # If -p, just prompt user to type a menu name
+
+    client = flags.find{|o| o =~ /^-c/}
+    path = "#{client} #{path}"
 
     wasnt_running = false
 
@@ -113,10 +115,9 @@ class XikiCommand
 
   def self.get_response
 
-    # Simulate timeout error if process not running
-    #     process_running = `ps -A` =~ /xiki_process.rb/
-    process_running = `ps x` =~ /xiki_process.rb/
+    # Simulate timeout error if process not running...
 
+    process_running = `ps x` =~ / xiki_process.rb *$/
     if ! process_running
       raise Timeout::Error
     end

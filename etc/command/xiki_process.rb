@@ -11,7 +11,6 @@ class XikiProcess
   def self.run
 
     open('/tmp/xikirequest', 'r+') do |f|
-
       open('/tmp/xikiresponse', 'w+') do |response|
         loop do
 
@@ -20,11 +19,14 @@ class XikiProcess
           path = XikiCommand.pop_initial_request || f.gets
           path.strip!
 
+          options = {}
+          options[:client] = "web" if path.slice!(/^-cweb /)
+
           # Invoke menu and send response...
 
           menu_output =
             begin
-              Xiki[path]
+              Xiki[path, options]
             rescue Exception=>e
               "#{e.message}\n#{e.backtrace.join("\n")}"
             end

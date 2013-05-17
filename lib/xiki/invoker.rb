@@ -209,7 +209,12 @@ class Invoker
   end
 
   def self.extract_ruby_package txt
-    txt[/^module (.+)/, 1]
-  end
 
+    txt = txt.sub /^ *class .+/m, ""   # Remove everything after 1st class... line
+
+    txt = txt.scan(/^ *module (.+)/).map{|o| o[0]}.join("::")
+
+    return nil if txt == ""
+    txt
+  end
 end
