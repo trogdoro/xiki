@@ -1,3 +1,5 @@
+module Xiki
+module Menu
 class Bootstrap
 
   #   @@relative = ""
@@ -246,6 +248,8 @@ class Bootstrap
         - javascript.html
         - base-css.html
         - getting-started.html#examples
+    - see/
+      @fontawesome/
     `
 
   @@bg = ['#eee', '#555', '#999', '#9D261D', '#369', '#096']
@@ -265,11 +269,7 @@ class Bootstrap
   }
 
   @@icons = [
-    '000_glass', '001_leaf', '002_dog', '003_user', '004_girl', '005_car', '006_user_add', '007_user_remove', '008_film', '009_magic', '010_envelope', '011_camera', '012_heart', '013_beach_umbrella', '014_train', '015_print', '016_bin', '017_music', '018_note', '019_cogwheel', '020_home', '021_snowflake', '022_fire', '023_cogwheels', '024_parents', '025_binoculars', '026_road', '027_search', '028_cars', '029_notes_2', '030_pencil', '031_bus', '032_wifi_alt', '033_luggage', '034_old_man', '035_woman', '036_file', '037_credit', '038_airplane', '039_notes', '040_stats', '041_charts', '042_pie_chart', '043_group', '044_keys', '045_calendar', '046_router', '047_camera_small', '048_dislikes', '049_star', '050_link', '051_eye_open', '052_eye_close', '053_alarm', '054_clock', '055_stopwatch', '056_projector', '057_history', '058_truck', '059_cargo', '060_compass', '061_keynote', '062_attach', '063_power', '064_lightbulb', '065_tag', '066_tags', '067_cleaning', '068_ruller', '069_gift', '070_umbrella', '071_book', '072_bookmark', '073_signal', '074_cup', '075_stroller', '076_headphones', '077_headset', '078_warning_sign', '079_signal', '080_retweet', '081_refresh', '082_roundabout', '083_random', '084_heat', '085_repeat', '086_display', '087_log_book', '088_adress_book', '089_magnet', '090_table', '091_adjust', '092_tint', '093_crop', '094_vector_path_square', '095_vector_path_circle', '096_vector_path_polygon', '097_vector_path_line', '098_vector_path_curve', '099_vector_path_all',
-
-    # Less interesting ones - don't show
-
-    '100_font', '101_italic', '102_bold', '103_text_underline', '104_text_strike', '105_text_height', '106_text_width', '107_text_resize', '108_left_indent', '109_right_indent', '110_align_left', '111_align_center', '112_align_right', '113_justify', '114_list', '115_text_smaller', '116_text_bigger', '117_embed', '118_embed_close', '119_adjust', '120_message_full', '121_message_empty', '122_message_in', '123_message_out', '124_message_plus', '125_message_minus', '126_message_ban', '127_message_flag', '128_message_lock', '129_message_new', '130_inbox', '131_inbox_plus', '132_inbox_minus', '133_inbox_lock', '134_inbox_in', '135_inbox_out', '136_computer_locked', '137_computer_service', '138_computer_proces', '139_phone', '140_database_lock', '141_database_plus', '142_database_minus', '143_database_ban', '144_folder_open', '145_folder_plus', '146_folder_minus', '147_folder_lock', '148_folder_flag', '149_folder_new', '150_check', '151_edit', '152_new_window', '153_more_windows', '154_show_big_thumbnails', '155_show_thumbnails', '156_show_thumbnails_with_lines', '157_show_lines', '158_playlist', '159_picture', '160_imac', '161_macbook', '162_ipad', '163_iphone', '164_iphone_transfer', '165_iphone_exchange', '166_ipod', '167_ipod_shuffle', '168_ear_plugs', '169_albums', '170_step_backward', '171_fast_backward', '172_rewind', '173_play', '174_pause', '175_stop', '176_forward', '177_fast_forward', '178_step_forward', '179_eject', '180_facetime_video', '181_download_alt', '182_mute', '183_volume_down', '184_volume_up', '185_screenshot', '186_move', '187_more', '188_brightness_reduce', '189_brightness_increase', '190_circle_plus', '191_circle_minus', '192_circle_remove', '193_circle_ok', '194_circle_question_mark', '195_circle_info', '196_circle_exclamation_mark', '197_remove', '198_ok', '199_ban',
+    'expand-alt', 'frown', 'meh', 'gamepad', 'keyboard', 'flag-alt', 'flag-checkered', 'mail-forward', 'mail-reply', 'reply-all', 'mail-reply-all', 'star-half-empty', 'star-half-full', 'location-arrow', 'rotate-left', 'rotate-right', 'crop', 'unlink', 'question', 'info', 'superscript', 'subscript', 'puzzle-piece', 'microphone', 'microphone-off', 'shield', 'calendar-empty', 'fire-extinguisher', 'rocket', 'maxcdn', 'html5', 'css3', 'anchor', 'unlock-alt', 'bullseye', 'rss-sign', 'play-sign', 'ticket', 'minus-sign-alt', 'check-minus', 'level-up', 'level-down', 'check-sign', 'edit-sign', 'external-link-sign', 'share-sign', 'adjust', 'asterisk', 'ban-circle', 'bar-chart', 'barcode', 'beaker', 'beer', 'bell-alt', 'bell', 'bolt', 'book', 'bookmark-empty', 'bookmark', 'briefcase', 'bullhorn', 'calendar', 'camera-retro', 'camera', 'certificate', 'check-empty', 'check', 'circle-blank', 'circle', 'cloud-download', 'cloud-upload', 'cloud', 'code-fork', 'code', 'coffee', 'cog', 'cogs', 'collapse-alt', 'comment-alt', 'comment', 'comments-alt', 'comments', 'credit-card', 'crop', 'dashboard', 'desktop', 'download-alt', 'download', 'edit', 'ellipsis-horizontal', 'ellipsis-vertical', 'envelope-alt', 'envelope', 'eraser', 'exchange', 'exclamation-sign', 'exclamation', 'external-link-sign', 'external-link', 'eye-close', 'eye-open', 'facetime-video', 'fighter-jet', 'film', 'filter', 'fire-extinguisher', 'fire', 'flag-alt', 'flag-checkered', 'flag', 'folder-close-alt', 'folder-close', 'folder-open-alt', 'folder-open', 'food', 'frown', 'gamepad', 'gift', 'glass', 'globe', 'group', 'hdd', 'headphones', 'heart-empty', 'heart', 'home', 'inbox', 'info-sign', 'info', 'key', 'keyboard', 'laptop', 'leaf', 'legal', 'lemon', 'level-down', 'level-up', 'lightbulb', 'location-arrow', 'lock', 'magic', 'magnet', 'mail-forward', 'mail-reply', 'mail-reply-all', 'map-marker', 'minus-sign-alt', 'minus-sign', 'minus', 'mobile-phone', 'money', 'move', 'music', 'off', 'ok-circle', 'ok-sign', 'ok', 'pencil', 'phone-sign', 'phone', 'picture', 'plane', 'plus-sign', 'plus', 'print', 'pushpin', 'puzzle-piece', 'qrcode', 'question-sign', 'question', 'quote-left', 'quote-right', 'random', 'refresh', 'remove-circle', 'remove-sign', 'remove', 'reorder', 'reply-all', 'reply', 'resize-horizontal', 'resize-vertical', 'retweet', 'road', 'rocket', 'rotate-left', 'rotate-right', 'rss-sign', 'rss', 'screenshot', 'search', 'share-alt', 'share-sign', 'share', 'shopping-cart', 'sign-blank', 'signal', 'signin', 'signout', 'sitemap', 'smile', 'sort-down', 'sort-up', 'sort', 'spinner', 'star-empty', 'star-half-full', 'star-half-empty', 'star-half', 'star', 'tablet', 'tag', 'tags', 'tasks', 'terminal', 'thumbs-down', 'thumbs-up', 'ticket', 'time', 'tint', 'trash', 'trophy', 'truck', 'umbrella', 'unlock-alt', 'unlock', 'upload-alt', 'upload', 'user-md', 'user', 'volume-down', 'volume-off', 'volume-up', 'warning-sign', 'wrench', 'zoom-in', 'zoom-out', 'file', 'file-alt', 'cut', 'copy', 'paste', 'save', 'undo', 'repeat', 'text-height', 'text-width', 'align-left', 'align-center', 'align-right', 'align-justify', 'indent-left', 'indent-right', 'font', 'bold', 'italic', 'strikethrough', 'underline', 'superscript', 'subscript', 'link', 'unlink', 'paper-clip', 'columns', 'table', 'th-large', 'th', 'th-list', 'list', 'list-ol', 'list-ul', 'list-alt', 'angle-left', 'angle-right', 'angle-up', 'angle-down', 'arrow-down', 'arrow-left', 'arrow-right', 'arrow-up', 'caret-down', 'caret-left', 'caret-right', 'caret-up', 'chevron-down', 'chevron-left', 'chevron-right', 'chevron-up', 'chevron-sign-left', 'chevron-sign-right', 'chevron-sign-up', 'chevron-sign-down', 'circle-arrow-down', 'circle-arrow-left', 'circle-arrow-right', 'circle-arrow-up', 'double-angle-left', 'double-angle-right', 'double-angle-up', 'double-angle-down', 'hand-down', 'hand-left', 'hand-right', 'hand-up', 'play-circle', 'play-sign', 'play', 'pause', 'stop', 'eject', 'backward', 'forward', 'fast-backward', 'fast-forward', 'step-backward', 'step-forward', 'fullscreen', 'resize-full', 'resize-small', 'facebook', 'facebook-sign', 'twitter', 'twitter-sign', 'github', 'github-sign', 'html5', 'linkedin', 'linkedin-sign', 'maxcdn', 'pinterest', 'pinterest-sign', 'google-plus', 'google-plus-sign', 'ambulance', 'h-sign', 'hospital', 'medkit', 'plus-sign-alt', 'stethoscope', 'user-md',
   ]
 
   @@random = ["Info", "Facts", "B. S.", "Why?", "History", "Traits", "Story", "What?", "Happy"]
@@ -289,12 +289,13 @@ class Bootstrap
     # If just 3 siblings, continue as usual
 
     # If more siblings
-    CodeTree.do_kill_indented
-    txt = ['project name/Foo', 'hero/', 'row/', 'style/'].map{|o| "- #{o}\n"}.join('')
-    Line.previous
-    Tree << txt
-
-    nil   # Means we're handling collapse ourself
+    "
+    - project name/Foo
+    - hero/
+    - row/
+    - icon/
+    - style/
+    "
   end
 
   def self.content *args
@@ -333,11 +334,21 @@ class Bootstrap
       | }
       "
     elsif args == ['row']
-      ['span4/', 'span6/', 'span12/']
+      "
+      - span4/
+      - span6/
+      - span12/
+      "
     elsif args == ['hero']
-      ['h1/random', 'p/lorem ipsum...']
+      "
+      - h1/random
+      - p/lorem ipsum...
+      "
     else
-      ['h2/random', 'p/lorem ipsum...']
+      "
+      - h2/random
+      - p/lorem ipsum...
+      "
     end
   end
 
@@ -485,8 +496,7 @@ class Bootstrap
   end
 
   def self.icon_tag name
-    #     "<img class='bs-icon' src='http://xiki.loc/images/icons/glyphicons_#{name}.png'>"
-    "<img class='bs-icon' src='#{@@relative}/images/icons/glyphicons_#{name}.png'>"
+    "<i class='icon-large icon-#{name}'></i>"
   end
 
   def wrap_html_page
@@ -510,7 +520,16 @@ class Bootstrap
           </style>
           <!-- <link href="../assets/css/bootstrap-responsive.css" rel="stylesheet"> -->
 
-         <link href="http://netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/css/bootstrap-combined.min.css" rel="stylesheet">
+          <!--
+          <link href="http://netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/css/bootstrap-combined.min.css" rel="stylesheet">
+          -->
+
+
+          <link href="http://netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/css/bootstrap-combined.no-icons.min.css" rel="stylesheet">
+          <link href="http://netdna.bootstrapcdn.com/font-awesome/3.1.1/css/font-awesome.min.css" rel="stylesheet">
+
+
+
 
           <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
           <!--[if lt IE 9]>
@@ -593,8 +612,8 @@ class Bootstrap
           <!-- Le javascript
           ================================================== -->
           <!-- Placed at the end of the document so the pages load faster -->
-          <script src="#{@@assets}/js/jquery.js"></script>
-          <script src="#{@@assets}/js/bootstrap.js"></script>
+          <script src="http:////ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+          <script src="http://netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/js/bootstrap.min.js"></script>
 
       #{@scripts}
 
@@ -605,4 +624,6 @@ class Bootstrap
     result
   end
 
+end
+end
 end
