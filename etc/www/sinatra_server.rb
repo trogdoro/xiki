@@ -190,8 +190,8 @@ class SinatraServer < Sinatra::Base
     </style>
     `
 
-    #   output <<  %`<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.5/jquery.min.js"></script>`
-    output <<  %`<script src="http://xiki.loc/js/jquery.min.js"></script>`
+    output <<  %`<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>`
+    #     output <<  %`<script src="http://xiki.loc/js/jquery.min.js"></script>`
 
     if ! options[:no_keys]
       output <<  %`
