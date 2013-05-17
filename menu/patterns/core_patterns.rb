@@ -73,6 +73,13 @@ Xiki.def(/^(ap) /) do |line|
   CodeTree.run line, :quote=>1
 end
 
+Xiki.def(/^ao /) do |line|   # "awesome out"
+  line.inspect
+  line.sub! /^ao /, "Ol.ap "
+  CodeTree.run line, :quote=>1
+  nil
+end
+
 Xiki.def(/^print\(/) do |line|
   Javascript.launch
 end

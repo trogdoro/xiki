@@ -1,5 +1,37 @@
 > Summary
-This menu updates config files etc. for Xiki-enabling emacs.
+| This menu updates config files etc. for Xiki-enabling emacs.
+| Currently it requires a GUI version of emacs.  It won't run
+| in no-window mode.
+
+> 1. Check whether emacs is installed
+check for app/
+  ! # Probably just do `which emacs`?
+  ! "TODO: borrow from aquamacs setup"
+
+> 2. Update scripts etc
+update .emacs/
+  ! el4r_gem_lib = Gem::Specification.find_by_name("trogdoro-el4r").gem_dir+"/"
+  ! el4r_gem_dir = "#{el4r_gem_lib}data/emacs/site-lisp/"
+  !
+  ! txt = %`
+  !   (add-to-list 'load-path "#{el4r_gem_dir}")
+  !   (require 'el4r)
+  !   (el4r-boot)
+  !   `.unindent
+  !
+  ! File.open(File.expand_path("~/.emacs"), "w") { |f| f << txt }
+  ! "- Created the ~/.emacs file"
+  !
+  ! # Todo: warn this will update the .emacs file
+install/
+  ! "
+  ! TODO: do actual install
+  ! For now, just have it run the scripts?  Or, was I going to have it move stuff around manually?.
+  ! Think through this.
+  ! Can't we just have emacs load it right from the gem?
+  ! See how that would work manually!
+  ! Maybe look through which files el4r uses again.
+  ! "
 
 > TODO
 - finish!

@@ -70,7 +70,7 @@
 
   | You'll see that it renders the menu as a bootstrap page.
 - more/
-  | There are more advanced ways to create menus as well, including using python, js, and coffeescript files, notes files, and .menu files that include routing to methods in classes.
+  | There are several more advanced ways to create menus as well, including using python, js, and coffeescript files, notes files, and .menu files that include routing to methods in classes.
   |
   | This menu covers them and gives samples to start with, but is meant for a xiki-enabled editor interface, rather than the web interface:
   @sample menus/

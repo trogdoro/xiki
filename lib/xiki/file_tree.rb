@@ -385,7 +385,7 @@ class FileTree
     # Must go before quotes - if it goes after, it supercedes them
     Styles.apply("\\(~\\)\\(.+?\\)\\(~\\)", nil, :quote_heading_bracket, :notes_label, :quote_heading_bracket)
 
-    Styles.apply("\\(https?\\|file\\)://[a-zA-Z0-9\/.~_:;,-]+", :notes_link)   # blue-ify url's
+    #     Styles.apply("\\(https?\\|file\\)://[a-zA-Z0-9\/.~_:;,-]+", :notes_link)   # blue-ify url's
 
     # - bullets
     Styles.apply("^[ \t]*\\([+=-]\\)\\( \\)", nil, :ls_bullet, :variable)
@@ -406,10 +406,10 @@ class FileTree
     # Slash after almost anything
 
     # foo/ lines
-    Styles.apply("^[ <=+-]*@?\\([~$#a-zA-Z0-9_,?* ().:;@'-]*[^ \n]\/\\)", nil, :ls_dir)
+    Styles.apply("^[ <=+-]*@?\\([~$&#a-zA-Z0-9_,?* ().:;@'-]*[^ \n]\/\\)", nil, :ls_dir)
 
     # Covers paths in files by themselves
-    Styles.apply("^[ <=+-]*\\([@~$a-zA-Z0-9_,*? ().:;<-]*\/[@\#'$a-zA-Z0-9_,*? ().:;\/<-]+\/\\)", nil, :ls_dir)   # Paths with multiple slashes
+    Styles.apply("^[ <=+-]*\\([@~$&a-zA-Z0-9_,*? ().:;<-]*\/[@\#'$a-zA-Z0-9_,*? ().:;\/<-]+\/\\)", nil, :ls_dir)   # Paths with multiple slashes
 
 
 
@@ -427,7 +427,7 @@ class FileTree
     # Put this one back?
     #     Styles.apply("^[ +-]*\\([^|\n]+/\\)$", nil, :ls_dir)   # Dirs with bullets
 
-    Styles.apply('\\(https?\\|file\\)://[a-zA-Z0-9\/.~_:;,?%&=|+!-#-]+', :notes_link)   # Url
+    Styles.apply('\\(https?\\|file\\):/[a-zA-Z0-9\/.~_:;,?%&=|+!-#-]+', :notes_link)   # Url
 
 
     # :... lines (quotes)
@@ -469,7 +469,7 @@ class FileTree
 
     Styles.apply("^ *\\(|\\)\\(@@ .*\n\\)", nil, :quote_heading_pipe, :diff_line_number)
 
-    #Styles.apply('^[ -]*\\([ a-zA-Z0-9\/_\.$-]*\\w/\\)$', nil, :ls_dir)  # Most dirs
+    #Styles.apply('^[ -]*\\([ a-zA-Z0-9\/_\.$-()]*\\w/\\)$', nil, :ls_dir)  # Most dirs ? Has ")" at end
     Styles.apply('^ *\\(//?\\)$', nil, :ls_dir)  # /
     Styles.apply('^ *\\(\./\\)$', nil, :ls_dir)  # ./
   end
@@ -1568,6 +1568,7 @@ class FileTree
     self.ls options
   end
 
+  # Just returns the parent
   def self.parent
     return nil unless Line[/^ /]
 
