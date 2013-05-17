@@ -4,6 +4,7 @@ class Web
 
   MENU_HIDDEN = "
     - .stop/
+    - .restart/
     "
 
   # What was this doing?

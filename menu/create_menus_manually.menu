@@ -7,7 +7,7 @@
 - 2. Save it with the name "foo.txt" in the "menu" directory in your home directory.
   - Create the "menu" directory if there isn't one.
   - Be sure to save it as plain text (most editors do this by default).
-- 3. View your new menu in your browser by clicking this...
+- 3. Go to http://localhost:8161/foo or click this...
 @foo/
 
 | You'll see that the menu simply shows "Hello World".
@@ -19,7 +19,7 @@ more/
     > Make a simple menu that is a .rb file
     - 1. Using any text editor, make a new file and type "2 + 3" as its contents.
     - 2. Save it with the name "bar.rb" in the "menu" directory in your home directory.
-    - 3. View your new menu in your browser...
+    - 3. Go to http://localhost:8161/bar or click this...
     @bar/
 
     | You'll see that the menu simply shows "5".
@@ -28,16 +28,16 @@ more/
     - 1. Using any text editor, make a new file and type the following as its contents.
       | <pre>snacks/<br>  chips<br>  pretzels<br>dessert/<br>  cake</pre>
     - 2. Save it with the name "food.menu" in the "menu" directory in your home directory.
-    - 3. View your new menu in your browser...
+    - 3. Go to http://localhost:8161/food or click this...
     @food/
 
     | You'll see that it first shows the "snacks" and "dessert" items, then shows the items underneath when you click on one of them.
-  - with headings and paragraphs/
+  - headings and paragraphs/
     > Make a simple menu with some visual elements
     - 1. Using any text editor, make a new file and type the following as its contents.
       | <pre>> Heading<br>A paragraph of text.<br><br>a menu item/<br>  > Heading under the item<br>  A paragraph under the item.</pre>
     - 2. Save it with the name "baz.menu" in the "menu" directory in your home directory.
-    - 3. View your new menu in your browser...
+    - 3. Go to http://localhost:8161/baz or click this...
     @baz/
 
     | You'll see that the heading are displayed using a larger font, and the menu item is collapsed until you click on it.
@@ -46,10 +46,28 @@ more/
     - 1. Using any text editor, make a new file and type the following as its contents.
       | <pre>wind/<br>  ! "howl" * 2<br>rain/<br>  ! "drop" * 3</pre>
     - 2. Save it with the name "weather.menu" in the "menu" directory in your home directory.
-    - 3. View your new menu in your browser...
+    - 3. Go to http://localhost:8161/weather or click this...
     @weather/
 
     | You'll see that it first shows the "wind" and "rain" items, then "howlhowl" when you click "wind", and "dropdropdrop" when you click "rain".
+  - class/
+    > Make a simple menu with items that run code
+    - 1. Using any text editor, make a new file and type the following as its contents.
+      | <pre>class Hello<br>  def hi<br>    "hi there"<br>  end<br>  def later<br>    "adios"<br>  end<br>end<br></pre>
+    - 2. Save it with the name "hello.rb" in the "menu" directory in your home directory.
+    - 3. Go to http://localhost:8161/hello or click this...
+    @hello/
+
+    | You'll see that it shows methods an the menu items.
+  - bootstrap/
+    > Make a simple menu with items that run code
+    - 1. Using any text editor, make a new file and type the following as its contents.
+      | <pre>> Heading<br>A sentence.<br>> Another<br>More Words.</pre>
+    - 2. Save it with the name "hey.bootstrap" in the "menu" directory in your home directory.
+    - 3. Go to http://localhost:8161/hey or click this...
+    @hey/
+
+    | You'll see that it renders the menu as a bootstrap page.
   - more/
     | There are more advanced ways to create menus as well, including using python, js, and coffeescript files, notes files, and .menu files that include routing to methods in classes.
     |

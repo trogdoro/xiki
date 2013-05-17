@@ -1,0 +1,836 @@
+- all/
+  @bootstrap/
+    + icon/
+      - expand-alt
+      - smile
+      - frown
+      - meh
+      - gamepad
+      - keyboard
+      - flag-alt
+      - flag-checkered
+      - mail-forward
+      - mail-reply
+      - reply-all
+      - mail-reply-all
+      - star-half-empty
+      - star-half-full
+      - location-arrow
+      - rotate-left
+      - rotate-right
+      - crop
+      - unlink
+      - question
+      - info
+      - superscript
+      - subscript
+      - puzzle-piece
+      - microphone
+      - microphone-off
+      - shield
+      - calendar-empty
+      - fire-extinguisher
+      - rocket
+      - maxcdn
+      - html5
+      - css3
+      - anchor
+      - unlock-alt
+      - bullseye
+      - rss-sign
+      - play-sign
+      - ticket
+      - minus-sign-alt
+      - check-minus
+      - level-up
+      - level-down
+      - check-sign
+      - edit-sign
+      - external-link-sign
+      - share-sign
+      - adjust
+      - asterisk
+      - ban-circle
+      - bar-chart
+      - barcode
+      - beaker
+      - beer
+      - bell-alt
+      - bell
+      - bolt
+      - book
+      - bookmark-empty
+      - bookmark
+      - briefcase
+      - bullhorn
+      - calendar
+      - camera-retro
+      - camera
+      - certificate
+      - check-empty
+      - check
+      - circle-blank
+      - circle
+      - cloud-download
+      - cloud-upload
+      - cloud
+      - code-fork
+      - code
+      - coffee
+      - cog
+      - cogs
+      - collapse-alt
+      - comment-alt
+      - comment
+      - comments-alt
+      - comments
+      - credit-card
+      - crop
+      - dashboard
+      - desktop
+      - download-alt
+      - download
+      - edit
+      - ellipsis-horizontal
+      - ellipsis-vertical
+      - envelope-alt
+      - envelope
+      - eraser
+      - exchange
+      - exclamation-sign
+      - exclamation
+      - external-link-sign
+      - external-link
+      - eye-close
+      - eye-open
+      - facetime-video
+      - fighter-jet
+      - film
+      - filter
+      - fire-extinguisher
+      - fire
+      - flag-alt
+      - flag-checkered
+      - flag
+      - folder-close-alt
+      - folder-close
+      - folder-open-alt
+      - folder-open
+      - food
+      - frown
+      - gamepad
+      - gift
+      - glass
+      - globe
+      - group
+      - hdd
+      - headphones
+      - heart-empty
+      - heart
+      - home
+      - inbox
+      - info-sign
+      - info
+      - key
+      - keyboard
+      - laptop
+      - leaf
+      - legal
+      - lemon
+      - level-down
+      - level-up
+      - lightbulb
+      - location-arrow
+      - lock
+      - magic
+      - magnet
+      - mail-forward
+      - mail-reply
+      - mail-reply-all
+      - map-marker
+      - minus-sign-alt
+      - minus-sign
+      - minus
+      - mobile-phone
+      - money
+      - move
+      - music
+      - off
+      - ok-circle
+      - ok-sign
+      - ok
+      - pencil
+      - phone-sign
+      - phone
+      - picture
+      - plane
+      - plus-sign
+      - plus
+      - print
+      - pushpin
+      - puzzle-piece
+      - qrcode
+      - question-sign
+      - question
+      - quote-left
+      - quote-right
+      - random
+      - refresh
+      - remove-circle
+      - remove-sign
+      - remove
+      - reorder
+      - reply-all
+      - reply
+      - resize-horizontal
+      - resize-vertical
+      - retweet
+      - road
+      - rocket
+      - rotate-left
+      - rotate-right
+      - rss-sign
+      - rss
+      - screenshot
+      - search
+      - share-alt
+      - share-sign
+      - share
+      - shopping-cart
+      - sign-blank
+      - signal
+      - signin
+      - signout
+      - sitemap
+      - smile
+      - sort-down
+      - sort-up
+      - sort
+      - spinner
+      - star-empty
+      - star-half-full
+      - star-half-empty
+      - star-half
+      - star
+      - tablet
+      - tag
+      - tags
+      - tasks
+      - terminal
+      - thumbs-down
+      - thumbs-up
+      - ticket
+      - time
+      - tint
+      - trash
+      - trophy
+      - truck
+      - umbrella
+      - unlock-alt
+      - unlock
+      - upload-alt
+      - upload
+      - user-md
+      - user
+      - volume-down
+      - volume-off
+      - volume-up
+      - warning-sign
+      - wrench
+      - zoom-in
+      - zoom-out
+      - file
+      - file-alt
+      - cut
+      - copy
+      - paste
+      - save
+      - undo
+      - repeat
+      - text-height
+      - text-width
+      - align-left
+      - align-center
+      - align-right
+      - align-justify
+      - indent-left
+      - indent-right
+      - font
+      - bold
+      - italic
+      - strikethrough
+      - underline
+      - superscript
+      - subscript
+      - link
+      - unlink
+      - paper-clip
+      - columns
+      - table
+      - th-large
+      - th
+      - th-list
+      - list
+      - list-ol
+      - list-ul
+      - list-alt
+      - angle-left
+      - angle-right
+      - angle-up
+      - angle-down
+      - arrow-down
+      - arrow-left
+      - arrow-right
+      - arrow-up
+      - caret-down
+      - caret-left
+      - caret-right
+      - caret-up
+      - chevron-down
+      - chevron-left
+      - chevron-right
+      - chevron-up
+      - chevron-sign-left
+      - chevron-sign-right
+      - chevron-sign-up
+      - chevron-sign-down
+      - circle-arrow-down
+      - circle-arrow-left
+      - circle-arrow-right
+      - circle-arrow-up
+      - double-angle-left
+      - double-angle-right
+      - double-angle-up
+      - double-angle-down
+      - hand-down
+      - hand-left
+      - hand-right
+      - hand-up
+      - play-circle
+      - play-sign
+      - play
+      - pause
+      - stop
+      - eject
+      - backward
+      - forward
+      - fast-backward
+      - fast-forward
+      - step-backward
+      - step-forward
+      - fullscreen
+      - resize-full
+      - resize-small
+      - facebook
+      - facebook-sign
+      - twitter
+      - twitter-sign
+      - github
+      - github-sign
+      - html5
+      - linkedin
+      - linkedin-sign
+      - maxcdn
+      - pinterest
+      - pinterest-sign
+      - google-plus
+      - google-plus-sign
+      - ambulance
+      - h-sign
+      - hospital
+      - medkit
+      - plus-sign-alt
+      - stethoscope
+      - user-md
+- category/
+  @bootstrap/
+    - project name/all fontawesome icons
+    h4/New Icons
+    icon/
+      expand-alt
+      collapse-alt
+      smile
+      frown
+      meh
+      gamepad
+      keyboard
+      flag-alt
+      flag-checkered
+      terminal
+      code
+      mail-forward
+      mail-reply
+      reply-all
+      mail-reply-all
+      star-half-empty
+      star-half-full
+      location-arrow
+      rotate-left
+      rotate-right
+      crop
+      code-fork
+      unlink
+      question
+      info
+      exclamation
+      superscript
+      subscript
+      eraser
+      puzzle-piece
+      microphone
+      microphone-off
+      shield
+      calendar-empty
+      fire-extinguisher
+      rocket
+      maxcdn
+      chevron-sign-left
+      chevron-sign-right
+      chevron-sign-up
+      chevron-sign-down
+      html5
+      css3
+      anchor
+      unlock-alt
+      bullseye
+      ellipsis-horizontal
+      ellipsis-vertical
+      rss-sign
+      play-sign
+      ticket
+      minus-sign-alt
+      check-minus
+      level-up
+      level-down
+      check-sign
+      edit-sign
+      external-link-sign
+      share-sign
+    h4/Web Application Icons
+    icon/
+      adjust
+      anchor
+      asterisk
+      ban-circle
+      bar-chart
+      barcode
+      beaker
+      beer
+      bell-alt
+      bell
+      bolt
+      book
+      bookmark-empty
+      bookmark
+      briefcase
+      bullhorn
+      bullseye
+      calendar-empty
+      calendar
+      camera-retro
+      camera
+      certificate
+      check-empty
+      check-minus
+      check-sign
+      check
+      circle-blank
+      circle
+      cloud-download
+      cloud-upload
+      cloud
+      code-fork
+      code
+      coffee
+      cog
+      cogs
+      collapse-alt
+      comment-alt
+      comment
+      comments-alt
+      comments
+      credit-card
+      crop
+      dashboard
+      desktop
+      download-alt
+      download
+      edit-sign
+      edit
+      ellipsis-horizontal
+      ellipsis-vertical
+      envelope-alt
+      envelope
+      eraser
+      exchange
+      exclamation-sign
+      exclamation
+      expand-alt
+      external-link-sign
+      external-link
+      eye-close
+      eye-open
+      facetime-video
+      fighter-jet
+      film
+      filter
+      fire-extinguisher
+      fire
+      flag-alt
+      flag-checkered
+      flag
+      folder-close-alt
+      folder-close
+      folder-open-alt
+      folder-open
+      food
+      frown
+      gamepad
+      gift
+      glass
+      globe
+      group
+      hdd
+      headphones
+      heart-empty
+      heart
+      home
+      inbox
+      info-sign
+      info
+      key
+      keyboard
+      laptop
+      leaf
+      legal
+      lemon
+      level-down
+      level-up
+      lightbulb
+      location-arrow
+      lock
+      magic
+      magnet
+      mail-forward
+      mail-reply
+      mail-reply-all
+      map-marker
+      meh
+      microphone-off
+      microphone
+      minus-sign-alt
+      minus-sign
+      minus
+      mobile-phone
+      money
+      move
+      music
+      off
+      ok-circle
+      ok-sign
+      ok
+      pencil
+      phone-sign
+      phone
+      picture
+      plane
+      plus-sign
+      plus
+      print
+      pushpin
+      puzzle-piece
+      qrcode
+      question-sign
+      question
+      quote-left
+      quote-right
+      random
+      refresh
+      remove-circle
+      remove-sign
+      remove
+      reorder
+      reply-all
+      reply
+      resize-horizontal
+      resize-vertical
+      retweet
+      road
+      rocket
+      rotate-left
+      rotate-right
+      rss-sign
+      rss
+      screenshot
+      search
+      share-alt
+      share-sign
+      share
+      shield
+      shopping-cart
+      sign-blank
+      signal
+      signin
+      signout
+      sitemap
+      smile
+      sort-down
+      sort-up
+      sort
+      spinner
+      star-empty
+      star-half-full
+      star-half-empty
+      star-half
+      star
+      tablet
+      tag
+      tags
+      tasks
+      terminal
+      thumbs-down
+      thumbs-up
+      ticket
+      time
+      tint
+      trash
+      trophy
+      truck
+      umbrella
+      unlock-alt
+      unlock
+      upload-alt
+      upload
+      user-md
+      user
+      volume-down
+      volume-off
+      volume-up
+      warning-sign
+      wrench
+      zoom-in
+      zoom-out
+    h4/Text Editor Icons
+    icon/
+      file
+      file-alt
+      cut
+      copy
+      paste
+      save
+      undo
+      repeat
+      text-height
+      text-width
+      align-left
+      align-center
+      align-right
+      align-justify
+      indent-left
+      indent-right
+      font
+      bold
+      italic
+      strikethrough
+      underline
+      superscript
+      subscript
+      link
+      unlink
+      paper-clip
+      eraser
+      columns
+      table
+      th-large
+      th
+      th-list
+      list
+      list-ol
+      list-ul
+      list-alt
+    h4/Directional Icons
+    icon/
+      angle-left
+      angle-right
+      angle-up
+      angle-down
+      arrow-down
+      arrow-left
+      arrow-right
+      arrow-up
+      caret-down
+      caret-left
+      caret-right
+      caret-up
+      chevron-down
+      chevron-left
+      chevron-right
+      chevron-up
+      chevron-sign-left
+      chevron-sign-right
+      chevron-sign-up
+      chevron-sign-down
+      circle-arrow-down
+      circle-arrow-left
+      circle-arrow-right
+      circle-arrow-up
+      double-angle-left
+      double-angle-right
+      double-angle-up
+      double-angle-down
+      hand-down
+      hand-left
+      hand-right
+      hand-up
+    h4/Video Player Icons
+    icon/
+      play-circle
+      play-sign
+      play
+      pause
+      stop
+      eject
+      backward
+      forward
+      fast-backward
+      fast-forward
+      step-backward
+      step-forward
+      fullscreen
+      resize-full
+      resize-small
+    h4/Brand Icons
+    icon/
+      css3
+      facebook
+      facebook-sign
+      twitter
+      twitter-sign
+      github
+      github-sign
+      html5
+      linkedin
+      linkedin-sign
+      maxcdn
+      pinterest
+      pinterest-sign
+      google-plus
+      google-plus-sign
+    h4/Medical Icons
+    icon/
+      ambulance
+      beaker
+      h-sign
+      hospital
+      medkit
+      plus-sign-alt
+      stethoscope
+      user-md
+- sizes/
+  @bootstrap/
+    - project name/fontawesome icon sizes
+    > star-empty
+    <i class="icon-3x icon-star-empty"></i> 3x
+    <i class="icon-2x icon-star-empty"></i> 2x
+    <i class="icon-large icon-star-empty"></i> large
+    <i class="icon-star-empty"></i>
+    > smile
+    <i class="icon-3x icon-smile"></i> 3x
+    <i class="icon-2x icon-smile"></i> 2x
+    <i class="icon-large icon-smile"></i> large
+    <i class="icon-smile"></i>
+    > envelope
+    <i class="icon-3x icon-envelope"></i> 3x
+    <i class="icon-2x icon-envelope"></i> 2x
+    <i class="icon-large icon-envelope"></i> large
+    <i class="icon-envelope"></i>
+    > keyboard
+    <i class="icon-3x icon-keyboard"></i> 3x
+    <i class="icon-2x icon-keyboard"></i> 2x
+    <i class="icon-large icon-keyboard"></i> large
+    <i class="icon-keyboard"></i>
+
+    > user
+    <i class="icon-3x icon-user"></i> 3x
+    <i class="icon-2x icon-user"></i> 2x
+    <i class="icon-large icon-user"></i> large
+    <i class="icon-user"></i>
+    > glass
+    <i class="icon-3x icon-glass"></i> 3x
+    <i class="icon-2x icon-glass"></i> 2x
+    <i class="icon-large icon-glass"></i> large
+    <i class="icon-glass"></i>
+    > heart
+    <i class="icon-3x icon-heart"></i> 3x
+    <i class="icon-2x icon-heart"></i> 2x
+    <i class="icon-large icon-heart"></i> large
+    <i class="icon-heart"></i>
+    > plane
+    <i class="icon-3x icon-plane"></i> 3x
+    <i class="icon-2x icon-plane"></i> 2x
+    <i class="icon-large icon-plane"></i> large
+    <i class="icon-plane"></i>
+
+    > leaf
+    <i class="icon-3x icon-leaf"></i> 3x
+    <i class="icon-2x icon-leaf"></i> 2x
+    <i class="icon-large icon-leaf"></i> large
+    <i class="icon-leaf"></i>
+    > folder-open
+    <i class="icon-3x icon-folder-open"></i> 3x
+    <i class="icon-2x icon-folder-open"></i> 2x
+    <i class="icon-large icon-folder-open"></i> large
+    <i class="icon-folder-open"></i>
+    > cog
+    <i class="icon-3x icon-cog"></i> 3x
+    <i class="icon-2x icon-cog"></i> 2x
+    <i class="icon-large icon-cog"></i> large
+    <i class="icon-cog"></i>
+    > sitemap
+    <i class="icon-3x icon-sitemap"></i> 3x
+    <i class="icon-2x icon-sitemap"></i> 2x
+    <i class="icon-large icon-sitemap"></i> large
+    <i class="icon-sitemap"></i>
+
+    > th-large
+    <i class="icon-3x icon-th-large"></i> 3x
+    <i class="icon-2x icon-th-large"></i> 2x
+    <i class="icon-large icon-th-large"></i> large
+    <i class="icon-th-large"></i>
+    > ok
+    <i class="icon-3x icon-ok"></i> 3x
+    <i class="icon-2x icon-ok"></i> 2x
+    <i class="icon-large icon-ok"></i> large
+    <i class="icon-ok"></i>
+    > remove
+    <i class="icon-3x icon-remove"></i> 3x
+    <i class="icon-2x icon-remove"></i> 2x
+    <i class="icon-large icon-remove"></i> large
+    <i class="icon-remove"></i>
+    > flag
+    <i class="icon-3x icon-flag"></i> 3x
+    <i class="icon-2x icon-flag"></i> 2x
+    <i class="icon-large icon-flag"></i> large
+    <i class="icon-flag"></i>
+
+    > tint
+    <i class="icon-3x icon-tint"></i> 3x
+    <i class="icon-2x icon-tint"></i> 2x
+    <i class="icon-large icon-tint"></i> large
+    <i class="icon-tint"></i>
+    > arrow-right
+    <i class="icon-3x icon-arrow-right"></i> 3x
+    <i class="icon-2x icon-arrow-right"></i> 2x
+    <i class="icon-large icon-arrow-right"></i> large
+    <i class="icon-arrow-right"></i>
+    > cloud
+    <i class="icon-3x icon-cloud"></i> 3x
+    <i class="icon-2x icon-cloud"></i> 2x
+    <i class="icon-large icon-cloud"></i> large
+    <i class="icon-cloud"></i>
+    > comment
+    <i class="icon-3x icon-comment"></i> 3x
+    <i class="icon-2x icon-comment"></i> 2x
+    <i class="icon-large icon-comment"></i> large
+    <i class="icon-comment"></i>
+

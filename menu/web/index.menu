@@ -55,9 +55,6 @@
       | differences:
       | - Use the 'sites-available' dir instead of 'other'
       | - Run "a2ensite xiki" on the command line before restarting apache
-- see/
-  <@ web development/
-  <@ servers/
 - docs/
   > Summary
   | The Xiki web interface lets you use Xiki menus via a web browser.
@@ -106,3 +103,6 @@
   @http://xiki
   | See this menu for how:
   @web/setup/apache/
+- see/
+  <@ web development/
+  <@ servers/
