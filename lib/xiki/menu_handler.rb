@@ -27,7 +27,7 @@ class MenuHandler
 
     # TODO: to tighten up, only do this if all lines start with "!"
 
-    code = txt.gsub /^! /, ''
+    code = txt.gsub /^! ?/, ''
 
     exclamations_args = options[:exclamations_args] || []
     code = "args = #{exclamations_args.inspect}\n#{code}"
