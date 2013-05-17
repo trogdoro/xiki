@@ -7,11 +7,10 @@
       |   "Hello Booze!"
       | end
     % ruby -rubygems sinatra_hi.rb
-    @http://localhost:4567
-- notes/
-  @technologies/sinatra/
+    @http://localhost:4567/
 - hello world OO/
   @/tmp/
+    % ruby -rubygems sinatra_oo.rb
     - sinatra_oo.rb
       | require "sinatra/base"
       |
@@ -26,12 +25,7 @@
       | end
       |
       | SinatraOo.run!
-    % ruby -rubygems sinatra_oo.rb
     @http://localhost:4567/hello
 - docs/
   > Intro
   @http://www.sinatrarb.com/intro
-
-> See
-<< rails/
-<< ruby/
