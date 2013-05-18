@@ -240,6 +240,10 @@ class Bookmarks
             "#{File.expand_path("~")}/todo.notes"
           elsif bm_orig == "f"
             "#{File.expand_path("~")}/files.notes"
+          elsif bm_orig == "h"
+            "#{File.expand_path("~")}/"
+          elsif bm_orig == "r"
+            "/"
           end
       end
       return path if bm.nil?
