@@ -212,7 +212,7 @@ class KeyBindings
     Keys.enter_row { View.insert_line }
 
     #     Keys.enter_search { Search.enter_search }
-    Keys.enter_source { Snippet.insert }
+    Xiki.def("enter+source"){ Snippet.insert }
 
     Xiki.def("enter+todo"){ View.enter_upper }
     #     Keys.enter_tree { FileTree.tree(:here=>true) }
