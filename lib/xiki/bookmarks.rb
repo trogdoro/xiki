@@ -231,7 +231,7 @@ class Bookmarks
       if ["x", "xiki"].member? bm
         bm = Xiki.dir
       else
-        bm = $el.bookmark_get_filename(bm)
+        bm = $el.bookmark_get_filename(bm) rescue nil
       end
 
       if bm.nil?
@@ -254,7 +254,7 @@ class Bookmarks
 
       # Expand ~/ if it has it
 
-      path = View.expand_path(path)  if path =~ /^~/
+      path = View.expand_path(path) if path =~ /^~/
 
       path
 

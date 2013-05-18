@@ -19,7 +19,7 @@ update emacs conf/
   !   (el4r-boot)
   !   `.unindent
   !
-  ! File.open(File.expand_path("~/.emacs__"), "w") { |f| f << txt }
+  ! File.open(File.expand_path("~/.emacs"), "w") { |f| f << txt }
   ! "- Created the ~/.emacs file."
   !
   ! # Todo: warn this will update the .emacs file
