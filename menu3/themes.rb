@@ -7,8 +7,8 @@
 class Themes
 
   def self.use name
-    path = "#{Xiki.dir}etc/themes/#{TextUtil.title_case name, :underscores=>1}.notes"
-    return "| Theme doesn't exist" if ! File.exists? path
+    path = "#{Xiki.dir}etc/themes/#{name.gsub " ", "_"}.notes"
+    raise "- Theme doesn't exist!" if ! File.exists? path
 
     load path
 
