@@ -814,7 +814,7 @@ class View
   end
 
   def self.frame
-    $el.window_frame($el.frame_first_window)
+    $el.selected_frame
   end
 
   def self.window

@@ -24,6 +24,7 @@ module Xiki::Menu
         - .add/
         - .delete/
         - .revert/
+        - .unadd/
       "
 
     def self.menu_before *args
@@ -67,7 +68,6 @@ module Xiki::Menu
     end
 
     def self.diff *args
-
       options = yield
       options[:no_search] = 1
 
@@ -159,7 +159,16 @@ module Xiki::Menu
 
     def self.add
       dir = Tree.closest_dir yield[:ancestors]
-      self.add_internal dir
+
+      siblings = Tree.siblings
+      return "- No files to add (they should be siblings of add)!" unless siblings.any?
+
+      siblings = self.remove_options siblings
+      command = "git add #{siblings.join("\\\n  ")}"
+
+      txt = Console.sync command, :dir=>dir
+      return Tree.quote(txt) if txt.any?
+      "@flash/- added!"
     end
 
     def self.commit message=nil
@@ -426,14 +435,14 @@ module Xiki::Menu
 
       is_unadded = false
 
-      # /, so show files...
+      # /, so show diff of files...
 
       if file.nil?
         txt = Console.run "git status", :dir=>dir, :sync=>true
         hash = self.status_to_hash(self.status_internal(txt))
 
         untracked = hash[:untracked].map{|i| i[1]}
-        untracked.map!{|i| "+ ignore untracked) #{i}\n"}
+        untracked.map!{|i| "+ untracked) #{i}\n"}
 
         option = is_unadded ? "- add\n" : "- commit/\n"
         command = "git diff --patience --relative #{self.git_diff_options} #{is_unadded ? '' : ' HEAD'}"
@@ -478,23 +487,33 @@ module Xiki::Menu
           | Or, to create a few sample files:
           @git/setup/make sample files/
           ".unindent if ! txt.any?
-        return option + txt + "- add/\n- delete/\n- revert/\n"
+        return option + txt + "
+          - add/
+          - delete/
+          - revert/
+          - unadd/
+          ".unindent
       end
+
 
       # /file, so show diff...
 
       if line.nil?   # If no line passed, re-do diff for 1 file
-        # If untracked, show whole file
-        if Line.label =~ /^untracked/
-          return "|@@ +1\n" + IO.read(Bookmarks.expand("#{dir}/#{file}")).gsub(/^/, '|+').gsub("\c@", '.')
-        end
 
         txt = is_unadded ?
           self.diff_internal("git diff --patience --relative #{self.git_diff_options} #{file}", dir) :
           self.diff_internal("git diff --patience --relative #{self.git_diff_options} HEAD #{file}", dir)
         self.clean! txt
 
-        raise "| No diffs, or not under version control?\n" if ! txt.any?
+        if txt.blank?
+          file_in_repository = self.file_in_repository? dir, file
+
+          # If not in repository, just show the contents
+          if ! file_in_repository
+            return "| untracked file...\n|@@ +1\n" + File.read(Bookmarks.expand("#{dir}/#{file}")).gsub(/^/, '|+').gsub("\c@", '.')
+          end
+          return "| No diffs"
+        end
 
         txt.gsub!(/^ ?diff .+\n/, '')
         txt.gsub!(/^/, '|')
@@ -555,63 +574,67 @@ module Xiki::Menu
     end
 
     def self.remove_options siblings
-      siblings.select{|o| o !~ /^(commit|delete|revert|add)\// && o !~ /^\|/ }
-    end
-
-    def self.add_internal dir
-
-      siblings = Tree.siblings
-      # Error if no siblings
-      unless siblings.any?
-        return "- No files to add (they should be siblings of .add)!"
-      end
-
-      siblings = self.remove_options siblings
-      command = "git add #{siblings.join("\\\n  ")}"
-
-      Console.run command, :dir=>dir
+      siblings.select{|o| o !~ /^(commit|delete|revert|add|unadd)\// && o !~ /^\|/ }
     end
 
     def self.commit_internal message, dir
 
       siblings = Tree.siblings :include_label=>true
+      # Remove labels
+      siblings = siblings.map{|i| Line.without_label(:line=>i)}
       # Remove "untracked (ignore)"
-      siblings = siblings.select{|i| i !~ /^. ignore untracked\)/}.map{|i| Line.without_label(:line=>i)}
       siblings = self.remove_options siblings
 
       unless siblings.any?   # Error if no siblings
-        return "@flash/- Provide some files (on lines next to this menu, with no blank lines, and no 'ignore untracked' label!"
+        return "@flash/- Provide some files (on lines next to this menu, with no blank lines, and no 'untracked' label!"
       end
 
       Console.run "git commit -m \"#{message}\" #{siblings.join("\\\n  ")}", :dir=>dir#, :no_enter=>true
     end
 
-    def self.revert project  #, file=nil
-      dir = self.extract_dir project
+    def self.unadd
+      dir = Tree.closest_dir yield[:ancestors]
 
       siblings = Tree.siblings :include_label=>true
       siblings.map!{|i| Line.without_label(:line=>i)}
+      siblings = self.remove_options siblings
 
-      unless siblings.any?   # Error if no siblings
-        return "- Error: No files to revert\n" +
-               "- They should be siblings of .revert!"
-      end
+      return "- No files to unadd (they should be siblings of unadd)!" if siblings.empty?   # Error if no siblings
 
-      Console.run "git checkout #{siblings.join(' ')}", :dir=>dir #, :no_enter=>true
+      command = "git reset #{siblings.join(' ')}"
+      txt = Console.sync command, :dir=>dir
+      return Tree.quote txt if txt.any?
+      "@flash/- unadded!"
     end
 
-    def self.delete project
-      dir = self.extract_dir project
+    def self.revert
+      dir = Tree.closest_dir yield[:ancestors]
 
       siblings = Tree.siblings :include_label=>true
       siblings.map!{|i| Line.without_label(:line=>i)}
+      siblings = self.remove_options siblings
 
-      unless siblings.any?   # Error if no siblings
-        return "- Error: No files to delete\n" +
-               "- They should be siblings of .delete!"
-      end
+      return "- No files to revert (they should be siblings of revert)!" if siblings.empty?   # Error if no siblings
 
-      Console.run "rm #{siblings.join(' ')}", :dir=>dir #, :no_enter=>true
+      command = "git checkout #{siblings.join(' ')}"
+      txt = Console.sync command, :dir=>dir
+      return Tree.quote txt if txt.any?
+      "@flash/- reverted!"
+    end
+
+    def self.delete
+      dir = Tree.closest_dir yield[:ancestors]
+
+      siblings = Tree.siblings :include_label=>true
+      siblings.map!{|i| Line.without_label(:line=>i)}
+      siblings = self.remove_options siblings
+
+      return "- No files to unadd (they should be siblings of delete)!" if siblings.empty?   # Error if no siblings
+
+      command = "rm #{siblings.join(' ')}"
+      txt = Console.sync command, :dir=>dir
+      return Tree.quote txt if txt.any?
+      "@flash/- deleted!"
     end
 
     def self.git_diff_options
@@ -652,6 +675,9 @@ module Xiki::Menu
       "
     end
 
-end; end
+    def self.file_in_repository? dir, file
+      txt = Console.sync "git ls-files '#{file}'", :dir=>dir
+      txt.any?   # It's in the repository if it didn't return blank
+    end
 
-# Xiki::Menu::Git.styles_define
+end; end

@@ -57,8 +57,13 @@ class Console
     self.run command, :sync=>1
   end
 
+  # Delegates to .run :sync=>1
+  # Console.sync "pwd"
+  # Console.sync "pwd", :clear=>1   # Clean up stupid ^H sequences
   def self.sync command, options={}
-    self.run command, options.merge(:sync=>1)
+    txt = self.run command, options.merge(:sync=>1)
+    txt.gsub!(/.\cH/, "") if options[:clean]
+    txt
   end
 
   #

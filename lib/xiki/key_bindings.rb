@@ -186,8 +186,7 @@ class KeyBindings
     Keys.enter_junior { Notes.enter_junior }
     Keys.enter_key { Keys.insert_code }
     Keys.enter_log_1 { View << "Ol[1]" }
-    Keys.enter_log_check { View << "Ol[\"check!\"]" }
-
+    Xiki.def("enter+log+check"){ View << "Ol[\"check!\"]\n" }
     Keys.enter_log_ancestors { Code.enter_log_ancestors }
     Keys.enter_list_databases { Launcher.insert('- Couch.databases/') }
     Keys.enter_like_edits { Search.enter_like_edits }
