@@ -459,19 +459,21 @@ class Notes
     Styles.define :notes_red, :fg=>"c55", :face=>'arial black', :size=>"0", :bold=>true
     Styles.define :notes_yellow, :fg=>"CC0", :face=>'arial black', :size=>"0", :bold=>true
     Styles.define :notes_green, :fg=>"3c3", :face=>'arial black', :size=>"0", :bold=>true
-    Styles.define :notes_h1_green, :fg=>"8f4", :bg=>"333", :face=>'arial', :size=>"+2", :bold=>true
-    Styles.define :notes_h0, :fg=>"fff", :bg=>"333", :face=>'arial', :size=>"+8", :bold=>true
-    Styles.define :notes_h0_green, :fg=>"8f4", :bg=>"333", :face=>'arial', :size=>"+8", :bold=>true
 
     if Styles.dark_bg?   # If black bg
-      # >>...
       Styles.define :notes_h2, :face=>'arial', :size=>"-1", :fg=>'fff', :bg=>"333", :bold=>true
       Styles.define :notes_h2_pipe, :face=>'arial', :size=>"-1", :fg=>'555555', :bg=>"333333", :bold=> true
       Styles.define :notes_h0_pipe, :face=>'arial', :size=>"+8", :fg=>'666666', :bg=>"333333", :bold=> true
-    else
+      Styles.define :notes_h0, :fg=>"fff", :bg=>"333", :face=>'arial', :size=>"+8", :bold=>true
+      Styles.define :notes_h0_green, :fg=>"8f4", :bg=>"333", :face=>'arial', :size=>"+8", :bold=>true
+      Styles.define :notes_h1_green, :fg=>"8f4", :bg=>"333", :face=>'arial', :size=>"+2", :bold=>true
+    else   # If white bg
       Styles.define :notes_h2, :face=>'arial', :size=>"-1", :fg=>'fff', :bg=>"999", :bold=>true
-      Styles.define :notes_h2_pipe, :face=>'arial', :size=>"-1", :fg=>'bbb', :bg=>"999", :bold=>true
-      Styles.define :notes_h0_pipe, :face=>'arial', :size=>"+8", :fg=>'bbb', :bg=>"999", :bold=>true
+      Styles.define :notes_h2_pipe, :face=>'arial', :size=>"-1", :fg=>'ccc', :bg=>"999", :bold=>true
+      Styles.define :notes_h0_pipe, :face=>'arial', :size=>"+8", :fg=>'ccc', :bg=>"aaa", :bold=>true
+      Styles.define :notes_h0, :fg=>"fff", :bg=>"aaa", :face=>'arial', :size=>"+8", :bold=>true
+      Styles.define :notes_h0_green, :fg=>"dfb", :bg=>"aaa", :face=>'arial', :size=>"+8", :bold=>true
+      Styles.define :notes_h1_green, :fg=>"dfb", :bg=>"aaa", :face=>'arial', :size=>"+2", :bold=>true
     end
 
     if Styles.dark_bg?   # If black bg

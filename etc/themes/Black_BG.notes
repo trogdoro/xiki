@@ -3,6 +3,8 @@ $el.set_face_background :trailing_whitespace, "#333333"
 Styles.define :default, :bg=>'151515', :fg=>'fff'
 Styles.define :fringe, :bg=>'151515', :fg=>'111111'
 
+Cursor.black
+
 Styles.minibuffer_prompt :size=>110, :face=>"Monaco", :fg=>"#bbb"
 Styles.minibuffer :size=>110, :face=>"Monaco"
 Styles.echo_area :size=>110, :face=>"Monaco"

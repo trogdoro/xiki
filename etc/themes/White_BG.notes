@@ -1,5 +1,7 @@
 $el.set_face_background :trailing_whitespace, "#aaaaaa"
 
+Cursor.black
+
 Styles.define :default, :bg=>'f8f8f8', :fg=>'000'
 Styles.define :fringe, :bg=>'f8f8f8', :fg=>'f8f8f8'
 

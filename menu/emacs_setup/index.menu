@@ -14,6 +14,7 @@ update emacs conf/
   ! el4r_gem_dir = "#{el4r_gem_lib}data/emacs/site-lisp/"
   !
   ! txt = %`
+  !   ; Load el4r, which loads Xiki
   !   (add-to-list 'load-path "#{el4r_gem_dir}")
   !   (require 'el4r)
   !   (el4r-boot)
