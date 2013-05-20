@@ -1,16 +1,13 @@
-class Climb
+class Source
   def self.menu *args
 
     path = yield[:ancestors]
-
     raise "> How to use\n| Nest this under a menu name\n" if ! path
 
     options = Expander.expanders path
-
     return "- no sources found!" if !options[:sources]
 
     Menu.climb_sources options
-
     sources = options[:sources]
 
     result = "@#{options[:menufied].sub /(.+\/).+/, "\\1"}\n"
