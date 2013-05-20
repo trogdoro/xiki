@@ -158,6 +158,12 @@ class Styles
         '(font-lock-keywords-case-fold-search t)
         )
       `
+
+    size = $el.boundp(:xiki_default_font_size) ? $el.elvar.xiki_default_font_size : nil
+    size ||= self.get_font_size
+    $el.elvar.xiki_default_font_size = size
+
+    #     $el.elvar.xiki_default_font_size = self.get_font_size
   end
 
   # Don't format quotes (it can override other styles)
@@ -176,6 +182,10 @@ class Styles
     size = $el.el4r_lisp_eval "(face-attribute 'default :height)"
     size ||= 90
     size + relative * 5
+  end
+
+  def self.default_font_size
+    self.font_size $el.elvar.xiki_default_font_size
   end
 
 end

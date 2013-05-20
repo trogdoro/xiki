@@ -20,7 +20,7 @@ class Kill
 
     # Grab filter and process args
     filter = args.shift if args[0] !~ /^\|/   # If 1st arg isn't pipe-quoted, it's a filter
-    process=args[0]
+    process = args[0]
 
     # /, so list processes, then MENU contents...
 
@@ -34,6 +34,7 @@ class Kill
         txt = txt.grep(/#{Regexp.quote filter}/).join('')
       end
 
+      txt = "| none found" if txt == ""
       return "> Select a process to kill it\n#{txt.strip}\n#{output}"
     end
 

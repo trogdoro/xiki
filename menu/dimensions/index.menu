@@ -1,14 +1,14 @@
 - half/
   ! width = 166
   ! width += 3 if ! View.scroll_bars
-  ! View.dimensions_set width, 63, 0, 902
-  ! Styles.font_size 110
+  ! View.dimensions_set 0, 902, width, 63
+  ! Styles.default_font_size
   ! Window.visibility('full')
 - full/
   ! View.dimensions_full
 - right/
-  ! View.dimensions_set 119, 57, 573, 22
-  ! Styles.font_size 110
+  ! View.dimensions_set 573, 22, 119, 57
+  ! Styles.default_font_size
 - small/
-  ! View.dimensions_set 50, 15, 100, 22
-  ! Styles.font_size 110
+  ! View.dimensions_set 100, 22, 50, 15
+  ! Styles.default_font_size

@@ -5,27 +5,24 @@ module Xiki::Menu
       - .font size/
       - .list faces/
       - api/
-        > Summary
-        | How to use the Styles class.  You can change the color and font of text.
-        | You define styles, then make them apply to the text that matches
-        | regular expression.
-
-        > Define
-        | Styles.define :red, :bg => "d77"
-
-        > Apply
-        | Styles.apply "apply", :red
-
-        > Define more complex font
-        | Styles.define :blueish,
-        |   :fg => "99e",
-        |   :face => "verdana",
-        |   :size => 90,
-        |   :bold => true
-
-        > See
-        | For styling specific text (not just a pattern):
-        <<< @overlay/
+        - summary/
+          | You can change the color and font of text using the Styles class.
+          | You define styles, then make them apply to the text that matches
+          | regular expression.
+        - define/
+          @Styles.define :red, :bg => "d77"
+        - apply/
+          @Styles.apply "apply", :red
+        - define more complex font/
+          | Styles.define :blueish,
+          |   :fg => "99e",
+          |   :face => "verdana",
+          |   :size => 90,
+          |   :bold => true
+        - see/
+          | For styling a specific block of text.  Location-based, not regular
+          | expression based.
+          <<< @overlay/
       - see/
         <<< @css/list/
         <<< @themes/

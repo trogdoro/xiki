@@ -1162,7 +1162,7 @@ class View
     path
   end
 
-  def self.dimensions_set size_x, size_y, position_x=nil, position_y=nil
+  def self.dimensions_set position_x=nil, position_y=nil, size_x, size_y
     self.fullscreen_off
     $el.set_frame_size(View.frame, size_x, size_y)
     $el.set_frame_position(View.frame, position_x, position_y) unless position_x.nil?
