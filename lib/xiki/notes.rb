@@ -373,7 +373,7 @@ class Notes
     else
       # Colors of headings
       @@h1_styles = {
-        :notes_h1 =>"aaa",
+        :notes_h1 =>"909090",
         :notes_h1r=>"b66",   # | r This will be red
         :notes_h1o=>"b83",   # | o This will be orange
         :notes_h1y=>"bb3",
@@ -466,14 +466,18 @@ class Notes
       Styles.define :notes_h0_pipe, :face=>'arial', :size=>"+8", :fg=>'666666', :bg=>"333333", :bold=> true
       Styles.define :notes_h0, :fg=>"fff", :bg=>"333", :face=>'arial', :size=>"+8", :bold=>true
       Styles.define :notes_h0_green, :fg=>"8f4", :bg=>"333", :face=>'arial', :size=>"+8", :bold=>true
-      Styles.define :notes_h1_green, :fg=>"8f4", :bg=>"333", :face=>'arial', :size=>"+2", :bold=>true
+      Styles.define :notes_h0_green_pipe, :fg=>"555", :bg=>"333", :face=>'arial', :size=>"+8", :bold=>true
+      Styles.define :notes_h1_green, :fg=>"8f4", :bg=>"333", :face=>'arial', :size=>"+3", :bold=>true
+      Styles.define :notes_h1_green_pipe, :fg=>"555", :bg=>"333", :face=>'arial', :size=>"+3", :bold=>true
     else   # If white bg
-      Styles.define :notes_h2, :face=>'arial', :size=>"-1", :fg=>'fff', :bg=>"999", :bold=>true
-      Styles.define :notes_h2_pipe, :face=>'arial', :size=>"-1", :fg=>'ccc', :bg=>"999", :bold=>true
-      Styles.define :notes_h0_pipe, :face=>'arial', :size=>"+8", :fg=>'ccc', :bg=>"aaa", :bold=>true
-      Styles.define :notes_h0, :fg=>"fff", :bg=>"aaa", :face=>'arial', :size=>"+8", :bold=>true
-      Styles.define :notes_h0_green, :fg=>"dfb", :bg=>"aaa", :face=>'arial', :size=>"+8", :bold=>true
-      Styles.define :notes_h1_green, :fg=>"dfb", :bg=>"aaa", :face=>'arial', :size=>"+2", :bold=>true
+      Styles.define :notes_h2, :face=>'arial', :size=>"-1", :fg=>'fff', :bg=>"909090", :bold=>true
+      Styles.define :notes_h2_pipe, :face=>'arial', :size=>"-1", :fg=>'bbb', :bg=>"909090", :bold=>true
+      Styles.define :notes_h0_pipe, :face=>'arial', :size=>"+8", :fg=>'bbb', :bg=>"909090", :bold=>true
+      Styles.define :notes_h0, :fg=>"fff", :bg=>"909090", :face=>'arial', :size=>"+8", :bold=>true
+      Styles.define :notes_h0_green, :fg=>"cf7", :bg=>"909090", :face=>'arial', :size=>"+8", :bold=>true
+      Styles.define :notes_h0_green_pipe, :fg=>"bbb", :bg=>"909090", :face=>'arial', :size=>"+8", :bold=>true
+      Styles.define :notes_h1_green, :fg=>"cf7", :bg=>"909090", :face=>'arial', :size=>"+3", :bold=>true
+      Styles.define :notes_h1_green_pipe, :fg=>"bbb", :bg=>"909090", :face=>'arial', :size=>"+3", :bold=>true
     end
 
     if Styles.dark_bg?   # If black bg
@@ -508,12 +512,12 @@ class Notes
     Styles.apply("^\\(>> \\)\\(.*\n\\)", nil, :notes_h2_pipe, :notes_h2)
 
     # > Green!
-    Styles.apply("^\\(> \\)\\(.*!\\)\\(\n\\)", nil, :notes_h1_pipe, :notes_h1_green, :notes_h1)
+    Styles.apply("^\\(> \\)\\(.*!\\)\\(\n\\)", nil, :notes_h1_green_pipe, :notes_h1_green, :notes_h1_green)
 
     # > Large:
     Styles.apply("^\\(> \\)\\(.*:\\)\\(\n\\)", nil, :notes_h0_pipe, :notes_h0, :notes_h1)
 
-    Styles.apply("^\\(> \\)\\(.*!:\\)\\(\n\\)", nil, :notes_h0_pipe, :notes_h0_green, :notes_h0)
+    Styles.apply("^\\(> \\)\\(.*!:\\)\\(\n\\)", nil, :notes_h0_green_pipe, :notes_h0_green, :notes_h0_green)
 
     Styles.apply("^\\(>\\)\\( .+?: \\)\\(.+\n\\)", nil, :notes_h1_pipe, :notes_h1_label, :notes_h1)
 
