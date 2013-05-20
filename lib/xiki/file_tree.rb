@@ -2224,7 +2224,7 @@ class FileTree
     file_path.gsub!("\\/", "\021")
 
     # While a (rightmost) filter exists
-    while file_path =~ %r"^([^|]*/)((##|\*\*)[^|]+?/)"
+    while file_path =~ %r"^([^|]*/)((##|\*\*).+?/)"
       start, filter = $1.length, $2
 
       # If it was at end, store it so we can do filter, and ignore the rest
