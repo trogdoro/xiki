@@ -120,7 +120,7 @@ class Svg
   # Scale numeric values according to default font size
   def self.scale xml, options={}
 
-    scale = options[:scale] || Styles.height / 110.0
+    scale = options[:scale] || Styles.get_font_size / 110.0
 
     white_list = ["height", "width", "x", "y", "rx", "ry", "stroke-width"].inject({}){|o, i| o[i] = true; o}
 

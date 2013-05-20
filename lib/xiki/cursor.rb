@@ -51,28 +51,28 @@ class Cursor
 
     return $el.face_background(:cursor) if color.nil?
 
-    $el.set_face_background :cursor, color
+    Styles.define :cursor, :bg=>color
     nil
   end
 
   def self.blue
-    $el.set_face_background :cursor, "#0099ff"
+    Styles.define :cursor, :bg=>"0099ff"
     nil
   end
   def self.red
-    $el.set_face_background :cursor, "#ff3300"
+    Styles.define :cursor, :bg=>"ff3300"
     nil
   end
   def self.green
-    $el.set_face_background :cursor, "#33bb00"
+    Styles.define :cursor, :bg=>"33bb00"
     nil
   end
   def self.white
-    $el.set_face_background :cursor, "#ffffff"
+    Styles.define :cursor, :bg=>"ffffff"
     nil
   end
   def self.black
-    $el.set_face_background :cursor, "#000000"
+    Styles.define :cursor, :bg=>"000000"
     nil
   end
 

@@ -31,7 +31,6 @@
   | (set-face-attribute 'default nil
   |   :height 110
   |   :family "Monaco"
-  |   :weight 'normal
   |   )
 - H for delete/
   | ; Make C-h delete backward

@@ -1,4 +1,4 @@
-$el.set_face_background :trailing_whitespace, "#333333"
+Styles.define :trailing_whitespace, :bg=>'333'
 
 Styles.define :default, :bg=>'151515', :fg=>'fff'
 Styles.define :fringe, :bg=>'151515', :fg=>'111111'

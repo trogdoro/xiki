@@ -1,39 +1,5 @@
 class Styles
 
-  def self.menu
-
-    '
-    - .font size/
-    - .list faces/
-    - api/
-      > Summary
-      | How to use the Styles class.  You can change the color and font of text.
-      | You define styles, then make them apply to the text that matches
-      | regular expression.
-
-      > Define
-      | Styles.define :red, :bg => "d77"
-
-      > Apply
-      | Styles.apply "apply", :red
-
-      > Define more complex font
-      | Styles.define :blueish,
-      |   :fg => "99e",
-      |   :face => "verdana",
-      |   :size => 90,
-      |   :bold => true
-
-      > See
-      | For styling specific text (not just a pattern):
-      <<< @overlay/
-    - see/
-      <<< @css/list/
-      <<< @themes/
-    '
-    #       > Apply multiple fonts and groups
-
-  end
 
   def self.reload_styles
     Notes.define_styles
@@ -41,13 +7,14 @@ class Styles
     Color.define_styles
   end
 
+  # Sets the font size
   def self.font_size size=nil
 
-    # If nothing passed, show default sizes
+    # If nothing passed, show default sizes...
 
     if ! size
       return "
-        - original) #{Styles.height}
+        - original) #{Styles.get_font_size}
         - 110
         - 120
         - 135
@@ -66,13 +33,18 @@ class Styles
     nil
   end
 
+  # Returns the font size
+  def self.get_font_size
+    $el.el4r_lisp_eval "(face-attribute 'default :height)"
+  end
+
   def self.zoom options={}
 
     increment = options[:out] ? -10 : 10
 
     increment *= 5 if Keys.prefix_u || options[:up]
 
-    height = self.height
+    height = self.get_font_size
     height += increment
     self.font_size height
   end
@@ -173,6 +145,7 @@ class Styles
           ("arial black" "arial" "DejaVu Sans")
           ("arial" "DejaVu Sans")
           ("courier" "Monospace")
+          ("monaco" "Monospace")
 
           ("xiki" "verdana")
 
@@ -192,14 +165,8 @@ class Styles
     $el.el4r_lisp_eval "(setq font-lock-defaults '(nil t))"
   end
 
-  def self.height
-    $el.el4r_lisp_eval "(face-attribute 'default :height)"
-  end
-
-  #
   # Styles.attribute "mode-line", "background"
   # Styles.attribute "mode-line", "box"
-  #
   def self.attribute style, attribute
     $el.el4r_lisp_eval "(face-attribute '#{style} :#{attribute})"
   end
