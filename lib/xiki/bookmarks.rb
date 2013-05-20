@@ -273,27 +273,32 @@ class Bookmarks
     end
   end
 
-  # Insert $bookmark into to path if it contains a bookmarked path
-  def self.collapse path
-    if ! @bookmarks_cache
-      @bookmarks_cache = []
-      # TODO: pull this list out and make configurable
-      %w[a tr p n x 18].each do |name|
 
-        bmpath = $el.bookmark_get_filename(name)
-        next unless bmpath
-        bmpath.sub!(/[^\/]+$/, "")
+  #   def self.collapse path
 
-        @bookmarks_cache << [name, bmpath]
-      end
-    end
+  #   # Insert $bookmark into to path if it contains a bookmarked path
+  #   Ol["Not used, right - obsolete - was used to shorten window labels!"]
 
-    @bookmarks_cache.each do |name, bmpath|
-      next unless path =~ /^#{bmpath}/
-      return path.sub(bmpath, "$#{name}/")
-    end
-    return path
-  end
+  #     if ! @bookmarks_cache
+  #       @bookmarks_cache = []
+  #       # TODO: pull this list out and make configurable
+  #       %w[a tr p n x 18].each do |name|
+
+  #         bmpath = $el.bookmark_get_filename(name)
+  #         next unless bmpath
+  #         bmpath.sub!(/[^\/]+$/, "")
+
+  #         @bookmarks_cache << [name, bmpath]
+  #       end
+  #     end
+
+  #     @bookmarks_cache.each do |name, bmpath|
+  #       next unless path =~ /^#{bmpath}/
+  #       return path.sub(bmpath, "$#{name}/")
+  #     end
+  #     return path
+  #   end
+
 
   # Remove file from the end (if not dir).
   # Bookmarks.dir_only "/tmp/foo.txt"

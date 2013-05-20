@@ -13,7 +13,7 @@ class ConfLoadingHandler
 
     conf = File.file?(conf) ? File.read(conf) : nil
 
-    conf = self.parse conf
+    conf = conf ? "#{conf.strip}\n" : ""
 
     user_conf = Xiki.menu_path_dirs[0]
 
@@ -21,30 +21,10 @@ class ConfLoadingHandler
     user_conf = File.expand_path user_conf
     user_conf = File.file?(user_conf) ? File.read(user_conf) : ""
 
-    user_conf = self.parse user_conf
-
-    conf.merge! user_conf
+    # Pass conf as Xi string, so menus can wrap Xi instance around it or just call Tree.children directly
+    conf = "#{user_conf.strip}\n#{conf}" if user_conf   # Put user conf at top, so it'll be found first by .children
 
     options[:conf] = conf if conf.any?
-  end
-
-  def self.parse txt
-
-    result = {}
-    return result if ! txt
-    Tree.traverse txt do |array, string|
-      item = array[0]
-     next if ! item
-     next if item =~ /^[|>]/   # Do nothing if doesn't start with bullet
-
-      # Don't worry about nesting for now
-      match = item.match(/^([+-] )?(.+?): (.+)/)
-      next if ! match
-      key, val = match[2..3]
-      result[key] = val
-    end
-    # Ol.stack
-    result
   end
 
 end

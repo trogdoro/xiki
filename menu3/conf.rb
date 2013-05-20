@@ -1,5 +1,11 @@
 class Conf
-  def self.menu *args
-    Launcher.menu_keys.select{|o| o =~ /config/}.map{|o| "<< #{o}/"}.join("\n")
+
+  # Use notes styles for .conf files
+  def self.init
+    Mode.define(:conf, ".conf") do
+      Notes.mode
+    end
   end
+
 end
+Conf.init   # Define mode

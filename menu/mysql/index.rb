@@ -77,18 +77,17 @@ module Xiki::Menu
     #     Tree.quote self.run(nil, ENV['txt'])
     #   end
 
-    #   def self.start
-    #     Console.run "mysqld", :buffer=>"mysql", :dir=>"/tmp/"
-    #     View.to_buffer "mysql"
-    #     nil
-    #   end
+    def self.start
+      Console.sync "mysql.server start", :dir=>"/tmp/"
+      "@flash/- started!"
+    end
 
     #   def self.start_in_background
     #     Console.run "mysql.server start"
     #   end
 
     def self.default_db options
-      conf = options[:conf]
+      conf = Xi.new options[:conf]
       if(! conf || ! conf["default db"])
         raise "
           > No default db defined.  Define it?

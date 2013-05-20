@@ -341,7 +341,7 @@ class FileTree
       Styles.define :diff_green_pipe, :bg=>"ddffcc", :fg=>"337744", :size=>"0", :face=>"xiki", :bold=>true
       Styles.define :diff_small, :fg=>"ddd", :size=>"-11"
 
-      Styles.tree_keys :fg=>"#ff0", :underline=>1
+      Styles.tree_keys :fg=>"#000", :underline=>1
 
       # dir/
       Styles.define :ls_dir, :fg => "777", :face => "verdana", :size => "-1", :bold => true
