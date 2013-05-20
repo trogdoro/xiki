@@ -1,0 +1,32 @@
+# Black bg, light gray path
+Styles.mode_line(
+  :bg=>'000000',
+  :border=>['000000', 3],
+  :face=>"arial",
+  :bold=>true,
+  :size=>'1',
+  :fg=>'888'
+  )
+
+# Inactive has Black bg, dark gray path
+Styles.mode_line_inactive(
+  :bg=>'000000',
+  :border=>['000000', 3],
+  :face=>"arial",
+  :bold=>true,
+  :size=>'1',
+  :fg=>'444'
+  )
+
+# White file stem
+Styles.mode_line_file(
+  :fg=>"fff",
+  :face=>"arial",
+  :bold=>true
+  )
+
+Styles.mode_line_dim(
+  :fg=>"bce",
+  :face=>"arial",
+  :bold=>false
+  )

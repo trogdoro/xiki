@@ -1911,6 +1911,9 @@ class FileTree
     dest_path = Tree.construct_path
 
     dest_dir = dest_path.sub(/(.+\/).*/, "\\1")
+    slash = dest_dir =~ /\/$/
+    dest_dir = File.expand_path dest_dir
+    dest_dir = "#{dest_dir}/" if slash
 
     if prefix == 2
       self.move_latest_screenshot_to dest_path, dest_dir

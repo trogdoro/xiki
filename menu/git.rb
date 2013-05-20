@@ -484,7 +484,7 @@ module Xiki::Menu
 
         return "
           | There were no differences. Try modifying a file first.
-          | Or, to create a few sample files:
+          | Or create a few sample files:
           @git/setup/make sample files/
           ".unindent if ! txt.any?
         return option + txt + "

@@ -46,3 +46,8 @@
 - emacsclient/
   | ; Enable emacsclient (for telling emacs to view source, etc)
   | (server-start)
+- control lock/
+  | ; Like caps lock but for the control key.  Use C-, to toggle it on and off.
+  | (add-to-list 'load-path "~/.emacs.d/")
+  | (require 'control-lock)
+  | (control-lock-keys)
