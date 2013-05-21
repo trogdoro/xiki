@@ -1,7 +1,7 @@
 require 'net/http'
 require 'uri'
 require 'timeout'
-require 'xiki/keys'
+require 'xiki/core/keys'
 
 class Redmine
 

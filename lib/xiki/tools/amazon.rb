@@ -1,5 +1,5 @@
-require 'xiki/view'
-require 'xiki/effects'
+require 'xiki/core/view'
+require 'xiki/core/effects'
 
 class Amazon
 

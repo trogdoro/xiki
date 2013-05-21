@@ -1,4 +1,4 @@
-require 'xiki/mode'
+require 'xiki/core/mode'
 
 # Makes text in .deck files huge, and makes left and right arrow keys treat
 # headings as slides.

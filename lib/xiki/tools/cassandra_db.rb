@@ -1,7 +1,7 @@
 gem 'cassandra'
-require 'xiki/cassandra'
+require 'xiki/core/cassandra'
 
-require 'xiki/launcher'
+require 'xiki/core/launcher'
 
 # Cassandras structure:
 #   keyspace ->* table family ->* key (->* super column) ->* column

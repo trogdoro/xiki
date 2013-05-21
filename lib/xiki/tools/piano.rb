@@ -1,6 +1,6 @@
 Requirer.require_gem 'unimidi', :optional=>1
 
-require 'xiki/mode'
+require 'xiki/core/mode'
 
 
 class Piano

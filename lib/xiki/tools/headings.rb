@@ -1,6 +1,6 @@
-require 'xiki/view'
-require 'xiki/line'
-require 'xiki/effects'
+require 'xiki/core/view'
+require 'xiki/core/line'
+require 'xiki/core/effects'
 
 class Headings
 

@@ -77,6 +77,7 @@ class Browser
       file = View.file
     end
 
+Ol["hard-coded > using this any more?!"]
     mappings = Menu.menu_to_hash "/Users/craig/menu3/url_mappings.menu"
 
     result = nil
