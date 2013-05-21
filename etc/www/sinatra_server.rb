@@ -3,8 +3,8 @@ require "sinatra/base"
 xiki_directory = `xiki directory`.strip
 
 $:.unshift "#{xiki_directory}lib"
-require 'xiki/ol.rb'
-require 'xiki/core_ext.rb'
+require 'xiki/core/ol.rb'
+require 'xiki/core/core_ext.rb'
 
 # TODO: Enable basic auth for security
   # Add menu to let users create a password
@@ -39,7 +39,7 @@ class SinatraServer < Sinatra::Base
       xiki_directory = File.expand_path "#{File.dirname(__FILE__)}/../.."
 
       $:.unshift "#{xiki_directory}/lib"
-      ["xiki/tree"].each{|o| require o}
+      ["xiki/core/tree"].each{|o| require o}
 
       txt.slice! /.+\n/
       txt = txt.unindent
@@ -55,7 +55,7 @@ class SinatraServer < Sinatra::Base
       xiki_directory = File.expand_path "#{File.dirname(__FILE__)}/../.."
 
       $:.unshift "#{xiki_directory}/lib"
-      ["xiki/ol", "xiki/core_ext", "xiki/line", "xiki/tree", "../../menu/bootstrap"].each{|o| require o}
+      ["xiki/core/ol", "xiki/core/core_ext", "xiki/core/line", "xiki/core/tree", "../../menu/bootstrap"].each{|o| require o}
 
       txt.slice! /.+\n/
       txt = txt.unindent

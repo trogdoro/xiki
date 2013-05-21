@@ -1,11 +1,11 @@
-require 'xiki/ol'
+require 'xiki/core/ol'
 
 require "active_support"
 require "active_support/time"
 
-require 'xiki/core_ext'
-require 'xiki/menu'
-require 'xiki/launcher'
+require 'xiki/core/core_ext'
+require 'xiki/core/menu'
+require 'xiki/core/launcher'
 
 Xiki.init
 

@@ -20,8 +20,8 @@ xiki_dir = File.expand_path "#{File.dirname(__FILE__)}/.."
 
 $:.unshift "#{xiki_dir}/lib" #.sub(/\/$/, '')
 
-require "xiki/ol"
-require "xiki/core_ext"
+require "xiki/core/ol"
+require "xiki/core/core_ext"
 
 $:.unshift "#{xiki_dir}/etc/command"
 

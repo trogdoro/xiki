@@ -339,7 +339,7 @@ module Xiki
     # Get rest of files to require
 
     #     classes = Dir["./lib/xiki/*.rb"]
-    classes = Dir["./lib/xiki/core/*.rb"]
+    classes = Dir["./lib/xiki/{handlers,core}/*.rb"]
 
     classes = classes.select{|i|
       i !~ /\/ol.rb$/ &&   # Don't load Ol twice
