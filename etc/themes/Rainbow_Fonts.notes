@@ -1,20 +1,17 @@
-if Styles.dark_bg?
-
-  Styles.define :font_lock_comment_face, :fg=>'555'   # gray
-  Styles.define :font_lock_function_name_face, :fg=>'f50'   # orange
-  Styles.define :font_lock_type_face, :fg=>'0a1'   # green
-  Styles.define :font_lock_variable_name_face, :fg=>'fd0'   # yellow
-  Styles.define :font_lock_string_face, :fg=>'e10'   # red
-  Styles.define :font_lock_keyword_face, :fg=>'999'
-
-else
-
-  Styles.define :font_lock_comment_face, :fg=>'aaa'   # gray
-  Styles.define :font_lock_function_name_face, :fg=>'f50'   # orange
-  Styles.define :font_lock_type_face, :fg=>'090', :bold=>nil   # green
-  Styles.define :font_lock_variable_name_face, :fg=>'00c', :bold=>1   # yellow
-  Styles.define :font_lock_string_face, :fg=>'e10', :bold=>nil   # red
-  Styles.define :font_lock_keyword_face, :fg=>'888', :bold=>1   # blue
-
+module Xiki
+  if Styles.dark_bg?
+    Styles.define :font_lock_comment_face, :fg=>'555'   # gray
+    Styles.define :font_lock_function_name_face, :fg=>'f50'   # orange
+    Styles.define :font_lock_type_face, :fg=>'0a1'   # green
+    Styles.define :font_lock_variable_name_face, :fg=>'fd0'   # yellow
+    Styles.define :font_lock_string_face, :fg=>'e10'   # red
+    Styles.define :font_lock_keyword_face, :fg=>'999'
+  else
+    Styles.define :font_lock_comment_face, :fg=>'aaa'   # gray
+    Styles.define :font_lock_function_name_face, :fg=>'f50'   # orange
+    Styles.define :font_lock_type_face, :fg=>'090', :bold=>nil   # green
+    Styles.define :font_lock_variable_name_face, :fg=>'00c', :bold=>1   # yellow
+    Styles.define :font_lock_string_face, :fg=>'e10', :bold=>nil   # red
+    Styles.define :font_lock_keyword_face, :fg=>'888', :bold=>1   # blue
+  end
 end
-

@@ -7,7 +7,7 @@ Xiki.def(/^([$%&]) (.+)/) do |path, options|
   prompt, command = match[1..2]
   options[:command] = command
 
-  Console.shell_command_per_prompt prompt, options
+  Xiki::Console.shell_command_per_prompt prompt, options
 end
 
 # Url's
@@ -66,7 +66,7 @@ end
 # etc.
 
 Xiki.def(/^(p|y|pp|puts|Ol|Ol\.ap) /) do |line|
-  CodeTree.run line, :quote=>1
+  Xiki::CodeTree.run line, :quote=>1
 end
 
 Xiki.def(/^(ap) /) do |line|

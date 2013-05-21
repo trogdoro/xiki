@@ -1,6 +1,8 @@
-Styles.define :font_lock_comment_face, :fg=>'65614E'   # gray
-Styles.define :font_lock_function_name_face, :fg=>'f32'   # red
-Styles.define :font_lock_type_face, :fg=>'c21'   # red
-Styles.define :font_lock_variable_name_face, :fg=>'fd0'   # yellow
-Styles.define :font_lock_string_face, :fg=>'E6DB74'   # red
-Styles.define :font_lock_keyword_face, :fg=>'A5A18E'
+module Xiki
+  Styles.define :font_lock_comment_face, :fg=>'65614E'   # gray
+  Styles.define :font_lock_function_name_face, :fg=>'f32'   # red
+  Styles.define :font_lock_type_face, :fg=>'c21'   # red
+  Styles.define :font_lock_variable_name_face, :fg=>'fd0'   # yellow
+  Styles.define :font_lock_string_face, :fg=>'E6DB74'   # red
+  Styles.define :font_lock_keyword_face, :fg=>'A5A18E'
+end

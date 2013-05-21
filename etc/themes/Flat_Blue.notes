@@ -1,33 +1,35 @@
 # Blue bg, dark blue path
-Styles.mode_line(
-  :bg=>'6483af',
-  :border=>['6483af', 3],
-  :face=>"arial",
-  :bold=>true,
-  :size=>'1',
-  :fg=>'001122'
-  )
+module Xiki
+  Styles.mode_line(
+    :bg=>'6483af',
+    :border=>['6483af', 3],
+    :face=>"arial",
+    :bold=>true,
+    :size=>'1',
+    :fg=>'001122'
+    )
 
-# Inactive has light gray bg, medium gray path
-Styles.mode_line_inactive(
-  :bg=>'bbbbbb',
-  :border=>['bbbbbb', 3],
-  :face=>"arial",
-  :bold=>true,
-  :size=>'1',
-  :fg=>'555555'
-  )
+  # Inactive has light gray bg, medium gray path
+  Styles.mode_line_inactive(
+    :bg=>'bbbbbb',
+    :border=>['bbbbbb', 3],
+    :face=>"arial",
+    :bold=>true,
+    :size=>'1',
+    :fg=>'555555'
+    )
 
-# White file stem
-Styles.mode_line_file(
-  :fg=>"fff",
-  :face=>"arial",
-  :bold=>true
-  )
+  # White file stem
+  Styles.mode_line_file(
+    :fg=>"fff",
+    :face=>"arial",
+    :bold=>true
+    )
 
-Styles.mode_line_dim(
-  :fg=>"bce",
-  :face=>"arial",
-  :bold=>false
-  )
+  Styles.mode_line_dim(
+    :fg=>"bce",
+    :face=>"arial",
+    :bold=>false
+    )
+end
 

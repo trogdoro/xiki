@@ -47,7 +47,7 @@ module Xiki::Menu
         return FileTree.suggest_mkdir dir
       end
 
-      branch = ::Git.branch_name dir
+      branch = Xiki::Git.branch_name dir
 
       # If not a repo, suggest creating one...
 
@@ -63,7 +63,7 @@ module Xiki::Menu
 
       # If /, add push/thebranch/ to the beginning
 
-      branch = ::Git.branch_name
+      branch = Xiki::Git.branch_name
       "+ push/#{branch}/\n#{output}"
     end
 
@@ -83,7 +83,7 @@ module Xiki::Menu
 
       # If we're nested under a file, break up into parts
       if File.file? dir
-        dir, path = ::Git.toplevel_split dir
+        dir, path = Xiki::Git.toplevel_split dir
       end
 
       self.git_diff dir, path, quote, options
@@ -281,7 +281,7 @@ module Xiki::Menu
 
       dir = Tree.closest_dir(options[:ancestors])
 
-      toplevel, relative = ::Git.toplevel_split dir
+      toplevel, relative = Xiki::Git.toplevel_split dir
 
       rev, *file_and_line = args
 
@@ -445,7 +445,8 @@ module Xiki::Menu
         untracked.map!{|i| "+ untracked) #{i}\n"}
 
         option = is_unadded ? "- add\n" : "- commit/\n"
-        command = "git diff --patience --relative #{self.git_diff_options} #{is_unadded ? '' : ' HEAD'}"
+        #         command = "git diff --patience --relative #{self.git_diff_options} #{is_unadded ? '' : ' HEAD'}"
+        command = "git diff -b --patience --relative #{self.git_diff_options} #{is_unadded ? '' : ' HEAD'}"
 
         is_file = File.file? dir
 
@@ -502,7 +503,8 @@ module Xiki::Menu
 
         txt = is_unadded ?
           self.diff_internal("git diff --patience --relative #{self.git_diff_options} #{file}", dir) :
-          self.diff_internal("git diff --patience --relative #{self.git_diff_options} HEAD #{file}", dir)
+          #           self.diff_internal("git diff --patience --relative #{self.git_diff_options} HEAD #{file}", dir)
+          self.diff_internal("git diff --patience -b --relative #{self.git_diff_options} HEAD #{file}", dir)
         self.clean! txt
 
         if txt.blank?
@@ -534,7 +536,7 @@ module Xiki::Menu
 
     def self.jump_line_number_maybe txt, options
 
-      line_number = ::Git.jump_line_number
+      line_number = Xiki::Git.jump_line_number
       return if ! line_number
 
       # Get rid of this?  What did it do?  Possibly an early version of the diff where I made the line numbers parents items?

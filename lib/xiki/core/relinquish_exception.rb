@@ -1,2 +1,4 @@
-class RelinquishException < RuntimeError
+module Xiki
+  class RelinquishException < RuntimeError
+  end
 end

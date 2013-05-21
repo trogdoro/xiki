@@ -44,55 +44,57 @@ def Xi object, options={}
   options[:txt]
 end
 
-class Xi
+module Xiki
+  class Xi
 
-  # p Xi.hset({:x=>:y}, :a, :b, :c)
-  #   {:x=>:y, :a=>{:b=>:c}}
-  def self.hset h, *array
-    ancestors = array.dup
-    key, value = ancestors.slice!(-2..-1)
-    last = h
-    ancestors.each do |o|
-      # If hash not there yet, create new
-      last = (last[o] ||= {})
-      # Make reference be it
+    # p Xi.hset({:x=>:y}, :a, :b, :c)
+    #   {:x=>:y, :a=>{:b=>:c}}
+    def self.hset h, *array
+      ancestors = array.dup
+      key, value = ancestors.slice!(-2..-1)
+      last = h
+      ancestors.each do |o|
+        # If hash not there yet, create new
+        last = (last[o] ||= {})
+        # Make reference be it
+      end
+
+      # Add value to end (last item in array)
+
+      last[key] = value
+      h
     end
 
-    # Add value to end (last item in array)
+    # p Xi.hget({:a=>{:b=>:c}}, :a, :b)
+    #   :c
+    def self.hget h, *array
+      last = h
+      array.each do |o|
+        last = last[o]
+        return nil if last.nil?
+      end
 
-    last[key] = value
-    h
-  end
-
-  # p Xi.hget({:a=>{:b=>:c}}, :a, :b)
-  #   :c
-  def self.hget h, *array
-    last = h
-    array.each do |o|
-      last = last[o]
-      return nil if last.nil?
+      last
     end
 
-    last
-  end
+    # Wraps a xiki tree.  Kind of like a hash.  Just wraps text
+    # and passes to .children method.
+    attr_accessor :txt
+    def initialize txt=nil
+      @txt = txt
+      @txt.unindent! if txt =~ /\A\s/
+    end
 
-  # Wraps a xiki tree.  Kind of like a hash.  Just wraps text
-  # and passes to .children method.
-  attr_accessor :txt
-  def initialize txt=nil
-    @txt = txt
-    @txt.unindent! if txt =~ /\A\s/
-  end
+    def [] path
+      return nil if ! @txt
+      result = Tree.children @txt, path
+      result.strip! if result
+      result
+    end
 
-  def [] path
-    return nil if ! @txt
-    result = Tree.children @txt, path
-    result.strip! if result
-    result
-  end
+    def to_s
+      @txt
+    end
 
-  def to_s
-    @txt
   end
-
 end

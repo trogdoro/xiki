@@ -27,7 +27,7 @@ module Xiki::Menu
         return
       end
 
-      ::Themes.use name
+      ::Xiki::Themes.use name
       ".flash - updated!"
     end
 

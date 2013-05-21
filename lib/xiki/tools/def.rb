@@ -1,17 +1,19 @@
-class Def
-  def self.menu *args
-    Line.delete
+module Xiki
+  class Def
+    def self.menu *args
+      Line.delete
 
-    txt = %`
-      def self.
-        "hi"
-      end
-      `.unindent
+      txt = %`
+        def self.
+          "hi"
+        end
+        `.unindent
 
-    View.insert txt.gsub(/^/, '  '), :dont_move=>1
-    Move.to_end
-    #     ControlLock.disable
+      View.insert txt.gsub(/^/, '  '), :dont_move=>1
+      Move.to_end
+      #     ControlLock.disable
 
-    nil
+      nil
+    end
   end
 end

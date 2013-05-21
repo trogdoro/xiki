@@ -1,6 +1,8 @@
-Themes.use "Black BG"
-Themes.use "Flat Blue"
-Themes.use "Path Mode Line"
+module Xiki
+  Themes.use "Black BG"
+  Themes.use "Flat Blue"
+  Themes.use "Path Mode Line"
+end
 
 $el.el4r_lisp_eval %`
   (progn

@@ -1,21 +1,23 @@
-Styles.mode_line(
-  :bg=>'44aa44',
-  :border=>['55aa55', -5, 'released-button'],
-  :face=>'Lucida Grande',
-  :size=>'3',
-  :bold=>false,
-  :fg=>'fff'
-  )
-Styles.mode_line_inactive(
-  :bg=>'bbb',
-  :border=>['bbbbbb', -1],
-  :face=>'Lucida Grande',
-  :bold=>false,
-  :fg=>'000'
-  )
-Styles.mode_line_file(
-  :fg=>"fff",
-  :size=>"0",
-  :face=>"arial",
-  :bold=>false
-  )
+module Xiki
+  Styles.mode_line(
+    :bg=>'44aa44',
+    :border=>['55aa55', -5, 'released-button'],
+    :face=>'Lucida Grande',
+    :size=>'3',
+    :bold=>false,
+    :fg=>'fff'
+    )
+  Styles.mode_line_inactive(
+    :bg=>'bbb',
+    :border=>['bbbbbb', -1],
+    :face=>'Lucida Grande',
+    :bold=>false,
+    :fg=>'000'
+    )
+  Styles.mode_line_file(
+    :fg=>"fff",
+    :size=>"0",
+    :face=>"arial",
+    :bold=>false
+    )
+end

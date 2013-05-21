@@ -23,7 +23,7 @@ require 'xiki/core/trouble_shooting'
 require 'xiki/core/ol'
 require 'xiki/core/requirer'
 require 'xiki/core/text_util'
-Requirer.require_classes ['xiki/core/notes']
+Xiki::Requirer.require_classes ['xiki/core/notes']
 require 'xiki/core/launcher'
 require 'xiki/core/mode'
 require 'xiki/core/menu'
@@ -381,8 +381,7 @@ module Xiki
     if $el
       # If the first time we've loaded
 
-      # TODO: after we namespace Xiki classes into 'Menu', remove the "::" and it will use Xiki::Menu, since we're in the Menu module
-      if ! $el.elvar.xiki_loaded_once && ! ::Menu.line_exists?("misc config", /^- don't show welcome$/) && ! View.buffer_visible?("Issues Loading Xiki")
+      if ! $el.elvar.xiki_loaded_once && ! Menu.line_exists?("misc config", /^- don't show welcome$/) && ! View.buffer_visible?("Issues Loading Xiki")
         Launcher.open("welcome/", :no_search=>1)
       end
 

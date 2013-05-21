@@ -1,6 +1,8 @@
-Styles.define :default, :bg=>'ddd', :fg=>'333'
-Styles.define :fringe, :bg=>'ddd', :fg=>'ddd'
+module Xiki
+  Styles.define :default, :bg=>'ddd', :fg=>'333'
+  Styles.define :fringe, :bg=>'ddd', :fg=>'ddd'
 
-# Adjust light colors
-Styles.define :font_lock_variable_name_face, :fg=>'c90'   # yellow
-Styles.define :font_lock_comment_face, :fg=>'aaa'   # gray
+  # Adjust light colors
+  Styles.define :font_lock_variable_name_face, :fg=>'c90'   # yellow
+  Styles.define :font_lock_comment_face, :fg=>'aaa'   # gray
+end

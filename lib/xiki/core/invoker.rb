@@ -1,220 +1,222 @@
-class Invoker
-  # Invokes actions on menu source classes.
-  #
-  # The actioun is often the .menu method, but could alternateyl be handled
-  # by the MENU constant or the foo.menu file.  Also, MENU or foo.menu may route
-  # to a different method, in which case that will be invoked.
-  #
-  # Todo: abstract this out so it can invoke other languages too?
-  # - Make it delegate back to RubyHandler for running stuff
-  #   - Make it have specific methods, for each type of eval below:
-  #     - handler.check_class_defined?
-  def self.invoke clazz, args, options={}
+module Xiki
+  class Invoker
+    # Invokes actions on menu source classes.
+    #
+    # The actioun is often the .menu method, but could alternateyl be handled
+    # by the MENU constant or the foo.menu file.  Also, MENU or foo.menu may route
+    # to a different method, in which case that will be invoked.
+    #
+    # Todo: abstract this out so it can invoke other languages too?
+    # - Make it delegate back to RubyHandler for running stuff
+    #   - Make it have specific methods, for each type of eval below:
+    #     - handler.check_class_defined?
+    def self.invoke clazz, args, options={}
 
-    args ||= []
-    menu_found = nil   # Possible values: nil, :constant, :file, :method (if :method, it overwrites the previous value, which is fine)
+      args ||= []
+      menu_found = nil   # Possible values: nil, :constant, :file, :method (if :method, it overwrites the previous value, which is fine)
 
-    action_method = nil
-    some_method_ran = false
+      action_method = nil
+      some_method_ran = false
 
-    code, clazz_name, dot_menu_file = options[:code], options[:clazz_name], options[:dot_menu_file]
+      code, clazz_name, dot_menu_file = options[:code], options[:clazz_name], options[:dot_menu_file]
 
-    # Load class...
+      # Load class...
 
-    # Assume clazz is a file for now
+      # Assume clazz is a file for now
 
-    # Just always reload for now (no caching)
+      # Just always reload for now (no caching)
 
-    returned, out, exception = Code.eval code, clazz, 1, :global=>1
-    return CodeTree.draw_exception exception, code if exception
-
-    # TODO: wrap modules around depending on dir (based on :last_source_dir)?
-
-    mod = self.extract_ruby_package code
-    clazz_name = "#{mod}::#{clazz_name}" if mod
-
-    clazz = Code.simple_eval("defined?(#{clazz_name}) ? #{clazz_name} : nil", nil, nil, :global=>1)
-
-    # Call .menu_before if exists...
-
-    method = clazz.method(:menu_before) rescue nil
-
-    if method
-      some_method_ran = true
-      code = proc{ method.call(*args) {options} }
-      returned, out, exception = Code.eval code
-
+      returned, out, exception = Code.eval code, clazz, 1, :global=>1
       return CodeTree.draw_exception exception, code if exception
-      if returned
-        returned.unindent! if returned =~ /\A[ \n]/
-        return returned
+
+      # TODO: wrap modules around depending on dir (based on :last_source_dir)?
+
+      mod = self.extract_ruby_package code
+      clazz_name = "#{mod}::#{clazz_name}" if mod
+
+      clazz = Code.simple_eval("defined?(#{clazz_name}) ? #{clazz_name} : nil", nil, nil, :global=>1)
+
+      # Call .menu_before if exists...
+
+      method = clazz.method(:menu_before) rescue nil
+
+      if method
+        some_method_ran = true
+        code = proc{ method.call(*args) {options} }
+        returned, out, exception = Code.eval code
+
+        return CodeTree.draw_exception exception, code if exception
+        if returned
+          returned.unindent! if returned =~ /\A[ \n]/
+          return returned
+        end
       end
-    end
 
-    # Grab MENU constant or .menu file...
+      # Grab MENU constant or .menu file...
 
-    if clazz.const_defined? :MENU
-      menu_found = :constant
-      menu_text = clazz::MENU
-    elsif File.file?(dot_menu_file)
-      menu_found = :file
-      menu_text = File.read dot_menu_file
-    end
-
-    txt = nil
-
-    # If MENU|foo.menu, do routing (get children or dotify)...
-
-    dotified = []
-
-    if menu_text
-
-      menu_text = menu_text.unindent if menu_text =~ /\A[ \n]/
-      txt = Tree.children menu_text, args, options
-
-      # If there was output use it, otherwise try routing (dotifying)
-
-      if ! txt || txt == "- */\n"
-        dotified = Tree.dotify menu_text, args
-      elsif menu_found == :constant || menu_found == :file   # If there was autput from MENU or foo.menu, eval !... lines
-        MenuHandler.eval_when_exclamations txt, options
+      if clazz.const_defined? :MENU
+        menu_found = :constant
+        menu_text = clazz::MENU
+      elsif File.file?(dot_menu_file)
+        menu_found = :file
+        menu_text = File.read dot_menu_file
       end
-    end
 
-    # If MENU_HIDDEN exists, use it to route...
+      txt = nil
 
-    menu_hidden = clazz.const_defined? "MENU_HIDDEN"
-    if menu_hidden
-      returned = clazz.const_get "MENU_HIDDEN"
+      # If MENU|foo.menu, do routing (get children or dotify)...
 
-      # Only do dotifying if not already done?
-      dotified = Tree.dotify returned.unindent, args, dotified
-    end
+      dotified = []
 
-    # If MENU|foo.menu not found or didn't handle path, call routed method or otherwise .menu with args...
-    if ! txt
-      # Figure out whether to try .menu or routed .method
-      action, variables = self.actionify args, dotified
+      if menu_text
 
-      menu_found = :method if clazz.method(action) rescue nil   # Method exists, so call it
+        menu_text = menu_text.unindent if menu_text =~ /\A[ \n]/
+        txt = Tree.children menu_text, args, options
 
-      # If no menu or routed method of any kind, try menuless mode...
+        # If there was output use it, otherwise try routing (dotifying)
 
-      if ! menu_found
-        cmethods = clazz.methods - Class.methods
-        options[:instance_method] = 1 if cmethods.empty?
+        if ! txt || txt == "- */\n"
+          dotified = Tree.dotify menu_text, args
+        elsif menu_found == :constant || menu_found == :file   # If there was autput from MENU or foo.menu, eval !... lines
+          MenuHandler.eval_when_exclamations txt, options
+        end
+      end
 
-        if args.empty?   # /, so list all methods
-          # If MENU|foo.menu|Foo.menu, just show all methods, and call method based on name...
+      # If MENU_HIDDEN exists, use it to route...
 
-          # Pass instance methods if none
-          cmethods = clazz.instance_methods - Class.instance_methods if cmethods.empty?
+      menu_hidden = clazz.const_defined? "MENU_HIDDEN"
+      if menu_hidden
+        returned = clazz.const_get "MENU_HIDDEN"
 
-          txt = cmethods.sort.map{|o| "+ #{o}/\n"}.join ""
+        # Only do dotifying if not already done?
+        dotified = Tree.dotify returned.unindent, args, dotified
+      end
 
-        else   # /foo/bar, so invoke /.foo/bar!
-          # Artificially route to 1st item to be the action
-          dotified = [true]   # Indicate only the first item is the action
-          action, variables = self.actionify args, dotified
+      # If MENU|foo.menu not found or didn't handle path, call routed method or otherwise .menu with args...
+      if ! txt
+        # Figure out whether to try .menu or routed .method
+        action, variables = self.actionify args, dotified
+
+        menu_found = :method if clazz.method(action) rescue nil   # Method exists, so call it
+
+        # If no menu or routed method of any kind, try menuless mode...
+
+        if ! menu_found
+          cmethods = clazz.methods - Class.methods
+          options[:instance_method] = 1 if cmethods.empty?
+
+          if args.empty?   # /, so list all methods
+            # If MENU|foo.menu|Foo.menu, just show all methods, and call method based on name...
+
+            # Pass instance methods if none
+            cmethods = clazz.instance_methods - Class.instance_methods if cmethods.empty?
+
+            txt = cmethods.sort.map{|o| "+ #{o}/\n"}.join ""
+
+          else   # /foo/bar, so invoke /.foo/bar!
+            # Artificially route to 1st item to be the action
+            dotified = [true]   # Indicate only the first item is the action
+            action, variables = self.actionify args, dotified
+          end
+
         end
 
+        # If still no text, try .menu or routed method...
+
+        if ! txt
+          action_method =
+            if options[:instance_method]
+              clazz.new.method(action) rescue nil
+            else
+              clazz.method(action) rescue nil
+            end
+
+          if action_method   # Method exists, so call it
+            some_method_ran = true
+            menu_found = :method
+
+            # Call action...
+
+            code = proc{ action_method.call(*variables) {options} }
+            txt, out, exception = Code.eval code
+
+            txt = CodeTree.returned_to_s(txt) if txt   # Convert from array into string, etc.
+            txt = txt.unindent if txt =~ /\A[ \n]/
+
+            if exception
+              args = variables.map{|o| "\"#{CodeTree.escape o}\""}.join(", ")   # This was only when we eval'ed
+              code = "#{clazz_name}.#{action} #{args}".strip
+              return CodeTree.draw_exception exception, code
+            end
+          end
+        end
       end
 
-      # If still no text, try .menu or routed method...
+      # TODO: Be sure to eval output that starts with "! "
+        # When?
+          # Even when self.menu output?
+
+
+      #     # TODO: Unified: comment out for now - just comment out since we're doing no caching
+      #     # reload 'path_to_class'
+      #     Menu.load_if_changed File.expand_path("~/menu/#{snake}.rb")
+
+      # Call .menu_after if it exists...
+
+      method = clazz.method(:menu_after) rescue nil
+      if method
+        some_method_ran = true
+
+        code = proc{ method.call(txt, *args) {options} }
+        returned, out, exception = Code.eval code
+
+        return CodeTree.draw_exception exception, code if exception
+        if returned
+          returned.unindent! if returned =~ /\A[ \n]/
+          txt = returned
+        end
+      end
 
       if ! txt
-        action_method =
-          if options[:instance_method]
-            clazz.new.method(action) rescue nil
-          else
-            clazz.method(action) rescue nil
-          end
+        return nil if some_method_ran   # Only say "no output" if didn't call .menu, .menu_before|_after, or other action
 
-        if action_method   # Method exists, so call it
-          some_method_ran = true
-          menu_found = :method
-
-          # Call action...
-
-          code = proc{ action_method.call(*variables) {options} }
-          txt, out, exception = Code.eval code
-
-          txt = CodeTree.returned_to_s(txt) if txt   # Convert from array into string, etc.
-          txt = txt.unindent if txt =~ /\A[ \n]/
-
-          if exception
-            args = variables.map{|o| "\"#{CodeTree.escape o}\""}.join(", ")   # This was only when we eval'ed
-            code = "#{clazz_name}.#{action} #{args}".strip
-            return CodeTree.draw_exception exception, code
-          end
-        end
+        # For now, let's try not doing this
+        txt = "@flash/- no output!" if options[:client] =~ /^editor\b/
       end
+
+      txt
     end
 
-    # TODO: Be sure to eval output that starts with "! "
-      # When?
-        # Even when self.menu output?
 
+    # Breaks args down into a method ("action") and the params
+    # Invoker.actionify(["act", "b"], [true])
+    #   ["act", ["b"]]
+    def self.actionify args, boolean_array
 
-    #     # TODO: Unified: comment out for now - just comment out since we're doing no caching
-    #     # reload 'path_to_class'
-    #     Menu.load_if_changed File.expand_path("~/menu/#{snake}.rb")
+      # Last .dotted one is the action, and non-dotted are variables to pass
+      i = -1
+      actions, variables = args.partition{|o|
+        i += 1
+        boolean_array[i]
+      }
 
-    # Call .menu_after if it exists...
+      action = actions.last || "menu"
+      action.gsub! /[ -]/, '_'
+      action.gsub! /[^\w.]/, ''
 
-    method = clazz.method(:menu_after) rescue nil
-    if method
-      some_method_ran = true
+      action.downcase!
 
-      code = proc{ method.call(txt, *args) {options} }
-      returned, out, exception = Code.eval code
-
-      return CodeTree.draw_exception exception, code if exception
-      if returned
-        returned.unindent! if returned =~ /\A[ \n]/
-        txt = returned
-      end
+      [action, variables]
     end
 
-    if ! txt
-      return nil if some_method_ran   # Only say "no output" if didn't call .menu, .menu_before|_after, or other action
+    def self.extract_ruby_package txt
 
-      # For now, let's try not doing this
-      txt = "@flash/- no output!" if options[:client] =~ /^editor\b/
+      txt = txt.sub /^ *class .+/m, ""   # Remove everything after 1st class... line
+
+      txt = txt.scan(/^ *module (.+)/).map{|o| o[0]}.join("::")
+
+      return nil if txt == ""
+      txt
     end
-
-    txt
-  end
-
-
-  # Breaks args down into a method ("action") and the params
-  # Invoker.actionify(["act", "b"], [true])
-  #   ["act", ["b"]]
-  def self.actionify args, boolean_array
-
-    # Last .dotted one is the action, and non-dotted are variables to pass
-    i = -1
-    actions, variables = args.partition{|o|
-      i += 1
-      boolean_array[i]
-    }
-
-    action = actions.last || "menu"
-    action.gsub! /[ -]/, '_'
-    action.gsub! /[^\w.]/, ''
-
-    action.downcase!
-
-    [action, variables]
-  end
-
-  def self.extract_ruby_package txt
-
-    txt = txt.sub /^ *class .+/m, ""   # Remove everything after 1st class... line
-
-    txt = txt.scan(/^ *module (.+)/).map{|o| o[0]}.join("::")
-
-    return nil if txt == ""
-    txt
   end
 end

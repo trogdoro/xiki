@@ -2,5 +2,5 @@ $LOAD_PATH << "{{xiki_dir}}lib/"
 # $LOAD_PATH << "/projects/xiki/lib/"
 require 'xiki'
 Xiki.init
-KeyBindings.keys   # Use default key bindings
-Themes.use "Default"  # Use xiki theme
+Xiki::KeyBindings.keys   # Use default key bindings
+Xiki::Themes.use "Default"  # Use xiki theme

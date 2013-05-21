@@ -19,16 +19,16 @@ class Mark
   def self.menu_after output, *args
     return if ! Color.colors_by_name[args[0]]   # Only continue if arg is an existing color
 
-    Color.mark args[0]
+    Xiki::Color.mark args[0]
     ""
   end
 
   def self.next
-    Color.next
+    Xiki::Color.next
     ""
   end
   def self.previous
-    Color.previous
+    Xiki::Color.previous
     ""
   end
 
@@ -71,7 +71,7 @@ class Mark
   end
 
   def self.show
-    hash = Color.all_marks_hash
+    hash = Xiki::Color.all_marks_hash
 
     if hash.empty?   # If no marks found, just say so
       return "- no marks found!"
