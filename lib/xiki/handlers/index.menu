@@ -1,0 +1,4 @@
+> Summary
+| Handlers are what Menu.expand passes control to to run source files.
+| Source files have various extensions (.menu, .py, etc.) and there's
+| a handler for each extension.

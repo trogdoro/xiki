@@ -36,10 +36,13 @@ class Gems
   end
 
   def self.gem_dir name
+    # TODO: use .find_all_by_name instead, and grab the appropreate version
+    # Probably require version as a param to this method.
     Gem::Specification.find_by_name(name).gem_dir+"/"
   end
 
   def self.source name, version
+Ol.>> name, version
     dir = Gems.gem_dir name
 
     "@#{dir}"

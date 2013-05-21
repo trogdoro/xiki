@@ -40,6 +40,5 @@ update initrb/
   ! File.open("#{el4r_dir}/init.rb", "w") { |f| f << txt }
   ! "- Created the ~/.el4r/init.rb file."
 
-> TODO
-- finish!
-
+> 3. Optionally tweak your emacs config
+Paste "emacs config tweaks" into emacs and double-click on it.  You'll be able to preview each conf item before it's added to your .emacs.

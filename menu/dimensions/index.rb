@@ -38,7 +38,27 @@ class Dimensions
       return "#{output}\n@conf/"
     end
 
+
+    # Close view if we opened it with a shortcut...
+
+    Ol["We can probably make this generic!"]
+    # Know to close after the first launch (that returns nil?) when
+    #   - Maybe always close when :letter param
+    #     - maybe only close when :letter=>"close"
+    #     - yes, probably do this
+    #       - just make the code that got the letter input close the view
+    #         - when the view name is @...
+    #         - then there's no need for this file
+    #   - or possibly: make name of view special
+    #     - to indicate that it should be closed
+    #       - probably isn't necessary, since :letter-related code will still be running
+
+    # /projects/xiki/lib/xiki/
+    #   - key_bindings.rb
+    #     |     Xiki.def "layout+dimensions", "dimensions/", :letter=>1
+
     View.kill if View.name == "@dimensions/"
+
 
     nil
   end

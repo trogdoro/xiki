@@ -623,7 +623,7 @@ module Xiki
 
       # Safe mapping of C-m to Search.isearch_m (works when el4r is down)
       $el.el4r_lisp_eval(%`(defun isearch-m () (interactive)
-        (if (eq (process-status el4r-process) 'run) (el4r-ruby-eval "Xiki::Search.isearch_m") (isearch-exit)))
+        (if (eq (process-status el4r-process) 'run) (el4r-ruby-eval "::Xiki::Search.isearch_m") (isearch-exit)))
         `.unindent)
 
       $el.define_key :isearch_mode_map, $el.kbd("C-m"), :isearch_m   # search+menu (done in a really safe way, so Return in isearch doesn't break when el4r goes down)

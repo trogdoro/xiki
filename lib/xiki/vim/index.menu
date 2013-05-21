@@ -1,0 +1,5 @@
+> Summary
+| In-progress support for Vim.  The current idea is that the classes will
+| loaded in Vim's ruby environment after the core classes, so that method
+| definitions in them will replace the default ones with vim-specific ones.
+| Possibly revisit this approach.

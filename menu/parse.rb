@@ -20,7 +20,9 @@ class Parse
       txt = self.ap options
       txt.gsub! /^  /, ""
       txt.sub! "[\n  [", "[["
-      return "#{Tree.quote txt}\n+ see/\n  <@ climb/"
+      txt = Tree.quote txt
+      txt << "\n<< source/" if options[:menufied]   # Sources menu helps for menus
+      return txt
     end
 
     # /|:def..., so jump to it...
