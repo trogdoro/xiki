@@ -2,7 +2,7 @@ gem 'net-ssh'
 require 'net/ssh'
 require 'net/sftp'
 require 'timeout'
-require 'xiki/ol'
+require 'xiki/core/ol'
 
 class Remote
 

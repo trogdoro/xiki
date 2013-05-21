@@ -1,8 +1,8 @@
 $:.unshift "spec/"
-require 'xiki/line'
-require 'xiki/ol'
-require 'xiki/diff_log'
-# require 'xiki/core_ext'
+require 'xiki/core/line'
+require 'xiki/core/ol'
+require 'xiki/core/diff_log'
+# require 'xiki/core/core_ext'
 
 describe Line, "#parse_tree_diffs" do
   #   it "parses a rename" do

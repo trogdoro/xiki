@@ -2,9 +2,9 @@ $:.unshift "spec/"
 
 require './spec/spec_helper'
 
-require 'xiki/conf_handler'
+require 'xiki/core/conf_handler'
 
-%w"xiki/tree".each {|o| require o}
+%w"xiki/core/tree".each {|o| require o}
 
 describe ConfHandler, "#parse" do
   it "makes a hash of one line" do

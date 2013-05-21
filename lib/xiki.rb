@@ -19,14 +19,14 @@ $el.set_process_query_on_exit_flag($el.get_buffer_process("*el4r:process*"), nil
 # $LOAD_PATH << "#{xiki_dir}/lib"
 # Require some of the core files
 require 'rubygems'
-require 'xiki/trouble_shooting'
-require 'xiki/ol'
-require 'xiki/requirer'
-require 'xiki/text_util'
-Requirer.require_classes ['xiki/notes']
-require 'xiki/launcher'
-require 'xiki/mode'
-require 'xiki/menu'
+require 'xiki/core/trouble_shooting'
+require 'xiki/core/ol'
+require 'xiki/core/requirer'
+require 'xiki/core/text_util'
+Requirer.require_classes ['xiki/core/notes']
+require 'xiki/core/launcher'
+require 'xiki/core/mode'
+require 'xiki/core/menu'
 
 # Launcher.add_class_launchers classes
 module Xiki
@@ -338,7 +338,8 @@ module Xiki
 
     # Get rest of files to require
 
-    classes = Dir["./lib/xiki/*.rb"]
+    #     classes = Dir["./lib/xiki/*.rb"]
+    classes = Dir["./lib/xiki/core/*.rb"]
 
     classes = classes.select{|i|
       i !~ /\/ol.rb$/ &&   # Don't load Ol twice
@@ -362,7 +363,8 @@ module Xiki
     Requirer.require_classes classes
 
     # key_bindings has many dependencies, require it last
-    Requirer.require_classes ['./lib/xiki/key_bindings.rb']
+    #     Requirer.require_classes ['./lib/xiki/key_bindings.rb']
+    Requirer.require_classes ['./lib/xiki/core/key_bindings.rb']
 
     Launcher.add_class_launchers classes.map{|o| o[/.*\/(.+)/, 1]}
     Launcher.reload_menu_dirs

@@ -1,4 +1,4 @@
-require 'xiki/hide'
+require 'xiki/core/hide'
 
 # Will store a diff each time a file is saved.
 class DiffLog

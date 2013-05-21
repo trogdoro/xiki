@@ -1,5 +1,5 @@
 $:.unshift "spec/"
-require 'xiki/text_util'
+require 'xiki/core/text_util'
 
 describe TextUtil, "#unindent" do
 

@@ -1,5 +1,5 @@
-require 'xiki/line'
-require 'xiki/ol'
+require 'xiki/core/line'
+require 'xiki/core/ol'
 
 class TextUtil
 

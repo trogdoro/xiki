@@ -2,7 +2,7 @@ $:.unshift "spec/"
 
 require './spec/spec_helper'
 
-require 'xiki/path'
+require 'xiki/core/path'
 
 describe Path, "#escape" do
   it "escapes slash" do

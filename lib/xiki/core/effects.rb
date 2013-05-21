@@ -1,4 +1,4 @@
-require 'xiki/styles'
+require 'xiki/core/styles'
 
 # Makes visual things happen
 class Effects

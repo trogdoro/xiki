@@ -3,8 +3,8 @@ require 'rubygems'
 class Keys
   def self.method_missing(meth, *args, &block); end
 end
-require 'xiki/remote'
-require 'xiki/core_ext'
+require 'xiki/core/remote'
+require 'xiki/core/core_ext'
 
 describe Remote, "#calculate_local_path" do
   it "should put dashes in path" do

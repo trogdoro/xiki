@@ -1,6 +1,6 @@
 $:.unshift "spec/"
 
-require 'xiki/invoker'
+require 'xiki/core/invoker'
 
 require './spec/spec_helper'
 

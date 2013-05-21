@@ -2,7 +2,7 @@ $:.unshift "spec/"
 require './spec/spec_helper'
 
 require 'xiki'
-require 'xiki/code_tree'
+require 'xiki/core/code_tree'
 # require 'core_ext'
 
 describe CodeTree, "#extract_class" do

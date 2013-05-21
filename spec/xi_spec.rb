@@ -1,6 +1,6 @@
 $:.unshift "spec/"
 
-require 'xiki/xi'
+require 'xiki/core/xi'
 require './spec/spec_helper'
 
 describe Xi, "#hput" do

@@ -1,5 +1,5 @@
-require 'xiki/effects'
-require 'xiki/requirer'
+require 'xiki/core/effects'
+require 'xiki/core/requirer'
 require 'xiki'
 
 require 'sourcify'   # slow - (0.144676)
@@ -24,7 +24,7 @@ class Launcher
 
   # Deprecated after unified
   MENU_DIRS = [
-    "#{Xiki.dir}menu3",
+    "#{Xiki.dir}lib/xiki/tools",
     File.expand_path("~/menu3"),
     ]
 
@@ -363,7 +363,7 @@ class Launcher
       root = $1
       root.gsub!(/[ -]/, '_') if root
 
-      ["~/menu3", Bookmarks["$x/menu3"]].each do |dir|
+      ["~/menu3", Bookmarks["$x/lib/xiki/tools"]].each do |dir|
 
         matches = Dir[File.expand_path("#{dir}/#{root}*")]
 

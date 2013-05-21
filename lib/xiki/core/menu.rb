@@ -828,7 +828,7 @@ module Menu
   def self.line_exists? name, pattern #, options={}
     name.gsub! /\W/, '_'
     dir = File.expand_path "~/menu3"
-    file = File.expand_path "#{dir}/#{name}.menu3"
+    file = File.expand_path "#{dir}/#{name}.menu"
     txt = File.read(file) rescue ""
     txt =~ pattern ? ($1 || $&) : nil   # Return whole string or group
   end

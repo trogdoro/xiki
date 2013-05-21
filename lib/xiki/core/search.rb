@@ -1,7 +1,7 @@
-require 'xiki/hide'
-require 'xiki/control_lock'
-require 'xiki/line'
-require 'xiki/text_util'
+require 'xiki/core/hide'
+require 'xiki/core/control_lock'
+require 'xiki/core/line'
+require 'xiki/core/text_util'
 
 class Search
 

@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 
-require 'xiki/styles'
-require 'xiki/line'
-require 'xiki/view'
+require 'xiki/core/styles'
+require 'xiki/core/line'
+require 'xiki/core/view'
 require 'net/http'
 require 'uri'
-require 'xiki/cursor'
+require 'xiki/core/cursor'
 
 # Draws a tree from a dir structure and lets you incrementally search in the tree.
 # Usage (user):

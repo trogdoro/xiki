@@ -1,4 +1,4 @@
-require 'xiki/block'
+require 'xiki/core/block'
 require 'stringio'
 
 class Code
@@ -256,7 +256,7 @@ class Code
       if View.file =~ /\/spec\//   # If in spec, open corresponding file
 
         path = View.file
-        path.sub! "/spec/", "/lib/xiki/"   # "/projects/xiki/lib/xiki/spec/code_spec.rb"
+        path.sub! "/spec/", "/lib/xiki/core/"   # "/projects/xiki/lib/xiki/spec/code_spec.rb"
         path.sub! "_spec.rb", ".rb"
 
         View.open path
@@ -264,7 +264,7 @@ class Code
 
         method = Code.grab_containing_method :name=>1
         path = View.file
-        path.sub! "/lib/xiki/", "/spec/"   # "/projects/xiki/lib/xiki/spec/code_spec.rb"
+        path.sub! "/lib/xiki/core/", "/spec/"   # "/projects/xiki/lib/xiki/spec/code_spec.rb"
         path.sub! ".rb", '_spec.rb'
 
         View.open path

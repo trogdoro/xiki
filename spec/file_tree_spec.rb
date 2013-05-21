@@ -1,6 +1,6 @@
 $:.unshift "spec/"
-require 'xiki/file_tree'
-require 'xiki/core_ext'
+require 'xiki/core/file_tree'
+require 'xiki/core/core_ext'
 
 
 describe "handles?" do
@@ -155,6 +155,12 @@ describe "#extract_filters" do
     file_path = "/projects/foo/##\\/bar/"
     FileTree.extract_filters!(file_path).should == ["##\\/bar/"]
     file_path.should == "/projects/foo/"
+  end
+
+  it "works when pipes" do
+    file_path = "/tmp/pry/##class| module /"
+    FileTree.extract_filters!(file_path).should == ["##class| module /"]
+    file_path.should == "/tmp/pry/"
   end
 
 end

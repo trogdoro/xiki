@@ -1,4 +1,4 @@
-require 'xiki/tree_cursor'
+require 'xiki/core/tree_cursor'
 
 # Class for manipulating tree-like strings.  Nesting is done by 2-space
 # indenting. Primary methods:

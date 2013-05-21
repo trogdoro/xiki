@@ -1,9 +1,9 @@
-require 'xiki/styles'
-require 'xiki/line'
-require 'xiki/effects'
-require 'xiki/view'
-require 'xiki/keys'
-require 'xiki/clipboard'
+require 'xiki/core/styles'
+require 'xiki/core/line'
+require 'xiki/core/effects'
+require 'xiki/core/view'
+require 'xiki/core/keys'
+require 'xiki/core/clipboard'
 
 class Notes
 

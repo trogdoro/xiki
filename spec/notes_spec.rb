@@ -2,9 +2,9 @@ $:.unshift "spec/"
 
 require './spec/spec_helper'
 
-%w"path code tree menu menu_suggester pre_pattern pattern file_tree bookmarks".each {|o| require "xiki/#{o}"}
+%w"path code tree menu menu_suggester pre_pattern pattern file_tree bookmarks".each {|o| require "xiki/core/#{o}"}
 
-require 'xiki/notes'
+require 'xiki/core/notes'
 
 describe Notes, "#drill_split" do
   it "pulls out head ang quote" do

@@ -1,6 +1,6 @@
-require 'xiki/pause_means_space'
-require 'xiki/line'
-require 'xiki/text_util'
+require 'xiki/core/pause_means_space'
+require 'xiki/core/line'
+require 'xiki/core/text_util'
 
 # Methods for defining keyboard shortcuts
 class Keys
@@ -120,7 +120,7 @@ class Keys
 
       | For all keyboard shortcuts, see where they're key_bindings.rb, where they're
       | defined:
-      - @$xiki/lib/xiki/key_bindings.rb
+      - @$xiki/lib/xiki/core/key_bindings.rb
 
       > Keyboard shortcuts while searching
       | The seventh category, "search" has special behavior.  See:
@@ -669,7 +669,7 @@ class Keys
   # Keys.bookmark_as_path :prompt=>"Enter something"   # Show message
   # Keys.bookmark_as_path :bm=>"ru"   # Don't prompt
   # Keys.bookmark_as_path :bm=>"."   # Current dir works
-  #   /projects/xiki/lib/xiki/
+  #   /projects/xiki/lib/xiki/core/
   def self.bookmark_as_path options={}
     bm = options[:bm] || Keys.input(:timed=>true, :prompt=>options[:prompt]||"Enter a bookmark: ")
 

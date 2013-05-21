@@ -1,4 +1,4 @@
-require "xiki/pre_pattern"
+require "xiki/core/pre_pattern"
 
 class Pattern
   @@defs ||= {}

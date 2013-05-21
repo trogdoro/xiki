@@ -6,10 +6,10 @@ Dir["./lib/xiki/*_handler.rb"].each{|o|
   require o.sub("./lib/", "")
 }
 
-%w"path code tree menu menu_suggester pre_pattern pattern file_tree bookmarks".each {|o| require "xiki/#{o}"}
+%w"path code tree menu menu_suggester pre_pattern pattern file_tree bookmarks".each {|o| require "xiki/core/#{o}"}
 
-require 'xiki/expander'
-require 'xiki/pattern'
+require 'xiki/core/expander'
+require 'xiki/core/pattern'
 
 # describe Expander, "#expand" do
 describe Expander, "#extract_ancestors" do

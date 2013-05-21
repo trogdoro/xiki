@@ -1,4 +1,4 @@
-require 'xiki/keys'
+require 'xiki/core/keys'
 
 # Provides different ways of moving cursor.
 class Move
