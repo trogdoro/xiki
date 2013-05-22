@@ -3,7 +3,6 @@ require './spec/spec_helper'
 
 require 'xiki'
 require 'xiki/core/code_tree'
-# require 'core_ext'
 
 describe CodeTree, "#extract_class" do
 
@@ -16,7 +15,6 @@ describe CodeTree, "#extract_class" do
     CodeTree.extract_method("- Wiki1.menu('hey')").should == "menu('hey')"
     CodeTree.extract_method("- .merb_local").should == "merb_local"
     CodeTree.extract_method("- Remote.dir 'f.com:21'").should == "dir 'f.com:21'"
-
   end
 
   it "should extract method with junk at beginning" do
@@ -32,22 +30,22 @@ describe CodeTree, "#extract_class" do
 
   it "should get class from parent" do
     code = CodeTree.determine_code_from_path([
-      "Wiki.menu('hey')",
-      ".pages"])
+        "Wiki.menu('hey')",
+        ".pages"])
     code.should == "Wiki.pages()"
-  #     assert_equal("Wiki.pages()", code)
+    #     assert_equal("Wiki.pages()", code)
   end
 
   it "should ignore parent when child is root" do
     code = CodeTree.determine_code_from_path([
-      "Red.herring/", "Foo.menu/", ".php/"])
+        "Red.herring/", "Foo.menu/", ".php/"])
     code.should == "Foo.php()"
   end
 
   it "should add curlies when hash" do
     code = CodeTree.determine_code_from_path(["CodeTree.menu/",
-      "ProtoNight.menu/", ".data/", ".local/",
-      ".send_invite_emails :date=>'2010-02-17'", "- Hey\n- You"])
+        "ProtoNight.menu/", ".data/", ".local/",
+        ".send_invite_emails :date=>'2010-02-17'", "- Hey\n- You"])
     code.should == "ProtoNight.send_invite_emails( {:date=>'2010-02-17'}, \"Hey\n- You\")"
   end
 

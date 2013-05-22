@@ -1,7 +1,7 @@
 require 'rr'
 require 'awesome_print'
 
-%w"xiki/core_ext xiki/ol".each {|o| require o}
+%w"xiki/core/core_ext xiki/core/ol".each {|o| require o}
 
 # RSpec::Runner.configure do |config|
 RSpec.configure do |config|
@@ -29,3 +29,5 @@ AwesomePrint.defaults = {
   :index => false,
   :multiline => true,
 }
+
+include Xiki   # Allows all specs to use classes in the Xiki module without "Xiki::"

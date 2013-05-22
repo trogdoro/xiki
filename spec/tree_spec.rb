@@ -1,7 +1,7 @@
 $:.unshift "spec/"
 require './spec/spec_helper'
 
-%w"xiki/tree xiki/path".each {|o| require o}
+%w"tree path".each {|o| require "xiki/core/#{o}"}
 
 describe Tree, "#traverse" do
 

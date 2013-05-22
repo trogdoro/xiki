@@ -2,7 +2,7 @@ $:.unshift "spec/"
 
 require './spec/spec_helper'
 
-require 'xiki/core/conf_loading_handler'
+require 'xiki/handlers/conf_loading_handler'
 
 %w"xiki/core/tree".each {|o| require o}
 
