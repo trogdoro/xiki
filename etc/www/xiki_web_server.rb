@@ -19,7 +19,7 @@ class SinatraServer < Sinatra::Base
 
   get %r{^/_reload$} do
     xiki_directory = File.expand_path "#{File.dirname(__FILE__)}/../.."
-    load "#{xiki_directory}/etc/www/sinatra_server.rb"
+    load "#{xiki_directory}/etc/www/xiki_web_server.rb"
     ".flash - done"
   end
 
