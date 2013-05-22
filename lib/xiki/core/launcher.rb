@@ -23,12 +23,6 @@ module Xiki
       "*console app",
       ]
 
-    # Deprecated after unified
-    MENU_DIRS = [
-      "#{Xiki.dir}lib/xiki/tools",
-      File.expand_path("~/menu3"),
-      ]
-
     # TODO: put this in better place - search notes for "emacs.d"
     @@log = File.expand_path("~/.emacs.d/menu_log.notes")
 
@@ -1309,15 +1303,14 @@ module Xiki
     end
 
     def self.reload_menu_dirs
-      MENU_DIRS.each do |dir|
-        next unless File.directory? dir
-        Files.in_dir(dir).each do |f|
-          next if f !~ /^[a-z].*\..*[a-z]$/ || f =~ /__/
-          path = "#{dir}/#{f}"
-          stem = f[/[^.]*/]
-          self.add stem, :menu=>path
-        end
+      dir = "#{Xiki.dir}lib/xiki/tools"
+      Files.in_dir(dir).each do |f|
+        next if f !~ /^[a-z].*\..*[a-z]$/ || f =~ /__/
+        path = "#{dir}/#{f}"
+        stem = f[/[^.]*/]
+        self.add stem, :menu=>path
       end
+
       "- reloaded!"
     end
 

@@ -480,18 +480,15 @@ module Xiki
       root.gsub!(/[ -]/, '_') if root
       root.downcase!
 
-      # Try looking in each menu dir!...
+      # Try looking in tools dir (formerly menu3)!...
 
-      (["#{Xiki.dir}lib/"]+Launcher::MENU_DIRS).reverse.each do |dir|
-        next unless File.directory? dir
-        file = Dir["#{dir}/#{root}.*"]
-        next unless file.any?
+      dir = "#{Xiki.dir}lib/xiki/tools"
 
+      file = Dir["#{dir}/#{root}.*"]
+      if file.any?
         View.open file[0]
 
-        # Found, so try to find line we were on
-
-        if line
+        if line   # Found, so try to find line we were on
           cursor = View.cursor
           View.to_highest
           line = Search.quote_elisp_regex line
@@ -500,8 +497,7 @@ module Xiki
           Line.to_beginning
           View.cursor = cursor if ! found
         end
-
-        return   # Break out of loop, since we found it
+        return
       end
 
       # Try dynamically-loaded procs!...
