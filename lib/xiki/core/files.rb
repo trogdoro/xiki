@@ -312,7 +312,7 @@ module Xiki
 
       if nth != 0
         View.to_highest
-        nth.times { Move.to_quote }
+        nth.times { Move.to_quote :pipes=>1 }
       end
 
       Effects.blink

@@ -20,15 +20,6 @@ module Xiki::Menu
       nil
     end
 
-    def self.insert
-      line = Line.value
-      return View << "google/" if line =~ /^$/
-      return View << "@google/" if line =~ /^ /
-      return View << "google/" if line =~ /^ *- $/
-
-      View << "google/"
-    end
-
     def self.search txt
       txt = CGI.escape txt
       Browser.url "http://www.google.com/search?q=#{txt}"

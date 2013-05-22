@@ -33,12 +33,6 @@ module Xiki
 
   $el.elvar.xiki_loaded_once = nil if $el && ! $el.boundp(:xiki_loaded_once)
 
-  def self.menu
-    %`
-    - ported to unified!
-    `
-  end
-
   def self.install_icon arg
 
     emacs_dir = "/Applications/Aquamacs Emacs.app"

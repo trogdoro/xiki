@@ -208,11 +208,13 @@ module Xiki
     # Thin wrapper, but will probably need to conditionally not call $el.instance_eval
     def self.simple_eval code, file=nil, line=nil, options={}
 
-      if options[:global] || ! $el
-        Object.module_eval code, file||__FILE__, line||__LINE__
-      else
-        $el.instance_eval code, file||__FILE__, line||__LINE__
-      end
+      Object.module_eval code, file||__FILE__, line||__LINE__
+
+      #       if options[:global] || ! $el
+      #         Object.module_eval code, file||__FILE__, line||__LINE__
+      #       else
+      #         Object.module_eval code, file||__FILE__, line||__LINE__
+      #       end
 
     end
 
@@ -235,7 +237,8 @@ module Xiki
           elsif options[:global] || ! $el
             Object.module_eval code, file||__FILE__, line||__LINE__
           else
-            $el.instance_eval code, file||__FILE__, line||__LINE__
+            Object.module_eval code, file||__FILE__, line||__LINE__
+            #             $el.instance_eval code, file||__FILE__, line||__LINE__
           end
 
       rescue Exception => e

@@ -197,7 +197,9 @@ module Xiki
       $el.end_of_buffer
     end
 
-    def self.to_quote
+    # Jumps to next |... or :... line.
+    # :pipes=>1 will make it only go to |... lines.
+    def self.to_quote options={}
       prefix = Keys.prefix :clear=>true
       if prefix.nil?
         times = 1
@@ -207,10 +209,14 @@ module Xiki
         View.to_relative
       end
 
+      patterns = options[:pipes] ?
+        [/^ *\|/, "^ *|."] :
+        [/^ *(\||:[ +-])/, "^ *\\(|.\\|:[ +-]\\)"]
+
       found = nil
       (times||1).times do
-        Line.next if Line.matches(/^ *(\||:[ +-])/)
-        found = Search.forward "^ *\\(|.\\|:[ +-]\\)"
+        Line.next if Line.matches patterns[0]
+        found = Search.forward patterns[1]
         return nil if ! found
         $el.backward_char 2
       end

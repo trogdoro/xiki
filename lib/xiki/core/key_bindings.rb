@@ -60,9 +60,9 @@ module Xiki
       # Y
       # Z
       #Keys.A0 { Clipboard.copy("0") }   # As 0: copy as key "0"
-      Keys.A1 { Clipboard.copy("1") }   # As 1
-      Keys.A2 { Clipboard.copy("2") };  Keys.A3 { Clipboard.copy("3") };  Keys.A4 { Clipboard.copy("4") }
-      Keys.A5 { Clipboard.copy("5") };  Keys.A6 { Clipboard.copy("6") };  Keys.A7 { Clipboard.copy("7") }
+      Xiki.def("as+1"){ Clipboard.copy("1") }   # As 1
+      Xiki.def("as+2"){ Clipboard.copy("2") };  Xiki.def("as+3"){ Clipboard.copy("3") };  Xiki.def("as+4"){ Clipboard.copy("4") }
+      Xiki.def("as+5"){ Clipboard.copy("5") };  Xiki.def("as+6"){ Clipboard.copy("6") };  Xiki.def("as+7"){ Clipboard.copy("7") }
     end
 
     def self.open_keys
@@ -109,7 +109,7 @@ module Xiki
 
       Xiki.def "open+list+log", ".@git/log/"   # Show git diffs o 1 file
 
-      Keys.open_last_outlog { Ol.open_last_outlog }   # Show git diffs for a bookmark
+      Keys.open_last_outlog { OlHelper.open_last_outlog }   # Show git diffs for a bookmark
       Keys.open_log_push { Git.show_log }   # Show git diffs for a bookmark
       Keys.open_last_screenshot { Files.open_last_screenshot }
       #     Keys.open_log_tree { Rails.tree_from_log }
@@ -145,12 +145,12 @@ module Xiki
       # Y
       # Z
 
-      Keys.O1 { Files.open_nth 1 };  Keys.O2 { Files.open_nth 2 };  Keys.O3 { Files.open_nth 3 };  Keys.O4 { Files.open_nth 4 };  Keys.O5 { Files.open_nth 5 }
-      Keys.O6 { Files.open_nth 6 };  Keys.O7 { Files.open_nth 7 };  Keys.O8 { Files.open_nth 8 };  Keys.O9 { Files.open_nth 9 }
+      Xiki.def("open+1"){ Files.open_nth 1 };  Xiki.def("open+2"){ Files.open_nth 2 };  Xiki.def("open+3"){ Files.open_nth 3 };  Xiki.def("open+4"){ Files.open_nth 4 };  Xiki.def("open+5"){ Files.open_nth 5 }
+      Xiki.def("open+6"){ Files.open_nth 6 };  Xiki.def("open+7"){ Files.open_nth 7 };  Xiki.def("open+8"){ Files.open_nth 8 };  Xiki.def("open+9"){ Files.open_nth 9 }
 
-      Keys.O0 { Files.open_nth 0 }   # Open 0: open line in $f that cursor is on
+      Xiki.def("open+0"){ Files.open_nth 0 }   # Open 0: open line in $f that cursor is on
 
-      Keys.O8 { History.open_current :all => true, :prompt_for_bookmark => true }   # Like do_outline, but inserts all
+      Xiki.def("open+8"){ History.open_current :all => true, :prompt_for_bookmark => true }   # Like do_outline, but inserts all
     end
 
     def self.enter_keys
@@ -178,7 +178,7 @@ module Xiki
       Keys.enter_insert_comment { Code.enter_insert_comment }      # insert date string (and time if C-u)
       Keys.enter_insert_new { DiffLog.enter_new }           # Enter Old: enter newly-deleted from last save
       Keys.enter_insert_ruby { code = Keys.input(:prompt=>"Enter ruby code to eval and insert results: "); View.insert(eval(code).to_s)}
-      Keys.enter_insert_search { Search.enter_insert_search }
+      Xiki.def("enter+insert+search"){ Search.enter_insert_search }
 
       Keys.enter_insert_old { DiffLog.enter_old }   # Enter Old: enter newly-deleted from last save
 
@@ -223,11 +223,11 @@ module Xiki
       # X
       # Y
       # Z
-      Keys.E1 { Clipboard.paste(1) }   # Enter 1
-      Keys.E2 { Clipboard.paste(2) }   # Enter 2
-      Keys.E3 { Clipboard.paste(3) }
-      Keys.E4 { Clipboard.paste(4) };   Keys.E5 { Clipboard.paste(5) };   Keys.E6 { Clipboard.paste(6) }
-      Keys.E7 { Clipboard.paste(7) };   Keys.E7 { Clipboard.paste(8) };   Keys.E7 { Clipboard.paste(9) }
+      Xiki.def("enter+1"){ Clipboard.paste(1) }   # Enter 1
+      Xiki.def("enter+2"){ Clipboard.paste(2) }   # Enter 2
+      Xiki.def("enter+3"){ Clipboard.paste(3) }
+      Xiki.def("enter+4"){ Clipboard.paste(4) };   Xiki.def("enter+5"){ Clipboard.paste(5) };   Xiki.def("enter+6"){ Clipboard.paste(6) }
+      Xiki.def("enter+7"){ Clipboard.paste(7) };   Xiki.def("enter+7"){ Clipboard.paste(8) };   Xiki.def("enter+7"){ Clipboard.paste(9) }
     end
 
     def self.do_keys
@@ -351,10 +351,10 @@ module Xiki
       }
       Keys.set("C-d C-/") { Code.comment }
 
-      Keys.D1 { Search.query_replace_nth "1", "2" }
-      Keys.D2 { Search.query_replace_nth "2", "1" }
-      Keys.D3 { Search.query_replace_nth "3", "4" }
-      Keys.D4 { Search.query_replace_nth "4", "3" }
+      Xiki.def("do+1"){ Search.query_replace_nth "1", "2" }
+      Xiki.def("do+2"){ Search.query_replace_nth "2", "1" }
+      Xiki.def("do+3"){ Search.query_replace_nth "3", "4" }
+      Xiki.def("do+4"){ Search.query_replace_nth "4", "3" }
 
     end
 
@@ -394,16 +394,16 @@ module Xiki
       # X
       # Z
 
-      Keys.T0 { View.to_nth_paragraph 0 }
-      Keys.T1 { View.to_nth_paragraph 1 }
-      Keys.T2 { View.to_nth_paragraph 2 }
-      Keys.T3 { View.to_nth_paragraph 3 }
-      Keys.T4 { View.to_nth_paragraph 4 }
-      Keys.T5 { View.to_nth_paragraph 5 }
-      Keys.T6 { View.to_nth_paragraph 6 }
-      Keys.T7 { View.to_nth_paragraph 7 }
-      Keys.T8 { View.to_nth_paragraph 8 }
-      Keys.T9 { View.to_nth_paragraph 9 }
+      Xiki.def("to+0"){ View.to_nth_paragraph 0 }
+      Xiki.def("to+1"){ View.to_nth_paragraph 1 }
+      Xiki.def("to+2"){ View.to_nth_paragraph 2 }
+      Xiki.def("to+3"){ View.to_nth_paragraph 3 }
+      Xiki.def("to+4"){ View.to_nth_paragraph 4 }
+      Xiki.def("to+5"){ View.to_nth_paragraph 5 }
+      Xiki.def("to+6"){ View.to_nth_paragraph 6 }
+      Xiki.def("to+7"){ View.to_nth_paragraph 7 }
+      Xiki.def("to+8"){ View.to_nth_paragraph 8 }
+      Xiki.def("to+9"){ View.to_nth_paragraph 9 }
 
       Keys.set("C-t C-/") { Code.to_comment }
 
@@ -441,12 +441,13 @@ module Xiki
       # X
       # Y
       Keys.layout_zoom { $el.narrow_to_region($el.region_beginning, $el.region_end) }   # show selection only
-      Keys.L0 { View.recenter_top }   # Layout 0: scroll so cursor is 0 lines from top af window
-      Keys.L1 { Move.to_window(1, :blink=>true) }   # Layout 1
-      Keys.L2 { Move.to_window(2, :blink=>true) }   # Layout 2
-      Keys.L3 { Move.to_window(3, :blink=>true) };  Keys.L4 { Move.to_window(4, :blink=>true) }
-      Keys.L5 { Move.to_window(5, :blink=>true) };  Keys.L6 { Move.to_window(6, :blink=>true) };  Keys.L7 { Move.to_window(7, :blink=>true) };  Keys.L8 { Move.to_window(8, :blink=>true) }
-      Keys.L9 { Move.to_last_window(:blink=>true) }
+
+      Xiki.def("layout+0"){ View.recenter_top }   # Layout 0: scroll so cursor is 0 lines from top af window
+      Xiki.def("layout+1"){ Move.to_window(1, :blink=>true) }   # Layout 1
+      Xiki.def("layout+2"){ Move.to_window(2, :blink=>true) }   # Layout 2
+      Xiki.def("layout+3"){ Move.to_window(3, :blink=>true) };  Xiki.def("layout+4"){ Move.to_window(4, :blink=>true) }
+      Xiki.def("layout+5"){ Move.to_window(5, :blink=>true) };  Xiki.def("layout+6"){ Move.to_window(6, :blink=>true) };  Xiki.def("layout+7"){ Move.to_window(7, :blink=>true) };  Xiki.def("layout+8"){ Move.to_window(8, :blink=>true) }
+      Xiki.def("layout+9"){ Move.to_last_window(:blink=>true) }
 
       # Todo: if prefix passed, expand window, but leave other windows open with that much space in each
       #    Keys.LCR { Colors.highlight  }   # Layout Tree: show bar on left with the quick bookmark named "-t"

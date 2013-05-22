@@ -1567,9 +1567,19 @@ module Xiki
       if FileTree.handles?
         Search.enter_search
       else
-        Google.insert
+        self.insert_google
       end
     end
+
+    def self.insert_google
+      line = Line.value
+      return View << "google/" if line =~ /^$/
+      return View << "@google/" if line =~ /^ /
+      return View << "google/" if line =~ /^ *- $/
+
+      View << "google/"
+    end
+
 
     def self.like_delete
       match = self.stop

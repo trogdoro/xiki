@@ -34,6 +34,8 @@ module Xiki
       mod = self.extract_ruby_package code
       clazz_name = "#{mod}::#{clazz_name}" if mod
 
+      clazz_name = "Xiki" if clazz_name == "Xiki::Xiki"   # Xiki is a module, so it grabbed it twice.  If we want to support other modules, do something generic here, but we may not need to.
+
       clazz = Code.simple_eval("defined?(#{clazz_name}) ? #{clazz_name} : nil", nil, nil, :global=>1)
 
       # Call .menu_before if exists...

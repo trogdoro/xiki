@@ -25,11 +25,11 @@ module Xiki
           View.layout_files :no_blink=>1
         end
 
-        found = Move.to_quote
+        found = Move.to_quote :pipes=>1
 
         if ! found
           View.to_highest   # to beginning of file
-          Move.to_quote
+          Move.to_quote :pipes=>1
         end
 
         Effects.blink
@@ -205,7 +205,7 @@ module Xiki
         Search.backward "^  - "
         first_diff_file = Tree.construct_path
 
-        Move.to_quote
+        Move.to_quote :pipes=>1
 
         # If 1st diff isn't todo.notes, and difflog not already open!
         if ! View.file_visible?(first_diff_file) && ! was_open
@@ -234,7 +234,7 @@ module Xiki
           Search.backward "^  - "
         end
 
-        Move.to_quote
+        Move.to_quote :pipes=>1
 
         # If cursor at top of view, scroll down
 

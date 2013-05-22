@@ -418,20 +418,6 @@ class Ol
     `open '#{url}'`
   end
 
-  def self.open_last_outlog
-    prefix = Keys.prefix :clear=>1
-    View.layout_outlog
-    if prefix == :u
-      View.to_highest
-      Search.forward "^-"
-    else
-      View.to_bottom
-      Line.previous   # <= 1
-    end
-
-    Launcher.launch_unified
-  end
-
 
   # Check the first few lines in the stack for a match
   def self.nesting_match stack, roots=nil
