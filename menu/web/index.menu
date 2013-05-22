@@ -10,10 +10,14 @@
     ! Ol["!"]
     ! Console.run "tail -f xiki_web.output", :dir=>"/tmp"
   - apache/
-    - warning/
-      | Beware, the web interface is currently experimental and
-      | has security holes that need to be patched (blocking)
-      | non-priveleged users from using sensitive menus.
+    > Be sure to read this warning first
+    | Beware, the web interface is currently experimental and
+    | has security holes that need to be patched.  They include
+    | blocking non-priveleged users from using sensitive menus,
+    | blocking external sites from linking to Xiki url's.  If
+    | you're security-knowledgeable and want to help brainstorm
+    | about the best ways of dealing with these, tweet me
+    | at @xiki.
     - Mac/
       - 1. Configure Apache/
         @/etc/apache2/other/
