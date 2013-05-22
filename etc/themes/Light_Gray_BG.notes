@@ -5,4 +5,5 @@ module Xiki
   # Adjust light colors
   Styles.define :font_lock_variable_name_face, :fg=>'c90'   # yellow
   Styles.define :font_lock_comment_face, :fg=>'aaa'   # gray
+  Styles.minibuffer_prompt :size=>"+0", :face=>"Monaco", :fg=>"#333"
 end

@@ -41,7 +41,7 @@ class Dimensions
 
     # Close view if we opened it with a shortcut...
 
-    Ol["We can probably make this generic!"]
+    # TODO: We can probably make this generic
     # Know to close after the first launch (that returns nil?) when
     #   - Maybe always close when :letter param
     #     - maybe only close when :letter=>"close"

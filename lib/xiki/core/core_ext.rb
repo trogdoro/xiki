@@ -37,6 +37,6 @@ class String
     Xiki::TextUtil.unindent(to_s)
   end
   def unindent!
-    self.replace TextUtil.unindent(to_s)
+    self.replace Xiki::TextUtil.unindent(to_s)
   end
 end

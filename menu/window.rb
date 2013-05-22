@@ -120,9 +120,10 @@ module Xiki::Menu
     end
 
     def self.scroll_bars
-      result = $el.scroll_bar_mode
-      View.frame_width += View.scroll_bars ? -3 : 3
-      #     View.scroll_bars = false
+      visible = View.scroll_bars
+
+      View.scroll_bars = ! visible
+      View.frame_width += visible ? 3 : -3
       View.kill if View.name == "@window/visibility/"
       nil
     end

@@ -1,6 +1,8 @@
 module Xiki::Menu
   class Conf
 
+    include Xiki
+
     MENU = "
       > options
       - docs/

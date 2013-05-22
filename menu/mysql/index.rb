@@ -16,7 +16,6 @@ module Xiki::Menu
           @ $ ps -eo pcpu,pid,user,args | grep mysql | grep -v grep
           @ $ kill _
         - db/
-          - .use/
           - .create/
           - .drop/
         - table/
@@ -55,21 +54,29 @@ module Xiki::Menu
       self.select options, args
     end
 
-    # TODO: bring these back
-    #   def self.install
-    #     "
-    #     > Installing Mysql
-    #     For now, this just has the mac / homebrew instructions.  Fork xiki on github to add docs for other platforms.
+    def self.install
 
-    #     > Install using homebrew
-    #     - 1. double-click to install) @ % brew install mysql
-    #     - 2. look at the output) and run the commands it tells you to run
+      if Environment.os == :unix
+        "
+        > Installing Mysql
+        @% sudo apt-get install mysql-server
+        "
+      elsif Environment.os == :osx
+        "
+        > Installing Mysql
+        For now, this just has the mac / homebrew instructions.  Fork xiki on github to add docs for other platforms.
 
-    #     > More
-    #     See this link for more info on installing:
-    #     @http://www.mysql.com/downloads/mysql/
-    #     "
-    #   end
+        > Install using homebrew
+        - 1. double-click to install) @ % brew install mysql
+        - 2. look at the output) and run the commands it tells you to run
+
+        > More
+        See this link for more info on installing:
+        @http://www.mysql.com/downloads/mysql/
+        "
+      end
+
+    end
 
     #   def self.menu_after txt, *args
     #     return nil if txt
@@ -123,7 +130,7 @@ module Xiki::Menu
       if table.nil?
         txt = self.run(db, 'show tables')
         if txt.blank?
-          return "> No tables exist.  Create one?\n- @mysql/setup/table/create/"
+          return "> No tables exist.  Create one?\n- @mysql/setup/table/create/#{db}/"
         end
         return txt.split[1..-1].map{|o| "#{o}/"}
       end
@@ -177,18 +184,18 @@ module Xiki::Menu
       hash
     end
 
-    #   def self.dummy_row db=nil, table=nil
-    #     fields = self.fields db, table
-    #     examples = {
-    #       "int"=>"1",
-    #       "varchar"=>"foo",
-    #       "text"=>"bar bar",
-    #       "date"=>"2011-01-01",
-    #       "time"=>"2011-01-01",
-    #       }
-    #     fields = fields.map{|o| examples[o[1]]}
-    #     fields.join("\t")
-    #   end
+    def self.dummy_row db=nil, table=nil
+      fields = self.fields db, table
+      examples = {
+        "int"=>"1",
+        "varchar"=>"foo",
+        "text"=>"bar bar",
+        "date"=>"2011-01-01",
+        "time"=>"2011-01-01",
+      }
+      fields = fields.map{|o| examples[o[1]]}
+      fields.join("\t")
+    end
 
     def self.fields db, table=nil
       txt = self.run db, "desc #{table}"
@@ -197,48 +204,42 @@ module Xiki::Menu
         [l[0], l[1].sub(/\(.+/, '')] }
     end
 
-    #   def self.use kind=nil, db=nil
-    #     # If nothing passed, show db's
+    def self.create what, db=nil, name=nil, columns=nil
+      if db.nil?
+        View.prompt "Type a db"
+        return nil
+      end
 
-    #     if db.nil?
-    #       return self.dbs
-    #     end
+      if what == "db"
+        txt = Console.run "mysqladmin -u root create #{db}", :sync=>true
+        return ".flash - created db!"
+      end
 
-    #     @default_db = db
-    #     ".flash - using db #{db}!"
-    #   end
+      if name.nil?
+        View.prompt "Type a name"
+        return nil
+      end
 
-    #   def self.create what, name=nil, columns=nil
-    #     if name.nil?
-    #       View.prompt "Type a name"
-    #       return nil
-    #     end
+      if columns.nil?
+        return "
+            : id int not null auto_increment primary key,
+            : name VARCHAR(20),
+            : details text,
+            : datestamp DATE,
+            : timestamp TIME,
+            "
+      end
 
-    #     if what == "db"
-    #       txt = Console.run "mysqladmin -u root create #{name}", :sync=>true
-    #       return ".flash - created db!"
-    #     end
+      txt = "
+          CREATE TABLE #{name} (
+            #{columns.strip.sub(/,\z/, '')}
+          );
+          "
 
-    #     if columns.nil?
-    #       return "
-    #         | id int not null auto_increment primary key,
-    #         | name VARCHAR(20),
-    #         | details text,
-    #         | datestamp DATE,
-    #         | timestamp TIME,
-    #         "
-    #     end
+      out = self.run(db, txt)
 
-    #     txt = "
-    #       CREATE TABLE #{name} (
-    #         #{ENV['txt'].strip.sub(/,\z/, '')}
-    #       );
-    #       "
-
-    #     out = self.run(@default_db, txt)
-
-    #     ".flash - created table!"
-    #   end
+      ".flash - created table!"
+    end
 
     #   def self.drop what, name=nil
     #     if name.nil?
@@ -262,6 +263,7 @@ module Xiki::Menu
       File.open("/tmp/tmp.sql", "w") { |f| f << sql }
       out = Console.run "mysql -u root #{db} < /tmp/tmp.sql", :sync=>true
 
+      raise "> Mysql doesn't appear to be installed.  Install it?\n- @mysql/setup/install/" if out == "sh: 1: mysql: not found\n"
       raise "> Mysql doesn't appear to be running.  Start it?\n- @mysql/setup/start/" if out =~ /^ERROR.+Can't connect/
       raise "| Database '#{db}' doesn't exist.  Create it?\n- @mysql/setup/db/create/#{$1}/" if out =~ /^ERROR.+Unknown database '(.+)'/
       raise "| Table doesn't exist.  Create it?\n- @mysql/setup/table/create/#{$1}/" if out =~ /^ERROR.+Table '.+\.(.+)' doesn't exist/

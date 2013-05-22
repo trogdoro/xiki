@@ -15,7 +15,6 @@ module Xiki
     end
 
     def self.expand options
-
       return if options[:output] || options[:halt]
 
       name = options[:name]
@@ -29,6 +28,17 @@ module Xiki
         # If found any completions, return them...
 
         if(list = self.completions(name)).any?
+          if list.length == 1
+            options[:output] = "<<< #{list[0]}/"
+            return
+          end
+
+          Ol["TODO: If editor, add '...' at the end of line!"]
+          # if editor, add "..." at the end of the line
+          if options[:client] =~ /^editor\b/
+            Line << "..."
+          end
+
           options[:no_slash] = 1   # If auto-completed, do no slash
           options[:output] = list.sort.uniq.map{|o| "<< #{o}/\n"}.join("")
           return
