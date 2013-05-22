@@ -45,9 +45,9 @@ class Web
   def self.urls_message
     "
     Go to this url in your web browser:
-      http://localhost:8161
+    @http://localhost:8161
     Or, if you've set up apache per @web/setup/apache/, go to:
-      http://xiki
+    @http://xiki
     ".unindent
   end
 

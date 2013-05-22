@@ -570,7 +570,8 @@ module Xiki
 
       return Tree << "| You must supply something to put under the '#{root}' menu.\n| First, add some lines here, such as these:\n- line/\n- another line/\n" if txt.empty?
 
-      path = File.expand_path "~/menu/#{root}.menu"
+      menu_dir = File.expand_path "~/menu"
+      path = File.expand_path "#{menu_dir}/#{root}.menu"
 
       file_existed = File.exists? path
 
@@ -583,6 +584,7 @@ module Xiki
 
       txt = txt.unindent
 
+      Dir.mkdir menu_dir if ! File.exists? menu_dir
       File.open(path, "w") { |f| f << txt }
 
       View.cursor = orig if orig
