@@ -416,7 +416,7 @@ module Xiki
       end
       # Last window
       $el.switch_to_buffer orig[-1][0]
-      $el.set_window_text_height o, orig[-1][1]
+      $el.set_window_text_height o, orig[-1][1] if o
       # Go to first window
       $el.select_window self.first
     end

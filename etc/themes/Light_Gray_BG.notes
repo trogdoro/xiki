@@ -1,6 +1,6 @@
 module Xiki
-  Styles.define :default, :bg=>'ddd', :fg=>'333'
-  Styles.define :fringe, :bg=>'ddd', :fg=>'ddd'
+  Styles.define :default, :bg=>'e4e4e4', :fg=>'333'
+  Styles.define :fringe, :bg=>'e4e4e4', :fg=>'e4e4e4'
 
   # Adjust light colors
   Styles.define :font_lock_variable_name_face, :fg=>'c90'   # yellow
