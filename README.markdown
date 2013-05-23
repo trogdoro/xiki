@@ -1,6 +1,8 @@
 ## Summary
 
-This file shows how to install Xiki.  Xiki is like a shell console with GUI features.  It has a web interface, but rens best from a Xiki-enabled text interface.  It has menus for quickly getting started with using various tools and libraries.  Also you can easily create your own menus.
+This file shows how to install Xiki.  Xiki is like a shell console with GUI features.  It is also a glue language.  It ties together many of the things we developers use.  Such as shell commands, code, files, directories, notes, urls, database queries, and many other things.  It accomplishes this by using a wiki-ish text syntax.  See http://xiki.org/screencasts if you have no idea what I'm talking about :)
+
+It has a web interface, but runs best from a Xiki-enabled text editor.  It has menus for quickly getting started with using various tools and libraries.  Also you can easily create your own menus, in about ten different ways.  Many of them will seem obvious.
 
 See http://xiki.org
 
