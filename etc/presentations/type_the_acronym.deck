@@ -128,7 +128,7 @@ files/docs/keys/
 
 - definitions:
 - /projects/xiki/
-  + key_bindings.rb
+  + key_shortcuts.rb
 
 
 > Existing emacs shortcuts

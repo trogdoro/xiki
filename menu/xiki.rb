@@ -31,16 +31,16 @@ module Xiki
         |
       - install global shortcut/
         - 1) With cursor on the following, type open+in+os, then click "Install"
-          @ #{self.dir}etc/services/Xiki Menu.workflow
+        @ #{self.dir}etc/services/Xiki Menu.workflow
 
         - 2) In Mac OS, open
-          | System Preferences > Keyboard > Keyboard Shortcuts > Services
+        | System Preferences > Keyboard > Keyboard Shortcuts > Services
 
         - 3) Scroll down to the bottom and give "Xiki Menu" the shortcut
-          | Command+Control+X
+        | Command+Control+X
 
         - 4) Try it out by typing Command+Control+X from any application
-          | It should prompt you to type a xiki menu
+        | It should prompt you to type a xiki menu
       - .process/
         - status/
         - start/
@@ -63,17 +63,17 @@ module Xiki
         - enable all/
           | Add this line to enable all xiki keys:
           ~/.el4r/init.rb
-            | KeyBindings.keys   # Use default key bindings
+            | KeyShortcuts.keys   # Use default key shortcuts
 
             > Todo: show options for more limited key mappings as well?
             | # Only enable Control-return in all files.
-            | KeyBindings.map_control_return
+            | KeyShortcuts.map_control_return
             | # Only enable Control-return in .notes files.
             | @define_key(:notes_mode_map, kbd("<C-return>"))  { Launcher.go }
         - minimal/
           | Add this line to enable all xiki keys:
           ~/.el4r/init.rb
-            | KeyBindings.minimal__
+            | KeyShortcuts.minimal__
       @web/
     - api/
       > Summary

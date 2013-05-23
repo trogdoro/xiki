@@ -1,6 +1,9 @@
 module Xiki
+  Styles.define :trailing_whitespace, :bg=>'999'
   Styles.define :default, :bg=>'e4e4e4', :fg=>'333'
   Styles.define :fringe, :bg=>'e4e4e4', :fg=>'e4e4e4'
+
+  Cursor.black
 
   # Adjust light colors
   Styles.define :font_lock_variable_name_face, :fg=>'c90'   # yellow

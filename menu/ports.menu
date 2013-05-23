@@ -1,0 +1,7 @@
+- all ports/
+  ! Tree.quote `lsof -i | grep LISTEN`
+- single port/
+  ! return "@prompt/Type a port" if args.empty?
+  ! Tree.quote `lsof -i :#{args[0]}`
+- all connections/
+  ! Tree.quote `netstat -p tcp`

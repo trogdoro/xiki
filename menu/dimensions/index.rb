@@ -54,7 +54,7 @@ class Dimensions
     #       - probably isn't necessary, since :letter-related code will still be running
 
     # /projects/xiki/lib/xiki/
-    #   - key_bindings.rb
+    #   - key_shortcuts.rb
     #     |     Xiki.def "layout+dimensions", "dimensions/", :letter=>1
 
     View.kill if View.name == "@dimensions/"

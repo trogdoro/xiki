@@ -1,6 +1,6 @@
 require "sinatra/base"
 
-xiki_directory = `xiki directory`.strip
+xiki_directory = `xiki dir`.strip
 
 $:.unshift "#{xiki_directory}lib"
 require 'xiki/core/ol.rb'

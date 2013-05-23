@@ -119,9 +119,9 @@ module Xiki
         - miscellaneous/
           | Control-tab: cycles through files
 
-        | For all keyboard shortcuts, see where they're key_bindings.rb, where they're
+        | For all keyboard shortcuts, see where they're key_shortcuts.rb, where they're
         | defined:
-        - @$xiki/lib/xiki/core/key_bindings.rb
+        - @$xiki/lib/xiki/core/key_shortcuts.rb
 
         > Keyboard shortcuts while searching
         | The seventh category, "search" has special behavior.  See:

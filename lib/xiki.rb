@@ -338,14 +338,14 @@ module Xiki
     classes = classes.select{|i|
       i !~ /\/ol.rb$/ &&   # Don't load Ol twice
       i !~ /\/xiki.rb$/ &&   # Remove self
-      i !~ /\/key_bindings.rb$/ &&   # Remove key_bindings
+      i !~ /\/key_shortcuts.rb$/ &&   # Remove key_shortcuts
       i !~ /__/   # Remove __....rb files
     }
 
     #     classes = Dir["**/*.rb"]
     #     classes = classes.select{|i|
     #       i !~ /xiki.rb$/ &&   # Remove self
-    #       i !~ /key_bindings.rb$/ &&   # Remove key_bindings
+    #       i !~ /key_shortcuts.rb$/ &&   # Remove key_shortcuts
     #       i !~ /\// &&   # Remove all files in dirs
     #       i !~ /tests\// &&   # Remove tests
     #       i !~ /__/   # Remove __....rb files
@@ -356,9 +356,9 @@ module Xiki
     # Require classes
     Requirer.require_classes classes
 
-    # key_bindings has many dependencies, require it last
-    #     Requirer.require_classes ['./lib/xiki/key_bindings.rb']
-    Requirer.require_classes ['./lib/xiki/core/key_bindings.rb']
+    # key_shortcuts has many dependencies, require it last
+    #     Requirer.require_classes ['./lib/xiki/key_shortcuts.rb']
+    Requirer.require_classes ['./lib/xiki/core/key_shortcuts.rb']
 
     Launcher.add_class_launchers classes.map{|o| o[/.*\/(.+)/, 1]}
     Launcher.reload_menu_dirs
