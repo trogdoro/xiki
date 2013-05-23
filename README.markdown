@@ -1,10 +1,8 @@
 ## Summary
 
-This file shows how to install Xiki.  Xiki is like a shell console with GUI features.  It is also a glue language.  It ties together many of the things we developers use.  Such as shell commands, code, files, directories, notes, urls, database queries, and many other things.  It accomplishes this by using a wiki-ish text syntax.  See http://xiki.org/screencasts if you have no idea what I'm talking about :)
+This file shows how to install Xiki.  Xiki is like a shell console with GUI features.  It is also a glue language.  It ties together many of the things we developers use.  Such as shell commands, code, files, directories, notes, urls, database queries, and many other things.  It accomplishes this by using a wiki-ish text syntax that can be expanded directly from a text editor.  See http://xiki.org/screencasts if you have no idea what I'm talking about. :)
 
-It has a web interface, but runs best from a Xiki-enabled text editor.  It has menus for quickly getting started with using various tools and libraries.  Also you can easily create your own menus, in about ten different ways.  Many of them will seem obvious.
-
-See http://xiki.org
+It has a web interface, but runs best from a Xiki-enabled text editor.  It has menus for quickly getting started with using various tools and libraries.  Also you can easily create your own menus, in about ten different ways.  Many of them will seem obvious to you.
 
 ## Install Ruby 1.9.3
 
@@ -17,6 +15,8 @@ On the mac, install rvm (http://google.com/search?q=install+rvm) and the do: $ r
 Either install as a gem, or install from github.
 
 ### As a gem
+
+      Note: at the moment this will give you the old Xiki version.  Use the "github" instructions.
 
       $ gem install xiki --pre
 
