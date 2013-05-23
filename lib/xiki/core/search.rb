@@ -1132,7 +1132,7 @@ module Xiki
       if char == "m"
         Launcher.open("- #{Xiki.dir}\n  - ##^ *def /")
       elsif char == "k"
-        Launcher.open("- #{Xiki.dir}lib/xiki/core/key_shortcuts.rb\n  - ##\\bKeys\\.|\\bXiki.def.\"\\w+\\+/")
+        Launcher.open("- #{Xiki.dir}lib/xiki/core/key_shortcuts.rb\n  - ##Xiki.def..\\w+\\+/")
       elsif char == "l"
         Launcher.open("- $ttm\n  - ##xiki|isearch/")
       else
