@@ -636,7 +636,7 @@ module Xiki
       # Aquamacs-specific: make cua not map C-return key
       $el.define_key(:cua_global_keymap, $el.kbd("<C-return>"), nil) if $el.boundp(:cua_global_keymap)
 
-      Keys.set("<C-return>") { Launcher.go }   # control-return, control-enter
+      Keys.set("<C-return>") { Launcher.go_unified }   # control-return, control-enter
     end
 
     def self.map_command_return
