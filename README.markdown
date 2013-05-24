@@ -14,19 +14,19 @@ On the mac, install rvm (http://google.com/search?q=install+rvm) and the do: $ r
 
 Either install as a gem, or install from github.
 
-### As a gem
-
-      Note: at the moment this will give you the old Xiki version.  Use the "github" instructions.
-
-      $ gem install xiki --pre
-
-### Or, from github
+### Install from github
 
       $ git clone git://github.com/trogdoro/xiki.git
       $ cd xiki
       $ sudo gem install bundler   # <- no "sudo" if using rvm
       $ sudo bundle                # <- no "sudo" if using rvm
       $ sudo ruby etc/command/copy_xiki_command_to.rb /usr/bin/xiki   # or /usr/local/bin/xiki and no "sudo" if using rvm
+
+### Or, as a gem
+
+## Note: at the moment this will give you the old Xiki version.  Use the "github" instructions.
+
+      $ gem install xiki --pre
 
 ## Verify the 'xiki' shell command works
 
