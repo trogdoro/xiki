@@ -6,6 +6,8 @@ It has a web interface, but runs best from a Xiki-enabled text editor.  It has m
 
 ## Install Ruby 1.9.3
 
+Type "ruby -v" to see which ruby version you currently have.
+
 On ubuntu, do: $ sudo apt-get install ruby1.9.3.
 
 On the mac, install rvm (http://google.com/search?q=install+rvm) and the do: $ rvm install ruby-1.9.3
@@ -24,7 +26,7 @@ Either install as a gem, or install from github.
 
 ### Or, as a gem
 
-## Note: at the moment this will give you the old Xiki version.  Use the "github" instructions.
+#### Note: at the moment this will give you the old Xiki version.  Use the "github" instructions.
 
       $ gem install xiki --pre
 
