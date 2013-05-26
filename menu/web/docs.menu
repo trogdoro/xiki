@@ -1,0 +1,38 @@
+> Summary
+| Hi Todd!!
+| The Xiki web interface lets you use Xiki menus via a web browser.
+
+> Example Menus
+@ip/
+@animals/
+@dbs/
+
+> Getting Started
+| You can create menus with any plain text editor, and access them via the web interface.
+@create menus manually/
+
+| Eventually you'll probably want to Xiki-enable an editor.  Using Xiki from an editor is the primary way to use it.
+@editor setup/
+
+> Show all menus
+| @all/
+
+> Misc
+- unfinished/
+  - content to use soon/
+    | By default (for convenience and security), most menus are disabled.
+    | This url displays xiki menus, which come from simple files found in ~/menu/.
+    | > Which menus are enabled
+    | - || web/
+    | - || web/enable/
+    | - web/enable/overview__
+    |   | By default, most Menus are disabled through the web interface.
+    |   | If you want to enable more, you are encouraged to set up security.
+    |   |
+    |   | -> add this text to just web menu text??
+    |   |   - extract it out to its own files?
+    |   - more/
+    | - web/enable/
+    | > Enable more menus to work
+    | By default, only a few menus are enabled.  You can enable more here:
+    | web/enable/
