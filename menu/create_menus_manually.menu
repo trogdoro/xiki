@@ -1,13 +1,13 @@
 > Summary
-| You can creating menus using any text editor, and use them via the web interface.
+| You can create menus using any text editor, and use them via the web interface.
 | Later, after you set up a Xiki-enabled text editor, you'll be able to use the menus directly from the editor.
 
 > Simplest way to make a menu
 - txt file/
   > Make a simple menu that is a .txt file
   - 1. Using any text editor, make a new file and type "Hello World" as its contents.
-  - 2. Save it with the name "foo.txt" in the "menu" directory in your home directory.
-    - Create the "menu" directory if there isn't one.
+  - 2. Save it with the name "foo.txt" in a "menu" directory in your home directory.
+    - Create a "menu" directory if there isn't one.
     - Be sure to save it as plain text (most editors do this by default).
   - 3. Go to http://localhost:8161/foo or click this...
   @foo/
