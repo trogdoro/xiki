@@ -641,7 +641,6 @@ module Xiki
       return if ! $el.boundp(:osx_key_mode_map)
 
       $el.define_key(:osx_key_mode_map, $el.kbd("<A-return>")) { Launcher.go_unified }
-      $el.define_key(:osx_key_mode_map, $el.kbd("<A-S-return>")) { Launcher.go }
     end
 
     # Not called by default

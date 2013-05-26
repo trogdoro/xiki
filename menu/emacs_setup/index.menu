@@ -35,7 +35,7 @@ update el4rrc/
   ! txt.sub!("{{trogdoro_el4r_dir}}", el4r_gem_lib.sub(/\/$/, ''))
   !
   ! target = File.expand_path("~/.el4rrc.rb")
-  ! return "~/.el4rrc.rb already exists.  Delete or rename it and re-run." if File.exists?(target)
+  ! return "The file ~/.el4rrc.rb already exists.  Delete or rename it and re-run." if File.exists?(target)
   !
   ! File.open(target, "w") { |f| f << txt }
   ! "- The ~/.el4rrc.rb file was successfully created."
@@ -47,7 +47,7 @@ update initrb/
   ! Dir.mkdir(el4r_dir) if ! File.exists?(el4r_dir)
   !
   ! target = "#{el4r_dir}/init.rb"
-  ! return "~/.el4r/init.rb already exists.  Delete or rename it and re-run." if File.exists?(target)
+  ! return "The file ~/.el4r/init.rb already exists.  Delete or rename it and re-run." if File.exists?(target)
   !
   ! File.open(target, "w") { |f| f << txt }
   ! "- The ~/.el4r/init.rb file was successfully created."

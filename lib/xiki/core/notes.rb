@@ -390,7 +390,7 @@ module Xiki
 
       @@h1_styles.each do |k, v|
         pipe = v.gsub(/./) {|c|
-          hex = c.to_i(16) + 3
+          hex = c.to_i(16) + 2
           hex = 15 if hex > 15   # In case it's aleady really light
           hex.to_s(16)
         }
@@ -463,22 +463,22 @@ module Xiki
 
       if Styles.dark_bg?   # If black bg
         Styles.define :notes_h2, :face=>'arial', :size=>"-1", :fg=>'fff', :bg=>"333", :bold=>true
-        Styles.define :notes_h2_pipe, :face=>'arial', :size=>"-1", :fg=>'555555', :bg=>"333333", :bold=> true
-        Styles.define :notes_h0_pipe, :face=>'arial', :size=>"+8", :fg=>'666666', :bg=>"333333", :bold=> true
+        Styles.define :notes_h2_pipe, :face=>'arial', :size=>"-1", :fg=>'444', :bg=>"333", :bold=> true
+        Styles.define :notes_h0_pipe, :face=>'arial', :size=>"+8", :fg=>'444', :bg=>"333", :bold=> true
         Styles.define :notes_h0, :fg=>"fff", :bg=>"333", :face=>'arial', :size=>"+8", :bold=>true
         Styles.define :notes_h0_green, :fg=>"8f4", :bg=>"333", :face=>'arial', :size=>"+8", :bold=>true
-        Styles.define :notes_h0_green_pipe, :fg=>"555", :bg=>"333", :face=>'arial', :size=>"+8", :bold=>true
+        Styles.define :notes_h0_green_pipe, :fg=>"444", :bg=>"333", :face=>'arial', :size=>"+8", :bold=>true
         Styles.define :notes_h1_green, :fg=>"8f4", :bg=>"333", :face=>'arial', :size=>"+3", :bold=>true
-        Styles.define :notes_h1_green_pipe, :fg=>"555", :bg=>"333", :face=>'arial', :size=>"+3", :bold=>true
+        Styles.define :notes_h1_green_pipe, :fg=>"444", :bg=>"333", :face=>'arial', :size=>"+3", :bold=>true
       else   # If white bg
         Styles.define :notes_h2, :face=>'arial', :size=>"-1", :fg=>'fff', :bg=>"909090", :bold=>true
-        Styles.define :notes_h2_pipe, :face=>'arial', :size=>"-1", :fg=>'bbb', :bg=>"909090", :bold=>true
-        Styles.define :notes_h0_pipe, :face=>'arial', :size=>"+8", :fg=>'bbb', :bg=>"909090", :bold=>true
+        Styles.define :notes_h2_pipe, :face=>'arial', :size=>"-1", :fg=>'b0b0b0', :bg=>"909090", :bold=>true
+        Styles.define :notes_h0_pipe, :face=>'arial', :size=>"+8", :fg=>'b0b0b0', :bg=>"909090", :bold=>true
         Styles.define :notes_h0, :fg=>"fff", :bg=>"909090", :face=>'arial', :size=>"+8", :bold=>true
-        Styles.define :notes_h0_green, :fg=>"cf7", :bg=>"909090", :face=>'arial', :size=>"+8", :bold=>true
-        Styles.define :notes_h0_green_pipe, :fg=>"bbb", :bg=>"909090", :face=>'arial', :size=>"+8", :bold=>true
-        Styles.define :notes_h1_green, :fg=>"cf7", :bg=>"909090", :face=>'arial', :size=>"+3", :bold=>true
-        Styles.define :notes_h1_green_pipe, :fg=>"bbb", :bg=>"909090", :face=>'arial', :size=>"+3", :bold=>true
+        Styles.define :notes_h0_green, :fg=>"af0", :bg=>"909090", :face=>'arial', :size=>"+8", :bold=>true
+        Styles.define :notes_h0_green_pipe, :fg=>"b0b0b0", :bg=>"909090", :face=>'arial', :size=>"+8", :bold=>true
+        Styles.define :notes_h1_green, :fg=>"af0", :bg=>"909090", :face=>'arial', :size=>"+3", :bold=>true
+        Styles.define :notes_h1_green_pipe, :fg=>"b0b0b0", :bg=>"909090", :face=>'arial', :size=>"+3", :bold=>true
       end
 
       if Styles.dark_bg?   # If black bg
