@@ -234,7 +234,7 @@ module Xiki
           $el.defun(meth.to_sym, :interactive=>true) do
             block.call
           end
-          @@key_queue << [menu, item]
+          @@key_queue.<< [menu, item] if item !~ /^\d+$/   # Don't add to+1 etc. to menu bar
         end
 
         # Change 'to_foo' to 'TF' etc

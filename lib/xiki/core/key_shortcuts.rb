@@ -173,7 +173,7 @@ module Xiki
       #     $el.define_key :global_map, $el.kbd("C-e C-e"), :end_of_line
       Xiki.def("enter+file+path"){ Files.enter_file }            # Given a bookmark
       Xiki.def("enter+firefox+tabs"){ Launcher.insert('browser/tabs/') }   # Given a bookmark
-      Xiki.def("enter+history"){ DiffLog.enter_from_difflog }         # Save point and go to difflog to search
+      # H
       Xiki.def("enter+insert+date"){ View.enter_date }
       Xiki.def("enter+insert+comment"){ Code.enter_insert_comment }      # insert date string (and time if C-u)
       Xiki.def("enter+insert+new"){ DiffLog.enter_new }           # Enter Old: enter newly-deleted from last save
@@ -252,7 +252,7 @@ module Xiki
       Xiki.def("do+as+quote"){ Notes.do_as_quote }
       Xiki.def("do+as+xul"){ Firefox.do_as_xul }
       # B
-      Xiki.def("do+backward"){ View.beep "- Changed to: up+H!" }   # delete word backward
+      Xiki.def("do+bookmark"){ FileTree.tree :recursive=>true }   # delete word backward
       Xiki.def("do+code+align"){ Code.do_code_align }   # Based on input character, all matches line up
       Xiki.def("do+click+back"){ Firefox.back }
       Xiki.def("do+create+directory"){ FileTree.do_create_dir }
@@ -333,9 +333,8 @@ module Xiki
       Xiki.def("do+query"){ Search.query_replace }   # do query replace
       Xiki.def("do+run"){ Code.run }   # run code as ruby
       Xiki.def("do+status"){ Git.do_status }
-
-      Xiki.def("do+tree"){ FileTree.tree(:recursive=>true) }   # draw filesystem tree for current dir or bookmark
-      Xiki.def("do+upper"){ Launcher.do_last_launch }
+      Xiki.def("do+todo"){ Launcher.do_last_launch }
+      Xiki.def("do+up"){ Launcher.do_last_launch :here=>1 }
       # V
       $el.define_key :global_map, $el.kbd("C-d C-v"), :cua_set_rectangle_mark   # Keys.do_vertical, do+vertical
       Xiki.def("do+whitespace"){ Deletes.delete_whitespace }   # delete blank lines
@@ -628,7 +627,6 @@ module Xiki
         `.unindent)
 
       $el.define_key :isearch_mode_map, $el.kbd("C-m"), :isearch_m   # search+menu (done in a really safe way, so Return in isearch doesn't break when el4r goes down)
-
     end
 
     def self.map_control_return
@@ -642,12 +640,13 @@ module Xiki
     def self.map_command_return
       return if ! $el.boundp(:osx_key_mode_map)
 
-      $el.define_key(:osx_key_mode_map, $el.kbd("<A-return>")) { Launcher.go }
+      $el.define_key(:osx_key_mode_map, $el.kbd("<A-return>")) { Launcher.go_unified }
+      $el.define_key(:osx_key_mode_map, $el.kbd("<A-S-return>")) { Launcher.go }
     end
 
     # Not called by default
     def self.map_meta_return
-      Keys.set("<M-return>") { Launcher.go }   # command-return, command-enter
+      Keys.set("<M-return>") { Launcher.go_unified }   # command-return, command-enter
     end
 
     def self.misc

@@ -1217,7 +1217,7 @@ module Xiki
         if prefix.is_a?(Fixnum)   # Make indent specific number
           " " * (prefix*2)
         elsif prefix == :u || prefix == :-   # Use prefix chars from previous line
-          line[/^[ |$~&%@\/\\#+!-]*/]
+          line[/^[ :|$~&%@\/\\#+!-]*/]
         elsif Notes.enabled?
           line[/^[ :|!$%+-]*/]
         else
