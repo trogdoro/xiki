@@ -349,8 +349,20 @@ module Xiki
       end
     end
 
-  end
-end
+    # Returns a unique version of the filename.
+    # Appends ".1" if the filename already exists.
+    # Or, if that already exists, ".2" or ".3" etc.
+    def self.unique_name name
+      i, limit = 1, 7
+      return name if ! File.exists? name
+      while i < limit
+        break if ! File.exists? "#{name}.#{i}"
+        i += 1
+      end
+      "#{name}.#{i}"
+    end
+
+end; end
 
 if $el
   $el.el4r_lisp_eval("(require 'recentf)")
