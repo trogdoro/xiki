@@ -1,2 +1,0 @@
-> Make soft link
-$ ln -s /dir/file new_file

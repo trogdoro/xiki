@@ -98,9 +98,12 @@
     - by name/
       @~/menu/<name>.rb
         | Xiki["tables/foo//", args]
+    - by filename/
+      @~/menu/<name>.rb
+        | Xiki["/tmp/foo/", args]
     - by bookmark/
       @~/menu/<name>.rb
-        | Xiki["$tm//", options[:items]]
+        | Xiki["$tm//", args]
   - directories/
     - show a simple example (dir of dirs)
     - other stuff/
