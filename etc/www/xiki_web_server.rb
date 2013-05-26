@@ -99,10 +99,11 @@ class SinatraServer < Sinatra::Base
       all
     }
     txt.gsub! /^$/, "<p class='blank'>&nbsp;</p>"
+    name = options[:name] ? "Xiki - #{options[:name]}" : "Xiki"
     output = ""
     output <<  %`
     <head>
-      <title>Xiki</title>
+      <title>#{name}</title>
       <meta name="viewport" content="initial-scale = 1.0,maximum-scale = 1.0" />
     </head>
     <style>
@@ -353,7 +354,7 @@ class SinatraServer < Sinatra::Base
 
     # Html-ify and print output...
     if txt !~ /^\s+<.+>$/
-      txt = htmlify txt, :no_keys=>no_keys
+      txt = htmlify txt, :no_keys=>no_keys, :name=>menu
     end
     txt
 
