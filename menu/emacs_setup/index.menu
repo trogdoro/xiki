@@ -21,7 +21,7 @@ update emacs conf/
   !   `.unindent
   !
   ! target = File.expand_path("~/.emacs")
-  ! return "Your .emacs already has '(el4r-boot)'.  Remove it and the related lines and re-run." if File.read(target, *Files.encoding_binary) =~ /^ *\(el4r-boot\)/
+  ! return "Your .emacs already has '(el4r-boot)'.  Remove it and the related lines and re-run." if File.read(target, *Files.encoding_binary) =~ /^ *\(el4r-boot\)/ rescue nil
   !
   ! File.open(target, "a") { |f| f << txt }
   ! backup = Files.unique_name("/tmp/.emacs")
