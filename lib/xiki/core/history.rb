@@ -227,6 +227,8 @@ module Xiki
     end
 
     def self.diff_with_backup
+      # If up+, do interactive ediff...
+
       if Keys.prefix_u
         $el.ediff_files Dir["#{Bookmarks['$bak']}#{View.file_name}*"].last, View.file
         return
@@ -238,14 +240,13 @@ module Xiki
 
       file = View.file
 
-      # Replace current version with last
+      # If 8+, replace current version with backup...
+
       if Keys.prefix == 8
         return if ! View.confirm "Replace current file with backup?"
-        txt = File.read backup
-        line = View.line
-        View.kill_all
-        View << txt
-        View.line = line
+        orig = Location.new
+        $el.insert_file_contents backup, nil, nil, nil, true
+        orig.go
         return
       end
 
