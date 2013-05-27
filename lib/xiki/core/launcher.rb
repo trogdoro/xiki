@@ -1445,6 +1445,8 @@ module Xiki
     def self.launch_unified insert_options={}
       line = Line.value
 
+      Line.<<("\n", :dont_move=>1) if Line.right == View.bottom   # If at very end of view and no linebreak, add one
+
       return if self.bullet_prefix_handling line
 
       options = {:client=>"editor/emacs"}

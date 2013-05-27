@@ -243,7 +243,7 @@ module Xiki
       # If 8+, replace current version with backup...
 
       if Keys.prefix == 8
-        return if ! View.confirm "Replace current file with backup?"
+        return if ! View.confirm "Replace with contents of backup?  Afterwards you can save to make it permanent."
         orig = Location.new
         $el.insert_file_contents backup, nil, nil, nil, true
         orig.go
