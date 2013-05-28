@@ -14,17 +14,22 @@ module Xiki
         self.content *args[1..-1]
       end
 
-      MENU = %`
+      # Called when MENU set, so subclasses can use it to make
+      # MENU have their name.
+      def self.menu_constant
+        name = self.name.to_s.downcase.sub(/.+:/, '')
+
+        %`
         <= .make a page/
         - examples/
           - layouts/
             - hello world/
-              - @#{self.to_s.downcase}/
+              - @#{name}/
                 - project name/Sharkathon
                 - h2/Sharks
                 - p/They have fins and other cool stuff.
             - hero unit/
-              - @#{self.to_s.downcase}/
+              - @#{name}/
                 - project name/Sharkathon
                 - hero/
                   - h1/Sharks
@@ -33,7 +38,7 @@ module Xiki
                 > Do you?
                 Lorem Ipsum Dolor...
             - 2 columns/
-              - @#{self.to_s.downcase}/
+              - @#{name}/
                 - row/
                   - span6/
                     - h2/random
@@ -42,7 +47,7 @@ module Xiki
                     - h2/random
                     - p/ipsum dolor...
             - 3 columns/
-              - @#{self.to_s.downcase}/
+              - @#{name}/
                 - row/
                   - span4/
                     - h2/random
@@ -54,7 +59,7 @@ module Xiki
                     - h2/random
                     - p/dolor sit...
             - with icons/
-              - @#{self.to_s.downcase}/
+              - @#{name}/
                 - hero/
                   - h1/Sharks
                   - p/lorem...
@@ -76,7 +81,7 @@ module Xiki
                     - h2 icon/random
                     - p/sit lorem...
             - shorthand/
-              - @#{self.to_s.downcase}/
+              - @#{name}/
                 - hero/
                   > Shorthand
                   p/Lines starting with ">" at left margin will have rows and spans auto-wrapped around them.
@@ -93,7 +98,7 @@ module Xiki
                 > o random
                 lorem...
             - with styled hero/
-              - @#{self.to_s.downcase}/
+              - @#{name}/
                 - hero/
                   - h1/Sharks
                   - p/lorem...
@@ -107,7 +112,7 @@ module Xiki
                   |   border-radius: 20px;
                   | }
             - modified navbar/
-              - @#{self.to_s.downcase}/
+              - @#{name}/
                 - navbar/
                   | <img src="http://xiki.org/images/bootstrap_icon.png">
                   | <style>.navbar .container { padding: 1px 30px 0px; }</style>
@@ -115,7 +120,7 @@ module Xiki
                 - p/sit lorem ipsum dolor...
           - components/
             - buttons/
-              - @#{self.to_s.downcase}/
+              - @#{name}/
                 - h2/Buttons
                 - p/
                   <a class="btn" href="">Hi</a>
@@ -133,7 +138,7 @@ module Xiki
                   <a class="btn disabled" href="">Hi</a>
             - icons/
               - with headings/
-                - @#{self.to_s.downcase}/
+                - @#{name}/
                   p/
                     - h3/random
                     - h2 icon/Info
@@ -167,7 +172,7 @@ module Xiki
                   <a class="btn btn-danger" href=""><i class="icon-music"></i> Music</a>
             - forms/
               - basics/
-                - @#{self.to_s.downcase}/
+                - @#{name}/
                   | <form class="well">
                   |   <label>Label name</label>
                   |   <input type="text" class="span3" placeholder="Type something?">
@@ -178,13 +183,13 @@ module Xiki
                   |   <button type="submit" class="btn">Submit</button>
                   | </form>
               - search/
-                - @#{self.to_s.downcase}/
+                - @#{name}/
                   | <form class="well form-search">
                   |   <input type="text" class="input-medium search-query">
                   |   <button type="submit" class="btn">Search</button>
                   | </form>
               - inline/
-                - @#{self.to_s.downcase}/
+                - @#{name}/
                   | <form class="well form-inline">
                   |   <input type="text" class="input-small" placeholder="Email">
                   |   <input type="password" class="input-small" placeholder="Password">
@@ -194,7 +199,7 @@ module Xiki
                   |   <button type="submit" class="btn">Sign in</button>
                   | </form>
               - horizontal/
-                - @#{self.to_s.downcase}/
+                - @#{name}/
                   | <form class="form-horizontal">
                   |   <fieldset>
                   |     <legend>Legend text</legend>
@@ -208,7 +213,7 @@ module Xiki
                   |   </fieldset>
                   | </form>
             - code/
-              - @#{self.to_s.downcase}/
+              - @#{name}/
                 - pre/
                   | class Clam
                   |   def hi
@@ -217,7 +222,7 @@ module Xiki
                   | end
                 - p/Hey <code>you</code> there.
             - carousel/
-              - @#{self.to_s.downcase}/
+              - @#{name}/
                 - <div id="myCarousel" class="carousel slide">
                   - <div class="carousel-inner">
                     <div class="active item">
@@ -240,7 +245,7 @@ module Xiki
           | Expand the 'container' menu to build, or start with the
           | 'example' menu.
           |
-          | @#{self.to_s.downcase}/
+          | @#{name}/
           |   h2/Example Heading
 
           > Bootstrap site
@@ -251,6 +256,9 @@ module Xiki
         - see/
           @fontawesome/
         `
+      end
+
+      MENU = self.menu_constant
 
       @@bg = ['#eee', '#555', '#999', '#9D261D', '#369', '#096']
 
