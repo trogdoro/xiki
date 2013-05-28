@@ -359,7 +359,8 @@ module Xiki
       return path.sub "~", File.expand_path("~") if path =~ %r"^~/"
 
       # Expand out . and ..
-      return path.sub $1, File.expand_path($1) if path =~ %r"^(\.+)/"
+
+      return path.sub $1, File.expand_path($1, View.dir) if path =~ %r"^(\.+)/"
 
       # Expand out $foo/ bookmarks
       if path =~ %r"^(\$[\w]+)(/|$)"
