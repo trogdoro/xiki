@@ -1135,6 +1135,9 @@ module Xiki
       end
 
       $el.kill_this_buffer
+
+      View.hide if Keys.prefix(:clear=>1) == :u   # If up+, also close view
+
       nil
     end
 
