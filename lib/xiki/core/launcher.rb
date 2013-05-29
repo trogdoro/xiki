@@ -1329,9 +1329,7 @@ module Xiki
 
       return self.open(item, options) if menu == " "   # Space means text is the menu
 
-      matches = self.menu_keys.select do |possibility|
-        possibility =~ /^#{menu}/
-      end
+      matches = Xiki::MenuSuggester.completions menu
 
       if matches.length == 1
         return self.open("#{matches[0]}/#{item}", options)
