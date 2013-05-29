@@ -80,7 +80,7 @@ module Xiki
 
       # While chars to search for (alpha chars etc.), narrow down list...
 
-      while ch.is_a?(String) && (ch =~ /[ -"&-),-.\/-:<?A-~]/ &&   # Be careful editing, due to ranges (_-_)
+      while ch.is_a?(String) && (ch =~ /[ -"&-)+-:<?A-~]/ &&   # Be careful editing, due to ranges (_-_)
           (ch_raw < 67108912 || ch_raw > 67108921) && ch_raw != 67108909) # ||   # If not control-<number> or C--
 
         if ch == ' ' && pattern != ""   # If space and not already cleared out
@@ -307,18 +307,6 @@ module Xiki
       when "@"   # Insert '@' for menus
         self.stop_and_insert left, right, pattern
         View.insert self.indent("@", 0)
-
-      when "+"   # Create dir
-        self.stop_and_insert left, right, pattern, :dont_disable_control_lock=>true
-        Line.previous
-        parent = self.construct_path
-        Line.next
-        View.insert self.indent("", 0)
-        name = Keys.input(:prompt=>'Name of dir to create: ')
-        Dir.mkdir("#{parent}#{name}")
-        View.insert "- #{name}/\n"
-        View.insert self.indent("", 0)
-        #Line.to_right
 
       when ">"   # Split view, then launch
         $el.delete_region(Line.left(2), right)
