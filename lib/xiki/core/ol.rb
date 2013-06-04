@@ -508,9 +508,9 @@ class Ol
 
   def self.update_value_comment value
     value = "   # => #{value}"
-    Line =~ /   # / ?
-      Line.sub!(/(.*)   # .*/, "\\1#{value}") :   # Line could be commented, so don't replace after first "#"
-      Line.<<(value)
+    Xiki::Line =~ /   # / ?
+      Xiki::Line.sub!(/(.*)   # .*/, "\\1#{value}") :   # Line could be commented, so don't replace after first "#"
+      Xiki::Line.<<(value)
     Move.to_axis
   end
 end

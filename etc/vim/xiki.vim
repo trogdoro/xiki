@@ -1,8 +1,11 @@
 function! XikiLaunch()
   ruby << EOF
+    include Xiki
     xiki_dir = ENV['XIKI_DIR']
-    ['ol', 'vim/line', 'vim/tree'].each {|o| require "#{xiki_dir}/lib/xiki/#{o}"}
+    ['core/ol', 'vim/line', 'vim/tree'].each {|o| load "#{xiki_dir}/lib/xiki/#{o}.rb"}
     line = Line.value
+    next_line = Line.value 2
+
     indent = line[/^ +/]
     command = "xiki #{line}"
     result = `#{command}`
