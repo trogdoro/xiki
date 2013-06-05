@@ -1,7 +1,9 @@
 function! XikiLaunch()
   ruby << EOF
-    include Xiki
     xiki_dir = ENV['XIKI_DIR']
+    $LOAD_PATH.unshift "#{xiki_dir}/lib"
+    load "#{xiki_dir}/lib/xiki.rb"
+    include Xiki
     ['core/ol', 'vim/line', 'vim/tree'].each {|o| load "#{xiki_dir}/lib/xiki/#{o}.rb"}
     line = Line.value
     next_line = Line.value 2
