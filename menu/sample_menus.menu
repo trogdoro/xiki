@@ -5,6 +5,7 @@
     | Change this text to something useful.
     | It will be the content of your menu.
 - items/
+  | You can type out items literally.
   @~/menu/<name>.menu
     | - dogs/
     |   - hot/
@@ -89,29 +90,33 @@
       - todo: get the above param stuff to work!
   - .directions/
 - more/
+  - wrap/
+    - path/
+      @~/menu/<name>.rb
+        | Xiki["tables/foo/", args]
+    - filename/
+      @~/menu/<name>.rb
+        | Xiki["/tmp/foo/", args]
+    - bookmark/
+      @~/menu/<name>.rb
+        | Xiki["$tm//", args]
   - redirect/
     | Makes one menu redirect to another.  Useful for creating menus
     | that just serve as shortcuts.
     @~/menu/<name>.menu
       | <<< foo/
-  - wrap other menu/
-    - by name/
-      @~/menu/<name>.rb
-        | Xiki["tables/foo//", args]
-    - by filename/
-      @~/menu/<name>.rb
-        | Xiki["/tmp/foo/", args]
-    - by bookmark/
-      @~/menu/<name>.rb
-        | Xiki["$tm//", args]
-  - directories/
-    - show a simple example (dir of dirs)
-    - other stuff/
-      - show example with a few different types nested
-        - hey.rb
-        - hey.menu
-        - hey.notes
-      - explain that you can have anything nested!
+  - directory/
+    | You can make menus backed by directories.  Files or dirs within
+    | the dir become items!
+    @~/menu/<name>/
+      - a.txt
+        | This is the 'a' item.
+      - b.rb
+        | 1 + 2   # The 'b' item will output "3"
+      - c/
+    + more/
+      | You can have any number of nested dirs and files, nested as deep
+      | as you want!
   - index files/
     - explain they work like index.html files, and do the work for their containing directory
     - so you can optionally have a dir a menu that contains all the files
