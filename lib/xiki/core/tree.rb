@@ -41,7 +41,11 @@ module Xiki
     end
 
     def self.search options={}
+
+
+      # Deprecated: Is $xiki_no_search still used?
       return $xiki_no_search=false if $xiki_no_search
+
 
       recursive = options[:recursive]
       recursive_quotes = options[:recursive_quotes]
@@ -225,6 +229,16 @@ module Xiki
         Keys.clear_prefix
         Launcher.launch_unified
 
+
+        #       # Temporarily make Command+Return do old launch (until all menus are ported over from the unified refactor)
+        #       when :meta_return
+        #         Keys.clear_prefix
+        #         Launcher.launch
+        #       when :control_period
+        #         Keys.clear_prefix
+        #         Launcher.launch_unified
+
+
       when :meta_return, :control_period
         Keys.clear_prefix
         Launcher.launch_unified
@@ -336,9 +350,12 @@ module Xiki
         n = ch.to_i
 
         # Pull whole string out
-        lines = $el.buffer_substring(left, right).split "\n"
-        $el.delete_region left, right
+        lines = View.txt(left, right).split "\n"
+        View.delete left, right
         if recursive
+
+          # Recursive is different because we only count children
+
           filtered = []
           file_count = 0
           # Replace out lines that don't match (and aren't dirs)
@@ -360,25 +377,14 @@ module Xiki
           $el.goto_char left
           FileTree.select_next_file
 
-          # Todo: merge this and the following .search
-          self.search(:recursive => true, :left => Line.left, :right => Line.left(2))
         else
-          nth = lines[ch.to_i - 1]
+          nth = lines[n - 1]
           View.insert "#{nth}\n"
           $el.previous_line
-          if options[:number_means_enter]   # If explicitly supposed to enter
-            Launcher.launch_unified
-          elsif FileTree.dir?   # If a dir, go into it
-            Launcher.launch_unified
-          else
-            Launcher.launch_unified
-            return
-
-            Line.to_beginning
-            # Get back into search, waiting for input
-            self.search(:left=>Line.left, :right=>Line.left(2))
-          end
         end
+
+        Launcher.launch_unified
+
 
       when "\C-s"
         $el.isearch_forward
@@ -1147,6 +1153,8 @@ module Xiki
       [left1, right1, left2, right2]
     end
 
+    # Call Tree.search with arguments appropriate to whether "output" string
+    # has nested children and/or quated children.
     def self.search_appropriately left, right, output, options={}
 
       View.cursor = left unless options[:line_found]
@@ -1168,7 +1176,7 @@ module Xiki
         end
         Tree.search options
       else
-        Tree.search options.merge(:number_means_enter=>true)
+        Tree.search options
       end
     end
 
@@ -2048,6 +2056,8 @@ module Xiki
         left = 0 if left < 0
         close_these = previous[left..-1]
         close_these.reverse.each_with_index do |tag, i|
+
+          next if ! tag   # Was throwing error for icon/... in @bootstrap when hero exists
 
           tag.sub! /^\| ?/, ''
           tag = Line.without_label :line=>tag
