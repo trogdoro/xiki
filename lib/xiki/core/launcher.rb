@@ -39,6 +39,7 @@ module Xiki
       @@menus
     end
 
+    # Deprecated!
     def self.menu_keys
       (@@menus[0].keys + @@menus[1].keys).sort.uniq #.select do |possibility|
     end
@@ -533,18 +534,6 @@ module Xiki
 
     def self.init_default_launchers
 
-      self.add(/^\$ /) do |l|   # $ shell command inline (sync)
-        Console.launch :sync=>true, :path=>l
-      end
-
-      self.add /^%( |$)/ do   # % shell command (async)
-        Console.launch_async
-      end
-
-      self.add /^&( |$)/ do   # % shell command in iterm
-        Console.launch_async :iterm=>1
-      end
-
       # %\n  | multiline\n  | commands
       Launcher.add /^\%\// do   # For % with nested quoted lines
         path = Tree.construct_path :list=>1
@@ -560,61 +549,6 @@ module Xiki
         orig.go
       end
 
-      # Deprecated
-      self.add(/^(http|file).?:\/\/.+/) do |path|
-        Launcher.append_log "- http/#{path}"
-
-        prefix = Keys.prefix
-        Keys.clear_prefix
-
-        url = path[/(http|file).?:\/\/.+/]
-        if prefix == "all"
-          txt = RestTree.request("GET", url)
-          txt = Tree.quote(txt) if txt =~ /\A<\w/
-          Tree.under Tree.quote(txt), :no_slash=>1
-          next
-        end
-        url.gsub! '%', '%25'
-        url.gsub! '"', '%22'
-        prefix == :u ? $el.browse_url(url) : Firefox.url(url)
-      end
-
-      self.add(/^\$[^ #*!\/]+$/) do |line|   # Bookmark
-        View.open Line.without_indent(line)
-      end
-
-      self.add(/^(p )?[A-Z][A-Za-z]+\.(\/|$)/) do |line|
-        line.sub! /^p /, ''
-        Code.launch_dot_at_end line
-      end
-
-
-      # Various lines that mean run as ruby
-      # p ...
-      # puts ...
-      # etc.
-      self.add(/^(p|y|pp|puts|Ol) /) do |line|
-        CodeTree.run line, :quote=>1
-      end
-
-      self.add(/^(ap) /) do |line|
-        CodeTree.run line, :quote=>1
-      end
-
-      self.add(/^print\(/) do |line|
-        Javascript.launch
-      end
-
-      self.add(/^pg /) do |line|
-        line.sub! /^pg /, ''
-        CodeTree.run "puts JSON.pretty_generate(#{line})"
-      end
-
-      self.add(/^ *$/) do |line|  # Empty line
-        View.beep
-        View.message "There was nothing on this line to launch."
-      end
-
       self.add(/^\*$/) do |line|  # *... buffer
         Line.sub! /.+/, "all"
 
@@ -625,32 +559,6 @@ module Xiki
         name = Line.without_label.sub(/\*/, '')
         View.to_after_bar
         View.to_buffer name
-      end
-
-      # Must have at least 2 slashes!
-      self.add(/^[^\|@:]+\/\w+\/[\/\w\-]+\.\w+:\d+/) do |line|  # Stack traces, etc
-        # Match again (necessary)
-        line =~ /([$\/.\w\-]+):(\d+)/
-        path, line = $1, $2
-
-        if path =~ /^(\w.*)/ || path =~ /^\.\/(.+)/
-
-          path = $1
-
-          local_path = "#{View.dir}/#{path}".sub "//", "/"
-          xiki_path = "#{Xiki.dir}/#{path}".sub "//", "/"
-          if File.exists? local_path
-            path = local_path
-          elsif File.exist? xiki_path
-            path = xiki_path
-          end
-
-        else
-          return ".flash - File doesn't exist!" if ! File.exists? path
-        end
-
-        View.open path
-        View.to_line line.to_i
       end
 
       # Xiki protocol to server
@@ -1325,7 +1233,7 @@ module Xiki
     def self.like_menu item, options={}
       return if item.nil?
 
-      menu = Keys.input :timed=>true, :prompt=>"Enter menu to pass '#{item}' to (space it's the menu): "
+      menu = Keys.input :timed=>true, :prompt=>"Pass '#{item}' to which menu? (or space it's the menu): "
 
       return self.open(item, options) if menu == " "   # Space means text is the menu
 

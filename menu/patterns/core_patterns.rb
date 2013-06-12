@@ -125,4 +125,38 @@ module Xiki
     html = Tree.quote(html) if html !~ /^[>|] / && html !~ /\A.+\/$/
     html
   end
+
+
+  Xiki.def(%r"^#(\w*)") do |path, options|
+    next Xiki["ids/"].gsub(/^\+/, "<<") if path == "#"
+
+    Xiki["ids/#{path}"]
+  end
+
+
+  Xiki.def(%r"^\.(\w*)") do |path, options|
+    next Xiki["css/list/"].gsub(/^\+/, "<<") if path == "."
+
+    Xiki["css/list/#{path}"]
+  end
+
+  # Probably make sure this one is the last!...
+
+  # Paths in stack traces, etc
+  #   Xiki.def(%r"/from (/.+):(\d+):") do |path, options|
+
+  # Matches lines from el4r log like:
+  # 2013-05-28 18:03:14 -0700:Error: uninitialized...
+  #   from /Users/craig/.rvm/gems/ruby-1.9.3-p327@xiki/gems/trogdoro-el4r-1.0.7/bin/el4r-instance:847:in `instance_eval'
+
+  Xiki.def(%r"^20.+/from (/.+):(\d+):") do |path, options|
+
+    match = options[:expanders][0][:match]
+    file, line = match[1..2]
+
+    View.open file
+    View.line = line
+    nil
+
+  end
 end
