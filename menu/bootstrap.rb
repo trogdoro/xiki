@@ -17,110 +17,118 @@ module Xiki
       # Called when MENU set, so subclasses can use it to make
       # MENU have their name.
       def self.menu_constant
-        name = self.name.to_s.downcase.sub(/.+:/, '')
-
-        %`
+        txt = %`
         <= .make a page/
         - examples/
           - layouts/
             - hello world/
-              - @#{name}/
-                - project name/Sharkathon
-                - h2/Sharks
-                - p/They have fins and other cool stuff.
+              - @bootstrap/
+                > A heading
+                You can just use a greater than sign for a heading.
+            - columns/
+              - @bootstrap/
+                > Hi
+                Since these two sections are right next to each other, they'll show up side by side (as columns).
+                > Snails
+                Cool swirly shell but creepy antennae things.
             - hero unit/
-              - @#{name}/
-                - project name/Sharkathon
+              - @bootstrap/
                 - hero/
-                  - h1/Sharks
-                  - p/They have fins and other cool stuff.
+                  h1/Sharks
+                  p/They have fins and other cool stuff.
+                > Colors?
+                Each time you generate the page, it uses a different background color for the hero, just to give you ideas.  Under "more control" there's an example of using a style to set it to a fixed color or gradient.
+            - rows/
+              - @bootstrap/
+                > Snails
+                Cool swirly shell but creepy antennae things.
+                > random
+                This heading is random since we used the special heading "random".
 
-                > Do you?
-                Lorem Ipsum Dolor...
-            - 2 columns/
-              - @#{name}/
-                - row/
-                  - span6/
-                    - h2/random
-                    - p/lorem ipsum...
-                  - span6/
-                    - h2/random
-                    - p/ipsum dolor...
-            - 3 columns/
-              - @#{name}/
-                - row/
-                  - span4/
-                    - h2/random
-                    - p/lorem ipsum...
-                  - span4/
-                    - h2/random
-                    - p/ipsum dolor...
-                  - span4/
-                    - h2/random
-                    - p/dolor sit...
-            - with icons/
-              - @#{name}/
-                - hero/
-                  - h1/Sharks
-                  - p/lorem...
-                - row/
-                  - span6/
-                    - h2 icon/random
-                    - p/ipsum dolor sit...
-                  - span6/
-                    - h2 icon/random
-                    - p/dolor sit lorem...
-                - row/
-                  - span4/
-                    - h2 icon/random
-                    - p/lorem ipsum...
-                  - span4/
-                    - h2 icon/random
-                    - p/ipsum dolor...
-                  - span4/
-                    - h2 icon/random
-                    - p/sit lorem...
-            - shorthand/
-              - @#{name}/
-                - hero/
-                  > Shorthand
-                  p/Lines starting with ">" at left margin will have rows and spans auto-wrapped around them.
-
-                > o random
-                lorem...
-                > o random
-                lorem...
-
-                > o random
-                lorem...
-                > o random
-                lorem...
-                > o random
-                lorem...
-            - with styled hero/
-              - @#{name}/
-                - hero/
-                  - h1/Sharks
-                  - p/lorem...
-                - h2/random
-                - p/sit lorem ipsum dolor...
-                - style/
-                  | .hero-unit {
-                  |   background-color: #9D261D;
-                  |   color: #fff;
-                  |   text-shadow: 2px 2px 2px #333;
-                  |   border-radius: 20px;
-                  | }
-            - modified navbar/
-              - @#{name}/
-                - navbar/
-                  | <img src="http://xiki.org/images/bootstrap_icon.png">
-                  | <style>.navbar .container { padding: 1px 30px 0px; }</style>
-                - h2/random
-                - p/sit lorem ipsum dolor...
+                > Another
+                This div is a underneath because of the blank line separating it.  If you removed the blank line, it would be a third column.
+            - icons/
+              - @bootstrap/
+                > $ Snails
+                The "$" is replaced with a random icon.
+                When you have "Lorem..." or "Ipsum Dolor..." or something like that, it uses sample text.
+                > $ Sample text
+                Lorem...
+            - html/
+              - @bootstrap/
+                > You can put html pretty much anywhere
+                <pre>Here's me using <b>some</b> html.</pre>
+                <ul><li>aww</li><li>yea-uh</li></ul>
+            - more control/
+              - 2 columns/
+                - @bootstrap/
+                  - row/
+                    - span5/
+                      > random
+                      lorem ipsum...
+                    - span7/
+                      > random
+                      ipsum dolor...
+              - 3 columns/
+                - @bootstrap/
+                  - project name/Sharks
+                  - row/
+                    - span3/
+                      > random
+                      lorem ipsum...
+                    - span6/
+                      > random
+                      ipsum dolor...
+                    - span3/
+                      > random
+                      dolor sit...
+              - hero and icons/
+                - @bootstrap/
+                  - project name/Sharks
+                  - hero/
+                    h1/Sharks
+                    p/lorem...
+                  - row/
+                    - span6/
+                      h2 icon/random
+                      ipsum dolor sit...
+                    - span6/
+                      h2 icon/random
+                      dolor sit lorem...
+                  - row/
+                    - span4/
+                      h2 icon/random
+                      lorem ipsum...
+                    - span4/
+                      h2 icon/random
+                      ipsum dolor...
+                    - span4/
+                      h2 icon/random
+                      sit lorem...
+              - with styled hero/
+                - @bootstrap/
+                  - hero/
+                    h1/Sharks
+                    p/lorem...
+                  - h2/random
+                  - p/sit lorem ipsum dolor...
+                  - style/
+                    | .hero-unit {
+                    |   background-color: #9D261D;
+                    |   color: #fff;
+                    |   text-shadow: 2px 2px 2px #333;
+                    |   border-radius: 20px;
+                    | }
+              - modified navbar/
+                - @bootstrap/
+                  navbar/
+                    | <img src="http://xiki.org/images/bootstrap_icon.png">
+                    | <style>.navbar .container { padding: 1px 30px 0px; }</style>
+                  h2/random
+                  p/sit lorem ipsum dolor...
           - components/
             - buttons/
-              - @#{name}/
+              - @bootstrap/
                 - h2/Buttons
                 - p/
                   <a class="btn" href="">Hi</a>
@@ -138,7 +146,7 @@ module Xiki
                   <a class="btn disabled" href="">Hi</a>
             - icons/
               - with headings/
-                - @#{name}/
+                - @bootstrap/
                   p/
                     - h3/random
                     - h2 icon/Info
@@ -172,7 +180,7 @@ module Xiki
                   <a class="btn btn-danger" href=""><i class="icon-music"></i> Music</a>
             - forms/
               - basics/
-                - @#{name}/
+                - @bootstrap/
                   | <form class="well">
                   |   <label>Label name</label>
                   |   <input type="text" class="span3" placeholder="Type something?">
@@ -183,13 +191,13 @@ module Xiki
                   |   <button type="submit" class="btn">Submit</button>
                   | </form>
               - search/
-                - @#{name}/
+                - @bootstrap/
                   | <form class="well form-search">
                   |   <input type="text" class="input-medium search-query">
                   |   <button type="submit" class="btn">Search</button>
                   | </form>
               - inline/
-                - @#{name}/
+                - @bootstrap/
                   | <form class="well form-inline">
                   |   <input type="text" class="input-small" placeholder="Email">
                   |   <input type="password" class="input-small" placeholder="Password">
@@ -199,7 +207,7 @@ module Xiki
                   |   <button type="submit" class="btn">Sign in</button>
                   | </form>
               - horizontal/
-                - @#{name}/
+                - @bootstrap/
                   | <form class="form-horizontal">
                   |   <fieldset>
                   |     <legend>Legend text</legend>
@@ -213,7 +221,7 @@ module Xiki
                   |   </fieldset>
                   | </form>
             - code/
-              - @#{name}/
+              - @bootstrap/
                 - pre/
                   | class Clam
                   |   def hi
@@ -222,7 +230,7 @@ module Xiki
                   | end
                 - p/Hey <code>you</code> there.
             - carousel/
-              - @#{name}/
+              - @bootstrap/
                 - <div id="myCarousel" class="carousel slide">
                   - <div class="carousel-inner">
                     <div class="active item">
@@ -245,7 +253,7 @@ module Xiki
           | Expand the 'container' menu to build, or start with the
           | 'example' menu.
           |
-          | @#{name}/
+          | @bootstrap/
           |   h2/Example Heading
 
           > Bootstrap site
@@ -256,6 +264,11 @@ module Xiki
         - see/
           @fontawesome/
         `
+        name = self.name.to_s.downcase.sub(/.+:/, '')
+        txt.gsub!("@bootstrap/", "@#{name}/") if name != "bootstrap"
+
+        txt
+
       end
 
       MENU = self.menu_constant
@@ -277,7 +290,7 @@ module Xiki
       }
 
       @@icons = [
-        'expand-alt', 'frown', 'meh', 'gamepad', 'keyboard', 'flag-alt', 'flag-checkered', 'mail-forward', 'mail-reply', 'reply-all', 'mail-reply-all', 'star-half-empty', 'star-half-full', 'location-arrow', 'rotate-left', 'rotate-right', 'crop', 'unlink', 'question', 'info', 'superscript', 'subscript', 'puzzle-piece', 'microphone', 'microphone-off', 'shield', 'calendar-empty', 'fire-extinguisher', 'rocket', 'maxcdn', 'html5', 'css3', 'anchor', 'unlock-alt', 'bullseye', 'rss-sign', 'play-sign', 'ticket', 'minus-sign-alt', 'check-minus', 'level-up', 'level-down', 'check-sign', 'edit-sign', 'external-link-sign', 'share-sign', 'adjust', 'asterisk', 'ban-circle', 'bar-chart', 'barcode', 'beaker', 'beer', 'bell-alt', 'bell', 'bolt', 'book', 'bookmark-empty', 'bookmark', 'briefcase', 'bullhorn', 'calendar', 'camera-retro', 'camera', 'certificate', 'check-empty', 'check', 'circle-blank', 'circle', 'cloud-download', 'cloud-upload', 'cloud', 'code-fork', 'code', 'coffee', 'cog', 'cogs', 'collapse-alt', 'comment-alt', 'comment', 'comments-alt', 'comments', 'credit-card', 'crop', 'dashboard', 'desktop', 'download-alt', 'download', 'edit', 'ellipsis-horizontal', 'ellipsis-vertical', 'envelope-alt', 'envelope', 'eraser', 'exchange', 'exclamation-sign', 'exclamation', 'external-link-sign', 'external-link', 'eye-close', 'eye-open', 'facetime-video', 'fighter-jet', 'film', 'filter', 'fire-extinguisher', 'fire', 'flag-alt', 'flag-checkered', 'flag', 'folder-close-alt', 'folder-close', 'folder-open-alt', 'folder-open', 'food', 'frown', 'gamepad', 'gift', 'glass', 'globe', 'group', 'hdd', 'headphones', 'heart-empty', 'heart', 'home', 'inbox', 'info-sign', 'info', 'key', 'keyboard', 'laptop', 'leaf', 'legal', 'lemon', 'level-down', 'level-up', 'lightbulb', 'location-arrow', 'lock', 'magic', 'magnet', 'mail-forward', 'mail-reply', 'mail-reply-all', 'map-marker', 'minus-sign-alt', 'minus-sign', 'minus', 'mobile-phone', 'money', 'move', 'music', 'off', 'ok-circle', 'ok-sign', 'ok', 'pencil', 'phone-sign', 'phone', 'picture', 'plane', 'plus-sign', 'plus', 'print', 'pushpin', 'puzzle-piece', 'qrcode', 'question-sign', 'question', 'quote-left', 'quote-right', 'random', 'refresh', 'remove-circle', 'remove-sign', 'remove', 'reorder', 'reply-all', 'reply', 'resize-horizontal', 'resize-vertical', 'retweet', 'road', 'rocket', 'rotate-left', 'rotate-right', 'rss-sign', 'rss', 'screenshot', 'search', 'share-alt', 'share-sign', 'share', 'shopping-cart', 'sign-blank', 'signal', 'signin', 'signout', 'sitemap', 'smile', 'sort-down', 'sort-up', 'sort', 'spinner', 'star-empty', 'star-half-full', 'star-half-empty', 'star-half', 'star', 'tablet', 'tag', 'tags', 'tasks', 'terminal', 'thumbs-down', 'thumbs-up', 'ticket', 'time', 'tint', 'trash', 'trophy', 'truck', 'umbrella', 'unlock-alt', 'unlock', 'upload-alt', 'upload', 'user-md', 'user', 'volume-down', 'volume-off', 'volume-up', 'warning-sign', 'wrench', 'zoom-in', 'zoom-out', 'file', 'file-alt', 'cut', 'copy', 'paste', 'save', 'undo', 'repeat', 'text-height', 'text-width', 'align-left', 'align-center', 'align-right', 'align-justify', 'indent-left', 'indent-right', 'font', 'bold', 'italic', 'strikethrough', 'underline', 'superscript', 'subscript', 'link', 'unlink', 'paper-clip', 'columns', 'table', 'th-large', 'th', 'th-list', 'list', 'list-ol', 'list-ul', 'list-alt', 'angle-left', 'angle-right', 'angle-up', 'angle-down', 'arrow-down', 'arrow-left', 'arrow-right', 'arrow-up', 'caret-down', 'caret-left', 'caret-right', 'caret-up', 'chevron-down', 'chevron-left', 'chevron-right', 'chevron-up', 'chevron-sign-left', 'chevron-sign-right', 'chevron-sign-up', 'chevron-sign-down', 'circle-arrow-down', 'circle-arrow-left', 'circle-arrow-right', 'circle-arrow-up', 'double-angle-left', 'double-angle-right', 'double-angle-up', 'double-angle-down', 'hand-down', 'hand-left', 'hand-right', 'hand-up', 'play-circle', 'play-sign', 'play', 'pause', 'stop', 'eject', 'backward', 'forward', 'fast-backward', 'fast-forward', 'step-backward', 'step-forward', 'fullscreen', 'resize-full', 'resize-small', 'facebook', 'facebook-sign', 'twitter', 'twitter-sign', 'github', 'github-sign', 'html5', 'linkedin', 'linkedin-sign', 'maxcdn', 'pinterest', 'pinterest-sign', 'google-plus', 'google-plus-sign', 'ambulance', 'h-sign', 'hospital', 'medkit', 'plus-sign-alt', 'stethoscope', 'user-md',
+        'expand-alt', 'meh', 'keyboard', 'microphone', 'microphone-off', 'shield', 'calendar-empty', 'css3', 'anchor', 'bullseye', 'check-minus', 'check-sign', 'edit-sign', 'adjust', 'asterisk', 'ban-circle', 'bar-chart', 'barcode', 'beaker', 'beer', 'bell-alt', 'bell', 'bolt', 'book', 'bookmark-empty', 'bookmark', 'briefcase', 'bullhorn', 'calendar', 'camera-retro', 'camera', 'certificate', 'check-empty', 'check', 'circle-blank', 'circle', 'cloud-download', 'cloud-upload', 'cloud', 'code-fork', 'code', 'coffee', 'cog', 'cogs', 'collapse-alt', 'comment-alt', 'comment', 'comments-alt', 'comments', 'credit-card', 'crop', 'dashboard', 'desktop', 'download-alt', 'download', 'edit', 'ellipsis-horizontal', 'ellipsis-vertical', 'envelope-alt', 'envelope', 'eraser', 'exchange', 'exclamation-sign', 'exclamation', 'external-link-sign', 'external-link', 'eye-close', 'eye-open', 'facetime-video', 'fighter-jet', 'film', 'filter', 'fire-extinguisher', 'fire', 'flag-alt', 'flag-checkered', 'flag', 'folder-close-alt', 'folder-close', 'folder-open-alt', 'folder-open', 'food', 'frown', 'gamepad', 'gift', 'glass', 'globe', 'group', 'hdd', 'headphones', 'heart-empty', 'heart', 'home', 'inbox', 'info-sign', 'info', 'key', 'laptop', 'leaf', 'legal', 'lemon', 'level-down', 'level-up', 'lightbulb', 'location-arrow', 'lock', 'magic', 'magnet', 'mail-forward', 'mail-reply', 'mail-reply-all', 'map-marker', 'minus-sign-alt', 'minus-sign', 'minus', 'mobile-phone', 'money', 'move', 'music', 'off', 'ok-circle', 'ok-sign', 'ok', 'pencil', 'phone-sign', 'phone', 'picture', 'plane', 'plus-sign', 'plus', 'print', 'pushpin', 'puzzle-piece', 'qrcode', 'question-sign', 'question', 'quote-left', 'quote-right', 'random', 'refresh', 'remove-circle', 'remove-sign', 'remove', 'reorder', 'reply-all', 'reply', 'resize-horizontal', 'resize-vertical', 'retweet', 'road', 'rocket', 'rotate-left', 'rotate-right', 'rss-sign', 'rss', 'screenshot', 'search', 'share-alt', 'share-sign', 'share', 'shopping-cart', 'sign-blank', 'signal', 'signin', 'signout', 'sitemap', 'smile', 'sort-down', 'sort-up', 'sort', 'spinner', 'star-empty', 'star-half-full', 'star-half-empty', 'star-half', 'star', 'tablet', 'tag', 'tags', 'tasks', 'terminal', 'thumbs-down', 'thumbs-up', 'ticket', 'time', 'tint', 'trash', 'trophy', 'truck', 'umbrella', 'unlock-alt', 'unlock', 'upload-alt', 'upload', 'user', 'volume-down', 'volume-off', 'volume-up', 'warning-sign', 'wrench', 'zoom-in', 'zoom-out', 'file', 'file-alt', 'cut', 'copy', 'paste', 'save', 'undo', 'repeat', 'text-height', 'text-width', 'align-left', 'align-center', 'align-right', 'align-justify', 'indent-left', 'indent-right', 'font', 'bold', 'italic', 'strikethrough', 'underline', 'superscript', 'subscript', 'link', 'unlink', 'paper-clip', 'columns', 'table', 'th-large', 'th', 'th-list', 'list', 'list-ol', 'list-ul', 'list-alt', 'angle-left', 'angle-right', 'angle-up', 'angle-down', 'arrow-down', 'arrow-left', 'arrow-right', 'arrow-up', 'caret-down', 'caret-left', 'caret-right', 'caret-up', 'chevron-down', 'chevron-left', 'chevron-right', 'chevron-up', 'chevron-sign-left', 'chevron-sign-right', 'chevron-sign-up', 'chevron-sign-down', 'circle-arrow-down', 'circle-arrow-left', 'circle-arrow-right', 'circle-arrow-up', 'double-angle-left', 'double-angle-right', 'double-angle-up', 'double-angle-down', 'hand-down', 'hand-left', 'hand-right', 'hand-up', 'play-circle', 'play-sign', 'play', 'pause', 'stop', 'eject', 'backward', 'forward', 'fast-backward', 'fast-forward', 'step-backward', 'step-forward', 'fullscreen', 'resize-full', 'resize-small', 'facebook', 'facebook-sign', 'twitter', 'twitter-sign', 'github', 'github-sign', 'html5', 'linkedin', 'linkedin-sign', 'maxcdn', 'pinterest', 'pinterest-sign', 'google-plus', 'google-plus-sign', 'ambulance', 'h-sign', 'hospital', 'medkit', 'plus-sign-alt', 'stethoscope', 'user-md',
       ]
 
       @@random = ["Info", "Facts", "B. S.", "Why?", "History", "Traits", "Story", "What?", "Happy"]
@@ -298,11 +311,11 @@ module Xiki
 
         # If more siblings
         "
-        - project name/Foo
         - hero/
         - row/
         - icon/
         - style/
+        - project name/
         "
       end
 
@@ -403,12 +416,12 @@ module Xiki
         no_h2_yet = true
         row_i = 0
         lines.each do |l|
-          if l =~ /^> (\w )?(.+)/   # If >..., increase count in hash
+          if l =~ /^> (\$ )?(.+)/   # If >..., increase count in hash
             icon, heading = $1, $2
             width = 12 / row_hash[row_i]
             txt << "row/\n" if no_h2_yet   # If first unindented >..., add initial row
             no_h2_yet = false
-            next txt.<< "  span#{width}/\n    h2 #{icon.strip}/#{heading}\n" if icon
+            next txt.<< "  span#{width}/\n    h2 icon/#{heading}\n" if icon
             txt << "  span#{width}/\n    h2/#{heading}\n"
           elsif no_h2_yet   # Leave items before first >... alone
             txt << "#{l}\n"
@@ -459,7 +472,7 @@ module Xiki
 
         # Add random icons in <h2 icon> tags.
 
-        @html.gsub!(/<h2 (\w+)>/) { |o| "<h2> #{Bootstrap.icon_tag @@icons[rand(93)]}" }
+        @html.gsub!("<h2 icon>") { |o| "<h2> #{Bootstrap.icon_tag @@icons[rand(93)]}" }
 
         # Make all lines within <icon> tags become icons.
 
@@ -504,7 +517,7 @@ module Xiki
       end
 
       def self.icon_tag name
-        "<i class='icon-large icon-#{name}'></i>"
+        "<i class='icon icon-#{name}'></i>"
       end
 
       def wrap_html_page
