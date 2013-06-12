@@ -27,20 +27,19 @@ module Xiki
 
         # If found any completions, return them...
 
-        if(list = self.completions(name)).any?
+        if(list = Menu.completions(name)).any?
           if list.length == 1
             options[:output] = "<<< #{list[0]}/"
             return
           end
 
-          Ol["TODO: If editor, add '...' at the end of line!"]
           # if editor, add "..." at the end of the line
           if options[:client] =~ /^editor\b/
             Line << "..."
           end
 
           options[:no_slash] = 1   # If auto-completed, do no slash
-          options[:output] = list.sort.uniq.map{|o| "<< #{o}/\n"}.join("")
+          options[:output] = list.map{|o| "<< #{o}/\n"}.join("")
           return
         end
       end
@@ -60,37 +59,20 @@ module Xiki
 
       # Non-existant items were created, so suggest making a new menu out of them...
       if options[:client] =~ /^editor\b/
+        options[:no_slash] = 1
+
+        # Note: If you update this text, be sure update the code in @save menu/
+        # that deletes it when saving.
         options[:output] = "
           > Make this into a menu?
-          | Create a new '#{options[:name]}' menu with these items?
-          @as menu/
+          @save menu/
+          | Creates a new '#{options[:name]}' menu with these items.
           "
       end
 
       # Shelved for now
       #     return "@back up/1/#{name}...\n#{completions}"
 
-    end
-
-
-    def self.completions name
-
-      # Check defined menus...
-
-      result = []
-      Menu.defs.keys.each do |key|
-        result << key.gsub("_", ' ') if key =~ /^#{name}/
-      end
-
-      # Check MENU_PATH menus...
-
-      Xiki.menu_path_dirs.each do |dir|
-        start = "#{dir}/#{name}*"
-        Dir.glob(start).each do |match|
-          result << File.basename(match, ".*").gsub("_", ' ')
-        end
-      end
-      result
     end
 
   end

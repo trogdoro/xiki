@@ -564,9 +564,9 @@ module Xiki
       txt.gsub! /^  /, ''
 
       # Remove help text that prompts you to create the menu with the items (if exists)
-      txt.sub! /^ +> Make this into a menu\?\n +\| Create the .+\n.+\n/, ''
+      txt.sub! /^ +> Save\?\n +@save menu\/\n.+\n.+\n/, ''
       # Remove help text that prompts you to update menus
-      txt.sub! /^ +> Update this menu\?\n +\| Save changes.+\n.+\n.+\n/, ''
+      txt.sub! /^ +> Make this into a menu\?\n +@save menu\/\n.+\n/, ''
 
       return Tree << "| You must supply something to put under the '#{root}' menu.\n| First, add some lines here, such as these:\n- line/\n- another line/\n" if txt.empty?
 
@@ -877,6 +877,9 @@ module Xiki
 
 
 
+    # Has subset of menus that are defined manually.  Usually via
+    # Xiki.def.  Most menus don't need to be defined because they
+    # exist in a menu dir (in MENU_PATH).
     # Examples: "ip"=><instance>, "tables"=>"/etc/menus/tables"
     @@defs ||= {}
 
@@ -1095,11 +1098,20 @@ module Xiki
       return options[:output] if options[:output] || options[:halt]
 
       if options[:client] =~ /^editor\b/ && sources.find{|o| o =~ /\.menu$/}
+
+
+        # TODO: make sure it has actually changed before showing the below message.
+        # Look up the menu really quick and compare.  If it's the same, flash something
+        # like "no items yet", on return nothing.
+
+
+        # Note: If you update this text, be sure update the code in @save menu/
+        # that deletes it when saving.
         options[:output] = "
-          > Update this menu?
-          | Save changes you made to this menu?  Alternately you can type
+          > Save?
+          @save menu/
+          | Saves any changes you made to this menu.  Alternately you can type
           | as+menu as a shortcut (meaning type Ctrl+a Ctrl+m).
-          @as menu/
           "
         options[:no_slash] = 1
       end
@@ -1107,10 +1119,13 @@ module Xiki
       nil
     end
 
+    # Returns subset of menus that are defined manually.
     def self.defs
       @@defs
     end
 
+    # Populates :sources option but only those at the root level
+    # to serve as a starting point.
     def self.root_sources_from_dir options
       found = self.source_glob options[:menufied]
 
@@ -1149,7 +1164,10 @@ module Xiki
     end
 
     def self.source_glob dir
-      list = Dir.glob ["#{dir}/", "#{dir}.*", "#{dir}/index.*"]
+
+      name = File.basename dir
+
+      list = Dir.glob ["#{dir}/", "#{dir}.*", "#{dir}/index.*", "#{dir}/#{name}_index.*"]
       return nil if list.empty?
 
       containing_dir_length = dir[/.*\//].length
@@ -1171,6 +1189,27 @@ module Xiki
     def self.format_name name
       name.gsub(/[ -]/, '_').downcase
     end
+
+    def self.completions name=""
+
+      # Check defined menus...
+
+      result = []
+      Menu.defs.keys.each do |key|
+        result << key.gsub("_", ' ') if key =~ /^#{name}/
+      end
+
+      # Check MENU_PATH menus...
+
+      Xiki.menu_path_dirs.each do |dir|
+        start = "#{dir}/#{name}*"
+        Dir.glob(start).each do |match|
+          result << File.basename(match, ".*").gsub("_", ' ')
+        end
+      end
+      result.sort.uniq
+    end
+
 
   end
 
