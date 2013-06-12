@@ -173,7 +173,7 @@ module Xiki::Menu
 
       self.save db, table, row
 
-      "@flash/- todo: save!"
+      "@flash/- save!"
     end
 
     # Returns key:value string to show record to the user
@@ -311,7 +311,7 @@ module Xiki::Menu
 
       self.save default_db, table, row
 
-      ".flash - TODO saved!"
+      "@flash/- saved!"
     end
 
     # Launcher.add "columns" do |path|

@@ -1,20 +1,29 @@
 module Xiki
   class Node
-    def self.menu
-      "
+    MENU = %`
       > Pass javascript to eval in node
       | puts(1 + 2)
       - .controller/
       - docs/
-        - menu/
-          > To try out controller code
-          | @node/controller/
-          |   | function
-        - node/
-          > Snippets
-          @technologies/node_js/
-      "
-    end
+        - headers/
+          | console.log(JSON.stringify(req.headers, null, 2));
+        - env vars/
+          | console.log(JSON.stringify(process.env, null, 2));
+        - method/
+          | console.log(req.method);
+        - url/
+          | console.log(req.url);
+        - request params/
+          | var url = require("url");
+          | var _url = url.parse(req.url, true);
+          | console.log(JSON.stringify(_url, null, 2));
+        - read a file sync/
+          | var fs = require('fs');
+          | var txt = fs.readFileSync('./recipe.txt', 'utf8');
+          | console.log(txt);
+        - run in prod mode/
+          % export NODE_ENV=production
+      `
 
     def self.menu_after output, *args
       return output if output
@@ -53,7 +62,7 @@ module Xiki
         | res.end('Hello Node World!');
         " if args.empty?
 
-      code = self.wrap_controller ENV['txt']
+      code = self.wrap_controller Tree.txt
       self.run_controller code
     end
 

@@ -110,7 +110,7 @@ module Xiki::Menu
 
 
     def self.visibility choice=nil
-      ::Window.visibility choice
+      Xiki::Window.visibility choice
     end
 
     def self.colorized

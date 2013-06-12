@@ -1,14 +1,12 @@
 module Xiki
   class Specials
-    def self.menu
-      "
+    MENU = "
       - see/
         - keys/
           > Find next special char in this view
           - search+just+special
         <@ encoding/
       "
-    end
 
     def self.menu_after output, *args
 
