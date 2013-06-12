@@ -95,7 +95,7 @@ module Xiki
 
       sequence.each do |i|
         $el.overlay_put over, :face, (faces[i-1] || faces[0])
-        $el.sit_for 0.007
+        $el.sit_for 0.012
       end
 
       $el.delete_overlay over

@@ -204,7 +204,7 @@ module Xiki
         options[:no_slash] = true
         return "@flash/- Your indenting looks messed up!" if options[:not_well_formed]
         return "@flash/- Can't launch empty line!" if options[:path].blank?
-        return "@flash/- No menu or pattern defined!"
+        return "@flash/- No menu or pattern found!"
       end
 
       # Delegate to one or more expanders...

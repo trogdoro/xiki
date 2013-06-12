@@ -535,16 +535,23 @@ module Xiki
     "TODO"
   end
 
+  # This dir is where user xiki puts user-created menus.
+  # Users can add other menu dirs to the MENU_PATH env var, but ~/menu is always added for now.
+  # See TODO:... comment below for an improvement.
   def self.menu_path_custom_dir
     File.expand_path("~/menu")
   end
+
   def self.menu_path_core_dir
     Bookmarks["$x/menu"]
   end
+
   # Return the MENU_PATH environment var, plus ~/menu/ and $x/menu.
   def self.menu_path_dirs
-    # Worry about this later
+
     # How many times called? - memo-ize this based on MENU_PATH value
+    # Worry about this later, when it gets slow.
+
     list = (ENV['MENU_PATH'] || "").split ":"
     list = [self.menu_path_custom_dir, list, self.menu_path_core_dir].flatten
     list.uniq

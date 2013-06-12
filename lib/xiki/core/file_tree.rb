@@ -1972,6 +1972,7 @@ module Xiki
         Effects.glow :fade_in=>1
         Line.previous if prefix == 1
       end
+      View.flash "- copied!"
     end
 
     def self.rename_file
