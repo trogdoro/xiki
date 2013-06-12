@@ -1,27 +1,27 @@
 module Xiki
   class Browser
-    def self.menu
-      "
-      - .url/
-      - .reload/
-      - .tabs/
-      - see/
-        <@ web development/
-        <@ firefox/
-      - api/
-        | This class lets you choose a default browser.
-        |
-        | Calls to Browser.url etc. will be delegated to the default browser.
-      - docs/
-        > Keys
-        | do+load+browser:  Reload the browser.
-        |
-        > See
-        | Many things have yet to be pulled out of firefox.rb and made generic.
-        << firefox/
-        |
-      "
-    end
+    #     def self.menu
+    #       "
+    #       - .url/
+    #       - .reload/
+    #       - .tabs/
+    #       - see/
+    #         <@ web development/
+    #         <@ firefox/
+    #       - api/
+    #         | This class lets you choose a default browser.
+    #         |
+    #         | Calls to Browser.url etc. will be delegated to the default browser.
+    #       - docs/
+    #         > Keys
+    #         | do+load+browser:  Reload the browser.
+    #         |
+    #         > See
+    #         | Many things have yet to be pulled out of firefox.rb and made generic.
+    #         << firefox/
+    #         |
+    #       "
+    #     end
 
     def self.url url, options={}
       Firefox.url url, options
@@ -104,8 +104,8 @@ module Xiki
       Markdown.render txt
     end
 
-    def self.tabs
-      Firefox.tabs
+    def self.tabs *urls
+      Firefox.tabs *urls
     end
 
     def self.reload

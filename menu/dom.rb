@@ -1,9 +1,7 @@
 module Xiki
   class Dom
 
-    def self.menu
-
-      "
+    MENU = "
       - .styles/
       - docs/
         > Summary
@@ -26,7 +24,6 @@ module Xiki
         > Show all styles
         @dom/styles/
       "
-    end
 
     def self.menu_before *args
 
@@ -68,7 +65,8 @@ module Xiki
         o.sub!(/:(\d+)$/) { ":eq(#{$1.to_i - 1})" }
         o.sub!(/$/, ':eq(0)') if o !~ /[:#]/
       end
-      args = ['html'] + args unless args[0] =~ /[.#]/
+      args = ['html'] + args unless args[0] =~ /^[.#*]/
+      args[0].sub! /^\*/, ''   # *foo means just don't prepend "body >"
       args = args.join ' > '
 
       js = %`
@@ -218,37 +216,6 @@ module Xiki
         #       return out.string
 
     end
-
-    #   def self.ids *args
-    # Ol << "args: #{args.inspect}"
-
-    #     # If just "ids/", list all
-
-    #     if args.blank?
-    #       js = %`
-    #         var result="";
-    #         $('*[id]').each(function(i, e){
-    #           var id = $(e).attr('id');
-    #           result += "+ #"+id+"/\\n";
-    #         })
-    #         result;
-    #         `.unindent
-
-    #       return Firefox.exec js
-    #     end
-
-    #     # Id passed so just navigate to it
-
-    #     Dom.dom *args
-
-    #     #     result.sub "html/", "- @dom/"
-
-    #   end
-
-    def self.styles
-      "todo"
-    end
-
 
   end
 end

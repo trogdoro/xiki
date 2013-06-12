@@ -437,9 +437,10 @@ module Xiki
       end
     end
 
-    def self.tabs *url
-      if url.any?
-        url = Line.value.sub /^[ |]*/, ''
+    def self.tabs *urls
+      if urls.any?
+        url = urls[-1]   # If nested quotes, just use the last
+        url.sub! /^\| /, ''
         self.url url, :new=>Keys.prefix_u
         return
       end

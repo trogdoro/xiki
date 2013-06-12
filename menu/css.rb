@@ -12,7 +12,6 @@ module Xiki
         return self.list args
       end
 
-
       nil
     end
 
@@ -36,11 +35,11 @@ module Xiki
         result = self.add_nth_to_dups result
 
         return "> No class attributes found!" if result == '""'
-        return result
+        return result.gsub /^\+ /, '+ .'
       end
 
       # Add "." to beginning of first (it was removed due to it meaning a method call)
-      args.first.sub! /^/, '.'
+      #       args.first.sub! /^/, '.'
 
       Dom.dom *args
     end
@@ -55,14 +54,14 @@ module Xiki
           |   font-family: arial;
           |   font-size: 15px;
           |   color: #333;
-          |   background-color: #fff;
+          |   background-color: #eee;
           |   margin: 30px;
           | }
           + list/
           "
       end
 
-      txt = ENV['txt'].dup
+      txt = Tree.txt.dup
 
       txt.gsub!("\n", '\n')
       txt.gsub!('"', '\"')
@@ -74,9 +73,6 @@ module Xiki
 
     # When dups, make foo,foo be foo,foo:2 etc.
     def self.add_nth_to_dups txt
-
-      # Why hard-coded?
-      #     txt = "+ navbar navbar-inverse navbar-fixed-top/\n+ navbar-inner/\n+ container/\n+ container/\n+ hero-unit/\n"
 
       dups = {}
       txt = txt.split("\n")
