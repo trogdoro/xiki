@@ -11,7 +11,7 @@ module Xiki
 
       options.merge! :dot_menu_file=>"#{options[:last_source_dir]}#{options[:ex]['menu']}"
       txt =
-        if code =~ /^ *(class|module) #{clazz_name}/   # Maybe check for actual class name
+        if code =~ /^ *(class|module) .*\b#{clazz_name}\b/   # Maybe check for actual class name
           options.merge! :clazz_name=>clazz_name
           self.handle_class file, code, options
         else

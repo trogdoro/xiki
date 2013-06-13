@@ -31,7 +31,7 @@ module Xiki
 
       # TODO: wrap modules around depending on dir (based on :last_source_dir)?
 
-      mod = self.extract_ruby_package code
+      mod = self.extract_ruby_module code
       clazz_name = "#{mod}::#{clazz_name}" if mod
 
       clazz_name = "Xiki" if clazz_name == "Xiki::Xiki"   # Xiki is a module, so it grabbed it twice.  If we want to support other modules, do something generic here, but we may not need to.
@@ -211,9 +211,14 @@ module Xiki
       [action, variables]
     end
 
-    def self.extract_ruby_package txt
+    def self.extract_ruby_module txt
 
-      txt = txt.sub /^ *class .+/m, ""   # Remove everything after 1st class... line
+      txt = txt.sub /\A( *class .+?\n).+/m, "\\1"   # Remove everything after 1st class... line, so it doesn't look at internal irrelevant module statements in a script.
+
+      # If it's class Foo::Bar, pull it out of there
+      if mod = txt[/class (.+)::/, 1]
+        return mod
+      end
 
       txt = txt.scan(/^ *module (.+)/).map{|o| o[0]}.join("::")
 
