@@ -4,15 +4,17 @@ class Kill
   # @kill/2.6   625 craig          /Appli...
   # @kill/xiki/2.6   625 craig          /Appli...
 
-  MENU = "
+  MENU = %`
     docs/
-      > Summary
-      | Lists process, so you can click to kill them.
-      > Filter
-      | If you pass an item, it filters the which processes are displayed...
-      @kill/user/
+      | This menu lists process, so you can expand to kill them.
+      - filter/
+        | If you pass an item it filters which processes are displayed. Example:
+        @kill/user/
+      - keys/
+        | The up key prefix will do a "kill -9", which is stronger
+        | than just a regular "kill".
     << ports/
-    "
+    `
 
   def self.menu_after output, *args
 
@@ -35,14 +37,19 @@ class Kill
       end
 
       txt = "| none found" if txt == ""
-      return "> Select a process to kill it\n#{txt.strip}\n#{output}"
+      txt.gsub!(/ +$/, '')
+      return "> Expand a process to kill it\n#{txt}\n#{output}"
     end
 
     # /process, so kill it...
 
-    pid = process.split(/ +/)[2]
-    output = `kill #{pid}`
+    options = yield
 
-    "- killed #{pid}!"
+    pid = process.split(/ +/)[2]
+    command = "kill #{pid}"
+    command = "kill -9 #{pid}" if options[:prefix] == :u
+    output = `#{command}`
+
+    "- sent kill to #{pid}!"
   end
 end

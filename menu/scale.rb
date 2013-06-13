@@ -26,7 +26,7 @@ module Xiki
 
       if save.nil?
         dest = "#{tmp_dir}/#{dest}"
-        Console.sync %`convert "#{file}" -resize #{percent} "#{dest}"`, :dir=>dir
+        Ol Console.sync %`convert "#{file}" -resize #{percent} "#{dest}"`, :dir=>dir
         Image.>> dest, "_"
         #       Line.previous
         return

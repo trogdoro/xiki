@@ -15,7 +15,7 @@ module Xiki
 
         return "
           - original) #{user_group}/
-          > Suggestions:
+          > Suggestions
           - #{default_user}:#{default_group}/
           - root:wheel/
           "

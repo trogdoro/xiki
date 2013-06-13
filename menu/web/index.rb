@@ -73,7 +73,7 @@ class Web
   def self.reload
     HTTParty.get("http://localhost:8161/_reload") rescue :exception
     Browser.reload
-    "- reloaded!"
+    "@flash/- reloaded!"
   end
 
 end
