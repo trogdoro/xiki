@@ -3,14 +3,21 @@
 # /usr/local/bin/) when installing Xiki manually from source
 # rather than as a gem.
 #
-dest = ARGV[0] || "/usr/local/bin/xiki"
+dest = ARGV[0]
+
+if ! dest
+  puts "Usage (run it from the xiki project dir):\n\n  $ etc/command/copy_xiki_command_to.rb /usr/bin/xiki"
+  exit
+end
+
+if dest !~ /xiki$/
+  puts "The path you pass should end with 'xiki'.  Such as:\n\n  $ etc/command/copy_xiki_command_to.rb /usr/bin/xiki"
+  exit
+end
+
 puts "Putting the 'xiki' shell command at:
 
   #{dest}
-
-You can pass a different path if you prefer...
-
-  $ xiki /bin/xiki
 "
 
 source = "etc/command/xiki_wrapper"
