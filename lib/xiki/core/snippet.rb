@@ -6,7 +6,7 @@ module Xiki
 
       if ! line.blank?
         Keys.prefix = "source"
-        Launcher.launch_unified
+        Launcher.launch
         return
       end
 

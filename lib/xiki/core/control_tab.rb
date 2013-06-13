@@ -266,7 +266,7 @@ module Xiki
 
       Effects.blink
       Color.mark "green" if @@ol_prefix == 11
-      Launcher.launch_unified
+      Launcher.launch
 
       # Replace or add comment if there's a value
       if value.any?

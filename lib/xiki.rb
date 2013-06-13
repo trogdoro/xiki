@@ -93,58 +93,6 @@ module Xiki
     "- TODO: finish implementing!"
   end
 
-  def self.insert_menu
-    line = Line.value
-    indent = Line.indent line
-    blank = Line.blank?
-
-    prefix = Keys.prefix
-
-    if prefix == :u   # Insert @last to see recent menu names and drill in.
-      Line << "$#{Keys.input :timed=>1}//"
-      Launcher.go_unified
-      return
-    end
-
-    if prefix == :-   # Insert @last to see recent menu names and drill in.
-      Line << "last/"
-      Launcher.launch_unified
-      return
-    end
-
-    # If line not blank, usually indent after
-
-    Line.<<("\n#{indent}  @") if ! blank
-
-    # If at end of line, and line not blank, go to next line
-
-    # Todo: if dash+, do auto-complete even if exact match - how to implement?
-
-    input = Keys.input(:timed=>true, :prompt=>"Start typing a menu that might exist (or type 'all'): ")
-
-    View << input
-
-    Launcher.launch_unified
-  end
-
-  def self.open_menu
-
-    prefix = Keys.prefix :clear=>1
-
-    return Launcher.open("- last/") if prefix == :u
-
-    input = Keys.input(:timed=>true, :prompt=>"Start typing a menu that might exist (or type 'all'): ")
-    View.to_buffer "menu"
-    Notes.mode
-
-    View.rename_uniquely
-
-    View.kill_all
-    View << "#{input}\n"
-    View.to_highest
-    Launcher.launch_unified
-  end
-
   def self.menus
     CodeTree.menu
   end
@@ -295,7 +243,8 @@ module Xiki
     Tree.quote txt
   end
 
-  # Other .init mode defined below
+  # TODO: needs updating.
+  # Run this when opening .xiki files.
   def self.on_open
     orig = View.name
     name = orig[/(.+?)\./, 1]
@@ -317,7 +266,7 @@ module Xiki
     View.dir = "/tmp/"
 
     View.<< "- #{name}/\n", :dont_move=>1
-    Launcher.launch_unified
+    Launcher.launch
 
   end
 

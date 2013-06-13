@@ -857,7 +857,7 @@ module Xiki
     def self.enter_like_edits
       Notes.enter_junior
       View << "@edits/"
-      Launcher.launch_unified
+      Launcher.launch
     end
 
     def self.enter_search bm=nil, input=nil
@@ -867,7 +867,7 @@ module Xiki
         indent = Line.indent
         Line.to_right
         View.insert "\n#{indent}  - ###{input}/"
-        Launcher.launch_unified
+        Launcher.launch
         return
       end
 
@@ -1309,7 +1309,7 @@ module Xiki
       Tree.to_parent if Line[/^ *- ##/]
 
       Tree.under "- \#\##{match}/", :escape=>'', :no_search=>1, :no_slash=>1
-      Launcher.launch_unified
+      Launcher.launch
     end
 
     def self.isearch_enter_and_next

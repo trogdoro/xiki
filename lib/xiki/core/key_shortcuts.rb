@@ -123,9 +123,9 @@ module Xiki
 
       Xiki.def("open+list+technologies"){ Launcher.open("technologies/") }   # open first hyperlink on page
       Xiki.def("open+last+urls"){ Launcher.open "last/urls/" }
-      Xiki.def("open+menu"){ Xiki.open_menu }   # Open all menus and show them
-      Xiki.def("open+new+file"){ View.new_file }
-      Xiki.def("open+not+saved", "not saved/")
+      Xiki.def("open+menu"){ Launcher.open_menu }   # Open all menus and show them
+      #       Xiki.def("open+new+file"){ View.new_file }
+      Xiki.def("open+note"){ Notes.open_note }
       Xiki.def("open+over"){ $el.open_line $el.elvar.current_prefix_arg || 1 }   # OO - open line (O's emacs default)
       Xiki.def("open+point"){ Bookmarks.go(nil, :point => true) }
       Xiki.def("open+quick"){ Bookmarks.open_quick }   # like OB but uses different temporary namespace
@@ -201,7 +201,7 @@ module Xiki
       Xiki.def("enter+like+url"){ Firefox.enter_as_url }
       Xiki.def("enter+like+variable"){ insert "\#{#{Clipboard.get(0)}}" }
 
-      Xiki.def("enter+menu"){ Xiki.insert_menu }
+      Xiki.def("enter+menu"){ Launcher.insert_menu }
       Xiki.def("enter+note"){ Notes.enter_note }
       Xiki.def("enter+note"){ Notes.enter_note }
       Xiki.def("enter+outline"){ Launcher.enter_outline }   # in tree, enter methods or headings
@@ -326,7 +326,7 @@ module Xiki
       Xiki.def("do+number+increment"){ Incrementer.increment }
       Xiki.def("do+number+one"){ Incrementer.start }
       Xiki.def("do+next+paragraph"){ Code.do_next_paragraph }   # Move line to start of next paragraph
-      Xiki.def("do+name+search"){ Search.do_name_search }
+      Xiki.def("do+not+saved", "not saved/")
       Xiki.def("do+outline"){ History.open_current :outline=>true, :prompt_for_bookmark=>true }
       #     Xiki.def("do+push"){ Git.code_tree_diff }   # Commit to repos, push, etc
       Xiki.def("do+push"){ Git.do_push }   # Commit to repos, push, etc
@@ -345,7 +345,7 @@ module Xiki
         input = Keys.input(:timed => true)
         $el.with(:save_window_excursion) do
           Bookmarks.go(".#{input}")
-          Launcher.launch_unified
+          Launcher.launch
         end
       }
       Keys.set("C-d C-/") { Code.comment }
@@ -421,7 +421,7 @@ module Xiki
       Xiki.def("layout+expand"){ View.enlarge }
       # F
       Xiki.def("layout+files"){ View.layout_files }
-      Xiki.def("layout+hide"){ View.hide }   #
+      Xiki.def("layout+hide"){ View.hide }
       Xiki.def("layout+indent"){ Hide.hide_by_indent }   # only show lines indented less than x
       Xiki.def("layout+jump"){ View.shift }
       Xiki.def("layout+kill"){ View.kill }
@@ -634,18 +634,26 @@ module Xiki
       # Aquamacs-specific: make cua not map C-return key
       $el.define_key(:cua_global_keymap, $el.kbd("<C-return>"), nil) if $el.boundp(:cua_global_keymap)
 
-      Keys.set("<C-return>") { Launcher.go_unified }   # control-return, control-enter
+      Keys.set("<C-return>") { Launcher.go }   # control-return, control-enter
     end
 
     def self.map_command_return
       return if ! $el.boundp(:osx_key_mode_map)
 
-      $el.define_key(:osx_key_mode_map, $el.kbd("<A-return>")) { Launcher.go_unified }
+
+      #       #
+      #       # Temporarily make Command+Return do old launch!!!
+      #       #
+      #       $el.define_key(:osx_key_mode_map, $el.kbd("<A-return>")) { Launcher.go_preunified }
+
+      $el.define_key(:osx_key_mode_map, $el.kbd("<A-return>")) { Launcher.go }
+
+
     end
 
     # Not called by default
     def self.map_meta_return
-      Keys.set("<M-return>") { Launcher.go_unified }   # command-return, command-enter
+      Keys.set("<M-return>") { Launcher.go }   # command-return, command-enter
     end
 
     def self.misc
@@ -658,7 +666,8 @@ module Xiki
       Keys.Q { Keys.timed_insert }
 
       # These keys "launch" things (same thing as double-clicking)
-      Keys.set("C-.") { Launcher.go_unified }   # control period
+      Keys.set("C-.") { Launcher.go }   # control period
+      self.map_meta_return
       self.map_command_return
       self.map_control_return
 

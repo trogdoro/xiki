@@ -60,7 +60,7 @@ module Xiki
         Line.previous   # <= 1
       end
 
-      Launcher.launch_unified
+      Launcher.launch
     end
 
 end; end

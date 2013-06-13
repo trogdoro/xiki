@@ -537,7 +537,7 @@ module Xiki
         View.message ""
         View.prompt "Type anything", :timed=>1, :times=>2 #, :color=>:rainbow
 
-        Launcher.launch_unified
+        Launcher.launch
       else
         Launcher.open menu, options
       end
@@ -645,7 +645,7 @@ module Xiki
       end
 
       Line << line unless skip
-      Launcher.launch_unified
+      Launcher.launch
     end
 
     def self.root_collapser_launcher
@@ -670,7 +670,7 @@ module Xiki
       old << "@" if old =~ /^ /   # If any indent, @ is needed
       View << "#{old}#{line}"
 
-      Launcher.launch_unified
+      Launcher.launch
     end
 
     def self.replacer_launcher
@@ -679,7 +679,7 @@ module Xiki
       # Run in place, grab output, then move higher and show output
 
       orig = View.line
-      Launcher.launch_unified :no_search=>1
+      Launcher.launch :no_search=>1
 
       # If didn't move line, assume it had no output, and it's collapse things itself
       return if orig == View.line
@@ -757,7 +757,7 @@ module Xiki
 
       return if ! launch
 
-      Launcher.launch_unified
+      Launcher.launch
     end
 
 
@@ -1053,6 +1053,7 @@ module Xiki
         "py"=>PythonHandler,
         "js"=>JavascriptHandler,
         "coffee"=>CoffeeHandler,
+        "jpg"=>JpgHandler,
         "/"=>DirHandler,
         }
     end

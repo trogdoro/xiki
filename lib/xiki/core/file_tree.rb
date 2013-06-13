@@ -1314,7 +1314,7 @@ module Xiki
       indent = Line.indent
       Move.to_end
       View.insert "\n#{indent}  - ###{Clipboard["0"]}/"
-      Launcher.launch_unified
+      Launcher.launch
     end
 
     # Remove the following lines indented more than the current one
@@ -1382,7 +1382,7 @@ module Xiki
       end
 
       # If dir, delegate to C-. (they meant to just open it)
-      return Launcher.launch_unified if self.dir?
+      return Launcher.launch if self.dir?
 
       Tree.plus_to_minus
 
@@ -1537,7 +1537,7 @@ module Xiki
 
       if prefix == :uu   # If up+up+, insert /the/path//
         Line << "#{Bookmarks["$#{Keys.input(:timed=>1)}"]}/"
-        Launcher.go_unified
+        Launcher.go
         return
       end
 
@@ -1972,7 +1972,8 @@ module Xiki
         Effects.glow :fade_in=>1
         Line.previous if prefix == 1
       end
-      View.flash "- copied!"
+
+      View.flash "- copied!" if ! dest_is_dir   # If copying to existing file, do something visually distinctive
     end
 
     def self.rename_file
@@ -2062,7 +2063,7 @@ module Xiki
       case prefix
       when 2   # Prompt to add @... menu under file
         Move.to_end
-        Xiki.insert_menu
+        Launcher.insert_menu
       when 4   # Get ready to run $... shell command on file
         $el.delete_char(1)
         View << "$ "
@@ -2074,7 +2075,7 @@ module Xiki
       when 7
         Move.to_end
         View << "\n    @info"
-        Launcher.launch_unified
+        Launcher.launch
       when 8
         Launcher.enter_all
       when 0

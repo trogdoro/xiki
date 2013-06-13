@@ -316,7 +316,7 @@ module Xiki
       end
 
       Effects.blink
-      Launcher.launch_unified
+      Launcher.launch
     end
 
     def self.delete_current_file

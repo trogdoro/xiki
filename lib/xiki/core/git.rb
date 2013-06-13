@@ -1,4 +1,5 @@
 module Xiki
+
   # This just has the consolidated (post-Unified) methods that
   # are used by key shortcuts (since methods in menu/git.rb might
   # not be loaded yet).
@@ -29,7 +30,7 @@ module Xiki
       if prefix == :-
         View.insert menu
         Line.previous
-        Launcher.launch_unified
+        Launcher.launch
       else
         View.bar if prefix == "outline"
         Launcher.open(menu)

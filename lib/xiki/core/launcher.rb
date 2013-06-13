@@ -201,16 +201,16 @@ module Xiki
       end
 
       # Else, launch
-      self.launch options
+      self.launch_preunified options
     end
 
     def self.hide
       Tree.kill_under
     end
 
-    # Deprecated in favor of .launch_unified
+    # TODO: deprecated
     # Call the appropriate launcher if we find one, passing it line
-    def self.launch options={}
+    def self.launch_preunified options={}
 
       # Committed on purpose, to draw attention to unported stuff.
       Ol.stack 2
@@ -298,7 +298,7 @@ module Xiki
         merged << "/" if list[-1] =~ /\/$/
 
         # Recursively call again with full path
-        return self.launch options.merge(:line=>merged)
+        return self.launch_preunified options.merge(:line=>merged)
 
         # What was this doing, did we mean to only pass on :no_search??
         #       return self.launch options.slice(:no_search).merge(:line=>merged)
@@ -338,7 +338,7 @@ module Xiki
           if matches.length == 1
             match = matches[0].gsub '_', ' '
             Line.sub! /^([ @+-]*).*/, "\\1#{match}"
-            Launcher.launch
+            Launcher.launch_preunified
             return
           end
 
@@ -369,7 +369,7 @@ module Xiki
               next if @@menus[0][root] || @@menus[1][root]   # Skip if already loaded
               require_menu(file)  # if File.exists? file
             end
-            return self.launch :recursed=>1   # options.slice(:no_search).merge(:line=>merged)
+            return self.launch_preunified :recursed=>1   # options.slice(:no_search).merge(:line=>merged)
           end
 
         end
@@ -514,6 +514,7 @@ module Xiki
       false   # No match, keep looking
     end
 
+    # TODO: deprecated
     def self.launch_by_proc list=nil
       list = Tree.construct_path(:list=>true)   # Get path to pass to procs, to help them decide
 
@@ -552,7 +553,7 @@ module Xiki
       self.add(/^\*$/) do |line|  # *... buffer
         Line.sub! /.+/, "all"
 
-        Launcher.launch_unified
+        Launcher.launch
       end
 
       self.add(/^\*./) do |line|  # *... buffer
@@ -741,9 +742,7 @@ module Xiki
         return
       end
 
-      prefix == :- ?
-        Launcher.launch(:no_search=>true) :
-        Launcher.launch_unified(:no_search=>true)
+      Launcher.launch(:no_search=>true)
 
       if ol_cursor_position
         View.to_buffer "*ol"
@@ -999,9 +998,7 @@ module Xiki
       View.insert txt
       $el.open_line(1)
 
-      return Launcher.launch options if options[:not_unified]
-
-      Launcher.launch_unified options
+      Launcher.launch options
     end
 
     def self.show menu, options={}
@@ -1012,6 +1009,7 @@ module Xiki
     #
     # Launcher.open "ip"
     def self.open menu, options={}
+
       return self.insert(menu, options) if options[:inline]
 
       $el.sit_for 0.25 if options[:delay] || options[:letter]   # Delay slightly, (avoid flicking screen when they type command quickly)
@@ -1054,11 +1052,9 @@ module Xiki
       end
 
       # Deprecated
-      return Launcher.go_unified if options[:unified]
+      return Launcher.go if options[:unified]
 
-      return Launcher.launch options if options[:not_unified]
-
-      Launcher.launch_unified options
+      Launcher.launch options
     end
 
     def self.method_missing *args, &block
@@ -1257,24 +1253,24 @@ module Xiki
 
     def self.as_update
       Keys.prefix = "update"
-      Launcher.launch_unified :leave_bullet=>1
+      Launcher.launch :leave_bullet=>1
     end
 
     def self.as_delete
       Keys.prefix = "delete"
-      Launcher.launch_unified
+      Launcher.launch
     end
 
     def self.as_open
       Keys.prefix = "open"
-      Launcher.launch_unified
+      Launcher.launch
     end
 
     def self.enter_all
       return FileTree.enter_lines(/.*/) if Line.blank?
 
       Keys.prefix = "all"
-      Launcher.launch_unified
+      Launcher.launch
     end
 
     # Shortcut for passing "outline" prefix and launching.
@@ -1283,7 +1279,7 @@ module Xiki
 
       # If there's a numeric prefix, add it
       Keys.add_prefix "outline"
-      Launcher.launch_unified
+      Launcher.launch
     end
 
     def self.set_env_vars path
@@ -1326,13 +1322,14 @@ module Xiki
       ENV['txt'] = nil
     end
 
+    # TODO: deprecated
     # Thin wrapper around how .launch_or_hide is called from key shortcuts.
-    def self.go
+    def self.go_preunified
       Ol.clear_pause
       Launcher.launch_or_hide :blink=>true
     end
 
-    def self.go_unified
+    def self.go
       Ol.clear_pause
 
       # If no prefixes and children exist, collapse
@@ -1343,12 +1340,12 @@ module Xiki
       end
 
       # Else, launch
-      self.launch_unified
+      self.launch
     end
 
     # While implementing, mapped to Command+Return.
     # After refactor, map to Ctrl+Return as well.
-    def self.launch_unified insert_options={}
+    def self.launch insert_options={}
       line = Line.value
 
       Line.<<("\n", :dont_move=>1) if Line.right == View.bottom   # If at very end of view and no linebreak, add one
@@ -1378,6 +1375,7 @@ module Xiki
 
       txt = Expander.expand path, options
 
+      txt = txt.to_s if ! txt.is_a? String
 
       return if txt == nil
 
@@ -1406,14 +1404,21 @@ module Xiki
       end
     end
 
-    # Called by .launch_unified to do appriate thing if result starts
+    # Called by .launch to do appriate thing if result starts
     # with @open file/, @flash/, or something else that instructs the editor to
     # take an action.
     def self.process_directives txt
-
       # Shelved for now
       #     if txt =~ /\A@back up\/(.*)/   # Means delete backward in tree - probably find a better name
       #       txt = $1
+
+      if txt.strip =~ /\A<<< (.+)\/\z/
+        txt = $1
+        indent = Line[/^ +@?/]
+        Line.sub! /.*/, "#{indent}#{txt}"
+        Launcher.launch
+        return true
+      end
 
       if txt =~ /\A@open file\/(.*)/
         txt = $1
@@ -1453,7 +1458,9 @@ module Xiki
       nil
     end
 
-    # Special editor-specific handling for <<, <=, and <@ bullets.
+    # Editor-only handling for <<, <=, and <@ bullets.
+    # For when launching <<... etc. lines, not for when output includes it.
+    #
     # Also when more <'s, like <<< and <<= etc.
     def self.bullet_prefix_handling line
       arrow_bullet = line[/^ +(<[<=@]+) /, 1]
@@ -1470,8 +1477,58 @@ module Xiki
       when "<@"
         Menu.root_collapser_launcher
       end
-
       true   # We handled it
+    end
+
+    def self.insert_menu
+      line = Line.value
+      indent = Line.indent line
+      blank = Line.blank?
+
+      prefix = Keys.prefix
+
+      if prefix == :u   # Insert @last to see recent menu names and drill in.
+        Line << "$#{Keys.input :timed=>1}//"
+        Launcher.go
+        return
+      end
+
+      if prefix == :-   # Insert @last to see recent menu names and drill in.
+        Line << "last/"
+        Launcher.launch
+        return
+      end
+
+      # If line not blank, usually indent after
+
+      Line.<<("\n#{indent}  @") if ! blank
+
+      # If at end of line, and line not blank, go to next line
+
+      # Todo: if dash+, do auto-complete even if exact match - how to implement?
+
+      input = Keys.input(:timed=>true, :prompt=>"Start typing a menu that might exist (or type 'all'): ")
+
+      View << input
+
+      Launcher.launch
+    end
+
+    def self.open_menu
+      prefix = Keys.prefix :clear=>1
+
+      return Launcher.open("- last/") if prefix == :u
+
+      input = Keys.input(:timed=>true, :prompt=>"Start typing a menu that might exist (or type 'all'): ")
+      View.to_buffer "menu"
+      Notes.mode
+
+      View.rename_uniquely
+
+      View.kill_all
+      View << "#{input}\n"
+      View.to_highest
+      Launcher.launch
     end
 
   end

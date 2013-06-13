@@ -41,6 +41,7 @@ module Xiki
       eol = "(+ 1 #{eol})" if options[:include_linebreak]
 
       result = $el.el4r_lisp_eval("(buffer-substring (point-at-bol #{n}) #{eol})")
+      #       result = $el.buffer_substring $el.point_at_bol #{n}) #{eol})")
 
       if options[:delete]
         $el.el4r_lisp_eval("(delete-region (point-at-bol #{n}) #{eol})")
@@ -431,7 +432,7 @@ module Xiki
       end
 
       Line.add_slash :txt=>"docs/", :unless_blank=>1
-      Launcher.launch_unified
+      Launcher.launch
     end
 
   end

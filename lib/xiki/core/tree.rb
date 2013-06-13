@@ -190,7 +190,7 @@ module Xiki
         Move.backward
         CodeTree.kill_siblings
         Keys.clear_prefix
-        Launcher.launch_unified
+        Launcher.launch
 
       when "\C-j"
         ch = Keys.input :chars=>1
@@ -223,30 +223,34 @@ module Xiki
       when :return   # Step in one level
 
         Keys.clear_prefix
-        Launcher.launch_unified
+        Launcher.launch
 
       when :control_return, "\C-m" #, :right   # If C-., go in but don't collapse siblings
         Keys.clear_prefix
-        Launcher.launch_unified
+        Launcher.launch
 
 
-        #       # Temporarily make Command+Return do old launch (until all menus are ported over from the unified refactor)
+
+        #         #
+        #         # Temporarily make Command+Return do old launch (until all menus are ported over from the unified refactor)
+        #         #
         #       when :meta_return
         #         Keys.clear_prefix
-        #         Launcher.launch
+        #         Launcher.launch_preunified
         #       when :control_period
         #         Keys.clear_prefix
-        #         Launcher.launch_unified
-
+        #         Launcher.launch
 
       when :meta_return, :control_period
         Keys.clear_prefix
-        Launcher.launch_unified
+        Launcher.launch
+
+
 
       when "\t"   # If tab, hide siblings and go in
         $el.delete_region(Line.left(2), right)
         Keys.clear_prefix
-        Launcher.launch_unified
+        Launcher.launch
 
       when :backspace#, :control_slash   # Collapse this item and keep searching
         self.to_parent
@@ -260,7 +264,7 @@ module Xiki
 
         if line =~ /^<+=? /
           Keys.clear_prefix
-          Launcher.launch_unified
+          Launcher.launch
           return
         end
 
@@ -281,7 +285,7 @@ module Xiki
             Line.to_beginning
           end
           View.delete(View.cursor, right)
-          return Launcher.launch_unified
+          return Launcher.launch
         end
 
         $el.delete_region(Line.left(2), right)  # Delete other files
@@ -294,7 +298,7 @@ module Xiki
         end
 
         # For now, always launch when C-/
-        Launcher.launch_unified   # if line =~ /\/$/   # Only launch if it can expand
+        Launcher.launch   # if line =~ /\/$/   # Only launch if it can expand
 
       when "#"   # Show ##.../ search
         self.stop_and_insert left, right, pattern
@@ -326,7 +330,7 @@ module Xiki
         $el.delete_region(Line.left(2), right)
         Keys.clear_prefix
         View.create
-        Launcher.launch_unified
+        Launcher.launch
 
       when "\C-e"   # Also C-a
         return Line.to_right
@@ -383,7 +387,7 @@ module Xiki
           $el.previous_line
         end
 
-        Launcher.launch_unified
+        Launcher.launch
 
 
       when "\C-s"
@@ -396,7 +400,7 @@ module Xiki
 
         #       CodeTree.kill_siblings
         Tree.collapse :replace_parent=>1
-        return Launcher.launch_unified
+        return Launcher.launch
 
 
       # when "/"   # Append selected dir to parent dir
@@ -461,7 +465,7 @@ module Xiki
         Cursor.restore :before_file_tree
         Line.next letters[letterized][0] - 1
         CodeTree.kill_siblings
-        Launcher.launch_unified
+        Launcher.launch
         return nil
       end
 
@@ -1516,11 +1520,11 @@ module Xiki
           end
         end
 
-      return if !output.respond_to?(:blank?) || output.blank? # rescue nil
+      return if !output.respond_to?(:blank?) || output.blank?  # rescue nil
 
       if output.is_a?(String) && $el && output.strip =~ /\A<<< (.+)\/\z/
         Tree.replace_item $1
-        Launcher.launch_unified
+        Launcher.launch
         return true
       end
 
