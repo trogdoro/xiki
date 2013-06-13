@@ -13,157 +13,6 @@ module Xiki
       @@source
     end
 
-
-    def self.menu
-      %`
-      - .log/
-      - .history/
-      - docs/
-        - Summary/
-          > Xiki Shortcuts
-          | Xiki has keyboard shortcuts predefined for doing all kinds of things.
-          | Each keyboard shortcut has a mnemonic. Check out the "Keys" menu bar
-          | menu for a quick look at them.
-
-          | And Xiki lets you define your own keyboard shortcuts.  This line makes
-          | Control-e Control-n insert "Steve".
-
-          |   Keys.EN { View << "Steve" }
-
-          | For more about defining your own keyboard shortcuts see:
-          - @keys/api/
-
-          > Xiki's "type the acronym" approach
-          | Each xiki keyboard shortcut has a mnemonic that helps you
-          | simultaneously remember what it does and how to type it.
-
-          | For example, given this mnemonic:
-
-          |   layout_create
-
-          | you type:
-
-          |   Control-l Control-c  (l for "layout" and c for "create")
-
-          > Reasons for this appoarch
-          - More possible shortcuts/
-            | The approach of having single character key shortcuts (e.g. Control-a)
-            | works nicely for apps that have a small number of shortcuts. But it
-            | becomes less elegant when more shortcuts are used (Ctrl-a, Alt-a,
-            | Ctrl-Shift-a).
-
-            | The "type the acronym" approach with just the Control
-            | key allows for very a large number of key shortcuts that are less
-            | prone to get confused with one another.
-
-          - Less to remember/
-            | A mnemonic clues you into what the keyboard shortcut does and how to type it,
-            | so it's all you need to remember. There's no need to separately remember a keyboard shortcut and what it does (a
-            | challenging part of most keyboard shortcut schemes having a large number of
-            | shortcuts, which xiki attempts to avoid).
-
-            | Doesn't sound like standard emacs shortcuts?  Here's an explanation about
-            | how xiki deals with existing emacs shortcuts.
-
-          - emacs_shortcuts/
-            | TODO add stuff about how C-a turns into C-a C-a, etc.
-            | Mention how this lets a large number of key shortcuts without interfering
-            | with emacs shortcuts.
-            | But an admitted downside is it affects 6 existing emacs shortcuts
-            | and makes you type them twice.
-            | In practice the annoyance caused by this isn't as bad as it initially may seem
-            | Consider using to_axis instead of C-a C-a and to_end instead of C-e C-e.
-
-        > Six categories
-        | As you can see by looking at the "Keys" menu in the menu bar, there are
-        | six main categories of key shortcuts.
-
-        - Descriptions of each category/
-          - to: jumping to specific points
-          - open: opening things
-          - layout: views and windows
-          - as: remembering things
-          - enter: inserting things
-          - do: executing things
-
-        > Examples
-        | Here are some of the most commonly used shortcuts in each category.
-        | (Double-click a category to see them.)
-
-        - to/
-          | to+highest: Jump to top of file
-          | to+lowest: Jump to bottom of file
-          | to+axis: Jump to beginning of line
-          | to+end: Jump to end of line
-        - open/
-          | open+bookmark: view a bookmark
-          | open+tree: view a tree of a directory
-          | open+current: shows currently open files
-          | open+edited: shows recently edited files
-          | open+history: shows recently viewed files
-          | open+menu: opens view that lets you type a menu (type "-" to see all)
-        - layout/
-          | layout+create: Create a new view
-          | layout+hide: Hide this view
-          | layout+next: Go to next view
-          | layout+previous: Go to previous view
-          | layout+kill: Close the current file
-        - as/
-          | as+clipboard: Copy (after doing Control-space on the other side)
-          | as+kill: Cut (after doing Control-space on the other side)
-          | as+bookmark: remember this file as a bookmark
-        - enter/
-          | enter+clipboard: Paste
-        - do/
-          | do+tree: view an expanded tree of a directory
-        - miscellaneous/
-          | Control-tab: cycles through files
-
-        | For all keyboard shortcuts, see where they're key_shortcuts.rb, where they're
-        | defined:
-        - @$xiki/lib/xiki/core/key_shortcuts.rb
-
-        > Keyboard shortcuts while searching
-        | The seventh category, "search" has special behavior.  See:
-        - @search/docs/
-      - .api/
-        - define/
-          > Defining key shortcuts
-          - acronym/
-            > Define Control-d Control-h usyng an "acronym"
-            | Keys.do_hi { Line << "hey there" }
-
-            | The acronym is "do hi".  Acronyms makes it easy to remember both
-            | the keys to type, and what they do.  This is the recommended way
-            | to define keys in Xiki.
-          - basic/
-            > Define Control-d Control-h
-            | Keys.DH { View << "foo" }
-          - specific files/
-            > Map Control d Control-h only in .rb files
-            | Keys.do_hi(:ruby_mode_map) { View << "foooo" }
-          - meta/
-            > Map M-z
-            | Keys._z { View << "foooo" }
-        - input/
-          > Get input from the user
-          - a string/
-            @Keys.input
-            @Keys.input :prompt=>"Name: "
-          - timed/
-            | Collects input until user pauses
-            @Keys.input :timed=>1
-            | Same, but returns nothing if user doesn't begin right away
-            @p Keys.input :optional=>1
-          - just one char/
-            @Keys.input :chars=>1
-        - history/
-          > Get the history of keys typed
-          @Keys.log
-          @Keys.log :raw=>1   # Raw char codes
-      `
-    end
-
     def self.api
       '
       > Summary
@@ -326,7 +175,7 @@ module Xiki
     # Keys.input   # Terminated by enter
     # Keys.input "Type something: "
     # Keys.input :chars=>1   # Just one char
-    # Keys.input :timed=>1   # Terminated by pause
+    # Keys.input :timed=>1   # Terminated by pause (and convert control to alpha)
     # Keys.input :optional=>1   # Terminated by pause
     #   - A pause at the beginning will result in no input (nil)
     def self.input *args
@@ -482,7 +331,7 @@ module Xiki
 
       # If was defined with unified, pull from Keys.source
 
-      letters = Keys.sequence_to_string keys
+      letters = self.sequence_to_string keys
       if source = Keys.source[letters]
         file, line = source.split ':'
         Location.go file
@@ -836,7 +685,7 @@ module Xiki
         # Turn into letters
         codes = codes.map{|o| Keys.to_letter o, :verbose=>1 }
 
-        codes = codes.map{|o| "- #{o}\n" }.join("")
+        codes = codes.map{|o| "| #{o}\n" }.join("")
         codes.gsub!(/  $/, " space")
       end
 
@@ -846,5 +695,22 @@ module Xiki
     def self.sequence_to_string keys
       keys.split('').map{|o| Keys.to_letter(o.sum).upcase}.join('')
     end
+
+    # Filters a list if items based on one or a few keys.
+    # To match, it finds the note file starting
+    # with the first char, and containing the second.  So, "r" or
+    # "rb" would match "ruby".
+    def self.filter list, keys
+      regex1 = Regexp.new "^#{keys}"
+      keys = keys.split(//)
+      first = keys.shift
+      regex2 = "^#{first}"
+      keys.each{|o| regex2 << ".*#{o}"}
+      regex2 = Regexp.new regex2
+      found = list.find{|o| o =~ regex1}
+      found ||= list.find{|o| o =~ regex2}
+      found
+    end
+
   end
 end

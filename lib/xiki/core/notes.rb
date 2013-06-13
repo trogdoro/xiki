@@ -594,7 +594,7 @@ module Xiki
 
       $el.defun(:notes_mouse_double_click, :interactive => "e") do |e|
         next Launcher.insert "h" if Line =~ /^$/   # If blank line, launch history
-        Launcher.go_unified
+        Launcher.go
       end
 
       $el.defun(:notes_mouse_toggle, :interactive => "e") do |e|
@@ -726,7 +726,7 @@ module Xiki
         if ! Tree.children?
 
           if FileTree.dir? or ! FileTree.handles?   # If on a dir or code_tree
-            Launcher.launch_unified
+            Launcher.launch
           else   # If on a file in a FileTree
             FileTree.enter_lines
           end
@@ -1219,11 +1219,34 @@ module Xiki
       txt = txt.gsub(/^#+/){"#{'>' * $&.length}"}
     end
 
-    #
     # Returns whether notes mode is enabled.
-    #
     def self.enabled?
       $el.current_local_map == $el.elvar.notes_mode_map
+    end
+
+    # Mapped to open+note.
+    # Prompts for some chars, and opens "@notes/foo" where "foo"
+    # matches your chars.  Matches are determined by Keys.filter().
+    def self.open_note
+
+      # Get user input...
+
+      keys = Keys.input :optional=>1, :message=>"Which note? (Type a key or two): "
+
+      return Launcher.open "notes/" if ! keys
+
+      # Get possible matches - files in ~/notes without extensions...
+
+      files = Dir.new(File.expand_path("~/notes/")).entries.grep /\A[^.]/
+      files.map!{|o| o.sub /\..+/, ''}
+
+      # Narrow down by input
+      found = Keys.filter files, keys
+
+      return Launcher.open "notes/" if ! found
+
+      Launcher.open "notes/#{found}/"
+      nil
     end
 
   end
