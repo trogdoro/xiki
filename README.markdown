@@ -32,6 +32,8 @@ Either install as a gem, or install from github.
 
 ## Verify the 'xiki' shell command works
 
+Close your current console window and open a new one.  Then type...
+
       $ xiki
 
 It should delay slightly the first time, but be fast subsequent
