@@ -30,26 +30,25 @@
       |   <script src="http://code.jquery.com/jquery-1.7.1.min.js"></script>
       |   <script src="https://apigee.com/usergrid/sdk/usergrid.0.10.5.js"></script>
       |   <script>
-      |     var apigee = new Usergrid.Client({
-      |       orgName:'trogdoro', appName:'sandbox'
-      |     });
+      |     // Main client object
+      |     var apigee = new Usergrid.Client({ orgName:'trogdoro', appName:'sandbox' });
       |
-      |     // A Collection object that will be used to hold the list of books locally
-      |     var my_books = new Usergrid.Collection( { "client":apigee, "type":"books" } );
+      |     // Collection object to hold list of books
+      |     var my_books = new Usergrid.Collection({ "client":apigee, "type":"books" });
       |
+      |     // Fetch all books
       |     my_books.fetch(
       |       function() {   // Success Callback
-      |         $('#books-list').empty();
-      |         while( my_books.hasNextEntity() ) {
+      |         while(my_books.hasNextEntity()) {
       |           var book = my_books.getNextEntity();
-      |           $('body').append((book.get('title')+" from "+book.get('author')));
+      |           $('body').append("<p>"+book.get('title')+"</p>");
+      |           $('body').append("<p>"+book.get('author')+"</p>");
       |         }
       |       },
       |       function() { alert("read failed"); }   // Failure Callback
       |     );
       |   </script>
-      | </head><body>
-      | </body></html>
+      | </head></html>
   - jquery mobile example/
     - Replace "trogdoro" with your username (see preparation/).
       - Then double-click to run.
@@ -60,20 +59,20 @@
       |   <script src="http://code.jquery.com/mobile/1.1.1/jquery.mobile-1.1.1.min.js"></script>
       |   <script src="https://apigee.com/usergrid/sdk/usergrid.0.10.5.js"></script>
       |   <script>
-      |     var apigee = new Usergrid.Client({
-      |       orgName:'trogdoro', appName:'sandbox'
-      |     });
+      |     // Main client object
+      |     var apigee = new Usergrid.Client({ orgName:'trogdoro', appName:'sandbox' });
       |
-      |     // A Collection object that will be used to hold the list of books locally
-      |     var my_books = new Usergrid.Collection( { "client":apigee, "type":"books" } );
+      |     // Collection object to hold list of books
+      |     var my_books = new Usergrid.Collection({ "client":apigee, "type":"books" });
       |
-      |     $(document).ready( function() {
+      |     $(document).ready(function() {
       |
+      |       // Fetch all books
       |       my_books.fetch(
       |         function() {   // Success Callback
       |           $('#books-list').empty();
       |
-      |           while( my_books.hasNextEntity() ) {
+      |           while(my_books.hasNextEntity()) {
       |             // Output the book on the page
       |             var book = my_books.getNextEntity();
       |             $('#books-list').append('<li><h3>'+book.get('title')+'</h3><p>'+book.get('author')+'</p></li>');
@@ -81,7 +80,6 @@
       |
       |           $('#books-list').listview('refresh');   // Re-apply jQuery Mobile styles
       |         },
-      |
       |         function() { alert("read failed"); }   // Failure Callback
       |       );
       |     });
