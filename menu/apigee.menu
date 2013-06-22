@@ -1,0 +1,114 @@
+- about/
+  | Apigee is sort of a JSON-ish database in the cloud.  You can
+  | include their js from an html page, and then use their javascript
+  | api to send json blobs to their server to store, and retrieve them.
+  - more/
+    | You can also use it from ios/android/php etc.
+  @http://apigee.com
+- examples/
+  - preparation/
+    - 1. Get a developer userid/
+      | At this url...
+      @https://developers.apigee.com/
+    - 2. Create record in 'book'/
+      - Click "Data Explorer" on this page
+        @https://apigee.com/usergrid/
+      - Click "Add Collection"
+        | Name it "books".
+        | Click the "POST" radio button.
+      - Type in this and click "Run Query"
+        | {
+        |   "name":"hi"
+        |   "author":"steve",
+        |   "title":"hello world",
+        | }
+  - hello world/
+    - Replace "trogdoro" with your username (see preparation/).
+      - Then double-click to run.
+    @html/
+      | <html><head>
+      |   <script src="http://code.jquery.com/jquery-1.7.1.min.js"></script>
+      |   <script src="https://apigee.com/usergrid/sdk/usergrid.0.10.5.js"></script>
+      |   <script>
+      |     var apigee = new Usergrid.Client({
+      |       orgName:'trogdoro', appName:'sandbox'
+      |     });
+      |
+      |     // A Collection object that will be used to hold the list of books locally
+      |     var my_books = new Usergrid.Collection( { "client":apigee, "type":"books" } );
+      |
+      |     my_books.fetch(
+      |       function() {   // Success Callback
+      |         $('#books-list').empty();
+      |         while( my_books.hasNextEntity() ) {
+      |           var book = my_books.getNextEntity();
+      |           $('body').append((book.get('title')+" from "+book.get('author')));
+      |         }
+      |       },
+      |       function() { alert("read failed"); }   // Failure Callback
+      |     );
+      |   </script>
+      | </head><body>
+      | </body></html>
+  - jquery mobile example/
+    - Replace "trogdoro" with your username (see preparation/).
+      - Then double-click to run.
+    @html/
+      | <html><head>
+      |   <link rel="stylesheet" href="http://code.jquery.com/mobile/1.1.1/jquery.mobile-1.1.1.min.css" />
+      |   <script src="http://code.jquery.com/jquery-1.7.1.min.js"></script>
+      |   <script src="http://code.jquery.com/mobile/1.1.1/jquery.mobile-1.1.1.min.js"></script>
+      |   <script src="https://apigee.com/usergrid/sdk/usergrid.0.10.5.js"></script>
+      |   <script>
+      |     var apigee = new Usergrid.Client({
+      |       orgName:'trogdoro', appName:'sandbox'
+      |     });
+      |
+      |     // A Collection object that will be used to hold the list of books locally
+      |     var my_books = new Usergrid.Collection( { "client":apigee, "type":"books" } );
+      |
+      |     $(document).ready( function() {
+      |
+      |       my_books.fetch(
+      |         function() {   // Success Callback
+      |           $('#books-list').empty();
+      |
+      |           while( my_books.hasNextEntity() ) {
+      |             // Output the book on the page
+      |             var book = my_books.getNextEntity();
+      |             $('#books-list').append('<li><h3>'+book.get('title')+'</h3><p>'+book.get('author')+'</p></li>');
+      |           }
+      |
+      |           $('#books-list').listview('refresh');   // Re-apply jQuery Mobile styles
+      |         },
+      |
+      |         function() { alert("read failed"); }   // Failure Callback
+      |       );
+      |     });
+      |   </script>
+      | </head><body>
+      |   <div data-role="page" data-theme="c" id="page-books-list">
+      |     <div data-role="header" data-theme="b">
+      |       <h1>My Books</h1><a id="btn-compose" data-icon="plus" data-iconpos="right" data-inline="true" data-role="button" class="ui-btn-right">Add</a>
+      |     </div>
+      |     <div data-role="content">
+      |       <ul id="books-list" data-role="listview" data-inset="false" >
+      |         <li><h3>Nothing loaded yet.  Maybe you haven't added a record to your "/books" collection yet?</h3></li>
+      |       </ul>
+      |     </div>
+      |   </div>
+      | </body></html>
+- docs/
+  @learn/
+    > Terms
+    | main 3 terms : collection, Data Explorer, usergrid
+    | collection : database table
+    | Data Explorer : web interface to create collection
+    | usergrid : url for Data Explorer
+
+    > Code
+    | Sign in : apigee = new Usergrid.Client({orgName:'my username', appName:'sandbox'})
+    | make collection : my_books = new Usergrid.Collection({ "client":apigee, "type":"books" })
+    | query all : my_books.fetch(success_callback, failure_callback)
+    | functions to use in fetch() : .hasNextEntity(), .getNextEntity()
+    | read value : book.get('title')
