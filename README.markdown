@@ -22,7 +22,10 @@ Either install as a gem, or install from github.
       $ cd xiki
       $ sudo gem install bundler   # <- no "sudo" if using rvm
       $ sudo bundle                # <- no "sudo" if using rvm
-      $ sudo ruby etc/command/copy_xiki_command_to.rb /usr/bin/xiki   # or /usr/local/bin/xiki and no "sudo" if using rvm
+      $ sudo ruby etc/command/copy_xiki_command_to.rb /usr/bin/xiki
+
+      # Or, if you're using rvm...
+      $ ruby etc/command/copy_xiki_command_to.rb /usr/local/bin/xiki
 
 ### Or, as a gem
 
