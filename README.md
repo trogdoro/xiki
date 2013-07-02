@@ -48,7 +48,7 @@ trouble-shooting (/tmp/xiki_process.rb.output).
 
       $ xiki web/start
 
-Then follow the instructions you see (it tells you to go to http://localhost:8161).
+Then follow the instructions you see (it tells you to go to http://localhost:8161).  Under "Getting Started" it walks you through creating menus and trying them in the web interface, and then getting Xiki running in a text editor.
 
 See the web log for trouble-shooting (/tmp/xiki_web.output).
 
