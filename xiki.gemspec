@@ -16,7 +16,7 @@ Gem::Specification.new do |s|
   s.email = "craig.muth@gmail.com"
   s.extra_rdoc_files = [
     "LICENSE",
-    "README.markdown"
+    "README.md"
   ]
 
   s.rdoc_options += %w[--exclude etc/templates/.*]
