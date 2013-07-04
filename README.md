@@ -4,6 +4,8 @@ This file shows how to install Xiki.  Xiki is like a shell console with GUI feat
 
 It has a web interface, but runs best from a Xiki-enabled text editor.  It has menus for quickly getting started with using various tools and libraries.  Also you can easily create your own menus, in about ten different ways.  Many of them will seem obvious to you.
 
+Supported platforms: MacOS and Ubuntu.  Pair with me if you want to see Windows support, support for your text editor, or just to hack on Xiki! (find me at twitter.com/xiki).
+
 ## Install Ruby 1.9.3
 
 Type "ruby -v" to see which ruby version you currently have.
