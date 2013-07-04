@@ -39,6 +39,11 @@ Close your current console window and open a new one.  Then type...
 
       $ xiki
 
+Troubleshooting: if you run "$ which xiki" and it doesn't show
+/usr/local/bin/xiki or /usr/local/xiki, delete the 'xiki' file it
+shows.  (Normally it would be ignored but you probably have your gem
+bin dirs at the beginning of your PATH.)
+
 It should delay slightly the first time, but be fast subsequent
 times.  If you run into errors and then fix them, you'll want to
 run the "xiki stop" command.  See the process log for
