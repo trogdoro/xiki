@@ -159,7 +159,7 @@ class XikiCommand
       and then double-clicking on it (or typing control-enter or
       command-enter) to browse and update your mysql database.
 
-      See the README.markdown file in the Xiki dir for help setting up
+      See the README.md file in the Xiki dir for help setting up
       your editor. You can view it by typing this command or going to
       this url:
 
@@ -241,7 +241,7 @@ class XikiCommand
         "#{self.heading_bracket $1} #{self.path $2}"
       when /^ *https?:\/\/.+/
         "#{self.url $&}"
-      when /^.+\/$/
+      when /^[^|\n].+\/$/
         "#{self.path $&}"
       when /^( *- )(.*!)$/
         "#{self.bullet $1}#{self.exclamation $2}"

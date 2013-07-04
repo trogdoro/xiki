@@ -41,7 +41,7 @@ This changelog likely won't be strictly maintained.  But it covers the big chang
       - now menus are no longer limited to a single file
          - and can scale to the level of complexity of a sophisticated web app
    - notes (heading will expand as menu items)
-   - misc other file types: .bootstrap, .markdown, .conf
+   - misc other file types: .bootstrap, .md, .conf
    - in addition to the old Xiki file types
       - menus, classes
 - "Handlers" can be created to let other file types be menu source files
