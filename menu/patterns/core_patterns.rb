@@ -1,4 +1,8 @@
-load "#{Xiki.dir}menu/mysql/index.rb"   # Necessary since it's lazy loaded
+# Necessary since it's lazy loaded
+# Probably pull common stuff out into pre-loaded class
+  # Maybe into class in $x/menu/patterns?
+load "#{Xiki.dir}menu/mysql/mysql_index.rb"
+
 module Xiki
   Menu::Mysql.def_patterns
 
@@ -23,7 +27,8 @@ module Xiki
 
     url = path[/(http|file).?:\/\/.+/]
     if prefix == "all"
-      txt = RestTree.request("GET", url)
+      txt = HTTParty.get(url).body
+
       txt = Tree.quote(txt) if txt =~ /\A<\w/
       Tree.under Tree.quote(txt), :no_slash=>1
       next
@@ -38,26 +43,57 @@ module Xiki
   Xiki.def(//, :pre=>1, :target_view=>"*ol") do |path, options|
     options[:halt] = 1
     OlHelper.launch
-    Effects.blink(:what=>:line)
+    Effects.blink :what=>:line
     nil
   end
 
+  # Comments in .rb files
+  Xiki.def(//, :pre=>1, :extension=>".rb") do |path, options|
+
+    line = Line.value
+    next unless line =~ /^ *#/
+
+    options[:halt] = 1
+
+    # Eval comment inline
+    line.sub! /^ *# */, ''
+    txt, out, exception = Code.eval line, View.file, Line.number, :pretty_exception=>1
+
+    next if ! txt && out == "" && ! exception # Do nothing if no return value or output
+
+    txt ||= out
+    txt = exception ? exception.strip : txt.inspect
+
+    txt.gsub!(/^/, "#{Line.indent}#   ")
+    Line.<< "\n#{txt}", :dont_move=>1
+
+    nil
+  end
 
   # !... lines (at left margin)
   Xiki.def(/^! /) do
-    code = Tree.siblings(:all=>1).select{|o| o =~ /^! /}.join("\n")
-    code.gsub! /^! /, ''
 
+    code =
+      if Line =~ /^ *@/   # @!..., so just use one line
+        Line[/! .+/]
+      else   # !..., so use multiple lines
+        Tree.siblings.select{|o| o =~ /^! /}.join("\n")
+      end
+
+    code.gsub! /^@?! /, ''
+
+    # Calculate where we are in relation to the parent, for stack trace
     line_number = View.line
-
     lines_above = Tree.siblings(:before=>1).select{|o| o =~ /^! /}
     line_number -= lines_above.length
 
-
-    returned, out, exception = Code.eval code, View.file, line_number
+    returned, out, exception = Code.eval code, View.file, line_number, :pretty_exception=>1
+    next exception if exception
     returned ||= out   # Use output if nothing returned
     returned = returned.to_s if returned
-    returned
+
+    next if returned.blank?
+    Tree.quote returned
   end
 
 
@@ -65,21 +101,25 @@ module Xiki
   # p ...
   # puts ...
   # etc.
-
-
-  Xiki.def(/^(p|y|pp|puts|Ol|Ol\.ap) /) do |line|
+  Xiki.def(/^(a|Ol|Ol\.a) /) do |line|
+    line.sub! /^a /, "Ol.a "
     CodeTree.run line, :quote=>1
+    "@flash/"
   end
 
-  Xiki.def(/^(ap) /) do |line|
-    CodeTree.run line, :quote=>1
-  end
-
-  Xiki.def(/^ao /) do |line|   # "awesome out"
-    line.inspect
-    line.sub! /^ao /, "Ol.ap "
+  Xiki.def(/^(p|y|pp|puts) /) do |line|
     CodeTree.run line, :quote=>1
     nil
+  end
+
+  Xiki.def(/^ap /) do |line|
+    CodeTree.run line, :quote=>1
+  end
+
+  Xiki.def(/^a /) do |line|   # "awesome out"
+    line.sub! /^a /, "Ol.a "
+    CodeTree.run line, :quote=>1
+    "@flash/"
   end
 
   Xiki.def(/^print\(/) do |line|
@@ -90,7 +130,6 @@ module Xiki
     line.sub! /^pg /, ''
     CodeTree.run "puts JSON.pretty_generate(#{line})"
   end
-
 
   # GET http://foo.com
   #  and
@@ -112,6 +151,18 @@ module Xiki
 
     html = Tree.quote(html) if html !~ /^[>|] / && html !~ /\A.+\/$/
     html
+  end
+
+  Xiki.def(%r"^source://") do |path, options|
+    path.sub! /^source/, 'http'
+    path.gsub! ' ', '+'
+    Tree.quote `curl -A "Mozilla/5.0" #{path}`
+  end
+
+  Xiki.def(%r"^xiki://") do |path, options|
+    path.sub! /^xiki/, 'http'
+    path.gsub! ' ', '+'
+    RestTree.request "GET", path
   end
 
   # http:/foo.com (only one slash means show result)
