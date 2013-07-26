@@ -5,38 +5,32 @@ module Xiki
   # headings as slides.
   class Deck
 
-    def self.menu
-      %`
+    MENU = %`
       - .enable arrow keys/
       - docs/
-        > Summary
-        | Create a file with a ".deck" extension to create a lightweight
-        | presentation.  The left and right arrow keys will go back and forth
-        | between the "slides".
-        |
-        | Make .deck files just like you make .notes files, with sections divided
-        | by headings ("> foo" lines).  The sections behave like slides.  Only one
-        | section is shown at a time.
-        |
-        > Keys
-        | Use these keys to go back and forth between slides:
-        | - right+arrow+key: show next slide (hiding everything else)
-        | - left+arrow+key: show next slide
-        | - custom+reminder: jump to corresponding heading at end
-        |
-        > Hints
-        | To create and show hints that correspond to a section, create a section
-        | near the bottom of the file with the same heading but starting with
-        | ">>" instead of ">"
-        |
-        | Then, type open+related+heading to jump back and forth.
-        |
-        > To enable the deck keys in a .notes file
-        - type: do+keys+deck
-        - or use) @deck/enable arrow keys/
-        |
+        - summary/
+          | Create a file with a ".deck" extension to create a lightweight
+          | presentation.  The left and right arrow keys will go back and forth
+          | between the "slides".
+          |
+          | Make .deck files just like you make .notes files, with sections divided
+          | by headings ("> foo" lines).  The sections behave like slides.  Only one
+          | section is shown at a time.
+        - keys/
+          | Use these keys to go back and forth between slides:
+          | - right+arrow+key: show next slide (hiding everything else)
+          | - left+arrow+key: show next slide
+          | - custom+reminder: jump to corresponding heading at end
+        - hints/
+          | To create and show hints that correspond to a section, create a section
+          | near the bottom of the file with the same heading but starting with
+          | ">>" instead of ">"
+          |
+          | Then, type open+related+heading to jump back and forth.
+        - to enable the deck keys in a .notes file/
+          - type: do+keys+deck
+          - or use) @deck/enable arrow keys/
       `
-    end
 
     @@size = 10
 
@@ -64,15 +58,17 @@ module Xiki
 
       Keys.custom_reminder(:deck_mode_map) { Deck.open_related_heading }
       Keys.layout_uncover(:deck_mode_map) {
-        View.status nil, :nth=>3
         Hide.reveal
       }
 
-      $el.define_key(:deck_mode_map, $el.kbd("<right>")) { Deck.right_arrow }
-      $el.define_key(:deck_mode_map, $el.kbd("<left>")) { Deck.left_arrow }
-
       # TODO Get this to not add item at top of "Keys > Do" menu bar menu - how?!
       Keys.do_keys_deck { Deck.enable_arrow_keys }
+
+      $el.define_key(:deck_mode_map, $el.kbd("<S-right>")) { Deck.right_arrow :dont_move=>1 }
+      $el.define_key(:deck_mode_map, $el.kbd("<right>")) { Deck.right_arrow }
+      $el.define_key(:deck_mode_map, $el.kbd("<left>")) { Deck.left_arrow }
+      $el.define_key(:deck_mode_map, $el.kbd("C-t C-o")) { FileTree.to_outline :no_dups=>1 }
+
     end
 
     def self.open_related_heading
@@ -135,7 +131,7 @@ module Xiki
       Effects.glow :fade_in=>1, :what=>:block if result[0] == 0
     end
 
-    def self.right_arrow
+    def self.right_arrow options={}
 
       Notes.narrow_block if ! View.hidden?   # If not hidden, hide first, for simplicity
 
@@ -146,7 +142,7 @@ module Xiki
 
       self.show_all
 
-      Notes.to_block
+      Notes.to_block unless options[:dont_move]
 
       result = self.set_bars
 
@@ -156,7 +152,7 @@ module Xiki
 
       View.column = column
 
-      Effects.glow :fade_in=>1, :what=>:block if result[2]
+      Effects.glow :fade_in=>1, :what=>:block if result[2] && ! options[:dont_move]
     end
 
     # Sets little bars at bottom of window (mode line)
@@ -166,6 +162,7 @@ module Xiki
 
       my_line_number = View.line
 
+      # Not used any more, for now
       top_bar, bottom_bar = 0, 0   # remaining in group, remaining total
 
       header, header_match_count, my_header = nil, 0, nil
@@ -196,11 +193,8 @@ module Xiki
 
       end
 
-      View.status :bars=>[top_bar, bottom_bar]
-
       [top_bar, bottom_bar, first_in_block]
     end
-
 
     def self.init
       self.keys
