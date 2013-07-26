@@ -148,7 +148,7 @@ module Xiki
       doc = doc.to_json
       # Update it
       res = RestTree.request 'PUT', "#{@@server}/#{db}/#{id}", doc
-      ".flash - Updated!"
+      "@flash/- updated!"
     end
 
     def self.views db

@@ -14,22 +14,22 @@ module Xiki
 
     def self.dos
       $el.set_buffer_file_coding_system :dos
-      ".flash - updated!"
+      "@flash/- updated!"
     end
 
     def self.raw_unix
       $el.set_buffer_file_coding_system :unix
-      ".flash - updated!"
+      "@flash/- updated!"
     end
 
     def self.iso_unix
       $el.set_buffer_file_coding_system :iso_latin_1_unix
-      ".flash - updated!"
+      "@flash/- updated!"
     end
 
     def self.utf8
       $el.set_buffer_file_coding_system :mule_utf_8_unix
-      ".flash - updated!"
+      "@flash/- updated!"
     end
 
   end

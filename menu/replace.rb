@@ -20,7 +20,7 @@ class Replace
 
     Clipboard[1], Clipboard[2] = a, b
 
-    ".flash - Now do do+1 to search and replace"
+    "@flash/- Now do do+1 to search and replace!"
 
   rescue
     "
