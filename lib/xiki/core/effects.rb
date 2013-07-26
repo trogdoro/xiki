@@ -4,45 +4,40 @@ module Xiki
   # Makes visual things happen
   class Effects
 
-    def self.menu
-      "
-      > Do cool-looking things to text
+    MENU = "
+      | Do cool-looking things to text.  Used by various menus.
       - api/
         | Try these out by double-clicking on them.
         - Glow/
-          @Effects.glow
-          @Effects.glow :times=>6
-          @Effects.glow :what=>:paragraph
-          @Effects.glow :what=>:block
-          @Effects.glow :what=>[1, 100]
-
+          @! Effects.glow
+          @! Effects.glow :times=>5
+          @! Effects.glow :what=>:paragraph
+          @! Effects.glow :what=>:block
+          @! Effects.glow :what=>[1, 100]
           - Colors/
-            @Effects.glow :color=>:fire
-            @Effects.glow :color=>:water
-            @Effects.glow :color=>:forest
-            @Effects.glow :color=>:rainbow
-            @Effects.glow :color=>:fat_rainbow
+            @! Effects.glow :color=>:fire
+            @! Effects.glow :color=>:water
+            @! Effects.glow :color=>:forest
+            @! Effects.glow :color=>:rainbow
+            @! Effects.glow :color=>:fat_rainbow
           - Fade in and out/
-            @Effects.glow :fade_in=>1
-            @Effects.glow :fade_out=>1
+            @! Effects.glow :fade_in=>1
+            @! Effects.glow :fade_out=>1
         - Blink/
           | Makes line blink orange. Using a longer time since the blink happens
           | anyway.
-
-          @Effects.blink :time=>1
-        - Some View methods that use effects/
-          @View.prompt
-          @View.flash
-          @View.flash 'Saved!'
+          @! Effects.blink :time=>1
+        - View methods that use effects/
+          @! View.prompt
+          @! View.flash
+          @! View.flash 'Saved!'
       - docs/
         > Keys
         | do+line+effects: make line blink
         | up+do+line+effects: make line blink rainbow color
-
-      > See
-      << themes/
+      - see/
+        <@ themes/
       "
-    end
 
     #
     # Effects.glow :color=>:forest
@@ -53,6 +48,7 @@ module Xiki
       if what.is_a? Array
         left, right = what
       elsif what == :block
+        # TODO: change this to :section!
         ignore, left, right = View.block_positions "^[|>]"
       elsif what == :paragraph
         left, right = View.paragraph :bounds=>1
