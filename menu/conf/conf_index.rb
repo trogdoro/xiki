@@ -6,7 +6,7 @@ module Xiki::Menu
     MENU = "
       > options
       - docs/
-        > Whatevs
+        > __
       "
 
     # Can be called 2 ways, nested or not:
