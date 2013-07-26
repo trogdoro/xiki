@@ -68,14 +68,6 @@ describe Ol, "#line" do
   before(:each) do
     @line = "/projects/foo/controllers/accounts.rb:24:in `check'"
   end
-
-  it "writes line to log with label like - class.method (line):" do
-    Ol.should_receive(:pause_since_last?).and_return false
-    Ol.should_receive(:write_to_file).with('/tmp/ds_ol.notes', "- Accounts.check:24) hi\n")
-    Ol.should_receive(:write_to_file_lines).with("/tmp/ds_ol.notes", "/projects/foo/controllers/accounts.rb:24\n")
-
-    Ol.line "hi", @line, "", "ds"#, @@last_log
-  end
 end
 
 describe Ol, "#log" do

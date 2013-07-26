@@ -103,20 +103,12 @@ class Ol
     `
   end
 
-  # For when the caller constructs what to log on its own.
-  # Is this being used anywhere?
-  def self.log_directly txt, line, name=nil
-    path = name ? "/tmp/#{name}_ol.notes" : self.file_path
-    self.write_to_file path, txt
-    self.write_to_file_lines path, line
-  end
-
   # Called by .line, to do the work of writing to the file
   #
   # Ol.log "hey"
-  def self.log txt, l=nil, name=nil, time=nil, options=nil
+  def self.log txt, l=nil, options=nil
 
-    path = name ? "/tmp/#{name}_ol.notes" : self.file_path
+    path = self.file_path
 
     l_raw = l.dup
 
@@ -128,7 +120,7 @@ class Ol
     end
 
     heading = nil
-    if self.pause_since_last? time
+    if self.pause_since_last? # time
       # If n seconds passed since last call
       heading = "\n>\n"
 
@@ -235,7 +227,15 @@ class Ol
     self.line txt, caller(0)[1]
   end
 
+  # Deprecated in favor of a
   def self.ap *args
+    self.a *args
+  end
+
+  def self.a *args
+    options = args.pop if args.length > 1 && args[-1].is_a?(Hash)
+    options ||= {}
+
     caption = args.shift if args.length > 1   # If 2 args, 1st is caption
     txt = args.shift
 
@@ -244,18 +244,19 @@ class Ol
     else
       txt = txt.ai
 
-      txt.gsub!(/^  /, "")
+      txt.gsub!(/^  /, "") if txt =~ /\A /
       if txt.count("\n") == 2   # If only one item in hash or array
-        txt.gsub! "\n", ""   # Leave brackets, so it's obvious what it is
+        txt.gsub! /\n */, ""   # Leave brackets, so it's obvious what it is
       else
         txt.sub!(/\A[\[{]\n/, '')
         txt.sub!(/\n[\]}]\z/, '')
       end
     end
 
-    self.line txt, caller(0)[1], nil, nil, nil, :caption=>caption
-  end
+    line = options[:stack_line] || caller(0)[1]
 
+    self.line txt, line, nil, :caption=>caption
+  end
 
   def self.yaml *args
     txt = args.shift
@@ -264,7 +265,7 @@ class Ol
     txt.sub! /.+\n/, ''   # Remove 1st line - it's ---...
     txt.gsub!(/[:-] $/, "")
 
-    self.line txt, caller(0)[1] #, nil, nil, nil, :caption=>caption
+    self.line txt, caller(0)[1]
   end
 
 
@@ -272,7 +273,7 @@ class Ol
     txt = args.shift
     txt = Xi txt
 
-    self.line txt, caller(0)[1] #, nil, nil, nil, :caption=>caption
+    self.line txt, caller(0)[1]
   end
 
 
@@ -285,7 +286,7 @@ class Ol
   end
 
   # The primary method of this file
-  def self.line txt=nil, l=nil, indent="", name=nil, time=nil, options=nil
+  def self.line txt=nil, l=nil, indent="", options=nil
     l ||= caller(0)[1]
 
     l_raw = l.dup
@@ -300,7 +301,7 @@ class Ol
 
     options ||= {}
     if h[:clazz]
-      self.log txt.to_s, l_raw, name, time, options.merge(:label=>self.extract_label(h))
+      self.log txt.to_s, l_raw, options.merge(:label=>self.extract_label(h))
     else
       display = l.sub(/_html_haml'$/, '')
       display.sub! /.*\//, ''   # Chop off path (if evalled)
@@ -309,7 +310,7 @@ class Ol
 
       label = "- #{display})"
       label << " #{options[:caption]}" if options[:caption]
-      self.log txt.to_s, l_raw, name, time, options.merge(:label=>label)
+      self.log txt.to_s, l_raw, options.merge(:label=>label)
 
     end
     nil
@@ -321,7 +322,7 @@ class Ol
 
   def self.parse_line path
     method = path[/`(.+)'/, 1]   # `
-    path, l = path.match(/(.+):(\d+)/)[1..2]
+    path, l = path.match(/(.+):(\d+)/)[1..2] # rescue ['not found', '1']
     path = File.expand_path path
     clazz = path[/.+\/(.+)\.rb/, 1]
     clazz = self.camel_case(clazz) if clazz
@@ -343,7 +344,7 @@ class Ol
     self.line "ancestors...", ls.shift, ""
 
     ls.each_with_index do |l, i|
-      self.line((i+1).to_s, l, "    ", nil, nil, :leave_root=>1)
+      self.line((i+1).to_s, l, "    ", :leave_root=>1)
     end
 
     nil
@@ -356,27 +357,13 @@ class Ol
   def self.stack n=3, nth=1
     ls ||= caller(0)[nth..-1]
 
-    #     dots = nil
     n.downto(1) do |i|
-      #       dots = "." * (i+1)
-      #       dots = "|" * (i+1)
       i == n ?
-      #         self.line(dots, ls[i..-1], nil, nil, nil, :leave_root=>1) :
-      #         self.line(dots, ls[i..-1])
-      #         self.line("...", ls[i..-1], nil, nil, nil, :leave_root=>1) :
-      #         self.line("...", ls[i..-1])
-      #         self.line(nil, ls[i..-1], nil, nil, nil, :leave_root=>1) :
-      #         self.line(nil, ls[i..-1])
-
-        self.line("|||", ls[i..-1], nil, nil, nil, :leave_root=>1) :
+        self.line("|||", ls[i..-1], nil, :leave_root=>1) :
         self.line("|||", ls[i..-1])
     end
 
-    #     self.line "|", ls[0..-1], nil, nil, nil, :leave_root=>1
-    #     self.line ".", ls[0..-1], nil, nil, nil, :leave_root=>1
-    #     self.line "...stack", ls[0..-1], nil, nil, nil, :leave_root=>1
-
-    self.line "|||", ls[0..-1], nil, nil, nil, :leave_root=>1
+    self.line "|||", ls[0..-1], nil, :leave_root=>1
 
     nil
   end
