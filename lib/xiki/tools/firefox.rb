@@ -88,15 +88,6 @@ module Xiki
       Firefox.exec txt
     end
 
-    def self.coffee txt=nil
-      return View.prompt("Type some coffeescript to run in the browser") if txt.nil?
-
-      txt = CoffeeScript.run_internal txt
-
-      Firefox.exec txt
-      ".flash - ran in browser!"
-    end
-
     def self.last_stack_trace
       Firefox.value('window.content.tmp_stack')
     end
@@ -132,8 +123,8 @@ module Xiki
       end
     end
 
-    def self.click
-      link = Keys.input(:prompt=>'Substring of link to click on: ')
+    def self.click link=nil
+      link ||= Keys.input(:prompt=>'Substring of link to click on: ')
 
       Firefox.exec("
         var a = $('a:contains(#{link}):first');
@@ -300,11 +291,13 @@ module Xiki
       self.html txt   # Write to temp file
     end
 
-    def self.html txt=nil
+    def self.html txt=nil, options={}
 
-      File.open("/tmp/tmp.html", "w") { |f| f << txt }
+      name = options[:name] || "tmp"
 
-      Firefox.url "file:///tmp/tmp.html", :reload=>1
+      File.open("/tmp/#{name}.html", "w") { |f| f << txt }
+
+      Firefox.url "file:///tmp/#{name}.html", :reload=>1
 
       nil
     end

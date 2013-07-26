@@ -27,8 +27,8 @@ module Xiki
       Firefox.url url, options
     end
 
-    def self.html html
-      Firefox.html html
+    def self.html html, options={}
+      Firefox.html html, options
     end
 
     def self.append html
@@ -41,47 +41,57 @@ module Xiki
 
     def self.open_in_browser
 
-      path = Tree.path.join("\n")
+      path = Tree.path[0]
 
-      prefix = Keys.prefix
-      line = Line.value
-      use_tree_at_cursor = line =~ /(^ *[|+-]|\/$)/   # If ends in slash or bullet or quote
-      use_tree_at_cursor = nil if prefix == :u   # If C-u, always use the surrounding file
-
-      # If Dash+, open in browser with "//" on end (as menufied)
-      if prefix == :-
-        use_tree_at_cursor = true
-        path.sub! /\.\w+$/, ''   # remove extension
-        path = "@#{path}"
-        path.sub! /\/?$/, "//"
+      if path =~ %r"^source://"
+        path.sub! /^source/, 'http'
+        self.url path
+        return
       end
 
-      if use_tree_at_cursor   # Open as http://xiki/...
-        path.gsub! ' ', '-'
+      # If file path, bullet, quote, or ends in slash, use tree instead of current file...
 
-        url = "http://xiki/#{path}"
+      file_exists = File.exists? path
 
-        # If it's a dir, use @dtail
-        url = "http://xiki/dtail/#{path}" if File.directory? path
+      if file_exists || Line =~ /(^ *[|+-]|\/$)/
+        # Treat as menu if not file path or "up" prefix
 
-        # If it's a file, put "@" at beginning so sinatra doesn't fuck it up
-        url = "http://xiki/@#{path}" if File.file? path
+        is_menu = ! file_exists || Keys.prefix_u
+
+        # If file path and is menu ("up" prefix), make sure double-slash at end
+        if file_exists &&  is_menu
+          path.sub! /\.\w+$/, ''   # remove extension
+          path = "@#{path}"
+          path.sub! /\/?$/, "//"
+        end
+
+        # Open as http://xiki/...
+
+        if is_menu
+          path.gsub! ' ', '-'
+          url = "http://xiki/#{path}"
+        else
+          url = "file://#{path}"
+        end
+
+        # Maybe make Dash+ show as web view of nested dirs with contents
+        # Commented out for now, until we can figure out how to deal with
+        # fact that it'll peg the cpu if there are a lot of dirs
+        #         # If it's a dir, use @dtail
+        #         url = "http://xiki/dtail/#{path}" if File.directory? path
 
         return self.url url
       end
 
-      if FileTree.handles?
-        file = Tree.construct_path
-      else
-        # Put this somewhere wher it works in file tree as well
-        return Browser.html(self.markdown_render View.txt) if View.extension == "markdown"   # If .markdown, render it
-        file = View.file
-      end
+      # Otherwise, just open current file
 
+      # Put this somewhere wher it works in file tree as well
+      return Browser.html(self.markdown_render View.txt) if View.extension == "md"   # If .markdown, render it
+      file = View.file
 
-      mappings = Menu.menu_to_hash Bookmarks["~/menu3/url_mappings.menu"]
+      # Optionally turn into local url, accounding url_mappings.menu...
 
-
+      mappings = Menu.menu_to_hash Bookmarks["~/menu3/url_mappings.menu"] rescue {}
       result = nil
       mappings.each do |k, v|
         break file.sub!(v, "#{k}/") if file.start_with? v
@@ -110,6 +120,13 @@ module Xiki
 
     def self.reload
       Firefox.reload
+    end
+
+    def self.source *url
+      return "@prompt/Pass me a url" if url == []
+      url = url.join '/'
+
+      `curl -A "Mozilla/5.0" #{url}`
     end
 
   end
