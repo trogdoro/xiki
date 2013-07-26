@@ -428,8 +428,7 @@ module Xiki
       # Put this one back?
       #     Styles.apply("^[ +-]*\\([^|\n]+/\\)$", nil, :ls_dir)   # Dirs with bullets
 
-      Styles.apply('\\(https?\\|file\\):/[a-zA-Z0-9\/.~_:;,?%&=|+!-#-]+', :notes_link)   # Url
-
+      Styles.apply('\\(https?\\|file\\|xiki\\|source\\):/[a-zA-Z0-9\/.~_:;,?%&=|+!-#-]+', :notes_link)   # Url
 
       # :... lines (quotes)
       Styles.apply("^ *\\(:\\)\\($\\| .*\n\\)", nil, :quote_heading_pipe, :ls_quote)
@@ -464,9 +463,8 @@ module Xiki
 
       # |+... diffs
       Styles.apply("^ +\\(:[0-9]+\\)$", nil, :ls_quote)
-      Styles.apply("^ *\\(|\\+\\|:\\+\\)\\(.*\\)", nil, :diff_green_pipe, :diff_green, :face=>"xiki")   # whole lines
-
-      Styles.apply("^ *\\(|-\\|:-\\)\\(.*\\)", nil, :diff_red_pipe, :diff_red)
+      Styles.apply("^ *\\([|:]\\)\\(\\+.*\\)", nil, :diff_green_pipe, :diff_green, :face=>"xiki")   # whole lines
+      Styles.apply("^ *\\([|:]\\)\\(-.*\\)", nil, :diff_red_pipe, :diff_red)
 
       Styles.apply("^ *\\(|\\)\\(@@ .*\n\\)", nil, :quote_heading_pipe, :diff_line_number)
 
@@ -1233,8 +1231,7 @@ module Xiki
     end
 
     # Enter what's in clipboard with | to on the left margin, with appropriate indent
-    def self.enter_quote txt=nil
-
+    def self.enter_quote txt=nil, options={}
       prefix = Keys.prefix :clear=>1
 
       # Skip forward if on heading
@@ -1285,8 +1282,7 @@ module Xiki
       end
 
       # Line has content, so indent under...
-
-      txt = txt.unindent   # Unindent
+      txt = txt.unindent unless options[:leave_indent]
       # TODO: don't unindent if up+?
 
       indent = Line.indent   # Get current indent
@@ -1455,9 +1451,17 @@ module Xiki
         end
 
         next unless line =~ pattern
+
         line = line == "" ? "" : " #{line}"
         line.sub! /^ > $/, ' >'
-        matches << "#{indent}#{indent_more}|#{line}\n"
+        quoted_line = "#{indent}#{indent_more}|#{line}\n"
+
+        # If :no_dups and a dup, skip
+        if options[:no_dups] && matches.end_with?(quoted_line)
+          next
+        end
+
+        matches << quoted_line
 
         matches_count+=1
       end
@@ -2091,6 +2095,7 @@ module Xiki
         txt, line = Search.deep_outline *args
         Tree.<< txt, :line_found=>line, :escape=>'| ', :no_slash=>1
       else
+
         self.enter_lines nil, options.merge(:current_line=>current_line)
       end
 

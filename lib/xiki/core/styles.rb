@@ -185,7 +185,16 @@ module Xiki
       size + relative * 5
     end
 
-    def self.default_font_size
+    def self.default_font_size value=nil
+      # if value passed, set it
+      if value
+        self.font_size value
+        $el.elvar.xiki_default_font_size = value
+        return
+      end
+
+      # If no value, just return the default size
+
       self.font_size $el.elvar.xiki_default_font_size
     end
 

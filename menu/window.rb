@@ -23,7 +23,7 @@ module Xiki::Menu
             - taller/
             - shorter/
         - current/
-      - .visibility/
+      - .visible/
         - full/
         - high/
         - medium/
@@ -31,6 +31,8 @@ module Xiki::Menu
         - .colorized/
         - .scroll bars/
         - .dotsies/
+        - @white/
+        - @black/
       - .scroll bars/
       "
 
@@ -109,8 +111,8 @@ module Xiki::Menu
     end
 
 
-    def self.visibility choice=nil
-      Xiki::Window.visibility choice
+    def self.visible choice=nil
+      Xiki::Window.visible choice
     end
 
     def self.colorized
@@ -124,12 +126,13 @@ module Xiki::Menu
 
       View.scroll_bars = ! visible
       View.frame_width += visible ? 3 : -3
-      View.kill if View.name == "@window/visibility/"
+      View.kill if View.name == "@window/visible/"
       nil
     end
 
     def self.dotsies
-      Dotsies.all_views
+      Styles.font_size 120
+      Xiki["dotsies/apply/all views/"]
     end
 
 end; end

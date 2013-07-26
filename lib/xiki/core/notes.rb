@@ -461,6 +461,8 @@ module Xiki
       Styles.define :notes_yellow, :fg=>"CC0", :face=>'arial black', :size=>"0", :bold=>true
       Styles.define :notes_green, :fg=>"3c3", :face=>'arial black', :size=>"0", :bold=>true
 
+      bg_color = Styles.attribute(:default, :background)
+
       if Styles.dark_bg?   # If black bg
         Styles.define :notes_h2, :face=>'arial', :size=>"-1", :fg=>'fff', :bg=>"333", :bold=>true
         Styles.define :notes_h2_pipe, :face=>'arial', :size=>"-1", :fg=>'444', :bg=>"333", :bold=> true
@@ -470,6 +472,7 @@ module Xiki
         Styles.define :notes_h0_green_pipe, :fg=>"444", :bg=>"333", :face=>'arial', :size=>"+8", :bold=>true
         Styles.define :notes_h1_green, :fg=>"8f4", :bg=>"333", :face=>'arial', :size=>"+3", :bold=>true
         Styles.define :notes_h1_green_pipe, :fg=>"444", :bg=>"333", :face=>'arial', :size=>"+3", :bold=>true
+
       else   # If white bg
         Styles.define :notes_h2, :face=>'arial', :size=>"-1", :fg=>'fff', :bg=>"909090", :bold=>true
         Styles.define :notes_h2_pipe, :face=>'arial', :size=>"-1", :fg=>'b0b0b0', :bg=>"909090", :bold=>true
@@ -480,6 +483,8 @@ module Xiki
         Styles.define :notes_h1_green, :fg=>"af0", :bg=>"909090", :face=>'arial', :size=>"+3", :bold=>true
         Styles.define :notes_h1_green_pipe, :fg=>"b0b0b0", :bg=>"909090", :face=>'arial', :size=>"+3", :bold=>true
       end
+
+      Styles.define :quote_hidden, :fg=>bg_color
 
       if Styles.dark_bg?   # If black bg
         Styles.dotted :bg=>'080808', :fg=>'111', :strike=>nil, :underline=>nil, :border=>['111', -1]
@@ -496,9 +501,6 @@ module Xiki
       Styles.notes_link :fg=>(Styles.dark_bg? ? "9ce" : "08f")
 
       Styles.shell_prompt :fg=>'#888', :bold=>1
-
-      bg_color = Styles.attribute(:default, :background)
-      Styles.define :quote_hidden, :fg=>bg_color #, :size=>"0"
 
     end
 
@@ -570,14 +572,13 @@ module Xiki
 
       Styles.apply "^hint/.+", :fade6
 
-      Styles.apply "^[< ]*@? ?\\([%$&]\\) ", nil, :shell_prompt   # Colorize shell prompts
+      Styles.apply "^[< ]*@? ?\\([%$&!]\\) ", nil, :shell_prompt   # Colorize shell prompts after "@"
 
       # Make |~... lines be Dotsies
       Styles.apply("^ *\\(|~\\)\\([^\n~]+\\)\\(~?\\)", nil, :quote_heading_pipe, :dotsies, :quote_heading_pipe)
-      #     Styles.apply("\\(^\\| \\)\\(|~\\)\\([^\n~]+\\)\\(~?\\)", nil, :quote_heading_pipe, :quote_heading_pipe, :dotsies, :quote_heading_pipe)
 
-      # |... invisible
-      Styles.apply("^ *\\(|\\.\\.\\.\\)\\(.*\n\\)", nil, :quote_heading_pipe, :quote_hidden)
+      # |#... invisible
+      Styles.apply("^ *\\(|#\\)\\(.*\n\\)", nil, :quote_heading_pipe, :quote_hidden)
 
       Styles.apply "^ *|\\^.*\n", :quote_medium
     end
@@ -757,7 +758,6 @@ module Xiki
     end
 
     def self.as_nav
-
       prefix = Keys.prefix :clear=>true
       txt = ""
       if prefix == :u || prefix == :uu
@@ -811,7 +811,7 @@ module Xiki
       View.to_highest
 
       if prefix == 6   # Only move under existing >...: header if 6+
-          Line.next if Line =~ /^> .*:$/   # If at >...: line, move after it
+        Line.next if Line =~ /^> .*:$/   # If at >...: line, move after it
       end
 
       if prefix == 8
@@ -950,6 +950,13 @@ module Xiki
     end
 
     def self.enter_note
+
+      if Line.blank? && Keys.prefix != :u
+        return self.open_note :insert=>1
+      end
+
+      # :u prefix...
+
       # If on blank line, just insert it
       indent = ""
       if ! Line.blank?
@@ -1227,13 +1234,15 @@ module Xiki
     # Mapped to open+note.
     # Prompts for some chars, and opens "@notes/foo" where "foo"
     # matches your chars.  Matches are determined by Keys.filter().
-    def self.open_note
+    def self.open_note options={}
+
+      open_or_insert = options[:insert] ? Launcher.method(:insert) : Launcher.method(:open)
 
       # Get user input...
 
       keys = Keys.input :optional=>1, :message=>"Which note? (Type a key or two): "
 
-      return Launcher.open "notes/" if ! keys
+      return open_or_insert.call "notes/" if ! keys
 
       # Get possible matches - files in ~/notes without extensions...
 
@@ -1243,9 +1252,9 @@ module Xiki
       # Narrow down by input
       found = Keys.filter files, keys
 
-      return Launcher.open "notes/" if ! found
+      return open_or_insert.call "notes/" if ! found
 
-      Launcher.open "notes/#{found}/"
+      open_or_insert.call "notes/#{found}/"
       nil
     end
 
