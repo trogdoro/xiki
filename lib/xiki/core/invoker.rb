@@ -10,9 +10,11 @@ module Xiki
     # - Make it delegate back to RubyHandler for running stuff
     #   - Make it have specific methods, for each type of eval below:
     #     - handler.check_class_defined?
-    def self.invoke clazz, args, options={}
+    def self.invoke clazz, args=[], options={}
 
       args ||= []
+      args = Path.split args if args.is_a? String
+
       menu_found = nil   # Possible values: nil, :constant, :file, :method (if :method, it overwrites the previous value, which is fine)
 
       action_method = nil
@@ -20,23 +22,24 @@ module Xiki
 
       code, clazz_name, dot_menu_file = options[:code], options[:clazz_name], options[:dot_menu_file]
 
-      # Load class...
 
-      # Assume clazz is a file for now
+      # Prepare by loading or reloading class...
 
       # Just always reload for now (no caching)
+      # Assume clazz is a file for now
 
       returned, out, exception = Code.eval code, clazz, 1, :global=>1
       return CodeTree.draw_exception exception, code if exception
 
-      # TODO: wrap modules around depending on dir (based on :last_source_dir)?
+      # Prepend module name if any...
 
-      mod = self.extract_ruby_module code
+      mod = self.extract_ruby_module code if code
       clazz_name = "#{mod}::#{clazz_name}" if mod
 
       clazz_name = "Xiki" if clazz_name == "Xiki::Xiki"   # Xiki is a module, so it grabbed it twice.  If we want to support other modules, do something generic here, but we may not need to.
 
-      clazz = Code.simple_eval("defined?(#{clazz_name}) ? #{clazz_name} : nil", nil, nil, :global=>1)
+      # Before this, 'clazz' is a file path
+      clazz = Code.simple_eval("defined?(#{clazz_name}) ? #{clazz_name} : nil", nil, nil, :global=>1) if clazz_name
 
       # Call .menu_before if exists...
 
@@ -59,7 +62,7 @@ module Xiki
       if clazz.const_defined? :MENU
         menu_found = :constant
         menu_text = clazz::MENU
-      elsif File.file?(dot_menu_file)
+      elsif dot_menu_file && File.file?(dot_menu_file)
         menu_found = :file
         menu_text = File.read dot_menu_file
       end
@@ -84,14 +87,35 @@ module Xiki
         end
       end
 
+
+      # If MENU_OBSCURED exists, use it to get children or route...
+
+      menu_obscured = clazz.const_defined? "MENU_OBSCURED"
+      if menu_obscured
+        menu_obscured = clazz.const_get "MENU_OBSCURED"
+        menu_obscured = menu_obscured.unindent if menu_obscured =~ /\A[ \n]/
+
+        txt_from_obscured = !txt && args.any? ?   # Only use children if it's not the root
+          Tree.children(menu_obscured, args, options) : nil
+
+        if txt_from_obscured
+          txt = txt_from_obscured
+        else
+          dotified = Tree.dotify menu_obscured, args, dotified
+        end
+      end
+
+
       # If MENU_HIDDEN exists, use it to route...
 
       menu_hidden = clazz.const_defined? "MENU_HIDDEN"
       if menu_hidden
-        returned = clazz.const_get "MENU_HIDDEN"
+        menu_hidden = clazz.const_get "MENU_HIDDEN"
+        menu_hidden = menu_hidden.unindent if menu_hidden =~ /\A[ \n]/
 
-        # Only do dotifying if not already done?
-        dotified = Tree.dotify returned.unindent, args, dotified
+        # Try getting children from MENU_HIDDEN, if it has any...
+
+        dotified = Tree.dotify menu_hidden, args, dotified
       end
 
       # If MENU|foo.menu not found or didn't handle path, call routed method or otherwise .menu with args...
@@ -202,7 +226,7 @@ module Xiki
         boolean_array[i]
       }
 
-      action = actions.last || "menu"
+      action = actions.any? ? actions[-1].dup : "menu"
       action.gsub! /[ -]/, '_'
       action.gsub! /[^\w.]/, ''
 

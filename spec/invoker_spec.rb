@@ -21,6 +21,12 @@ describe Invoker, "#actionify" do
   it "two actions" do
     Invoker.actionify(["act", "act2", "b"], [true, true, nil]).should == ["act2", ["b"]]
   end
+
+  it "doesn't mess up the args" do
+    args = ["Hey you"]
+    Invoker.actionify(args, [true, true, nil]).should == ["hey_you", []]
+    args.should == ["Hey you"]
+  end
 end
 
 describe Invoker, "#extract_ruby_module" do
