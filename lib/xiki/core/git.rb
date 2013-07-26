@@ -6,7 +6,7 @@ module Xiki
   class Git
 
     class << self
-      attr_accessor :jump_line_number
+      attr_accessor :line_found
     end
 
     def self.branch_name dir=nil
@@ -43,10 +43,7 @@ module Xiki
     def self.do_compare_repository
       file = View.file
 
-      # Temporarily set the line number in a temporary place
-      Git.jump_line_number = View.line
-      Launcher.open "#{file}\n  @git/diff/"
-      Git.jump_line_number = nil
+      Launcher.open "#{file}\n  @git/diff/", :line_found=>View.line
 
       ""
     end
