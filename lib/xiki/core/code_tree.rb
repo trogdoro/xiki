@@ -334,7 +334,7 @@ module Xiki
       # If last parameter was |..., make it be all the lines
       if data.first =~ /^ *\|/
         data.first.replace( self.escape(
-          Tree.siblings(:all=>true).map{|i| "#{i[/^ *\| ?(.*)/, 1]}\n"}.join('')
+          Tree.siblings.map{|i| "#{i[/^ *\| ?(.*)/, 1]}\n"}.join('')
           ))
       end
 

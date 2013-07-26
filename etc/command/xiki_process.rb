@@ -25,7 +25,18 @@ class XikiProcess
           path.strip!
 
           options = {}
-          options[:client] = "web" if path.slice!(/^-cweb /)
+
+          # If line is "@options/...", parse it and read path...
+
+          if path =~ /^@options\/(.+)/
+            options = JSON[$1]
+
+            # Turn keys into symbols
+            options = options.reduce({}){ |acc, o| acc[o[0].to_sym] = o[1]; acc }
+
+            path = f.gets
+            path.strip!
+          end
 
           # Invoke menu and send response...
 

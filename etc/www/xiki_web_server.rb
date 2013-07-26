@@ -1,10 +1,15 @@
 require "sinatra/base"
+require "cgi"
+require "json"
+require 'open3'
 
 xiki_directory = `xiki dir`.strip
 
 $:.unshift "#{xiki_directory}lib"
 require 'xiki/core/ol.rb'
+require 'xiki/core/files.rb'
 require 'xiki/core/core_ext.rb'
+require 'xiki/core/html.rb'
 
 # TODO: Enable basic auth for security
   # Add menu to let users create a password
@@ -27,269 +32,25 @@ class SinatraServer < Sinatra::Base
     index env['REQUEST_PATH'].sub(/^\//, '')
   end
 
-  def htmlify txt, options={}
-
-    return txt if request.env['HTTP_ACCEPT'] !~ /\Atext\/html/   # Only process if request wants html
-
-    # If starts with <foo or @bootstrap, just render it as html or bootstrap...
-
-    if txt =~ /\A<\w/
-      return txt
-    elsif txt =~ /\A@html\/\n  /
-      xiki_directory = File.expand_path "#{File.dirname(__FILE__)}/../.."
-
-      $:.unshift "#{xiki_directory}/lib"
-      ["xiki/core/tree"].each{|o| require o}
-
-      txt.slice! /.+\n/
-      txt = txt.unindent
-      txt = Tree.unquote txt
-
-      return txt
-
-    elsif txt =~ /\A@bootstrap\/\n  /
-
-      # Maybe move this to inside Expander. Convert to html
-      # if :client=>"web"
-
-      xiki_directory = File.expand_path "#{File.dirname(__FILE__)}/../.."
-
-      $:.unshift "#{xiki_directory}/lib"
-      ["xiki/core/ol", "xiki/core/core_ext", "xiki/core/line", "xiki/core/tree", "../../menu/bootstrap"].each{|o| require o}
-
-      txt.slice! /.+\n/
-      txt = txt.unindent
-
-      txt = Xiki::Menu::Bootstrap.render txt
-
-      return txt
-    end
-
-    # Turn menu text into html...
-
-    # TODO: should probably maintain indenting?
-    txt.gsub! /^ *\| ?/, ''
-
-    txt.gsub! /^( *)[+-]+ /, "\\1"   # Get rid of bullets
-    txt.gsub! /^> (.+)/, "<h1>\\1</h1>"
-
-    # Use relative links if path ends in slash, otherwise use absolute
-    path = request.env['REQUEST_PATH']
-
-    path = "#{path}/" if path !~ /\/$/
-
-    # Make path be "/foo/bar/", if no slash ("/foo/bar")
-
-    txt.gsub!(/^( *)(.+?)(\/?)$/){
-      all = $&
-      indent, item, slash = $1, $2, $3
-      next all if all =~ /<h/ || all !~ /\/$/
-      my_path = path
-      my_path = "/" if item.slice!(/^<< /)
-      my_path = "/" if item.slice!(/^@ ?/)
-      "#{indent}<a href=\"#{my_path}#{item.gsub ' ', '-'}\">#{item}</a>"
-    } # no slash
-
-    txt.gsub!(/^ +/){"&nbsp; " * $&.length}   # Get rid of bullets
-
-    txt.gsub!(/.+/){
-      all = $&
-      next all if all =~ /<h/
-      next "<p class='info'>#{all}</p>" if all !~ /^<a/   # Don't end in "/" - just informational
-      all
-    }
-    txt.gsub! /^$/, "<p class='blank'>&nbsp;</p>"
-    name = options[:name] ? "Xiki - #{options[:name]}" : "Xiki"
-    output = ""
-    output <<  %`
-    <head>
-      <title>#{name}</title>
-      <meta name="viewport" content="initial-scale = 1.0,maximum-scale = 1.0" />
-    </head>
-    <style>
-      a {
-        text-decoration: none;
-      }
-
-      .content a.selected {
-        background: -moz-linear-gradient(center top, #58b, #7ad) repeat scroll 0 0 transparent;
-      }
-      .content a {
-        color: #666;
-        display: block;
-
-        border-radius: 2px;
-        border: solid 1px;
-        border-color: #eee #ddd #bbb #ddd;
-        background: -moz-linear-gradient(center top, #fff, #f1f1f1) repeat scroll 0 0 transparent;
-        background: -webkit-gradient(linear,center bottom,center top,from(#f1f1f1),to(#fff));
-        display: block;
-        padding: 10px 16px;
-        text-shadow: 0 1px 0 #fff;
-        font-weight: bold;
-      }
-      a:hover {
-        background: -moz-linear-gradient(center top, #f8f8f8, #e1e1e1) repeat scroll 0 0 transparent;
-        background: -webkit-gradient(linear,center bottom,center top,from(#e1e1e1),to(#f8f8f8));
-      }
-      body {
-        font-family: dotsies;
-        font-family: arial;
-
-        margin: 50px;
-        font-size: 15px;
-        color: #666;
-        line-height: 21px;
-        background-color: #f8f8f8;
-      }
-      p {
-        margin: 0;
-      }
-      .blank {
-        line-height: 12px;
-      }
-      h1 {
-        color: #000;
-        font-family: arial;
-        font-size: 16px;
-        font-weight: bold;
-        margin: 11px 0 7px;
-        text-shadow: 1px 1px 1px #999;
-      }
-      .save {
-        margin: 0 20px 10px 20px;
-        font-size: 15px;
-      }
-      form {
-        margin: 0;
-      }
-      textarea {
-        border: solid #ccc 1px;
-        margin: 2px 20px 13px 20px;
-        padding: 7px;
-        width: 80%;
-        font-size: 15px;
-        color: #555;
-        height: 150px;
-        line-height: 20px;
-      }
-      .toggle {
-        font-size: 13px;
-        margin: 15px 20px 0px 20px;
-        font-weight: bold;
-      }
-      .toggle a {
-        color: #aaa;
-      }
-      .info {
-        margin: 5px 0 4px;
-      }
-      pre {
-        font-weight: bold;
-      }
-
-    </style>
-    `
-
-    output <<  %`<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>`
-    #     output <<  %`<script src="http://xiki.loc/js/jquery.min.js"></script>`
-
-    if ! options[:no_keys]
-      output <<  %`
-      <script>
-        filter_pattern = "";
-        started_searching = false;
-        $(function(){
-
-          $(window).focus(function () {
-            filter_pattern = "";
-            started_searching = false;
-
-            $('body').css("opacity", 1.0);
-            $('p, h1, a').show();
-            $('a').removeClass("selected");
-          });
-
-          $('body').keypress(function(e){
-            if(e.ctrlKey || e.altKey || e.metaKey) return;
-            var char = e.which;
-            var letter = String.fromCharCode(char).toLowerCase();
-            //console.log(char)
-            if(char == 13){
-              $("a:visible:eq(0)").click();
-              e.stopPropagation();
-              return false;
-            }
-
-            if(letter == " "){
-              if(started_searching) filter_pattern = "";
-              else window.location = "/";
-              e.stopPropagation();
-              return false;
-            }
-
-            if(! letter.match(/[0-9a-z]/)) return true;
-
-            started_searching = true;
-            filter_pattern += letter;
-
-            //console.log(filter_pattern);
-
-            // If more than 100, don't use fade
-            var count = $('p, h1, a').filter(':visible').length;
-            var fade = count < 50;
-
-            $('p, h1, a').each(function(i, e){
-              e = $(e);
-              if(e.is(":hidden")) return;
-              var html = e.html().replace(/<.+?>/g, '');
-              //console.log(html);
-              if(html.toLowerCase().indexOf(filter_pattern) == -1)
-                fade ? e.slideUp(400) : e.hide();
-              // Get content
-                // Remove tags
-                  // Hide if remaining doesn't match regex (/on/)
-            })
-
-          });
-
-          $('a').click(function(e){
-            var target = $(e.target);
-            target.toggleClass("selected");
-
-            $('body').animate({opacity: 0.0}, {easing: 'swing', duration: 150});
-            window.setTimeout(function(){ window.location = target.attr('href'); }, 150);
-            return false;
-          });
-
-        })
-      </script>
-      `
-    end
-
-    "#{output}<div class='content'>#{txt}</div>"
-
+  post '/*' do
+    index env['REQUEST_PATH'].sub(/^\//, '')
   end
 
   # Handles /
   def default
-    txt = `xiki web/docs/`
-    htmlify txt
+    txt = call_command "web/docs", env
   end
 
   # Handles most requests
   def index menu
+
+    # Probably only do this if it's requesting an image!
+    # For now, if ends in .jpg, just assume they're requesting an image?
+    # What if it's an actual menu item?  How to distinguish?
+    menu.gsub! /\.jpg$/, ''
+
+
     no_keys = false
-    if ENV['REQUEST_METHOD'] == "POST"
-      cgi = CGI.new
-      post_txt = cgi['txt']
-
-      # Temporary hack
-      File.open("/tmp/post_tmp", "w") { |f| f << post_txt }
-
-      # What's a better way to do this?
-      # Pass in pipe, and send to shell command via STDIN
-    end
 
     return default if menu == ""
 
@@ -297,13 +58,8 @@ class SinatraServer < Sinatra::Base
 
     menu.sub! /^@/, ''
     menu.gsub! /-/, ' '
-    command = "xiki -cweb '#{menu}'"
-    txt = `#{command}`
 
-    #   rescue e=>Exception
-    #     puts "<pre>#{e.message}\n#{e.backtrace}</pre>"
-    #     Ol << "If we get the permission problem, provide .notes file that will run command to run xiki command once (message explaining it first)!"
-    #   end
+    txt = call_command menu, env
 
     # TODO: return different string when the service is down
 
@@ -352,15 +108,64 @@ class SinatraServer < Sinatra::Base
       end
     end
 
-    # Html-ify and print output...
-    if txt !~ /^\s+<.+>$/
-      txt = htmlify txt, :no_keys=>no_keys, :name=>menu
+    # if a file, read it manually...
+    if txt =~ /^@file\/(.+)/
+      file = $1
+      content_type = {".jpg"=>"image/jpeg"}[File.extname file]
+      content_type content_type
+      return File.read(file, *Xiki::Files.encoding_binary)
     end
+
     txt
 
   rescue Exception=>e
     "<pre>#{e.message}\n#{e.backtrace}</pre>"
   end
+
+  def call_command path, env
+
+    # Only process as html if browser and not ajax...
+
+    client = ""
+
+    is_browser = env['HTTP_USER_AGENT'] =~ /\AMozilla/ ||
+      env['HTTP_ACCEPT'] =~ /\Atext\/html/
+
+    client = " -cweb" if is_browser && env["HTTP_X_REQUESTED_WITH"] != "XMLHttpRequest"
+
+    # If POST, pipe params and path to command...
+
+    if env['REQUEST_METHOD'] == "POST"
+      options = "@options/#{JSON[params]}"
+      return SinatraServer.shell_command "xiki#{client} -", :stdin=>"#{options}\n#{path}"
+    end
+
+    # Otherwise, run command normally...
+
+    command = "xiki#{client} '#{path}'"
+    `#{command}`
+
+  end
+
+
+  def self.shell_command command, options={}
+    #     stdin, stdout, stderr = Open3.popen3("#{profile}cd \"#{dir}\";#{command}")
+    stdin, stdout, stderr = Open3.popen3(command)
+
+    if txt = options[:stdin]
+      stdin.puts txt
+      stdin.close
+    end
+
+    result = ""
+    result << stdout.readlines.join('')
+    result << stderr.readlines.join('')
+
+    result.force_encoding("binary") if result.respond_to? :force_encoding
+    result.gsub!("\c@", '.')   # Replace out characters that el4r can't handle
+    result
+  end
+
 
   def camel_case txt
     return txt if txt !~ /_/ && txt =~ /[A-Z]+.*/

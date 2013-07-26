@@ -2,15 +2,19 @@
 
 #
 # > Summary
-# This file is aliased to /usr/local/bin/xiki, so it can be
-# called from the command line.  It exposes xiki menus.
+# This is the "xiki" shell command.  It exposes xiki menus.
 #
-# > Example
+# > Example usage
 # $ xiki ip
 #   111.1.1.111
 #
-# To create the alias, see:
-# @xiki/setup/install command/
+# This will be invoked by the "xiki" wrapper gem files create
+# when you install xiki as a gem.
+#
+# Or, if you installed xiki from
+# source (github), this file gets copied into /usr/local/bin/
+# or a similar path by the copy_xiki_command_to.rb the project
+# README file tells you to run.
 #
 
 require 'rubygems'

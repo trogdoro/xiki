@@ -80,25 +80,23 @@ module Xiki
 
       Ol.clear_pause
 
-      if prefix == :uu
-        path = Tree.construct_path
-
-        load path
-        return View.flash "- loaded!"
-      end
-
       if options[:left]
         left, right = options[:left], options[:right]
         txt = View.txt left, right
       elsif prefix.is_a?(Fixnum) && 0 <= prefix && prefix <= 7
-        file, line = View.file, Line.number(left)
         txt, left, right = View.txt_per_prefix nil, :blink=>1, :remove_heading=>1
+        file, line = View.file, Line.number(left)
       else
         case prefix
-        when :u   # Load file in emacsruby
+        when :u   # Load file
           return self.load_this_file
 
           # These were superceded by .txt_per_prefix apparently
+
+        when :uu   # Load file at point in tree
+          path = Tree.construct_path
+          load path
+          return View.flash "- loaded!"
 
         when 8   # Put into file and run in console
           File.open("/tmp/tmp.rb", "w") { |f| f << Notes.current_section("^>").text }
@@ -117,12 +115,13 @@ module Xiki
       txt.sub! /\A( *)@ /, "\\1"   # Remove @ if at beginning
       txt.gsub! /^ *\| ?/, '' if txt =~ /\A *\|/   # Remove quoted lines if it's quoted
 
-      # If C--, define the launcher
+
+      # If C--, reload in command line tool...
+
       if prefix == :-
-        if txt =~ /\A\s*class (\w+)/
-          clazz = $1
-          Launcher.add TextUtil.snake_case(clazz)
-        end
+        file = View.file
+        `xiki load/#{file}`
+        return
       end
 
       orig = Location.new
@@ -219,34 +218,67 @@ module Xiki
     end
 
     # Evaluates a string, and returns the output and the stdout string generated
-    def self.eval code, file=nil, line=nil, options={}
+    # Code.eval "p 11; 22", nil, nil, :simple=>1   # Returns 1 string, which is quoted return value or output, or unquoted formatted exception.
+    #
+    # params:
+    # The last options param will be available to the code being eval'ed
+    def self.eval code, file=nil, line=nil, eval_options={}, options={}
+
+      if file.is_a? Hash
+        eval_options = file
+        file = nil
+      end
+
       return ['- Warning: nil passed to Code.eval!', nil, nil] if code.nil?
 
       # Capture stdout output (saving old stream)
       orig_stdout = $stdout;  $stdout = StringIO.new
       stdout = nil
       exception = nil
-      begin   # Run code
 
+      begin   # Run code
         # TODO: Try always doing what :global does
         #   - see if it breaks
 
-        returned =
-          if code.is_a? Proc
-            Object.module_eval &code
-          elsif options[:global] || ! $el
-            Object.module_eval code, file||__FILE__, line||__LINE__
-          else
-            Object.module_eval code, file||__FILE__, line||__LINE__
-            #             $el.instance_eval code, file||__FILE__, line||__LINE__
-          end
+        returned = self.eval_inner code, file, line, eval_options, options
 
       rescue Exception => e
         exception = e
       end
+
       stdout = $stdout.string;  $stdout = orig_stdout  # Restore stdout output
+
+      # Is this even worth doing?
+      if exception && (eval_options[:pretty_exception] || eval_options[:simple])
+         exception = CodeTree.draw_exception exception, code if exception
+      end
+
+      # This change might be risky
+      stdout = nil if stdout == ""
+
+      if eval_options[:simple]   # Return one string (quoted if result, or just exception)
+        return exception if exception
+        txt = stdout || returned
+        return nil if ! txt
+        txt = txt.to_s
+        txt = Tree.quote txt if eval_options[:quoted]
+        return txt
+      end
+
       [returned, stdout, exception]
     end
+
+    def self.eval_inner code, file, line, eval_options, options
+      if code.is_a? Proc
+        Object.module_eval &code
+      elsif eval_options[:global] || ! $el
+        Object.module_eval code, file||__FILE__, line||__LINE__
+      else
+        Object.module_eval code, file||__FILE__, line||__LINE__
+      end
+    end
+
+
 
     def self.do_as_align
       $el.align_regexp
@@ -480,18 +512,23 @@ module Xiki
     # - 3+do+indent     # Make indent be 6 spaces from the left (3*2)
     #
     def self.indent_to
-
       prefix = Keys.prefix
       return Code.indent if prefix == :-   # Just indent to where it should go
 
       txt = View.selection
-      old_indent = txt[/^( *)[^ \n]/, 1]
+
+      # Find lowest indent
+      old_indent = txt.split("\n").reduce(999) do |acc, line|
+        next acc if line.blank?
+        indent = line[/^ */].length
+        indent < acc ? indent : acc
+      end
 
       new_indent =
         if ! prefix
-          old_indent.length + 2
+          old_indent + 2
         elsif prefix == :u
-          old_indent.length - 2
+          old_indent - 2
         elsif prefix.is_a?(Fixnum)
           prefix * 2
         else
@@ -505,7 +542,7 @@ module Xiki
 
       # Grab indent if 1st line that has text
       txt.gsub!(/^\s+/) { |t| t.gsub("\t", '        ') }   # Untab indent
-      txt.gsub! /^#{old_indent}/, ' ' * new_indent
+      txt.gsub! /^#{' ' * old_indent}/, ' ' * new_indent
 
       txt.gsub!(/^ +$/, '')   # Kill trailing spaces on lines with just spaces
 

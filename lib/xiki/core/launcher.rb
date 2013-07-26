@@ -393,6 +393,9 @@ module Xiki
     end
 
     def self.try_menu_launchers line, options={}
+
+      Ol["TODO > is this deprecated?!"]
+
       # If there's a /@ in the path, cut it off
       line.sub! /.+\/@/, ''
 
@@ -712,7 +715,7 @@ module Xiki
 
       prefix = Keys.prefix :clear=>true
 
-      if prefix ==:u || options[:here] || prefix ==:uu
+      if options[:here] # || prefix ==:uu
         View.to_nth orig
       else
         Move.to_window 1
@@ -724,7 +727,7 @@ module Xiki
       line = Line.value
 
       # Go to parent and collapse, if not at left margin, and buffer modified (shows we recently inserted)
-      if ! Color.at_cursor.member?("color-rb-light")   #&& line !~ /^ *[+-] /  # and not a bullet
+      if ! Color.at_cursor.find{|o| o =~ /^color-rb-/}
         if line =~ /^ /
           prefix ==:uu ?
             Tree.to_parent(:u) :
@@ -742,7 +745,9 @@ module Xiki
         return
       end
 
-      Launcher.launch(:no_search=>true)
+      options[:here] ?
+        Launcher.launch :
+        Launcher.launch(:no_search=>true)
 
       if ol_cursor_position
         View.to_buffer "*ol"
@@ -1233,7 +1238,7 @@ module Xiki
 
       return self.open(item, options) if menu == " "   # Space means text is the menu
 
-      matches = Xiki::MenuSuggester.completions menu
+      matches = Xiki::Menu.completions menu
 
       if matches.length == 1
         return self.open("#{matches[0]}/#{item}", options)
@@ -1350,9 +1355,12 @@ module Xiki
 
       Line.<<("\n", :dont_move=>1) if Line.right == View.bottom   # If at very end of view and no linebreak, add one
 
-      return if self.bullet_prefix_handling line
+      return if self.bullet_prefix_handling line   # If the line has << and other arrow-ish bullets
 
-      options = {:client=>"editor/emacs"}
+      Tree.plus_to_minus unless insert_options[:leave_bullet]
+
+      # Now passing insert_options all the way in - might cause problems
+      options = insert_options.merge(:client=>"editor/emacs")
 
       begin
         path = Tree.path_unified
@@ -1365,7 +1373,16 @@ module Xiki
       end
 
       if prefix = Keys.prefix; options[:prefix] = prefix; end
+
+      # Maybe nest these within new :limits option (and delete before
+      # passing to menu) to avoid too many options passed into menus.
+      # If this change is made, be sure to make pattern launchers look
+      # in the new place:
+      # /projects/xiki/lib/xiki/core/
+      #   - pattern.rb
+      #     |           if nested = value[options[key]]
       if view = View.name; options[:target_view] = view; end
+      if file = View.file; options[:extension] = File.extname(file); end
 
       #     # Stopping doing this - anyone still relying on it?!
       #     # - Fix conf!
@@ -1373,22 +1390,26 @@ module Xiki
       #       options[:txt] = Tree.siblings :quotes=>1, :string=>1
       #     end
 
+      # Expand menu...
+
       txt = Expander.expand path, options
 
-      txt = txt.to_s if ! txt.is_a? String
+      # Expand menu again, if it @beg'ed for more info...
 
-      return if txt == nil
+      txt = self.expand_again_if_beg txt, options
 
-      return if self.process_directives txt
+      txt = txt.to_s if txt && ! txt.is_a?(String)
 
-      # Pull certain options out if passed by implementation, meant to control how it's inserted
+      # Pull out certain options set by implementation, meant to control how it's inserted...
 
-      options.each{|k, v| insert_options[k] = v if [:no_slash, :no_search].include?(k)}
+      options.each{|k, v| insert_options[k] = v if [:no_slash, :no_search, :line_found].include?(k)}
+
+      return if txt.blank?
 
       # Automatically repress slash if were on ^... or |... line
       insert_options[:no_slash] = 1 if options[:args] && options[:args].last =~ /(^[>|:]|\n)/
 
-      self.jump_line_number insert_options, options
+      return if self.process_directives txt, insert_options
 
       txt = txt.to_s if txt
       return if txt.blank?
@@ -1398,21 +1419,57 @@ module Xiki
       nil
     end
 
-    def self.jump_line_number insert_options, options
-      if jump_line_number = options[:jump_line_number]
-        insert_options[:line_found] = jump_line_number
+
+    def self.expand_again_if_beg txt, options
+
+      return txt if txt !~ /\A@beg\/(.+)\/\z/   # Only try to do something if menu returned @beg/.../
+
+      beg = $1
+
+      return if ! options[:items] || ! options[:items][-1]   # Only try to do something if there's a path
+      # It only makes sense to beg for siblings when there's a path (since we
+      # wouldn't want to pass the siblings of the root menu as the path)
+
+      options.delete :output   # Clear out, because handler won't over-write output
+
+      # Can have siblings we can grab if it's |... or is just one item (unescaped)
+      line = Line.without_label
+      can_have_siblings = line =~ /^\|/ || Path.split(line).length == 1
+
+      # Remember whether ends in slash and not quoted - means begged item should be appended to path, not replaced
+      itemish = line !~ /^ *[|:]/ && line =~ /\/$/
+
+      if ! can_have_siblings   # If no siblings, just add \n, so they'll no we sent all the lines
+        options[:items][-1] = "#{options[:items][-1]}\n"
+
+      # Grab siblings and pass as last arg
+      elsif beg == "quoted"   # Consecutive quoted siblings
+        options[:items][-1] = Tree.txt
+      elsif beg == "neighbors"   # Siblings, not crossing blank lines
+        siblings = "#{Tree.siblings(:include_label=>1).join("\n")}\n"
+        itemish ?
+          options[:items].<<(siblings) :
+          options[:items][-1] = siblings      # Includes current line
+      elsif beg == "siblings"   # Siblings, crossing blank lines
+        siblings = "#{Tree.siblings(:cross_blank_lines=>1, :include_label=>1, :children=>1)}"
+        itemish ?
+          options[:items].<<(siblings) :
+          options[:items][-1] = siblings      # Includes current line
+      else
+        return "| Menu begging for: #{beg}\n| (it returned #{txt.inspect})"
       end
+
+      Expander.expand options
     end
 
     # Called by .launch to do appriate thing if result starts
     # with @open file/, @flash/, or something else that instructs the editor to
     # take an action.
-    def self.process_directives txt
-      # Shelved for now
-      #     if txt =~ /\A@back up\/(.*)/   # Means delete backward in tree - probably find a better name
-      #       txt = $1
+    def self.process_directives txt, options
 
-      if txt.strip =~ /\A<<< (.+)\/\z/
+      # If "<<< foo", launch foo in place of parent...
+
+      if txt.strip =~ /\A<<< (.+\/)\z/
         txt = $1
         indent = Line[/^ +@?/]
         Line.sub! /.*/, "#{indent}#{txt}"
@@ -1420,7 +1477,33 @@ module Xiki
         return true
       end
 
-      if txt =~ /\A@open file\/(.*)/
+      if txt =~ /\A@instead\/(.*)/
+        arg = $1
+
+        # Remove the 1st line, and unindent the rest
+        txt.sub! /\A@.+\n/, ''
+        txt.gsub! /^  /, ''
+
+        if arg == "neighbors/"
+          left, ignore1, ignore2, right = Tree.sibling_bounds
+        elsif arg == "siblings/"
+          left, right = Tree.sibling_bounds :cross_blank_lines=>1#, :children=>1
+        elsif arg == "quoted/"
+          Ol["todo: implement!"]
+        else
+          left, right = Tree.sibling_bounds :cross_blank_lines=>1
+        end
+
+        old_txt = View.txt left, right
+        indent = old_txt[/^ */]
+        View.delete left, right
+        txt = "#{txt}\n".gsub /^/, indent
+
+        Tree.output_and_search txt, options.merge(:not_under=>1)
+
+        return true
+
+      elsif txt =~ /\A@open file\/(.*)/
         txt = $1
 
         # if |..., pull off line and go to it
@@ -1447,7 +1530,12 @@ module Xiki
       end
 
       if txt =~ /\A@flash\/(.*)/
-        View.flash $1
+        txt = $1
+        if txt.blank?
+          Effects.glow :times=>1
+        else
+          View.flash txt
+        end
         return true
       end
       if txt =~ /\A@prompt\/(.*)/
@@ -1508,6 +1596,9 @@ module Xiki
       # Todo: if dash+, do auto-complete even if exact match - how to implement?
 
       input = Keys.input(:timed=>true, :prompt=>"Start typing a menu that might exist (or type 'all'): ")
+
+      # If space, they want to do just raw "@", which will suggest something based on parent
+      input = "" if input == " "
 
       View << input
 

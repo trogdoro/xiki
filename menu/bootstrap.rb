@@ -457,7 +457,7 @@ module Xiki
 
         @project_name = project_name ? project_name[/\/(.+)/, 1] : "Welcome"
 
-        @html = Tree.to_html @txt   # Convert to html
+        @html = Html.to_html_tags @txt   # Convert to html
 
         # Expand out tags into actual html...
 

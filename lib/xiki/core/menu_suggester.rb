@@ -46,7 +46,34 @@ module Xiki
 
       # No completions or existing menu, so suggest creating via samples (@sample_menus)...
 
-      txt = Expander.expand "sample menus", options[:items]   # Will handle if no items or a sample menu item
+      expand_options = {}
+      if options[:client] == "web"
+
+        options[:dont_html_format_items] = 1
+
+        # If they posted the form to create the menu, do it...
+
+        if create_kind = options[:create_kind]
+
+          file = File.expand_path "~/menu/#{options[:path].gsub(/[ -]/, '_')}#{options[:create_extension]}"
+          txt = options[:create_txt]
+          txt.gsub! "\r\n", "\n"
+          File.open(file, "w") { |f| f << txt }
+
+          # If they posted, create, and continue on to view the menu...
+
+          options[:output] = "<script>window.location = '"+options[:path].gsub(' ', '-')+"';</script>"
+          return
+        end
+
+        expand_options[:original_name] = TextUtil.camel_case options[:name]
+        sample_menus = "web sample menus"
+      else
+        sample_menus = "sample menus"
+      end
+
+      # We might need to pass more options in here... - :client, for example?
+      txt = Expander.expand sample_menus, options[:items], expand_options   # Will handle if no items or a sample menu item
 
       if txt
         txt.gsub! "<name>", name
@@ -69,9 +96,108 @@ module Xiki
           | Creates a new '#{options[:name]}' menu with these items.
           "
       end
+    end
 
-      # Shelved for now
-      #     return "@back up/1/#{name}...\n#{completions}"
+    # For now, just make map of possible menus.
+    # Eventually, move them out into other files somewhere probably, to make it easier to add them.
+    SUGGESTIONS_WHEN_BLANK = [
+      ["config/application.rb", "rails"],
+      [".git", "git"],
+      [/\.png\/?$/, "scale"],
+      [:dir, "chmod"],
+      [:dir, "chown"],
+      [:file, "specials"],
+      [:dir, "dtail"],
+
+      [:file_or_dir, "edits"],
+      [:file_or_dir, "ln"],
+      [:file_or_dir, "ls"],
+      [:file, "tail"],
+      [:file, "head"],
+
+      [/\.rb$/, "| You can add '//' at the end of the file to run it as a menu - like this:"],
+      [/\.haml$/, "| You can add '//' at the end of the file to run it as a menu - like this:"],
+      [/^\/$/, "disk"],
+      [/^\/$/, "ip"],
+      [/^\/$/, "recent files"],
+      [/^\/$/, "servers"],
+      [/^\/$/, "network"],
+    ]
+
+    # Called when user launches on just an "@" sign
+    def self.blank_at ancestors
+
+      # Only worry about last ancestors for now
+      ancestor = ancestors[-1]
+
+      result = ""
+
+      is_dir = File.directory? "/tmp/"
+      is_file = File.file? "/tmp"
+      exists = is_dir || is_file
+
+      SUGGESTIONS_WHEN_BLANK.each do |pattern, menu|
+        case pattern
+        when :file
+          next if ! is_file
+        when :dir
+          next if ! is_dir
+        when String
+          next if Dir["#{ancestor}#{pattern}"].blank?
+        when Regexp
+          next if ancestor !~ pattern
+        end
+
+        result << "<< #{menu}/\n"
+      end
+
+      result
+
+      # Other menus to add to the list
+      # all/
+      #   - if rakefile?
+      #   << bundler/
+      #   - if png file, will it recognize? - make it
+      #   << chess/
+
+      #   - how does this compare to double-slash at end?
+      #     - should there be a tie-in between them?
+      #       - maybe just show explanation in-line about what you can do with that file
+      #         - with example of // at end
+      #         - or not in-line?
+      #       - maybe have "<< //" if it's launchable
+      #         | /tmp/
+      #         |   + hi.rb
+      #         |     @
+      #         |       <<< //
+      #       - maybe just worry about directories for now?
+
+      #   - maybe when url?
+      #   << tail/
+      #   << head/
+
+      #   - add "see" for this?
+      #   << headers/
+
+      #   - create @browse, and show when .html page?
+      #   << browse/
+      #   - create these, and also show when a url?
+      #   << browse/
+      #   << content/
+      #   << ip/
+
+      #   - if menu?
+      #   << source/
+      #   << options/
+
+      #   - or make it just view?
+      #   << markdown/
+
+      #   - if svg (would have to make it work on the ancestor file)?
+      #   << svg edit/
+
+      #   - how about what finder does?
+      #   | Maybe show inline description - of what app the finder would open it with - probably too obvious?
 
     end
 

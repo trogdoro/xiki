@@ -1,4 +1,5 @@
 require 'timeout'
+require 'json'
 # require 'xiki/environment'
 
 #
@@ -25,7 +26,8 @@ class XikiCommand
     if argv.empty?
       puts "#{self.usage}\n"
       @@dont_show_output = true
-      argv = ['start']   # So it continues on and starts server
+      # Does this make any sense when client isn't web ?
+      argv = ['']   # So it continues on and starts server
     elsif argv.length == 1 && ['status', 'stop', 'restart'].member?(argv[0])
       return self.ctrl argv[0]
     end
@@ -35,8 +37,27 @@ class XikiCommand
 
     return self.emacs path if flags.member?("-e")   # If -p, just prompt user to type a menu name
 
-    client = flags.find{|o| o =~ /^-c/}
-    path = "#{client} #{path}"
+    options = {}
+    options[:client] = 'web' if flags.member?("-cweb")
+
+    if flags.member? '-'
+
+      stdin = $stdin.read.split("\n")
+
+      # If 1st line is @options/..., parse it
+      if stdin[0] =~ /@options\/(.+)/
+        hash = JSON[$1]
+        hash = hash.reduce({}){ |acc, o| acc[o[0].to_sym] = o[1]; acc }
+        options.merge! hash
+        stdin.shift
+      end
+
+      path = stdin[0].strip
+    end
+
+    if options.any?
+      path = "@options/#{JSON[options]}\n#{path}"
+    end
 
     wasnt_running = false
 
@@ -111,6 +132,10 @@ class XikiCommand
     end
 
     raise SystemExit.new
+
+    #   rescue Exception=>e
+    #     puts e.to_s
+
   end
 
   def self.get_response

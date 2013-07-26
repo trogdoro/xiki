@@ -1,7 +1,7 @@
 $:.unshift "spec/"
 require './spec/spec_helper'
 
-%w"tree path".each {|o| require "xiki/core/#{o}"}
+%w"tree path view".each {|o| require "xiki/core/#{o}"}
 
 describe Tree, "#traverse" do
 
@@ -334,6 +334,24 @@ describe Tree, "#dotify" do
       ".unindent
 
     path = ["delete it"]
+    Tree.dotify(tree, path).should == [true]
+  end
+
+  it "works when a underscore and space in reverse" do
+    tree = "
+      - .delete it/
+      ".unindent
+
+    path = ["delete_it"]
+    Tree.dotify(tree, path).should == [true]
+  end
+
+  it "works when a case is different" do
+    tree = "
+      - .Delete it/
+      ".unindent
+
+    path = ["delete_it"]
     Tree.dotify(tree, path).should == [true]
   end
 
@@ -1037,68 +1055,6 @@ describe Tree, "#add_pluses_and_minuses" do
 
 end
 
-describe Tree, "#to_html" do
-  it "handles one tag" do
-    Tree.to_html("
-      p/
-        hi
-      ".unindent).should == "
-      <p>
-        hi
-      </p>
-      ".unindent
-  end
-
-  it "handles single with no contents" do
-    Tree.to_html("
-      p/
-      ".unindent).should == "
-      <p>
-      </p>
-      ".unindent
-  end
-
-  #   it "doesn't close certain tags" do
-  #     Tree.to_html("
-  #       hr/
-  #       ".unindent).should == "
-  #       <p>
-  #       </p>
-  #       ".unindent
-  #   end
-
-  it "doesn't confuse comments" do
-    Tree.to_html("
-      p/
-        /* hey */
-      ".unindent).should == "
-      <p>
-        /* hey */
-      </p>
-      ".unindent
-  end
-
-  it "adds closing tags to html" do
-    Tree.to_html("
-      <p>
-        hi
-      ".unindent).should == "
-      <p>
-        hi
-      </p>
-      ".unindent
-  end
-
-  it "doesn't close comment tags" do
-    Tree.to_html("
-      <!-- hey -->
-      hi
-      ".unindent).should == "
-      <!-- hey -->
-      hi
-      ".unindent
-  end
-end
 
 describe Tree, "#construct_path" do
   before :each do
@@ -1209,15 +1165,35 @@ describe Tree, "#join_to_subpaths" do
     Tree.join_to_subpaths(["a/", "@b/", "c/"]).should == ["a/", "b/c/"]
   end
 
-  it "it doesn't split escaped at sign" do
+  it "doesn't split escaped at sign" do
     Tree.join_to_subpaths(["a/", "b/;@ip/"]).should == ["a/b/;@ip/"]
   end
 
-  it "it doesn't split at sign after escaped slash" do
+  it "doesn't split at sign after escaped slash" do
     Tree.join_to_subpaths(["a/", "b;/@ip/"]).should == ["a/b;/@ip/"]
   end
 
-  it "tests a bunch of other stuff, once we're comfortable with making this the official way of delimiting @'s and dealing with trailing slashes"
+  it "doesn't split at sign after escaped slash" do
+    Tree.join_to_subpaths(["a/", "b;/@ip/"]).should == ["a/b;/@ip/"]
+  end
+
+
+  it "handles file path quotes" do
+    Tree.join_to_subpaths(["/foo/", "path.rb", "| def bar"]).should == ["/foo/path.rb/| def bar"]
+  end
+
+
+
+  it "doesn't turn blank items into slashes" do
+    Tree.join_to_subpaths(["", "ip/"]).should == ["ip/"]
+  end
+
+  it "merges single @ without slashes" do
+    Tree.join_to_subpaths(["@", "ip/"]).should == ["ip/"]
+  end
+
+
+  #   it "tests a bunch of other stuff, once we're comfortable with making this the official way of delimiting @'s and dealing with trailing slashes"
 
     # Paths we should handle:
     # ["a/", "b/"].should == ["a/b/"]
@@ -1231,3 +1207,31 @@ describe Tree, "#join_to_subpaths" do
     # ["a@b/"]
 end
 
+describe Tree, "#add_slashes_except_last" do
+  it "doesn't add slash to last" do
+    path = ["a", "b"]
+    Tree.add_slashes_except_last path
+    path.should == ["a/", "b"]
+  end
+
+  it "always adds slashes redundantly by default" do
+    # After unified, should probably remove this behavior, and make :only_if_needed not required
+    path = ["a/", "b"]
+    Tree.add_slashes_except_last path
+    path.should == ["a//", "b"]
+  end
+
+  it "doesn't add redundantly when :only_if_needed" do
+    # After unified, should probably remove this behavior, and make :only_if_needed not required
+    path = ["a/", "b"]
+    Tree.add_slashes_except_last path, :only_if_needed=>1
+    path.should == ["a/", "b"]
+  end
+
+  it "doesn't add slashes to blanks when :leave_blanks" do
+    path = ["", ""]
+    Tree.add_slashes_except_last path, :leave_blanks=>1
+    path.should == ["", ""]
+  end
+
+end

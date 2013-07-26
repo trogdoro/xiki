@@ -14,12 +14,12 @@
 
   | You'll see that the menu simply shows "Hello World".
 
-
 > More ways to make menus
 - ruby file/
   > Make a simple menu that is a .rb file
   - 1. Using any text editor, make a new file and type "2 + 3" as its contents.
-  - 2. Save it with the name "bar.rb" in the "menu" directory in your home directory.
+    - Create a "menu" directory if there isn't one.
+  - 2. Save it with the name "bar.rb" in a "menu" directory in your home directory.
   - 3. Go to http://localhost:8161/bar or click this...
   @bar/
 
@@ -28,7 +28,7 @@
   > Make a simple menu that is a .menu file
   - 1. Using any text editor, make a new file and type the following as its contents.
     | <pre>snacks/<br>  chips<br>  pretzels<br>dessert/<br>  cake</pre>
-  - 2. Save it with the name "food.menu" in the "menu" directory in your home directory.
+  - 2. Save it with the name "food.menu" in a "menu" directory in your home directory.
   - 3. Go to http://localhost:8161/food or click this...
   @food/
 
@@ -37,7 +37,7 @@
   > Make a simple menu with some visual elements
   - 1. Using any text editor, make a new file and type the following as its contents.
     | <pre>> Heading<br>A paragraph of text.<br><br>a menu item/<br>  > Heading under the item<br>  A paragraph under the item.</pre>
-  - 2. Save it with the name "baz.menu" in the "menu" directory in your home directory.
+  - 2. Save it with the name "baz.menu" in a "menu" directory in your home directory.
   - 3. Go to http://localhost:8161/baz or click this...
   @baz/
 
@@ -46,7 +46,7 @@
   > Make a simple menu with items that run code
   - 1. Using any text editor, make a new file and type the following as its contents.
     | <pre>wind/<br>  ! "howl" * 2<br>rain/<br>  ! "drop" * 3</pre>
-  - 2. Save it with the name "weather.menu" in the "menu" directory in your home directory.
+  - 2. Save it with the name "weather.menu" in a "menu" directory in your home directory.
   - 3. Go to http://localhost:8161/weather or click this...
   @weather/
 
@@ -55,7 +55,7 @@
   > Make a simple menu with items that run code
   - 1. Using any text editor, make a new file and type the following as its contents.
     | <pre>class Hello<br>  def hi<br>    "hi there"<br>  end<br>  def later<br>    "adios"<br>  end<br>end<br></pre>
-  - 2. Save it with the name "hello.rb" in the "menu" directory in your home directory.
+  - 2. Save it with the name "hello.rb" in a "menu" directory in your home directory.
   - 3. Go to http://localhost:8161/hello or click this...
   @hello/
 
@@ -64,7 +64,7 @@
   > Make a simple menu with items that run code
   - 1. Using any text editor, make a new file and type the following as its contents.
     | <pre>> Heading<br>A sentence.<br>> Another<br>More Words.</pre>
-  - 2. Save it with the name "hey.bootstrap" in the "menu" directory in your home directory.
+  - 2. Save it with the name "hey.bootstrap" in a "menu" directory in your home directory.
   - 3. Go to http://localhost:8161/hey or click this...
   @hey/
 

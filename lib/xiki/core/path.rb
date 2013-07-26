@@ -140,8 +140,10 @@ module Xiki
         i += 1
       end
 
-      result
+      # Remove @ from beginning if there is one
+      result[0].sub!(/\A@/, '') if result[0]
 
+      result
     end
 
     # Joins path array into a string, being sure to re-escape slashes

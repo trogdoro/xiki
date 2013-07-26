@@ -13,8 +13,10 @@
   - with wiki elements/
     @~/menu/<name>.menu
       | > Heading
-      | - Bullet point
-      | @http://google.com/
+      | A Sentence.
+      | - an item/
+      |   > Heading under the item
+      |   @http://google.com/
   - .directions/
   - creating inline/
     | As a shortcut for creating or updating a menu, you can just
@@ -39,13 +41,13 @@
     | You can put anything under the headings.
 - code/
   @~/menu/<name>.rb
-    | # Change this code to something useful.
+    | # Change this code to something useful
     | a = "la"
     | a * 3
   - ruby class/
     @~/menu/<name>.rb
       | class <Name>
-      |   def self.menu
+      |   def self.menu *args
       |     "
       |     hello
       |     "
@@ -55,23 +57,43 @@
   - other languages/
     - python/
       @~/menu/<name>.py
-        | # Change this code to something useful.
-        | a = "la"
-        | print(a)
+        | # Change this code to something useful
+        | a = "hi"
+        | a + a
     - js/
       @~/menu/<name>.js
-        | # Change this code to something useful.
+        | // Change this code to something useful
         | a = "la"
-        | print(a)
+        | return a + a
     - coffeescript/
       @~/menu/<name>.coffee
-        | # Change this code to something useful.
+        | # Change this code to something useful
         | a = "la"
-        | console.log(a)
+        | a + a
   - combinations/
-    - ruby class with menu method/
     - ruby class with embedded menu/
-    - menu file and menu file/
+      @~/menu/<name>.rb
+        | class <Name>
+        |   MENU = "
+        |     - cats/
+        |       - siamese/
+        |     - .dogs/
+        |     "
+        |   def self.dogs
+        |     "arf"
+        |   end
+        | end
+    - ruby script and menu file/
+      @~/menu/
+        - <name>/
+          - index.menu
+            | - cats/
+            | - dogs/
+          - index.rb
+            | args[0] * 2
+    - ruby class and menu file/
+      @~/menu/
+        
   - plain ruby object/
     | Will use class or instance methods.
   - programatic/
@@ -79,17 +101,40 @@
     - pattern/
     - load from disk/
     - menu with other stuff/
-  - menu with nested code/
+  - items with nested code/
     @~/menu/<name>.menu
-      | - add stuff/
-      |   ! 1 + 2
-      | - add numbers from path/
-      |   ! raise "Pass 2 numbers in this path, like\n- 11/22/"
-      |   ! args[0] + args[1]
-      - todo: fix bug where returning number makes it fail!
-      - todo: get the above param stuff to work!
+      | - add/
+      |   ! a = 1
+      |   ! 2 + a
+      | - use an arg/
+      |   ! return "| Pass something in, like:\n- hi/" if ! args[0]
+      |   ! args[0] * 3
+    - other languages/
+      @~/menu/<name>.menu
+        | - using javascript/
+        |   ! a = 1   // .js
+        |   ! return 2 + a
+        | - using coffeescript/
+        |   ! a = 1   # .coffee
+        |   ! 2 + a
+        | - using python/
+        |   ! a = 1   # .py
+        |   ! return 2 + a
   - .directions/
 - more/
+  - bootstrap/
+    @~/menu/<name>.bootstrap
+      | > Heading
+      | Here's a sentence.
+      | > Another
+      | The following three columns will be next to each other.
+      |
+      | > One
+      | Lorem...
+      | > Two
+      | Ipsum...
+      | > Three
+      | Dolor...
   - wrap/
     - path/
       @~/menu/<name>.rb
@@ -125,10 +170,6 @@
   - multiple files/
     - show 2 files with same name that work together
       - don't need to be nested in a directory
-  - old/
-    - is this still relevant?
-    > Docs
-    @menus/docs/creating/
   - todo/
     > Add these menus
     - with menu_after

@@ -1,4 +1,8 @@
 class SampleMenus
+  MENU_HIDDEN = "
+    .ajax/
+    "
+
   def self.directions *args
     %q`
     | 1. Change the above text.
@@ -10,4 +14,13 @@ class SampleMenus
     |    double-click it!
     `
   end
+
+  # Just filter out examples - for ajax calls from web create.
+  def self.ajax *items
+    txt = Xiki["sample menus/#{items * '/'}"]
+    extension = txt[/.\w+$/]
+    txt = txt.grep(/^ *\|/).join("").gsub(/^ *\| ?/, "")
+    {:txt=>txt, :extension=>extension}.to_json
+  end
+
 end

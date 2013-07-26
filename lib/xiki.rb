@@ -322,7 +322,8 @@ module Xiki
     end
 
     if $el
-      # If the first time we've loaded
+
+      # If the first time we've loaded, open @welcome in todo.notes...
 
       if ! $el.elvar.xiki_loaded_once && ! Menu.line_exists?("misc config", /^- don't show welcome$/) && ! View.buffer_visible?("Issues Loading Xiki")
         Launcher.open("welcome/", :no_search=>1)
@@ -535,6 +536,7 @@ module Xiki
       :indent => -2,   # left-align hash keys
       :index => false,
       :multiline => true,
+      :plain => true,
     }
   end
 

@@ -109,7 +109,6 @@ module Xiki
         thing = thing[-1]
       end
 
-
       # If 2nd arg is array, it's a list of args
       options[:items] = args.shift if args[0].is_a? Array
 
@@ -190,20 +189,32 @@ module Xiki
     # @expander/docs/expanding/
     def self.expand *args
 
-      # Break path down into attributes...
+      options = nil
 
-      options = self.parse *args
+      # If 1st arg is just a hash with sources, we're being called again so don't re-parse and re-find expands
+      if args[0].is_a?(Hash) # && args[0][:expanders]
+        options = args[0]
+      else
+        # Break path down into attributes...
+        options = self.parse *args
 
-      # Figure out what type of expander (to use and set some more attributes along the way)...
+        # Figure out what type of expander (to use and set some more attributes along the way)...
 
-      self.expanders options
+        self.expanders options
+      end
+
+      # If it's a class, just .invoke it directly
+      return Invoker.invoke *args if options[:class]
 
       expanders = options[:expanders]
 
       if ! expanders || expanders.length == 0
         options[:no_slash] = true
         return "@flash/- Your indenting looks messed up!" if options[:not_well_formed]
-        return "@flash/- Can't launch empty line!" if options[:path].blank?
+        if options[:path].blank?
+          return MenuSuggester.blank_at options[:ancestors] if options[:ancestors]
+          return "@flash/- Can't launch empty line!"
+        end
         return "@flash/- No menu or pattern found!"
       end
 
@@ -223,7 +234,13 @@ module Xiki
       end
 
       Launcher.append_log(options[:path]) if options[:path] && options[:expanders].find{|o| o == Menu} && ! options[:dont_log]
-      options[:output]
+      txt = options[:output]
+
+      if options[:client] == "web" && txt !~ /^\s*<html[ >]/i
+        txt = Xiki::Html.to_html txt, options
+      end
+
+      txt
     end
 
 
@@ -376,6 +393,8 @@ module Xiki
 
     def self.delegate_to_keys args, options, block
 
+      keys = Keys.words_to_letters args[0]
+
       # If 2 args and 2nd is string, wrap block based on enter+ other
       if args.length == 2 && menu.is_a?(String)
         options.merge! :bar_is_fine=>1
@@ -403,12 +422,13 @@ module Xiki
       end
 
       args[0].gsub! '+', '_'
+      keys = Keys.words_to_letters args[0]
+
       Keys.method_missing args[0], &block
 
       # Store where it was defined for open+key, else we won't know (have to climb stack to do this)
 
       definer = caller(0)[3]
-      keys = Keys.words_to_letters args[0]
       Keys.source[keys] = definer
 
       nil

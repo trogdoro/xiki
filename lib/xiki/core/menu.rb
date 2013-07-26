@@ -354,12 +354,16 @@ module Xiki
     # Examples:
     # @menu/api/other/With a string/
     def self.[] path
+      Ol["deprecated!"]
+
       path, rest = path.split '/', 2
 
       self.call path, rest
     end
 
     def self.call root, rest=nil
+      Ol["deprecated!"]
+
       root = root.gsub /[ +-]/, '_'
       menus = Launcher.menus
       block = menus[0][root] || menus[1][root]
@@ -685,8 +689,8 @@ module Xiki
       return if orig == View.line
 
       # If it inserted something
-      # output = Tree.siblings :everything=>1
-      output = Tree.siblings :cross_blank_lines=>1, :everything=>1
+      # output = Tree.siblings :children=>1
+      output = Tree.siblings :cross_blank_lines=>1, :children=>1
 
       # Shouldn't this be looping like self.collapser_launcher ?
       Tree.to_parent
@@ -1006,13 +1010,11 @@ module Xiki
     # Menu.climb_sources(:menufied=>"/tmp/foo/a/b", :items=>["a"])
     #   => sources: [["foo/", "foo.rb"], ["a/", "a.rb"]]
     def self.climb_sources options
-
       path, items, menufied, sources = options[:path], options[:items], options[:menufied], options[:sources]
 
-      sources.pop   # Remove :incomplete, since we're going to grab them all for this path
+      sources.pop if sources[-1] == :incomplete   # Remove :incomplete, since we're going to grab them all for this path
 
       # For each item...
-
       climbed_path = "#{menufied}"
       (items||[]).each do |item|
 
@@ -1027,7 +1029,7 @@ module Xiki
         sources << found
       end
 
-      options[:last_source_dir] = Menu.source_path options
+      options[:enclosing_source_dir] = Menu.source_path options
 
       # Create :args, having :items that weren't sources
       if items
@@ -1045,6 +1047,8 @@ module Xiki
         "conf"=>ConfHandler,   # This should always run
         "rb"=>RubyHandler,
         "menu"=>MenuHandler,
+        "deck"=>DeckHandler,
+        "steps"=>StepsHandler,
         "notes"=>NotesHandler,
         "html"=>HtmlHandler,
         "markdown"=>MarkdownHandler,
@@ -1054,6 +1058,8 @@ module Xiki
         "js"=>JavascriptHandler,
         "coffee"=>CoffeeHandler,
         "jpg"=>JpgHandler,
+        "pgn"=>PgnHandler,
+        "erb"=>ErbHandler,
         "/"=>DirHandler,
         }
     end
@@ -1100,7 +1106,6 @@ module Xiki
 
       if options[:client] =~ /^editor\b/ && sources.find{|o| o =~ /\.menu$/}
 
-
         # TODO: make sure it has actually changed before showing the below message.
         # Look up the menu really quick and compare.  If it's the same, flash something
         # like "no items yet", on return nothing.
@@ -1116,7 +1121,6 @@ module Xiki
           "
         options[:no_slash] = 1
       end
-
       nil
     end
 
@@ -1167,6 +1171,9 @@ module Xiki
     def self.source_glob dir
 
       name = File.basename dir
+
+      dir = dir.gsub ' ', '[ -_]'   # For spaces in menus, match source files with underscores or dashes, etc
+      name.gsub! ' ', '[ -_]'
 
       list = Dir.glob ["#{dir}/", "#{dir}.*", "#{dir}/index.*", "#{dir}/#{name}_index.*"]
       return nil if list.empty?

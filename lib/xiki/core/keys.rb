@@ -329,7 +329,7 @@ module Xiki
     def self.jump_to_code
       keys = $el.read_key_sequence("Type some keys, to jump to the corresponding code: ")
 
-      # If was defined with unified, pull from Keys.source
+      # If was defined with unified, pull from Keys.source...
 
       letters = self.sequence_to_string keys
       if source = Keys.source[letters]
