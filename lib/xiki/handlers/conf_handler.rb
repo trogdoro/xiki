@@ -2,7 +2,7 @@ module Xiki
   class ConfHandler
     def self.handle options
 
-      # When expanding foo/@conf, ~/menu/conf/index.rb will take over
+      # When expanding foo/@conf, ~/menu/conf/conf_index.rb will take over
 
       source = options[:ex]['conf']
 
@@ -13,7 +13,7 @@ module Xiki
 
       name, txt = options[:items] # if options[:items]
 
-      # TODO: remove Tree.txt editor dependency
+      # TODO: remove Tree.txt editor dependency?
       options[:output] = self.txt name, (txt ? Tree.txt : nil)
     end
 
@@ -54,10 +54,10 @@ module Xiki
       Dir.mkdir custom_conf_dir
 
       # Handlers will get control without this
-      File.open("#{custom_conf_dir}/index.rb", "w") { |f| f << %`
+      File.open("#{custom_conf_dir}/conf_index.rb", "w") { |f| f << %`
         # This file proxies control to the core conf menu
         # (when @conf/foo/ and conf/foo.conf doesn't exist yet).
-        load "\#{Xiki.menu_path_core_dir}/conf/index.rb"
+        load "\#{Xiki.menu_path_core_dir}/conf/conf_index.rb"
 
         # This is here so we'll be expanded as a class
         module Xiki::Menu
@@ -71,7 +71,7 @@ module Xiki
       # ~/menu/conf/
       #   - index.rb
       #     : # This file proxies control to the core conf menu
-      #     : load "#{Xiki.menu_path_core_dir}/conf/index.rb"
+      #     : load "#{Xiki.menu_path_core_dir}/conf/conf_index.rb"
 
     end
   end
