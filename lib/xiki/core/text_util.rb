@@ -39,7 +39,10 @@ module Xiki
       txt.gsub!(/^\s+/) { |t| t.gsub("\t", '        ') }   # Untab indent
 
       # Does nothing if any subsequent line (not first) isn't indented
-      return txt if txt[/.*?\n(.*)/m, 1] =~ /^[^\s\n]/
+      if txt[/.*?\n(.*)/m, 1] =~ /^[^\s\n]/
+        # Just add linebreak if none there, for consistent handling
+        return txt =~ /\n\z/ ? txt : "#{txt}\n"
+      end
 
       # If 1st line has no indent and 2nd line has indent (at least 3 spaces)
       if txt !~ /\A / and txt =~ /\A.+\n(   +)/
@@ -109,6 +112,19 @@ module Xiki
 
     def self.title_case! s
       s.replace self.title_case(s)
+    end
+
+    def self.word_wrap txt, max=64
+      words = txt.split(/ /)
+      txt = ""
+      words.each do |w|
+        # If it would make last line longer than max make new line
+        last_line = txt[/.*\z/]
+        txt.sub!(/ ?\z/, "\n") if last_line.length + w.length > max
+
+        txt << "#{w} "   # Add word
+      end
+      txt.strip
     end
 
   end

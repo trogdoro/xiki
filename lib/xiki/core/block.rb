@@ -19,7 +19,34 @@ module Xiki
 
     def self.do_as_wrap
 
-      if Keys.prefix_u?
+      line = Line.value
+
+      # If |... line, indent consecutive |... lines...
+
+      if quote = line[/^ *([|:#]|\/\/) /, 1]
+
+        orig = View.cursor
+
+        #         txt = Tree.siblings :quotes=>1, :string=>1
+        bounds = Tree.sibling_bounds :quotes=>quote
+        txt = View.delete bounds[0], bounds[-1]
+
+        indent = Line.indent txt
+        txt.gsub! /^ *#{Regexp.quote quote} ?/, ''
+        txt.gsub!(/ *\n */, ' ')   # Remove linebreaks
+        txt = TextUtil.word_wrap(txt, 64-indent.length)
+
+        txt = Tree.quote txt, :char=>quote
+        txt.gsub! /^/, indent
+
+        View << txt
+        insert_right = bounds[0] + txt.length
+        orig = insert_right-1 if orig > insert_right
+        View.cursor = orig
+
+        return
+
+      elsif Keys.prefix_u?
         # Grab paragraph and remove linebreaks
 
         orig = Location.new

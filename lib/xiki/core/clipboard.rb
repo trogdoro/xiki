@@ -294,6 +294,7 @@ module Xiki
       Effects.blink :what=>:all
       Clipboard.set("0", $el.buffer_string)
       $el.set_mark($el.point_max)
+      View.to_highest if Keys.prefix_u
     end
 
     def self.as_line many=nil
