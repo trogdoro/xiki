@@ -15,7 +15,7 @@ module Xiki
 
     def self.start
       buffer = '*couchdb'
-      return ".flash - *couchdb already open!" if View.buffer_open? buffer
+      return "@flash/- *couchdb already open!" if View.buffer_open? buffer
 
       Console.run('sudo couchdb', :buffer=>buffer)
     end
@@ -169,7 +169,7 @@ module Xiki
 
     def self.create db
       RestTree.request 'PUT', "#{@@server}/#{db}", nil
-      ".flash - created!"
+      "@flash/- created!"
     end
 
     def self.crud db

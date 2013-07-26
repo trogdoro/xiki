@@ -46,7 +46,7 @@ module Xiki
         View.flash "- deleted!"
         # TODO: let this behave properly when returning with .flash:
         # Currently it ends up one line off?  Because we're treating it like it returned nil - make it treat ^.flash as nill?
-        # return ".flash - deleted!"
+        # return "@flash/- deleted!"
         Line.delete
         return
       end

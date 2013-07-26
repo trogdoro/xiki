@@ -33,7 +33,7 @@ module Xiki::Menu
       txt = "sudo gem uninstall #{name} -v #{version}"
       Console.run txt
 
-      ".flash - Running gem uninstall command in shell..."
+      "@flash/- Running gem uninstall command in shell..."
     end
 
     def self.gem_dir name

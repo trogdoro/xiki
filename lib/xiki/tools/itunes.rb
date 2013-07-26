@@ -57,7 +57,7 @@ module Xiki
 
     def self.next
       Applescript.run "iTunes", "next track"
-      ".flash - #{self.current}"
+      "@flash/- #{self.current}"
     end
     def self.previous
       Applescript.run "iTunes", "previous track"
@@ -81,7 +81,7 @@ module Xiki
       end
 
       self.songs track
-      ".flash - Playing!"
+      "@flash/- Playing!"
     end
   end
 end

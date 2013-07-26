@@ -35,7 +35,7 @@ module Xiki
 
       Firefox.url "file:///tmp/untitled.html"
 
-      ".flash - showing in browser!"
+      "@flash/- showing in browser!"
     end
 
     def self.wrap_standalone children

@@ -129,7 +129,7 @@ class Defs
   def self.clear
     Pattern.defs.clear
     Menu.defs.clear
-    ".flash - cleared!"
+    "@flash/- cleared!"
   end
 
 end

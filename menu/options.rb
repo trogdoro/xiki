@@ -31,7 +31,7 @@ module Xiki
 
       file, line = Tree.source options
 
-      return ".flash - no source found!" if ! file
+      return "@flash/- no source found!" if ! file
 
       View.open file
       View.line = line if line

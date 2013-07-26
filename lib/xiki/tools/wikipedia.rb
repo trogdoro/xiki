@@ -26,7 +26,7 @@ module Xiki
       end
 
       Firefox.url "http://en.wikipedia.org/wiki/#{TextUtil.title_case name}"
-      ".flash - opened in browser!"
+      "@flash/- opened in browser!"
     end
   end
 

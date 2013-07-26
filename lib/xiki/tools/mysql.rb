@@ -130,7 +130,7 @@ module Xiki
 
       self.save db, table, row
 
-      ".flash - saved record!"
+      "@flash/- saved record!"
     end
 
     def self.dummy_row db=nil, table=nil
@@ -161,7 +161,7 @@ module Xiki
       end
 
       @default_db = db
-      ".flash - using db #{db}!"
+      "@flash/- using db #{db}!"
     end
 
     def self.create what, name=nil, columns=nil
@@ -172,7 +172,7 @@ module Xiki
 
       if what == "db"
         txt = Console.run "mysqladmin -u root create #{name}", :sync=>true
-        return ".flash - created db!"
+        return "@flash/- created db!"
       end
 
       if columns.nil?
@@ -193,7 +193,7 @@ module Xiki
 
       out = self.run(@default_db, txt)
 
-      ".flash - created table!"
+      "@flash/- created table!"
     end
 
     def self.drop what, name=nil
@@ -208,7 +208,7 @@ module Xiki
 
       out = self.run(@default_db, "drop table #{name}")
 
-      ".flash - dropped table!"
+      "@flash/- dropped table!"
     end
 
     def self.run db, sql
@@ -248,7 +248,7 @@ module Xiki
       ENV['no_slash'] = "1"
       self.save @default_db, table, row
 
-      ".flash - saved!"
+      "@flash/- saved!"
     end
   end
 end

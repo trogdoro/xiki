@@ -856,7 +856,7 @@ module Xiki
       txt = File.read(file) rescue ""
 
       if txt =~ /^#{Regexp.escape addition}$/
-        return ".flash - was already there!"
+        return "@flash/- was already there!"
       end
 
       # Append to end (might be blank)

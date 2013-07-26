@@ -83,7 +83,7 @@ module Xiki
     end
 
     def self.browse txt=nil
-      return ".flash - Type some text" if txt.nil?
+      return "@flash/- Type some text" if txt.nil?
       "do"
     end
 

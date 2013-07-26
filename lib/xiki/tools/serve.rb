@@ -33,7 +33,7 @@ module Xiki
       code = self.wrap_controller file
       Node.run_controller code
 
-      ".flash - showing in browser!"
+      "@flash/- showing in browser!"
     end
 
     def self.wrap_controller file

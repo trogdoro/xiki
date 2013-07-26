@@ -202,7 +202,7 @@ module Xiki::Menu
 
       if what == "db"
         txt = Console.run "mysqladmin -u root create #{db}", :sync=>true
-        return ".flash - created db!"
+        return "@flash/- created db!"
       end
 
       if name.nil?
@@ -228,7 +228,7 @@ module Xiki::Menu
 
       out = self.run(db, txt)
 
-      ".flash - created table!"
+      "@flash/- created table!"
     end
 
     #   def self.drop what, name=nil
@@ -243,7 +243,7 @@ module Xiki::Menu
 
     #     out = self.run(@default_db, "drop table #{name}")
 
-    #     ".flash - dropped table!"
+    #     "@flash/- dropped table!"
     #   end
 
     def self.run db, sql

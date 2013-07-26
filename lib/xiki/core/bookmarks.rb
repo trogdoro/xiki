@@ -375,7 +375,7 @@ module Xiki
 
     def self.persist
       $el.bookmark_save
-      ".flash - persisted bookmarks!"
+      "@flash/- persisted bookmarks!"
     end
 
   end

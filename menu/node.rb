@@ -69,10 +69,10 @@ module Xiki
 
       Buffers.delete "node" if View.buffer_open? "node"
 
-      Console.run "node controller.js", :dir=>"/tmp/", :buffer=>"node"
+      Console.run "node controller.js", :dir=>"/tmp/", :buffer=>"node", :dont_move=>1
       $el.sit_for 0.2
       Firefox.url "http://localhost:1338"
-      ".flash - showing in browser!"
+      "@flash/- showing in browser!"
     end
 
     def self.block

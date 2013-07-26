@@ -11,7 +11,7 @@ module Xiki
 
       Firefox.exec code
 
-      ".flash - Loaded in browser!"
+      "@flash/- Loaded in browser!"
     end
   end
 end

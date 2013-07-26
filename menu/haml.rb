@@ -29,6 +29,6 @@ module Xiki::Menu
         Firefox.reload :
         $el.browse_url("file:///tmp/tmp.html")
 
-      ".flash - Loaded in browser!"
+      "@flash/- Loaded in browser!"
     end
 end; end

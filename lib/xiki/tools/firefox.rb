@@ -471,7 +471,7 @@ module Xiki
         }
         ".unindent
 
-      raise ".flash - Added required js libs into page, try again!"
+      raise "@flash/- Added required js libs into page, try again!"
     end
 
     def self.object name=nil, key=nil
