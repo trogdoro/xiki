@@ -48,7 +48,7 @@ module Xiki
 
       # If C-1, C-7, C-8, C-9, step through in special ways...
 
-      return self.go_in_outlog(prefix) if [9, 99, 1, 11].member?(prefix) || @@ol_prefix
+      return self.go_in_outlog(prefix) if [9, 99, 1, 11, 111].member?(prefix) || @@ol_prefix
       return self.go_in_color(prefix) if [8, 88].member?(prefix) || @@color_prefix
       return self.go_in_difflog(prefix) if [7, 77].member?(prefix) || @@difflog_prefix
 
@@ -254,7 +254,11 @@ module Xiki
       View.to_buffer "*ol"
       Move.to_end
 
-      target = @@ol_prefix == 1 ? "^ *-.*!$" : "^ *-"
+      target =
+        if @@ol_prefix == 1; "^ *-.*!$"
+        elsif @@ol_prefix == 11; "^ *-.* check!$"
+        else; "^ *-"
+        end
 
       Search.forward target, :go_anyway=>1, :beginning=>true
       if View.cursor == View.bottom
@@ -265,7 +269,7 @@ module Xiki
       value = @@ol_prefix == 99 ? Ol.grab_value(Line.value) : nil
 
       Effects.blink
-      Color.mark "green" if @@ol_prefix == 11
+      Color.mark "green" if @@ol_prefix == 111
       Launcher.launch
 
       # Replace or add comment if there's a value
@@ -273,7 +277,7 @@ module Xiki
         Ol.update_value_comment value
       end
 
-      Color.mark "green" if @@ol_prefix == 11
+      Color.mark "green" if @@ol_prefix == 111
 
       return
     end
