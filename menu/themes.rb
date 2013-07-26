@@ -28,7 +28,8 @@ module Xiki::Menu
       end
 
       ::Xiki::Themes.use name
-      ".flash - updated!"
+      Styles.reload_styles
+      "@flash/- updated!"
     end
 
 end; end

@@ -6,6 +6,7 @@ module Xiki
           > Find next special char in this view
           - search+just+special
         <@ encoding/
+        @ascii/
       "
 
     def self.menu_after output, *args

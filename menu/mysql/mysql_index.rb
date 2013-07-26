@@ -45,9 +45,9 @@ module Xiki::Menu
 
 
     def self.menu_before *args
-      return if args[0] !~ /^select /
+      return if args[0] !~ /^(select|delete|update) /
 
-      # select..., so take control
+      # sql statement, so take control...
 
       options = yield
 
@@ -78,20 +78,10 @@ module Xiki::Menu
 
     end
 
-    #   def self.menu_after txt, *args
-    #     return nil if txt
-    #     ENV['no_slash'] = "1"
-    #     Tree.quote self.run(nil, ENV['txt'])
-    #   end
-
     def self.start
       Console.sync "mysql.server start", :dir=>"/tmp/"
       "@flash/- started!"
     end
-
-    #   def self.start_in_background
-    #     Console.run "mysql.server start"
-    #   end
 
     def self.default_db options
       conf = Xi.new options[:conf]

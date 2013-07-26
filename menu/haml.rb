@@ -1,6 +1,7 @@
 module Xiki::Menu
   class Haml
     def self.menu *args
+
       return "
         > Type some HAML here to run it in your browser
         | %h1 Example
@@ -10,7 +11,10 @@ module Xiki::Menu
         |     %td Table cells
         " if args == []
 
-      txt = Tree.txt
+      txt = args[0]
+      return "@beg/quoted/" if txt !~ /\n/
+
+
       File.open("/tmp/tmp.haml", "w") { |f| f << txt }
       output = Console.sync "haml /tmp/tmp.haml /tmp/tmp.html"
 
@@ -18,7 +22,7 @@ module Xiki::Menu
         return Tree.quote output
       end
 
-      File.open("/tmp/tmp.html", "a") { |f| f << Html.default_css }
+      File.open("/tmp/tmp.html", "a") { |f| f << Xiki::Html.default_css }
 
       # Then load in browser (or reload)
       Firefox.value('document.location.toString()') == "file:///tmp/tmp.html" ?

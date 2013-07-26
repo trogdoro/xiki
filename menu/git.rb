@@ -161,9 +161,10 @@ module Xiki::Menu
       dir = Tree.closest_dir yield[:ancestors]
 
       siblings = Tree.siblings
-      return "- No files to add (they should be siblings of add)!" unless siblings.any?
 
       siblings = self.remove_options siblings
+      return "- No files to add (they should be siblings of add)!" unless siblings.any?
+
       command = "git add #{siblings.join("\\\n  ")}"
 
       txt = Console.sync command, :dir=>dir
@@ -270,9 +271,9 @@ module Xiki::Menu
     def self.graph *args
       dir = Tree.closest_dir(yield[:ancestors])
 
-      # TODO: finish - Delegate to .log!
+      txt = Console.sync %`git log --graph --full-history --all --pretty=format:"%h%x09%d%x20%s"`, :dir=>dir
 
-      "todo"
+      Tree.quote txt
     end
 
     def self.log *args
@@ -445,13 +446,11 @@ module Xiki::Menu
         untracked.map!{|i| "+ untracked) #{i}\n"}
 
         option = is_unadded ? "- add\n" : "- commit/\n"
-        #         command = "git diff --patience --relative #{self.git_diff_options} #{is_unadded ? '' : ' HEAD'}"
         command = "git diff -b --patience --relative #{self.git_diff_options} #{is_unadded ? '' : ' HEAD'}"
 
         is_file = File.file? dir
 
         txt = self.diff_internal command, dir
-        # Ol.ap txt
 
         if txt =~ /^fatal: ambiguous argument 'HEAD': unknown revision/
           txt = self.status_hash_to_bullets hash, is_unadded
@@ -536,8 +535,8 @@ module Xiki::Menu
 
     def self.jump_line_number_maybe txt, options
 
-      line_number = Xiki::Git.jump_line_number
-      return if ! line_number
+      line_found = options.delete :line_found
+      return if ! line_found
 
       # Get rid of this?  What did it do?  Possibly an early version of the diff where I made the line numbers parents items?
       last = 0
@@ -546,7 +545,7 @@ module Xiki::Menu
       txt.split("\n").each_with_index do |o, i|
         target_line += 1 if o =~ /^\|[+ ]/
         match = o[/^\|@@ .+\+(\d+)/, 1]
-        if target_line >= line_number
+        if target_line >= line_found
           break
         end
         if match
@@ -557,7 +556,7 @@ module Xiki::Menu
       last += 3
       last += (target_line - target_boundary)
 
-      options[:jump_line_number] = last
+      options[:line_found] = last
     end
 
 

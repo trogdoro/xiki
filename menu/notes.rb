@@ -1,4 +1,5 @@
 class Xiki::Menu::Notes
+
   MENU = %`
     - docs/
       - summary/
@@ -43,21 +44,29 @@ class Xiki::Menu::Notes
 
   def self.menu_after output, *path
 
-    # TODO: thing where we're nested under a menu-like item
+    options = yield
 
     # Prepend parent to items if foo/@menu...
 
-    options = yield
     items = options[:items]
 
+    # foo/@notes/, so use foo as name...
+
     if parent = Xiki.menuish_parent(options)
+      # If we're nested under a menu-like item, use it as name
       (items||=[]).unshift parent
       output = nil   # Blank out output so we won't get mislead below
     end
 
     # /, so list notes at top...
 
-    return "#{Xiki["~/notes//"]}\n> This menu\n#{output}" if ! items
+    if ! items
+      if options[:prefix] == "open"   # Or navigate there if open+
+        Launcher.open "~/notes/"
+        return ""
+      end
+      return "#{Xiki["~/notes//"]}> This menu\n#{output}"
+    end
 
     # /foo and output, so MENU already handled it...
 
@@ -66,8 +75,6 @@ class Xiki::Menu::Notes
     # /foo and no output, so we need to handle it...
 
     Xiki["~/notes//", items]
-
   end
 
 end
-

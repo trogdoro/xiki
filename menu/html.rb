@@ -1,136 +1,139 @@
-class Html
+module Menu
+  class Html
 
-  MENU_HIDDEN = "
-    .outline/
-    "
+    MENU_HIDDEN = "
+      .outline/
+      "
 
-  def self.menu_before *args
+    def self.menu_before *args
 
-    # If enter+all on blank menu, grab html from browser
+      # If enter+all on blank menu, grab html from browser
 
-    if args.blank? && Keys.prefix == "all"
-      txt = Dom.dom(:prefix=>"all")
-      return txt
+      if args.blank? && Keys.prefix == "all"
+        txt = Dom.dom(:prefix=>"all")
+        return txt
+      end
+      nil
     end
 
-    nil
-  end
+    MENU = %`
+      | <h1>Sample</h1>
+      | <p>Type some html here</p>
+      - examples/
+        - forms/
+          - text input/
+            | <input type="text" name="foo">
+          - textarea/
+            | <textarea name="foo">This is the text</textarea>
+          - select/
+            | <select name="foo">
+            |   <option value="volvo">Volvo</option>
+            |   <option value="saab">Saab</option>
+            | </select>
+            - with groups/
+              | <select>
+              |   <optgroup label="German Cars">
+              |     <option value="mercedes">Mercedes</option>
+              |     <option value="audi">Audi</option>
+              |   </optgroup>
+              |   <optgroup label="Japanese Cars">
+              |     <option value="toyota">Toyota</option>
+              |     <option value="nissan">Nissan</option>
+              |   </optgroup>
+              | </select>
+      - docs/
+        - summary/
+          | Put some html under this menu, and open it to render
+          | it in the browser
+        - outline/
+          | You can use the hidden 'outline' item to quickly
+          | build basic html outlines:
+          <@ html/outline/
+      `
 
-  MENU = "
-    | <h1>Sample</h1>
-    | <p>Type some html here</p>
-    + docs/
-      > Summary
-      | Put some html under this menu, and open it to render
-      | it in the browser
-    "
-  # TODO: put this back, but under docs?
-  #     <= outline/
+    # TODO: put this back, but under docs?
+    #     <= outline/
 
-  def self.outline
-    "
-    + html/
-    + div/
-    + style/
-    "
-  end
+    def self.outline *args
 
-  def self.menu_after output, *args
-    return if output
-    return Tree.<< Dom.dom(:prefix=>"outline") if Keys.prefix == "outline"
+      options = yield
 
-    prefix = Keys.prefix :clear=>1
+      # /outline/|.../, so render outline...
 
-    # If as+open, or launched line without slash, render in browser...
+      if options[:prefix] == "open" || Line =~ /[^\/]$/
+        orig = Location.new
+        Tree.to_root
 
-    line = Line.value
+        txt = Tree.children :string=>1, :cross_blank_lines=>1
 
-    # If quote at left margin, just grab this paragraph
+        orig.go
+        txt = txt.unindent
 
-    if line =~ /^  \|/
-      html = Tree.txt
-      html = "#{Html.default_css}\n#{html}"
-      return Browser.html html
+        # Convert from tree to html if any ident, or 1st line doesn't start with "|"
+        txt = txt =~ /^ / || txt !~ /\A\|/ ?
+          Xiki::Html.to_html_tags(txt) :
+          txt.gsub(/^\| ?/, '')
+
+        return Browser.html txt
+      end
+
+      # /outline/.../, so show items...
+
+      last = args.last
+
+      if filler = @@filler[last]
+        Line.add_slash :txt=>filler, :left=>1
+      elsif last == nil
+        ['html/', 'div/', 'ul/', 'style/']
+      elsif last == 'html'
+        ['head/', 'body/']
+      elsif last == 'ul'
+        ['li/', 'li/']
+      elsif last == 'head'
+        "- title/\n- style/\n| <script src='http://xiki.loc/assets/js/jquery.js'></script>"
+      elsif last == 'style'
+        Tree.quote Xiki::Html.default_css :no_tags=>1
+      elsif last == 'body'
+        ['div/', 'ul/']
+      elsif last == 'div'
+        ['h1/Info', 'p/lorem ipsum...']
+      else
+        "| Hello"
+      end
+
     end
 
-    # If single line html/foo, just run line in browser...
+    def self.menu_after output, *args
+      return if output
+      return Tree.<< Dom.dom(:prefix=>"outline") if Keys.prefix == "outline"
 
-    if line =~ /^html\// && line !~ /\/$/
-      txt = line[/\/(.+)/, 1]
-      return Browser.html txt
+      options = yield
+
+      prefix = Keys.prefix :clear=>1
+
+      # If as+open, or launched line without slash, render in browser...
+
+      # If quote at left margin, just grab this paragraph
+
+
+      return "@beg/quoted/" if args[-1] =~ /^ *\|/ && args[-1] !~ /\n/
+
+      if args[-1] =~ /\n/
+        html = "#{Xiki::Html.default_css}\n#{args[-1]}"
+        return Browser.html html
+      end
+
     end
 
-    # If as+open or line that shouldn't be auto-completed...
-
-    if prefix == "open" || (line !~ /\/$/ && line =~ /^ /)
-      orig = Location.new
-      Tree.to_root
-      txt = Tree.children :string=>1, :cross_blank_lines=>1
-      orig.go
-      txt = txt.unindent
-
-      # Convert from tree to html if any ident, or 1st line doesn't start with "|"
-      txt = txt =~ /^ / || txt !~ /\A\|/ ?
-        Tree.to_html(txt) :
-        txt.gsub(/^\| ?/, '')
-
-      return Browser.html txt
+    def initialize txt
+      @txt = txt
     end
 
-    # Insert stuff under if we recognize as auto-complete...
-
-    last = args.last
-    if filler = @@filler[last]
-      Line.add_slash :txt=>filler, :left=>1
-    elsif args == ['outline']
-      ['html/', 'div/', 'style/']
-    elsif last == 'html'
-      ['head/', 'body/']
-    elsif last == 'head'
-      "- title/\n- style/\n| <script src='http://xiki.loc/assets/js/jquery.js'></script>"
-    elsif last == 'style'
-      Tree.quote Html.default_css :no_tags=>1
-    elsif last == 'body'
-      ['div/']
-    else
-      ['h1/Info', 'p/lorem ipsum...']
-    end
+    @@filler = {
+      "h1"=>"Info",
+      "title"=>"Welcome",
+      "p"=>"Lorem ipsum...",
+    }
 
   end
-
-  def initialize txt
-    @txt = txt
-  end
-
-  @@filler = {
-    "h1"=>"Info",
-    "title"=>"Welcome",
-    "p"=>"Lorem ipsum...",
-  }
-
-  # Html.default_css
-  # Html.default_css :no_tags=>1
-  def self.default_css options={}
-    txt = ""
-    txt.<< "<style type='text/css'>\n" if ! options[:no_tags]
-    txt.<< "
-      body {
-        font-family: arial;
-        font-size: 13px;
-        margin: 30px;
-      }
-      pre {
-        background-color: #F8F8F8;
-        border: 1px solid #CCCCCC;
-        border-radius: 3px 3px 3px 3px;
-        font-size: 13px;
-        line-height: 19px;
-        overflow: auto;
-        padding: 6px 10px;
-      }
-    ".unindent
-    txt.<< "</style>\n" if ! options[:no_tags]
-    txt
-  end
-
 end

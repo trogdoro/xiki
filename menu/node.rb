@@ -1,8 +1,6 @@
 module Xiki
   class Node
     MENU = %`
-      > Pass javascript to eval in node
-      | puts(1 + 2)
       - .controller/
       - docs/
         - headers/
@@ -57,7 +55,7 @@ module Xiki
     def self.controller *args
 
       return "
-        | // Sample controller code
+        | // This is a sample controller.  Edit and expand to run it.
         | console.log('got a request');
         | res.end('Hello Node World!');
         " if args.empty?

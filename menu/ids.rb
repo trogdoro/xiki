@@ -15,7 +15,7 @@ class Ids
 
       result = Firefox.exec js
       return "
-        > No id attributes found!
+        > No id attributes found in page!
         | Maybe try listing by classes:
         << css/list/
         " if result == '""'

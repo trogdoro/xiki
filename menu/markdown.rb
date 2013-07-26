@@ -2,11 +2,15 @@ gem 'redcarpet'
 require 'redcarpet'
 
 class Markdown
+  # include Xiki
 
   def self.render txt
+    require "#{Xiki.dir}menu/html"
+
     markdown = Redcarpet::Markdown.new(Redcarpet::Render::HTML, :autolink=>true, :space_after_headers=>true)
     html = markdown.render txt
-    html << Html.default_css
+
+    html << Xiki::Html.default_css
 
     html
   end

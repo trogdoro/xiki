@@ -49,7 +49,6 @@ class Kill
     command = "kill #{pid}"
     command = "kill -9 #{pid}" if options[:prefix] == :u
     output = `#{command}`
-
     "- sent kill to #{pid}!"
   end
 end
