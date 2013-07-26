@@ -17,8 +17,7 @@ module Xiki
 
     @@log = File.expand_path("~/.emacs.d/search_log.notes")
 
-    def self.menu
-      '
+    MENU = '
       - .history/
       - .log/
       - .launched/
@@ -61,7 +60,6 @@ module Xiki
       - see/
         <@ next/
       '
-    end
 
     def self.case_options
       return @@case_options if @@case_options
@@ -101,8 +99,8 @@ module Xiki
       was_reverse = self.was_reverse
       match = self.stop
 
-      if match.nil?   # If nothing searched for yet, search difflog
-        loc = Keys.input(:chars=>1, :prompt=>"Enter one char to search for corresponding string: ")
+      if match.nil?   # If nothing searched for yet, search for variable
+        loc = Keys.input(:chars=>1, :prompt=>"Enter variable name (one char) to search: ")
         loc = loc.to_s
 
         txt = Clipboard.hash[loc.to_s] || Clipboard.hash_by_first_letter[loc.to_s]
@@ -165,7 +163,7 @@ module Xiki
     def self.isearch_delete
       match = self.stop
 
-      # If nothing searched for, go to spot of last delete
+      # If nothing searched for, open difflog
       if match.nil?   # If nothing searched for yet, search difflog
         DiffLog.open
         View.to_bottom
@@ -582,9 +580,11 @@ module Xiki
     # Insert line at beginning of search
     def self.have_line
       self.stop
+      column = View.column
       line = Line.value(1, :include_linebreak=>true).sub("\n", "")
       self.to_start  # Go back to start
       $el.insert line
+      View.column = column
     end
 
     # Insert line at beginning of search
@@ -1132,13 +1132,12 @@ module Xiki
       if char == "m"
         Launcher.open("- #{Xiki.dir}\n  - ##^ *def /")
       elsif char == "k"
-        Launcher.open("- #{Xiki.dir}lib/xiki/core/key_shortcuts.rb\n  - ##Xiki.def..\\w+\\+/")
+        Launcher.open("- #{Xiki.dir}lib/xiki/core/key_shortcuts.rb\n  - ##^ *Xiki.def..\\w+\\+/")
       elsif char == "l"
         Launcher.open("- $ttm\n  - ##xiki|isearch/")
       else
         View.beep "Don't know what to do with that char."
       end
-
     end
 
     def self.isearch_restart path, options={}
@@ -1341,7 +1340,6 @@ module Xiki
     end
 
     def self.fit_in_snippet match
-
       target_path = View.file
       View.layout_files :no_blink=>1
 
@@ -1354,7 +1352,7 @@ module Xiki
       return false if ! target_path || ! target_path.start_with?(path)
 
       cursor = Line.left 2
-      FileTree.enter_quote match
+      FileTree.enter_quote match, :leave_indent=>1
       View.cursor = cursor
 
       return true   # If handled
@@ -1449,7 +1447,12 @@ module Xiki
 
       if ! txt
         searches = self.searches.uniq
-        return searches.map{|o| "| #{o}\n"}.join("")
+        searches = searches.map do |o|
+          o =~ /\n/ ?
+            "| #{o.inspect}\n" :
+            "| #{o}\n"
+        end
+        return searches.join("")
       end
 
       # Option selected, so search for it
@@ -1621,6 +1624,19 @@ module Xiki
       found = Search.forward "[^\t-~]"   # => 1434703
       View.flash("- no special char found", :times=>3) if ! found
       nil
+    end
+
+    def self.search_just_swap
+      # Grab and delete what's selected
+      txt_a = self.stop
+      View.delete(Search.left, Search.right)
+
+      # Insert from clipboard
+      View << Clipboard["0"]
+
+      # Go back to start and insert text_a
+      self.to_start  # Go back to start
+      View << txt_a
     end
   end
 end
