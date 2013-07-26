@@ -6,7 +6,7 @@ module Xiki
       # This will soon be refactored to be called by hash
       return if ! source || options[:output] || options[:halt]
 
-      items = Dir.new("#{options[:last_source_dir]}#{source}").entries.grep /^[^.]/
+      items = Dir.new("#{options[:enclosing_source_dir]}#{source}").entries.grep /^[^.]/
 
       items.delete "default.conf"   # ignore default conf
 

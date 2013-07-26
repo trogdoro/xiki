@@ -4,7 +4,7 @@ module Xiki
       source = options[:ex]['notes']
 
       return if ! options[:ex] || options[:output] || options[:halt]
-      path = "#{options[:last_source_dir]}#{source}"
+      path = "#{options[:enclosing_source_dir]}#{source}"
 
       txt = Notes.drill path, *options[:args]||[]
 

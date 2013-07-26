@@ -7,7 +7,7 @@ module Xiki
       source = options[:ex]['markdown']
       return if ! source || options[:output] || options[:halt]
 
-      txt = options[:output] = File.read "#{options[:last_source_dir]}#{source}"
+      txt = options[:output] = File.read "#{options[:enclosing_source_dir]}#{source}"
       html = self.render txt
 
       Browser.html html

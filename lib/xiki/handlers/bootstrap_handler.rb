@@ -6,7 +6,7 @@ module Xiki
 
       return if ! source || options[:output] || options[:halt]
 
-      txt = File.read "#{options[:last_source_dir]}#{source}"
+      txt = File.read "#{options[:enclosing_source_dir]}#{source}"
 
       if options[:client] == "web"
         require "#{Xiki.dir}menu/bootstrap.rb" if ! defined? Xiki::Menu::Bootstrap

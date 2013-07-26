@@ -4,7 +4,7 @@ module Xiki
       source = options[:ex]['jpg']
       return if ! source || options[:output] || options[:halt]
 
-      path = "#{options[:last_source_dir]}#{source}"
+      path = "#{options[:enclosing_source_dir]}#{source}"
 
       options[:output] = "@file/#{path}"
     end
