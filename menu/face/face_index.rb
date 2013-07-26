@@ -16,6 +16,7 @@ module Xiki
       html << "</body></html>"
 
       Browser.html html
+      ""
     end
   end
 end

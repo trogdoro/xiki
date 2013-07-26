@@ -8,8 +8,7 @@ module Xiki
       - Show options: Rails.menu
     >
 
-    def self.menu
-      "
+    MENU = "
       - .start/
       - .generate/
         - app/
@@ -27,18 +26,17 @@ module Xiki
         - .use rspec/
         - .rails version/
       "
-      #     - .eval/
-    end
-
-    def self.menu_after txt, *args
-      txt
-    end
 
     def self.menu_before *path
-      dir = Projects.default   # Returns dir in tree, or current project (top of projects.menu)
+
+      dir = Tree.closest_dir yield[:ancestors]
+
+      # Rethink about how to use default - really just do it with no parent?
+      # No, probably add path of default project before line...
+      #   /projects/rails2/@rails/
 
       # Don't intercede if already rails app or trying to generate
-      return nil if ["generate", "general"].member?(path[0]) || File.exists?("#{dir}app")
+      return nil if ["generate", "general"].member?(path[0]) || File.exists?("#{dir}/app")
 
       # If not a rails dir, give option to generate
       return "
@@ -55,7 +53,7 @@ module Xiki
     end
 
     def self.use_rspec
-      dir = Projects.default
+      dir = Tree.closest_dir yield[:ancestors]
 
       txt = "
         @ #{dir}
@@ -105,7 +103,7 @@ module Xiki
       when "model", "resource", "scaffold"
         return View.prompt "Enter a name" if ! name
         return examples if ! detail
-        fields = ENV['txt'].gsub("\n", ' ').strip
+        fields = Tree.txt.gsub("\n", ' ').strip
         Console.run "rails g #{what} #{name} #{fields}", :dir=>Projects.default
         return "- generating #{what}..."
       when "controller"
@@ -162,7 +160,7 @@ module Xiki
       # Start server if necessary
         # And install the dev controller?
 
-      txt = ENV['txt']
+      txt = Tree.txt
 
       "- TODO) implement calling dev_controller"
     end

@@ -86,7 +86,7 @@ module Xiki
         `.unindent
 
       if save
-        save = Tree.siblings(:all=>true).map{|i| "#{i.gsub(/^\| /, '')}\n"}.join('')
+        save = Tree.siblings.map{|i| "#{i.gsub(/^\| /, '')}\n"}.join('')
         save.gsub! "\n", "\\n"
         save.gsub! '"', '\\"'
 

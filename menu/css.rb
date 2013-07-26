@@ -6,9 +6,10 @@ module Xiki
 
       return self.list args[1..-1] if args[0] == "list"
 
+      # Make this start with dot now?
       # If css/foo, treat as style
 
-      if args[0] && args[0] =~ /^[a-z]/i
+      if args[0] && args[0] =~ /^[a-z]/i && args[0] !~ /\n/
         return self.list args
       end
 
@@ -34,7 +35,7 @@ module Xiki
         # When dups, make foo,foo be foo,foo:2, etc.
         result = self.add_nth_to_dups result
 
-        return "> No class attributes found!" if result == '""'
+        return "> No class attributes found in page!" if result == '""'
         return result.gsub /^\+ /, '+ .'
       end
 
@@ -61,7 +62,8 @@ module Xiki
           "
       end
 
-      txt = Tree.txt.dup
+      txt = args[0]
+      return "@beg/quoted/" if txt !~ /\n/
 
       txt.gsub!("\n", '\n')
       txt.gsub!('"', '\"')

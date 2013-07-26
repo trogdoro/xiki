@@ -7,6 +7,8 @@ class Defs
     @menu_path/
     - .menus/
     - .patterns/
+      - global/
+      - pre/
     - .keys/
     - docs/
       - todo: pull menus from...!
@@ -76,12 +78,14 @@ class Defs
     self.defs implementation, source
   end
 
-  def self.patterns key=nil, source=nil
+  def self.patterns category=nil, key=nil, source=nil
 
     # /, so list menus...
 
+    hash = category == "pre" ? PrePattern.defs : Pattern.defs[:global]
+
     if ! key
-      keys = Pattern.defs[:global].keys.map{|o| "| #{o.source}"}
+      keys = hash.keys.map{|o| "| #{o.source rescue o}"}
       return keys.join "\n"
     end
 
@@ -89,8 +93,8 @@ class Defs
 
     regex = key[/^\| ?(.+)/, 1]
 
-    found = Pattern.defs[:global].find{|k, v| k.source == regex}
-    implementation = Pattern.defs[:global][found[0]]
+    found = hash.find{|k, v| k.source == regex}
+    implementation = hash[found[0]]
 
     self.defs implementation, source
 

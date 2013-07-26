@@ -1,6 +1,6 @@
 module Xiki
   class Dotsies
-    def self.menu
+    MENU =
       %`
       |~this is an example
       - .apply/
@@ -28,7 +28,6 @@ module Xiki
       << dotsies tweets/
       << youtube/use dotsies in transcript/
       `
-    end
 
     def self.all_views
 
