@@ -28,6 +28,7 @@ Gem::Specification.new do |s|
 
   s.add_dependency('httparty')
   s.add_dependency('activesupport')
+  s.add_dependency('erubis')
   s.add_dependency('method_source')
   s.add_dependency('net-ssh')
   s.add_dependency('net-scp')
