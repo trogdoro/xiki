@@ -4,7 +4,7 @@ This file shows how to install Xiki.  Xiki is like a shell console with GUI feat
 
 It has a web interface, but runs best from a Xiki-enabled text editor.  It has menus for quickly getting started with using various tools and libraries.  Also you can easily create your own menus, in about ten different ways.  Many of them will seem obvious to you.
 
-Supported platforms: MacOS and Ubuntu.  Pair with me if you want to see Windows support, support for your text editor, or just to hack on Xiki! (find me at twitter.com/xiki).
+Supported platforms: MacOS and Linux.  Pair with me if you want to see Windows support, support for your text editor, or just to hack on Xiki! (find me at twitter.com/xiki).
 
 ## Install Ruby 1.9.3
 
@@ -41,15 +41,21 @@ Close your current console window and open a new one.  Then type...
 
       $ xiki
 
-Troubleshooting: if you run "$ which xiki" and it doesn't show
+#### Troubleshooting
+
+If you run "$ which xiki" and it doesn't show
 /usr/local/bin/xiki or /usr/local/xiki, delete the 'xiki' file it
 shows.  (Normally it would be ignored but you probably have your gem
 bin dirs at the beginning of your PATH.)
 
-It should delay slightly the first time, but be fast subsequent
-times.  If you run into errors and then fix them, you'll want to
-run the "xiki stop" command.  See the process log for
-trouble-shooting (/tmp/xiki_process.rb.output).
+Check the process log for error messages
+(/tmp/xiki_process.rb.output).
+
+It should delay slightly the first time and be fast subsequent times.
+If you run into errors and then fix them, you'll want to run the "xiki
+stop" command.  Use 'ps' to verify that the "xiki_process.rb" dies -
+manually kill it if not.  Try opening a new shell console window when
+trying the "xiki" command after fixing things.
 
 ## Bring up the Xiki web interface
 
