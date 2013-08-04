@@ -7,6 +7,13 @@ require 'xiki/core/core_ext'
 require 'xiki/core/menu'
 require 'xiki/core/launcher'
 
+is_windows = (RbConfig::CONFIG['host_os'] =~ /mswin|mingw|cygwin/)
+
+if is_windows
+  require 'win32/pipe'
+  include Win32
+end
+
 Xiki.init
 
 # Make named pipes for input and output
@@ -15,8 +22,9 @@ class XikiProcess
 
   def self.run
 
-    open('/tmp/xikirequest', 'r+') do |f|
-      open('/tmp/xikiresponse', 'w+') do |response|
+    is_windows?Pipe::Server.new('xikirequest'):open('/tmp/xikirequest', 'r+') do |f|
+      if is_windows then f.connect end
+      is_windows?Pipe::Client.new('xikiresponse'):open('/tmp/xikiresponse', 'w+') do |response|
         loop do
 
           # Read request...
@@ -34,7 +42,7 @@ class XikiProcess
             # Turn keys into symbols
             options = options.reduce({}){ |acc, o| acc[o[0].to_sym] = o[1]; acc }
 
-            path = f.gets
+            path = is_windows?f.read:f.gets
             path.strip!
           end
 
@@ -54,8 +62,13 @@ class XikiProcess
           menu_output = menu_output.to_s
 
           menu_output.gsub! "\n", "\036"   # Escape linebreaks as 036 char (record separator)
-          response.puts menu_output
-          response.flush
+          if is_windows
+            response.write menu_output
+            response.close
+          else
+            response.puts menu_output
+            response.flush
+          end
         end
       end
     end
