@@ -1,0 +1,26 @@
+- create/
+  @/tmp/
+    $ jekyll new myblog
+- view/
+  - localhost/
+    @/tmp/myblog/
+      % jekyll serve -w
+      @http://localhost:4000/
+  - files/
+    | This is an alternative to starting the server, but the relative
+    | links won't work when viewing the files directly.
+    @/tmp/myblog/
+      $ jekyll build
+      @file:///tmp/myblog/_site/index.html
+- new post/
+  ! %`
+  ! @/tmp/myblog/
+  !   - _posts/
+  !     - {date}-hi-again.markdown
+  !       | ---
+  !       | title:  "Hi Again"
+  !       | date:   {date}
+  !       | layout: post
+  !       | ---
+  !       | This page is simple.
+  ! `.gsub("{date}", Time.now.strftime("%Y-%m-%d"))
