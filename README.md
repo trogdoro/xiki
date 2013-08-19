@@ -33,6 +33,7 @@ Either install as a gem, or install from github.
 
 #### Note: at the moment this will give you the old Xiki version.  Use the "github" instructions.
 
+      # This will work again soon, but currently use github
       $ gem install xiki --pre
 
 ## Verify the 'xiki' shell command works
