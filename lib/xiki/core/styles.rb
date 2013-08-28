@@ -98,6 +98,7 @@ module Xiki
       if options[:size]
         size = options[:size]
         size = self.size(size.to_i) if size.is_a? String   # If a string, convert to relative size
+        size = [size, 1].max
         code << "  :height #{size}\n"
       end
 
