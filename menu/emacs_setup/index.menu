@@ -1,14 +1,11 @@
 > Summary
-| This menu updates config files etc. for Xiki-enabling emacs.
-| Currently it requires a GUI version of emacs.  It won't run
-| in no-window mode.
+| This menu updates config files etc. for Xiki-enabling emacs. Currently it requires a GUI version of emacs.  It won't run in no-window mode.
+|
+| If you're not familiar with emacs and you're on the mac, it's recommended you use Aquamacs instead.
 
-> 1. Check whether emacs is installed
-check for app/
-  ! # Probably just do `which emacs`?
-  ! "TODO: borrow from aquamacs setup"
+> Click on each of these
+Click on each of these items individually.  Note the first one appends to or creates a ~/.emacs file.
 
-> 2. Update scripts etc
 update emacs conf/
   ! el4r_gem_lib = Gem::Specification.find_by_name("trogdoro-el4r").gem_dir+"/"
   ! el4r_gem_dir = "#{el4r_gem_lib}data/emacs/site-lisp/"
@@ -18,6 +15,7 @@ update emacs conf/
   !   (add-to-list 'load-path "#{el4r_gem_dir}")
   !   (require 'el4r)
   !   (el4r-boot)
+  !   (el4r-troubleshooting-keys)
   !   `.unindent
   !
   ! target = File.expand_path("~/.emacs")
@@ -52,5 +50,5 @@ update initrb/
   ! File.open(target, "w") { |f| f << txt }
   ! "- The ~/.el4r/init.rb file was successfully created."
 
-> 3. Optionally tweak your emacs config
+> Optionally tweak your emacs config
 Paste "emacs config tweaks" into emacs and double-click on it.  You'll be able to preview each conf item before it's added to your .emacs.
