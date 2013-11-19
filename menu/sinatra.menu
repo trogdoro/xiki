@@ -2,13 +2,12 @@
   @/tmp/
     - sinatra_hi.rb
       | require 'sinatra'
-      |
       | get '/' do
       |   "Hello Booze!"
       | end
     % ruby -rubygems sinatra_hi.rb
     @http://localhost:4567/
-- hello world OO/
+- as a class/
   @/tmp/
     % ruby -rubygems sinatra_oo.rb
     - sinatra_oo.rb
@@ -26,6 +25,15 @@
       |
       | SinatraOo.run!
     @http://localhost:4567/hello
+- wildcard path/
+  @/tmp/
+    - sinatra_path.rb
+      | require 'sinatra'
+      | get '/*' do |path|
+      |   "The path is: #{path.inspect}"
+      | end
+    % ruby -rubygems sinatra_hi.rb
+    @http://localhost:4567/foo/bar
 - docs/
   > Intro
   @http://www.sinatrarb.com/intro

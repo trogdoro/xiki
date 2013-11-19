@@ -1,5 +1,11 @@
 - list/
-  @$ rvm list
+  - currently installed/
+    @$ rvm list
+  - available/
+    - 1) Update rvm so it knows about new ones
+    @$ rvm get stable
+    - 2) List them
+    @$ rvm list known
 - set default/
   @% rvm --default use system
   @% rvm --default use 1.8.7
