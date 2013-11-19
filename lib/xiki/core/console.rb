@@ -80,6 +80,8 @@ module Xiki
       buffer = options[:buffer]
       reuse_buffer = options[:reuse_buffer]
 
+      orig = Location.new if options[:dont_move]
+
       # Nil out dir if blank
       dir = nil if dir && dir.length == 0
 
@@ -147,6 +149,8 @@ module Xiki
           Console.enter unless options[:no_enter]
         end
       end
+
+      orig.go if options[:dont_move]
 
       nil
     end
@@ -592,6 +596,8 @@ module Xiki
       when "%"
         return Console.run command, :dir=>dir
       when "&"
+        Applescript.run 'tell application "iTerm" to activate'
+        return Iterm.run("#{command}") if ! dir
         return Iterm.run("cd #{dir}\n#{command}")
       end
     end
