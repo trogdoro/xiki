@@ -93,7 +93,11 @@ module Xiki
 
           # These were superceded by .txt_per_prefix apparently
 
-        when :uu   # Load file at point in tree
+        when :uu   # Load file in Xiki shell command instance
+          `xiki "! load '#{View.file}'"`
+          return View.flash "- loaded in Xiki shell command instance!"
+
+        when :-   # Load file at point in tree
           path = Tree.construct_path
           load path
           return View.flash "- loaded!"
@@ -277,8 +281,6 @@ module Xiki
         Object.module_eval code, file||__FILE__, line||__LINE__
       end
     end
-
-
 
     def self.do_as_align
       $el.align_regexp
@@ -511,9 +513,11 @@ module Xiki
     # - up+do+indent    # Indent to the left (by 2 spaces)
     # - 3+do+indent     # Make indent be 6 spaces from the left (3*2)
     #
-    def self.indent_to
+    def self.indent_to options={}
       prefix = Keys.prefix
       return Code.indent if prefix == :-   # Just indent to where it should go
+
+      prefix = :u if options[:left]
 
       txt = View.selection
 

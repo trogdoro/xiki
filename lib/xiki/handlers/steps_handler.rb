@@ -29,7 +29,7 @@ module Xiki
       # /foo, so find item and use one after...
 
       # Get all lines
-      return options[:output] = "@beg/lines/" if args[-1] !~ /\n/
+      return options[:output] = "@beg/siblings/" if args[-1] !~ /\n/
 
       section = args[-1].strip
 

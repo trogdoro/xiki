@@ -94,11 +94,10 @@ module Xiki
       elsif code.is_a? String
         code = code.strip
         if code =~ /\n/   # If multi-line, quote it
-          code = "\n#{Tree.quote(code).gsub /^/, '  '}"
+          code = "\n#{Tree.quote(code).strip.gsub /^/, '  '}"
         else
           code = " #{code}"
         end
-
         txt << "- tried to run:#{code}\n"
       end
       txt << "- error:#{message}\n- backtrace:\n#{backtrace}"

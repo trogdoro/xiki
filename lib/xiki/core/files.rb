@@ -221,7 +221,11 @@ module Xiki
       path ||= View.file
       path ||= View.dir
 
-      $el.shell_command("open \"#{path}\"")
+      # TODO: make this multi-platform
+        # Equivalent command for linux?
+
+      # $el.shell_command("open \"#{path}\"")
+      `open \"#{path}\"`
     end
 
     def self.do_load_file
@@ -277,7 +281,7 @@ module Xiki
 
       file ||= FileTree.tree_path_or_this_file
 
-      file = File.expand_path file
+      file = File.expand_path Bookmarks[file]
 
       # Else, reveal current file
       command = "open --reveal \"#{file}\""

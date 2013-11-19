@@ -4,10 +4,10 @@ module Xiki
   Themes.use "Path Mode Line"
 end
 
+$el.tool_bar_mode -1
+
 $el.el4r_lisp_eval %`
   (progn
-    (tool-bar-mode -1)   ; Turn off the toolbar
-
     (custom-set-variables
       '(tabbar-mode nil)   ; No tabs
       '(cua-rectangle-mark-key (kbd "<C-S-return>"))   ; This is aquamacs stuff - probably put somewhere else

@@ -256,6 +256,13 @@ module Xiki
       self.hide_by_indent :u   # If hidden by indent
     end
 
+    # Hides using narrowing
+    def self.hide left, right
+      $el.narrow_to_region left, right
+      nil
+    end
+
+
   end
   Hide.init
 end

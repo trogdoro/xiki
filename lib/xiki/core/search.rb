@@ -116,6 +116,11 @@ module Xiki
       $el.insert match
     end
 
+    def self.isearch_have_wikipedia
+      term = self.stop
+      Wikipedia.wp term
+    end
+
     def self.isearch_have_within
       match = self.stop
       self.to_start  # Go back to start
@@ -188,7 +193,7 @@ module Xiki
       end
 
       View.delete(Search.left, Search.right)
-      View.insert txt
+      View.insert txt, :dont_move=>1
     end
 
     def self.copy_and_comment
@@ -282,6 +287,7 @@ module Xiki
       match = self.stop
 
       if match.nil?   # If nothing searched for yet
+        Location.as_spot
         Search.isearch_restart "$f", :restart=>true
         return
       end
@@ -637,6 +643,7 @@ module Xiki
       match = self.stop
 
       if match.nil?   # If nothing searched for yet
+        Location.as_spot
         Search.isearch_restart "$t", :restart=>true
 
       else
@@ -797,9 +804,7 @@ module Xiki
       term = self.stop
       if term
         term.gsub!(' ', '+')
-
         term = "\"#{term}\"" if options[:quote]
-
         term =~ /^https?:\/\// ?   # If url, just browse
           $el.browse_url(term) :
           $el.browse_url("http://google.com/search?q=#{term}")
@@ -825,14 +830,14 @@ module Xiki
       View.delete $el.point_at_bol, $el.point_at_eol + 1
       #self.to_start  # Go back to start
       $el.exchange_point_and_mark
-      $el.insert line
+      View.insert line, :dont_move=>1
     end
 
     def self.outline
       if Keys.prefix_u?
-        History.open_current :outline => true, :prompt_for_bookmark => true
+        History.open_current :outline=>true, :prompt_for_bookmark=>true
       else
-        History.open_current :outline => true
+        History.open_current :outline=>true
       end
     end
 
@@ -1304,10 +1309,11 @@ module Xiki
       self.just_orange
       match = self.match
 
-      Tree.to_parent   # Go to parent
-      Tree.to_parent if Line[/^ *- ##/]
+      Search.backward "^ *[+-] ##"
+      Move.to_axis
+      indent = Line[/^ */]
 
-      Tree.under "- \#\##{match}/", :escape=>'', :no_search=>1, :no_slash=>1
+      View.insert "#{indent}- \#\##{match}/\n", :dont_move=>1
       Launcher.launch
     end
 

@@ -507,6 +507,7 @@ module Xiki
     end
 
     def self.clear_prefix
+      return if ! $el
       $el.elvar.current_prefix_arg = nil
     end
 

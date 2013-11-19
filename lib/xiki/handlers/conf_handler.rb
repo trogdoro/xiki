@@ -11,16 +11,25 @@ module Xiki
 
       # Handle crud when expanding ~/menu/conf/foo...
 
-      name, txt = options[:items] # if options[:items]
+      name, item = options[:items] # if options[:items]
 
       # TODO: remove Tree.txt editor dependency?
-      options[:output] = self.txt name, (txt ? Tree.txt : nil)
+      options[:output] = self.txt name, (item ? Tree.txt : nil), item, options
     end
 
-    def self.txt name, content=nil
+    def self.txt name, content=nil, item=nil, options={}
+
+      prefix = options[:prefix]
 
       # If no content, get it
       custom_conf = "#{Xiki.menu_path_custom_dir}/conf/#{name}.conf"
+
+      if prefix == "open"
+        item.sub! /^\| /, ''
+
+        View.open custom_conf, :to=>"^#{$el.regexp_quote item}$"   # "
+        return ""
+      end
 
       if ! content
         return Tree.quote(File.read(custom_conf)) if File.exists?(custom_conf)
@@ -55,7 +64,10 @@ module Xiki
 
       # Handlers will get control without this
       File.open("#{custom_conf_dir}/conf_index.rb", "w") { |f| f << %`
+        #
         # This file proxies control to the core conf menu
+        #
+
         # (when @conf/foo/ and conf/foo.conf doesn't exist yet).
         load "\#{Xiki.menu_path_core_dir}/conf/conf_index.rb"
 

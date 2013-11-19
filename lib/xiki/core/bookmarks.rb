@@ -172,8 +172,7 @@ module Xiki
       keys ||= Keys.input(:timed => true, :prompt => "Enter bookmark to jump to: ") || "0"
 
       # If ".", delegate to FileTree.tree, since it knows how to hilight the current file
-      return FileTree.tree :bm=>keys if keys =~ /^[.\/]$/
-
+      return FileTree.tree :bm=>keys if keys =~ /^[.\/]+$/
       path = Bookmarks["$#{prefix_to_bm}#{keys}"]
 
       if path.nil?   # If not found, try buffer in bookmarks.yml
@@ -198,7 +197,7 @@ module Xiki
         View.bar
         self.jump "#{prefix_to_bm}#{keys}"
       else
-        Location.go path, :stay_in_bar => true
+        Location.go path, :stay_in_bar=>1
       end
 
       if options[:point] or prefix == :-   # Go to actual point

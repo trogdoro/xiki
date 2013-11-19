@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 module Xiki
   #
   # Represents a division of a window (in emacs terms, it's a window (which is within a frame))
@@ -197,6 +198,8 @@ module Xiki
     # View.open "hello", :txt=>"> Hi\nMessage to show in new buffer."
     def self.open path, options={}
 
+      path, options = nil, path if path.is_a?(Hash)
+
       return self.show_txt(options[:txt], :name=>path) if options[:txt]
 
       # Pull off line number if there
@@ -262,6 +265,16 @@ module Xiki
       # Jump to point if :goto_point (we assume path is just a bookmark)
       if options[:go_to_point] == true
         $el.bookmark_jump path.sub(/^\$/, "")
+      end
+
+      if to = options[:to]
+        if to.is_a? Integer
+          View.line = to
+        else
+          View.to_highest
+          Search.forward to
+          Line.to_beginning
+        end
       end
 
       if line_number
@@ -508,6 +521,8 @@ module Xiki
         $el.other_window 1
       end
       Effects.blink(:what=>:line) if options[:blink]
+      rescue
+        # Do nothing
     end
 
     def self.previous options={}
@@ -774,6 +789,9 @@ module Xiki
     end
 
     def self.dir force_slash=nil
+
+      return "/tmp/" if ! $el   # Tmp: if not $el, default to /tmp/
+
       # TODO: merge with .path?
       result = File.expand_path($el.elvar.default_directory)
 
@@ -789,6 +807,7 @@ module Xiki
     end
 
     def self.file
+      return nil if ! $el
       file = $el.buffer_file_name
       file ? File.expand_path(file) : nil
     end
@@ -900,9 +919,23 @@ module Xiki
     end
 
     def self.recenter n=nil
+      if n.is_a? String
+
+        View.to_highest
+        Search.forward n, :beginning=>1
+        View.recenter 0
+
+        return
+      end
+
       n ||= Keys.prefix
 
       return View.recenter_under "^\\( *def \\| *it \\|^>\\)", :relative=>1 if n == :u
+
+      if n == :-
+        indent = Line[/^  ( *)/, 1]
+        return View.recenter_under "^#{indent}\\S-", :relative=>1
+      end
 
       if n == :uu
         return View.recenter_under "^\\( *def \\| *it \\|^>\\)", :relative=>1, :incude_comments=>1
@@ -1127,16 +1160,32 @@ module Xiki
       $el.browse_url txt
     end
 
-    def self.kill
+    def self.kill options={}
+
+      prefix = Keys.prefix :clear=>1
+
+      options[:force_recent] = 1 if prefix == :-
 
       # To avoid "Buffer has a running process; keep the buffer? (y or n)" message
       if process = $el.get_buffer_process(View.buffer)
         $el.set_process_query_on_exit_flag process, nil
       end
 
+      # If :force_recent, grab view that is 2nd most recent (if it's shown in another view, it won't be shown by default)
+
+      if options[:force_recent]
+        list = Buffers.list[0..3].map{|o| Buffers.name o}
+        list.delete_if{|o| o == "*ol"}
+        recent = list[1]
+      end
+
       $el.kill_this_buffer
 
-      View.hide if Keys.prefix(:clear=>1) == :u   # If up+, also close view
+      View.hide if prefix == :u   # If up+, also close view
+
+      if options[:force_recent]
+        $el.switch_to_buffer recent
+      end
 
       nil
     end
@@ -1145,10 +1194,12 @@ module Xiki
       $el.erase_buffer
     end
 
-    def self.kill_paragraph
+    def self.kill_paragraph options={}
       left, right = View.paragraph(:bounds => true)
-      Effects.blink(:left=>left, :right=>right)
-      View.delete(left, right)
+      Effects.blink :left=>left, :right=>right
+      txt = View.delete left, right
+      return options[:return] if options.key?(:return)
+      txt
     end
 
     def self.expand_path path
@@ -1358,8 +1409,8 @@ module Xiki
         $el.split_window_vertically
     end
 
-    def self.to_relative
-      prefix = Keys.prefix
+    def self.to_relative options={}
+      prefix = options[:line] || Keys.prefix
 
       if prefix == :u   # up+ means go to middle
         top = Line.number($el.window_start)
@@ -1544,6 +1595,7 @@ module Xiki
     #
     # View.status "aa"
     # View.status nil
+    # View.status :nth=>1   # Retrieve
     # View.status "bb", :nth=>2
     # View.status "dim", :nth=>3
     # View.status "dotsies", :nth=>4
@@ -1590,6 +1642,12 @@ module Xiki
 
       key = "xiki_status#{nth}".to_sym
 
+      # If val is still hash, we must just be returning it...
+
+      if val.is_a? Hash
+        return $el.elvar[key]
+      end
+
       $el.make_local_variable key
       $el.elvar[key] = val
 
@@ -1610,6 +1668,7 @@ module Xiki
     def self.confirm message="Are you sure?", options={}
       View.beep :times=>3 if options[:beep]
 
+      View.message message   # Make sure to clear the message out
       View.flash "- #{message}", :times=>(options[:times]||2)
       choice = Keys.input :prompt=>"#{message} (type 'y' for yes)", :chars=>1
 
@@ -1664,9 +1723,7 @@ module Xiki
 
       Line.to_beginning
 
-      if quote =~ /^(> | *def )/
-        View.recenter_top
-      end
+      View.recenter_top if quote =~ /^(> | *(def|function) )/
 
       found
 
@@ -1695,6 +1752,10 @@ module Xiki
       return $el.transpose_paragraphs(1) if prefix == :-
 
       $el.transpose_chars 1 # $el.elvar.current_prefix_arg
+    end
+
+    def self.minimize
+      $el.iconify_frame
     end
 
 

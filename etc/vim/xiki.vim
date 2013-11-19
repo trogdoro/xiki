@@ -9,7 +9,7 @@ function! XikiLaunch()
     next_line = Line.value 2
 
     indent = line[/^ +/]
-    command = "xiki #{line}"
+    command = "xiki '#{line}'"
     result = `#{command}`
     Tree << result
 EOF

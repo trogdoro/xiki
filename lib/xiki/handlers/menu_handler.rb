@@ -11,18 +11,20 @@ module Xiki
       path = Path.join(options[:args]||[])
 
       txt = Tree.children txt, path, options
-      self.eval_when_exclamations txt, options
+      self.eval_exclamations txt, options
 
       options[:output] = txt
     end
 
     # If started with !, eval code...
-    def self.eval_when_exclamations txt, options={}
+    def self.eval_exclamations txt, options={}
 
       return if txt !~ /^! / || Keys.prefix == "source"
 
-      source_file = options[:sources][-1][options[:source_index]]
-      source_file = "#{options[:enclosing_source_dir]}#{source_file}"
+      if options[:sources]
+        source_file = options[:sources][-1][options[:source_index]]
+        source_file = "#{options[:enclosing_source_dir]}#{source_file}"
+      end
 
       line_number = options[:children_line]
       line_number += 4 if source_file =~ /\.rb$/

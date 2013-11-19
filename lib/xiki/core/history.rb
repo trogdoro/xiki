@@ -256,7 +256,7 @@ module Xiki
       # Reverse the files
       file, backup = backup, file if Keys.prefix == :-
 
-      diff = Console.run "diff -U 0 \"#{backup}\" \"#{file}\"", :sync=>true
+      diff = Console.run "diff -w -U 0 \"#{backup}\" \"#{file}\"", :sync=>true
 
       return Launcher.show "- No Differences!" if diff.blank?
 

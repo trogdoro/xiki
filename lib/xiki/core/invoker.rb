@@ -22,14 +22,16 @@ module Xiki
 
       code, clazz_name, dot_menu_file = options[:code], options[:clazz_name], options[:dot_menu_file]
 
-
       # Prepare by loading or reloading class...
 
       # Just always reload for now (no caching)
       # Assume clazz is a file for now
 
       returned, out, exception = Code.eval code, clazz, 1, :global=>1
-      return CodeTree.draw_exception exception, code if exception
+      if exception
+        options[:no_search] = 1
+        return CodeTree.draw_exception exception, code
+      end
 
       # Prepend module name if any...
 
@@ -83,7 +85,7 @@ module Xiki
         if ! txt || txt == "- */\n"
           dotified = Tree.dotify menu_text, args
         elsif menu_found == :constant || menu_found == :file   # If there was autput from MENU or foo.menu, eval !... lines
-          MenuHandler.eval_when_exclamations txt, options
+          MenuHandler.eval_exclamations txt, options
         end
       end
 
