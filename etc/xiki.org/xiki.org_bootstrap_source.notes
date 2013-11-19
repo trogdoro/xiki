@@ -7,14 +7,18 @@ $p/xiki.org/www/
     + index.shtml
     $ scp index.shtml xiki@xiki.org:/var/www/xiki.org/screencasts/index.shtml
 
-/tmp/
-  - tmp.html
-  $ scp tmp.html xiki@xiki.org:/var/www/xiki.org/index.html
-  $ scp tmp.html xiki@xiki.org:/var/www/xiki.org/screencasts/index.shtml
-
 http://xiki.org
 http://xiki.org/screencasts
 
+
+/xiki@xiki.org/var/www/xiki.org/
+
+
+- old
+  | /tmp/
+  |   - tmp.html
+  |   $ scp tmp.html xiki@xiki.org:/var/www/xiki.org/index.html
+  |   $ scp tmp.html xiki@xiki.org:/var/www/xiki.org/screencasts/index.shtml
 
 > Home page
 bootstrap/
@@ -22,7 +26,22 @@ bootstrap/
     - twitter
     - twitter-sign
 
-xiki local/
+xiki loc/
+  | <!--
+  |   - about/
+  |     > Welcome
+  |     : Xiki is a UI Language - a language for creating user interfaces.
+  |     : It's open source.
+  |   - getting started/
+  |     - install/
+  |   - get in touch/
+  |     - twitter/
+  |       @http://twitter.com/xiki
+  |     - mailing list/
+  |       @http://groups.google.com/group/xiki
+  |   - pair with me/
+  |     : Ping me at @xiki on twitter if you want to pair!
+  |   -->
   - project name/Xiki
   - navbar/
     | <img src="/images/bootstrap_icon.png">
@@ -38,11 +57,9 @@ xiki local/
         | <a class="carousel-control right" href="#the_carousel" data-slide="next">&rsaquo;</a>
       | <div style="min-height:290px;">
         | <h1 style="margin-top:10px;">
-          | Type notes, prototype, and program in one place.
-          |# Like a shell console, but better.
+          | Xiki is a UI Language.
         | <p style="font-size:35px; color:#8cf; padding-top:8px; line-height:47px;">
-          | Xiki: The shell console reimagined
-          |# Xiki does what shell consoles do, but lets you edit everything at any time. It's trivial to make your own commands and menus to access other tools.
+          | The shell console reimagined. Type notes, prototype, program.
         | <p style="font-size:14px; text-align:top;">
           | Donate to Xiki: <iframe style="border:0; margin:0 0 0 10px; padding:0; vertical-align:middle;"
           |   src="https://www.gittip.com/xiki/widget.html"
@@ -171,6 +188,15 @@ xiki local/
         - span4/
           - h1 icon/New way
           - p/In Xiki, text is always editable. Command output is inserted underneath the command, nested two spaces.
+
+
+> Old wording
+          | <!-- Type notes, prototype, and program in one place. -->
+          | <!-- a shell console, but better. -->
+          | <!-- Xiki: The shell console reimagined -->
+          | <!-- Xiki does what shell consoles do, but lets you edit everything at any time. It's trivial to make your own commands and menus to access other tools. -->
+
+
 
 
 > local url

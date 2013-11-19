@@ -168,6 +168,11 @@ module Xiki
       $el.rename_buffer Keys.input(options)
     end
 
+    # Buffers.file View.buffer
+    def self.file buffer
+      $el.buffer_file_name buffer
+    end
+
     def self.name buffer
       $el.buffer_name(buffer)
     end

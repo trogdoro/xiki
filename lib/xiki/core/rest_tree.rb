@@ -29,25 +29,6 @@ module Xiki
       [verb || root_verb, path.join(''), body]
     end
 
-    def self.launch options={}
-
-      Tree.plus_to_minus_maybe
-      verb, url, body = self.launch_inner options[:path], Tree.children
-      url = "http://#{url}" unless url =~ %r"http://"
-
-      result = self.request verb, url, body
-      result = "#{result}\n" unless result =~ /\n\z/
-      result.gsub! "\cm", ''
-
-      # Quote unless begins with "|"
-      result.gsub! /^/, "| "
-      result.gsub! /^\| ( *[-+] )/, "\\1"
-
-      Tree.<< result, :escape=>'', :no_slash=>1
-
-      nil
-    end
-
     # Tell Launcher whether we're in a rest tree
     def self.handles? list
       list.index{|i| i =~ /^(GET|PUT|POST|DELETE)/}
@@ -74,21 +55,91 @@ module Xiki
       list
     end
 
-    def self.request verb, url, body=nil
+    def self.request url, options={}
+      verb = options[:verb] || "GET"
+
       begin
         net_http_class = Net::HTTP.const_get(verb.capitalize)
         url.gsub!('"', '%22')
         uri = URI.parse(url)
 
         req = net_http_class.new(uri.request_uri)
-        req.body = body
+        req.body = options[:body]
         res = Net::HTTP.start(uri.host, uri.port) {|http|
           http.request(req)
         }
-        (res.code == '200' ? '' : "#{res.code} ") + res.body
+        options[:code] = res.code
+        (res.code == '200' ? '' : "#{res.code} #{res.header["location"]}...\n") + res.body
       rescue Exception=>e
         e.message
       end
+    end
+
+    def self.xiki_url url
+      url.sub! /^xiki:\/\//, 'http://'
+      url.gsub! ' ', '+'
+      url = "http://#{url}" if url !~ /\Ahttp:\/\//
+
+      options = {}
+      txt = self.request url, options
+
+      # If 404, grab root
+      if options[:code] == "404"
+        root_url = url[%r`.+?//.+?/`]
+        txt = self.request(root_url) if root_url
+      end
+
+      # If options[:code] == ""
+      # TODO: This is assuming we're at the root
+      #   rewrite so it starts at lowest path and climbs until it's not 301
+
+      path = url[%r`.+?//.+?/(.+)`, 1] || ""
+
+      if result = self.embedded_menu(txt, path)
+        txt = result
+      elsif txt =~ /\A.+\/$/
+        # Don't quote
+      else
+        txt = Tree.quote txt
+      end
+
+      # If not found, back up to the root to check for a
+      # comment-embedded menu
+
+      # Only do if there's a sub-path
+      #       if options[:code] == "404"
+      # Ol["try again!"]
+      #       end
+
+      txt.sub!(/\A\| 301 (.+)\.\.\.$/){ "\n<@ #{$1.sub(/^http/, 'xiki')}" }
+
+      txt
+    end
+
+    # Called by .xiki_url.  If found, grabs menus from
+    # comments like the following and routes (calls
+    # Tree.children).
+    #
+    # <!--
+    #   - about/
+    #     This is whatever
+    #   - install/
+    def self.embedded_menu txt, path
+
+      # For now, require it to be in the whole file, or a comment...
+
+      if txt !~ /\A[>|:+-] /
+        comment = txt[/<!--\n *[>:|+-] .+?-->/m]
+        return nil if ! comment   # Return existing if there's no tree
+        txt = comment.sub(/ *<!--/, '').sub(/ *-->/, '')
+        txt.unindent!
+      end
+
+      path.gsub! "+", ' '
+
+      Tree.children txt, path
+
+      # Returns nothing, so uses whole tree if no match found
 
     end
 
