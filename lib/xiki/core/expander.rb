@@ -90,7 +90,11 @@ module Xiki
     # will we add stuff to the hash based on definitions or menu
     # dirs.
     #
-    # Expander.parse("a").should == {:name=>"a"}
+    # This stuff this method extracts should probably be limited
+    # to elements that determine which expander to use, or are of
+    # interest to multiple expanders.
+    #
+    # Expander.parse("a").should == {:name=>"a", :path=>"a"}
     # Expander.parse("/tmp").should == {:file_path=>"/tmp"}
     # Expander.parse(:foo=>"bar").should == {:foo=>"bar"}
     def self.parse *args
@@ -125,10 +129,17 @@ module Xiki
 
       # If menu-like, extract menu and items and return...
 
-      if thing =~ /^[\w _-]+(\/.*|$)/
+      if thing =~ /^[\w _.-]+(\/|$)/
+
         path_items = Path.split thing   # Split into items
 
         options[:name] = Menu.format_name path_items.shift   # First arg is name, so pull it off
+
+        # Split off extension if any...
+
+        extension = options[:name].slice! /\..*/
+        options[:extension] = extension if extension
+
 
         # Store original path, since it could be a pattern, and set items extracted from path...
 
@@ -188,7 +199,6 @@ module Xiki
     # Expander.expand "ip"   # => "192.0.0.1"
     # @expander/docs/expanding/
     def self.expand *args
-
       options = nil
 
       # If 1st arg is just a hash with sources, we're being called again so don't re-parse and re-find expands
@@ -237,7 +247,11 @@ module Xiki
       txt = options[:output]
 
       if options[:client] == "web" && txt !~ /^\s*<html[ >]/i
-        txt = Xiki::Html.to_html txt, options
+        if options[:extension]
+          txt = "extension but web"
+        else
+          txt = Xiki::Html.to_html txt, options
+        end
       end
 
       txt
@@ -245,7 +259,7 @@ module Xiki
 
 
     # Adds :expander=>TheClass to options that says it .expands? this path (represented by the options).
-    # Expander.expanders(:name=>"foo").should == "guess"
+    # Expander.expanders(:name=>"foo")[:expanders].should == [Xiki::Menu]
     # Expander.expanders(:file_path=>"/tmp/").should == {:file_path=>"/tmp/", :expander=>FileTree}
     # Expander.expanders("a").should == "guess"
     def self.expanders *args
@@ -410,10 +424,19 @@ module Xiki
               Launcher.open "#{file}\n  #{menu}", options
             }
           elsif menu =~ /^\.@/   # If menu is .@foo..., nest under current file
+
+            # For key shortcuts, if .@..., use current file, or view name
+
             menu.sub! /^\./, ''
-            lambda{
+            ->{
               bm = Keys.input :optional=>1, :prompt=>"Enter bookmark, or pause for current file."   # Terminated by pause
-              file = bm ? Keys.bookmark_as_path(:bm=>bm, :include_file=>1) : View.file
+
+              # Nest under... tree path if we're in one, else view path, else buffer name...
+
+              ancestor = FileTree.grab_file_on_line
+              ancestor ||= View.file || View.name
+
+              file = bm ? Keys.bookmark_as_path(:bm=>bm, :include_file=>1) : ancestor
               Launcher.open "#{file}\n  #{menu}", options
             }
           else

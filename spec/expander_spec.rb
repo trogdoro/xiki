@@ -84,17 +84,17 @@ describe Expander, "#parse" do
 
   it "handles menufied paths" do
     Expander.parse("/tmp/a//").should ==
-      {:menufied=>"/tmp/a"}
+      {:menufied=>"/tmp/a", :path=>"/tmp/a//"}
   end
 
   it "handles menufied path with items" do
     Expander.parse("/tmp/a//b/").should ==
-      {:menufied=>"/tmp/a", :items=>["b"]}
+      {:menufied=>"/tmp/a", :items=>["b"], :path=>"/tmp/a//b/"}
   end
 
   it "handles filesystem root menufied path" do
     Expander.parse("//").should ==
-      {:menufied=>"/"}
+      {:menufied=>"/", :path=>"//"}
   end
 
   it "handles name that looks kind of menufied" do
@@ -183,6 +183,33 @@ describe Expander, "#parse" do
       :path => "echo/a;/b"
     }
   end
+
+
+  it "pulls out extension" do
+    Expander.parse("echo.txt").should == {
+      :name=>"echo",
+      :extension=>".txt",
+      :path=>"echo.txt"
+    }
+  end
+
+  it "pulls out path and extension" do
+    Expander.parse("echo.txt/a/b").should == {
+      :items=>["a", "b"],
+      :name=>"echo",
+      :extension=>".txt",
+      :path=>"echo.txt/a/b"
+    }
+  end
+
+  it "pulls out period-only extension" do
+    Expander.parse("echo.").should == {
+      :name=>"echo",
+      :extension=>".",
+      :path=>"echo."
+    }
+  end
+
 end
 
 describe Expander, "#expand method" do

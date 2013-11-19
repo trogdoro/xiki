@@ -98,7 +98,7 @@ module Xiki
       # If nothing hidden, hide all but current
       if $el.point_min == 1 && ($el.buffer_size + 1 == $el.point_max)
         left, after_header, right = View.block_positions "^#{delimiter}\\( \\|$\\)"
-        $el.narrow_to_region left, right
+        Hide.hide left, right
         return
       end
       # Otherwise, expand all, go to next heading, hide all but current
@@ -574,8 +574,13 @@ module Xiki
 
       Styles.apply "^[< ]*@? ?\\([%$&!]\\) ", nil, :shell_prompt   # Colorize shell prompts after "@"
 
+
       # Make |~... lines be Dotsies
       Styles.apply("^ *\\(|~\\)\\([^\n~]+\\)\\(~?\\)", nil, :quote_heading_pipe, :dotsies, :quote_heading_pipe)
+
+      #       # Make |~... lines be FontAwesome
+      #       # Probably don't commit - doesn't work in all aquamacs versions :/
+      #       Styles.apply("^ *\\(|\\)\\(\\*\\)\\([^ \n]+\\)\\(.*\\)", nil, :quote_heading_pipe, :diff_line_number, :fontawesome, :ls_quote)
 
       # |#... invisible
       Styles.apply("^ *\\(|#\\)\\(.*\n\\)", nil, :quote_heading_pipe, :quote_hidden)
@@ -631,6 +636,8 @@ module Xiki
 
     def self.enter_junior
 
+      prefix = Keys.prefix
+
       Move.to_end if Line.before_cursor =~ /^ +$/   # If at awkward position, move
 
       cursor = View.cursor
@@ -642,6 +649,8 @@ module Xiki
       else   # In middle of line
         Deletes.delete_whitespace
       end
+
+      pipe = nil if prefix == :u   # up+ means to not carry over pipes etc.
 
       return View.<< "\n#{line[/^[ |#]*/]}  " if pipe
       View << "\n#{indent}#{pipe}  "
@@ -725,6 +734,8 @@ module Xiki
       if Line.matches(/^\s*[+-]/) and View.char =~ /[+-]/
         plus_or_minus = Tree.toggle_plus_and_minus
         if ! Tree.children?
+
+          $el.deactivate_mark   # So aquamacs doesn't highlight something after double-click
 
           if FileTree.dir? or ! FileTree.handles?   # If on a dir or code_tree
             Launcher.launch
@@ -1117,7 +1128,7 @@ module Xiki
 
         txt = txt.split("\n")
         txt = txt.grep /^\>( .+)/
-        return "| This file has no '>...' headings:\n@ #{file}" if txt.empty?
+        return "| This file has no '>...' headings:\n@#{file}" if txt.empty?
         return txt.join("\n")  #.gsub /^> /, '| '
       end
 

@@ -538,6 +538,8 @@ module Xiki
 
     def self.init_default_launchers
 
+      # TODO > Deprecated - only keep this around until shell stuff has been ported over sufficiently!"]
+
       # %\n  | multiline\n  | commands
       Launcher.add /^\%\// do   # For % with nested quoted lines
         path = Tree.construct_path :list=>1
@@ -553,7 +555,7 @@ module Xiki
         orig.go
       end
 
-      self.add(/^\*$/) do |line|  # *... buffer
+      self.add(/^\*$/) do |line|  # *
         Line.sub! /.+/, "all"
 
         Launcher.launch
@@ -733,6 +735,8 @@ module Xiki
             Tree.to_parent(:u) :
             Tree.to_parent
         end
+
+        Tree.to_parent if Line =~ /^ +- backtrace:$/   # If we went to "- backtrace:", go up again
         Tree.kill_under
       end
 
@@ -1110,107 +1114,6 @@ module Xiki
 
     end
 
-    def self.wrapper_rb dir, file, path
-      output = Console.run "ruby #{Xiki.dir}/etc/wrappers/wrapper.rb #{file} \"#{path}\"", :sync=>1, :dir=>dir
-
-      # Sensible thing for now is to just do literal output
-      #     output = Tree.children output, path if path !~ /^\./
-
-      # How to know when to do children?!
-        # Because it called .menu, and menu had no args
-          # Make it set env var?
-
-      #     output = Tree.children output, path
-
-      Tree << output
-    end
-
-    def self.wrapper_js dir, file, path
-      output = Console.run "node #{Xiki.dir}etc/wrappers/wrapper.js \"#{dir}#{file}\" \"#{path}\"", :sync=>1, :dir=>dir
-      output = Tree.children output, path
-      Tree << output
-    end
-
-    def self.wrapper_coffee dir, file, path
-      txt = CoffeeScript.to_js("#{dir}#{file}")
-      tmp_file = "/tmp/tmp.js"
-      File.open(tmp_file, "w") { |f| f << txt }
-
-      output = Console.run "node #{Xiki.dir}etc/wrappers/wrapper.js \"#{tmp_file}\" \"#{path}\"", :sync=>1, :dir=>dir
-      output = Tree.children output, path
-      Tree << output
-    end
-
-    def self.wrapper_notes dir, file, path
-      if match = path.match(/^(\| .+)(\| .*)/)
-        heading, content = match[1..2]
-        # [nil, nil])[1..2]
-      else
-        heading, content = [path, nil]
-      end
-
-      heading = nil if heading.blank?
-
-      #     heading, content = (path.match(/^(\| .+)(\| .*)/) || [nil, nil])[1..2]
-
-      dir = "#{dir}/" if dir !~ /\/$/
-      output = Notes.drill "#{dir}#{file}", heading, content
-      Tree << output
-    end
-
-    def self.wrapper_menu dir, file, path
-      heading, content = (path.match(/^(\| .+)(\| .*)?/) || [nil, nil])[1..2]
-
-      #     output = Menu.drill "#{dir}/#{file}", heading, content
-
-      #     output = Tree.children File.read(file), Tree.rootless(path)
-      output = Tree.children File.read("#{Bookmarks[dir]}/#{file}"), path
-
-      Tree << output
-    end
-
-    def self.wrapper_py dir, file, path
-      output = Console.run "python #{Xiki.dir}etc/wrappers/wrapper.py \"#{dir}#{file}\" \"#{path}\"", :sync=>1, :dir=>dir
-      output = Tree.children output, path if path !~ /^\./
-      Tree << output
-    end
-
-    def self.wrapper_haml dir, file, path
-
-      engine = Haml::Engine.new(File.read "#{dir}#{file}")
-
-      foos = ["foo1", "foo2", "foo3"]
-      o = Object.new
-      o.instance_eval do
-        @foo = "Foooo"
-        @foos = foos
-      end
-
-      txt = engine.render(o, "foo"=>"Fooooooo", "foos"=>foos)
-
-      Tree << Tree.quote(txt)
-    end
-
-    def self.wrapper_rakefile dir, file, path
-
-      # If just file passed, show all tasks
-
-      if path.blank?
-        txt = Console.sync "rake -T", :dir=>dir
-
-        txt = txt.scan(/^rake (.+?) *#/).flatten
-
-        Tree << txt.map{|o| "- #{o}/\n"}.join
-        return
-      end
-
-      # Task name passed, so run it
-
-      path.sub! /\/$/, ''
-      Console.run "rake #{path}", :dir=>dir
-      nil
-    end
-
     def self.reload_menu_dirs
       dir = "#{Xiki.dir}lib/xiki/tools"
       Files.in_dir(dir).each do |f|
@@ -1382,7 +1285,7 @@ module Xiki
       #   - pattern.rb
       #     |           if nested = value[options[key]]
       if view = View.name; options[:target_view] = view; end
-      if file = View.file; options[:extension] = File.extname(file); end
+      if file = View.file; options[:target_extension] = File.extname(file); end
 
       #     # Stopping doing this - anyone still relying on it?!
       #     # - Fix conf!
@@ -1409,11 +1312,12 @@ module Xiki
       # Automatically repress slash if were on ^... or |... line
       insert_options[:no_slash] = 1 if options[:args] && options[:args].last =~ /(^[>|:]|\n)/
 
-      return if self.process_directives txt, insert_options
+      return if self.process_directives txt, options, insert_options
 
       txt = txt.to_s if txt
       return if txt.blank?
 
+      $el.deactivate_mark   # So aquamacs doesn't highlight something after double-click
       Tree.<< txt, insert_options
 
       nil
@@ -1421,6 +1325,8 @@ module Xiki
 
 
     def self.expand_again_if_beg txt, options
+
+      return txt if ! txt.is_a? String
 
       return txt if txt !~ /\A@beg\/(.+)\/\z/   # Only try to do something if menu returned @beg/.../
 
@@ -1465,7 +1371,7 @@ module Xiki
     # Called by .launch to do appriate thing if result starts
     # with @open file/, @flash/, or something else that instructs the editor to
     # take an action.
-    def self.process_directives txt, options
+    def self.process_directives txt, options, insert_options
 
       # If "<<< foo", launch foo in place of parent...
 
@@ -1491,15 +1397,15 @@ module Xiki
         elsif arg == "quoted/"
           Ol["todo: implement!"]
         else
-          left, right = Tree.sibling_bounds :cross_blank_lines=>1
+          left, right = Line.left, Line.right+1
         end
 
         old_txt = View.txt left, right
         indent = old_txt[/^ */]
         View.delete left, right
-        txt = "#{txt}\n".gsub /^/, indent
+        txt = "#{txt}".gsub(/^/, indent)
 
-        Tree.output_and_search txt, options.merge(:not_under=>1)
+        Tree.output_and_search txt, insert_options.merge(:not_under=>1)
 
         return true
 
@@ -1519,7 +1425,9 @@ module Xiki
           end
         end
 
-        View.open txt
+        open_options = options[:prefix] == 0 ? {:same_view=>1} : {}   # 0+ means use same view
+
+        View.open txt, open_options
 
         if line_number
           View.line = line_number
@@ -1575,6 +1483,27 @@ module Xiki
 
       prefix = Keys.prefix
 
+      # /foo/
+      #   @bar/
+      if prefix == 2
+        Line << "#{Keys.bookmark_as_path}"
+        Line << "\n  @"
+        menu = Keys.input :timed=>1
+        menu = "" if menu == " "
+        Line << "#{menu}"
+        Launcher.go
+        return
+      end
+
+      # /foo/
+      #   @
+      if prefix == 8
+        Line << "#{Keys.bookmark_as_path}"
+        Line << "\n  @"
+        Launcher.go
+        return
+      end
+
       if prefix == :u   # Insert @last to see recent menu names and drill in.
         Line << "$#{Keys.input :timed=>1}//"
         Launcher.go
@@ -1595,7 +1524,9 @@ module Xiki
 
       # Todo: if dash+, do auto-complete even if exact match - how to implement?
 
-      input = Keys.input(:timed=>true, :prompt=>"Start typing a menu that might exist (or type 'all'): ")
+      prompt = "Start typing a menu ('a' for all): "
+      prompt.sub! ")", ", space for suggestions)" if ! blank
+      input = Keys.input(:timed=>true, :prompt=>prompt)
 
       # If space, they want to do just raw "@", which will suggest something based on parent
       input = "" if input == " "
@@ -1661,4 +1592,4 @@ def require_menu file, options={}
   Xiki::Launcher.add stem if ! Xiki::Launcher.menus[1][stem]
 end
 
-Xiki::Launcher.init_default_launchers
+#Xiki::Launcher.init_default_launchers

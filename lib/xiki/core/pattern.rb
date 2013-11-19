@@ -42,7 +42,7 @@ module Xiki
       #       - the tree will be climbed if keys/vals at any level are keys/vals in target_hash
       #     - example:
       #       - Xi.dig hash, target
-      #       - Xi.dig {:word=>{"select"=>{:extension=>{"notes"=>'$'}}}}, {:extension=>{"notes"}, :word=>"select"}
+      #       - Xi.dig {:word=>{"select"=>{:target_extension=>{"notes"=>'$'}}}}, {:target_extension=>{"notes"}, :word=>"select"}
       #         - returns => array with "$" in it
       #
       # - Step through tree while..
@@ -55,7 +55,7 @@ module Xiki
       #           - do recursively?
       #             - probably
       #           - or: store a stack of .keys output and current index for each level
-      #             | stack => [[:target_view, :global], [/foo/, :extension]]
+      #             | stack => [[:target_view, :global], [/foo/, :target_extension]]
       #             | stack_indexs = [0, 1]
       # - Treat :global differently
 
@@ -63,7 +63,7 @@ module Xiki
       #   | :target_view => {
       #   |   "*ol" => {
       #   |     /foo/         => #<Proc:0x007f9e9cd68318@/docs/todo/todo.notes:61>,
-      #   |     :extension => {
+      #   |     :target_extension => {
       #   |       "rb" => {
       #   |         // => #<Proc:0x007f9e9cb36608@/docs/todo/todo.notes:76>
       #   | }}}},

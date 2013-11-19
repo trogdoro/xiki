@@ -1,6 +1,6 @@
 $:.unshift "spec/"
 
-%w"core_ext ol tree core_ext menu launcher expander".each {|o| require "xiki/core/#{o}"}
+%w"core_ext ol tree core_ext menu menu_source launcher expander".each {|o| require "xiki/core/#{o}"}
 
 require './spec/spec_helper'
 
@@ -95,9 +95,16 @@ describe :Menu, "#expands?" do
     options.should == {
       :name      => "path",
       :path      => "path/",
-      :sources   => [["path.menu"], :incomplete ],
+      :sources   => [["path.rb"], :incomplete ],
       :menufied  => "/projects/xiki/menu/path",
       :expanders => [Menu]
     }
   end
+
+  it "doesn't try to handle when extension" do
+    options = {:name=>"path", :path=>"path.txt/", :extension=>".txt"}
+    Menu.expands?(options)
+    options[:expanders].should == [MenuSource]
+  end
+
 end

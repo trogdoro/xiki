@@ -19,9 +19,33 @@ module Xiki
 
       name = options[:name]
 
-      return nil if ! name   # Don't suggest if it's not menu-like
+      return if ! name   # Don't suggest if it's not menu-like
 
-      # Don't try to complete if line doesn't end with a slash...
+      if extension = options[:extension]
+        options[:no_slash] = 1
+
+        if items = options[:items]
+          txt = items[0]
+          return options[:output] = "@beg/quoted/" if txt =~ /\A\| .+\z/
+          return options[:output] = "| Should either be no items or one quoted item" if items.length != 1 || items[0] !~ /\n/
+          file = "~/menu/#{Menu.format_name name}#{extension}"
+          file = File.expand_path file
+          File.open(file, "w") { |f| f << txt }
+          return options[:output] = "@flash/- saved!"
+        end
+
+        load "#{Xiki.dir}menu/sample_menus/sample_menus_index.rb" if !defined?(SampleMenus)
+
+        txt = SampleMenus.by_extension(extension)
+
+        if ! txt
+          return options[:output] = "| Doesn't exist yet...\n"+Menu.handlers_with_samples.map{|o| "<< #{name}.#{o}\n"}.join("")
+        end
+
+        return options[:output] = Tree.quote(txt)
+      end
+
+      # Don't try to complete if line ends with a slash...
 
       if options[:path] !~ /\/$/
 
@@ -52,17 +76,17 @@ module Xiki
         options[:dont_html_format_items] = 1
 
         # If they posted the form to create the menu, do it...
-
         if create_kind = options[:create_kind]
 
-          file = File.expand_path "~/menu/#{options[:path].gsub(/[ -]/, '_')}#{options[:create_extension]}"
+          file = File.expand_path "~/menu/#{name.gsub(/[ -]/, '_')}#{options[:create_extension]}"
           txt = options[:create_txt]
           txt.gsub! "\r\n", "\n"
+
           File.open(file, "w") { |f| f << txt }
 
           # If they posted, create, and continue on to view the menu...
 
-          options[:output] = "<script>window.location = '"+options[:path].gsub(' ', '-')+"';</script>"
+          options[:output] = "<script>window.location = '/"+options[:path].gsub(' ', '-')+"';</script>"
           return
         end
 

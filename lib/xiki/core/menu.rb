@@ -374,7 +374,7 @@ module Xiki
     # TODO: After Unified, don't use this any more for defining methods.
     def self.method_missing *args, &block
       Launcher.method_missing *args, &block
-      "- defined!"
+      "- menu defined (this is deprecated though :( )!"
     end
 
     # Deprecated after Unified refactor.
@@ -426,12 +426,20 @@ module Xiki
     # Note this works for patterns as well as menus.
     def self.to_menu
 
-      return self.to_menu_old if Keys.prefix_u
+      #       return self.to_menu_old if Keys.prefix_u
+
+
+      # If up+, jump to parent menu...
 
       item = Line.without_label
       item = Path.split(item)[-1]   # Grab last item (in case multiple items on the same line separated by slashes)
 
       path = Tree.path_unified
+
+      if Keys.prefix_u
+        path.pop
+      end
+
       options = Expander.expanders path
 
       source = Tree.source options
@@ -899,8 +907,11 @@ module Xiki
 
     # Adds to :expanders if :name is backed by a menu.
     def self.expands? options
-
       # If no name, maybe an inline menufied path, so set sources...
+
+      if extension = options[:extension]
+        return if extension != "." && ! Menu.handlers[extension[/\w+/]]
+      end
 
       if ! options[:name]
         if options[:menufied]
@@ -955,12 +966,13 @@ module Xiki
         #
 
       nil   # We couldn't find anything, so continue onto patterns
-
     end
 
     # Expand thing (represented by the hash) like a menu.  Could be a block, or
     # menufied (has sources).
     def self.expand options
+
+      return self.expand_when_extension options if options[:extension]   # If foo.txt/...
 
       # Get simple invocations out of the way (block or class)...
 
@@ -990,6 +1002,57 @@ module Xiki
       return self.expand_menufied options
     end
 
+
+    # Called by .expand when extension was in path (foo.txt/a/b/)
+    def self.expand_when_extension options
+
+      options[:no_slash] = 1
+
+      self.climb_sources options
+
+      extension = options[:extension]
+      sources = options[:sources]
+
+      only_one_source = sources.length == 1 && sources[0].length == 1
+      file = "#{options[:enclosing_source_dir]}#{sources[-1][0]}"
+
+      # If this is the source, save it...
+
+      if items = options[:items]
+        return options[:output] = "| More than one source exists for this menu." if ! only_one_source
+
+        txt = items[0]
+        return options[:output] = "@beg/quoted/" if txt =~ /\A\| .+\z/
+        return options[:output] = "| Should either be no items or one quoted item" if items.length != 1 || items[0] !~ /\n/
+
+        # Just open if as+open
+        return options[:output] = "@open file/#{file}" if options[:prefix] == "open"
+
+        File.open(file, "w") { |f| f << txt }
+        return options[:output] = "@flash/- saved!"
+      end
+
+      # Show all if extension doesn't match too
+
+      # If . and only one source, replace it with the actual extension (unless C-u)
+      if extension == "." && only_one_source && options[:prefix] != :u
+        txt = "@instead/\n  #{sources[-1][0]}\n#{Tree.quote File.read(file), :indent=>'    '}"
+      # If multiple sources, or different extension
+      elsif extension == "." || !only_one_source || sources[-1][0][/\..+/] != extension
+        return options[:output] = "| Try using just a dot with no extension, like:\n|\n| #{options[:name]}." if extension != "."
+
+        txt = Xiki["source", :ancestors=>[options[:path]]]
+      else
+        if File.file? file
+          txt = Tree.quote File.read(file)
+        else
+          txt = Tree.quote "TODO: grab sample\ncode for extension from @sample_menus"
+        end
+      end
+
+      options[:output] = txt
+
+    end
 
     # Does actual invocation.  Finds all sources and delegates to handlers.
     def self.expand_menufied options
@@ -1062,6 +1125,11 @@ module Xiki
         "erb"=>ErbHandler,
         "/"=>DirHandler,
         }
+    end
+
+    def self.handlers_with_samples
+      txt = File.read("#{Xiki.dir}menu/sample_menus/sample_menus_index.menu")
+      extensions = txt.scan(/<name>\.(\w+)/).map{|o| o[0]}.uniq
     end
 
     def self.handlers_order

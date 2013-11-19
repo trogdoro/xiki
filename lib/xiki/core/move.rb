@@ -72,7 +72,8 @@ module Xiki
       $el.beginning_of_line
     end
 
-    def self.to_previous_paragraph
+    def self.to_previous_paragraph options={}
+
       prefix = Keys.prefix :clear=>1
       if prefix == :u   # If C-u, just go to end
 
@@ -85,6 +86,8 @@ module Xiki
       end
 
       prefix = prefix.is_a?(Fixnum) ? prefix : 1
+
+      Move.to_axis if options[:skip_if_top]
 
       prefix.times do
         $el.skip_chars_backward "\n "
