@@ -12,14 +12,16 @@ module Xiki
   end
 end
 
+# if $el.display_graphic_p
 $el.el4r_lisp_eval '(ignore-errors (kill-buffer "Issues Loading Xiki"))' if $el
+# end
+
 $el.set_process_query_on_exit_flag($el.get_buffer_process("*el4r:process*"), nil) if $el
 
 
 # $LOAD_PATH << "#{xiki_dir}/lib"
 # Require some of the core files
 require 'rubygems'
-require 'xiki/core/trouble_shooting'
 require 'xiki/core/ol'
 require 'xiki/core/requirer'
 require 'xiki/core/text_util'
@@ -282,7 +284,8 @@ module Xiki
     # Get rest of files to require
 
     #     classes = Dir["./lib/xiki/*.rb"]
-    classes = Dir["./lib/xiki/{handlers,core}/*.rb"]
+
+    classes = Dir["#{Xiki.dir}lib/xiki/{handlers,core}/*.rb"]
 
     classes = classes.select{|i|
       i !~ /\/ol.rb$/ &&   # Don't load Ol twice
@@ -307,7 +310,8 @@ module Xiki
 
     # key_shortcuts has many dependencies, require it last
     #     Requirer.require_classes ['./lib/xiki/key_shortcuts.rb']
-    Requirer.require_classes ['./lib/xiki/core/key_shortcuts.rb']
+
+    Requirer.require_classes ["#{Xiki.dir}lib/xiki/core/key_shortcuts.rb"] if Xiki.environment != 'web'
 
     Launcher.add_class_launchers classes.map{|o| o[/.*\/(.+)/, 1]}
     Launcher.reload_menu_dirs
@@ -520,7 +524,8 @@ module Xiki
 
   def self.yaml_setup
     Kernel.require 'yaml'
-    YAML::ENGINE.yamler='syck'
+
+    YAML::ENGINE.yamler='syck' if Xiki.environment != 'web'
   end
 
   def self.awesome_print_setup
@@ -538,6 +543,26 @@ module Xiki
       :multiline => true,
       :plain => true,
     }
+  end
+
+  # Xiki.web is shortcut for calling Xiki.expand "foo", :client=>"web"
+  #
+  # Xiki.web "ip"
+  # Xiki.web "ip", :no_slash=>1
+  def self.web *args
+
+    # Add or merge :client=>"web" into options
+    if args[-1].is_a? Hash
+      args[-1][:client] = "web"
+    else
+      args << {:client=>"web"}
+    end
+
+    self.expand *args
+  end
+
+  class << self
+    attr_accessor :environment
   end
 
 end

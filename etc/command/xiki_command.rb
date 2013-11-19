@@ -38,7 +38,7 @@ class XikiCommand
     return self.emacs path if flags.member?("-e")   # If -p, just prompt user to type a menu name
 
     options = {}
-    options[:client] = 'web' if flags.member?("-cweb")
+    options[:client] = 'web' if flags.member?("-cweb") || flags.member?("-web")
 
     if flags.member? '-'
 

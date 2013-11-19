@@ -17,7 +17,7 @@ require 'xiki/core/html.rb'
 #   u == 'foo' && p == 'bar'
 # end
 
-class SinatraServer < Sinatra::Base
+class XikiWebServer < Sinatra::Base
 
   set :port, 8161
   set :bind, '127.0.0.1'
@@ -48,7 +48,6 @@ class SinatraServer < Sinatra::Base
     # For now, if ends in .jpg, just assume they're requesting an image?
     # What if it's an actual menu item?  How to distinguish?
     menu.gsub! /\.jpg$/, ''
-
 
     no_keys = false
 
@@ -122,6 +121,7 @@ class SinatraServer < Sinatra::Base
     "<pre>#{e.message}\n#{e.backtrace}</pre>"
   end
 
+
   def call_command path, env
 
     # Only process as html if browser and not ajax...
@@ -131,13 +131,13 @@ class SinatraServer < Sinatra::Base
     is_browser = env['HTTP_USER_AGENT'] =~ /\AMozilla/ ||
       env['HTTP_ACCEPT'] =~ /\Atext\/html/
 
-    client = " -cweb" if is_browser && env["HTTP_X_REQUESTED_WITH"] != "XMLHttpRequest"
+    client = " -web" if is_browser && env["HTTP_X_REQUESTED_WITH"] != "XMLHttpRequest"
 
     # If POST, pipe params and path to command...
 
     if env['REQUEST_METHOD'] == "POST"
       options = "@options/#{JSON[params]}"
-      return SinatraServer.shell_command "xiki#{client} -", :stdin=>"#{options}\n#{path}"
+      return self.class.shell_command "xiki#{client} -", :stdin=>"#{options}\n#{path}"
     end
 
     # Otherwise, run command normally...
@@ -149,6 +149,7 @@ class SinatraServer < Sinatra::Base
 
 
   def self.shell_command command, options={}
+
     #     stdin, stdout, stderr = Open3.popen3("#{profile}cd \"#{dir}\";#{command}")
     stdin, stdout, stderr = Open3.popen3(command)
 
@@ -173,4 +174,4 @@ class SinatraServer < Sinatra::Base
   end
 end
 
-SinatraServer.run!
+XikiWebServer.run!
