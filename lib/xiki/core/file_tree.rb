@@ -305,7 +305,9 @@ module Xiki
         Styles.define :quote_heading_h0, :fg=>"fff", :size=>"+8", :face=>"arial", :bold=>true
         Styles.define :quote_heading_h1, :fg=>"fff", :size=>"2", :face=>"arial", :bold=>true
         Styles.define :quote_heading_h2, :fg=>"fff", :size=>"-2", :face=>"arial", :bold=>true
-        Styles.define :quote_heading_pipe, :fg=>"444", :size=>"0", :face => "xiki", :bold=>true
+
+        Styles.define :quote_heading_pipe, :fg=>"555", :size=>"0", :face => "xiki", :bold=>true
+
         Styles.define :quote_heading_h1_green, :fg=>"8f4", :size=>"2", :face=>"arial", :bold=>true
 
         Styles.define :quote_heading_bracket, :fg=>"4c4c4c", :size=>"-2", :face=>"arial black", :bold=>true
@@ -313,10 +315,10 @@ module Xiki
 
         Styles.define :diff_line_number, :bold => true, :size => "-2", :fg => "444444"
         Styles.define :diff_red, :bg=>"400", :fg=>"ee3333", :size=>"-1"
-        Styles.define :diff_red_pipe, :bg=>"400", :fg=>"771111", :size=>"0", :face=>"xiki", :bold=>true
+        Styles.define :diff_red_pipe, :bg=>"400", :fg=>"601111", :size=>"0", :face=>"xiki", :bold=>true
 
         Styles.define :diff_green, :bg=>"130", :fg=>"44dd33", :size=>"-1"
-        Styles.define :diff_green_pipe, :bg=>"130", :fg=>"117719", :size=>"0", :face=>"xiki", :bold=>true
+        Styles.define :diff_green_pipe, :bg=>"130", :fg=>"114a19", :size=>"0", :face=>"xiki", :bold=>true
 
         Styles.define :diff_small, :fg => "222", :size => "-11"
 
@@ -397,7 +399,7 @@ module Xiki
       # Path-like lines and parts of lines (make gray)
 
       # Single "@" or bullets at beginning
-      Styles.apply("^[ <+=@-]*\\(@\\)", nil, :ls_dir)   # @, <= @, etc.
+      Styles.apply("^[ <+=@-]*\\([@=]\\)", nil, :ls_dir)   # @, <= @, etc.
 
       Styles.apply("^[ \t]*\\(<+=?@?\\)\\( \\)", nil, :ls_bullet, :variable)
 
@@ -407,17 +409,17 @@ module Xiki
       # Slash after almost anything
 
       # foo/ lines
-      Styles.apply("^[ <=+-]*@?\\([~$&#a-zA-Z0-9_,?* ().:;@'-]*[^ \n]\/\\)", nil, :ls_dir)
+      Styles.apply("^[ <=+-]*[@=]?\\([~$&#a-zA-Z0-9_,?* ().:;@='<>-]*[^ \n]\/\\)", nil, :ls_dir)
 
       # Covers paths in files by themselves
-      Styles.apply("^[ <=+-]*\\([@~$&a-zA-Z0-9_,*? ().:;<-]*\/[@\#'$a-zA-Z0-9_,*? ().:;\/<-]+\/\\)", nil, :ls_dir)   # Paths with multiple slashes
+      Styles.apply("^[ <=+-]*\\([@=~$&a-zA-Z0-9_,*? ().:;<>-]*\/[@=\#'$a-zA-Z0-9_,*? ().:;\/<>-]+\/\\)", nil, :ls_dir)   # Paths with multiple slashes
 
 
 
 
       # < next) menus/
-      Styles.apply("^[ \t]*[<+-][<+=-]* [a-zA-Z0-9_,? ().:;-]+?[:)] \\(\[.@a-zA-Z0-9 ]+\/\\)", nil, :ls_dir)   # label, one word, slash
-      Styles.apply("^[ \t]*[<+-][<+=-]* [a-zA-Z0-9_,? ().:;-]+?[:)] \\([.@a-zA-Z0-9 ]+\/[.@a-zA-Z0-9 \/]+\/\\)", nil, :ls_dir)   # label, one word, path, slash
+      Styles.apply("^[ \t]*[<+-][<+=-]* [a-zA-Z0-9_,? ().:;-]+?[:)] \\(\[.@=a-zA-Z0-9 ]+\/\\)", nil, :ls_dir)   # label, one word, slash
+      Styles.apply("^[ \t]*[<+-][<+=-]* [a-zA-Z0-9_,? ().:;-]+?[:)] \\([.@=a-zA-Z0-9 ]+\/[.@=a-zA-Z0-9 \/]+\/\\)", nil, :ls_dir)   # label, one word, path, slash
 
 
 
@@ -441,6 +443,10 @@ module Xiki
 
       Styles.apply("^ *\\(|\\)\\(.*\n\\)", nil, :quote_heading_pipe, :ls_quote)
 
+      # | hey : you (makes colon big)
+      # Styles.apply("^ *\\(|\\)\\( .* \\)\\(:\\)\\( .*\n\\)", nil, :quote_heading_pipe, :ls_quote, :quote_heading_pipe_bold, :ls_quote)
+      Styles.apply("^ *\\(|\\)\\( .* \\)\\(:\\)\\( .*\n\\)", nil, :quote_heading_pipe, :ls_quote, :quote_heading_pipe, :ls_quote)
+
       Styles.apply("^ *\\(|\\)\\(.+?\\)([+-].*[-+])", nil, :quote_heading_pipe, :ls_quote)   # quoted lines: beginnings of lines
       Styles.apply("^ *|.*([-+].*[+-])\\(.+\\)$", nil, :ls_quote)   # quoted lines: ends of lines
       Styles.apply("[+-])\\(.*?\\)([+-]", nil, :ls_quote)   # quoted lines: between diffs
@@ -449,9 +455,10 @@ module Xiki
 
       Styles.apply("^ *\\(|\\|:\\)\\( ?\\)\\(>\\)\\(\n\\| .*\n\\)", nil, :quote_heading_pipe, :ls_quote, :quote_heading_bracket, :quote_heading_h1)
 
+      # | >>
       Styles.apply("^ *\\(|\\)\\( \\)\\(>>\\)\\(\n\\| .*\n\\)", nil, :quote_heading_pipe, :ls_quote, :quote_heading_bracket, :quote_heading_small)
       # | >...! headings
-      Styles.apply("^ *\\(|\\)\\( ?\\)\\(>\\)\\(.*!\n\\)", nil, :quote_heading_pipe, :ls_quote, :quote_heading_bracket, :quote_heading_h1_green)
+      Styles.apply("^ *\\(|\\)\\( ?\\)\\(>\\)\\(.*!:?\n\\)", nil, :quote_heading_pipe, :ls_quote, :quote_heading_bracket, :quote_heading_h1_green)
 
       #    >... headings (indented)
       Styles.apply("^ +\\(> ?\\)\\(.*\n\\)", nil, :quote_heading_bracket, :quote_heading_h1)
@@ -466,7 +473,7 @@ module Xiki
       Styles.apply("^ *\\([|:]\\)\\(\\+.*\\)", nil, :diff_green_pipe, :diff_green, :face=>"xiki")   # whole lines
       Styles.apply("^ *\\([|:]\\)\\(-.*\\)", nil, :diff_red_pipe, :diff_red)
 
-      Styles.apply("^ *\\(|\\)\\(@@ .*\n\\)", nil, :quote_heading_pipe, :diff_line_number)
+      Styles.apply("^ *\\([|:]\\)\\(@@ .*\n\\)", nil, :quote_heading_pipe, :diff_line_number)
 
       #Styles.apply('^[ -]*\\([ a-zA-Z0-9\/_\.$-()]*\\w/\\)$', nil, :ls_dir)  # Most dirs ? Has ")" at end
       Styles.apply('^ *\\(//?\\)$', nil, :ls_dir)  # /
@@ -1155,7 +1162,7 @@ module Xiki
     def self.expand_one_dir options
       dir = options[:file_path]
 
-      dirs, files = self.files_in_dir dir   # Get dirs and files in it
+      dirs, files = self.files_in_dir dir, options   # Get dirs and files in it
 
       if files.empty? && dirs.empty?
         if ! File.exists? dir   # If doesn't exist, show message
@@ -1353,7 +1360,8 @@ module Xiki
       elsif extension == "js"
         "(^ *(function)| = function\\()"
       elsif extension =~ /^notes|deck$/
-        "^[\\|>]( |$)"
+        # "^[\\|>]( |$)"
+        "^>( |$)"
       else
         "^[^ \\t\\n]"
       end
@@ -1660,6 +1668,14 @@ module Xiki
         path = path =~ /\/$/ ? path : File.dirname(path)+"/"
       end
       path
+    end
+
+    # Grab file path on current line (climbs tree if there is one).
+    # Returns nil if none or not a file
+    def self.grab_file_on_line
+      return nil if ! self.handles?
+
+      Tree.construct_path
     end
 
     def self.do_create_dir
@@ -2113,6 +2129,7 @@ module Xiki
     end
 
     def self.expand options
+
       prefix = options[:prefix]
 
       file_path = options[:file_path]
@@ -2155,8 +2172,10 @@ module Xiki
         options[:no_slash] = 1
 
         return options[:output] = self.filter_one_file(file_path).join("\n") if prefix == "outline"
+        return options[:output] = self.filter_one_file(file_path, /^> .+:$/).join("\n") if prefix == "u outline"
 
         return options[:output] = Tree.quote(File.read(file_path, *Files.encoding_binary)) if prefix == "all"
+
         return options[:output] = self.save(file_path, options) if prefix == "update" && options[:quote]
 
         # If editor, tell it to open the file...
@@ -2181,6 +2200,7 @@ module Xiki
           return options[:output] = self.expand_dir_recursively(options)
         end
 
+        options[:date_sort] = 1 if prefix == 6
         return options[:output] = self.expand_one_dir(options)
       end
 
@@ -2323,6 +2343,7 @@ module Xiki
         `.unindent
       txt
     end
+
 
   end
   FileTree.define_styles
