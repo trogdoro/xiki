@@ -38,7 +38,8 @@ module Xiki
       Xiki.def("as+nav"){ Notes.as_nav }
       Xiki.def("as+open"){ Launcher.as_open }   # copy object / symbol at point
       Xiki.def("as+paragraph"){ Clipboard.copy_paragraph }   # copy paragraph
-      Xiki.def("as+quick"){ Bookmarks.save :q }   # like AB but uses different temporary namespace
+      Xiki.def("as+quick", ".@quick/save/")   # like AB but uses different temporary namespace
+
       Xiki.def("as+rest"){ Clipboard.copy_paragraph(:rest => true) }
       Xiki.def("as+spot"){ Location.as_spot }   # remember point in file
       Xiki.def("as+todo"){ Notes.as_todo }
@@ -127,8 +128,8 @@ module Xiki
       #       Xiki.def("open+new+file"){ View.new_file }
       Xiki.def("open+note"){ Notes.open_note }
       Xiki.def("open+over"){ $el.open_line $el.elvar.current_prefix_arg || 1 }   # OO - open line (O's emacs default)
-      Xiki.def("open+point"){ Bookmarks.go(nil, :point => true) }
-      Xiki.def("open+quick"){ Bookmarks.open_quick }   # like OB but uses different temporary namespace
+      Xiki.def("open+point"){ Bookmarks.go(nil, :point=>true) }
+      Xiki.def "open+quick", "quick", :letter=>1   # like OB but uses different temporary namespace
       Xiki.def("open+related+test"){ Code.open_related_rspec }
       Xiki.def("open+related+file"){ Code.open_related_file }
       # S
@@ -174,15 +175,14 @@ module Xiki
       Xiki.def("enter+file+path"){ Files.enter_file }            # Given a bookmark
       Xiki.def("enter+firefox+tabs"){ Launcher.insert('browser/tabs/') }   # Given a bookmark
       # H
-      Xiki.def("enter+insert+date"){ View.enter_date }
       Xiki.def("enter+insert+comment"){ Code.enter_insert_comment }      # insert date string (and time if C-u)
+      Xiki.def("enter+insert+date"){ View.enter_date }
+      Xiki.def("enter+insert+http"){View << "http://"}
       Xiki.def("enter+insert+new"){ DiffLog.enter_new }           # Enter Old: enter newly-deleted from last save
+      Xiki.def("enter+insert+old"){ DiffLog.enter_old }   # Enter Old: enter newly-deleted from last save
       Xiki.def("enter+insert+ruby"){ code = Keys.input(:prompt=>"Enter ruby code to eval and insert results: "); View.insert(eval(code).to_s)}
       Xiki.def("enter+insert+search"){ Search.enter_insert_search }
-
-      Xiki.def("enter+insert+old"){ DiffLog.enter_old }   # Enter Old: enter newly-deleted from last save
-
-      Xiki.def("enter+insert+words"){ PauseMeansSpace.go }
+      #       Xiki.def("enter+insert+words"){ PauseMeansSpace.go }   # Broken :(
 
       Xiki.def("enter+junior"){ Notes.enter_junior }
       Xiki.def("enter+key"){ Keys.insert_code }
@@ -244,7 +244,7 @@ module Xiki
       #     Xiki.def("do+as+launched"){ Launcher.do_as_launched }
       #     Xiki.def("do+as+php"){ Php.run }
       Xiki.def("do+as+menu"){ Menu.do_as_menu }   # Grab item after '@' and run it by itself
-      Xiki.def("do+as+python"){ Python.run_block }
+      Xiki.def("do+as+python"){ Python.run }
       # Do, take numeric prefix for before and after
       Xiki.def("do+add+space"){ Code.add_space }
       Xiki.def("do+as+test"){ Code.do_as_rspec }
@@ -263,6 +263,7 @@ module Xiki
       Xiki.def("do+compare+history"){ History.diff_with_backup }   # compare with last AV version
 
       Xiki.def("do+code+indent"){ Code.indent }
+      Xiki.def("do+chrome+load"){ Chrome.reload }
       Xiki.def("do+count+matches"){  View.count_matches }
       Xiki.def("do+copy+name"){ Clipboard.copy_name }   # Copy file name (without extension and path)
       Xiki.def("do+colors+off"){ $el.font_lock_mode }   # toggles
@@ -288,14 +289,14 @@ module Xiki
       Xiki.def("do+indent"){ Code.indent_to }
       Xiki.def("do+job"){ Macros.run }   # do last macro
       Xiki.def("do+kill+all"){ Effects.blink :what=>:all; View.kill_all }   # kill all text in buffer
-      Xiki.def("do+kill+indented"){ CodeTree.do_kill_indented }  # Delete menu or file or whatever (just passes "0") prefix
+      Xiki.def("do+kill+indented"){ CodeTree.do_kill_indented }
+      Xiki.def("do+kill+line"){ View.delete Line.left, Line.right }
       Xiki.def("do+kill+matching"){ Search.kill_filter }
       Xiki.def("do+kill+nonmatching"){ Search.kill_filter }
       Xiki.def("do+kill+paragraph"){ View.kill_paragraph }   # kill all text in buffer
       Xiki.def("do+kill+rest"){ CodeTree.kill_rest }   # kill adjacent lines at same indent as this one
       Xiki.def("do+kill+siblings"){ CodeTree.kill_siblings }   # kill adjacent lines at same indent as this one
       Xiki.def("do+kill+trailing"){ View.gsub!(/[ 	]+$/, "") }   # Deletes trailing whitespace
-      Xiki.def("do+list+ancestors"){ View.beep "- Changed to: do+visibility!" }   # Moved to do+visibility
       Xiki.def("do+load+browser"){ Browser.reload }
       Xiki.def("do+last+command"){ Console.do_last_command }
       Xiki.def("do+line+duplicate"){ Line.duplicate_line }
@@ -380,7 +381,7 @@ module Xiki
       Xiki.def("to+menu"){ Menu.to_menu }
       Xiki.def("to+next"){ Move.to_next_paragraph }   # to next paragraph
       Xiki.def("to+outline"){ FileTree.to_outline }
-      Xiki.def("to+previous"){ Move.to_previous_paragraph }   # to beginning of previous paragraph
+      Xiki.def("to+previous"){ Move.to_previous_paragraph :skip_if_top=>1 }   # to beginning of previous paragraph
       Xiki.def("to+quote"){ Move.to_quote }   # move to next ...|... quote
       Xiki.def("to+row"){ Move.to_line }   # go to nth line, relative to top of window
       Xiki.def("to+spot"){ Location.to_spot }
@@ -435,7 +436,7 @@ module Xiki
       Xiki.def("layout+search"){ Keys.prefix_u? ? Search.find_in_buffers(Keys.input(:prompt=>"Search all open files for: ")) : Hide.search }
       Xiki.def("layout+todo"){ View.layout_todo }   # show bar on left with the quick bookmark named "-t"
       Xiki.def("layout+uncover"){ Hide.reveal }   # Reveal all hidden text
-      Xiki.def "layout+visibility", "window/visibility/", :letter=>1
+      Xiki.def "layout+visible", "window/visible/", :letter=>1
       Xiki.def("layout+wrap"){ $el.toggle_truncate_lines }   # wrap lines
       # X
       # Y
@@ -482,7 +483,8 @@ module Xiki
       Xiki.def("search+have+highest"){ Search.isearch_restart :top }
       Xiki.def("search+have+javascript"){ Search.isearch_have_outlog_javascript }
       Xiki.def("search+have+line"){ Search.have_line }   # copy line back to search start
-      Xiki.def("search+have+mock"){ Search.isearch_have_outlog :method=>".mock" }
+      #       Xiki.def("search+have+mock"){ Search.isearch_have_outlog :method=>".mock" }
+      Xiki.def("search+have+move"){ Search.isearch_move_line }
       Xiki.def("search+have+nav"){ Search.isearch_move_to "$f" }
 
       Xiki.def("search+have+outlog"){ Search.isearch_have_outlog }
@@ -492,7 +494,11 @@ module Xiki
       Xiki.def("search+have+spot"){ Search.insert_at_spot }
       Xiki.def("search+have+todo"){ Search.isearch_move_to "$t" }
       Xiki.def("search+have+variable"){ Search.insert_var_at_search_start }
-      Xiki.def("search+have+within"){ Search.isearch_have_within }   # Grab everything except chars on edges
+
+      # This is like search+have, but grabs stuff within quotes or parens > find other key for this
+      #       Xiki.def("search+have+within"){ Search.isearch_have_within }   # Grab everything except chars on edges
+
+      Xiki.def("search+have+wikipedia"){ Search.isearch_have_wikipedia }   # Grab everything except chars on edges
 
       # AVAILABLE: search_i ?  (when nothing searched for)
 
@@ -515,12 +521,11 @@ module Xiki
       Xiki.def("search+just+previous"){ Search.isearch_restart :previous }
       Xiki.def("search+just+query"){ Search.isearch_query_replace :match }   # replace
       Xiki.def("search+just+right"){ Search.isearch_restart :right }   # Search in top-right view
-      #     Xiki.def("search+just+search"){ Search.isearch_just_search }   # Add "##search" line in tree for match
-      Xiki.def("search+just+special"){ Search.isearch_just_special }   # Add "##search" line in tree for match
+      Xiki.def("search+just+swap"){ Search.search_just_swap }   # Add "##search" line in tree for match
       Xiki.def("search+just+todo"){ Search.isearch_restart "$t" }   # isearch for this string in $t
 
       Xiki.def("search+just+variable"){ Search.isearch_just_surround_with_char '#{', '}' }
-      Xiki.def("search+just+wrap"){ Ol << 'search_just_wrap';  toggle_truncate_lines }   # make match be snake case
+      Xiki.def("search+just+wrap"){ Ol << 'search_just_wrap';  $el.toggle_truncate_lines }   # make match be snake case
 
       Xiki.def("search+just+yellow"){ Search.just_orange }
       Xiki.def("search+kill"){ Search.cut }   # cut
@@ -534,13 +539,17 @@ module Xiki
       }   # make match be camel case
       Xiki.def("search+like+delete"){ Search.like_delete }   # Delete all lines that contain the match
       Xiki.def("search+like+file"){ Search.isearch_open }
+      Xiki.def("search+like+here"){ Search.isearch_just_search }   # Add "##search" line in tree for match
+
       Xiki.def("search+like+menu"){ Launcher.search_like_menu }
+
       Xiki.def("search+like+outlog"){ Search.isearch_have_outlog :no_label=>1 }
-      Xiki.def("search+line+pull"){ Search.isearch_move_line }
+      #       Xiki.def("search+line+pull"){ Search.isearch_move_line }
       Xiki.def("search+like+quote"){ Search.isearch_google :quote=>true }
       Xiki.def("search+like+repository"){ Git.search_repository }   # When not searching
 
-      Xiki.def("search+like+synonyms"){ Search.search_thesaurus }
+      Xiki.def("search+like+special"){ Search.isearch_just_special }
+      Xiki.def("search+like+thesaurus"){ Search.search_thesaurus }
       #     Xiki.def("search+like+timer"){ Search.search_like_timer }
 
       #     Xiki.def("search+like+thesaurus"){ Search.search_thesaurus }
@@ -644,16 +653,16 @@ module Xiki
       #       #
       #       # Temporarily make Command+Return do old launch!!!
       #       #
-      #       $el.define_key(:osx_key_mode_map, $el.kbd("<A-return>")) { Launcher.go_preunified }
+      #       $el.define_key(:osx_key_mode_map, $el.kbd("<A-return>")) { Launcher.go_preunified }   # Command+Return
 
-      $el.define_key(:osx_key_mode_map, $el.kbd("<A-return>")) { Launcher.go }
+      #       $el.define_key(:osx_key_mode_map, $el.kbd("<A-return>")) { Launcher.go }   # Command+Return
 
 
     end
 
     # Not called by default
     def self.map_meta_return
-      Keys.set("<M-return>") { Launcher.go }   # command-return, command-enter
+      Keys.set("<M-return>") { Launcher.go }   # Command+Return, Command+Enter
     end
 
     def self.misc
@@ -670,6 +679,7 @@ module Xiki
       self.map_meta_return
       self.map_command_return
       self.map_control_return
+
 
       if $el.locate_library "ruby-mode"
         $el.el_require :ruby_mode
