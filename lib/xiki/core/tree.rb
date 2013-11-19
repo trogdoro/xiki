@@ -84,7 +84,7 @@ module Xiki
 
       # While chars to search for (alpha chars etc.), narrow down list...
 
-      while ch.is_a?(String) && (ch =~ /[ -"&-)+-:<?A-~]/ &&   # Be careful editing, due to ranges (_-_)
+      while ch.is_a?(String) && (ch =~ /[ -"&-)+-:<-?A-~]/ &&   # Be careful editing, due to ranges (_-_)
           (ch_raw < 67108912 || ch_raw > 67108921) && ch_raw != 67108909) # ||   # If not control-<number> or C--
 
         if ch == ' ' && pattern != ""   # If space and not already cleared out
@@ -326,12 +326,6 @@ module Xiki
         self.stop_and_insert left, right, pattern
         View.insert self.indent("@", 0)
 
-      when ">"   # Split view, then launch
-        $el.delete_region(Line.left(2), right)
-        Keys.clear_prefix
-        View.create
-        Launcher.launch
-
       when "\C-e"   # Also C-a
         return Line.to_right
 
@@ -389,7 +383,6 @@ module Xiki
 
         Launcher.launch
 
-
       when "\C-s"
         $el.isearch_forward
 
@@ -397,25 +390,8 @@ module Xiki
         $el.isearch_backward
 
       when ";"   # Replace parent
-
-        #       CodeTree.kill_siblings
         Tree.collapse :replace_parent=>1
         return Launcher.launch
-
-
-      # when "/"   # Append selected dir to parent dir
-      # Just search for a slash
-
-
-      when "="   # Drill into the file
-        dir = self.construct_path  # Expand out ~
-        View.open(dir)
-
-        # Does something else above
-        #     when "0"   # Drill into the file
-        #       # TODO Is this ever used? - does it work?
-        #       $el.delete_region(Line.left(2), right)   # Delete other files
-        #       self.drill
 
       when "\a"   # Typed C-g
         View.beep
@@ -438,9 +414,9 @@ module Xiki
       lines.each_with_index do |l, i|
         found = false
         l.length.times do |j|
-          #         letter = l[/^  \S+ (\w)/, 1]   # Grab 1st letter
-          letter = l[j].chr
-          next if letter !~ /[a-z]/i
+          letter = l[j].chr.downcase
+
+          next if letter !~ /[a-z0-9]/i
           next if letters[letter]
 
           letters[letter] = [i+1, j+1]   # Set letter to index, if not there yet
@@ -639,7 +615,7 @@ module Xiki
       txt = TextUtil.unindent(txt) if txt =~ /\A[ \n]/
 
       escape = options[:escape] || ''
-      txt = txt.gsub!(/^/, escape)
+      txt = txt.gsub(/^/, escape)
       txt.gsub!(/^\| $/, '|')
 
       # Add linebreak at end if none
@@ -915,7 +891,7 @@ module Xiki
     #
     # Tree.unquote "| a\n|\n| b"
     def self.unquote txt
-      txt.gsub(/^\| ?/, '')
+      txt.gsub(/^ *[|:] ?/, '')
     end
 
     # Add "| " to the beginnig of each line.
@@ -924,7 +900,9 @@ module Xiki
       if options[:leave_headings]
         return TextUtil.unindent(txt).gsub(/^([^>])/, "#{char} \\1").gsub(/^#{Regexp.quote char} $/, char)
       end
-      TextUtil.unindent(txt).gsub(/^/, "#{char} ").gsub(/^\#{Regexp.quote char} $/, '#{char}')
+      txt = TextUtil.unindent(txt).gsub(/^/, "#{char} ").gsub(/^#{Regexp.quote char} $/, char)
+      txt = txt.gsub(/^/, options[:indent]) if options[:indent]
+      txt
     end
 
     def self.colons txt, options={}
@@ -1363,7 +1341,10 @@ module Xiki
         # Ol["!"]
         break   # Not found
       end
-      return Path.split(path[0..pi], :trailing=>1).length-1   # Count up items in one of the paths
+      matched = path[0..pi]
+      matched.sub! /\/$/, ''
+
+      return Path.split(matched, :trailing=>1).length-1   # Count up items in one of the paths
     end
 
 
@@ -1502,7 +1483,7 @@ module Xiki
       output = output.dup   # So nothing below alters the string
 
       # Move what they printed over to left margin initally, in case they haven't
-      output = TextUtil.unindent(output) if output =~ /\A[ \n]/
+      output = TextUtil.unindent(output) if output =~ /\A[ \n]/ && !options[:not_under]
       output = CodeTree.returned_to_s output   # Turn bullets or strings into arrays
 
       output = "#{output.sub /\n+\z/, ''}\n"   # Make only one trailing linebreak
@@ -1516,7 +1497,8 @@ module Xiki
 
       # Presumes cursor is at the parent node, so git indent and move to after...
 
-      indent = Line.indent
+      indent = "#{Line.indent}  "
+      indent = "" if options[:not_under]
       Line.to_left
 
       if options[:not_under]
@@ -1528,7 +1510,7 @@ module Xiki
 
       left = View.cursor
 
-      output.gsub! /^./, "#{indent}  \\0"   # Add indent, except for blank lines
+      output.gsub! /^./, "#{indent}\\0"   # Add indent, except for blank lines
 
       View.<< output, :utf8=>1
       right = View.cursor
@@ -1626,12 +1608,17 @@ module Xiki
             next
           end
 
-          next if target_match != :shorter && target_match != :same # &&   # If we found where patch matched
+          next if target_match != :shorter && target_match != :same   # If we found where patch matched
+
+          # Found, so start collecting items as output...
 
           options[:children_line] = i
           found = branch.length - 1   # Found, remember indent
 
         else
+
+        # Match was found and we're collecting items as output...
+
           current_indent = branch.length - 1
           # If found and still indented one deeper
           one_deeper = current_indent == found + 1
@@ -2076,7 +2063,19 @@ module Xiki
       return nil if locations.blank? && tree.blank?
 
       # Merge locations into tree when both
-      "#{tree}#{locations.inspect}\n- improve this!"
+      "#{tree}#{locations.inspect}\n- improve this (when more than one pattern matched?)!"
+    end
+
+    # Updates tree to have contents of the path
+    # Tree.update "a\n  b\nc", ["a", "XX"]
+    #   "a\n  XX\nc"
+    def self.update txt, path
+      raise "currently only implemented to accept the last 2 items" if path.length > 2
+      txt.sub(/^( *)([ +-]*#{path[0]}\/?)\n(^\1  .*\n)+/) do |indent, item|
+        indent, item = $1, $2
+        new_part = path[-1].gsub(/^/, "#{indent}  ")
+        "#{indent}#{item}\n#{new_part}\n"
+      end
     end
 
   end

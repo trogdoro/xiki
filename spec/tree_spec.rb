@@ -355,8 +355,15 @@ describe Tree, "#dotify" do
     Tree.dotify(tree, path).should == [true]
   end
 
-  # TODO: also work when they erroneously put "_" in the menu?
+  it "matches when star" do
+    tree = "
+      - */
+        - .bb/
+      ".unindent
 
+    path = ["aa/bb/"]
+    Tree.dotify(tree, path).should == [nil, true]
+  end
 end
 
 
@@ -753,6 +760,13 @@ describe Tree, "#children" do
       ", "a/z").should == "+ aaa/\n"
   end
 
+  it "matches when root is star" do
+    Tree.children("
+      - */
+        - bb/
+      ", "a/").should == "+ bb/\n"
+  end
+
   it "includes all sub-items of items under at sign" do
     Tree.children("
       - @a/
@@ -903,6 +917,14 @@ describe Tree, "#children" do
     options[:exclamations_args].should == nil
   end
 
+  it "doesn't mess up when subpath and exclamations" do
+    Tree.children("
+      - right presentation/
+        ! aa
+      - right/
+        ! bb
+      ", ["right presentation"]).should == "! aa"
+  end
 
 end
 
@@ -1034,6 +1056,10 @@ describe Tree, "#target_match" do
   it "return the count of items that did match upon failure" do
     Tree.target_match("a/b/", "a/z/").should == 1
     Tree.target_match("a/b/c/", "a/b/z/").should == 2
+  end
+
+  it "doesn't confuse when partial match" do
+    Tree.target_match("right/! bb", "right presentation").should == 0
   end
 
 end
@@ -1233,5 +1259,56 @@ describe Tree, "#add_slashes_except_last" do
     Tree.add_slashes_except_last path, :leave_blanks=>1
     path.should == ["", ""]
   end
+end
+
+describe Tree, "#update" do
+  it "updates one item" do
+    txt = "
+      a/
+        b
+      c/
+      ".unindent
+    Tree.update(txt, ["a", "XX"]).should == "
+      a/
+        XX
+      c/
+      ".unindent
+  end
+
+  it "updates when bullets" do
+    txt = "
+      - a/
+        - b
+      - c/
+      ".unindent
+    Tree.update(txt, ["a", "XX"]).should == "
+      - a/
+        XX
+      - c/
+      ".unindent
+  end
+
+  it "updates multiple nested lines" do
+    txt = "
+      z/
+        a/
+          b
+          c
+      c/
+      ".unindent
+    Tree.update(txt, ["a", "XX\nYY"]).should == "
+      z/
+        a/
+          XX
+          YY
+      c/
+      ".unindent
+  end
+
+  it "returns when no match" do
+    txt = "a/"
+    Tree.update(txt, ["z", "XX"]).should == "a/"
+  end
+
 
 end
