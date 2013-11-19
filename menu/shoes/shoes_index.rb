@@ -1,7 +1,8 @@
 module Xiki
   class Shoes
     def self.menu *args
-      txt = ENV['txt']
+      # txt = ENV['txt']
+      txt = args[0]
 
       app = "/Applications/Shoes.app/Contents/MacOS/shoes"
 

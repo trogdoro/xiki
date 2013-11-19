@@ -384,7 +384,9 @@ module Xiki
       def self.expand_wiki_headings txt
 
         # Always simply wrap >... lines that are indented...
-        txt.gsub! /( +)> /, "\\1h2/"
+        txt.gsub! /^( *hero\/\n *)> /, "\\1h1/"   # If under "hero/" make h1
+
+        txt.gsub! /^( +)> /, "\\1h2/"
 
         return if txt !~ /^> /   # If no >... lines at left margin, we're done (because only they have are meant to be wrapped)
 
@@ -538,17 +540,26 @@ module Xiki
                   padding-top: 60px;
                   padding-bottom: 40px;
                 }
+
               </style>
               <!-- <link href="../assets/css/bootstrap-responsive.css" rel="stylesheet"> -->
 
               <!--
+
+                /* Temp Hack to get icons to not be fucked up. */
+                .icon{
+                  line-height: 38px !important;
+                  width: 33px !important;
+                }
+
+
+              <link href="http://xiki.loc/font-awesome/3.1.1/css/font-awesome.min.css" rel="stylesheet">
+              <link href="http://xiki.loc/twitter-bootstrap/2.3.1/css/bootstrap-combined.min.css" rel="stylesheet">
               <link href="http://netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/css/bootstrap-combined.min.css" rel="stylesheet">
               -->
 
-
               <link href="http://netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/css/bootstrap-combined.no-icons.min.css" rel="stylesheet">
               <link href="http://netdna.bootstrapcdn.com/font-awesome/3.1.1/css/font-awesome.min.css" rel="stylesheet">
-
 
 
 
@@ -578,37 +589,6 @@ module Xiki
               </div>
           `.unindent
 
-        #                 <button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
-        #                   <span class="icon-bar"></span>
-        #                   <span class="icon-bar"></span>
-        #                   <span class="icon-bar"></span>
-        #                 </button>
-        #                 <a class="brand" href="#">Project name</a>
-        #                 <div class="nav-collapse collapse">
-        #                   <ul class="nav">
-        #                     <li class="active"><a href="#">Home</a></li>
-        #                     <li><a href="#about">About</a></li>
-        #                     <li><a href="#contact">Contact</a></li>
-        #                     <li class="dropdown">
-        #                       <a href="#" class="dropdown-toggle" data-toggle="dropdown">Dropdown <b class="caret"></b></a>
-        #                       <ul class="dropdown-menu">
-        #                         <li><a href="#">Action</a></li>
-        #                         <li><a href="#">Another action</a></li>
-        #                         <li><a href="#">Something else here</a></li>
-        #                         <li class="divider"></li>
-        #                         <li class="nav-header">Nav header</li>
-        #                         <li><a href="#">Separated link</a></li>
-        #                         <li><a href="#">One more separated link</a></li>
-        #                       </ul>
-        #                     </li>
-        #                   </ul>
-        #                   <form class="navbar-form pull-right">
-        #                     <input class="span2" type="text" placeholder="Email">
-        #                     <input class="span2" type="password" placeholder="Password">
-        #                     <button type="submit" class="btn">Sign in</button>
-        #                   </form>
-        #                 </div>
-
 
         if @html =~ /class='hero-unit'/
           bg = @@bg[rand @@bg.length]
@@ -633,11 +613,18 @@ module Xiki
               <!-- Le javascript
               ================================================== -->
               <!-- Placed at the end of the document so the pages load faster -->
+
+
+              <!--
+              <script src="http://xiki.loc/js/jquery.min.js"></script>
+                -->
               <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+
+
+
               <script src="http://netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/js/bootstrap.min.js"></script>
 
           #{@scripts}
-
             </body>
           </html>
           `.gsub(/^      /, '')

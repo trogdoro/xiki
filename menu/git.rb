@@ -110,7 +110,7 @@ module Xiki::Menu
     def self.status_raw
       dir = Tree.closest_dir yield[:ancestors]
 
-      result = Console.sync "echo 'TODO - finish .status_raw - #{dir}'"  #, :dir=>Dir.pwd______
+      result = Console.sync "echo 'TODO - finish .status_raw - #{dir}'"
       Tree.quote result
     end
 
@@ -590,7 +590,7 @@ module Xiki::Menu
         return "@flash/- Provide some files (on lines next to this menu, with no blank lines, and no 'untracked' label!"
       end
 
-      Console.run "git commit -m \"#{message}\" #{siblings.join("\\\n  ")}", :dir=>dir#, :no_enter=>true
+      Console.run "git commit -m \"#{message}\" #{siblings.join("\\\n  ")}", :dir=>dir
     end
 
     def self.unadd

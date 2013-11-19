@@ -1,3 +1,5 @@
+require "#{Xiki.dir}menu/dom.rb"  # if ! defined?(Xiki::Dom)
+
 module Menu
   class Html
 

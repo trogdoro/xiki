@@ -1,7 +1,6 @@
 module Xiki
   class Mongo
-    def self.menu # bucket=nil
-      %`
+    MENU = %`
       - .collections/
       - docs/
         > Create
@@ -16,22 +15,37 @@ module Xiki
 
         > Delete
         @foo.remove({_id:"a"})
-      `.unindent
-    end
+      `
 
-    def self.collections collection=nil
+    def self.collections collection=nil, doc=nil
 
       collection.sub!(/\/$/, '') if collection
 
-      # If /, list databases
+      # /, so list databases
 
-      if collection.nil?
+      if ! collection
         json = self.run 'printjson(db._adminCommand("listDatabases"))'
         o = JSON[json]
         return o["databases"].map{|d| "#{d['name']}/"}
       end
 
-      self.run("db.#{collection}.find()").gsub(/^/, '| ')
+      # /db/, so list records
+
+      if ! doc
+        txt = self.run("db.#{collection}.find()")
+        txt = %Q`> No documents yet.  Create one?\n{ "_id":"id", "name":"Steve", "description":"whatever"}` if txt == ""
+        return txt.gsub(/^/, '| ')
+      end
+
+      # /db/doc, so save
+
+      doc.sub!(/^\| /, '')
+      command = "db.#{collection}.save(#{doc})"
+
+      txt = self.run command   # .gsub(/^/, '| ')
+
+      "@flash/- saved!"
+
     end
 
     def self.run command
@@ -46,10 +60,13 @@ module Xiki
       end
 
       txt.sub /(.+\n){2}/, ''   # Delete first 2 lines
-
     end
 
     def self.init
+
+      # - Is this being called anywhere?
+      #   - Maybe have item in menu that saves it to startup
+      #     - maybe just shows file syntax for adding to a file!
 
       Launcher.add(/^db\./) do |l|   # General db... lines
         l.strip!

@@ -1,8 +1,6 @@
 module Xiki
   class Youtube
-    def self.menu
-
-      "
+    MENU = "
       | Put words here to search on youtube
       - url with start time/
         @http://www.youtube.com/watch?v=XkYcWzBCEb8#t=2m51s
@@ -21,12 +19,11 @@ module Xiki
           | }
       @notes/
       "
-    end
 
     def self.menu_after output, *args
       return output if output
 
-      txt = ENV['txt']
+      txt = yield['args'][0]
 
       Browser.url "http://www.youtube.com/results?search_query=#{txt}"
     end

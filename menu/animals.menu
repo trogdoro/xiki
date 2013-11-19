@@ -14,7 +14,6 @@
         - row/
           - span6/
             - h1/
-              - icon/002_dog
               - Facts
             - p/This is some stuff.
           - span6/
@@ -22,17 +21,16 @@
             - p/dolor sit lorem...
   - cats/
     - persian/
+      | meow
     - siamese/
+      | meow
 - wild/
   - lions/
-    - white/
-    - other/
+    | growl
   - tigers/
-    - ligers/
-    - regular type/
+    | growl
   - bears/
-    - brown/
-    - black/
+    | oh my
 - bugs/
   - spiders/
-  - bees/
+    | go web

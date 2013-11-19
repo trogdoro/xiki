@@ -20,6 +20,7 @@ module Xiki
     end
 
     def self.define_keys
+
       self.keys
       View.flash "- defined Command-C, Command-V, Command-Q, etc."
     end
@@ -32,6 +33,8 @@ module Xiki
     def self.keys_for_aquamacs # options={}
 
       return if ! $el.boundp(:osx_key_mode_map)
+
+      $el.define_key(:osx_key_mode_map, $el.kbd("A-r")){ Browser.reload }
 
       # Don't do the rest by default, since it presumes that "Options > Appearance > Auto Faces" is off ...
 
@@ -47,6 +50,9 @@ module Xiki
       $el.define_key :osx_key_mode_map, $el.kbd("A-n") do
         View.new_file
       end
+
+      $el.define_key(:osx_key_mode_map, $el.kbd("<A-right>")) { Code.indent_to }   # Command+right
+      $el.define_key(:osx_key_mode_map, $el.kbd("<A-left>")) { Code.indent_to :left=>1 }   # Command+left
 
     end
 

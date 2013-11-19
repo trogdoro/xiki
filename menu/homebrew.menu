@@ -1,0 +1,12 @@
+- before every each use/
+  @% brew update
+  - refetch if problems/
+    @/usr/local/
+      % git fetch origin
+      % git reset --hard origin/master
+- install package/
+  @% brew install imagemagick
+- setup/
+  - make sure things are ok/
+    @% brew doctor
+@notes/

@@ -58,7 +58,8 @@ module Xiki
           |   background-color: #eee;
           |   margin: 30px;
           | }
-          + list/
+          - list/
+          @notes/
           "
       end
 

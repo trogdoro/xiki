@@ -1,0 +1,52 @@
+> Summary
+| This menu updates config files etc. for Xiki-enabling aquamacs.  Aquamacs is the recommended editor to use Xiki on the Mac.  It is a mac-friendly variant of Emacs, that lets you use all of the standard Mac key shortcuts and editing paradigms.
+
+> Click on each of these
+Click on each of these items individually.  Note the first one appends to or creates a ~/.emacs file.
+
+update emacs conf/
+  ! el4r_gem_lib = Gem::Specification.find_by_name("trogdoro-el4r").gem_dir+"/"
+  ! el4r_gem_dir = "#{el4r_gem_lib}data/emacs/site-lisp/"
+  !
+  ! txt = %`
+  !   ; Load el4r, which loads Xiki
+  !   (add-to-list 'load-path "#{el4r_gem_dir}")
+  !   (require 'el4r)
+  !   (el4r-boot)
+  !   (el4r-troubleshooting-keys)
+  !   `.unindent
+  !
+  ! target = File.expand_path("~/.emacs")
+  ! return "Your .emacs already has '(el4r-boot)'.  Remove it and the related lines and re-run." if File.read(target, *Files.encoding_binary) =~ /^ *\(el4r-boot\)/ rescue nil
+  !
+  ! File.open(target, "a") { |f| f << txt }
+  ! backup = Files.unique_name("/tmp/.emacs")
+  ! File.open(backup, "w") { |f| f << txt }
+  ! "- The ~/.emacs file was updated.  A backup of the original was successfully created at #{backup}"
+  !
+  ! # Todo: warn this will update the .emacs file
+update el4rrc/
+  ! el4r_gem_lib = Gem::Specification.find_by_name("trogdoro-el4r").gem_dir+"/"
+  ! txt = File.read("#{Xiki.dir}menu/emacs_setup/el4rrc_default.txt")
+  ! txt.sub!("{{trogdoro_el4r_dir}}", el4r_gem_lib.sub(/\/$/, ''))
+  !
+  ! target = File.expand_path("~/.el4rrc.rb")
+  ! return "The file ~/.el4rrc.rb already exists.  Delete or rename it and re-run." if File.exists?(target)
+  !
+  ! File.open(target, "w") { |f| f << txt }
+  ! "- The ~/.el4rrc.rb file was successfully created."
+update initrb/
+  ! txt = File.read("#{Xiki.dir}menu/emacs_setup/initrb_default.txt")
+  ! txt.sub!("{{xiki_dir}}", Xiki.dir)
+  !
+  ! el4r_dir = File.expand_path("~/.el4r")
+  ! Dir.mkdir(el4r_dir) if ! File.exists?(el4r_dir)
+  !
+  ! target = "#{el4r_dir}/init.rb"
+  ! return "The file ~/.el4r/init.rb already exists.  Delete or rename it and re-run." if File.exists?(target)
+  !
+  ! File.open(target, "w") { |f| f << txt }
+  ! "- The ~/.el4r/init.rb file was successfully created."
+
+> Optionally tweak your emacs config
+Paste "emacs config tweaks" into emacs and double-click on it.  You'll be able to preview each conf item before it's added to your .emacs.

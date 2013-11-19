@@ -27,14 +27,14 @@ class Mark
     Xiki::Color.next
     ""
   end
+
   def self.previous
     Xiki::Color.previous
     ""
   end
 
   def self.outline
-    View.kill if View.name == "@mark/"
-
+    View.kill :force_recent=>1 if View.name == "@mark/"
     txt = self.get_marked_lines
     if txt.blank?
       txt = "    - no marked lines in this view!"

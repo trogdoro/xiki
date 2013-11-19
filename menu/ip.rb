@@ -1,4 +1,4 @@
-# return "127.1.2.3"   # Hard-coded IP, for when demoing
+# return "127.3.3.7"   # Hard-coded IP, for when demoing
 
 inet = `ifconfig`.split("\n").grep(/\binet\b/)
 

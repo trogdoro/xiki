@@ -13,7 +13,8 @@ module Xiki
 
       load path
 
-      Styles.reload_styles
+      # This should be done manually, since many themes can be used in a row
+      #       Styles.reload_styles
 
       nil
     end

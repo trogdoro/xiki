@@ -31,7 +31,7 @@ module Xiki::Menu
 
     def self.uninstall name, version
       txt = "sudo gem uninstall #{name} -v #{version}"
-      Console.run txt
+      Console.run txt, :dont_move=>1
 
       "@flash/- Running gem uninstall command in shell..."
     end

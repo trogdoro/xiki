@@ -26,7 +26,7 @@ module Xiki
           | near the bottom of the file with the same heading but starting with
           | ">>" instead of ">"
           |
-          | Then, type open+related+heading to jump back and forth.
+          | Then, type custom+reminder to jump back and forth.
         - to enable the deck keys in a .notes file/
           - type: do+keys+deck
           - or use) @deck/enable arrow keys/
@@ -102,7 +102,7 @@ module Xiki
 
     end
 
-    def self.left_arrow
+    def self.left_arrow options={}
 
       Notes.narrow_block if ! View.hidden?   # If not hidden, hide first, for simplicity
 
@@ -128,7 +128,7 @@ module Xiki
 
       Notes.narrow_block
 
-      Effects.glow :fade_in=>1, :what=>:block if result[0] == 0
+      Effects.glow(:fade_in=>1, :what=>:block) if ! options[:dont_fade] && result[0] == 0
     end
 
     def self.right_arrow options={}
@@ -152,7 +152,7 @@ module Xiki
 
       View.column = column
 
-      Effects.glow :fade_in=>1, :what=>:block if result[2] && ! options[:dont_move]
+      Effects.glow :fade_in=>1, :what=>:block if result[2] && ! options[:dont_move] && ! options[:dont_fade]
     end
 
     # Sets little bars at bottom of window (mode line)

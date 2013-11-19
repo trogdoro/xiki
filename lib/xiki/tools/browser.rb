@@ -43,6 +43,12 @@ module Xiki
 
       path = Tree.path[0]
 
+      if path =~ /^(\w+)\.bootstrap\//
+        name = $1
+        self.url "http://localhost:8161/#{name}"
+        return
+      end
+
       if path =~ %r"^source://"
         path.sub! /^source/, 'http'
         self.url path
@@ -51,7 +57,7 @@ module Xiki
 
       # If file path, bullet, quote, or ends in slash, use tree instead of current file...
 
-      file_exists = File.exists? path
+      file_exists = path && File.exists?(path)
 
       if file_exists || Line =~ /(^ *[|+-]|\/$)/
         # Treat as menu if not file path or "up" prefix
@@ -69,7 +75,7 @@ module Xiki
 
         if is_menu
           path.gsub! ' ', '-'
-          url = "http://xiki/#{path}"
+          url = "http://localhost:8161/#{path}"
         else
           url = "file://#{path}"
         end
@@ -91,7 +97,7 @@ module Xiki
 
       # Optionally turn into local url, accounding url_mappings.menu...
 
-      mappings = Menu.menu_to_hash Bookmarks["~/menu3/url_mappings.menu"] rescue {}
+      mappings = Menu.menu_to_hash Bookmarks["~/menu/url_mappings.menu"] rescue {}
       result = nil
       mappings.each do |k, v|
         break file.sub!(v, "#{k}/") if file.start_with? v

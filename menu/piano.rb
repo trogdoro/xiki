@@ -40,9 +40,7 @@ module Xiki
     rescue Exception=>e
     end
 
-    def self.menu
-
-      %`
+    MENU = %`
       > Pass in notes (start GarageBand first)
       | g cdefg c c
       - .setup/
@@ -294,7 +292,6 @@ module Xiki
           | - Oo o o oo o O: phrygian
           | - Oo o oo o o O: locrian
       `
-    end
 
     def self.names
       @@names
@@ -318,7 +315,8 @@ module Xiki
           Move.to_end
           Search.forward("^[^(\n]+$")
         end
-        txt = ENV['txt']
+        txt = args[0]
+        return "@beg/quoted/" if txt !~ /\n/
       else
         txt = args[0]
       end
@@ -346,6 +344,7 @@ module Xiki
 
         # Start at where cursor is
         if $el
+          # Comment out for demo?
           View.column = Line.value[/.+(\/|\| ?)/].length if options[:move]
         end
 
@@ -362,6 +361,7 @@ module Xiki
             sharp = char == "#"
           end
           if $el
+            # Comment out for demo?
             Move.forward if options[:move] && View.cursor != Line.right
           end
           self.pause
@@ -513,7 +513,6 @@ module Xiki
     end
 
     def self.pause
-      # Ol << "!"
       pause = @@tempo * 4
       pause = pause / 60.0
       pause = 1 / pause
@@ -663,7 +662,7 @@ module Xiki
       @@repeat = 1
       # @@seed = nil
 
-      ".flash - success!"
+      "@flash/- success!"
     end
 
     #
@@ -682,9 +681,9 @@ module Xiki
       @@midi
     end
 
-    def self.velocity txt="126";  @@velocity = txt.to_i;  ".flash - updated!";  end
-    def self.tempo txt="120";  @@tempo = txt.to_i;  ".flash - updated!";  end
-    def self.probability txt="50";  @@probability = txt.to_s.sub('%', '').to_i;  ".flash - updated!";  end
+    def self.velocity txt="126";  @@velocity = txt.to_i;  "@flash/- updated!";  end
+    def self.tempo txt="120";  @@tempo = txt.to_i;  "@flash/- updated!";  end
+    def self.probability txt="50";  @@probability = txt.to_s.sub('%', '').to_i;  "@flash/- updated!";  end
     def self.variation txt="2"
       @@variation = txt.to_i
       # if @@seed   # If seed set manually, just use it
@@ -695,15 +694,15 @@ module Xiki
 
       # srand seed
 
-      ".flash - updated!"
+      "@flash/- updated!"
     end
-    def self.melodic txt="1";  @@melodic = txt.to_i;  ".flash - updated!";  end
-    def self.climb txt="1";  @@climb = txt.to_i;  ".flash - updated!";  end
-    def self.pentatonic txt="1";  Ol.<<(txt); @@pentatonic = [true, "on", 1].member?(txt);  ".flash - updated!";  end
-    def self.consistency txt="50";  @@consistency = txt.to_s.sub('%', '').to_i;  ".flash - updated!";  end
-    def self.octave txt="0";  @@octave = txt.to_i;  ".flash - updated!";  end
-    def self.repeat txt="4"; @@repeat = txt.to_i;  ".flash - updated!";  end
-    # def self.seed txt; @@seed = txt.to_i;  ".flash - updated!";  end
+    def self.melodic txt="1";  @@melodic = txt.to_i;  "@flash/- updated!";  end
+    def self.climb txt="1";  @@climb = txt.to_i;  "@flash/- updated!";  end
+    def self.pentatonic txt="1";  Ol.<<(txt); @@pentatonic = [true, "on", 1].member?(txt);  "@flash/- updated!";  end
+    def self.consistency txt="50";  @@consistency = txt.to_s.sub('%', '').to_i;  "@flash/- updated!";  end
+    def self.octave txt="0";  @@octave = txt.to_i;  "@flash/- updated!";  end
+    def self.repeat txt="4"; @@repeat = txt.to_i;  "@flash/- updated!";  end
+    # def self.seed txt; @@seed = txt.to_i;  "@flash/- updated!";  end
 
     def self.mode txt=nil
       return @@mode if txt.nil?
@@ -711,11 +710,11 @@ module Xiki
       if txt.to_s == "random"
         random = (-2..9).to_a[rand 7]
         @@mode = random
-        return ".flash - updated to #{random}!"
+        return "@flash/- updated to #{random}!"
       end
 
       @@mode = txt.to_i
-      ".flash - updated!"
+      "@flash/- updated!"
     end
 
     class << self

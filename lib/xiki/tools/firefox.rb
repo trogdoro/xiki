@@ -92,12 +92,19 @@ module Xiki
       Firefox.value('window.content.tmp_stack')
     end
 
-    def self.reload
+    def self.set_tab tab
+      self.reload tab
+      nil
+    end
+
+    # Go to nth tab
+    #   Firefox.reload 4
+    def self.reload tab=nil
 
       # Clears out OL log
       Code.open_log_view if Keys.prefix_u && View.buffer_visible?('*ol')
 
-      prefix = Keys.prefix_n :clear=>true
+      prefix = tab || Keys.prefix_n(:clear=>true)
       if ! prefix
         Firefox.exec("gBrowser.reload()", :browser=>true)
       elsif prefix == 0
@@ -109,7 +116,7 @@ module Xiki
         if tab == -1   # If 0, close tab
           self.close_tab
         else   # If number, switch to tab
-          Firefox.exec("gBrowser.tabContainer.selectedIndex = #{tab}", :browser=>true)
+          Firefox.exec("if(#{tab} >= gBrowser.tabContainer.childNodes.length){ gBrowser.addTab() }; gBrowser.tabContainer.selectedIndex = #{tab}", :browser=>true)
         end
 
       end
@@ -223,7 +230,7 @@ module Xiki
 
       result = Firefox.mozrepl_command txt, options
 
-      if result =~ /\$ is not defined/   # If no jquery wrap it and try again
+      if result =~ /(jQuery|\$) is not defined/   # If no jquery wrap it and try again
         txt = Javascript.wrap_jquery_load txt
         result = Firefox.mozrepl_command txt, options
       elsif result =~ /\bp is not defined\b/   # If no jquery wrap it and try again
@@ -277,6 +284,11 @@ module Xiki
         `.unindent
 
       result = self.exec js, :browser=>true
+
+      if ! $el   # Command-line, so do decoupled way of opening url
+        Files.open_in_os url
+        return nil
+      end
 
       $el.browse_url(url) if result =~ /^!!! TypeError: gBrowser is null/
 

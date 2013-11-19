@@ -2,6 +2,8 @@ module Xiki
   class AddressBook
     def self.names
       names = Applescript.run "get the name of every person as string", :app=>"address book", :delimiter=>"|"
+      names.sub! /\A"/, ''
+      names.sub! /"\z/, ''
       names.split "|"
     end
 
@@ -16,7 +18,10 @@ module Xiki
       txt.gsub! /, /, "\n"
       txt.gsub! /:/, ": "
       txt = txt.split("\n").select{|o| o !~ /^"\}|missing value|END: VCARD|VERSION: 3.0|BEGIN: VCARD/}.join("\n")
-      txt.gsub! /^/, "- "
+      txt.sub!(/^PRODID:.+\n/, "")
+      txt.gsub! /^/, "| "
+      txt.gsub! /;+/, "   "
+      txt.gsub!(/ +$/, "")
 
       txt
     end

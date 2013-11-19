@@ -833,4 +833,17 @@
     <i class="icon-2x icon-comment"></i> 2x
     <i class="icon-large icon-comment"></i> large
     <i class="icon-comment"></i>
+- inline/
+  ! txt = ""
+  ! a = ""
+  ! 63.times { txt << "|*#{a}\n"; a = a.next }
+  ! #txt << "|-----------------\n"
+  ! a = ""
+  ! 30.times { txt << "|*#{a}\n"; a = a.next }
+  ! a = ""
+  ! 30.times { txt << "|*#{a}\n"; a = a.next }
+  ! a = ""
+  ! 40.times { txt << "|*#{a}\n"; a = a.next }
+  ! txt
+
 

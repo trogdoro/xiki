@@ -88,8 +88,14 @@ module Xiki
     end
 
     def self.define_styles
+      #       Styles.define :fontawesome, :size => '+10', :face => "FontAwesome"
+
       Styles.define :dotsies, :size => '+2', :face => "Dotsies"
-      Styles.define :dotsies_white, :size => '+2', :face => "Dotsies", :fg=>"fff"
+      # Styles.define :dotsies_white, :size => '+2', :face => "Dotsies", :fg=>"fff"
+
+      # Styles.define :dotsies_white, :size => '-2', :face => "Dotsies", :fg=>"bce"
+      Styles.define :dotsies_white, :size => '-2', :face => "Dotsies", :fg=>"cdf"
+
       Styles.define :dotsies_experimental, :size => '+2', :face => "Dotsies Experimental"
       Styles.define :dotsies_roman, :size => '+2', :face => "Dotsies Roman"
       Styles.define :dotsies_mono, :size => '+2', :face => "Dotsies Mono"

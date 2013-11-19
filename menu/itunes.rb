@@ -1,7 +1,6 @@
 module Xiki
   class Itunes
-    def self.menu
-      "
+    MENU = "
       - .play/
       - .pause/
       - .next/
@@ -21,7 +20,6 @@ module Xiki
         | Play a playlist
         @itunes/playlist/class
       "
-    end
 
     @@use_pipe_delimiter = "set Applescript's text item delimiters to \"|\""
 
@@ -57,7 +55,7 @@ module Xiki
 
     def self.next
       Applescript.run "iTunes", "next track"
-      "@flash/- #{self.current}"
+      "@flash/- #{self.current.gsub('\"', '')}"
     end
     def self.previous
       Applescript.run "iTunes", "previous track"

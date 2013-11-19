@@ -34,10 +34,14 @@ module Xiki::Menu
 
       return self.menus(output) if ! name
 
-      # /foo/... or /foo/|content...
+      # /foo/... or /foo/|content, so show conf or save...
 
-      # TODO: remove Tree.txt editor dependency
-      ConfHandler.txt name, content ? Tree.txt : nil
+      options[:no_search] = 1
+
+      item = args[-1]
+
+      # TODO: remove Tree.txt editor dependency?
+      ConfHandler.txt name, (content ? Tree.txt : nil), item, options
     end
 
 
@@ -58,7 +62,6 @@ module Xiki::Menu
 
       Dir["#{Xiki.menu_path_custom_dir}/conf/*.conf"].each do |conf_file|
         menus << "- #{File.basename(conf_file, ".*")}/"
-
       end
 
       menus.sort!

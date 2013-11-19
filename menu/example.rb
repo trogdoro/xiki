@@ -7,7 +7,10 @@ module Xiki
   #     | p "123"
   class Example
     def self.menu *args
-      Eval.menu *args
+      return "@beg/neighbors/" if args[-1] !~ /\n/
+      txt, out, exception = Code.eval args[-1].gsub(/^\| ?/, ''), :pretty_exception=>1
+      return exception if exception
+      Tree.quote out || txt
     end
   end
 end

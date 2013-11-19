@@ -1,8 +1,6 @@
 module Xiki
   class Encoding
-    def self.menu
-      "
-      - current: #{$el.elvar.buffer_file_coding_system.to_s}
+    MENU = "
       - .dos/
       - .raw unix/
       - .iso unix/
@@ -10,6 +8,10 @@ module Xiki
       - see/
         <@ specials/
       "
+
+    def self.menu_after out, *args
+      return if args.any?
+      "- current: #{$el.elvar.buffer_file_coding_system.to_s}\n#{out}"
     end
 
     def self.dos
