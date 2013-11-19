@@ -1,34 +1,14 @@
-# TODO: are we using this?
-# - layout+dimensions uses @dimensions
-#   - which exists completely separately from this?
-# - layout+visibility uses part of this?
-#   - should probably make separate @visibility menu
-
 module Xiki::Menu
   class Window
 
     MENU = "
-      - .dimensions/
-        - presets/
-        - @dimensions config/
-        - .adjust/
-          - position/
-            - up/
-            - down/
-            - left/
-            - right/
-          - size/
-            - wider/
-            - narrower/
-            - taller/
-            - shorter/
-        - current/
       - .visible/
         - full/
         - high/
         - medium/
         - low/
         - .colorized/
+        - .notes mode/
         - .scroll bars/
         - .dotsies/
         - @white/
@@ -69,7 +49,7 @@ module Xiki::Menu
 
       # If preset passed, apply it
 
-      View.kill if View.name == "@window/dimensions/presets/"
+      View.kill :force_recent=>1 if View.name == "@window/dimensions/presets/"
       txt = txt.find { |o| o =~ /^[ +-]*#{preset}\// }
 
       txt = txt[/\/(.+)/, 1]
@@ -116,8 +96,14 @@ module Xiki::Menu
     end
 
     def self.colorized
-      View.kill if View.file.nil?
+      View.kill :force_recent=>1 if View.file.nil?
       Styles.toggle
+      nil
+    end
+
+    def self.notes_mode
+      View.kill :force_recent=>1 if View.file.nil?
+      Xiki::Notes.mode
       nil
     end
 
@@ -126,7 +112,7 @@ module Xiki::Menu
 
       View.scroll_bars = ! visible
       View.frame_width += visible ? 3 : -3
-      View.kill if View.name == "@window/visible/"
+      View.kill :force_recent=>1 if View.name == "@window/visible/"
       nil
     end
 
@@ -136,5 +122,3 @@ module Xiki::Menu
     end
 
 end; end
-
-
