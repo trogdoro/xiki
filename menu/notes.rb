@@ -43,7 +43,6 @@ class Xiki::Menu::Notes
     `
 
   def self.menu_after output, *path
-
     options = yield
 
     # Prepend parent to items if foo/@menu...
@@ -74,7 +73,28 @@ class Xiki::Menu::Notes
 
     # /foo and no output, so we need to handle it...
 
-    Xiki["~/notes//", items]
+    # Delegate to the notes dir...
+
+    # TODO: if doesn't exist yet > ask for whether to create it?!
+    #   - Is this general enough to be extracted?
+    #     - maybe, if we ask
+    #       - probably have to make a setting
+    #       - crap, it's still just a dir - how would I know whether to suggest create?
+    #         - probably just handle it here
+    #           - at least do creating here!
+    #           - maybe do creating notes internally!
+
+    # Check whether it exists first, just here
+    # If doesn't exist
+    # Probably set a setting if doesn't exist
+    #     if ! File.exists?("~/notes/")
+    #       && ! File.exists?("~/notes/")
+
+    #     Xiki["~/notes//", items, :suggest_create=>1]
+    options = {}
+    txt = Xiki["~/notes//", items, options]
+
+    txt
   end
 
 end
