@@ -17,6 +17,8 @@ module Xiki
           | <text x="100" y="50" style="fill:#f00; font-family:arial; font-size:50px;">Hey</text>
           | <text x="100" y="50" style="fill:green; font-family:arial; font-size:50px; text-anchor:end;">Hey</text>
           | <text x="100" y="50" style="fill:orange; font-family:arial; font-size:50px; text-anchor:middle;">Hey</text>
+        - image/
+          | <image class="shark" xlink:href="http://xiki.loc/shark.svg" width="500" height="500" />
         - gradient/
           | <defs>
           |   <linearGradient id="fade" x1="0%" y1="0%" x2="0%" y2="100%" spreadMethod="pad">

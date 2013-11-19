@@ -1,3 +1,6 @@
+- install/
+  : download and install a package from here
+  @http://downloads.vagrantup.com/
 - 1. choose OS/
   : Create vagrant configuration file for an OS
   - precise pengolin 64/

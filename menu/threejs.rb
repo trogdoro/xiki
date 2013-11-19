@@ -326,6 +326,10 @@ class Threejs
         @http://mrdoob.github.com/three.js/docs/55/
       - shaders/
         @http://mrdoob.com/projects/glsl_sandbox/
+    - docs/
+      - rectangle/
+      - adding to a real projects/
+        - see video/
     `
 
   def self.menu_after output, *path

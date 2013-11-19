@@ -17,10 +17,27 @@ class SampleMenus
 
   # Just filter out examples - for ajax calls from web create.
   def self.ajax *items
-    txt = Xiki["sample menus/#{items * '/'}"]
+    txt = File.read __FILE__.sub(/\.rb$/, '.menu')
+    txt = Xiki::Tree.children txt, items
+
     extension = txt[/.\w+$/]
     txt = txt.grep(/^ *\|/).join("").gsub(/^ *\| ?/, "")
-    {:txt=>txt, :extension=>extension}.to_json
+
+    {:txt=>txt, :create_extension=>extension}.to_json
+  end
+
+  def self.by_extension extension
+
+    return nil if extension == "."
+
+    txt = File.read __FILE__.sub(/\.rb$/, '.menu')
+    txt = txt[/#{extension}\n(^ +\|.+\n)+/]
+    return nil if ! txt
+    # Remove 1st line and pipes
+    txt.sub! /.+\n/, ''
+    txt.gsub! /^ +\| /, ''
+
+    txt
   end
 
 end

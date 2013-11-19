@@ -59,7 +59,7 @@
       @~/menu/<name>.py
         | # Change this code to something useful
         | a = "hi"
-        | a + a
+        | return a + a
     - js/
       @~/menu/<name>.js
         | // Change this code to something useful
@@ -124,10 +124,13 @@
 - more/
   - bootstrap/
     @~/menu/<name>.bootstrap
+      | hero/
+      |   > Mumbo Jumbo.
+      |   Convinced? We. Thought. So.
       | > Heading
       | Here's a sentence.
       | > Another
-      | The following three columns will be next to each other.
+      | Put a blank space after a heading for separate rows.
       |
       | > One
       | Lorem...
@@ -135,6 +138,14 @@
       | Ipsum...
       | > Three
       | Dolor...
+  - html/
+    @~/menu/<name>.html
+      | <h1>Hello</h1>
+      | <p>How are you</p>
+  - haml/
+    @~/menu/<name>.haml
+      | %h1 Hello
+      |   %p How are you
   - wrap/
     - path/
       @~/menu/<name>.rb
