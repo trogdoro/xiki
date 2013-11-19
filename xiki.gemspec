@@ -7,7 +7,11 @@ Gem::Specification.new do |s|
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Craig Muth"]
   s.date = "2013-05-20"
-  s.executables = ["xiki"]
+
+  if ENV['_'] !~ /\/bundle$/   # If not called by bundler, install executables
+    s.executables = ["xiki"]
+  end
+
   s.summary = "A shell console with GUI features."
   s.description = "Xiki does what shell consoles do, but lets you edit everything at any time. It's trivial to make your own commands and menus to access other tools."
   s.email = "craig.muth@gmail.com"
@@ -25,7 +29,9 @@ Gem::Specification.new do |s|
   s.homepage = "http://xiki.org"
   s.licenses = ["MIT"]
   s.require_paths = ["."]
+  s.require_paths = ["lib"]
 
+  s.add_dependency('awesome_print')
   s.add_dependency('json')
   s.add_dependency('httparty')
   s.add_dependency('activesupport')
@@ -36,7 +42,7 @@ Gem::Specification.new do |s|
   s.add_dependency('net-sftp')
   s.add_dependency('rake')
   s.add_dependency('rspec', [" ~> 2.12.0"])
-  s.add_dependency('trogdoro-el4r', [">= 1.0.7"])
+  s.add_dependency('trogdoro-el4r', [">= 1.0.9"])
 
   s.add_dependency('sexp_processor')
   s.add_dependency('file-tail')
