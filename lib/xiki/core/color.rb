@@ -74,7 +74,7 @@ module Xiki
 
       # /mark/, so show options...
 
-      View.kill if View.name == "@mark/"
+      View.kill :force_recent=>1 if View.name == "@mark/"
 
       # Back in the original view...
 
