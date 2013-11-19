@@ -346,7 +346,9 @@ module Xiki
       if prefix == :-
         l, r = View.range
         Effects.blink :left=>l, :right=>r
-        Clipboard["0"] = View.selection.gsub(/^ *\|.?/, '')
+        txt = View.selection
+        quote_char = txt[/[:|]/]
+        Clipboard["0"] = txt.gsub(/^ *#{Regexp.escape quote_char}.?/, '')
         return
       end
 
