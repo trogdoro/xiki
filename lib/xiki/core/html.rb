@@ -62,6 +62,9 @@ module Xiki
       # Turn menu text into html...
 
       # TODO: should probably maintain indenting?
+
+      txt = txt.to_s
+
       txt.gsub! /^ *\| ?/, ''
 
       txt.gsub! /^( *)[+-]+ /, "\\1"   # Get rid of bullets
@@ -88,7 +91,7 @@ module Xiki
       txt.gsub!(/.+/){
         all = $&
         next all if all =~ /<h/
-        next "<p class='info'>#{all}</p>" if all !~ /^<a/   # Don't end in "/" - just informational
+        next "<p class='info'>#{all}</p>" if all !~ %r"^<a"   # Don't end in "/" - just informational
         all
       }
       txt.gsub /^$/, "<p class='blank'>&nbsp;</p>"
@@ -97,99 +100,111 @@ module Xiki
     # Wrap surrounding html - style and js etc.
     def self.template txt, options={}
 
+      # return txt   # Don't add template, for when experimenting
+      # return "<div class='content'>#{txt}</div>"
+
       name = options[:name] ? "Xiki - #{options[:name]}" : "Xiki"
 
       output = %`
-      <head>
-        <title>#{name}</title>
-        <meta name="viewport" content="initial-scale = 1.0,maximum-scale = 1.0" />
-      </head>
-      <style>
-        a {
-          text-decoration: none;
-        }
+        <head>
+          <title>#{name}</title>
+          <meta name="viewport" content="initial-scale = 1.0,maximum-scale = 1.0" />
+          <meta http-equiv="Cache-Control" content="no-cache" /> <meta http-equiv="Pragma" content="no-cache"/> <meta http-equiv="Expires" content="0"/>
+        </head>
+        <style>
+          a {
+            text-decoration: none;
+            font-size: 16px;
+          }
+          .content a.selected {
+            background: -moz-linear-gradient(center top, #58b, #7ad) repeat scroll 0 0 transparent;
+            background: -webkit-gradient(linear,center bottom,center top,from(#58b),to(#7ad));
+          }
+          .content a {
+            color: #222;
+            display: block;
 
-        .content a.selected {
-          background: -moz-linear-gradient(center top, #58b, #7ad) repeat scroll 0 0 transparent;
-        }
-        .content a {
-          color: #666;
-          display: block;
+            border-radius: 8px;
+            border: solid 1px;
+            border-color: #eee #ddd #bbb #ddd;
+            background: -moz-linear-gradient(center top, #fff, #eee) repeat scroll 0 0 transparent;
+            background: -webkit-gradient(linear,center bottom,center top,from(#eee),to(#fff));
+            display: block;
+            padding: 11px 17px;
+            text-shadow: 0 1px 0 #fff;
+            font-weight: bold;
+            box-shadow: 1px 1px 3px #aaa;
+            margin: 0 0 1px;
+          }
+          a:hover {
+            background: -moz-linear-gradient(center top, #f8f8f8, #e1e1e1) repeat scroll 0 0 transparent;
+            background: -webkit-gradient(linear,center bottom,center top,from(#e1e1e1),to(#f8f8f8));
+          }
+          body {
+            font-family: dotsies;
+            font-family: arial;
+            margin: 0;
+            padding: 35px;
+            font-size: 15px;
+            color: #222;
+            line-height: 21px;
+            background-color: #f8f8f8;
+          }
+          p {
+            margin: 0;
+          }
+          .blank {
+            line-height: 12px;
+          }
+          h1 {
+            color: #000;
+            font-family: arial;
+            font-size: 17px;
+            font-weight: bold;
+            margin: 11px 0 7px;
+            text-shadow: 1px 1px 1px #999;
+          }
+          .save {
+            margin: 0 20px 10px 20px;
+            font-size: 15px;
+          }
+          form {
+            margin: 0;
+          }
+          textarea {
+            border: solid #ccc 1px;
+            margin: 2px 20px 13px 20px;
+            padding: 7px;
+            width: 80%;
+            font-size: 15px;
+            color: #555;
+            height: 150px;
+            line-height: 20px;
+          }
+          .toggle {
+            font-size: 13px;
+            margin: 15px 20px 0px 20px;
+            font-weight: bold;
+          }
+          .toggle a {
+            color: #aaa;
+          }
+          .info {
+            margin: 5px 0 4px;
+          }
+          pre {
+            font-weight: bold;
+          }
 
-          border-radius: 2px;
-          border: solid 1px;
-          border-color: #eee #ddd #bbb #ddd;
-          background: -moz-linear-gradient(center top, #fff, #f1f1f1) repeat scroll 0 0 transparent;
-          background: -webkit-gradient(linear,center bottom,center top,from(#f1f1f1),to(#fff));
-          display: block;
-          padding: 10px 16px;
-          text-shadow: 0 1px 0 #fff;
-          font-weight: bold;
-        }
-        a:hover {
-          background: -moz-linear-gradient(center top, #f8f8f8, #e1e1e1) repeat scroll 0 0 transparent;
-          background: -webkit-gradient(linear,center bottom,center top,from(#e1e1e1),to(#f8f8f8));
-        }
-        body {
-          font-family: dotsies;
-          font-family: arial;
+        </style>
+        `
 
-          margin: 50px;
-          font-size: 15px;
-          color: #666;
-          line-height: 21px;
-          background-color: #f8f8f8;
-        }
-        p {
-          margin: 0;
-        }
-        .blank {
-          line-height: 12px;
-        }
-        h1 {
-          color: #000;
-          font-family: arial;
-          font-size: 16px;
-          font-weight: bold;
-          margin: 11px 0 7px;
-          text-shadow: 1px 1px 1px #999;
-        }
-        .save {
-          margin: 0 20px 10px 20px;
-          font-size: 15px;
-        }
-        form {
-          margin: 0;
-        }
-        textarea {
-          border: solid #ccc 1px;
-          margin: 2px 20px 13px 20px;
-          padding: 7px;
-          width: 80%;
-          font-size: 15px;
-          color: #555;
-          height: 150px;
-          line-height: 20px;
-        }
-        .toggle {
-          font-size: 13px;
-          margin: 15px 20px 0px 20px;
-          font-weight: bold;
-        }
-        .toggle a {
-          color: #aaa;
-        }
-        .info {
-          margin: 5px 0 4px;
-        }
-        pre {
-          font-weight: bold;
-        }
-
-      </style>
-      `
-
+      # Temporarily load from local url!
+      #       output <<  %`<script src="http://xiki.loc/js/jquery.min.js"></script>`
       output <<  %`<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>`
+
+
+
       #     output <<  %`<script src="http://xiki.loc/js/jquery.min.js"></script>`
 
       if ! options[:dont_html_format_items]
@@ -199,13 +214,19 @@ module Xiki
           started_searching = false;
           $(function(){
 
-            $(window).focus(function () {
+            $(window).bind("pageshow", function(){
+              if($('body').css("margin-left") != "0px"){
+                $('body').animate({"margin-left": 0}, {easing: 'swing', duration: 400})
+              }
+
+              $('a').removeClass("selected");
+
+              $('a').blur()
+
               filter_pattern = "";
               started_searching = false;
 
-              $('body').css("opacity", 1.0);
               $('p, h1, a').show();
-              $('a').removeClass("selected");
             });
 
             $('body').keypress(function(e){
@@ -255,8 +276,10 @@ module Xiki
               var target = $(e.target);
               target.toggleClass("selected");
 
-              $('body').animate({opacity: 0.0}, {easing: 'swing', duration: 150});
-              window.setTimeout(function(){ window.location = target.attr('href'); }, 150);
+              var width = $('body').width()
+              $('body').width(width).animate({"margin-left": -width - 80}, {easing: 'swing', duration: 400})
+
+              window.setTimeout(function(){ window.location = target.attr('href'); }, 400);
               return false;
             });
 
@@ -269,13 +292,12 @@ module Xiki
 
     end
 
-
-
     # Turns a xiki tree with items like tag names into corresponding html tags.
     #
     # Html.to_html_tags "p/\n  hi\n"
     #   "<p>\n  hi\n</p>\n"
     def self.to_html_tags txt
+
       html = ""
 
       txt = txt.gsub /^( *)([+-] )?(\w[\w ]*\/)(.+)/, "\\1\\3\n\\1  \\4"   # Preprocess to break foo/Bar into separate lines
@@ -290,7 +312,7 @@ module Xiki
         self.add_closing_tags html, l, previous   # If lower than last, add any closing tags
 
         last = Line.without_label :line=>last
-        if last =~ /([^*\n]+)\/$/
+        if last !~ /^ *\| / && last =~ /([^*\n]+)\/$/
           tag = $1
           html.<<("  " * (l.length-1)) unless l[-2] =~ /[ +-]*pre\/$/
 
@@ -326,6 +348,8 @@ module Xiki
         close_these.reverse.each_with_index do |tag, i|
 
           next if ! tag   # Was throwing error for icon/... in @bootstrap when hero exists
+
+          next if tag =~ /^ *\|.+\/$/   # Skip if it's a quoted foo/ line
 
           tag.sub! /^\| ?/, ''
           tag = Line.without_label :line=>tag
