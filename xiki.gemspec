@@ -42,7 +42,7 @@ Gem::Specification.new do |s|
   s.add_dependency('net-sftp')
   s.add_dependency('rake')
   s.add_dependency('rspec', [" ~> 2.12.0"])
-  s.add_dependency('trogdoro-el4r', [">= 1.0.9"])
+  s.add_dependency('trogdoro-el4r', [">= 1.0.10"])
 
   s.add_dependency('sexp_processor')
   s.add_dependency('file-tail')
