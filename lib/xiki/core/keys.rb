@@ -581,21 +581,27 @@ module Xiki
 
       if ch_initial =~ /^\d+$/   # If a number, assign it to raw
         ch_raw = ch_initial.to_i
+
         if 134217825 <= ch_raw and ch_raw <= 134217850  # If meta (out of elisp range)
           return ["meta_#{(ch_raw - 134217728).chr}".to_sym, nil]
         end
 
         # Special check for C-. and other sequences
-        ch = if ch_raw == 67108910
-          :control_period
-        elsif ch_raw >= 67108912 && ch_raw <= 67108921   # If between C-0 and C-9
-          (ch_raw - 67108864).chr
-        elsif ch_raw == 67108911
-          :control_slash
-        else
-          # If char is over the elisp max, try to interpret it as Meta
-          $el.char_to_string(ch_raw)
-        end
+        ch =
+          if ch_raw == 67108910
+            :control_period
+          elsif ch_raw >= 67108912 && ch_raw <= 67108921   # If between C-0 and C-9
+            (ch_raw - 67108864).chr
+          elsif ch_raw == 67108911
+            :control_slash
+
+          elsif ch_raw == 28
+            :control_backslash
+
+          else
+            # If char is over the elisp max, try to interpret it as Meta
+            $el.char_to_string(ch_raw)
+          end
         return [ch, ch_raw]
 
       elsif ['left', 'right', 'up', 'down', ].member?(ch_initial)
