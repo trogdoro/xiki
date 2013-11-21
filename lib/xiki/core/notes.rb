@@ -572,7 +572,7 @@ module Xiki
 
       Styles.apply "^hint/.+", :fade6
 
-      Styles.apply "^[< ]*@? ?\\([%$&!]\\) ", nil, :shell_prompt   # Colorize shell prompts after "@"
+      Styles.apply "^[< ]*[@=]? ?\\([%$&!]\\) ", nil, :shell_prompt   # Colorize shell prompts after "@"
 
 
       # Make |~... lines be Dotsies

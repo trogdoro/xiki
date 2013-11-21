@@ -84,7 +84,7 @@ module Xiki
 
       # While chars to search for (alpha chars etc.), narrow down list...
 
-      while ch.is_a?(String) && (ch =~ /[ -"&-)+-:<-?A-~]/ &&   # Be careful editing, due to ranges (_-_)
+      while ch.is_a?(String) && (ch =~ /[ -"&-)+-:<>?A-~]/ &&   # Be careful editing, due to ranges (_-_)
           (ch_raw < 67108912 || ch_raw > 67108921) && ch_raw != 67108909) # ||   # If not control-<number> or C--
 
         if ch == ' ' && pattern != ""   # If space and not already cleared out
@@ -176,233 +176,241 @@ module Xiki
       # Search exited, do something based on char that exited search...
 
       case ch
-      when "0"
-        file = self.construct_path   # Expand out ~
-        # Open in OS
-        $el.shell_command("open #{file}")
-        #     when "\C-a"
-        #       Line.to_left
-      when "\C-t"   # to+Item, starting with a character
+        when "0"
+          file = self.construct_path   # Expand out ~
+          # Open in OS
+          $el.shell_command("open #{file}")
+          #     when "\C-a"
+          #       Line.to_left
+        when "\C-t"   # to+Item, starting with a character
 
-        ch = Keys.input :chars=>1
-        Move.to_axis
-        Search.forward "^ +[+-] #{ch}"#, :beginning=>1
-        Move.backward
-        CodeTree.kill_siblings
-        Keys.clear_prefix
-        Launcher.launch
-
-      when "\C-j"
-        ch = Keys.input :chars=>1
-        if ch == 't'   # just+time
-          self.to_parent
-          self.kill_under
-          FileTree.dir :date_sort=>true
-        elsif ch == 's'   # just+size
-          self.to_parent
-          self.kill_under
-          FileTree.dir :size_sort=>true
-        elsif ch == 'n'   # just+name
-          self.to_parent
-          self.kill_under
-          FileTree.dir
-        elsif ch == 'a'   # just+all
-
-          # If a quote, insert lines indented lower
-          if Line.matches(/\|/)
-            CodeTree.kill_siblings
-            self.enter_under
-          elsif FileTree.dir?  # A Dir, so do recursive search
-            $el.delete_region(Line.left(2), right)
-            FileTree.dir_recursive
-          else   # A file, so enter lines
-            $el.delete_region(Line.left(2), right)
-            FileTree.enter_lines(//)  # Insert all lines
-          end
-        end
-      when :return   # Step in one level
-
-        Keys.clear_prefix
-        Launcher.launch
-
-      when :control_return, "\C-m" #, :right   # If C-., go in but don't collapse siblings
-        Keys.clear_prefix
-        Launcher.launch
-
-
-
-        #         #
-        #         # Temporarily make Command+Return do old launch (until all menus are ported over from the unified refactor)
-        #         #
-        #       when :meta_return
-        #         Keys.clear_prefix
-        #         Launcher.launch_preunified
-        #       when :control_period
-        #         Keys.clear_prefix
-        #         Launcher.launch
-
-      when :meta_return, :control_period
-        Keys.clear_prefix
-        Launcher.launch
-
-
-
-      when "\t"   # If tab, hide siblings and go in
-        $el.delete_region(Line.left(2), right)
-        Keys.clear_prefix
-        Launcher.launch
-
-      when :backspace#, :control_slash   # Collapse this item and keep searching
-        self.to_parent
-        self.kill_under
-        self.search :left=>Line.left, :right=>Line.left(2)
-
-      when :control_slash   # Move this line onto the end of its parent, and expand
-        line = Line.txt
-
-        # Don't kill siblings if "<<" or "<=" line
-
-        if line =~ /^<+=? /
+          ch = Keys.input :chars=>1
+          Move.to_axis
+          Search.forward "^ +[+-] #{ch}"#, :beginning=>1
+          Move.backward
+          CodeTree.kill_siblings
           Keys.clear_prefix
           Launcher.launch
-          return
-        end
 
-        # If CodeTree search
-        if CodeTree.handles?
-          # Kill others
-          View.delete(Line.left(2), right)
+        when "\C-j"
+          ch = Keys.input :chars=>1
+          if ch == 't'   # just+time
+            self.to_parent
+            self.kill_under
+            FileTree.dir :date_sort=>true
+          elsif ch == 's'   # just+size
+            self.to_parent
+            self.kill_under
+            FileTree.dir :size_sort=>true
+          elsif ch == 'n'   # just+name
+            self.to_parent
+            self.kill_under
+            FileTree.dir
+          elsif ch == 'a'   # just+all > show's all recursively
 
-          if Line.without_label =~ /^\./   # If just a method
-            # Back up to first . on last line
-            Search.forward "\\."
-            right = View.cursor
-            Line.previous
-            Search.forward "\\."
-          else   # Else, just delete previous line
-            right = View.cursor
-            Line.previous
-            Line.to_beginning
+            # If a quote, insert lines indented lower
+            if Line.matches(/\|/)
+              CodeTree.kill_siblings
+              self.enter_under
+            elsif FileTree.dir?  # A Dir, so do recursive search
+              $el.delete_region(Line.left(2), right)
+              FileTree.dir_recursive
+            else   # A file, so enter lines
+              $el.delete_region(Line.left(2), right)
+              FileTree.enter_lines(//)  # Insert all lines
+            end
           end
-          View.delete(View.cursor, right)
+        when :return   # Step in one level
+
+          Keys.clear_prefix
+          Launcher.launch
+
+        when :control_return, "\C-m", :meta_return, :control_period
+          Keys.clear_prefix
+          Launcher.launch
+
+
+
+          #         #
+          #         # Temporarily make Command+Return do old launch (until all menus are ported over from the unified refactor)
+          #         #
+          #       when :meta_return
+          #         Keys.clear_prefix
+          #         Launcher.launch_preunified
+          #       when :control_period
+          #         Keys.clear_prefix
+          #         Launcher.launch
+
+          #       when :meta_return, :control_period
+          #         Keys.clear_prefix
+          #         Launcher.launch
+
+
+
+        when "\t"   # If tab, hide siblings and go in
+          $el.delete_region(Line.left(2), right)
+          Keys.clear_prefix
+          Launcher.launch
+
+        when :backspace#, :control_slash   # Collapse this item and keep searching
+          self.to_parent
+          self.kill_under
+          self.search :left=>Line.left, :right=>Line.left(2)
+
+        when :control_backslash
+          Line.<< "/"
+          Launcher.launch
+
+        when :control_slash   # Move this line onto the end of its parent, and expand
+          line = Line.txt
+
+          # Don't kill siblings if "<<" or "<=" line
+
+          if line =~ /^<+=? /
+            Keys.clear_prefix
+            Launcher.launch
+            return
+          end
+
+          # If CodeTree search
+          if CodeTree.handles?
+            # Kill others
+            View.delete(Line.left(2), right)
+
+            if Line.without_label =~ /^\./   # If just a method
+              # Back up to first . on last line
+              Search.forward "\\."
+              right = View.cursor
+              Line.previous
+              Search.forward "\\."
+            else   # Else, just delete previous line
+              right = View.cursor
+              Line.previous
+              Line.to_beginning
+            end
+            View.delete(View.cursor, right)
+            return Launcher.launch
+          end
+
+          $el.delete_region(Line.left(2), right)  # Delete other files
+          $el.delete_horizontal_space
+          $el.delete_backward_char 1
+
+          # delete -|+ if there
+          if View.txt(View.cursor, Line.right) =~ /^[+-] /
+            $el.delete_char 2
+          end
+
+          # For now, always launch when C-/
+          Launcher.launch   # if line =~ /\/$/   # Only launch if it can expand
+
+        when "#"   # Show ##.../ search
+          self.stop_and_insert left, right, pattern
+          View.insert self.indent("- ##/", 0)
+          View.to(Line.right - 1)
+
+        when "*"   # Show **.../ search
+          self.stop_and_insert left, right, pattern
+          View.insert self.indent("- **/", 0)
+          View.to(Line.right - 1)
+
+        when "$"   # Insert '$ ' for command
+          self.stop_and_insert left, right, pattern
+          View.insert self.indent("$ ", 0)
+
+        when "%"   # Insert '!' for command
+          self.stop_and_insert left, right, pattern
+          View.insert self.indent("% ", 0)
+
+        when "-"   # Insert '-' for bullet
+          self.stop_and_insert left, right, pattern
+          View.insert self.indent("- ", 0)
+
+        when "@"   # Insert '@' for menus
+          self.stop_and_insert left, right, pattern
+          View.insert self.indent("@", 0)
+
+        when "="   # Insert '=' for menus
+          self.stop_and_insert left, right, pattern
+          View.insert self.indent("=", 0)
+
+        when "\C-e"
+          return Line.to_right
+
+        when "\C-a"
+          return Line.to_left
+
+        when "\C-o"   # When 9 or C-o, show methods, or outline
+          $el.delete_region(Line.left(2), right)   # Delete other files
+          return FileTree.drill_quotes_or_enter_lines self.construct_path.sub(/\|.*/, ''), Line.=~(/^ *\|/)
+        when "1".."9"   # If number, go to nth
+          #       if ch == "7" and ! View.bar?   # Open in bar
+          #         $el.delete_region(Line.left(2), right)  # Delete other files
+          #         View.bar
+          #         Keys.clear_prefix
+          #         return Launcher.launch   # Expand or open
+          #       end
+
+          Keys.clear_prefix
+          n = ch.to_i
+
+          # Pull whole string out
+          lines = View.txt(left, right).split "\n"
+          View.delete left, right
+          if recursive
+
+            # Recursive is different because we only count children
+
+            filtered = []
+            file_count = 0
+            # Replace out lines that don't match (and aren't dirs)
+            lines.each_with_index do |l, i|
+              is_dir = (l =~ /\/$/)
+              file_count += 1 unless is_dir
+              # If dir or nth, keep
+              filtered << l if (is_dir or (file_count == n))
+            end
+
+            # Remove dirs with nothing under them
+            self.clear_empty_dirs! filtered
+
+            # Put back into buffer
+            View.insert(filtered.join("\n") + "\n")
+            right = $el.point
+
+            # Go to first file and go back into search
+            $el.goto_char left
+            FileTree.select_next_file
+
+          else
+            nth = lines[n - 1]
+            View.insert "#{nth}\n"
+            $el.previous_line
+          end
+
+          Launcher.launch
+
+        when "\C-s"
+          $el.isearch_forward
+
+        when "\C-r"
+          $el.isearch_backward
+
+        when ";"   # Replace parent
+          Tree.collapse :replace_parent=>1
           return Launcher.launch
-        end
 
-        $el.delete_region(Line.left(2), right)  # Delete other files
-        $el.delete_horizontal_space
-        $el.delete_backward_char 1
-
-        # delete -|+ if there
-        if View.txt(View.cursor, Line.right) =~ /^[+-] /
-          $el.delete_char 2
-        end
-
-        # For now, always launch when C-/
-        Launcher.launch   # if line =~ /\/$/   # Only launch if it can expand
-
-      when "#"   # Show ##.../ search
-        self.stop_and_insert left, right, pattern
-        View.insert self.indent("- ##/", 0)
-        View.to(Line.right - 1)
-
-      when "*"   # Show **.../ search
-        self.stop_and_insert left, right, pattern
-        View.insert self.indent("- **/", 0)
-        View.to(Line.right - 1)
-
-      when "$"   # Insert '$ ' for command
-        self.stop_and_insert left, right, pattern
-        View.insert self.indent("$ ", 0)
-
-      when "%"   # Insert '!' for command
-        self.stop_and_insert left, right, pattern
-        View.insert self.indent("% ", 0)
-
-      when "-"   # Insert '-' for bullet
-        self.stop_and_insert left, right, pattern
-        View.insert self.indent("- ", 0)
-
-      when "@"   # Insert '@' for menus
-        self.stop_and_insert left, right, pattern
-        View.insert self.indent("@", 0)
-
-      when "\C-e"   # Also C-a
-        return Line.to_right
-
-      when "\C-a"   # Also C-a
-
-        return Line.to_left
-
-      when "\C-o"   # When 9 or C-o, show methods, or outline
-        $el.delete_region(Line.left(2), right)   # Delete other files
-        return FileTree.drill_quotes_or_enter_lines self.construct_path.sub(/\|.*/, ''), Line.=~(/^ *\|/)
-      when "1".."9"   # If number, go to nth
-        #       if ch == "7" and ! View.bar?   # Open in bar
-        #         $el.delete_region(Line.left(2), right)  # Delete other files
-        #         View.bar
-        #         Keys.clear_prefix
-        #         return Launcher.launch   # Expand or open
-        #       end
-
-        Keys.clear_prefix
-        n = ch.to_i
-
-        # Pull whole string out
-        lines = View.txt(left, right).split "\n"
-        View.delete left, right
-        if recursive
-
-          # Recursive is different because we only count children
-
-          filtered = []
-          file_count = 0
-          # Replace out lines that don't match (and aren't dirs)
-          lines.each_with_index do |l, i|
-            is_dir = (l =~ /\/$/)
-            file_count += 1 unless is_dir
-            # If dir or nth, keep
-            filtered << l if (is_dir or (file_count == n))
-          end
-
-          # Remove dirs with nothing under them
-          self.clear_empty_dirs! filtered
-
-          # Put back into buffer
-          View.insert(filtered.join("\n") + "\n")
-          right = $el.point
-
-          # Go to first file and go back into search
-          $el.goto_char left
-          FileTree.select_next_file
-
-        else
-          nth = lines[n - 1]
-          View.insert "#{nth}\n"
+        when "\a"   # Typed C-g
+          View.beep
+        when :left
+          Move.backward
+        when :right
+          Move.forward
+        when :up
           $el.previous_line
-        end
+        when :down
+          $el.next_line
 
-        Launcher.launch
-
-      when "\C-s"
-        $el.isearch_forward
-
-      when "\C-r"
-        $el.isearch_backward
-
-      when ";"   # Replace parent
-        Tree.collapse :replace_parent=>1
-        return Launcher.launch
-
-      when "\a"   # Typed C-g
-        View.beep
-      when :left
-        Move.backward
-      when :right
-        Move.forward
-      when :up
-        $el.previous_line
-      when :down
-        $el.next_line
       else
         $el.command_execute ch
       end
@@ -1887,6 +1895,7 @@ module Xiki
 
     # Goes from [a/, @b/, c/] to [a/, b/c/]
     # Tree.join_to_subpaths(["a/", "@b/", "c/"]).should == ["a/", "b/c/"]
+    # Tree.join_to_subpaths(["a/", "=b/", "c/"]).should == ["a/", "b/c/"]
     def self.join_to_subpaths path
 
       # Temporary implementation...
@@ -1917,7 +1926,7 @@ module Xiki
     def self.path options={}
       path = Tree.construct_path :all=>1, :slashes=>1
       return path if options[:string]
-      path = path.split(/\/@ ?/)
+      path = path.split(/\/[@=] ?/)
       self.add_slashes_except_last path
       path
     end
@@ -2008,7 +2017,7 @@ module Xiki
     def self.add_slashes_except_last list, options={}
       0.upto list.length-2 do |i|
         next if options[:only_if_needed] && list[i] =~ /\/$/
-        next if options[:leave_blanks] && list[i] =~ /\A@?\z/   # If blank or just @
+        next if options[:leave_blanks] && list[i] =~ /\A[@=]?\z/   # If blank or just @
         list[i].sub! /$/, '/'
       end
     end

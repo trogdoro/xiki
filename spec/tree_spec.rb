@@ -1191,6 +1191,10 @@ describe Tree, "#join_to_subpaths" do
     Tree.join_to_subpaths(["a/", "@b/", "c/"]).should == ["a/", "b/c/"]
   end
 
+  it "leaves list boundaries only for equals signs" do
+    Tree.join_to_subpaths(["a/", "=b/", "c/"]).should == ["a/", "b/c/"]
+  end
+
   it "doesn't split escaped at sign" do
     Tree.join_to_subpaths(["a/", "b/;@ip/"]).should == ["a/b/;@ip/"]
   end
@@ -1216,6 +1220,10 @@ describe Tree, "#join_to_subpaths" do
 
   it "merges single @ without slashes" do
     Tree.join_to_subpaths(["@", "ip/"]).should == ["ip/"]
+  end
+
+  it "merges single = without slashes" do
+    Tree.join_to_subpaths(["=", "ip/"]).should == ["ip/"]
   end
 
 

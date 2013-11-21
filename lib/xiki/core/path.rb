@@ -128,8 +128,8 @@ module Xiki
         c = path[i]
         cc = path[i, 2]
 
-        # If /@ and not escaped
-        if cc == "/@" && ! last_was_escape
+        # If /= and not escaped
+        if cc =~ /^\/[@=]$/ && ! last_was_escape
           result[-1] << "/"
           result << ""
           i += 1
@@ -140,8 +140,8 @@ module Xiki
         i += 1
       end
 
-      # Remove @ from beginning if there is one
-      result[0].sub!(/\A@/, '') if result[0]
+      # Remove = from beginning if there is one
+      result[0].sub!(/\A[@=]/, '') if result[0]
 
       result
     end
