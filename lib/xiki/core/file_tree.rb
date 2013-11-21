@@ -1118,7 +1118,7 @@ module Xiki
       if files.empty? && dirs.empty?
         if ! File.exists? dir   # If doesn't exist, show message
           return Tree << "
-            - @mkdir/
+            - =mkdir/
             | ...dir '#{dir}' doesn't exist.  Create it?
             "
         end
@@ -1167,7 +1167,7 @@ module Xiki
       if files.empty? && dirs.empty?
         if ! File.exists? dir   # If doesn't exist, show message
           return "
-            - @mkdir/
+            - =mkdir/
             | ...dir '#{dir}' doesn't exist.  Create it?
             ".unindent
         end
@@ -1562,6 +1562,9 @@ module Xiki
 
       # If file, delegate to FileTree.enter_lines...
 
+      # commit: open+bookmark+slash
+      dir = "/" if dir == :slash
+
       if File.file? dir
         return FileTree.enter_lines nil, :path=>dir
       end
@@ -1569,13 +1572,13 @@ module Xiki
       # If dir, delegate to .ls...
 
       # Put back slash if was dir
-        dir = Bookmarks.dir_only dir
-        dir << "/" unless dir =~ /\/$/
+      dir = Bookmarks.dir_only dir
+      dir << "/" unless dir =~ /\/$/
 
       return if dir == :bookmark_doesnt_exist
 
-      dir = "/" if dir == :slash
       dir = Bookmarks.dir_only(dir) if options[:recursive]
+
       options.merge!(:dir=>dir)
 
       self.ls options
@@ -2229,7 +2232,7 @@ module Xiki
 
     def self.suggest_mkdir file_path
       "
-        @mkdir/
+        =mkdir/
         | Dir '#{file_path}' doesn't exist.  Create it?
         ".unindent
     end
