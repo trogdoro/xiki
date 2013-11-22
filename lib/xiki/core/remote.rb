@@ -34,9 +34,6 @@ module Xiki
 
       user, server, port, path = self.split_root(root)
 
-      # Add slash to path if none there
-      path << "/" unless path =~ /\/$/
-
       path_passed = path_append.size > 0
 
       if path_passed  # If anything in array
@@ -46,6 +43,7 @@ module Xiki
 
       timeout(15) do
         if path =~ /\/$/   # If a dir
+          path << "/" unless path =~ /\/$/
           out = connection.exec!("ls -pa #{path}")
           out ||= ""
           out = out.split("\n").grep(/^[^#]+$/).join("\n")   # Weed out #...#
@@ -135,9 +133,8 @@ module Xiki
 
     def self.split_root root   # Splits name@server:port/path
       root = root.dup   # Append / at end if no / exists
-      root << "/" unless root =~ /\/$/
 
-      user, server_port, path = root.match(/^(.+?)@(.+?)(\/.*?)\/?$/)[1..3]
+      user, server_port, path = root.match(/^(.+?)@(.+?)(\/.*?)$/)[1..3]
 
       if(server_port =~ /(.+?):(.+)/)
         server, port = $1, $2
@@ -197,12 +194,51 @@ module Xiki
       # TODO remove this
     end
 
+    def self.remote_files_in_dir dir
+      txt = self.dir(dir)
+      return txt if txt.is_a? String   # If it's a file
+
+      txt.map!{|i| "#{dir}#{i}"}
+      [txt.select{|i| i =~ /\/$/}.map{|i| i.sub(/\/$/, '')}, txt.select{|i| i !~ /\/$/}]
+    end
+
+    def self.remote_file_contents file
+      path, file = file.match(/(.+\/)(.+)/)[1..2]
+      self.dir path, file   # Delegate to Remote.dir
+    end
+
+    def self.expand path, options
+
+      dirs, files = self.remote_files_in_dir path
+
+      return if dirs.is_a? String
+
+      # If empty, say so...
+
+      return "@flash/- dir is empty!" if files.empty? && dirs.empty?
+
+      indent = "#{Line.indent}  "
+
+      # Change path to proper indent
+      dirs.collect!{|i| i.sub(/.*\/(.+)/, "#{indent}+ \\1/")}
+      files.collect!{|i| i.sub(/.*\/(.+)/, "#{indent}+ \\1")}
+
+      Line.next
+      left = View.cursor
+
+      both = dirs + files
+
+      View.insert(both.join("\n") + "\n")
+      right = View.cursor
+      View.cursor = left
+      Line.to_beginning
+      Tree.search(:left=>left, :right=>right, :always_search=>true)
+
+    end
   end
 
-  Keys.do_as_remote do
+  Xiki.def("do+as+remote") do
     Remote.save_file
   end
 
-
-  # Remote.init
 end

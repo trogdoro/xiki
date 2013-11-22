@@ -541,10 +541,6 @@ module Xiki
 
       return Files.open_in_os(path) if Keys.prefix == 0
 
-      remote = self.is_remote?(path)
-      unless remote
-        path = File.expand_path(path)
-      end
       # Prefix keys with specific behavior
       prefix_was_u = false
 
@@ -594,26 +590,18 @@ module Xiki
       end
 
 
-      # Open or go to file...
-
-      if remote
-        self.remote_file_contents(path)   # Get text from server and insert
-
-      else   # Normal file opening
-
         # See if it exists, and store contents if not?
 
         # TODO: why are we using Location.go - isn't it just delegating to View.open?
           # Does it do extra stuff?  Maybe goes somewhere if dir?
             # Try just calling View.open instead!
 
-        if options[:other_view]
-          View.open path, {:other_view=>1}.merge(prefix == :- ? {:no_recenter=>1} : {})
-        else
-          options[:same_view] ? View.open(path, :same_view=>true) : Location.go(path)
-        end
-        Effects.blink(:what=>:line) unless line_number || quote_string || path =~ /\.xiki$/
+      if options[:other_view]
+        View.open path, {:other_view=>1}.merge(prefix == :- ? {:no_recenter=>1} : {})
+      else
+        options[:same_view] ? View.open(path, :same_view=>true) : Location.go(path)
       end
+      Effects.blink(:what=>:line) unless line_number || quote_string || path =~ /\.xiki$/
 
       return unless line_number || quote_string
 
@@ -1097,20 +1085,16 @@ module Xiki
     def self.dir_one_level options={}
 
       Line.to_left
-      line = Line.value
-      indent = line[/^ */] + "  "  # Get indent
+      indent = "#{Line.indent}  "
 
       dir = Bookmarks.expand(Tree.construct_path)
 
-      remote = self.is_remote?(dir)
-      unless remote
-        # If C-2, just open in dired
-        if Keys.prefix == 2
-          # TODO: Open in 1st window
-          View.to_after_bar
-          $el.find_file dir
-          return
-        end
+      # If C-2, just open in dired
+      if Keys.prefix == 2
+        # TODO: Open in 1st window
+        View.to_after_bar
+        $el.find_file dir
+        return
       end
 
       dirs, files = self.files_in_dir(dir, options)   # Get dirs and files in it
@@ -1131,12 +1115,10 @@ module Xiki
 
       # Change path to proper indent
       dirs.collect!{|i| i.sub(/.*\/(.+)/, "#{indent}+ \\1/")}
-
-      # Change path to proper indent
       files.collect!{|i| i.sub(/.*\/(.+)/, "#{indent}+ \\1")}
 
       Line.next
-      left = $el.point
+      left = View.cursor
 
       # Move .notes files to top
       files = files.select{|i| i =~ /\.notes$/} + files.select{|i| i !~ /\.notes$/}
@@ -1144,8 +1126,8 @@ module Xiki
       both = options[:date_sort] || options[:size_sort] ?
         files + dirs : dirs + files
       View.insert(both.join("\n") + "\n")
-      right = $el.point
-      $el.goto_char left
+      right = View.cursor
+      View.cursor = left
 
       Line.to_beginning
 
@@ -1432,6 +1414,7 @@ module Xiki
       matches = ""
       indent_more = '  '
 
+      # commit: Works? Get enter+lines to work with remote files
       if path =~ /^\/\w+@/
         contents = Remote.file_contents path
         Tree.under contents, :escape=>'| ', :no_slash=>1
@@ -1597,42 +1580,24 @@ module Xiki
       parent
     end
 
-    # Returns a regexp to match the acronym
-    def self.is_remote? path
-      return path =~ /^\/\w+@/
-    end
-
     # Returns the files in the dir
     def self.files_in_dir dir, options={}
-      if self.is_remote?(dir)
-        self.remote_files_in_dir(dir)
-      else
-        dir = FileTree.add_slash_maybe dir
-        all = Dir.glob("#{dir}*", File::FNM_DOTMATCH).
-          select {|i| i !~ /\/\.(\.*|svn|git)$/}.   # Exclude some dirs (exclude entensions here too?)
-          select {|i| i !~ /\/\.#/}.sort
 
-        if options[:date_sort]
-          all = all.sort{|a,b| File.mtime(b) <=> File.mtime(a)}
-        elsif options[:size_sort]
-          all = all.sort{|a,b| File.size(b) <=> File.size(a)}
-        end
+      dir = FileTree.add_slash_maybe dir
+      all = Dir.glob("#{dir}*", File::FNM_DOTMATCH).
+        select {|i| i !~ /\/\.(\.*|svn|git)$/}.   # Exclude some dirs (exclude entensions here too?)
+        select {|i| i !~ /\/\.#/}.sort
 
-        dirs = all.select{|i| File.directory?(i)}#.sort
-        files = all.select{|i| File.file?(i)}#.sort
-        [dirs, files]
+      if options[:date_sort]
+        all = all.sort{|a,b| File.mtime(b) <=> File.mtime(a)}
+      elsif options[:size_sort]
+        all = all.sort{|a,b| File.size(b) <=> File.size(a)}
       end
-    end
 
-    def self.remote_file_contents file
-      path, file = file.match(/(.+\/)(.+)/)[1..2]
-      Remote.dir path, file   # Delegate to Remote.dir
-    end
+      dirs = all.select{|i| File.directory?(i)}#.sort
+      files = all.select{|i| File.file?(i)}#.sort
+      [dirs, files]
 
-    def self.remote_files_in_dir dir
-      res = Remote.dir(dir)
-      res.map!{|i| "#{dir}#{i}"}
-      [res.select{|i| i =~ /\/$/}.map{|i| i.sub(/\/$/, '')}, res.select{|i| i !~ /\/$/}]
     end
 
     def self.url_from_path verb, path

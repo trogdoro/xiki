@@ -261,4 +261,8 @@ module Xiki
     Xiki.expand "xiki://#{path}"
   end
 
+  Xiki.def(/^\/\w+@/) do |path, options|
+    Xiki::Remote.expand path, options
+  end
+
 end
