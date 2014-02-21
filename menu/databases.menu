@@ -1,6 +1,7 @@
 << mysql/
 << memcache/
 << mongodb/
+<< mongo2
 << couch/
 << riak/
 << local storage/
