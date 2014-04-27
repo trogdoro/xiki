@@ -1,5 +1,12 @@
 require 'timeout'
 require 'json'
+
+is_windows = (RbConfig::CONFIG['host_os'] =~ /mswin|mingw|cygwin/)
+
+if is_windows
+  require 'win32/pipe'
+  include Win32
+end
 # require 'xiki/environment'
 
 #
@@ -62,16 +69,22 @@ class XikiCommand
     wasnt_running = false
 
     begin
-      `mkfifo -m 600 /tmp/xikirequest` if ! File.exists?("/tmp/xikirequest")   # Always create first, so they have to be pipes and can't be files
-      `mkfifo -m 600 /tmp/xikiresponse` if ! File.exists?("/tmp/xikiresponse")
+      if is_windows
+        Pipe::Client.new("xikirequest") do |out|
+          out.write path
+          out.close
+        end
+      else
+        `mkfifo -m 600 /tmp/xikirequest` if ! File.exists?("/tmp/xikirequest")   # Always create first, so they have to be pipes and can't be files
+        `mkfifo -m 600 /tmp/xikiresponse` if ! File.exists?("/tmp/xikiresponse")
 
       # Try writing to pipe...
 
-      open("/tmp/xikirequest", 'w+') do |out|
-        out.puts path
-        out.flush   # do this when we're done writing data
-        out.close
-      end
+        open("/tmp/xikirequest", 'w+') do |out|
+          out.puts path
+          out.flush   # do this when we're done writing data
+          out.close
+        end
 
       # Try reading from pipe...
 
@@ -154,17 +167,25 @@ class XikiCommand
     timeout(3) do
       #     timeout(0.5) do
       #     timeout(1.5) do
-      open("/tmp/xikiresponse", "r+") do |response|
+      if is_windows
+        Pipe::Server.new("xikiresponse") do |responsee|
+          responsee.connect
+          response = responsee.read
+          responsee.close
+        end
+      else
+        open("/tmp/xikiresponse", "r+") do |response|
 
-        # old TODO Try using select here, to see if there's data avaliable
-        # old IO.select ["/tmp/xikiresponse"]
+          # old TODO Try using select here, to see if there's data avaliable
+          # old IO.select ["/tmp/xikiresponse"]
 
-        response = response.gets   # will block if there's nothing in the pipe
+          response = response.gets   # will block if there's nothing in the pipe
+        end
+      end
         response.strip!
         response.gsub! "\036", "\n"   # Escape linebreaks as 036 char (record separator)
         return "" if @@dont_show_output
         self.add_coloring response
-      end
     end
   end
 
