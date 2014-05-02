@@ -56,7 +56,7 @@ module Xiki
 
       return "
         | // This is a sample controller.  Edit and expand to run it.
-        | console.log('got a request');
+        | console.log('got one request');
         | res.end('Hello Node World!');
         " if args.empty?
 
