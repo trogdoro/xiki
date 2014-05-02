@@ -4,7 +4,7 @@ module Xiki
   Themes.use "Path Mode Line"
 end
 
-$el.tool_bar_mode -1
+$el.tool_bar_mode -1 if Xiki::Environment.gui_emacs
 
 $el.el4r_lisp_eval %`
   (progn
