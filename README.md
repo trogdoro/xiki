@@ -20,7 +20,7 @@ Either install as a gem, or install from github.
 
 ### Install from github
 
-      $ git clone git://github.com/trogdoro/xiki.git
+      $ git clone https://github.com/trogdoro/xiki.git
       $ cd xiki
       $ sudo gem install bundler   # <- no "sudo" if using rvm
       $ sudo bundle                # <- no "sudo" if using rvm
