@@ -1,6 +1,6 @@
 $:.unshift "spec/"
 
-%w"core_ext ol tree core_ext menu menu_source launcher expander".each {|o| require "xiki/core/#{o}"}
+%w"core_ext ol tree core_ext menu launcher expander".each {|o| require "xiki/core/#{o}"}
 
 require './spec/spec_helper'
 
