@@ -12,7 +12,7 @@ Type "ruby -v" to see which ruby version you currently have.
 
 On ubuntu, do: $ sudo apt-get install ruby1.9.3.
 
-On the mac, install rvm (http://google.com/search?q=install+rvm) and the do: $ rvm install ruby-1.9.3
+On the mac, install rvm (http://google.com/search?q=install+rvm) and then do: $ rvm install ruby-1.9.3
 
 ## Install Xiki
 
