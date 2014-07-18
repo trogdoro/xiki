@@ -6,7 +6,6 @@ function! XikiLaunch()
     include Xiki
 
     line = Line.value
-    next_line = Line.value 2
 
     indent = line[/^ +/]
     command = "xiki '#{line}'"
