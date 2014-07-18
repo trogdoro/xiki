@@ -77,7 +77,7 @@ module Xiki
 
       dir = options[:dir]
       sync = options[:sync]
-      buffer = options[:buffer]
+      buffer = options[:buffer] || command.split(' ')[0]
       reuse_buffer = options[:reuse_buffer]
 
       orig = Location.new if options[:dont_move]
