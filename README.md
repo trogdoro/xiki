@@ -28,6 +28,9 @@ Either install as a gem, or install from github.
 
       # Or, if you're using rvm...
       $ ruby etc/command/copy_xiki_command_to.rb /usr/local/bin/xiki
+      
+      # Make sure you are using 1.9.3 as your default ruby version in rvm (see https://groups.google.com/forum/#!topic/xiki/jHZu8upnosc)
+      $ rvm --default use 1.9.3
 
 ### Or, as a gem
 
