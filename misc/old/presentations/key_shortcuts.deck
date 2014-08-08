@@ -11,6 +11,6 @@ Keys.Z { Line.gsub!(/ +/, " ") }
 
 > Define shortcuts
 
-Keys.do_hi { Line << "hey there" }
+Keys.just_hi { Line << "hey there" }
 
 
