@@ -35,7 +35,8 @@ class XikiCommand
     flags, path = argv.partition{|o| o =~ /^-/}
     path = path.join ' '
 
-    return self.emacs path if flags.member?("-e")   # If -p, just prompt user to type a menu name
+    # xiki -e
+    return self.emacs path if flags.member?("-e")   # If -e, just prompt user to type a menu name
 
     options = {}
     options[:client] = 'web' if flags.member?("-cweb") || flags.member?("-web")
@@ -244,12 +245,17 @@ class XikiCommand
 
     # Bring emacs to front
 
-    `open "/Applications/Aquamacs Emacs.app"`
+    # `open "/Applications/Aquamacs Emacs.app"`
+    `open "/Applications/Aquamacs.app/"`
 
     ruby = %`Xiki::Menu.external \\"#{menu}\\"`
     ruby.<< %`, :dir=>\\"#{Dir.pwd}\\"` if menu =~ /^@/
 
-    command = %`emacsclient -n -e '(el4r-ruby-eval "#{ruby}")'`
+    command = %`/Applications/Aquamacs.app/Contents/MacOS/bin/emacsclient -n -e '(el4r-ruby-eval "#{ruby}")'`
+Ol["Make it use relative path if above doesn't exist!"]
+    # command = %`emacsclient -n -e '(el4r-ruby-eval "#{ruby}")'`
+
+
     `#{command}`
 
     nil
