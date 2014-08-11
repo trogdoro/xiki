@@ -1,15 +1,23 @@
+# Tmp
+require "/projects/xiki/lib/xiki/core/ol.rb"
+Ol RUBY_VERSION
+
+
 require "sinatra/base"
 require "cgi"
 require "json"
 require 'open3'
 
 xiki_directory = `xiki dir`.strip
+Ol "xiki_directory", xiki_directory
 
 $:.unshift "#{xiki_directory}lib"
 require 'xiki/core/ol.rb'
 require 'xiki/core/files.rb'
 require 'xiki/core/core_ext.rb'
 require 'xiki/core/html.rb'
+
+Ol["!"]
 
 # TODO: Enable basic auth for security
   # Add menu to let users create a password
@@ -19,13 +27,13 @@ require 'xiki/core/html.rb'
 
 class XikiWebServer < Sinatra::Base
 
-  set :port, 8161
+  set :port, 8163
   set :bind, '127.0.0.1'
 
   get %r{^/_reload$} do
     xiki_directory = File.expand_path "#{File.dirname(__FILE__)}/../.."
     load "#{xiki_directory}/etc/www/xiki_web_server.rb"
-    "@flash/- done"
+    "<! done"
   end
 
   get '/*' do
@@ -55,7 +63,8 @@ class XikiWebServer < Sinatra::Base
 
     # Run command...
 
-    menu.sub! /^@/, ''
+    # menu.sub! /^@/, ''
+    menu.sub! /^=/, ''
     menu.gsub! /-/, ' '
 
     txt = call_command menu, env

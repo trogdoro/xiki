@@ -1,31 +1,4 @@
-> Deploy
-$p/xiki.org/www/
-  + index.html
-  $ scp index.html xiki@xiki.org:/var/www/xiki.org/index.html
-
-  + screencasts/
-    + index.shtml
-    $ scp index.shtml xiki@xiki.org:/var/www/xiki.org/screencasts/index.shtml
-
-http://xiki.org
-http://xiki.org/screencasts
-
-
-/xiki@xiki.org/var/www/xiki.org/
-
-
-- old
-  | /tmp/
-  |   - tmp.html
-  |   $ scp tmp.html xiki@xiki.org:/var/www/xiki.org/index.html
-  |   $ scp tmp.html xiki@xiki.org:/var/www/xiki.org/screencasts/index.shtml
-
-> Home page
-bootstrap/
-  icon/
-    - twitter
-    - twitter-sign
-
+> 1. Edit home page
 xiki loc/
   | <!--
   |   - about/
@@ -44,8 +17,16 @@ xiki loc/
   |   -->
   - project name/Xiki
   - navbar/
-    | <img src="/images/bootstrap_icon.png">
+    | <a href="/"><img src="/images/bootstrap_icon.png"></a>
   - container/
+    - row/
+      - span12/
+        - h2 style="text-align:center; margin-top:20px"/
+          | The Xiki Kickstarter is happening now!
+    - row/
+      | <div class='span12' style='text-align:center; margin-top:15px; margin-bottom:55px;'>
+        | <iframe width="560" height="420" src="https://www.kickstarter.com/projects/xiki/xiki-the-command-revolution/widget/video.html" frameborder="0" scrolling="no"> </iframe>
+        | <iframe frameborder="0" height="420" scrolling="no" src="https://www.kickstarter.com/projects/xiki/xiki-the-command-revolution/widget/card.html?v=2" width="220"></iframe>
     - hero/
       | <div id="the_carousel" class="carousel slide" style="width:319px; float:left;">
         | <div class="carousel-inner">
@@ -57,9 +38,13 @@ xiki loc/
         | <a class="carousel-control right" href="#the_carousel" data-slide="next">&rsaquo;</a>
       | <div style="min-height:290px;">
         | <h1 style="margin-top:10px;">
-          | Xiki is a UI Language.
+          | Xiki: The Command Revolution!
+          |-Xiki: User Friendly Shell Commands
+          |-Xiki: the Command Line Reimagined
         | <p style="font-size:35px; color:#8cf; padding-top:8px; line-height:47px;">
-          | The shell console reimagined. Type notes, prototype, program.
+          | The shell console reimagined Type notes, prototype, and program.
+          |-Shell commands are amazing! But they're hard to learn. Until now!
+          |-A better way to run commands.
         | <p style="font-size:14px; text-align:top;">
           | Donate to Xiki: <iframe style="border:0; margin:0 0 0 10px; padding:0; vertical-align:middle;"
           |   src="https://www.gittip.com/xiki/widget.html"
@@ -70,14 +55,14 @@ xiki loc/
           - icon/cog
           Type and double-click
         - p/
-          Type a word, any word. Then double click on it or type control-return (or command-return).
-          For example type: git, bootstrap, mysql, mongo, rails, node, coffee, js, dom, jquery, svg, ruby code, file paths, url's, shell commands, etc.
+          | Type a word, any word. Then double click on it or type control-return (or command-return).
+          | For example type: git, bootstrap, mysql, mongo, rails, node, coffee, js, dom, jquery, svg, ruby code, file paths, url's, shell commands, etc. (The mouse optional, there are key shortcuts for everything!)
       - span6/
         - h2/
           - icon/align-left
           Wiki inspired
         - p/
-          Everything is editable text. Type commands anywhere. Edit the output. (Vs. typing commands at the bottom, and read-only output.) Intermix menus, headings, bullet points, wherever you want.
+          Xiki runs in your text editor, so everything is editable text. Type commands anywhere. Edit the output. (Vs. typing commands at the bottom, and read-only output.) Intermix menus, headings, bullet points, wherever you want.
           <b>Xiki</b> == e<b>x</b>ecutable w<b>iki</b>.
   - <div style="background: transparent url('/images/waves.png') repeat-x 0px 0px;">
     - container/
@@ -89,12 +74,12 @@ xiki loc/
           - p/
             Check out the
             <a href="screencasts/">screencast</a>
-            to see Xiki in action.
+            to see Xiki in action.  This is the best way to get a feel for it.
         - span4/
           - h2/
             + icon/
               - th
-            - Other Tools
+            - Creating
           - p/
             | Create menus to access other tools just by typing.
             | If the menu doesn't exist, xiki guides you through creating it.
@@ -160,6 +145,46 @@ xiki loc/
       |   })();
 
 
+> 2. Deploy
+$p/xiki.org/www/
+/projects/xiki.org/www/
+  $ scp index.html xiki@xiki.org:/var/www/xiki.org/index.html
+  =http://xiki.org
+
+
+
+  + index.html
+
+  + screencasts/
+    + index.shtml
+    $ scp index.shtml xiki@xiki.org:/var/www/xiki.org/screencasts/index.shtml
+/tmp/
+  $ scp tmp.html xiki@xiki.org:/var/www/xiki.org/screencasts/index.shtml
+
+http://xiki.org/screencasts
+
+
+/xiki@xiki.org/var/www/xiki.org/
+
+
+- old
+  | /tmp/
+  |   - tmp.html
+  |   $ scp tmp.html xiki@xiki.org:/var/www/xiki.org/index.html
+  |   $ scp tmp.html xiki@xiki.org:/var/www/xiki.org/screencasts/index.shtml
+
+> old header > "Xiki is a UI Language."
+      | <div style="min-height:290px;">
+        | <h1 style="margin-top:10px;">
+          | Xiki is a UI Language.
+        | <p style="font-size:35px; color:#8cf; padding-top:8px; line-height:47px;">
+          | The shell console reimagined. Type notes, prototype, and program.
+        | <p style="font-size:14px; text-align:top;">
+          | Donate to Xiki: <iframe style="border:0; margin:0 0 0 10px; padding:0; vertical-align:middle;"
+          |   src="https://www.gittip.com/xiki/widget.html"
+          |   width="48pt" height="22pt"></iframe>
+
+
 >> Old swimming shark
 - move to bottom!
 
@@ -207,7 +232,7 @@ http://xiki.loc
 bootstrap/
   - project name/Xiki
   - navbar/
-    | <img src="http://xiki.org/images/bootstrap_icon.png">
+    | <a href="/"><img src="http://xiki.org/images/bootstrap_icon.png"></a>
 
   - style/
     .section {
