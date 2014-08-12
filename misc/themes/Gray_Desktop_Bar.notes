@@ -1,35 +1,30 @@
 # Blue bg, dark blue path
 module Xiki
   Styles.mode_line(
-    :bg=>'6483af',
-    :border=>['6483af', 3],
+    :bg=>'#5e5e5e',
+    :border=>['#5e5e5e', 3],
     :face=>"arial",
     :bold=>true,
-    :size=>'1',
-    :fg=>'001122'
+    :size=>120,
+    :fg=>'777'
     )
 
   # Inactive has light gray bg, medium gray path
   Styles.mode_line_inactive(
-    :bg=>'bbbbbb',
-    :border=>['bbbbbb', 3],
+    :bg=>'#5e5e5e',
+    :border=>['#5e5e5e', 3],
     :face=>"arial",
     :bold=>true,
-    :size=>'1',
-    :fg=>'555555'
+    :size=>120,
+    :fg=>'777'
     )
 
   # White file stem
   Styles.mode_line_file(
-    :fg=>"fff",
+    :fg=>"888",
     :face=>"arial",
     :bold=>true
     )
 
-  Styles.mode_line_dim(
-    :fg=>"bce",
-    :face=>"arial",
-    :bold=>false
-    )
 end
 

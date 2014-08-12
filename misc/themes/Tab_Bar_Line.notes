@@ -1,0 +1,50 @@
+module Xiki
+  Themes.use 'Dark Black BG'
+
+  # Black bg, light gray path
+  Styles.mode_line(
+    :bg=>'#999',
+    :fg=>'#999',
+    :border=>['000', 3],
+    :face=>"arial",
+    :bold=>true,
+    :underline=>nil,
+    )
+
+  # Inactive has Black bg, dark gray path
+  Styles.mode_line_inactive(
+    :bg=>'#999',
+    :fg=>'#999',
+    :border=>['000000', 3],
+    :face=>"arial",
+    :bold=>true,
+    :underline=>nil,
+    )
+
+  Styles.mode_line_file(
+    :face=>"arial",
+    :bold=>true,
+    :fg=>"#777",
+    :bg=>"#000",
+    :underline=>true,
+    )
+
+  Styles.mode_line_dir(
+    :face=>"arial",
+    :bold=>true,
+    :fg=>"#777",
+    :bg=>"#000",
+    :underline=>true,
+    )
+
+  Styles.vertical_border :fg=>"#aaa", :bg=>'#aaa', :underline=>nil
+
+  Styles.region(
+    :bg=>"#333",
+    )
+
+  Styles.minibuffer_prompt :size=>110, :face=>"Monaco", :fg=>"#444"
+  Styles.minibuffer :size=>110, :face=>"Monaco", :fg=>"#444"
+  Styles.echo_area :size=>110, :face=>"Monaco", :fg=>"#444"
+
+end

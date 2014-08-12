@@ -6,7 +6,7 @@ module Xiki
     :face=>"arial",
     :bold=>true,
     :size=>'1',
-    :fg=>'999'
+    :fg=>'#666',
     )
 
   # Inactive has Black bg, dark gray path
@@ -16,19 +16,14 @@ module Xiki
     :face=>"arial",
     :bold=>true,
     :size=>'1',
-    :fg=>'666'
+    :fg=>'#444',
     )
 
   # White file stem
   Styles.mode_line_file(
-    :fg=>"fff",
     :face=>"arial",
-    :bold=>true
+    :bold=>true,
+    :fg=>"#aaa",
     )
 
-  Styles.mode_line_dim(
-    :fg=>"bce",
-    :face=>"arial",
-    :bold=>false
-    )
 end

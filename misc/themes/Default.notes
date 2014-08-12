@@ -1,7 +1,7 @@
 module Xiki
   Themes.use "Black BG"
-  Themes.use "Flat Blue"
-  Themes.use "Path Mode Line"
+  Themes.use "Path In Bar"
+  Themes.use "Middle Bar"   # Put this last, since it changes the bar, and will thus fix the control lock color
 end
 
 $el.tool_bar_mode -1 if Xiki::Environment.gui_emacs
@@ -10,9 +10,8 @@ $el.el4r_lisp_eval %`
   (progn
     (custom-set-variables
       '(tabbar-mode nil)   ; No tabs
-      '(cua-rectangle-mark-key (kbd "<C-S-return>"))   ; This is aquamacs stuff - probably put somewhere else
       )
-    (set-face-attribute 'region nil :background "#333333" :foreground "#ffffff") ;; More mac-like selection color
+    (set-face-attribute 'region nil :background "#333333")   ;; More mac-like selection color
 
     (setq-default
      frame-title-format

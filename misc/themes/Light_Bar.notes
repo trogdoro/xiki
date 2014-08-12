@@ -1,0 +1,36 @@
+# Light gray bar - blends in with white
+module Xiki
+  Styles.mode_line(
+    :bg=>'#ddd',
+    :border=>['#ddd', 3],
+    :face=>"arial",
+    :bold=>true,
+    :size=>130,
+    :fg=>'#bbb'
+    )
+
+  # Inactive has light gray bg, medium gray path
+  Styles.mode_line_inactive(
+    :bg=>'#eee',
+    :border=>['#eee', 3],
+    :face=>"arial",
+    :bold=>true,
+    :size=>130,
+    :fg=>'#ccc'
+    )
+
+  # White file stem
+  Styles.mode_line_file(
+    :fg=>"fff",
+    :face=>"arial",
+    :bold=>true,
+    :size=>130,
+    )
+
+  # Message area at bottom
+  Styles.minibuffer_prompt :size=>110, :face=>"Monaco", :fg=>"#666"
+  Styles.minibuffer :size=>110, :face=>"Monaco", :fg=>"#666"
+  Styles.echo_area :size=>110, :face=>"Monaco", :fg=>"#666"
+
+end
+

@@ -1,0 +1,36 @@
+module Xiki
+  Themes.use 'Dark Black BG'
+
+  Styles.mode_line(
+    :bold=>true,
+    :bg=>'#aaa',
+    :fg=>"#666",
+    )
+
+  Styles.mode_line_inactive(
+    :bg=>'#aaa',
+    :fg=>"#666",
+    :bold=>true,
+    )
+
+  Styles.mode_line_sides(
+    :bg=>"unspecified",
+    :fg=>"#aaaaaa",
+    :underline=>true,
+    )
+
+  Styles.mode_line_file(
+    :fg=>"#fff",
+    )
+
+  Styles.vertical_border :fg=>"#aaa", :bg=>'#aaa', :underline=>nil
+
+  Styles.region(
+    :bg=>"#333",
+    )
+
+  Styles.minibuffer_prompt :size=>110, :face=>"Monaco", :fg=>"#666"
+  Styles.minibuffer :size=>110, :face=>"Monaco", :fg=>"#666"
+  Styles.echo_area :size=>110, :face=>"Monaco", :fg=>"#666"
+
+end

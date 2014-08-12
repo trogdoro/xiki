@@ -1,0 +1,40 @@
+$el.el4r_lisp_eval %`
+  (progn
+
+    (setq xiki-bar-special-text nil)
+
+    (setq-default mode-line-format
+      (quote (
+        (:eval
+          (cond
+            ; Special text set, so use it...
+            (xiki-bar-special-text
+              (propertize (xiki-bar-add-padding xiki-bar-special-text) 'face 'mode-line-sides)
+            )
+            ; No special text...
+            (t
+              (let
+                (
+
+                  (dir  (replace-regexp-in-string (getenv "HOME") "~" (replace-regexp-in-string "^//$" "/" default-directory))  )
+                  (star (if (and (buffer-modified-p) (buffer-file-name)) "*" " "))
+                )
+
+                (xiki-bar-add-padding (concat
+                  "  "
+                  star
+                  dir
+                  ;"%b"
+                  (propertize (buffer-name) 'face 'mode-line-file)
+                  ":"
+                  (number-to-string (line-number-at-pos))
+                  "   "
+                  ) t)
+              )
+            )
+          )
+        )
+    )))
+  )
+
+`

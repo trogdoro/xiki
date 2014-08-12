@@ -1,0 +1,12 @@
+module Xiki
+  Styles.define :trailing_whitespace, :bg=>'333'
+  Styles.define :default, :bg=>'#5e5e5e', :fg=>'fff'
+  Styles.define :fringe, :bg=>'#5e5e5e', :fg=>'#5e5e5e'
+
+  Cursor.white
+
+  Styles.minibuffer_prompt :size=>"+0", :face=>"Monaco", :fg=>"#666"
+  Styles.minibuffer :size=>"+0", :face=>"Monaco"
+  Styles.echo_area :size=>"+0", :face=>"Monaco"
+
+end

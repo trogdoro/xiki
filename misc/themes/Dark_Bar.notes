@@ -1,0 +1,30 @@
+# Blue bg, dark blue path
+module Xiki
+  Styles.mode_line(
+    :bg=>'#222',
+    :fg=>'#444',
+    :border=>['#222', 3],
+    :face=>"arial",
+    :bold=>true,
+    #:size=>120,
+    )
+
+  # Inactive has light gray bg, medium gray path
+  Styles.mode_line_inactive(
+    :bg=>'#222',
+    :fg=>'#444',
+    :border=>['#222', 3],
+    :face=>"arial",
+    :bold=>true,
+    #:size=>120,
+    )
+
+  # White file stem
+  Styles.mode_line_file(
+    :fg=>"888",
+    :face=>"arial",
+    :bold=>true
+    )
+
+end
+
