@@ -8,11 +8,19 @@ Supported platforms: MacOS and Linux.  Pair with me if you want to see Windows s
 
 ## Install Ruby 1.9.3
 
-Type "ruby -v" to see which ruby version you currently have.
+Type `ruby -v` to see which ruby version you currently have.
 
-On ubuntu, do: $ sudo apt-get install ruby1.9.3.
+On ubuntu, run:
 
-On the mac, install rvm (http://google.com/search?q=install+rvm) and the do: $ rvm install ruby-1.9.3
+```sh
+$ sudo apt-get install ruby1.9.3.
+```
+
+On the mac, install rvm (http://google.com/search?q=install+rvm) and then run:
+
+```sh
+$ rvm install ruby-1.9.3
+```
 
 ## Install Xiki
 
@@ -20,14 +28,16 @@ Either install as a gem, or install from github.
 
 ### Install from github
 
-      $ git clone git://github.com/trogdoro/xiki.git
-      $ cd xiki
-      $ sudo gem install bundler   # <- no "sudo" if using rvm
-      $ sudo bundle                # <- no "sudo" if using rvm
-      $ sudo ruby etc/command/copy_xiki_command_to.rb /usr/bin/xiki
+```sh
+$ git clone git://github.com/trogdoro/xiki.git
+$ cd xiki
+$ sudo gem install bundler   # <- no "sudo" if using rvm
+$ sudo bundle                # <- no "sudo" if using rvm
+$ sudo ruby etc/command/copy_xiki_command_to.rb /usr/bin/xiki
 
-      # Or, if you're using rvm...
-      $ ruby etc/command/copy_xiki_command_to.rb /usr/local/bin/xiki
+# Or, if you're using rvm...
+$ ruby etc/command/copy_xiki_command_to.rb /usr/local/bin/xiki
+```
 
 ### Or, as a gem
 
