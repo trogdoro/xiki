@@ -104,7 +104,9 @@ module Xiki::Menu
     end
 
     def self.status *args
-      self.diff({:expand=>false}, *args)
+      options = yield
+      options[:expand] = false
+      self.diff(*args) {options}
     end
 
     def self.status_raw
