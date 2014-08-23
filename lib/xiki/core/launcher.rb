@@ -2,35 +2,20 @@ require 'xiki/core/effects'
 require 'xiki/core/requirer'
 require 'xiki'
 
-require 'sourcify'   # slow - (0.144676)
-require 'ruby_parser'
-require 'file-tail'
-
-Xiki::Requirer.require_gem 'activesupport', :name2=>'active_support/ordered_hash'
-Xiki::Requirer.require_gem 'httparty', :optional=>1   # Not super-important
-
-Xiki::Requirer.require_gem 'haml', :optional=>1   # slow - (0.136328)
-# autoload(:Haml, "haml")
-
-
 module Xiki
   class Launcher
 
     CLEAR_CONSOLES = [
       "*ol",
-      "*output - tail of /tmp/ds_ol.notes",
-      "*visits - tail of /tmp/visit_log.notes",
-      "*console app",
       ]
 
-    # TODO: put this in better place - search notes for "emacs.d"
-    @@log = File.expand_path("~/.emacs.d/menu_log.notes")
+    @@log = File.expand_path("~/xiki/misc/logs/command_log.notes")
 
     # Use @launcher/options/show or launch/ to enable.
-    # Look in /tmp/output.notes
+
     @@just_show = false
 
-    @@launchers ||= ActiveSupport::OrderedHash.new
+    @@launchers ||= {}
     @@launchers_procs ||= []
     @@launchers_parens ||= {}
     @@menus ||= [{}, {}]   # [.menu files, .rb files]
@@ -119,17 +104,25 @@ module Xiki
     end
 
     # Called by menu to show log contents, with newest first.
-    def self.log
+    def self.log options={}
 
       lines = IO.readlines self.log_file
 
-      # If parent, narrow down to just it
-      trunk = Xiki.trunk
+      # foo/=log, so narrow down to just this menu...
+
+      trunk = Tree.path
       if trunk.length > 1 && trunk[-2] != "menu/history"   # Show all if under this menu
         lines = lines.select {|o| o.start_with? "- #{trunk[-2]}"}
       end
 
-      lines.reverse.uniq.map{|o| o.sub /^- /, '<< '}.join
+      # Remove indented lines (shouldn't have been logged with unescaped linebreaks)...
+
+      bullets = options[:arrows] ? "<< " : "="
+
+      lines = lines.reverse.uniq.map{|o| o.sub /^/, bullets}
+      lines = lines.select{|o| o =~ /^[^ ]/}   # Only grab unindented lines (in case there's weirdness in the log)
+
+      lines.join
     end
 
     def self.log_file
@@ -192,514 +185,21 @@ module Xiki
       raise "Don't know how to deal with: #{root}, #{hash}, #{block}"
     end
 
-    def self.launch_or_hide options={}
-      # If no prefixes and children exist, delete under
-      if ! Keys.prefix and ! Line.blank? and Tree.children?
-        Tree.minus_to_plus
-        Tree.kill_under
-        return
-      end
 
-      # Else, launch
-      self.launch_preunified options
-    end
-
-    def self.hide
-      Tree.kill_under
-    end
-
-    # TODO: deprecated
-    # Call the appropriate launcher if we find one, passing it line
-    def self.launch_preunified options={}
-
-      # Committed on purpose, to draw attention to unported stuff.
-      Ol.stack 2
-      Ol["old .launch is deprecated!!!!!!"]
-
-      # Add linebreak at end if at end of file and none
-      Line.<<("\n", :dont_move=>1) if Line.right == View.bottom
-
-      Tree.plus_to_minus unless options[:leave_bullet]
-
-      Line.sub! /^\.$/, './'
-      Line.sub! /^~$/, '~/'
-
-      # Maybe don't blink when in $__small_menu_box!"
-      Effects.blink(:what=>:line) if options[:blink]
-      line = options[:line] || Line.value   # Get paren from line
-      label = Line.label(line)
-
-      if line =~ /^ *@$/
-        matches = Launcher.menu_keys
-        Tree.<< matches.sort.map{|o| "<< #{o.gsub '_', ' '}/"}.join("\n"), :no_slash=>1
-        return
-      end
-
-      # Special hooks for specific files and modes
-      return if self.file_and_mode_hooks
-
-      $xiki_no_search = options[:no_search]   # If :no_search, disable search
-
-      is_root = false
-
-      if line =~ /^( *)[+-] [^\n\(]+?\) (.+)/   # Split off label, if there
-        line = $1 + $2
-      end
-      if line =~ /^( *)[+-] (.+)/   # Split off bullet, if there
-        line = $1 + $2
-      end
-      if line =~ /^ *@ ?(.+)/   # Split off @ and indent if @ exists
-        is_root = true
-        line = $1
-      end
-
-      # Special case to turn launchers back on
-      return self.show_or_launch if line == "launcher/setup/show or launch/"
-
-      # Try each potential regex match...
-
-      @@launchers.each do |regex, block|
-        # If we found a match, launch it
-        if line =~ regex
-          group = $1
-
-          # Run it
-          if @@just_show
-            Ol << "- regex: #{regex.to_s}\n- group: #{group}"
-          else
-
-            begin
-              block.call line
-            rescue RelinquishException
-              next   # They didn't want to handle it, keep going
-            rescue Exception=>e
-              # Show error and sourche of block
-              Tree.<< CodeTree.draw_exception(e, block.to_source), :no_slash=>true
-            end
-
-          end
-          $xiki_no_search = false
-          return true
-        end
-      end
-
-      # If current line is indented and not passed recursively yet, try again, passing tree...
-
-      if Line.value =~ /^ / && ! options[:line] && !is_root   # If indented, call .launch recursively
-
-        # Use Xiki.branch here? (breaks up by @'s)
-
-        # merge together (spaces if no slashes) and pass that to launch
-
-        list = Tree.construct_path :list=>true, :ignore_ol=>1   # Get path to pass to procs, to help them decide
-
-        found = list.index{|o| o =~ /^@/} and list = list[found..-1]   # Remove before @... node if any
-        merged = list.map{|o| o.sub /\/$/, ''}.join('/')
-        merged << "/" if list[-1] =~ /\/$/
-
-        # Recursively call again with full path
-        return self.launch_preunified options.merge(:line=>merged)
-
-        # What was this doing, did we mean to only pass on :no_search??
-        #       return self.launch options.slice(:no_search).merge(:line=>merged)
-      end
-
-      if self.launch_by_proc   # Try procs (currently all trees)
-        return $xiki_no_search = false
-      end
-
-      # If nothing found so far, don't do anything if...
-      if line =~ /^\|/
-        View.beep
-        return View.message "Don't know what to do with this line"
-      end
-
-      # See if it's a menu...
-
-      self.set_env_vars line
-
-      result = self.try_menu_launchers line, options
-      self.unset_env_vars
-      return if result
-
-      # Do "autocomplete" - show all menus that start with this...
-
-      if line =~ /^([\w -]*)$/ || line =~ /^([\w -]*)\.\.\.\/?$/
-
-        #     if line =~ /^([\w -]*)(\.\.\.)?\/?$/
-        # TODO just check for exact match in dir, and load it if no launcher yet!
-
-        root = $1
-        root.gsub!(/[ -]/, '_') if root
-        matches = self.menu_keys.select do |possibility|
-          possibility =~ /^#{root}/
-        end
-        if matches.any?
-          if matches.length == 1
-            match = matches[0].gsub '_', ' '
-            Line.sub! /^([ @+-]*).*/, "\\1#{match}"
-            Launcher.launch_preunified
-            return
-          end
-
-          Line.sub! /\b$/, "..."
-
-          View.under matches.sort.map{|o| "<< #{o.gsub '_', ' '}/"}.join("\n")
-          return
-        end
-      end
-
-      # If just root line, load any unloaded launchers this completes and relaunch...
-
-      # Failed attempt to not auto-complete if slash
-        # It's tough because we still want to load!
-      # Don't do if ends with slash? - does this mean it won't load unloaded?
-
-      if line =~ /^([\w -]+)\/?$/ && ! options[:recursed]
-        root = $1
-        root.gsub!(/[ -]/, '_') if root
-
-        ["~/menu3", Bookmarks["$x/lib/xiki/tools"]].each do |dir|
-
-          matches = Dir[File.expand_path("#{dir}/#{root}*")]
-
-          if matches.any?
-            matches.sort.each do |file|
-              iroot = file[/\/(\w+)\./, 1]
-              next if @@menus[0][root] || @@menus[1][root]   # Skip if already loaded
-              require_menu(file)  # if File.exists? file
-            end
-            return self.launch_preunified :recursed=>1   # options.slice(:no_search).merge(:line=>merged)
-          end
-
-        end
-      end
-
-      if root = line[/^[\w -]+/]
-
-        Xiki.dont_search
-        # Maybe make the following print out optionally, via a 'help_last' block?
-        Tree << "
-          | There's no \"#{root}\" menu yet. Create it? You can start by
-          | adding items right here, or you can create a class.
-          <= @menu/create/here/
-          <= @menu/create/class/
-          <= @menu/install/gem/
-          "
-      else
-        View.flash "- No launcher matched!"
-      end
-      $xiki_no_search = false
-    end
-
-    def self.try_menu_launchers line, options={}
-
-      Ol["TODO > is this deprecated?!"]
-
-      # If there's a /@ in the path, cut it off
-      line.sub! /.+\/@/, ''
-
-      root_orig = root = line[/^[\w -]+/]   # Grab thing to match
-      root = TextUtil.snake_case root if root
-
-      self.append_log line
-      trunk = Xiki.trunk
-
-      # If menu nested under dir or file, chdir first
-
-      orig_pwd = nil
-      if trunk.size > 1 && closest_dir = Tree.closest_dir
-        orig_pwd = Dir.pwd   # Where ruby pwd was before
-
-        if root == "mkdir"
-          Dir.chdir "/tmp/"
-        elsif File.directory?(closest_dir) || is_file = File.file?(closest_dir)   # If dir path
-          closest_dir = File.dirname closest_dir if is_file
-
-          Dir.chdir closest_dir
-
-          # If file, make path only have dir
-          # remove file
-
-        else   # If doesn't exist
-          Tree.<< "> Dir doesn't exist.  Create it?\n@mkdir/\n"
-          return true
-        end
-      end
-
-      # If there is a matching .menu, use it
-
-      out = nil
-      if block_dot_menu = @@menus[0][root]
-
-        if @@just_show
-          Ol.line "Maps to .menu file, for menu: #{root}\n - #{block_dot_menu}\n - #{block_dot_menu.to_source}"
-          View.flash "- Showed launcher in $o", :times=>4
-          return true   # To make it stop trying to run it
-        end
-
-        begin
-          out = Tree.output_and_search block_dot_menu, :line=>line  #, :dir=>file_path
-        ensure
-          Dir.chdir orig_pwd if orig_pwd
-        end
-
-        # If .menu file matched but had no output, and no other block to delegate to, say we handled it so it will stop looking
-
-        if ! out
-          require_menu File.expand_path("~/menu3/#{root}.rb"), :ok_if_not_found=>1
-          if ! @@menus[1][root]
-            Tree << "
-              | This menu item does nothing yet.  You can update the .menu file to
-              | give it children or create a class to give it dynamic behavior:
-              <= @menu/create/class/
-              "
-            return true
-          end
-        end
-        return true if out   # Output means we handled it, otherwise continue on and try class
-      end
-
-      # If there is a matching .rb for the menu, use it
-
-      if block_other = @@menus[1][root]   # If class menu
-
-        if @@just_show
-          Ol.line << "Maps to class or other block, for menu: #{root}\n - #{block_other}\n - #{block_other.to_source}"
-          View.flash "- Showed launcher in $o", :times=>4
-          return true   # To make it stop trying to run it
-        end
-
-        begin
-          Tree.output_and_search block_other, options.merge(:line=>line)  #, :dir=>file_path
-        ensure
-          Dir.chdir orig_pwd if orig_pwd
-        end
-
-        return true
-      end
-
-      #
-      # @Unified > Kind of cool that it tries class if capital *after* it
-      # tries for registered menus.  Probably do this after refactor as well.
-      #
-
-      # If uppercase, try invoking on in-memory class
-      if root_orig =~ /^[A-Z]/
-
-        if @@just_show
-          Ol["Maps to in-memory class for: #{root}"]
-          View.flash "- Showed launcher in $o", :times=>4
-          return true   # To make it stop trying to run it
-        end
-
-        begin
-          lam = lambda do |path|
-            Launcher.invoke root_orig, path
-          end
-
-          #         Launcher.invoke__
-          #         do |path|
-          #           # Make class me camel case, and change Launcher.invoke to Menu.call
-          #         end
-
-          Tree.output_and_search lam, options.merge(:line=>line)  #, :dir=>file_path
-        ensure
-          Dir.chdir orig_pwd if orig_pwd
-        end
-
-        return true
-      end
-
-      # Pull into other function?
-        # re-use code that calls class wrapper
-
-      false   # No match, keep looking
-    end
-
-    # TODO: deprecated
-    def self.launch_by_proc list=nil
-      list = Tree.construct_path(:list=>true)   # Get path to pass to procs, to help them decide
-
-      # Try each proc
-      @@launchers_procs.each do |launcher|   # For each potential match
-        condition_proc, block = launcher
-        if found = condition_proc.call(list)   # If we found a match, launch it
-          if @@just_show
-            Ol << condition_proc.to_source
-          else
-            block.call list[found..-1]
-          end
-          return true
-        end
-      end
-      return false
-    end
-
-    def self.init_default_launchers
-
-      # TODO > Deprecated - only keep this around until shell stuff has been ported over sufficiently!"]
-
-      # %\n  | multiline\n  | commands
-      Launcher.add /^\%\// do   # For % with nested quoted lines
-        path = Tree.construct_path :list=>1
-
-        next if path[-1] !~ /^\| /
-
-        txt = Tree.siblings :string=>1
-
-        orig = Location.new
-        Console.to_shell_buffer
-        View.to_bottom
-        Console.enter txt
-        orig.go
-      end
-
-      self.add(/^\*$/) do |line|  # *
-        Line.sub! /.+/, "all"
-
-        Launcher.launch
-      end
-
-      self.add(/^\*./) do |line|  # *... buffer
-        name = Line.without_label.sub(/\*/, '')
-        View.to_after_bar
-        View.to_buffer name
-      end
-
-      # Xiki protocol to server
-      self.add(/^[a-z-]{2,}\.(com|net|org|loc|in|edu|gov|uk)(\/|$)/) do |line|  # **.../: Tree grep in dir
-        self.web_menu line
-      end
-
-      self.add(/^localhost:?\d*(\/|$)/) do |line|
-        self.web_menu line
-      end
-
-      self.add(/^ *(Ol\.line|Ol << )/) do
-        View.layout_outlog :called_by_launch=>1
-      end
-
-      # Example code in method comments, such as:
-      #   @/tmp/foo.rb
-      #     | class Foo
-      #     |   # C-return to run this example:
-      #     |   # Foo.bar
-      #     |   def self.bar
-      # p 1 + 2
-      # 1.should == 2
-      # rails/
-      #   generate/
-      #   start/
-      Launcher.add /^class (\w+).+\/\#.+/ do |path|
-        # Remove comment and run
-        txt = Line.value
-
-        comment_indent, txt = txt.match(/^( +# )(.+)/)[1..2]
-
-        result = Code.eval txt, View.file, Line.number(left)
-        if result[2]
-          result = CodeTree.draw_exception(result[2], txt)
-          result.strip!
-          result.gsub! /^/, "#{comment_indent}  "
-          Line.<< "\n#{result}", :dont_move=>1
-          next
-        end
-
-        result = result[0] || result[1]
-        next if ! result
-
-        result = result.to_s
-        result.gsub! /^/, "#{comment_indent}  "
-        Line.<< "\n#{result}", :dont_move=>1
-      end
-
-      Launcher.add /^class (\w+)\/def self.menu\/(.+)/ do |path|
-        clazz, path = path.match(/^class (\w+)\/def self.menu\/(.+)/)[1..2]
-
-        path = "#{TextUtil.snake_case clazz}/#{path}".gsub("/.", '/')
-
-        Tree << Menu[path]
-      end
-
-      Launcher.add /^  +<+@ .+/ do
-        Menu.root_collapser_launcher
-      end
-
-      Launcher.add /^  +<+ .+/ do
-        Menu.collapser_launcher
-      end
-
-      Launcher.add /^  +<+= .+/ do
-        Menu.replacer_launcher
-      end
-
-      Launcher.add /^[a-z]+\+[a-z+]+\/?$/ do |path|
-        txt = %`
-          | If you were told to "type #{path}", it is meant that you should
-          | "type the acronym" while holding down control. This means
-          | you should type:
-          |
-          |   #{Keys.human_readable(path)}
-          `
-        Tree.<< txt, :no_slash=>1
-      end
-
-      # Some menu launchers...
-
-      # Proc Launchers (obsolete now that climbed path is passed to regex's)...
-
-      # RestTree
-      condition_proc = proc {|list| RestTree.handles? list}
-      Launcher.add condition_proc do |list|
-        RestTree.launch :path=>list
-      end
-
-      # FileTree
-      condition_proc = proc {|list| FileTree.handles? list}
-      Launcher.add condition_proc do |list|
-        FileTree.launch
-      end
-
-      # CodeTree
-      condition_proc = proc {|list| CodeTree.handles? list}
-      Launcher.add condition_proc do |list|
-        CodeTree.launch :path=>list
-      end
-
-      # UrlTree
-      condition_proc = proc {|list| UrlTree.handles? list}
-      Launcher.add condition_proc do |list|
-        UrlTree.launch :path=>list
-      end
-    end
-
-    # Deprecated after Unified
-    def self.file_and_mode_hooks
-      if View.mode == :dired_mode
-        filename = $el.dired_get_filename
-        # If dir, open tree
-        if File.directory?(filename)
-          FileTree.ls :dir=>filename
-        else   # If file, do full file search?
-          History.open_current :all => true, :paths => [filename]
-        end
-        return true
-      end
-      if View.name =~ /^\*ol/   # If in an ol output log file
-        OlHelper.launch
-        Effects.blink(:what=>:line)
-        return true
-      end
-      return false
-    end
-
+    # Collapses and re-runs line in current view, or in :t (sometimes jumping to the nth labeled line).
     def self.do_last_launch options={}
+      # Ol "options", options
+      prefix = options[:prefix] || Keys.prefix(:clear=>true)
 
       # Clear out time of last log, so it always shows heading
       Ol.clear_pause
 
       orig = View.index
+      orig_file = View.file
+
+      filter_to_current_file = prefix == :u
+
+      Ol.filter = orig_file if filter_to_current_file
 
       # If *ol buffer open, grab line number so we can restore it after
       ol_cursor_position = nil
@@ -708,62 +208,123 @@ module Xiki
         ol_cursor_position = Line.number if ! View.at_bottom
       end
 
-      # File.open("/tmp/simple.log", "a") { |f| f << "final ol_cursor_position: #{ol_cursor_position}\n" }
-
-
-      CLEAR_CONSOLES.each do |buffer|
-        View.clear buffer
+      if ! options[:dont_launch]
+        CLEAR_CONSOLES.each do |buffer|
+          View.clear buffer
+        end
       end
-
-      prefix = Keys.prefix :clear=>true
 
       if options[:here] # || prefix ==:uu
         View.to_nth orig
       else
-        Move.to_window 1
-        if prefix.is_a? Fixnum
+        View.open options[:bookmark] || ":t"
+        if prefix.is_a?(Fixnum) && prefix > 0
           View.line = prefix
         end
       end
 
-      line = Line.value
+      # If do+1 or do+2 etc, move to nth thing to run...
 
-      # Go to parent and collapse, if not at left margin, and buffer modified (shows we recently inserted)
-      if ! Color.at_cursor.find{|o| o =~ /^color-rb-/}
-        if line =~ /^ /
-          prefix ==:uu ?
-            Tree.to_parent(:u) :
-            Tree.to_parent
+      if options[:nth] || options[:label]
+        # Remember where to go back to, if we were in $todo
+        if orig_file == Bookmarks[":t"]
+          line, column = View.line, View.column
         end
 
-        Tree.to_parent if Line =~ /^ +- backtrace:$/   # If we went to "- backtrace:", go up again
-        Tree.kill_under
+        if options[:here]   # Staying in current file, so do nth visible
+          View.to_relative :line=>1
+        else   # Normal, so do nth from top of file
+          View.to_highest
+        end
+
+        if options[:nth]
+          options[:nth].times{ Notes.next_paren_label }
+        elsif options[:label]
+
+          # Find "- foo) bar", "- ) foo", or "- )\nbar"
+          label = Emacs.regexp_quote options[:label]
+          Search.forward "^ *[+-] \\(#{label})\\|) #{label}/?$\\|)\n[^a-zA-Z_]*#{label}/?$\\)", :beginning=>1
+          Line.next if Line =~ /^ *[+-] [\w .+']*\)$/   # Next line if this is just a label > label regex
+        end
+
+        return if options[:navigate]
+
+        # Do nothing if went to the end without finding anything
+        if View.cursor == View.bottom
+          View.to_highest
+          View.line, View.column = line, column if line
+          return View.flash "- No lines are marked.  Use layout+mark."
+        end
+
+        # No idea why it was doing this
+        # # If next line is indented lower, move down
+        # if Line.indent(2).length > Line.indent.length
+        #   Line.next
+        # end
+
       end
 
-      Effects.blink
 
-      # If on >... line, just eval section as ruby...
-
-      if line =~ /^>/
-        Code.run
+      if prefix == 0
+        Move.backward
+        Line.to_beginning
         return
       end
 
-      options[:here] ?
-        Launcher.launch :
+      line_value = Line.value
+
+
+      # Better plan > always collapse (only does something if something under it)...
+
+      Tree.to_parent if Line =~ /^ +- backtrace:$/   # If we went to "- backtrace:", go up again
+
+
+      # Ol "options[:dont_launch]", options[:dont_launch]
+      return if options[:dont_launch]
+      # Ol()
+
+      Tree.kill_under
+
+      Effects.blink
+
+      # # Not possible for now
+      # # If on >... line, just eval section as ruby...
+      # if line_value =~ /^>/
+      #   Code.run
+      #   return
+      # end
+
+      if (options[:here] && ! options[:nth]) || prefix == :-   # :here is only used by do+up
+        Launcher.launch
+      else
         Launcher.launch(:no_search=>true)
+      end
+        #       end
+
+      return if prefix == :-
+
+      Ol.filter = nil if filter_to_current_file
 
       if ol_cursor_position
         View.to_buffer "*ol"
         View.line = ol_cursor_position
       end
 
+      View.line, View.column = line, column if line
+
+      # Don't go to orig if :f > and we already went to a file...
+
+      return if options[:bookmark] == ":f" && View.file != Bookmarks[":f"]
+
       View.to_nth orig
+
+      # do+expand, so reflect value in comment, if line is "Ol foo" or "ol[foo]"
+      View.layout_outlog(:prefix=>:-) if prefix == :u && Line =~ /^ *Ol( |!|\.>>)/
     end
 
     # Used any more? - should be replaced by menu log - delete this
     def self.urls
-      txt = File.read File.expand_path("~/.emacs.d/url_log.notes")
+      txt = File.read File.expand_path("~/xiki/misc/logs/url_log.notes")
       txt = txt.split("\n").reverse.uniq.join("\n")
     end
 
@@ -815,19 +376,15 @@ module Xiki
 
       raise "No class '#{clazz || camel}' found in launcher" if clazz.nil?
 
-      # TODO: Unified: comment out for now - just comment out since we're doing no caching
-      # reload 'path_to_class'
-      Menu.load_if_changed File.expand_path("~/menu3/#{snake}.rb")
-
-
+Ol["oh, this path is an array: #{path}!"] if path.is_a?(Array)
+      Ol["Changed > might cause problems?!"]
       args = path.is_a?(Array) ?
-        path : Menu.split(path, :return_path=>1)
+        path : Path.split(path, :return_path=>1)
+      #         path : Menu.split(path, :return_path=>1)
 
       # Call .menu_before if there...
 
       method = clazz.method("menu_before") rescue nil
-
-      self.set_env_vars path
 
       if method
         code = "#{camel}.menu_before *#{args.inspect}"
@@ -835,8 +392,6 @@ module Xiki
 
         return CodeTree.draw_exception exception, code if exception
         if returned
-
-          # TODO: call .unset_env_vars before this and other below places we return
 
           returned = returned.unindent if returned =~ /\A[ \n]/
           return returned
@@ -876,8 +431,7 @@ module Xiki
         txt = Tree.children tree, args
 
         if txt && txt != "- */\n"
-          # Pass in output of menu as either:
-            # ENV['output']
+          # Pass in output of menu as
             # 1st parameter: .menu_after output, *args
           return self.invoke_menu_after clazz, txt, args
         end
@@ -938,15 +492,12 @@ module Xiki
 
       txt_orig = txt
       txt = CodeTree.returned_to_s(txt)   # Convert from array into string, etc.
-      self.unset_env_vars
 
       txt = txt.unindent if txt =~ /\A[ \n]/
 
       return CodeTree.draw_exception exception, code if exception
 
       txt = self.invoke_menu_after clazz, txt_orig, args_orig
-
-      self.unset_env_vars
 
       txt
     end
@@ -961,8 +512,6 @@ module Xiki
 
       return CodeTree.draw_exception exception, code if exception
       if returned
-
-        # TODO: call .unset_env_vars before this and other below places we return
 
         returned = returned.unindent if returned =~ /\A[ \n]/
         return returned
@@ -996,7 +545,6 @@ module Xiki
 
       return if path =~ /^(h|log|last)\//
 
-      path = "- #{path}"
       File.open(@@log, "a") { |f| f << "#{path}\n" } rescue nil
     end
 
@@ -1021,15 +569,19 @@ module Xiki
 
       return self.insert(menu, options) if options[:inline]
 
-      $el.sit_for 0.25 if options[:delay] || options[:letter]   # Delay slightly, (avoid flicking screen when they type command quickly)
-
       View.to_after_bar if View.in_bar? && !options[:bar_is_fine]
 
-      dir = View.dir
+      dir = options[:buffer_dir] || View.dir
 
-      # For buffer name, handle multi-line strings
-      buffer = menu.sub(/.+\n[ -]*/m, '').gsub(/[.,]/, '')
-      buffer = "@" + buffer.sub(/^[+-] /, '')
+      buffer = options[:buffer_name]
+
+      if ! buffer
+        # For buffer name, handle multi-line strings
+        buffer = menu.sub(/.+\n[ -]*/m, '').gsub(/[.,]/, '')
+        buffer = buffer.sub(/^[+-] /, '')
+        buffer = buffer.sub(/^=/, '')
+      end
+
       View.to_buffer buffer, :dir=>dir
 
       View.clear
@@ -1050,7 +602,7 @@ module Xiki
 
       if options[:choices]
         View.to_highest
-        Tree.search
+        Tree.filter
         return
       end
 
@@ -1062,65 +614,22 @@ module Xiki
 
       # Deprecated
       return Launcher.go if options[:unified]
-
       Launcher.launch options
     end
 
-    def self.method_missing *args, &block
 
-      arg = args.shift
-
-      if block.nil?
-        if args == []   # Trying to call menu with no args
-          return Menu.call arg.to_s
-        end
-        if args.length == 1 && args[0].is_a?(String)   # Trying to call menu with args / path?
-          return
-        end
-      end
-
-      raise "Menu.#{arg} called with no block and no args" if args == [] && block.nil?
-      self.add arg.to_s, args[0], &block
-    end
-
-    def self.wrapper path
-
-      # If starts with bookmark, expand as file (not dir)
-
-      path = Bookmarks.expand path, :file_ok=>1
-
-      # TODO: make generic
-      # TODO: load all the adapters and construct the "rb|js" part of the regex
-
-      # Don't match if it's quoted (after a pipe)
-      match = path.match(/^([^|]+\/)(\w+)\.(rb|js|coffee|py|notes|menu|haml)\/(.*)/)
-      if match
-        dir, file, extension, path = match[1..4]
-        # TODO: instead, call Launcher.invoke JsAdapter(dir, path), path
-        self.send "wrapper_#{extension}", dir, "#{file}.#{extension}", path
-        return true   # Indicate we handled it
-      end
-
-      # For matches to filename instead of extensions?
-      match = path.match(/^([^|]+\/)(Rakefile)\/(.*)/)
-      if match
-        dir, file, path = match[1..4]
-        # TODO: instead, call Launcher.invoke JsAdapter(dir, path), path
-        self.send "wrapper_#{file.downcase}", dir, file, path
-        return true   # Indicate we handled it
-      end
-
-      return false
-
-    end
-
-    def self.reload_menu_dirs
+    #
+    # Adds a menu (command) for each file in tools?
+    #
+    def self.load_tools_dir
       dir = "#{Xiki.dir}lib/xiki/tools"
       Files.in_dir(dir).each do |f|
         next if f !~ /^[a-z].*\..*[a-z]$/ || f =~ /__/
+        next if f =~ /\.menu$/
+
         path = "#{dir}/#{f}"
-        stem = f[/[^.]*/]
-        self.add stem, :menu=>path
+
+        require path
       end
 
       "- reloaded!"
@@ -1137,7 +646,7 @@ module Xiki
     def self.like_menu item, options={}
       return if item.nil?
 
-      menu = Keys.input :timed=>true, :prompt=>"Pass '#{item}' to which menu? (or space it's the menu): "
+      menu = Keys.input :timed=>true, :prompt=>"Pass '#{item}' to which command? (or space if it's the command): "
 
       return self.open(item, options) if menu == " "   # Space means text is the menu
 
@@ -1147,11 +656,11 @@ module Xiki
         return self.open("#{matches[0]}/#{item}", options)
       end
 
-      self.open(matches.map{|o| "- #{o}/#{item}\n"}.join(''), options.merge(:choices=>1))
+      self.open(matches.map{|o| "#{o}/#{item}\n"}.join(''), options.merge(:choices=>1))
       right = View.cursor
       Move.to_previous_paragraph
 
-      Tree.search :left=>View.cursor, :right=>right
+      Tree.filter :left=>View.cursor, :right=>right
     end
 
     def self.search_like_menu
@@ -1183,33 +692,26 @@ module Xiki
 
     # Shortcut for passing "outline" prefix and launching.
     def self.enter_outline
-      return FileTree.enter_lines if Line.blank?   # Prompts for bookmark to insert if blank line
 
-      # If there's a numeric prefix, add it
-      Keys.add_prefix "outline"
-      Launcher.launch
-    end
+      # Blank line, so interst file from bookmark first...
 
-    def self.set_env_vars path
-      return if ! $el
+      if Line.blank?
 
-      ENV['prefix'] = Keys.prefix.to_s
+        message = "File to insert outline for: "
+        View.flash message
+        path = Keys.input "#{message}: ", :timed=>1
 
-      args = path.is_a?(Array) ?
-        path : Menu.split(path, :return_path=>1)
+        path = Bookmarks["$#{path}"] if path =~/^\w/   # They typed a word, so expand it as a bookmark
 
-      # If line not quoted, just use single line
+        View.insert path
 
-      quoted = args.find{|o| o =~ /^\|/}
-      if ! quoted
-        return ENV['txt'] = args[-1]
       end
 
-      # Quoted lines
+      # If there's a numeric prefix, add it
 
-      txt = Tree.leaf("|")   # Cheat to make it grab quoted
-      ENV['txt'] = txt.length > 1_000_000 ? "*too long to put into env var*" : txt
+      Launcher.launch :dropdown=>["outline"]
     end
+
 
     def self.web_menu line
       Line << "/" unless Line =~ /\/$/
@@ -1223,18 +725,6 @@ module Xiki
       rescue Exception=>e
         Tree << "- couldn't connect!"
       end
-    end
-
-    def self.unset_env_vars
-      ENV['prefix'] = nil
-      ENV['txt'] = nil
-    end
-
-    # TODO: deprecated
-    # Thin wrapper around how .launch_or_hide is called from key shortcuts.
-    def self.go_preunified
-      Ol.clear_pause
-      Launcher.launch_or_hide :blink=>true
     end
 
     def self.go
@@ -1251,22 +741,27 @@ module Xiki
       self.launch
     end
 
-    # While implementing, mapped to Command+Return.
-    # After refactor, map to Ctrl+Return as well.
+    # Mapped to Ctrl+Return.  Expands thing on current line.
+    # Invokes Expander.expand.
     def self.launch insert_options={}
-      line = Line.value
 
-      Line.<<("\n", :dont_move=>1) if Line.right == View.bottom   # If at very end of view and no linebreak, add one
+      line, line_number = Line.value, Line.number
 
-      return if self.bullet_prefix_handling line   # If the line has << and other arrow-ish bullets
+      Line.<<("\n", :dont_move=>1) if Line.right == View.bottom   # If at end of view add linebreak, in none.
 
-      Tree.plus_to_minus unless insert_options[:leave_bullet]
-
-      # Now passing insert_options all the way in - might cause problems
       options = insert_options.merge(:client=>"editor/emacs")
 
+      # Treat -foo as same as foo (and change it)
+
+      if line =~ /^-[a-z]/i
+        # This may be too simple > maybe delegate to a method that does stuff specific to the commands?
+        # and/or > make the single letter equivalent have more logic!
+        Line.sub!(/^-/, '')   # Change variable and the line itself
+        line.sub!(/^-/, '')
+      end
+
       begin
-        path = Tree.path_unified
+        path = Tree.path
       rescue Exception=>e
         # Maybe make this be WellformedTreeException
         if e.is_a?(RuntimeError) && e.message =~ /well-formed tree/
@@ -1275,7 +770,13 @@ module Xiki
         end
       end
 
+      # Commit: swap colon and pipe quotes
+
       if prefix = Keys.prefix; options[:prefix] = prefix; end
+
+      # Launching a "* dropdown" item, so delete the siblings (the'll be added back later)...
+
+      dropdown_orig = self.delete_dropdown_siblings path
 
       # Maybe nest these within new :limits option (and delete before
       # passing to menu) to avoid too many options passed into menus.
@@ -1284,51 +785,83 @@ module Xiki
       # /projects/xiki/lib/xiki/core/
       #   - pattern.rb
       #     |           if nested = value[options[key]]
+
       if view = View.name; options[:target_view] = view; end
       if file = View.file; options[:target_extension] = File.extname(file); end
 
-      #     # Stopping doing this - anyone still relying on it?!
-      #     # - Fix conf!
-      #     if line =~ /^ *\|/
-      #       options[:txt] = Tree.siblings :quotes=>1, :string=>1
-      #     end
+      # Set :dir, based on path ancestors, or else Shell.dir
+      dir = Tree.closest_dir(path[0..-2]) if path.is_a?(Array)
+      options[:dir] = dir || Shell.dir
 
-      # Expand menu...
+      return if self.process_bullets_before line   # If the line has << and other arrow-ish bullets
+
+      self.adjust_line_number_maybe path, options
+
+      if options[:path_append]   # Append item to path (used for :dropdown)
+        path[-1] << "/" if path[-1] =~ /[^\/]$/   # Append slash if content that doesn't end in slash
+        path[-1] << options[:path_append]
+      end
+
+
+      # Expand command...
 
       txt = Expander.expand path, options
 
-      # Expand menu again, if it @beg'ed for more info...
-
+      # Todo > possibly this several times, in case they ask for multiple?
+        # (maybe max out at like 10 times)
       txt = self.expand_again_if_beg txt, options
-
-      txt = txt.to_s if txt && ! txt.is_a?(String)
+      txt = txt.to_s if txt != nil && ! txt.is_a?(String)
 
       # Pull out certain options set by implementation, meant to control how it's inserted...
 
-      options.each{|k, v| insert_options[k] = v if [:no_slash, :no_search, :line_found].include?(k)}
+      options.each{|k, v| insert_options[k] = v if [:no_slash, :no_search, :line_found, :letter, :omit_slashes].include?(k)}
+
+      # Re-add dropdown items and restore cursor if requested to put output under dropdown...
+
+      if options[:dropdown] && options[:nest] && dropdown_orig
+        # Keep using letters if under dropdown
+        insert_options[:letter] = 1 if ! options[:no_dropdown]
+        Line.next
+        View << dropdown_orig
+        View.line = line_number
+      end
 
       return if txt.blank?
 
-      # Automatically repress slash if were on ^... or |... line
+      # Automatically repress slash if were on >... or |... line
+
       insert_options[:no_slash] = 1 if options[:args] && options[:args].last =~ /(^[>|:]|\n)/
 
-      return if self.process_directives txt, options, insert_options
+      if txt =~ /\A\s*~ /
+        insert_options[:no_slash] = 1
+        insert_options[:letter] = 1
+      end
+
+      return if self.process_bullets_in_output txt, options, insert_options
 
       txt = txt.to_s if txt
       return if txt.blank?
 
       $el.deactivate_mark   # So aquamacs doesn't highlight something after double-click
-      Tree.<< txt, insert_options
 
+      self.process_bullets_after line, txt, insert_options   # Delete stuff if bullet was <~ or <+!
+
+      Tree.plus_to_minus unless insert_options[:leave_bullet]   # There was output, so change + to -
+
+      Tree.<< txt, insert_options
       nil
     end
 
+    def self.adjust_line_number_maybe path, options
+      # It's a file path with numbers, so adjust the number first
+        # What was this supposed to do?
+    end
 
     def self.expand_again_if_beg txt, options
 
       return txt if ! txt.is_a? String
 
-      return txt if txt !~ /\A@beg\/(.+)\/\z/   # Only try to do something if menu returned @beg/.../
+      return txt if txt !~ /\A=beg\/(.+)\/\z/   # Only try to do something if menu returned =beg/.../
 
       beg = $1
 
@@ -1340,23 +873,24 @@ module Xiki
 
       # Can have siblings we can grab if it's |... or is just one item (unescaped)
       line = Line.without_label
-      can_have_siblings = line =~ /^\|/ || Path.split(line).length == 1
+      can_have_siblings = line =~ /^[|:]/ || Path.split(line).length == 1
 
       # Remember whether ends in slash and not quoted - means begged item should be appended to path, not replaced
-      itemish = line !~ /^ *[|:]/ && line =~ /\/$/
+      itemish = line !~ /^ *\|/  # && line =~ /\/$/
 
       if ! can_have_siblings   # If no siblings, just add \n, so they'll no we sent all the lines
         options[:items][-1] = "#{options[:items][-1]}\n"
 
       # Grab siblings and pass as last arg
       elsif beg == "quoted"   # Consecutive quoted siblings
-        options[:items][-1] = Tree.txt
+        options[:items][-1] = Tree.siblings :string=>1
       elsif beg == "neighbors"   # Siblings, not crossing blank lines
         siblings = "#{Tree.siblings(:include_label=>1).join("\n")}\n"
         itemish ?
           options[:items].<<(siblings) :
           options[:items][-1] = siblings      # Includes current line
-      elsif beg == "siblings"   # Siblings, crossing blank lines
+      elsif beg == "siblings"   # =beg/siblings/
+        # Siblings, crossing blank lines
         siblings = "#{Tree.siblings(:cross_blank_lines=>1, :include_label=>1, :children=>1)}"
         itemish ?
           options[:items].<<(siblings) :
@@ -1368,77 +902,124 @@ module Xiki
       Expander.expand options
     end
 
-    # Called by .launch to do appriate thing if result starts
-    # with @open file/, @flash/, or something else that instructs the editor to
-    # take an action.
-    def self.process_directives txt, options, insert_options
+    # Called by .launch to do appriate thing if output starts with
+    # =replace/, =open file/, =flash/, <!..., <<<..., or something else that
+    # instructs the editor to take an action.
+    def self.process_bullets_in_output txt, options={}, insert_options={}   # Based on bullets or =replace
 
-      # If "<<< foo", launch foo in place of parent...
+      # <$$ foo, so exit and run the command (if in shell console)...
 
-      if txt.strip =~ /\A<<< (.+\/)\z/
+      if txt.strip =~ /\A<\$\$ (.+)\z/
+        command = $1
+        return View.<<("Don't know how to handle $$... when not run from shell.") if Environment.gui_emacs
+        $el.suspend_emacs command
+        return true
+      end
+
+      # <$ foo, so move output up to $... line and replaces it...
+
+      if txt.strip =~ /\A<\$ (.+)\z/
         txt = $1
-        indent = Line[/^ +@?/]
+
+        Tree.to_parent
+
+        line = Line.value
+        while(line =~ /^\s/ && line !~ /^ *\$/) do
+          Tree.to_parent
+          line = Line.value
+        end
+
+        Tree.kill_under :no_plus=>1
+        Line.sub! /( *).*/, "\\1#{txt}"
+
+        Launcher.launch
+
+        return true
+      end
+
+      # <@ foo/, so replace item with output...
+
+      if txt.strip =~ /\A<@ (.+)\z/
+        # Not sure what this does > behaves as though it doesn't have a bullet?
+        txt = $1
+        indent = Line[/^ +=?/]   # Put '=' back on if it was there
+        Line.sub! /.*/, "#{indent}#{txt}"
+        return true
+      end
+
+      # <<< foo/, so replace item with output and launch...
+
+      if txt.strip =~ /\A<<< (.+)\z/
+        txt = $1
+        indent = Line[/^ +=?/]   # Put '=' back on if it was there
         Line.sub! /.*/, "#{indent}#{txt}"
         Launcher.launch
         return true
       end
 
-      if txt =~ /\A@instead\/(.*)/
+      # <+ : replace line...
+
+      # <: : replace siblings...
+
+      if txt =~ /\A<([+:])\n/
+        arg = $1
+        to = arg == "+" ? "=replace/line/" : "=replace/siblings/"
+        txt.sub! /../, to
+      end
+
+      # =replace/...
+
+      if txt =~ /\A=replace\/(.*)/
         arg = $1
 
         # Remove the 1st line, and unindent the rest
-        txt.sub! /\A@.+\n/, ''
+        txt.sub! /\A=.+\n/, ''
         txt.gsub! /^  /, ''
 
         if arg == "neighbors/"
-          left, ignore1, ignore2, right = Tree.sibling_bounds
-        elsif arg == "siblings/"
-          left, right = Tree.sibling_bounds :cross_blank_lines=>1#, :children=>1
-        elsif arg == "quoted/"
-          Ol["todo: implement!"]
-        else
-          left, right = Line.left, Line.right+1
+          raise "pass =replace/, instead of =replace/neighbors/"
         end
 
-        old_txt = View.txt left, right
+        expand_when_done = nil
+
+        if arg == ""
+          bounds = Tree.sibling_bounds
+        elsif arg =~ /^siblings\/(.*)\/?/   # =replace/siblings/, or =replace/siblings/2/, or =replace/siblings/expand/
+          arg = $1 == "" ? nil : $1
+          if arg
+            number, expand_when_done = arg.split "/"
+            (number.to_i - 1).times{ Tree.to_parent }
+            insert_options[:launch] = 1
+          end
+          bounds = Tree.sibling_bounds :cross_blank_lines=>1 #, :children=>1
+        elsif arg == "quoted/"
+          raise "implement quoted/!"
+        elsif arg == "line/"
+          bounds = Line.left, nil, nil, Line.right+1   # Just replace line
+        else   # Just =replace/ ?
+          raise "not implemented"
+        end
+
+        old_txt = View.txt bounds[0], bounds[3]
         indent = old_txt[/^ */]
-        View.delete left, right
+        View.delete bounds[0], bounds[3]
         txt = "#{txt}".gsub(/^/, indent)
 
         Tree.output_and_search txt, insert_options.merge(:not_under=>1)
 
         return true
+      end
 
-      elsif txt =~ /\A@open file\/(.*)/
-        txt = $1
-
-        # if |..., pull off line and go to it
-        quote = Path.extract_quote(txt)
-
-        if line_number = Path.extract_line_number(txt)
-          line_number = line_number.to_i
-
-          # Before we open, calculate difference between cursor's line and :... line number
-          if char = Line[/^ +\|([+-])/, 1]
-            siblings = Tree.siblings :before=>1
-            line_number += siblings.select{|o| o =~ /^\|#{Regexp.escape char}/}.length
-          end
-        end
-
-        open_options = options[:prefix] == 0 ? {:same_view=>1} : {}   # 0+ means use same view
-
-        View.open txt, open_options
-
-        if line_number
-          View.line = line_number
-        elsif quote
-          View.to_quote quote.sub(/./, '')   # 1st char of quote is a redundant space or + or something else
-        end
+      if txt =~ /\A=open file\/(.*)/
+        self.open_file $1, options
         return true
       end
 
-      if txt =~ /\A@flash\/(.*)/
-        txt = $1
+      # <! or =flash/...
+
+      if txt =~ /\A=(flash)\/(.*)/ || txt =~ /\A<(!) ?(.*)/
+        kind, txt = $1, $2
+        txt = "- #{txt}" if kind == "!" && txt =~ /^[^-]/   # Add bullet if <! foo
         if txt.blank?
           Effects.glow :times=>1
         else
@@ -1446,7 +1027,10 @@ module Xiki
         end
         return true
       end
-      if txt =~ /\A@prompt\/(.*)/
+
+      # <? or =prompt/...
+
+      if txt =~ /\A=prompt\/(.*)/ || txt =~ /\A<\? (.*)/
         View.prompt $1
         return true
       end
@@ -1454,12 +1038,89 @@ module Xiki
       nil
     end
 
+
+    def self.delete_dropdown_siblings path=nil #, line=nil
+
+      line = Line.value
+      path ||= Tree.path
+
+      # Do nothing unless unless a parent line is *...
+
+      path = Path.split(path[-1]) rescue []
+      index = path.index{|o| o =~ /\A~ / && o !~ /\n/}
+      return if ! index   # Do nothing if no *... in path
+
+      # Jump up to line that has ~...
+      ((path.length - 1) - index).times { Tree.to_parent }
+
+      bounds = Tree.sibling_bounds(:cross_blank_lines=>1, :must_match=>"~ |--")
+
+      txt = View.delete bounds[0], bounds[3]
+      Line.previous if txt !~ /^\~/   # If at left margin, don't move up
+
+      txt
+    end
+
+
+    def self.open_file txt, options={}
+
+      # if |..., pull off line and go to it
+      quote = Path.extract_quote(txt)
+
+      if line_number = Path.extract_line_number(txt)
+        line_number = line_number.to_i
+
+        # Before we open, calculate difference between cursor's line and :... line number
+        if char = Line[/^ +\|([+-])/, 1]
+          siblings = Tree.siblings :before=>1
+          line_number += siblings.select{|o| o =~ /^\[|:]#{Regexp.escape char}/}.length
+        end
+      end
+
+      open_options = options[:prefix] == 0 ? {:same_view=>1} : {}   # 0+ means use same view
+
+      View.open txt, open_options
+
+      if line_number
+        View.line = line_number
+      elsif quote
+        View.to_quote quote.sub(/./, '')   # 1st char of quote is a redundant space or + or something else
+      end
+
+    end
+
     # Editor-only handling for <<, <=, and <@ bullets.
     # For when launching <<... etc. lines, not for when output includes it.
     #
     # Also when more <'s, like <<< and <<= etc.
-    def self.bullet_prefix_handling line
-      arrow_bullet = line[/^ +(<[<=@]+) /, 1]
+    def self.process_bullets_after line, txt, insert_options # , path, options
+
+      arrow_bullet = line[/^ +(<[+:])/, 1]
+
+      return nil if ! arrow_bullet   # Not handled
+
+      key = arrow_bullet.sub /<+/, '<'
+
+      indent = Line.indent line
+
+      if key == "<+"
+        Line.delete
+      else
+        bounds = Tree.sibling_bounds(:cross_blank_lines=>1)
+        View.delete bounds[0], bounds[3]
+      end
+
+      txt.gsub! /^/, indent
+      insert_options[:not_under] = 1
+
+    end
+
+
+    # How does this compare to > .process_bullets_in_output?
+    #   - should they be merged?
+    def self.process_bullets_before line
+
+      arrow_bullet = line[/^ +(<[<@=:]+)/, 1]
 
       return nil if ! arrow_bullet   # Not handled
 
@@ -1467,11 +1128,9 @@ module Xiki
 
       case key
       when "<"
-        Menu.collapser_launcher
-      when "<="
-        Menu.replacer_launcher
-      when "<@"
-        Menu.root_collapser_launcher
+        Menu.launch_after_collapse
+      when /<=/
+        Menu.launch_after_collapse_root
       end
       true   # We handled it
     end
@@ -1518,13 +1177,13 @@ module Xiki
 
       # If line not blank, usually indent after
 
-      Line.<<("\n#{indent}  @") if ! blank
+      Line.<<("\n#{indent}  =") if ! blank
 
       # If at end of line, and line not blank, go to next line
 
       # Todo: if dash+, do auto-complete even if exact match - how to implement?
 
-      prompt = "Start typing a menu ('a' for all): "
+      prompt = "Start typing a command ('a' for all): "
       prompt.sub! ")", ", space for suggestions)" if ! blank
       input = Keys.input(:timed=>true, :prompt=>prompt)
 
@@ -1536,23 +1195,137 @@ module Xiki
       Launcher.launch
     end
 
-    def self.open_menu
-      prefix = Keys.prefix :clear=>1
+    def self.open_command
 
-      return Launcher.open("- last/") if prefix == :u
-
-      input = Keys.input(:timed=>true, :prompt=>"Start typing a menu that might exist (or type 'all'): ")
-      View.to_buffer "menu"
+      View.to_buffer View.unique_name("untitled.notes")
       Notes.mode
+      View >> "\n\n\n"
 
-      View.rename_uniquely
-
-      View.kill_all
-      View << "#{input}\n"
-      View.to_highest
+      Keys.timed_insert :prompt=>"Type a command to run!"
       Launcher.launch
+
     end
 
+    def self.open_prompt
+
+      prompt = Keys.prefix_u ? "% " : "$ "
+
+      View.to_buffer View.unique_name("untitled.notes")
+      Notes.mode
+
+      View << "#{prompt}"
+      View >> "\n\n\n"
+
+      ControlLock.disable
+    end
+
+
+    def self.dropdown
+
+      Keys.remember_key_for_repeat ["dropdown"]
+
+      return self.dropdown_on_this_file if Keys.prefix_u(:clear=>1)
+
+      Launcher.launch :dropdown=>[]
+    end
+
+    def self.dropdown_on_this_file
+
+      file = View.file   # Get path of this file
+
+      file.sub! /.+\//, "\\0\n  - "   # Indent before file
+
+      View.new_file
+      View << file
+
+      Launcher.launch :dropdown=>[]
+
+    end
+
+    def self.double_click
+      Launcher.go
+    end
+
+    def self.right_click options={}
+
+      path = Tree.path
+
+      expand_options = {:dropdown=>[]}
+      expand_options[:mouse] = 1 # unless options[:no_mouse]
+
+      txt = Xiki.expand path, expand_options
+
+      txt.unindent!
+      txt_with_stars = txt.dup
+      txt.gsub! /~ /, ""
+
+      result = Menu.dropdown txt, :offset=>[23, 21], :cursor=>Line.left+Line.indent.length
+
+      return if ! result
+
+      Launcher.launch :path_append=>"~ #{result}"
+
+    end
+
+    # Jumps up to :t and runs first "- )" line.
+    def self.do_task options={}
+      Launcher.do_last_launch :nth=>1, :prefix=>:u
+    end
+
+    def self.launch_local path, options
+      options.delete :no_slash
+
+      path = path.sub /^\./, '+'   # We want +foo, not .foo
+      root = path[/^[^\/]+/]
+
+      "Todo > find in current file > use .file_or_temp_file"
+
+      file = View.file_or_temp_file
+
+      # Grab +foo definition...
+
+      definition = Launcher.extract_command root, :file=>file
+
+      # Todo > if not found, look for it in :t if not there?
+      # Todo > what if not found at all?
+
+      Tree.children definition, path
+
+    end
+
+    # Launcher.extract_command :file=>"/tmp/foo.notes"
+    # Launcher.extract_command :txt=>"+foo\n  bar\n"
+    def self.extract_command command, options
+
+      file, txt = options[:file], options[:txt]
+
+      if txt
+        txt = txt.split("\n")
+        enumerator = txt.each
+
+        # Go through until found at left margin
+
+      elsif file
+        enumerator = IO.foreach(file, *Files.encoding_binary)
+      end
+
+      found, last_was_blank = "", nil
+      enumerator.each do |line|
+        line.sub! /\n/, ''   # When iterating file, includes linebreaks
+        # If not found yet, check for line
+        if found == ""
+          found << "#{line}\n" if line =~ /^#{Regexp.quote command}(\/|$)/
+        else   # Found, so append until line at margin or 2 blank lines
+          break if line =~ /^[^ \n]/
+          break if line == "" && last_was_blank
+          found << "#{line}\n"
+          last_was_blank = true if line == ""
+        end
+      end
+
+      found
+
+    end
   end
 
 end
@@ -1591,5 +1364,3 @@ def require_menu file, options={}
 
   Xiki::Launcher.add stem if ! Xiki::Launcher.menus[1][stem]
 end
-
-#Xiki::Launcher.init_default_launchers
