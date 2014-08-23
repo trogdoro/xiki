@@ -27,14 +27,22 @@ module Xiki
 
         orig = View.cursor
 
-        #         txt = Tree.siblings :quotes=>1, :string=>1
         bounds = Tree.sibling_bounds :quotes=>quote
+
         txt = View.delete bounds[0], bounds[-1]
 
         indent = Line.indent txt
         txt.gsub! /^ *#{Regexp.quote quote} ?/, ''
-        txt.gsub!(/ *\n */, ' ')   # Remove linebreaks
-        txt = TextUtil.word_wrap(txt, 64-indent.length)
+
+        # For each paragraph, wrap separately...
+
+        txt = txt.split "\n\n"
+        txt.map! do |paragraph|
+          paragraph.gsub!(/ *\n */, ' ')   # Remove linebreaks
+          paragraph = TextUtil.word_wrap(paragraph, 64-indent.length).strip
+          paragraph
+        end
+        txt = txt.join "\n\n"
 
         txt = Tree.quote txt, :char=>quote
         txt.gsub! /^/, indent
