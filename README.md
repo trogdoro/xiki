@@ -44,6 +44,16 @@ Close your current console window and open a new one.  Then type...
 
 #### Troubleshooting
 
+When running xiki, if you see an error like
+      
+      `require': no such file to load -- rubygems LoadError"
+      
+then run this command
+      
+      $ sudo update-alternatives --config ruby
+      
+and select "ruby1.9.1" if avalable.
+
 If you run "$ which xiki" and it doesn't show
 /usr/local/bin/xiki or /usr/local/xiki, delete the 'xiki' file it
 shows.  (Normally it would be ignored but you probably have your gem
