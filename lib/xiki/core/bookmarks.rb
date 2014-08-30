@@ -1,6 +1,7 @@
 require 'xiki/core/location'
 require 'xiki/core/keys'
-require 'yaml'
+
+require 'xiki/core/files'
 
 module Xiki
   class Bookmarks
@@ -16,13 +17,13 @@ module Xiki
         | Some of the common ways to use the Bookmarks class programatically.
         |
         | > Get path for a bookmark
-        @p Bookmarks["$t"]
+        =p Bookmarks[":t"]
         |
         | > Expand bookmark in a path
-        @p Bookmarks["$tm/hi.txt"]
+        =p Bookmarks["$tm/hi.txt"]
         |
         > Where Emacs stores bookmarks
-        @~/.emacs.bmk
+        =~/.emacs.bmk
         |
         - .elisp/
           | > Save unsaved bookmarks to ~/.emacs.bmk
@@ -43,26 +44,25 @@ module Xiki
         | open+point: jumps to bookmark file and cursor position
         |
         > See Also
-        @files/docs/
+        =files/docs/
       `
     end
 
     def self.save arg=nil
       in_a_file_tree = FileTree.handles? rescue nil
 
-      # If we're in a file tree, use file in tree (unless C-u over-rides it)
+      # Cursor is on a file in a tree, so use it (unless C-u over-rides it)...
+
       if ! Keys.prefix_u? && in_a_file_tree && ! Line[/^ *\|/]
         path = Tree.construct_path
         keys = Keys.input(:timed=>true, :prompt=>"Name of bookmark for #{path.sub(/.+\/(.)/, "\\1")}: ") || "0"
-        $el.with(:save_window_excursion) do
-          $el.find_file path
-          self.set keys
-        end
+        self.set keys, :file=>path
         View.flash "- bookmarked as: $#{keys}", :times=>3
         return
       end
 
-      # If arg is a symbol, use it as the prefix
+      # arg is a symbol, so use it as the prefix...
+
       prefix = ""
       if arg && arg.class == Symbol
         prefix = arg.to_s
@@ -70,15 +70,12 @@ module Xiki
         self.set(arg.sub(/^\$/, ""))
         return
       end
-      # Use input from user or "default"
+
+      # Append to bookmark file...
+
       keys = Keys.input(:timed=>true, :prompt=>"Name of bookmark for #{View.file_name}: ") || "0"
       self.set "#{prefix}#{keys}"
 
-      # Append to bookmark file
-      log_path = "/temp/bookmark_log.notes"
-      if File.exists?(log_path)
-        File.open(log_path, "a") { |f| f << "| $#{prefix}#{keys}\n#{View.file}\n\n" }
-      end
     end
 
     def self.[]= bookmark, path
@@ -89,76 +86,24 @@ module Xiki
     end
 
     # Like bookmark-set, but accepts buffers
-    def self.set name
-      # Just create normal bookmark if file
-      return $el.bookmark_set(name) if View.file || $el.elvar.dired_directory
+    def self.set name, options={}
 
-      # Must be buffer
+      file = options[:file] || View.file
+      file = self.bookmarkify_path file
 
-      $el.bookmark_delete name   # Delete real bookmark
+      File.open(File.expand_path("~/xiki/bookmarks/#{name}.notes"), "w") { |f| f << "#{file}\n" }
 
-      # Load bookmarks.yml
-      bookmarks_yml = File.expand_path("~/bookmarks.yml")
-      if File.exists?(bookmarks_yml)
-        bookmarks = YAML::load IO.read(bookmarks_yml)
-      end
-      bookmarks = [] unless bookmarks
-
-      # Delete if there
-      already_here = bookmarks.find {|bm| bm[0] == name}
-      bookmarks.delete(already_here) if already_here
-
-      # Add to end
-      bookmarks << [name, View.name]
-
-      # Save file
-      File.open(bookmarks_yml, "w") { |f| f << bookmarks.to_yaml }
+      # Handle bookmarks for buffers?
+      # Format of file?
+      #   | buffers/foo
 
     end
-
-    # Like bookmark-jump, but accepts buffers
-    def self.jump name
-
-      # If normal bookmark found, use it
-      return $el.bookmark_jump(name) if $el.bookmark_get_filename(name)
-
-      buffer = self.buffer_bookmark name
-
-      if buffer == :buffer_not_open
-        return $el.message "Buffer '#{buffer}' not currently open."
-      end
-      return nil if buffer.nil?
-
-      View.to_buffer buffer
-      return true
-    end
-
-    def self.buffer_bookmark name
-      # Load bookmarks.yml
-      bookmarks_yml = File.expand_path("~/bookmarks.yml")
-      return nil unless File.exists?(bookmarks_yml)
-      bookmarks = YAML::load IO.read(bookmarks_yml)
-      bookmarks = [] unless bookmarks
-
-      # Get buffer name
-      found = bookmarks.find {|bm| bm[0] == name}
-      return nil unless found
-
-      unless View.buffer_open?(found[1])
-        return :buffer_not_open
-      end
-      # Do nothing if already open
-
-      found[1]
-    end
-
-
 
     # If string passed, go to file+point of bookmark.
     # If nothing passed, go to file of user-prompted text
     # If no args passed, get bookmark from user and jump there
     def self.go bookmark=nil, options={}
-      #el4r_lisp_eval "(require 'bookmark)(bookmark-maybe-load-default-file)"
+
       # If arg is a symbol, use it as the prefix
       prefix_to_bm = ""
       if bookmark && bookmark.class == Symbol
@@ -169,44 +114,28 @@ module Xiki
       end
 
       # Use input from user or "default"
-      keys ||= Keys.input(:timed => true, :prompt => "Enter bookmark to jump to: ") || "0"
+      keys ||= Keys.input(:timed=>true, :prompt=>"Type ., /, or a bookmark: ") || "0"
 
-      # If ".", delegate to FileTree.tree, since it knows how to hilight the current file
+      # Non-word, so delegate to FileTree.tree, since it knows how to hilight the current file
       return FileTree.tree :bm=>keys if keys =~ /^[.\/]+$/
-      path = Bookmarks["$#{prefix_to_bm}#{keys}"]
 
-      if path.nil?   # If not found, try buffer in bookmarks.yml
+      path = keys =~ /^\w/ ?
+        Bookmarks[":#{prefix_to_bm}#{keys}"] :
+        keys
 
-        return true if self.jump( "#{prefix_to_bm}#{keys}" )
-        View.beep
-        $el.message("Bookmark not found!")
-        return :not_found
-      end
+      return View.open "> Error:\n:-Bookmark #{path} doesn't exist" if path =~ /^:/
 
       prefix = Keys.prefix
 
       # If up+, open bookmark as menu
       if prefix == :u
-        Launcher.open "$#{keys}//", :unified=>1
+        Launcher.open "$#{keys}//" #, :unified=>1
         return
       elsif prefix == :uu   # Jump up one level if up+up+
         path = File.dirname path
       end
 
-      if prefix==9  # If 9, open in bar
-        View.bar
-        self.jump "#{prefix_to_bm}#{keys}"
-      else
-        Location.go path, :stay_in_bar=>1
-      end
-
-      if options[:point] or prefix == :-   # Go to actual point
-        return self.jump("#{prefix_to_bm}#{keys}")
-      end
-    end
-
-    def self.keys
-      # TODO: put newest keys here
+      Location.go path, options.merge(:stay_in_bar=>1)
     end
 
     # Expand $foo paths in strings.  Expects strings to bee bookmark names,
@@ -215,90 +144,130 @@ module Xiki
       self.expand(path)
     end
 
+    def self.bookmarks_required bm=nil
+      return @@bookmarks_required if ! bm
+      @@bookmarks_required[bm]
+    end
+
+    @@bookmarks_required = {
+      "hx"=>"~/xiki/",
+      "x"=>"~/xiki/",
+
+      "xiki"=>Xiki.dir,
+      "source"=>Xiki.dir,
+      "s"=>Xiki.dir,
+
+      "xiki"=>Files.tilda_for_home(Xiki.dir),
+      "source"=>Files.tilda_for_home(Xiki.dir),
+      "s"=>Files.tilda_for_home(Xiki.dir),
+
+    }
+
+    # Bookmarks.bookmarks_optional "t"
+    # Bookmarks.bookmarks_optional "herring"
+    def self.bookmarks_optional bm=nil
+      return @@bookmarks_optional if ! bm
+      @@bookmarks_optional[bm]
+    end
+
+    @@bookmarks_optional = {
+      "h"=>"~/",
+
+      "d"=>"~/Desktop/",
+      "r"=>"/",
+      "tm"=>"/tmp/",
+      "et"=>"/etc/",
+      "b"=>"~/xiki/bookmarks/",
+
+      "se"=>"~/xiki/sessions/",
+      "t"=>"~/xiki/tasks.notes",
+      "f"=>"~/xiki/files.notes",
+
+      "n"=>"~/xiki/notes/",
+      "c"=>"~/xiki/commands/",
+      "cf"=>"~/xiki/commands/conf/",
+
+      "dl"=>"~/Downloads/",
+
+      "q"=>"~/xiki/notes/quick.notes",
+
+      "xc"=>"#{Xiki.dir}commands",
+      "c2"=>"#{Xiki.dir}commands",
+
+      "ir"=>"#{Xiki.dir}misc/emacs/el4r/init.rb",
+      "th"=>"#{Xiki.dir}misc/themes/",
+
+      "m"=>"~/xiki/misc/",
+      "v"=>"~/xiki/misc/versions/",
+      "lo"=>"~/xiki/misc/logs/",
+      "fa"=>"~/xiki/misc/favorites/",
+      "st"=>"~/xiki/misc/startup.rb",
+      "cl"=>"~/xiki/misc/logs/command_log.notes",
+      "pi"=>"~/Pictures/",
+      "k"=>"#{Xiki.dir}lib/xiki/core/key_shortcuts.rb",
+      "us"=>"/usr/",
+      "ap"=>"/Applications/",
+      "vo"=>"/Volumes/",
+    }
+
+    # Looks up bookmark in ~/xiki/bookmarks
+    # Bookmarks.lookup "p"
+    def self.lookup path
+      file = File.read(File.expand_path("~/xiki/bookmarks/#{path}.notes")).strip
+      file
+    rescue Exception=>e
+      # It looks for a file and falls back to optional bookmarks if not found
+      nil
+    end
+
     # Expands bookmark to file
     def self.expand path, options={}
 
-      if options[:just_bookmark]   # If only a bookmark, just expand it
-        return $el.bookmark_get_filename(path)
+      # If ~/..., /..., or ./..., no need to look up bookmark...
+
+      if path =~ /^~\// || options[:absolute] || path =~ /^\.+(\/|$)/
+        # Expand ~/ if it has it
+        return View.expand_path(path)
       end
 
-      # If $xxx found
-      if path =~ /^\$([._a-zA-Z0-9-]+)([\\\/]?)(.*)/
+      # Just bookmark string passed, so just expand it...
+
+      if options[:just_bookmark]
+        bm, slash, rest = path, nil, nil
+      elsif path =~ /^:([._a-zA-Z0-9-]+)([\\\/]?)(.*)/   # Path starts with $xxx, so pull it out and look it up...
         bm, slash, rest = $1, $2, $3
-
-        bm_orig = bm
-        # Expand bookmark
-        if ["x", "xiki"].member? bm
-          bm = Xiki.dir
-        else
-          bm = $el.bookmark_get_filename(bm) rescue nil
-        end
-
-        if bm.nil?
-          bm =
-            if bm_orig == "t"
-              "#{File.expand_path("~")}/todo.notes"
-            elsif bm_orig == "f"
-              "#{File.expand_path("~")}/files.notes"
-            elsif bm_orig == "h"
-              "#{File.expand_path("~")}/"
-            elsif bm_orig == "r"
-              "/"
-            end
-        end
-        return path if bm.nil?
-        # If a slash, cut off filename if there is one (only dir is wanted)
-        if options[:file_ok]   # Put slash back if there was one
-          bm << "/" if bm !~ /\/$/ && slash.any?
-        elsif slash.any?
-          bm.sub! /[^\\\/]+$/, ""
-        end
-
-        path = "#{bm}#{rest}"
-
-        # Expand ~/ if it has it
-
-        path = View.expand_path(path) if path =~ /^~/
-
-        path
-
-      elsif path =~ /^~\//  # If home dir, expand
-        # Expand ~/ if it has it
-        View.expand_path(path)
-
-      elsif options[:absolute] || path =~ /^\.+(\/|$)/  # If relative path, expand
-        View.expand_path(path)
-      else
-        path
+      elsif path =~ /^\$([._a-zA-Z0-9-]+)([\\\/]?)(.*)/   # Path starts with $xxx, so pull it out and look it up...
+        bm, slash, rest = $1, $2, $3
+        Ol["Deprecated > use :... instead > #{path}!"]
+      else   # If no $..., just return the literal path...
+        return path
       end
+
+      found = self.bookmarks_required bm
+      found ||= self.lookup bm
+      found ||= self.bookmarks_optional bm
+
+      if found.nil?
+        return nil if options[:just_bookmark]
+        return path
+      end
+
+      # Recursively run if still has $ after lookup...
+
+      found = self.expand found if found =~ /^\:/
+      # Deprecated, comment this out soon
+      found = self.expand found if found =~ /\$/
+
+
+      found = View.expand_path(found) if found =~ /^~/
+
+      if slash.any? || rest.any?
+        found.sub! /\/$/, ""
+        found << "/"
+      end
+      "#{found}#{rest}"
+
     end
-
-
-    #   def self.collapse path
-
-    #   # Insert $bookmark into to path if it contains a bookmarked path
-    #   Ol["Not used, right - obsolete - was used to shorten window labels!"]
-
-    #     if ! @bookmarks_cache
-    #       @bookmarks_cache = []
-    #       # TODO: pull this list out and make configurable
-    #       %w[a tr p n x 18].each do |name|
-
-    #         bmpath = $el.bookmark_get_filename(name)
-    #         next unless bmpath
-    #         bmpath.sub!(/[^\/]+$/, "")
-
-    #         @bookmarks_cache << [name, bmpath]
-    #       end
-    #     end
-
-    #     @bookmarks_cache.each do |name, bmpath|
-    #       next unless path =~ /^#{bmpath}/
-    #       return path.sub(bmpath, "$#{name}/")
-    #     end
-    #     return path
-    #   end
-
 
     # Remove file from the end (if not dir).
     # Bookmarks.dir_only "/tmp/foo.txt"
@@ -326,31 +295,10 @@ module Xiki
       File.read(self.expand(name))
     end
 
-    def self.list path=nil
-
-      result = ""
-      if ! path   # Print all bookmarks
-        all = $el.elvar.bookmark_alist.collect { |bm|
-          item = bm.to_a
-
-          second = item[1]   # Either (filename . "/path") or ((filename . "/path") ...)
-          second = second[1].is_a?(String) ? second[1] : second[0][1]
-
-          [item[0], second]
-        }
-        all.each do |l|
-          n, p = l
-          result << "- #{n}) @#{p.sub(/\/$/,'')}\n"
-        end
-        return result
-      end
-
-      # Open single path
-      View.open path[/ ([~\/].+)/, 1]
-      nil
-    end
-
     def self.tree
+
+      raise "This is cool, so maybe do this with new :b dir"
+
       paths = $el.elvar.bookmark_alist.collect {|bm|
         ary = bm.to_a
         key = ary[0]
@@ -372,15 +320,23 @@ module Xiki
       self.go("q#{bookmark}")
     end
 
-    def self.persist
-      $el.bookmark_save
-      "@flash/- persisted bookmarks!"
+    # Bookmarks.bookmarkify_path "/Users/craig/xiki/misc/logs/"
+    def self.bookmarkify_path path
+
+      # Expand out tilda in path if not there, since paths in bookmarks have tildas
+
+      path = Files.tilda_for_home path
+      bookmarks = self.bookmarks_required   # => {"hx"=>"~/xiki/", "x"=>"~/xiki/", "xiki"=>"/Users/craig/Dropbox/xiki/", "source"=>"/Users/craig/Dropbox/xiki/", "s"=>"/Users/craig/Dropbox/xiki/"}
+
+      self.bookmarks_required.each do |bookmark, dir|
+        return path.sub(/^#{dir}/, ":#{bookmark}/") if path =~ /^#{dir}/
+      end
+
+      path
+
     end
 
   end
+
 end
 
-if $el
-  $el.el4r_lisp_eval("(require 'bookmark)")
-  $el.bookmark_maybe_load_default_file
-end
