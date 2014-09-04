@@ -21,7 +21,6 @@ module Xiki
     end
 
     def self.bounds_of_thing left=nil, right=nil
-
       return [left, right] if left.is_a?(Fixnum)
 
       return [Line.left, Line.right+1] if left == :line
@@ -43,39 +42,52 @@ module Xiki
     def self.comment left=nil, right=nil
 
       prefix = Keys.prefix
+      line = Line.value
 
-      if prefix == 0   # If 0 prefix, comment paragraph
+      # No prefix add no selection, so use the line
+      if ! prefix && ! View.selection?
+        left, right = Line.left, Line.right+1
+
+        # Line is blank, so insert a comment...
+
+        return Code.enter_insert_comment if line =~ /^ *$/
+
+      elsif prefix == 0   # If 0 prefix, comment paragraph
         left, right = View.paragraph(:bounds => true)
       else
 
         if prefix == 2
-          a_commented = Line =~ /^ *(#|\/\/)/
+          a_commented = line =~ /^ *(#|\/\/)/
           b_commented = Line.value(2) =~ /^ *(#|\/\/)/
           if !!a_commented ^ !!b_commented
             Keys.clear_prefix
             orig = Location.new
-            Code.comment Line.left(1), Line.left(2)   # Toggle commenting of this line
-            Code.comment Line.left(2), Line.left(3)   # Toggle commenting of next line
+            self.comment Line.left(1), Line.left(2)   # Toggle commenting of this line
+            self.comment Line.left(2), Line.left(3)   # Toggle commenting of next line
             orig.go
             return
           end
         end
 
         Line.to_left
+
         left ||= {:default=>:region}
-        left, right = Code.bounds_of_thing(left, right)
+        left, right = self.bounds_of_thing(left, right)
         left, right = right, left if View.cursor == right   # In case cursor is at right side
       end
+
+      # Nothing was selected, so select the line...
 
       View.to left
       View.set_mark right
 
       $el.comment_or_uncomment_region View.range_left, View.range_right
-      Code.indent View.range_left, View.range_right
+      self.indent View.range_left, View.range_right
     end
 
     # Evaluates file, paragraph, or next x lines using el4r
     def self.run options={}
+
       prefix = Keys.prefix
 
       Ol.clear_pause
@@ -87,6 +99,9 @@ module Xiki
         txt, left, right = View.txt_per_prefix nil, :blink=>1, :remove_heading=>1
         file, line = View.file, Line.number(left)
       else
+
+        prefix ||= :u if View.extension == "rb"   # In .rb file, so pretend like prefix was :u, to load file
+
         case prefix
         when :u   # Load file
           return self.load_this_file
@@ -104,9 +119,9 @@ module Xiki
 
         when 8   # Put into file and run in console
           File.open("/tmp/tmp.rb", "w") { |f| f << Notes.current_section("^>").text }
-          return Console.run "ruby -I. /tmp/tmp.rb", :dir=>View.dir
+          return Shell.run "ruby -I. /tmp/tmp.rb", :dir=>View.dir
         when 9   # Pass whole file as ruby
-          return Console.run("ruby #{View.file_name}", :buffer => "*console ruby")
+          return Shell.run("ruby #{View.file_name}", :buffer => "*console ruby")
         else   # Move this into ruby - block.rb?
           ignore, left, right = View.block_positions "^>"
           file, line = View.file, Line.number(left)
@@ -117,7 +132,7 @@ module Xiki
       end
 
       txt.sub! /\A( *)@ /, "\\1"   # Remove @ if at beginning
-      txt.gsub! /^ *\| ?/, '' if txt =~ /\A *\|/   # Remove quoted lines if it's quoted
+      txt.gsub! /^ *[|:] ?/, '' if txt =~ /\A *[|:]/   # Remove quoted lines if it's quoted
 
 
       # If C--, reload in command line tool...
@@ -155,7 +170,7 @@ module Xiki
       end
 
       if exception
-        backtrace = exception.backtrace[0..8].join("\n").gsub(/^/, '  @') + "\n"
+        backtrace = exception.backtrace[0..8].join("\n").gsub(/^/, '  =') + "\n"
         error = CodeTree.format_exception_message_for_tree exception.message
         View.insert ">>\n"
         View.insert "- error:#{error}\n- backtrace:\n#{backtrace}".gsub(/^/, '  ')
@@ -225,7 +240,7 @@ module Xiki
     # Code.eval "p 11; 22", nil, nil, :simple=>1   # Returns 1 string, which is quoted return value or output, or unquoted formatted exception.
     #
     # params:
-    # The last options param will be available to the code being eval'ed
+    #   | options : The last options param will be available to the code being eval'ed
     def self.eval code, file=nil, line=nil, eval_options={}, options={}
 
       if file.is_a? Hash
@@ -241,8 +256,6 @@ module Xiki
       exception = nil
 
       begin   # Run code
-        # TODO: Try always doing what :global does
-        #   - see if it breaks
 
         returned = self.eval_inner code, file, line, eval_options, options
 
@@ -273,12 +286,14 @@ module Xiki
     end
 
     def self.eval_inner code, file, line, eval_options, options
+      target = eval_options[:target_module] || Object
+
       if code.is_a? Proc
-        Object.module_eval &code
+        target.module_eval &code
       elsif eval_options[:global] || ! $el
-        Object.module_eval code, file||__FILE__, line||__LINE__
+        target.module_eval code, file||__FILE__, line||__LINE__
       else
-        Object.module_eval code, file||__FILE__, line||__LINE__
+        target.module_eval code, file||__FILE__, line||__LINE__
       end
     end
 
@@ -444,16 +459,12 @@ module Xiki
         View.to_buffer buffer
       else   # Otherwise open it and run console
         xiki ?
-          Console.run("", :dir=>dir, :buffer=>buffer) :
-          Console.run("bundle exec merb -i -e test", :dir=>dir, :buffer=>buffer)
-          #         Console.run("merb -i", :dir=>dir, :buffer=>buffer)
-        #       Console.run "merb -i -e test", :dir=>dir, :buffer=>buffer
+          Shell.run("", :dir=>dir, :buffer=>buffer) :
+          Shell.run("bundle exec merb -i -e test", :dir=>dir, :buffer=>buffer)
       end
       View.clear
 
       View.wrap(:on) if prefix == :u
-
-      #     args << '-D'   # Show diffs
 
       if xiki
         command = "#{extra}spec #{args.join(' ')}"
@@ -461,10 +472,9 @@ module Xiki
         args = args.map{|o| o =~ /^"/ ? o : "\"#{o}\"" }.join(",\n")   # Only add quotes if not already there
         command = "Spec::Runner::CommandLine.run(Spec::Runner::OptionParser.parse([#{args}], $stderr, $stdout))"
         # Rails version (commented out - it's currently hard-coded to use merb)
-        #       command = "#{extra}p :reload; reload!; #{command}"
       end
       View.insert command
-      Console.enter
+      Shell.enter
       View.to 1
 
       orig.go unless orig.nil? || View.index == orig_index   # Go back unless in same view
@@ -515,11 +525,15 @@ module Xiki
     #
     def self.indent_to options={}
       prefix = Keys.prefix
-      return Code.indent if prefix == :-   # Just indent to where it should go
-
+      if prefix == :-   # Just indent to where it should go
+        Code.indent
+        View.no_deselect
+        return
+      end
       prefix = :u if options[:left]
 
-      txt = View.selection
+      txt = View.selection :always=>1
+      return View.flash "- Select some lines first" if ! txt
 
       # Find lowest indent
       old_indent = txt.split("\n").reduce(999) do |acc, line|
@@ -550,12 +564,11 @@ module Xiki
 
       txt.gsub!(/^ +$/, '')   # Kill trailing spaces on lines with just spaces
 
+      left = View.cursor
+      right = left + txt.length
       View.insert txt
 
-      if orig.line != Line.number   # If we're at the end
-        View.set_mark
-        orig.go
-      end
+      View.no_deselect
 
     end
 
@@ -567,26 +580,8 @@ module Xiki
       $el.insert txt
     end
 
-    def self.enter_as_debug
-
-      orig = View.range[0]
-      txt = View.selection :delete=>true
-      count = 0
-      txt.gsub!(/^.+/) { |m|
-        if m =~ /^\s+(end|else|elsif|\})/
-          m
-        else
-          count += 1;
-          (count & 1 == 0) ? " ol #{count}\n#{m}" : m
-        end
-      }
-
-      View.insert txt
-      View.to orig
-    end
-
     def self.kill_duplicates
-      txt = View.selection :delete=>true
+      txt = View.selection :delete=>true, :always=>1
       l = txt.split("\n")
       orig = Location.new
       View.insert l.uniq.join("\n") + "\n"
@@ -596,11 +591,14 @@ module Xiki
 
     def self.randomize_lines txt=nil
       txt ||= View.selection :delete=>true
+
+      return View.flash "- Select some lines first" if ! txt
+
       l = txt.split("\n")
-      orig = Location.new
+      orig = View.cursor
       View.insert l.sort_by{ rand }.sort_by{ rand }.join("\n") + "\n"
-      View.set_mark
-      orig.go
+
+      View.selection = orig, View.cursor
     end
 
     def self.do_next_paragraph
@@ -686,19 +684,19 @@ module Xiki
       lines = "#{file}.lines"
       `touch #{lines}` unless File.exists?(lines)
 
-      Console.run "tail #{prefix == :- ? '-n 100' : ''} -f #{file}", :buffer=>buffer, :dir=>'/tmp', :dont_leave_bar=>true
+      Shell.run "tail #{prefix == :- ? '-n 100' : ''} -f #{file}", :buffer=>buffer, :dir=>'/tmp', :dont_leave_bar=>true
       Notes.mode
 
       return if self.clear_and_go_back orig
     end
 
-    def self.enter_log_line
+    def self.enter_log_line options={}
 
       return Firefox.enter_log_javascript_line if View.extension == "js"
 
       Move.to_axis if ! Line.at_right?
 
-      $el.open_line(1) unless Line.value.strip.blank?
+      View.<<("\n", :dont_move=>1) if Line !~ /^[ |:!]*$/
 
       # Javascript
       if Tree.construct_path(:all=>1, :slashes=>1) =~ /<script/
@@ -706,13 +704,16 @@ module Xiki
         return Move.backward 4
       end
 
-      if Keys.prefix_u?
-        View.insert 'Ol["!"]'
+      prefix = Keys.prefix
+      if options[:exclamation] || prefix == :u || prefix == 1 || prefix == 3
+        extra = prefix == 3 ? "# " : ""
+        View.insert "Ol[\"#{extra}!\"]"
+        ControlLock.disable
         return Move.backward 3
       end
 
       View.insert "Ol()"
-      Line.to_words
+      Line.to_beginning
     end
 
     def self.enter_log_out
@@ -765,27 +766,33 @@ module Xiki
     def self.do_list_ancestors
       prefix = Keys.prefix :clear=>1
 
-      result = Tree.ancestors_indented
+      orig = View.cursor   # If not on indented line, back up to one...
+      Search.backward "^ " if Line !~ /^ /
 
-      result = result.strip.gsub('%', '%%')
+      # Climb path...
 
-      # If U, save in clipboard as quote, ready to be pasted into a tree
-      #     Clipboard[0] = result if Keys.prefix_u
+      txt = Tree.ancestors_indented
+
+
+      # Indent over, and add file path and percent...
+
+      txt.gsub! /^/, "  "
+      txt = "#{View.file}\n#{txt}(#{View.percent}%)"
+
+      View.cursor = orig   # Go back in case we moved
+
+      txt = txt.strip.gsub('%', '%%')   # Escape %'s, .message interprets them strangely
+
+      txt = "\n#{txt}"
 
       if prefix == :-   # Actually insert it inline
         Line.next
-        View << "#{result}\n"
+        View << "#{txt}\n"
         Line.previous
         return
       end
 
-      if prefix == :u   # Just recenter to method
-        View.recenter_under "^\\( *def \\| *it \\|^>\\)", :relative=>1
-      elsif prefix == :uu
-        result = "Cursor: #{View.cursor}"
-      end
-
-      View.message result
+      View.message txt
     end
 
     def self.add_space
@@ -807,8 +814,8 @@ module Xiki
     def self.open_related_file
       file = View.file
 
-      return View.open(file.sub /\.menu$/, '.rb') if file =~ /\/menu\/\w+\.menu$/
-      return View.open(file.sub /\.rb$/, '.menu') if file =~ /\/menu\/\w+\.rb$/
+      return View.open(file.sub /\.menu$/, '.rb') if file =~ /\/commands\/\w+\.menu$/
+      return View.open(file.sub /\.rb$/, '.menu') if file =~ /\/commands\/\w+\.rb$/
 
       View.flash "No matching file known."
 
@@ -861,16 +868,28 @@ module Xiki
     def self.enter_whitespace
 
       prefix = Keys.prefix :clear=>1
+      prefix = 0 if prefix == :u
 
-      if prefix == :u
-        column = View.column
-        Move.to_axis; View << "\n"
-        Move.to_end; View >> "\n"
-        View.column = column
+      # Selection, so surround with space...
+      if View.selection?
+        n = prefix.is_a?(Fixnum) ? prefix : 2
+
+        left, right = View.range
+        View.cursor = right
+        View << "\n"*n
+        View.cursor = left
+        View << "\n"*n
         return
       end
 
-      $el.open_line(prefix || 1)
+      # No prefix, so insert single linebreak...
+
+      if ! prefix
+        View >> "\n"
+        return
+      end
+
+      Deletes.delete_whitespace :prefix=>prefix
 
     end
 
@@ -889,12 +908,19 @@ module Xiki
 
     # Convenience for entering "# " to start a comment
     def self.enter_insert_comment
+      prefix = Keys.prefix :clear=>1
+
       if Line.blank?
         View << "# "
         $el.ruby_indent_line
       else
         Move.to_end
         View << "   # "
+      end
+
+      # Dash+, so end with ...
+      if prefix == :-
+        View.<< "...", :dont_move=>1
       end
 
       ControlLock.disable    # insert date string (and time if C-u)
@@ -932,15 +958,15 @@ module Xiki
         > Method doesn't exist. Create it?
 
         #{file}
-          |+
-          |+  def self.#{method}
-          |+
-          |+  end
-          | end
+          :+
+          :+  def self.#{method}
+          :+
+          :+  end
+          : end
         ".unindent
 
       View.line = 4
-      View.column = 2
+      View.column = 3
 
     end
 
@@ -951,6 +977,24 @@ module Xiki
       file, line = $1, $2
       View.open file
       View.line = line
+    end
+
+    def self.jump_to_proc_source proc
+      file, line = Code.location_from_proc proc
+      file = "#{Xiki.dir}#{file}" unless file =~ /^\//
+      Location.go file
+      View.to_line line.to_i
+    end
+
+    # Code.eval_lisp '(message "hi")'
+    def self.eval_lisp txt
+      $el.eval $el.read "(progn #{txt})"
+    end
+
+    def self.args options, opts={}
+      "
+        args, path, dir, dropdown = options[:args]||[], options[:path], options[:dir], options[:dropdown]||[]
+      ".unindent
     end
 
   end
