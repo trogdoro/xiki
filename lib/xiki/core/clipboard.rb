@@ -9,35 +9,7 @@ module Xiki
     @@hash ||= {}
     @@hash_by_first_letter ||= {}
 
-    def self.menu
-      %`
-      - .log/
-      - docs/
-        - main clipboard/
-          | The "0" clipboard is where things are stored when you do these
-          | shortcuts:
-          - as+clipboard
-          - search+copy
-
-          | (They're also put in the OS clipboard for convenience.)
-        - numbered clipboards/
-          | You can type these shortcuts use the numbered clipboards
-          - as+1
-          - as+2
-          - enter+2
-          - do+1   # Does search and replace from the "1" to "2" clipboard
-        - other clipboards/
-          | You can type these shortcuts use other letters
-          - as+variable+a   # Stores in "a"
-          - as+variable+b
-          - enter+variable+b
-          - search+like+variable+b
-      - see/
-        <@ replace/
-      `
-    end
-
-    def self.log key=nil
+    def self.names key=nil
 
       # /log/, so show keys...
 
@@ -47,16 +19,16 @@ module Xiki
         keys.each do |k|
           val = Tree.quote @@hash[k]
           val.gsub! /^/, '  '
-          result << "| #{k}\n"
+          result << ": #{k}\n"
         end
         return result.empty? ? "- Nothing was copied yet!" : result
       end
 
       # /log/foo, so show value...
 
-      line = Line.value.sub(/^ *\| /, "")
+      line = Line.value.sub(/^ *: /, "")
 
-      Tree.quote @@hash[line]
+      Tree.quote @@hash[line], :char=>"|"
     end
 
     def self.copy loc=nil, txt=nil
@@ -71,7 +43,7 @@ module Xiki
         Effects.blink :left=>left, :right=>right
         txt = $el.buffer_substring($el.region_beginning, $el.region_end)
       end
-      self.set(loc, txt, Keys.prefix)
+      self.set loc, txt # , Keys.prefix)
     end
 
     def self.cut loc=nil
@@ -113,7 +85,16 @@ module Xiki
     end
 
     def self.get key='0', options={}
-      val = @@hash[key.to_s]
+
+      # Default key, so grab from killring
+
+      key = key.to_s
+      val =
+        if key == '0'
+          $el.current_kill 0
+        else
+          @@hash[key]
+        end
       if options[:add_linebreak]
         val = "#{val}\n" unless val[/\n$/]
       end
@@ -153,23 +134,22 @@ module Xiki
       $el.beginning_of_buffer
     end
 
-    def self.set loc, str, append=nil
+    def self.set loc, txt #, append=nil
       loc = loc.to_s
-      # Save in corresponding register (or append if prefix)
-      if append
-        @@hash[loc] += str
-      else
-        # Store as path
-        @@hash["/"] = $el.expand_file_name( $el.buffer_file_name ? $el.buffer_file_name : $el.elvar.default_directory )
-        if $el.buffer_file_name
-          # Store as tree snippet
-          @@hash["="] = FileTree.snippet :txt=>str
-          @@hash["."] = "#{$el.file_name_nondirectory($el.buffer_file_name)}"
-          @@hash["\\"] = "#{$el.elvar.default_directory}\n  #{$el.file_name_nondirectory($el.buffer_file_name)}"
-        end
-        @@hash[loc] = str
-        $el.x_select_text str if loc == "0"  # If 0, store in OS clipboard
+
+      # If not standard clipboard, store in hash...
+
+      if loc != "0"
+        return @@hash[loc] = txt
       end
+
+      # Save in corresponding register (or append if prefix)
+      if $el.buffer_file_name
+        # Store as tree snippet
+        @@hash["="] = FileTree.snippet :txt=>txt
+      end
+      $el.kill_new txt
+      $el.x_select_text txt if loc == "0" && Environment.gui_emacs  # If 0, store in OS clipboard
     end
 
     def self.do_as_snake_case
@@ -204,6 +184,7 @@ module Xiki
       end
     end
 
+    # Mapped to as+paragraph and as+rest
     def self.copy_paragraph options={}
       prefix = Keys.prefix
 
@@ -223,12 +204,13 @@ module Xiki
       end
       $el.goto_char left
       $el.set_mark right
-      Effects.blink(:left => left, :right => right)
-      Clipboard.copy("0")
+      Effects.blink(:left=>left, :right=>right)
     end
 
     def self.copy_name
-      Clipboard.set("0", Files.stem)
+      path = Files.stem
+      Clipboard.set("0", path)
+      View.flash "- Copied: #{path}", :times=>3
     end
 
     def self.diff_1_and_2
@@ -252,7 +234,7 @@ module Xiki
       orig = Location.new
 
       # If at end of space, grab as tree
-      if Line.indent.length == View.column
+      if Line.indent.length == View.column - 1
         left = Line.left
         return
       end
@@ -277,8 +259,6 @@ module Xiki
       txt = View.txt(left, right)
       Clipboard.set "0", txt
       View.to right
-      #     View.mark left   # What did this do?
-      Clipboard.save_by_first_letter txt
 
       orig.go
 
@@ -292,9 +272,16 @@ module Xiki
 
     def self.copy_everything
       Effects.blink :what=>:all
+
+      # up+, so just select everything...
+
+      if Keys.prefix_u
+        View.to_highest
+        $el.set_mark($el.point_min)   # For now, don't select anything
+        return
+      end
+
       Clipboard.set("0", $el.buffer_string)
-      $el.set_mark($el.point_max)
-      View.to_highest if Keys.prefix_u
     end
 
     def self.as_line many=nil
@@ -302,7 +289,7 @@ module Xiki
 
       # If Dash+, copy Foo.bar from quoted line
       if prefix == :-
-        txt = Ruby.quote_to_method_invocation
+        txt = Tree.construct_path
         View.flash "- copied #{txt}"
         return Clipboard.set("0", txt)
       end
@@ -313,11 +300,14 @@ module Xiki
       many ||= prefix || 1
       left = Line.left
       right = Line.left(many+1)
+
       line = View.txt(left, right)
+
       Clipboard.set("0", line)
       Effects.blink :left=>left, :right=>right
       $el.set_mark(right)
-      Clipboard.save_by_first_letter line   # Store for retrieval with enter_yank
+
+      View.deselect
     end
 
     def self.enter_replacement
@@ -343,15 +333,6 @@ module Xiki
         return
       end
 
-      if prefix == :-
-        l, r = View.range
-        Effects.blink :left=>l, :right=>r
-        txt = View.selection
-        quote_char = txt[/[:|]/]
-        Clipboard["0"] = txt.gsub(/^ *#{Regexp.escape quote_char}.?/, '')
-        return
-      end
-
       Location.as_spot('clipboard')
 
       # If numeric prefix, get next n lines and put in clipboard
@@ -365,13 +346,6 @@ module Xiki
       end
 
       Clipboard.copy("0")
-      Clipboard.save_by_first_letter View.selection   # Store for retrieval with enter_yank
-    end
-
-    def self.save_by_first_letter txt
-      key = txt[/[a-z]/i]
-      return unless key
-      @@hash_by_first_letter[key.downcase] = txt
     end
 
     def self.enter_yank
@@ -379,6 +353,100 @@ module Xiki
       value = @@hash_by_first_letter[ch]
       return unless value
       View.insert value
+    end
+
+    def self.whipe
+      $el.kill_region $el.mark, $el.point
+    end
+
+    def self.kill
+      prefix = Keys.prefix # :clear=>1
+
+      # 0+, so delete line without linebreak
+      return $el.kill_region Line.left, Line.right if prefix == :u
+
+      if prefix # == :u
+        Line.to_left
+      end
+
+      # up+, so just delete (don't save in clipboard)
+
+      if prefix == :u
+        return Line.delete
+      end
+
+      $el.kill_line prefix
+    end
+
+    def self.yank
+      $el.yank
+    end
+
+    def self.select
+      if $el.elvar.mark_active
+        $el.exchange_point_and_mark
+      else   # Mark already set, so just jump to other side
+        $el.cua_set_mark
+      end
+    end
+
+    def self.init_in_client
+
+      # Make C-c, C-x, and C-v use the os clipboard...
+
+      from_os_code, to_os_code = nil, nil
+
+      if Environment.xsh? && Environment.os == "osx"
+        from_os_code = '"pbpaste"'
+        to_os_code = '"copy_from_osx" "*Messages*" "pbcopy"'
+      end
+
+      if Environment.xsh? && Environment.os == "linux" && Shell.sync("which xclip").any?
+        from_os_code = '"xclip -o -selection clipboard"'
+        to_os_code = '"xclip" "*Messages*" "xclip" "-selection" "clipboard"'
+      end
+
+      return if ! from_os_code
+
+      $el.el4r_lisp_eval %`
+        (progn
+          (defun copy-from-osx ()
+            (shell-command-to-string #{from_os_code}))
+          (defun paste-to-osx (text &optional push)
+            (let ((process-connection-type nil))
+              (let ((proc (start-process #{to_os_code})))
+                (process-send-string proc text)
+                (process-send-eof proc)))
+            (when (el4r-running-p)
+              (let ((xiki-clipboard-txt text))
+                (el4r-ruby-eval "Xiki::Clipboard.hash['='] = Xiki::FileTree.snippet :txt=>$el.elvar.xiki_clipboard_txt")
+                )
+              )
+            )
+          (setq interprogram-cut-function 'paste-to-osx)
+          (setq interprogram-paste-function 'copy-from-osx)
+        )
+      `
+
+    end
+
+
+    # Clipboard.register "1"   < Returns register 1
+    # Clipboard.register "1", "foo"   < Sets register 1
+    def self.register key, value=nil
+      # Fix keys ("1" to 49, etc)...
+
+      key = key[0].sum if key.is_a? String
+
+      # Just key, so return the register...
+
+      return $el.get_register key if ! value
+
+      # key, value, so set register
+
+      $el.set_register key, value
+      nil
+
     end
 
   end
