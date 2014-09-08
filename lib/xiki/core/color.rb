@@ -74,7 +74,7 @@ module Xiki
 
       # /mark/, so show options...
 
-      View.kill :force_recent=>1 if View.name == "@mark/"
+      View.kill :force_recent=>1 if View.name == "mark/"
 
       # Back in the original view...
 
@@ -99,8 +99,13 @@ module Xiki
       nil
     end
 
+    # Color.position_of_next
+    def self.position_of_next
+      $el.next_overlay_change(View.cursor)
+    end
+
     def self.next options={}
-      View.kill if View.name == "@mark/"
+      View.kill if View.name == "mark/"
 
       column = View.column
       pos = nil
@@ -114,7 +119,7 @@ module Xiki
     end
 
     def self.previous
-      View.kill if View.name == "@mark/"
+      View.kill if View.name == "mark/"
       column = View.column
       Move.to_axis   # So we don't "find" the line we're already on
       Keys.prefix_times do
@@ -157,14 +162,14 @@ module Xiki
       if Styles.dark_bg?
 
         Styles.define :color_rb_red, :bg => "500"
-        Styles.define :color_rb_orange, :bg => "442500"
-        Styles.define :color_rb_yellow, :bg => "440"
-        Styles.define :color_rb_green, :bg => "131"
+        Styles.define :color_rb_orange, :bg => "630"
+        Styles.define :color_rb_yellow, :bg => "550"
+        Styles.define :color_rb_green, :bg => "141"
         Styles.define :color_rb_white, :fg=>'222', :bg=>'fff', :border=>['fff', -1]
-        Styles.define :color_rb_light, :bg => "252525"
+        Styles.define :color_rb_light, :bg => "333"
 
-        Styles.define :color_rb_blue, :bg => "005"
-        Styles.define :color_rb_purple, :bg => "203"
+        Styles.define :color_rb_blue, :bg => "135"
+        Styles.define :color_rb_purple, :bg => "315"
 
       else
 
@@ -233,7 +238,33 @@ module Xiki
       hash
     end
 
-  end
+    def self.run_highlight
 
+      prefix = Keys.prefix :clear=>1
+
+      # No prefix, so show menu of colors...
+
+      return Launcher.open("mark/", :letter=>1, :bar_is_fine=>1) if ! prefix
+
+      # N+, so jump to nth visible label...
+
+      if prefix.is_a?(Fixnum)
+        column = View.column
+        View.to_relative
+        prefix.times{ Xiki::Color.next }
+        View.column = column
+        return
+      end
+
+      # up+, so jump to light label...
+
+      if prefix.is_a?(Fixnum)
+        View.flash "TODO > make option > Color.next :light"
+        return
+      end
+
+    end
+
+  end
   Color.define_styles
 end
