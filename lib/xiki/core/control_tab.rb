@@ -10,14 +10,17 @@ module Xiki
     @@dash_prefix_buffer = nil
 
     # Primary method.  Is mapped to C-tab and does the switching.
-    def self.go
+    def self.go options={}
+
+      Keys.remember_key_for_repeat(proc {ControlTab.go :subsequent=>1}, :movement=>1)
 
       prefix = Keys.prefix :clear=>1
-
-      first_tab_in_sequence = Keys.before_last !~ /\btab$/   # If first tab, clear edited
+      before_last = Keys.before_last
+      first_tab_in_sequence = before_last != "92" && before_last != "28"   # If first tab, clear edited
+      first_tab_in_sequence = nil if options[:subsequent]
       @@edited = @@dash_prefix = @@ol_prefix = @@color_prefix = @@difflog_prefix = nil if first_tab_in_sequence
 
-      if prefix == :- || @@dash_prefix   # Go to next quote in $f
+      if prefix == :- || @@dash_prefix   # Go to next quote in :f
 
         if @@dash_prefix_buffer
           View.to_buffer @@dash_prefix_buffer   # => "files.notes"
@@ -25,24 +28,24 @@ module Xiki
           View.layout_files :no_blink=>1
         end
 
-        found = Move.to_quote :pipes=>1
+        # =commit/Quotes > swapped quotes for colons.
+
+        found = Move.to_quote
 
         if ! found
           View.to_highest   # to beginning of file
-          Move.to_quote :pipes=>1
+          Move.to_quote
         end
 
         Effects.blink
         @@dash_prefix = true
-
 
         options = {:no_recenter=>1}
 
         # Go to other view (leave index visible) if no bar or not in bar
         options[:other_view] = 1 if !View.bar? || !View.is_at_left
 
-
-        FileTree.launch options
+        Launcher.launch
         return
       end
 
@@ -52,22 +55,12 @@ module Xiki
       return self.go_in_color(prefix) if [8, 88].member?(prefix) || @@color_prefix
       return self.go_in_difflog(prefix) if [7, 77].member?(prefix) || @@difflog_prefix
 
-
-        #     if prefix == 9   # Just burry buffer
-        #       $el.bury_buffer
-        #       # Store original order, and windows originally opened
-        #       @@original = buffer_list.to_a   # Hide evidence that we were on top (lest it restore us)
-        #       @@open_windows = window_list.collect {|b| window_buffer b}
-        #       @@consider_test = lambda{|b| ! buffer_name(b)[/Minibuf/] }
-        #       return
-        #     end
-
-
-      # If C-u, toggle through $f...
+      # If C-u, toggle through :f...
 
       if prefix == :u   # If U prefix (must be first alt-tab in sequence)
         # Go to last edited file, and store list
-        @@edited = $el.elvar.editedhistory_history.to_a
+        #         @@edited = $el.elvar.editedhistory_history.to_a
+        @@edited = DiffLog.file_list
         @@edited -= View.files :visible=>1   # Exclude currently visible files
         $el.find_file @@edited.shift
 
@@ -90,12 +83,18 @@ module Xiki
         case prefix
         when 0   # Handled above - tabs through outlog lines
           @@consider_test = lambda{|b| ! $el.buffer_file_name(b) && ! $el.buffer_name(b)[/Minibuf/]}
-        when 1   # Only files
-          @@consider_test = lambda{|b| $el.buffer_file_name(b)}
+
+          # when 1   # Handled above
+
+        when 2   # .notes files
+          @@consider_test = lambda{|b| $el.buffer_name(b) =~ /\.notes[<>0-9]*$/}
+
+          #         when 1   # Only files
+          #           @@consider_test = lambda{|b| $el.buffer_file_name(b)}
           #       when 3   # ...css
           #         @@consider_test = lambda{|b| buffer_name(b) =~ /\.(css|sass)/}
-        when 2   # Non-files
-          @@consider_test = lambda{|b| ! $el.buffer_file_name(b) && ! $el.buffer_name(b)[/Minibuf/]}
+          #         when 2   # Non-files
+          #           @@consider_test = lambda{|b| ! $el.buffer_file_name(b) && ! $el.buffer_name(b)[/Minibuf/]}
         when 3   # ...css
           @@consider_test = lambda{|b| $el.buffer_name(b) =~ /^#/}
         when 4   # haml.html files
@@ -118,15 +117,14 @@ module Xiki
         when 67   # Tests
           @@consider_test = lambda{|b| $el.buffer_file_name(b) =~ /_(spec|test)\.rb$/}
 
+          # when 7, 8, 9   # Handled above
+
           #       when 7   # .notes files
           #         @@consider_test = lambda{|b| $el.buffer_file_name(b) =~ /\.notes$/}
-
           #       when 8   # Non-files
           #         @@consider_test = lambda{|b| ! $el.buffer_file_name(b) && ! $el.buffer_name(b)[/Minibuf/]}
           #       when 9   # js
           #         @@consider_test = lambda{|b| buffer_file_name(b) =~ /\.js$/}
-
-          # when 7, 8, 9   # Handled above
 
         else   # Anything (except minibuffer)
           @@consider_test = lambda{|b| ! $el.buffer_name(b)[/Minibuf/] }
@@ -171,7 +169,7 @@ module Xiki
           View.create :u
         end
 
-        FileTree.launch :no_recenter=>1
+        Louncher.launch :no_recenter=>1
 
         @@color_prefix, @@dash_prefix = nil, true
 
@@ -207,14 +205,14 @@ module Xiki
 
         Move.to_quote :pipes=>1
 
-        # If 1st diff isn't todo.notes, and difflog not already open!
+        # If 1st diff isn't tasks.notes, and difflog not already open!
         if ! View.file_visible?(first_diff_file) && ! was_open
           View.create
           View.recenter(View.line - View.number_of_lines)
           View.previous
-          FileTree.launch
+          Launcher.launch
         else
-          FileTree.launch :other_view=>1
+          Launcher.launch :other_view=>1
         end
 
       else   # Subsequent times tabbed
@@ -242,7 +240,7 @@ module Xiki
           View.recenter -8
         end
 
-        FileTree.launch :other_view=>1
+        Launcher.launch :other_view=>1
       end
     end
 
@@ -273,7 +271,7 @@ module Xiki
       Launcher.launch
 
       # Replace or add comment if there's a value
-      if value.any?
+      if value.any? && value != "!"
         Ol.update_value_comment value
       end
 
@@ -327,10 +325,5 @@ module Xiki
       $el.set_buffer(to_buffer)   # Go there so test can look at buffer mode, etc
     end
 
-    def self.keys
-      Keys.set("C-<tab>") do
-        ControlTab.go
-      end
-    end
   end
 end
