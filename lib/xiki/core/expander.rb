@@ -45,7 +45,7 @@ module Xiki
               |   (/tmp/a//)
             - menus that are already defined__/
               | If an "ip" menu is already defined (see "defining" below), or
-              | exists in a dir in MENU_PATH such as ~/menu/, you can simply
+              | exists in a dir in MENU_PATH such as ~/xiki/commands/, you can simply
               | invoke it by name:
               |   Xiki["ip"]
               |
@@ -120,16 +120,18 @@ module Xiki
 
       return options.merge!(:name=>Menu.format_name(thing.to_s)) if thing.is_a? Symbol
       return options.merge!(:class=>thing) if thing.is_a? Class
-
       raise "Don't know how to deal with #{thing.class} #{thing.inspect}" if ! thing.is_a? String
 
       # It's a string (possibly name, file, pathified, pattern)
 
       self.extract_ancestors thing, options   # Move ...@ ancestors into options if any
 
+      # Split up all path types, to pull off options...
+      self.extract_dropdown_items thing, options
+
       # If menu-like, extract menu and items and return...
 
-      if thing =~ /^[\w _.-]+(\/|$)/
+      if thing =~ /^\w[\w _.-]*(\/|$)/
 
         path_items = Path.split thing   # Split into items
 
@@ -137,9 +139,8 @@ module Xiki
 
         # Split off extension if any...
 
-        extension = options[:name].slice! /\..*/
+        extension = options[:name].slice! /\.[a-z]*$/
         options[:extension] = extension if extension
-
 
         # Store original path, since it could be a pattern, and set items extracted from path...
 
@@ -147,6 +148,7 @@ module Xiki
           options[:path] = thing   # Store original path, since it could be a pattern that just looks like a menu
           options[:items] = path_items if path_items.any?
         else   # If already items (2nd arg was an array)
+
           options[:path] = ([thing] + options[:items]).join("/")   # Make path string include 2nd arg items
           options[:items] = path_items + options[:items] if path_items.any?   # Prepend any path items 2nd arg items
         end
@@ -154,12 +156,13 @@ module Xiki
         return options
       end
 
-      thing = self.expand_file_path thing if thing =~ /^[~.$]/   # Expand out file shortcuts if any
+      # Eventually, remove $...
+
+      thing = self.expand_file_path thing if thing =~ /^[~.:$]/   # Expand out file shortcuts if any
 
       # If not a file, it's probably a pattern, so store in line and return...
 
       return options.merge!(:path=>thing) if thing !~ /^\/($|[\w. -]+$|[\w. -]+\/)/ && thing !~ %r"^//"
-
       # It's file-ish, so either file or menufied ("//")
 
       # If menufied (has "//"), parse and return...
@@ -172,6 +175,7 @@ module Xiki
 
         options[:menufied] = menufied
         options[:path] = thing
+
         raise "didn't anticipate expanders yet" if options[:expanders]
 
         # Grab args
@@ -181,7 +185,6 @@ module Xiki
 
         return options
       end
-
 
       # Else, assume just a file path...
       options[:file_path] = thing
@@ -197,7 +200,8 @@ module Xiki
 
     # Most important method in Xiki.  Called when stuff is double-clicked on.
     # Expander.expand "ip"   # => "192.0.0.1"
-    # @expander/docs/expanding/
+    # expander/docs/expanding/
+    # expander/docs/expanding/
     def self.expand *args
       options = nil
 
@@ -205,13 +209,20 @@ module Xiki
       if args[0].is_a?(Hash) # && args[0][:expanders]
         options = args[0]
       else
+
         # Break path down into attributes...
+
         options = self.parse *args
+
+        # Remove :expanders, so they don't clash and make infinite loop!
+        options.delete :expanders
 
         # Figure out what type of expander (to use and set some more attributes along the way)...
 
         self.expanders options
       end
+
+      # Dropdown, so make future C-.'s expand with dropdown...
 
       # If it's a class, just .invoke it directly
       return Invoker.invoke *args if options[:class]
@@ -220,12 +231,20 @@ module Xiki
 
       if ! expanders || expanders.length == 0
         options[:no_slash] = true
-        return "@flash/- Your indenting looks messed up!" if options[:not_well_formed]
+
+        return "<! Your indenting looks messed up!" if options[:not_well_formed]
+
         if options[:path].blank?
+
           return MenuSuggester.blank_at options[:ancestors] if options[:ancestors]
-          return "@flash/- Can't launch empty line!"
+
+          # dropdown, so show options...
+          return self.blank_line_dropdown options if options[:dropdown]
+
+          return "<! Blank line, try dropdown (Control+D)!"
         end
-        return "@flash/- No menu or pattern found!"
+
+        return "<! No menu or pattern found!"
       end
 
       # Delegate to one or more expanders...
@@ -235,6 +254,7 @@ module Xiki
 
       expanders.each do |expander|
         expander = expander[:expander] if expander.is_a?(Hash)   # For patterns, :expanders has {:expander=>Pattern, ...}
+
         expander.expand options
 
         break if expander == Menu && options[:output]   # Always stop going after MenuExpander, if it had output
@@ -253,8 +273,51 @@ module Xiki
           txt = Xiki::Html.to_html txt, options
         end
       end
-
       txt
+    end
+
+
+    def self.blank_line_dropdown options
+      dropdown = options[:dropdown]
+
+      menu =  "
+        ~ create menu/
+          - inline menu/
+          - script/
+          - shell command/
+          - pattern/
+          - more/
+        ~ tutorial/
+        ~ all menus/
+        ~ recent menus/
+        "
+
+      # Dropdown root, so show items...
+
+      if dropdown == []
+        # If mouse right-click, return all of them nested
+        # If Control+dropdown, drill in one step at a time
+
+        return menu if options[:mouse]
+        return Tree.children menu, ""
+      end
+
+      # ~ foo/..., so see if there's a sub-item...
+
+      result = Tree.children menu, "~ #{Path.join dropdown}"
+
+      # If there was a result, show it as nested item...
+
+      if result
+        options[:nest] = 1
+        return result
+      end
+
+      # Otherwise, launch item as menu...
+
+      return "<<< all/" if dropdown == ["all menus"]   # For now, assume there are menus with the corresponding names
+      return "<<< #{Path.join dropdown}/"   # For now, assume there are menus with the corresponding names
+
     end
 
 
@@ -266,14 +329,13 @@ module Xiki
       options = args[0]   # Probably a single options hash
       options = self.parse(*args) if ! args[0].is_a?(Hash)   # If not just a hash, assume they want us to parse
 
-      [PrePattern, Menu, FileTree, Pattern, MenuSuggester].each do |clazz|
+      [PrePattern, Menu, FileTree, Pattern, MenuSuggester].each do |clazz|   # For each expander
         clazz.expands? options
         break if options[:halt]
       end
 
       options
     end
-
 
     # Move ancestors into options if any
     #
@@ -289,6 +351,29 @@ module Xiki
         path.replace path_new[-1]
       end
     end
+
+    # Expander.extract_dropdown_items "foo/~ rename/"
+    # Extracts "* foo" items from the path, removing them.
+    def self.extract_dropdown_items thing, options={}
+
+      path = Path.split thing
+
+      # *... item, so pull them off and store in :dropdown...
+
+      index = path.index{|o| o =~ /^~ /}
+
+      return if ! index
+
+      dropdown = path.slice! index..-1
+      path = Path.join path
+
+      dropdown[0].sub! /^~ /, ''
+
+      options[:dropdown] = dropdown
+
+      thing.replace path
+    end
+
 
     # Defines menus so they can later be called with Expander.expand.
     # Note that menus in a MENU_PATH dir don't need to be def'ed.
@@ -329,7 +414,7 @@ module Xiki
           args[0].sub! /(\.\w+)?\/*$/, ''
           name = args[0][%r"([^\/]+)/*$"]   # "
         else   # Must be normal foo/... menu path
-          return self.delegate_to_keys args, options, block if args[0] =~ /\+/   # If name has "+", delegate to key shortcut
+          return self.def_key args, options, block if args[0] =~ /\+/   # If name has "+", delegate to key shortcut
           name = args[0].scan(/\w+/)[-1]   # Might be a menufied path
         end
 
@@ -376,15 +461,15 @@ module Xiki
     # Just expands out ~/, ./, ../, and $foo/ at beginning of paths,
     # leaving the rest in tact
     #
-    # Expander.expand_file_path("$x/a//b").should =~ %r".+/xiki/a//b$"
-    # Expander.expand_file_path("$x//")
+    # Expander.expand_file_path(":xiki/a//b").should =~ %r".+/xiki/a//b$"
+    # Expander.expand_file_path(":xiki//")
     #   /projects/xiki//
     # Expander.expand_file_path("$ru//")
     #   /Users/craig/notes/ruby/ruby.notes//
     def self.expand_file_path path
 
       # Probably restore this line
-      return path if path !~ %r"^(~/|\.|\$\w)"   # One regex to speed up when obviously not a match
+      return path if path !~ %r"^(~/|\.|:\w|\$\w)"   # One regex to speed up when obviously not a match
 
       # Expand out ~
       return path.sub "~", File.expand_path("~") if path =~ %r"^~/"
@@ -394,10 +479,10 @@ module Xiki
       return path.sub $1, File.expand_path($1, View.dir) if path =~ %r"^(\.+)/"
 
       # Expand out $foo/ bookmarks
-      if path =~ %r"^(\$[\w]+)(/|$)"
+      if path =~ %r"^([:$][\w]+)(/|$)"
         file = Bookmarks[$1]
         file.sub! /\/$/, ''   # Clear trailing slash so we can replace consistently with dirs and files
-        return path.sub /\$\w+/, file
+        return path.sub /[:$]\w+/, file
       end
 
       # TODO > Make bookmarks not emacs dependant > Use Bookmarks2 to expand bookmarks - or just update Bookmarks?!
@@ -405,27 +490,28 @@ module Xiki
       path   # No match, so return unchanged
     end
 
-    def self.delegate_to_keys args, options, block
+    def self.def_key args, options, block
 
       keys = Keys.words_to_letters args[0]
 
-      # If 2 args and 2nd is string, wrap block based on enter+ other
+      menu = args[1]
+
+      # 2nd arg is string, so treat it like a menu ...
+
+      # Example: Xiki.def "view+dimensions", "dimensions/", :letter=>1
       if args.length == 2 && menu.is_a?(String)
         options.merge! :bar_is_fine=>1
-
-        menu = args[1]
-
         block =
-          if args[0] =~ /^enter\+/
+          if args[0] =~ /^text\+/
             lambda{ Launcher.insert menu, options }
-          elsif menu =~ /^@/   # If menu is @foo..., prompt for bookmark and nest under result
+          elsif menu =~ /^=/   # If menu is =foo..., prompt for bookmark to nest result under
             lambda{
               file = Keys.bookmark_as_path :include_file=>1, :prompt=>"Enter a bookmark: "
               Launcher.open "#{file}\n  #{menu}", options
             }
-          elsif menu =~ /^\.@/   # If menu is .@foo..., nest under current file
+          elsif menu =~ /^\.=/   # If menu is .=foo..., nest under current file
 
-            # For key shortcuts, if .@..., use current file, or view name
+            # For key shortcuts, if .=..., use current file, or view name
 
             menu.sub! /^\./, ''
             ->{
@@ -440,19 +526,49 @@ module Xiki
               Launcher.open "#{file}\n  #{menu}", options
             }
           else
+
+            # Todo > Make this store the menu name in
+            # Like this:
+            #   return menu
+            #   | What about options though?  Will probably have to store into a hash
+
             lambda{ Launcher.open menu, options }
           end
       end
 
+      # Just normal definition...
+
       args[0].gsub! '+', '_'
+
       keys = Keys.words_to_letters args[0]
 
-      Keys.method_missing args[0], &block
+      # foo, so save to Keys.map...
 
-      # Store where it was defined for open+key, else we won't know (have to climb stack to do this)
+      if args[0] =~ /^[a-z]/
 
-      definer = caller(0)[3]
-      Keys.source[keys] = definer
+        # New way of defining (only when :noob for now), so store in nested hash...
+        path = args[0].split("_")
+        Keys.map((path + [block]), options)
+
+        return unless path[0] =~ /^[sc]/   # search+... and custom+... keys still need to be defined the old way
+      end
+
+      # search+..., custom+..., or other first word, so map the standard emacs way
+
+      key = Keys.words_to_letters args[0]
+
+      map = :global_map
+
+      # search+..., so pull off "search+" and add to :isearch_mode_map
+
+      if key =~ /^S/
+        key.sub! /./, ''   # Chop of S
+        map = :isearch_mode_map
+      end
+
+      key.gsub!(/./){|o| (o.downcase.sum - 96).chr }   # Convert to control chars
+
+      $el.define_key(map, key, &block)
 
       nil
     end
