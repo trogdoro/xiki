@@ -7,13 +7,13 @@ module Xiki
       # Is this even called anymore?
       "
       > Files
-      << @edited/
-      << @recent_files/
-      << @not saved/
+      << =edited/
+      << =recent files/
+      << =unsaved/
 
       > See
-      << @log/
-      << @last/
+      << =log/
+      << =last/
       "
     end
 
@@ -27,6 +27,10 @@ module Xiki
     def self.open_current options={}
       if options[:paths]
         paths = options[:paths]
+      elsif path = options[:file]
+        path = File.expand_path(path)
+
+        paths = [path]
       elsif options[:prompt_for_bookmark]
         bm = Keys.input(:timed => true, :prompt => "Enter bookmark to show content for: ")
         path = Bookmarks.expand(bm, :just_bookmark => true)
@@ -49,6 +53,7 @@ module Xiki
       end
 
       if options[:enter_here]  # If entering in current file
+
         path = paths.to_s
         # If it's a dir, delegate to Open Tree
         if path =~ /\/$/
@@ -75,7 +80,7 @@ module Xiki
         raise "Thought this wouldn't happen :(" if paths.length > 1
 
         dir, file = paths[0].match(/(.+\/)(.+)/)[1..2]
-        View << "- #{dir}\n  - #{file}\n"
+        View << "#{dir}\n  - #{file}\n"
 
         View.to_top
         Keys.clear_prefix
@@ -85,22 +90,10 @@ module Xiki
         elsif options[:outline] || options[:prompt_for_bookmark]
           FileTree.enter_lines
         else
-          Tree.search :recursive => true
+          Tree.filter :recursive => true
         end
       end
 
-    end
-
-    def self.open_edited
-      # TODO: Is this used any more? > moved to @edited
-      times = self.prefix_times
-      View.to_buffer("*tree of edited")
-      View.clear;  notes_mode
-      View.insert Tree.paths_to_tree($el.elvar.editedhistory_history.to_a[0..(times-1)])
-      View.to_top
-      Keys.clear_prefix
-      FileTree.select_next_file
-      Tree.search :recursive => true
     end
 
     def self.open_history
@@ -112,7 +105,7 @@ module Xiki
       View.to_top
       Keys.clear_prefix
       FileTree.select_next_file
-      Tree.search :recursive => true
+      Tree.filter :recursive => true
     end
 
     def self.insert_history times
@@ -124,7 +117,7 @@ module Xiki
       self.insert_history self.prefix_times
       right = $el.point
       orig.go
-      Tree.search :recursive => true, :left => $el.point, :right => right
+      Tree.filter :recursive => true, :left => $el.point, :right => right
     end
 
     def self.insert_viewing times
@@ -138,91 +131,34 @@ module Xiki
       self.insert_viewing self.prefix_times
       right = $el.point
       orig.go
-      Tree.search :recursive => true, :left => $el.point, :right => right
-    end
-
-    def self.setup_editedhistory
-
-      return if ! $el
-
-      $el.el4r_lisp_eval %q<
-        (progn
-          ; Settings
-          (setq editedhistory-log "~/.editedhistory")
-
-          ; Runs upon startup.  Load log file into memory if it exists.  Run this manually if you edit the log file.
-          (defun editedhistory-load ()
-            (if (file-readable-p editedhistory-log)
-              ; Read from file into memory
-              (with-temp-buffer
-                (insert-file-contents editedhistory-log nil nil nil t)
-                (setq editedhistory-history
-                  (car (read-from-string (buffer-substring (point-min) (point-max))) )))
-              ; Otherwise, initialize var
-              (set 'editedhistory-history nil)))
-
-          ; Saves on exit: 'editedhistory-history' to the file 'editedhistory-log'
-          (add-hook 'kill-emacs-hook 'editedhistory-save)
-          (defun editedhistory-save () (interactive)
-            (with-temp-buffer
-              (erase-buffer)
-              (insert (pp-to-string editedhistory-history) )
-              (if (file-writable-p editedhistory-log)
-                (write-region (point-min) (point-max) editedhistory-log)
-              )
-              (kill-buffer (current-buffer)))
-            nil)
-
-          ; Runs upon save: Track modified files
-          (defun editedhistory-remember-file ()
-            ; Remove from list in case it's already there (we want to add to beginning)
-            (when (boundp 'editedhistory-history)
-              (setq editedhistory-history (delete buffer-file-name editedhistory-history) )
-              ; Add to list
-              (add-to-list 'editedhistory-history buffer-file-name))
-            nil)   ; Return nil so we won't block writing
-          (add-hook 'write-file-hooks 'editedhistory-remember-file)
-
-          ; Load upon startup, to add hooks
-          (define-minor-mode editedhistory-mode
-            "Toggle editedhistory mode"
-            :global t
-            :group 'editedhistory
-
-            ; Load if not yet loaded
-            (pp (boundp 'editedhistory-loaded-p))
-            (unless (boundp 'editedhistory-loaded-p)
-              (setq editedhistory-loaded-p t)
-              (pp editedhistory-loaded-p)
-              ; Load log file into memory
-              (editedhistory-load)))
-
-          ; Load mode
-          (editedhistory-mode t)
-        )
-      >
+      Tree.filter :recursive => true, :left => $el.point, :right => right
     end
 
     def self.backup_file
-      bm = Bookmarks['$bak']
-      return View.beep "- First, set the 'bak' bookmark to a dir!" if bm == "$bak"
 
-      unless bm.any?   # If no bookmark, just show error
-        View.beep
-        return View.message("Error: create a bookmark named 'bak' first, in a dir where you backups will go.")
-      end
+      dir = File.expand_path "#{Bookmarks[":x"]}misc/versions"
+      FileUtils.mkdir_p dir   # Guarantee dir exists
 
-      path = Keys.prefix_u? ?
+      prefix = Keys.prefix
+
+      # :-, so always use current file, not file path cursor is on...
+
+      path = prefix == :- ?
         View.file :
         FileTree.tree_path_or_this_file
 
       name = path.sub(/.+\//, '')
+      name = "#{dir}/#{name}.#{Time.now.strftime('%Y-%m-%d.%H-%M')}"
+      if prefix == :u
+        txt = Keys.input :prompt=>"Comment for this version: "
+        name = "#{name}.#{TextUtil.snake txt}"
+      end
 
-      # Copy file xx
-      $el.copy_file path, "#{bm}#{name}.#{Time.now.strftime('%Y-%m-%d.%H-%M')}"
+      # Copy file
+      $el.copy_file path, name
 
-      message = "backed up to $bak: '#{name}'"
-      View.flash "- #{message}", :times=>3
+      message = "backed up to: #{Bookmarks.bookmarkify_path name}"
+      View.flash "- #{message}"#, :times=>3
       View.message "Successfully #{message}"
     end
 
@@ -230,13 +166,13 @@ module Xiki
       # If up+, do interactive ediff...
 
       if Keys.prefix_u
-        $el.ediff_files Dir["#{Bookmarks['$bak']}#{View.file_name}*"].last, View.file
+        $el.ediff_files Dir["#{Bookmarks[':x/misc/versions']}#{View.file_name}*"].last, View.file
         return
       end
 
-      backup = Dir["#{Bookmarks['$bak']}#{View.file_name}.????-??-??.??-??"].last   # "
+      backup = Dir["#{Bookmarks[':x/misc/versions']}/#{View.file_name}.????-??-??.??-??*"].last   # "
 
-      return View.beep("- No backup exists in $bak/") if ! backup
+      return View.beep("- No backup exists in :x/misc/versions/") if ! backup
 
       file = View.file
 
@@ -256,13 +192,13 @@ module Xiki
       # Reverse the files
       file, backup = backup, file if Keys.prefix == :-
 
-      diff = Console.run "diff -w -U 0 \"#{backup}\" \"#{file}\"", :sync=>true
+      diff = Shell.run "diff -w -U 0 \"#{backup}\" \"#{file}\"", :sync=>true
 
       return Launcher.show "- No Differences!" if diff.blank?
 
       diff = DiffLog.format diff, :use_other_path=>1
 
-      View.to_buffer("*diff with saved*")
+      View.to_buffer("*diff with version*")
       View.clear
       Notes.mode
 
@@ -270,8 +206,17 @@ module Xiki
         diff :
         "| Alert\n- ~No Differences~\n"
 
+      View.to_top
+
+    end
+
+    def self.list
+      regex = Regexp.quote View.name
+      current_file = View.file.sub(/.+\//, "\\0\n  + ")
+      Launcher.open "#{current_file}\n:x/misc/versions/\n  - ***^#{regex}\./"
+
+      "to-does"
     end
 
   end
-  History.setup_editedhistory
 end
