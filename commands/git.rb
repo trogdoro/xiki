@@ -4,9 +4,9 @@ module Xiki::Menu
     @@git_diff_options = '-U2'
 
     MENU = "
+      - .status/
       - .diff/
       - .log/
-      - .status/
       - .graph/
       - .setup/
         - .create/
@@ -22,21 +22,21 @@ module Xiki::Menu
       - .diff/
         - .commit/
         - .add/
-        - .delete/
+        - .remove/
         - .revert/
         - .unadd/
+      - .status/
+        - .commit/
+        - .add/
+        - .remove/
       "
 
     def self.menu_before *args
-
       return if ['docs', 'do push'].member?(args[0])
 
       options = yield
 
-      dir = Tree.closest_dir options[:ancestors]
-
-      # Tell them to nest under something if not nested...
-      return self.docs if ! dir
+      dir = options[:dir]
 
       exists, kind = FileTree.examine dir   # => [false, :file]
 
@@ -59,6 +59,7 @@ module Xiki::Menu
     end
 
     def self.menu_after output, *args
+
       return if args.any?
 
       # If /, add push/thebranch/ to the beginning
@@ -68,18 +69,18 @@ module Xiki::Menu
     end
 
     def self.diff *args
+
       options = yield
       options[:no_search] = 1
 
-      return "@prompt/Type a commit message." if args == ["commit"]
-
       options[:no_slash] = 1
 
-      dir = Tree.closest_dir options[:ancestors]
+      dir = options[:dir]
 
       quote = args.pop if args[-1] =~ /^\|/
+      quote = args.pop if args[-1] =~ /^:/
       path = args.any? ? args.join("/") : nil
-      quote = quote.sub(/^\|/, '') if quote
+      quote = quote.sub(/^:/, '') if quote
 
       # If we're nested under a file, break up into parts
       if File.file? dir
@@ -104,23 +105,136 @@ module Xiki::Menu
     end
 
     def self.status *args
-      self.diff({:expand=>false}, *args)
+
+      options = yield
+      dir = options[:dir]
+
+      # /status, so list files...
+
+      if args == []
+
+        txt = Shell.command("git status", :dir=>dir)
+        txt = Tree.quote txt
+        txt.gsub! /^: #/, ':'
+
+        txt.gsub! /^:\t(modified|deleted|renamed|new file): +/, "+ \\1: "
+
+        txt.gsub! /^:\t/, "+ "
+
+        # Add blank space above unstaged, but only if both added and unadded files
+        txt.gsub!(/\n:\n: (Changes|Untracked) /, "\n\n:\n: \\1 ") #if txt =~ /: Changes to be committed:\n/
+
+        txt.sub! /^\+ /, "+ commit/\n\\0"
+
+        return txt
+      end
+
+      label = args[0].slice!(/^.+?: /)
+
+      quote = args.pop if args[-1] =~ /^:/
+      file = args.join "/"
+
+      # /status/a.txt, so show diff or contents...
+
+      if ! quote
+
+        dropdown = options[:dropdown]
+
+        return "~ add\n~ add multiple\n~ remove" if dropdown == []
+        return self.dropdown_add file, dir if dropdown == ["add"]
+        return self.dropdown_add_multiple file, dir if dropdown == ["add multiple"]
+        return self.dropdown_remove file, dir if dropdown == ["remove"]
+
+        # "modified:", so show diff
+
+        if label == "modified: "
+          txt = self.diff_internal("git diff --patience --relative #{self.git_diff_options} #{file}", dir)
+
+          txt.gsub!(/^/, ':')
+          txt.gsub!(/^:(---|\+\+\+|diff|index) .+\n/, '')
+          return txt
+        end
+
+        if label == "renamed: "
+          file.sub! /.+ -> /, ''   # Remove the first file
+          txt = self.diff_internal("git diff --patience --relative #{self.git_diff_options} #{file}", dir)
+          txt = " no diffs" if txt == ""
+          txt.gsub!(/^/, ':')
+          txt.gsub!(/^:(---|\+\+\+|diff|index) .+\n/, '')
+          return txt
+        end
+
+        # "deleted:", so show old file
+
+        if label == "deleted: "
+          txt = Shell.command("git show HEAD:#{file}", :dir=>dir)
+          return txt.gsub!(/^/, ':-')
+        end
+
+        # a.txt (no label), so just show from disk...
+
+        if ! label || label == "new file: "
+          txt = Tree.quote File.read("#{dir}#{file}")
+          txt = ":@@ +1\n#{txt}"
+          return txt
+          return "todo > show from disk"
+        end
+
+        # We don't know the label
+
+        return "Don't understand the label: #{label}"
+      end
+
+      # /status/a.txt/:content, so navigate to the file...
+
+      file.sub! /.+ -> /, ''   # In case it's "renamed: a -> b"
+
+      whole_path = "#{dir}#{file}"
+      self.jump_to_file_in_tree whole_path
+
+      return ""
+
+    end
+
+    def self.dropdown_add file, dir
+
+      command = "git add \"#{file}\""
+      txt = Shell.sync command, :dir=>dir
+      return Tree.quote(txt) if txt.any?
+      "<! added!"
+
+    end
+
+    def self.dropdown_add_multiple file, dir
+
+      indent = Line.indent
+      Line.to_left
+      View.<< "#{indent}+ add/\n", :dont_move=>1
+      ""
+
+    end
+
+    def self.dropdown_remove file, dir
+      command = "git rm -r \"#{file}\""
+      txt = Shell.sync command, :dir=>dir
+      "<! removed!"
     end
 
     def self.status_raw
-      dir = Tree.closest_dir yield[:ancestors]
+      dir = options[:dir]
 
-      result = Console.sync "echo 'TODO - finish .status_raw - #{dir}'"
+      result = Shell.sync "echo 'TODO - finish .status_raw - #{dir}'"
       Tree.quote result
     end
 
     def self.make_sample_files
-      dir = Tree.closest_dir yield[:ancestors]
+      options = yield
+      dir = options[:dir]
 
-      Dir.mkdir "#{dir}/d" rescue nil
+      Dir.mkdir "#{dir}d" rescue nil
 
       txt = "hello\nhi again\n"
-      ["a.txt", "b.txt", "d/aa.txt"].each { |path| File.open("#{dir}/#{path}", "w") { |f| f << txt } }
+      ["a.txt", "b.txt", "d/aa.txt"].each { |path| File.open("#{dir}#{path}", "w") { |f| f << txt } }
 
       "
       | Created these files:
@@ -150,15 +264,16 @@ module Xiki::Menu
         return "- choose the branch!"
       end
 
-      dir = Tree.closest_dir yield[:ancestors]
+      dir = options[:dir]
 
       self.push_internal branch, dir
 
       nil
     end
 
-    def self.add
-      dir = Tree.closest_dir yield[:ancestors]
+    def self.add # options=nil
+      options = yield
+      dir = options[:dir]
 
       siblings = Tree.siblings
 
@@ -167,21 +282,22 @@ module Xiki::Menu
 
       command = "git add #{siblings.join("\\\n  ")}"
 
-      txt = Console.sync command, :dir=>dir
+      txt = Shell.sync command, :dir=>dir
       return Tree.quote(txt) if txt.any?
-      "@flash/- added!"
+      "<! added!"
     end
 
     def self.commit message=nil
-      return View.prompt "Enter a commit message" if message.nil?
+      return "<? Enter a commit message" if message.nil?
 
-      dir = Tree.closest_dir(yield[:ancestors])
+      options = yield
+      dir = options[:dir]
 
       self.commit_internal message, dir
     end
 
     def self.methods_by_date path
-      txt = Console.sync "git blame \"#{path}\""
+      txt = Shell.sync "git blame \"#{path}\""
       txt = txt.split "\n"
 
       txt = txt.select{|o| o =~ /\) *def /}   # Remove all but method definitions
@@ -196,9 +312,10 @@ module Xiki::Menu
 
 
 
-    def self.diff_internal command, dir
-      txt = Console.sync command, :dir=>dir
+    def self.diff_internal command, dir, options={}
+      txt = options[:txt] || Shell.sync(command, :dir=>dir)
 
+      # Show intra-line diffs > not used any more
       if Keys.prefix_u
         txt.gsub!(/\c[\[31m(.*?)\c[\[m/, "\(\-\\1\-\)")
         txt.gsub!(/\c[\[32m(.*?)\c[\[m/, "\(\+\\1\+\)")
@@ -214,6 +331,7 @@ module Xiki::Menu
         txt.gsub! /\([+-][+-]\)/, ''
       else
         txt.gsub! /^ $/, ''
+        txt.gsub! /^deleted file mode /, "@@ \\0"
       end
 
       txt
@@ -233,7 +351,7 @@ module Xiki::Menu
       result = {}
 
       # Pull out unadded
-      unadded = txt[/^\| Changed but not updated:.+/m]
+      unadded = txt[/^\| Changes not staged for commit:.+/m]
       result[:unadded] =
         if unadded
           unadded.sub! /\A(^\|[^\n]+\n)+/m, ''   # Remove first few headings
@@ -269,18 +387,18 @@ module Xiki::Menu
 
 
     def self.graph *args
-      dir = Tree.closest_dir(yield[:ancestors])
+      options = yield
+      dir = options[:dir]
 
-      txt = Console.sync %`git log --graph --full-history --all --pretty=format:"%h%x09%d%x20%s"`, :dir=>dir
+      txt = Shell.sync %`git log --graph --full-history --all --pretty=format:"%h%x09%d%x20%s"`, :dir=>dir
 
       Tree.quote txt
     end
 
     def self.log *args
-
       options = yield
 
-      dir = Tree.closest_dir(options[:ancestors])
+      dir = options[:dir]
 
       toplevel, relative = Xiki::Git.toplevel_split dir
 
@@ -294,15 +412,16 @@ module Xiki::Menu
 
       if rev.nil?
 
-        #         command = "git log -1000 --pretty=oneline"
         command = "git log -1000 --oneline"
         command << " '#{relative}'" if relative
+        txt = Shell.command command, :dir=>toplevel
 
-        txt = Console.run command, :sync=>true, :dir=>toplevel
+        return "> No revisions in the repository yet?\n: It looks like this is a new repository. Do a commit first,\n: then try running 'log' again." if txt == "\n> error\nfatal: bad default revision 'HEAD'\n"
 
         txt.gsub! ':', '-'
         txt.gsub! /(.+?) (.+)/, "\\2) \\1/"
         txt.gsub! /^- /, ''
+
         return txt.gsub!(/^/, '+ ')
       end
 
@@ -320,7 +439,6 @@ module Xiki::Menu
       # /rev/, so show files for rev...
 
       if ! file
-        #         command = "git show --pretty=oneline --name-status #{rev}"
 
         relative_flag = relative ? "--relative=#{relative}" : ''
         command = "git diff --pretty=oneline --name-status #{relative_flag} #{rev}~ #{rev}"
@@ -328,7 +446,6 @@ module Xiki::Menu
         # Rev passed, so show all diffs
         txt = self.diff_internal command, toplevel
 
-        #         txt.sub! /^.+\n/, ''   # Remove 1st line?
         txt.gsub! /^([A-Z]+)\t/, "\\1) "
         txt.gsub! /^M\) /, ''
         return txt.split("\n").sort.map{|l| "+ #{l}\n"}.join('')
@@ -350,8 +467,8 @@ module Xiki::Menu
           # Probably broken - hasn't been tested since Unified refactor
 
           minus_one = prefix == 0 ? "~" : ""
-          txt = Console.run("git show #{rev}#{minus_one}:#{file}", :sync=>true, :dir=>toplevel)
-          ENV['no_slash'] = "1"
+          txt = Shell.run("git show #{rev}#{minus_one}:#{file}", :sync=>true, :dir=>toplevel)
+
           return Tree.quote txt
         end
 
@@ -360,10 +477,9 @@ module Xiki::Menu
         txt = self.diff_internal command, toplevel
         txt.sub!(/.+?@@/m, '@@')
         txt.gsub! /^/, '|'
-        ENV['no_slash'] = "1"
+
         return txt
       end
-
 
       # /rev/file/line, so jump to file...
 
@@ -389,9 +505,9 @@ module Xiki::Menu
 
       orig = View.cursor
 
-      Search.backward "^ +\|@@" unless Line.matches(/^ +\|@@/)
+      Search.backward "^ +[|:]@@" unless Line.matches(/^ +[|:]@@/)
       inbetween = View.txt(orig, View.cursor)
-      inbetween.gsub!(/^ +\|-.*\n/, '')
+      inbetween.gsub!(/^ +[|:]-.*\n/, '')
       inbetween = inbetween.count("\n")
       line = Line.value[/\+(\d+)/, 1]
 
@@ -401,47 +517,21 @@ module Xiki::Menu
       View.to_line(line.to_i + (inbetween - 1))
     end
 
-    # Called by code tree directly
-    def self.status_tree project
-      dir = self.extract_dir project
-      dir = Bookmarks.expand(dir)
-      CodeTree.tree_search_option + self.status_tree_internal(dir)
-    end
-
-    def self.status_tree_internal dir
-
-      status = Console.run "git status", :dir => dir, :sync => true
-
-      # Grab out modified:...
-      found = status.scan(/^#\s+modified: +(.+)/)
-      result = []
-      found.each do |m|
-        result << "#{dir}#{m[0]}"
-      end
-      Tree.paths_to_tree(result)
-    end
-
     def self.clean! txt
       txt.gsub!(/^ ?index .+\n/, '')
       txt.gsub!(/^ ?--- .+\n/, '')
       txt.gsub!(/^ ?\+\+\+ .+\n/, '')
     end
 
-    def self.extract_dir project
-      project.sub(/.+? - /, '').sub(/\/$/, '')
-    end
-
-
     def self.git_diff dir, file, line, options={}
 
-      is_unadded = false
+      is_unadded = false   # This is now hard-coded. It used to enable a mode for bypassing adding and commtting directly?
 
       # /, so show diff of files...
 
       if file.nil?
-        txt = Console.run "git status", :dir=>dir, :sync=>true
+        txt = Shell.run "git status", :dir=>dir, :sync=>true
         hash = self.status_to_hash(self.status_internal(txt))
-
         untracked = hash[:untracked].map{|i| i[1]}
         untracked.map!{|i| "+ untracked) #{i}\n"}
 
@@ -458,13 +548,13 @@ module Xiki::Menu
           unless txt.empty?
 
             self.clean! txt
-            txt.gsub!(/^/, '  |')
+            txt.gsub!(/^/, '  :')
 
             if is_file
               return txt.sub(/.+\n/, '')   # First "diff..." line deleted
             end
 
-            txt.gsub!(/^  \| ?diff --git .+ b\//, '- ')
+            txt.gsub!(/^  : ?diff --git .+ b\//, '- ')
           end
         end
 
@@ -485,7 +575,7 @@ module Xiki::Menu
         return "
           | There were no differences. Try modifying a file first.
           | Or create a few sample files:
-          @git/setup/make sample files/
+          =git/setup/make sample files/
           ".unindent if ! txt.any?
         return option + txt + "
           - add/
@@ -502,7 +592,6 @@ module Xiki::Menu
 
         txt = is_unadded ?
           self.diff_internal("git diff --patience --relative #{self.git_diff_options} #{file}", dir) :
-          #           self.diff_internal("git diff --patience --relative #{self.git_diff_options} HEAD #{file}", dir)
           self.diff_internal("git diff --patience -b --relative #{self.git_diff_options} HEAD #{file}", dir)
         self.clean! txt
 
@@ -517,7 +606,7 @@ module Xiki::Menu
         end
 
         txt.gsub!(/^ ?diff .+\n/, '')
-        txt.gsub!(/^/, '|')
+        txt.gsub!(/^/, ':')
 
         self.jump_line_number_maybe txt, options
 
@@ -543,8 +632,8 @@ module Xiki::Menu
 
       target_line, target_boundary = 0, 0
       txt.split("\n").each_with_index do |o, i|
-        target_line += 1 if o =~ /^\|[+ ]/
-        match = o[/^\|@@ .+\+(\d+)/, 1]
+        target_line += 1 if o =~ /^:[+ ]/
+        match = o[/^:@@ .+\+(\d+)/, 1]
         if target_line >= line_found
           break
         end
@@ -570,31 +659,39 @@ module Xiki::Menu
     end
 
     def self.push_internal dest, dir
-      Console.run "git push origin #{dest}", :dir=>dir
+      Shell.run "git push origin #{dest}", :dir=>dir
       nil
     end
 
     def self.remove_options siblings
-      siblings.select{|o| o !~ /^(commit|delete|revert|add|unadd)\// && o !~ /^\|/ }
+      siblings = siblings.map{|l| l.sub /^[+-] /, ""}
+      siblings = siblings.map{|l| l.sub /^[a-z ]+: /, ""}
+      siblings = siblings.select{|o| o !~ /^(commit|delete|revert|add|unadd)\// && o =~ /^\w/ }
+      siblings = siblings.map{|o| o.sub(/^(modified|deleted|renamed): /, '')}
+      siblings
     end
 
     def self.commit_internal message, dir
 
       siblings = Tree.siblings :include_label=>true
       # Remove labels
-      siblings = siblings.map{|i| Line.without_label(:line=>i)}
+
       # Remove "untracked (ignore)"
       siblings = self.remove_options siblings
 
       unless siblings.any?   # Error if no siblings
-        return "@flash/- Provide some files (on lines next to this menu, with no blank lines, and no 'untracked' label!"
+        return "<! Provide some files (on lines next to this menu, with no blank lines, and no untracked files)!"
       end
 
-      Console.run "git commit -m \"#{message}\" #{siblings.join("\\\n  ")}", :dir=>dir
+      siblings = siblings.join("\\\n  ")
+      siblings.gsub!(" -> ", " ")   # In case any "a -> b" exist, from renames
+
+      Shell.run "git commit -m \"#{message}\" #{siblings}", :dir=>dir
     end
 
     def self.unadd
-      dir = Tree.closest_dir yield[:ancestors]
+
+      dir = options[:dir]
 
       siblings = Tree.siblings :include_label=>true
       siblings.map!{|i| Line.without_label(:line=>i)}
@@ -603,13 +700,14 @@ module Xiki::Menu
       return "- No files to unadd (they should be siblings of unadd)!" if siblings.empty?   # Error if no siblings
 
       command = "git reset #{siblings.join(' ')}"
-      txt = Console.sync command, :dir=>dir
+      txt = Shell.sync command, :dir=>dir
       return Tree.quote txt if txt.any?
-      "@flash/- unadded!"
+      "<! unadded!"
     end
 
     def self.revert
-      dir = Tree.closest_dir yield[:ancestors]
+
+      dir = options[:dir]
 
       siblings = Tree.siblings :include_label=>true
       siblings.map!{|i| Line.without_label(:line=>i)}
@@ -618,13 +716,15 @@ module Xiki::Menu
       return "- No files to revert (they should be siblings of revert)!" if siblings.empty?   # Error if no siblings
 
       command = "git checkout #{siblings.join(' ')}"
-      txt = Console.sync command, :dir=>dir
+      txt = Shell.sync command, :dir=>dir
       return Tree.quote txt if txt.any?
-      "@flash/- reverted!"
+      "<! reverted!"
     end
 
-    def self.delete
-      dir = Tree.closest_dir yield[:ancestors]
+    def self.remove
+
+      options = yield
+      dir = options[:dir]
 
       siblings = Tree.siblings :include_label=>true
       siblings.map!{|i| Line.without_label(:line=>i)}
@@ -633,9 +733,9 @@ module Xiki::Menu
       return "- No files to unadd (they should be siblings of delete)!" if siblings.empty?   # Error if no siblings
 
       command = "rm #{siblings.join(' ')}"
-      txt = Console.sync command, :dir=>dir
+      txt = Shell.sync command, :dir=>dir
       return Tree.quote txt if txt.any?
-      "@flash/- deleted!"
+      "<! deleted!"
     end
 
     def self.git_diff_options
@@ -652,32 +752,23 @@ module Xiki::Menu
       Search.isearch match
     end
 
+    # Meant to search git diffs.
     def self.search_repository
-      # .code_tree_diff was deprecated in Unified refactor - see do+push
       self.code_tree_diff
     end
 
-    def self.docs
-      "
-      > How to use
-      | Put the @git menu under a path that is (or you want to make into)
-      | a git repo, like so:
-      |
-      | /tmp/myproject/
-      |   @git/
-      "
-    end
-
     def self.create
-      dir = Tree.closest_dir yield[:ancestors]
-      result = Console.sync 'git init', :dir=>dir
+
+      options = yield
+      dir = options[:dir]
+      result = Shell.sync 'git init', :dir=>dir
       "
       | #{result.strip}
       "
     end
 
     def self.file_in_repository? dir, file
-      txt = Console.sync "git ls-files '#{file}'", :dir=>dir
+      txt = Shell.sync "git ls-files '#{file}'", :dir=>dir
       txt.any?   # It's in the repository if it didn't return blank
     end
 

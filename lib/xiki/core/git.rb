@@ -11,7 +11,7 @@ module Xiki
 
     def self.branch_name dir=nil
       dir ||= Tree.closest_dir
-      Console.run("git status", :sync=>true, :dir=>dir)[/# On branch (.+)/, 1]
+      Shell.run("git status", :sync=>true, :dir=>dir)[/# On branch (.+)/, 1]
     end
 
     def self.do_push
@@ -22,7 +22,7 @@ module Xiki
 
       menu = "
         #{file}
-          @git/
+          =git/
             - push/#{branch}/
             - diff/
         ".unindent
@@ -43,7 +43,7 @@ module Xiki
     def self.do_compare_repository
       file = View.file
 
-      Launcher.open "#{file}\n  @git/diff/", :line_found=>View.line
+      Launcher.open "#{file}\n  =git/diff/", :line_found=>View.line
 
       ""
     end
@@ -51,7 +51,7 @@ module Xiki
 
     def self.toplevel_split path
 
-      dir = Console.sync "git rev-parse --show-toplevel", :dir=>path
+      dir = Shell.sync "git rev-parse --show-toplevel", :dir=>path
       return nil if dir =~ /^fatal: /
 
       dir.strip!
@@ -63,6 +63,23 @@ module Xiki
       relative = nil if relative == ""
 
       [dir, relative]
+    end
+
+    # Massages output of "git diff" or "git show" into :... quotes.
+    # Git diff args should be like this? > --oneline -U1
+    def self.format_as_quote txt, options={}
+
+      # Remove junk at beginning before leading diff
+      txt.sub!(/.*?^@@ /m, '@@ ') if options[:one_file]
+
+      txt.gsub!(/^index .+\n/, '')
+      txt.gsub!(/^diff .+\n/, '')
+      txt.gsub!(/^--- .+\n/, '')
+      txt.gsub!(/^\+\+\+ /, '@@ ')
+
+      txt.gsub!(/^/, ':')
+      txt.gsub!(/ $/, '')
+      txt
     end
 
   end
