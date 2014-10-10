@@ -10,82 +10,13 @@ module Xiki
 
     LABEL_REGEX = /(?:[a-zA-Z0-9 _-]+\) )?/
 
-    def self.menu_before *args
-
-      # If @notes is nested under a menu, use that menu as the .notes filename...
-
-      # 3 main scenarios
-      # foo/@notes/   - .menu_before assumes ~/note/foo.notes is the file
-      # foo/@notes/list/   - just let .menu handle it
-      # notes/list/        - just let .menu handle it
-
-      path = Xiki.path rescue []
-
-      # Assume menu handled it if
-
-      # Take over and assume ~/notes/ancestor.notes if we're nested, and no args or 1st arg is a quoted heading
-      take_over = path.length >= 2 && !args[0] || args[0] =~ /^>/
-      return if ! take_over
-
-      # Pull out file name and path from "foo/@notes/bar"
-      root = path[-2]
-      root.sub! /\/$/, ''
-
-      notes_dir = File.expand_path("~/notes")
-
-      # Can we just pass Notes.drill the stem?  Is it smart enough to look for index, etc?
-
-      notes_path =
-        if File.exists?(found = "#{notes_dir}/#{root}/index.notes")
-          found
-        elsif File.exists?(found = "#{notes_dir}/#{root}/#{root}.notes")
-          found
-        elsif File.exists?(found = "#{notes_dir}/#{root}.notes")
-          found   # Internally, .drill will ask them to create it, I think
-        end
-
-      Notes.drill found, *args
-    end
-
-    def self.menu
-      %`
-      - .list/
-      - api/
-        - misc methods/
-          > Turn notes wiki text into html
-          @Notes.to_html "> Heading\\njust text\\n"
-      - docs/
-        - nesting/
-          - intro/
-            | You can nest @notes under other menus, like so:
-            @foo/
-              @notes/
-
-            | It will use ~/notes/foo.notes. This is a convenience mechanism
-            | for you to create notes that are associated with menus.
-          - example/
-            > 1. if you have a file like this
-            @~/notes/foo.notes
-              | > Bar
-              | Some notes about bar.
-              |
-              | > Baz
-              | Some notes about baz.
-
-            > 2. When you expand, it will look like this
-            @foo/
-              @notes/
-                > Bar
-                > Baz
-
-            | Then you can expand the headings and edit inline.
-      `
-    end
-
     def self.list *args
-      Notes.drill "~/notes/", *args
+      Notes.drill "~/xiki/notes/", *args
     end
 
+    # Returns contents block where cursor is.
+    # Blocks are delimited by >... headings.
+    # Notes.block
     def self.block regex="^> "
       left, after_header, right = View.block_positions regex
       View.txt after_header, right
@@ -123,7 +54,7 @@ module Xiki
       block.hide_text
     end
 
-    def self.to_block up=false
+    def self.to_block options={}
       prefix = Keys.prefix :clear=>1
 
       kind = :h1
@@ -132,7 +63,7 @@ module Xiki
 
       times = prefix.is_a?(Fixnum) ? prefix : 1
 
-      if up
+      if options[:up]
         times.times do
           Line.to_left
           Search.backward regex
@@ -143,6 +74,12 @@ module Xiki
           Search.forward regex
           Line.to_left
         end
+      end
+
+      # Run from the key shortcut, so remember it for C-,
+      if options[:key]
+        prock = options[:up] ? proc {Xiki::Notes.to_block :up=>1} : proc {Xiki::Notes.to_block}
+        Keys.remember_key_for_repeat(prock, :movement=>1)
       end
     end
 
@@ -181,10 +118,13 @@ module Xiki
     end
 
     def self.move_block up=false
+
+      Keys.remember_key_for_repeat(proc {Notes.move_block up})
+
       prefix = Keys.prefix :clear=>1
       kind = self.heading_kind
       times = Keys.prefix_times prefix
-      regex = self.heading_regex kind#, :match_only_self=>1
+      regex = self.heading_regex kind #, :match_only_self=>1
 
       if kind == :h0
         regex = self.heading_regex :h0
@@ -192,16 +132,18 @@ module Xiki
       end
 
       orig = Location.new
-      block = self.current_section prefix
-      block.blink if kind == :h0 || kind == :h2
 
-      block.delete_content
+      section = self.current_section prefix
+      section.blink if kind == :h0 || kind == :h2
+
+      section.delete
 
       if up
         times.times do
           Search.backward regex, :go_anyway=>true
         end
-        $el.insert block.content
+
+        $el.insert section.content
         Search.backward regex
       else
 
@@ -212,38 +154,83 @@ module Xiki
           Search.forward move_regex, :go_anyway=>true
         end
         Move.to_axis
-        View.insert block.content
+
+        View.insert section.content
         Search.backward move_regex
       end
       times == 1 ?
         self.current_section(regex).fade_in :
         orig.go
+
     end
 
     def self.insert_heading options={}
+
+      Keys.remember_key_for_repeat(proc {Xiki::Notes.insert_heading})
+
       Line.start
       orig = Line.value
 
-      prefix = Keys.prefix
       times = Keys.prefix_n || 1
-      times.times { $el.insert ">" }
-      View.insert " " # unless times > 1
+      prefix = options[:prefix] || Keys.prefix(:clear=>1)
+      times = 1 if times > 5
 
-      if options[:extra_space] || prefix == :u   # If up+, create blank lines.
+      # Put comment above line
+      Move.to_axis
+      View.insert "#{">"*times} "
+
+      linebreaks = 4
+      linebreaks = 1 if orig.any? && orig !~ /^>/   # If on non-blank line, and not heading, don't put space after heading
+
+      if prefix == :u
+        View << ":"#, :dont_move=>1
+
+        linebreaks = 1 if orig =~ /^>(.*[^:\n]|)$/   # If on ">..." line, don't add space after this ">...:" heading
+
+        View.insert "\n"*linebreaks, :dont_move=>1
+        View.column = -1
+        return
+      end
+
+      if prefix == nil
+        View.insert "\n"*linebreaks, :dont_move=>1
+      end
+
+      if prefix == 1
+        View << "!:"#, :dont_move=>1
+        View.insert "\n"*4, :dont_move=>1
+        View.column = -2
+        return
+      end
+
+      if prefix == 8
         View.insert("\n"*4, :dont_move=>1)
+        View << "today > :"#, :dont_move=>1
+        Move.to_column -1
+        ControlLock.disable
         return
       end
 
-      if options[:extra_space] || prefix == :-
+      if prefix == 9
         View.insert("\n"*2, :dont_move=>1)
-        View.<< "!:", :dont_move=>1
+        View << "feature > :"#, :dont_move=>1
+        Move.to_column -1
+        ControlLock.disable
         return
       end
 
-      View.insert("\n", :dont_move=>1) if orig != ""
+      if prefix == :-
+        View.insert("\n", :dont_move=>1) if orig != ""
+      end
+
+      raise "- Don't understand the prefix: #{prefix.inspect}" if prefix
+
     end
 
     def self.cut_block no_clipboard=false
+
+      Keys.remember_key_for_repeat(proc {Xiki::Notes.cut_block})
+
       block = self.current_section Keys.prefix
 
       block.blink
@@ -251,7 +238,7 @@ module Xiki
       unless no_clipboard
         Clipboard.set("0", block.content)
       end
-      block.delete_content
+      block.delete
     end
 
     def self.copy_block
@@ -274,7 +261,7 @@ module Xiki
 
       block.fade_out unless prefix_u
 
-      block.delete_content
+      block.delete
 
       $el.beginning_of_buffer
       $el.insert block.content
@@ -295,37 +282,24 @@ module Xiki
 
     def self.keys
 
-      return if ! $el
-
       # Get reference to map if already there (don't mess with existing buffers)
       $el.elvar.notes_mode_map = $el.make_sparse_keymap unless $el.boundp :notes_mode_map
 
-      Keys.custom_archive(:notes_mode_map) { Notes.archive }
-      Keys.custom_back(:notes_mode_map) { Notes.move_block :backwards }   # Move block up to before next block
-      Keys.custom_clipboard(:notes_mode_map) { Notes.copy_block }   # block -> clipboard
-      Keys.custom_delete(:notes_mode_map) { Notes.cut_block :backwards }   # block -> clear
-      #     Keys.custom_expand(:notes_mode_map) { Notes.narrow_block }   # Show just block
-      Keys.custom_forward(:notes_mode_map) { Notes.move_block }   # Move block down to after next block
-      Keys.custom_heading(:notes_mode_map) { Notes.insert_heading }   # Insert |... etc. heading
-      Keys.custom_item(:notes_mode_map) { Agenda.quick_add_line }
-      # j
-      Keys.custom_kill(:notes_mode_map) { Notes.cut_block }   # block -> cut
-      # l
-      Keys.custom_mask(:notes_mode_map) { Notes.hide_text }   # block -> hide
-      Keys.custom_next(:notes_mode_map) { Notes.to_block }   # Go to block after next block
-      Keys.custom_open(:notes_mode_map) { Notes.show_text }   # block -> reveal
-      Keys.custom_previous(:notes_mode_map) { Notes.to_block :backwards }   # Go to block before next block
-      # q
-      # r
-      Keys.custom_stamp(:notes_mode_map) { $el.insert Time.now.strftime("- %Y-%m-%d %I:%M%p: ").downcase.sub(' 0', ' ') }
-      Keys.custom_top(:notes_mode_map) { Notes.move_block_to_top }   # block -> top
-      # u
-      # v
-      # w
-      Keys.custom_x(:notes_mode_map) { Notes.cut_block }   # block -> cut
-      # y
-      # z
+      Xiki.def("custom+next", :map=>:notes_mode_map){ Notes.to_block :key=>1 }
+      Xiki.def("custom+previous", :map=>:notes_mode_map){ Notes.to_block :up=>1, :key=>1 }
 
+      Xiki.def("custom+copy", :map=>:notes_mode_map){ Notes.copy_block }
+      Xiki.def("custom+xut", :map=>:notes_mode_map){ Notes.cut_block }
+      Xiki.def("custom+delete", :map=>:notes_mode_map){ Notes.cut_block :no_clipboard }
+      Xiki.def("custom+zoom", :map=>:notes_mode_map){ Notes.zoom }
+
+      Xiki.def("custom+back", :map=>:notes_mode_map){ Notes.move_block :backwards }
+      Xiki.def("custom+forward", :map=>:notes_mode_map){ Notes.move_block }
+      Xiki.def("custom+top", :map=>:notes_mode_map){ Notes.move_block_to_top }
+
+      Xiki.def("custom+heading", :map=>:notes_mode_map){ Notes.insert_heading }
+
+      $el.message ""
       $el.define_key(:notes_mode_map, $el.kbd("<double-mouse-1>"), :notes_mouse_double_click)
       $el.define_key(:notes_mode_map, $el.kbd("<mouse-1>"), :notes_mouse_toggle)
 
@@ -333,80 +307,42 @@ module Xiki
       $el.define_key(:notes_mode_map, $el.kbd("<S-mouse-1>"), :notes_mouse_double_click)
       $el.define_key(:notes_mode_map, $el.kbd("<C-mouse-1>"), :notes_mouse_double_click)
 
+      # custom+N, to jump to nth visible label
+      (1..9).each do |n|
+        $el.define_key(:notes_mode_map, $el.kbd("C-c C-#{n}")){ Launcher.do_last_launch :nth=>n, :here=>1, :dont_launch=>1 }
+      end
+
+      $el.define_key(:notes_mode_map, $el.kbd("C-m")) { View.insert_line }
 
       $el.define_key(:notes_mode_map, $el.kbd("C-i")) { Notes.tab_key }
+
+      $el.message ""
+
     end
 
     def self.define_styles
 
-      return if ! $el
-
-      # - foo (r): <here>
-      Styles.define :notes_light_gray, :fg => "bbb"
+      raise "maybe put this line back:" if ! $el
 
       # - foo (r): <here>
       Styles.define :variable, :face => 'verdana'
 
-      # - foo (r): <here>
-      Styles.define :notes_label_parens,
-        :fg => "bbb",
-        :size => "-2",
-        :face => 'arial'
-
       # >...
       h1_size = "+3"
 
-      # Colors of "| ..." headings
-      if Styles.dark_bg?   # If black bg
-        @@h1_styles = {
-          :notes_h1 =>"333",
-          :notes_h1r=>"611",   # | r This will be red
-          :notes_h1o=>"841",   # | o This will be orange
-          :notes_h1y=>"871",
-          :notes_h1e=>"363",
-          :notes_h1g=>"363",
-          :notes_h1b=>"678",
-          :notes_h1p=>"636",
-          :notes_h1m=>"622",
-          :notes_h1x=>"345",
-          :notes_h1t=>"055",
-          }
+      if Styles.dark_bg?
+        bg = "444"
       else
-        # Colors of headings
-        @@h1_styles = {
-          :notes_h1 =>"909090",
-          :notes_h1r=>"b66",   # | r This will be red
-          :notes_h1o=>"b83",   # | o This will be orange
-          :notes_h1y=>"bb3",
-          :notes_h1e=>"363",
-          :notes_h1g=>"7b6",
-          :notes_h1b=>"678",
-          :notes_h1p=>"b8b",
-          :notes_h1m=>"944",
-          :notes_h1x=>"678",
-          :notes_h1t=>"055",
-          }
+        bg = "909090"
+        #"292929" : "909090"
       end
 
-      @@h1_styles.each do |k, v|
-        pipe = v.gsub(/./) {|c|
-          hex = c.to_i(16) + 2
-          hex = 15 if hex > 15   # In case it's aleady really light
-          hex.to_s(16)
-        }
-        label = v.gsub(/./) {|c|
-          hex = c.to_i(16) + 6
-          hex = 15 if hex > 15   # In case it's aleady really light
-          hex.to_s(16)
-        }
+      pipe = "555"
+      label = "bbb"
 
-        #       label = "eee" if label == "fff"
-
-        Styles.define k,
-          :face=>'arial', :size=>h1_size, :fg=>'ffffff', :bg=>v, :bold=> true
-        Styles.define "#{k}_pipe".to_sym, :face=>'arial', :size=>h1_size, :fg=>pipe, :bg=>v, :bold=>true
-        Styles.define "#{k}_label".to_sym, :face=>'arial', :size=>h1_size, :fg=>label, :bg=>v, :bold=>true
-      end
+      Styles.define "notes_h1", :face=>'arial', :size=>h1_size, :fg=>'bbb', :bg=>bg, :bold=>nil
+      Styles.define "notes_h1_pipe", :face=>'arial', :size=>h1_size, :fg=>pipe, :bg=>bg, :bold=>true
+      Styles.define "notes_h1_label", :face=>'arial', :size=>h1_size, :fg=>label, :bg=>bg, :bold=>true
 
       Styles.define :notes_h1_agenda_pipe, :face => 'arial', :size => h1_size, :fg => '88cc88', :bg => '336633', :bold =>  true
       Styles.define :notes_h1_agenda, :face => 'arial', :size => h1_size, :fg => 'ffffff', :bg => '336633', :bold => true
@@ -439,7 +375,6 @@ module Xiki
       # Labels, emphasis
       Styles.define :notes_label,
         :face=>'arial black', :size=>"0",  # Mac
-        #:face=>'courier', :size=>"0",  # Mac
         :fg=>label_color, :bold=>true
 
       Styles.define :notes_bullet_parens,
@@ -448,12 +383,6 @@ module Xiki
 
       # Strikethrough
       Styles.define(:strike, :strike=>true)
-
-      # - <here> (r): foo
-      Styles.define :notes_label_link,
-        :face => 'verdana', :size => "-1",
-        :fg => "66f",
-        :bold => true, :underline => true
 
       Styles.define :notes_g, :fg=>"6cf", :face=>'arial black', :size=>"0", :bold=>true
       Styles.define :notes_blue, :fg=>"69f", :face=>'arial black', :size=>"0", :bold=>true
@@ -464,23 +393,23 @@ module Xiki
       bg_color = Styles.attribute(:default, :background)
 
       if Styles.dark_bg?   # If black bg
-        Styles.define :notes_h2, :face=>'arial', :size=>"-1", :fg=>'fff', :bg=>"333", :bold=>true
-        Styles.define :notes_h2_pipe, :face=>'arial', :size=>"-1", :fg=>'444', :bg=>"333", :bold=> true
-        Styles.define :notes_h0_pipe, :face=>'arial', :size=>"+8", :fg=>'444', :bg=>"333", :bold=> true
-        Styles.define :notes_h0, :fg=>"fff", :bg=>"333", :face=>'arial', :size=>"+8", :bold=>true
-        Styles.define :notes_h0_green, :fg=>"8f4", :bg=>"333", :face=>'arial', :size=>"+8", :bold=>true
-        Styles.define :notes_h0_green_pipe, :fg=>"444", :bg=>"333", :face=>'arial', :size=>"+8", :bold=>true
-        Styles.define :notes_h1_green, :fg=>"8f4", :bg=>"333", :face=>'arial', :size=>"+3", :bold=>true
-        Styles.define :notes_h1_green_pipe, :fg=>"444", :bg=>"333", :face=>'arial', :size=>"+3", :bold=>true
+        Styles.define :notes_h2, :face=>'arial', :size=>"-1", :fg=>'999'
+        Styles.define :notes_h2_pipe, :face=>'arial', :size=>"-1", :fg=>'555'
+        Styles.define :notes_h0_pipe, :face=>'arial', :size=>"+8", :fg=>'555', :bg=>"444", :bold=> true
+        Styles.define :notes_h0, :fg=>"fff", :bg=>"444", :face=>'arial', :size=>"+8", :bold=>true
+        Styles.define :notes_h0_green, :fg=>"8f4", :bg=>"444", :face=>'arial', :size=>"+8", :bold=>true
+        Styles.define :notes_h0_green_pipe, :fg=>"555", :bg=>"444", :face=>'arial', :size=>"+8", :bold=>true
+        Styles.define :notes_h1_green, :fg=>"8f4", :bg=>"444", :face=>'arial', :size=>"+3", :bold=>nil
+        Styles.define :notes_h1_green_pipe, :fg=>"555", :bg=>"444", :face=>'arial', :size=>"+3", :bold=>true
 
       else   # If white bg
-        Styles.define :notes_h2, :face=>'arial', :size=>"-1", :fg=>'fff', :bg=>"909090", :bold=>true
-        Styles.define :notes_h2_pipe, :face=>'arial', :size=>"-1", :fg=>'b0b0b0', :bg=>"909090", :bold=>true
+        Styles.define :notes_h2, :face=>'arial', :size=>"-1", :fg=>'fff'
+        Styles.define :notes_h2_pipe, :face=>'arial', :size=>"-1", :fg=>'b0b0b0'
         Styles.define :notes_h0_pipe, :face=>'arial', :size=>"+8", :fg=>'b0b0b0', :bg=>"909090", :bold=>true
         Styles.define :notes_h0, :fg=>"fff", :bg=>"909090", :face=>'arial', :size=>"+8", :bold=>true
         Styles.define :notes_h0_green, :fg=>"af0", :bg=>"909090", :face=>'arial', :size=>"+8", :bold=>true
         Styles.define :notes_h0_green_pipe, :fg=>"b0b0b0", :bg=>"909090", :face=>'arial', :size=>"+8", :bold=>true
-        Styles.define :notes_h1_green, :fg=>"af0", :bg=>"909090", :face=>'arial', :size=>"+3", :bold=>true
+        Styles.define :notes_h1_green, :fg=>"af0", :bg=>"909090", :face=>'arial', :size=>"+3", :bold=>1
         Styles.define :notes_h1_green_pipe, :fg=>"b0b0b0", :bg=>"909090", :face=>'arial', :size=>"+3", :bold=>true
       end
 
@@ -518,23 +447,14 @@ module Xiki
       Styles.apply("^\\(> \\)\\(.*!\\)\\(\n\\)", nil, :notes_h1_green_pipe, :notes_h1_green, :notes_h1_green)
 
       # > Large:
-      Styles.apply("^\\(> \\)\\(.*:\\)\\(\n\\)", nil, :notes_h0_pipe, :notes_h0, :notes_h1)
+      Styles.apply("^\\(> \\)\\(.*:\\)\\(\n\\)", nil, :notes_h0_pipe, :notes_h0, :notes_h0)
 
       Styles.apply("^\\(> \\)\\(.*!:\\)\\(\n\\)", nil, :notes_h0_green_pipe, :notes_h0_green, :notes_h0_green)
 
       Styles.apply("^\\(>\\)\\( .+?: \\)\\(.+\n\\)", nil, :notes_h1_pipe, :notes_h1_label, :notes_h1)
 
-      Styles.apply("^\\(> 20[0-9][0-9]-[0-9][0-9]-[0-9][0-9].*:\\)\\(.*\n\\)", nil, :notes_h1_agenda_pipe, :notes_h1_agenda)
-
-      @@h1_styles.each do |k, v|
-        l = k.to_s[/_..(.)$/, 1]
-        next unless l
-        Styles.apply("^\\(> #{l}\\)\\(\n\\| .*\n\\)", nil, "#{k}_pipe".to_sym, k)
-        Styles.apply("^\\(>\\)\\( #{l} .+: \\)\\(.*\n\\)", nil, "#{k}_pipe".to_sym, "#{k}_label".to_sym, k)
-      end
 
       # >>... lines
-      #     Styles.apply("^\\(>>\\)\\(.*\\)", nil, :notes_h2_pipe, :notes_h2)
       Styles.apply("^\\(>>\\)\\(.*\n\\)", nil, :notes_h2_pipe, :notes_h2)
 
       # Commented
@@ -548,9 +468,9 @@ module Xiki
 
       # - bullets with labels and comments
       Styles.apply("^[ \t]*\\([<+-][<+=-]*\\) \\([^/:\n]+:\\) ", nil, :ls_bullet, :notes_label)   # - hey: you
-      Styles.apply("^[ \t]*\\([<+-][<+=-]*\\) \\([^(\n]+?)\\)\\( \\|$\\)", nil, :ls_bullet, :notes_label)   # - hey) you
+      Styles.apply("^[ \t]*\\([<+-][<+=-]*\\) \\([^(\n]*?)\\)\\( \\|$\\)", nil, :ls_bullet, :notes_label)   # - hey) you
 
-      Styles.apply("^[ \t]*\\([<+-][<+=-]*\\) \\(.+:\\)$", nil, :ls_bullet, :notes_label)   # - hey)
+      Styles.apply("^[ \t]*\\([<+-][<+=-]*\\) \\(.*:\\)$", nil, :ls_bullet, :notes_label)   # - hey:
 
       Styles.apply("^\\([ \t]*\\)\\([<+-]\\) \\(.+?:\\) +\\(|.*\n\\)", nil, :default, :ls_bullet, :notes_label, :ls_quote)
       Styles.apply("^\\([ \t]*\\)\\([<+-]\\) \\([^(\n]+?)\\) +\\(|.*\n\\)", nil, :default, :ls_bullet, :notes_label, :ls_quote)
@@ -566,24 +486,24 @@ module Xiki
       Styles.apply("\\(\(\\+\\)\\(.+?\\)\\(\\+\)\\)", nil, :diff_small, :diff_green, :diff_small)
 
       # google/
-      Styles.apply "^ *\\(-?\\) ?\\(@?\\)\\(g\\)\\(o\\)\\(o\\)\\(g\\)\\(l\\)\\(e\\)\\(/\\)", nil, :ls_bullet, :ls_dir,
+      Styles.apply "^ *\\(-?\\) ?\\([@=]?\\)\\(g\\)\\(o\\)\\(o\\)\\(g\\)\\(l\\)\\(e\\)\\(/\\)", nil, :ls_bullet, :ls_dir,   # google
         :notes_blue, :notes_red, :notes_yellow, :notes_blue, :notes_green, :notes_red,
         :ls_dir
 
       Styles.apply "^hint/.+", :fade6
 
-      Styles.apply "^[< ]*[@=]? ?\\([%$&!]\\) ", nil, :shell_prompt   # Colorize shell prompts after "@"
+      # $..., %..., etc.
+      Styles.apply "^[< ]*[@=]? ?\\([%$&!]\\)\\( \\|$\\)", nil, :shell_prompt   # Colorize shell prompts after "@"
+
+      # $$...
+      Styles.apply "^[< ]*[@=]? ?\\(\\$\\$\\)", nil, :shell_prompt   # Colorize shell prompts after "@"
 
 
       # Make |~... lines be Dotsies
       Styles.apply("^ *\\(|~\\)\\([^\n~]+\\)\\(~?\\)", nil, :quote_heading_pipe, :dotsies, :quote_heading_pipe)
 
-      #       # Make |~... lines be FontAwesome
-      #       # Probably don't commit - doesn't work in all aquamacs versions :/
-      #       Styles.apply("^ *\\(|\\)\\(\\*\\)\\([^ \n]+\\)\\(.*\\)", nil, :quote_heading_pipe, :diff_line_number, :fontawesome, :ls_quote)
-
       # |#... invisible
-      Styles.apply("^ *\\(|#\\)\\(.*\n\\)", nil, :quote_heading_pipe, :quote_hidden)
+      Styles.apply("^ *\\(|[#*]\\)\\(.*\n\\)", nil, :quote_light, :quote_hidden)
 
       Styles.apply "^ *|\\^.*\n", :quote_medium
     end
@@ -591,21 +511,18 @@ module Xiki
     # Startup
     def self.init
 
-      return if ! $el
-
       $el.defun(:notes_mouse_meta_click, :interactive => "e") do |e|
         $el.mouse_set_point(e)
         View.insert "hey"
       end
 
       $el.defun(:notes_mouse_double_click, :interactive => "e") do |e|
-        next Launcher.insert "h" if Line =~ /^$/   # If blank line, launch history
-        Launcher.go
+        Launcher.double_click
       end
 
       $el.defun(:notes_mouse_toggle, :interactive => "e") do |e|
         $el.mouse_set_point(e)
-        Notes.mouse_toggle
+        Notes.mouse_click
       end
 
       $el.defun(:notes_mode, :interactive => "", :docstring => "Apply notes styles, etc") {# |point|
@@ -615,6 +532,7 @@ module Xiki
         Notes.apply_styles
         FileTree.apply_styles_at_end
         $el.use_local_map $el.elvar.notes_mode_map
+        Notes.chdir_when_xsh_session
       }
       $el.el4r_lisp_eval %q<
         (progn
@@ -636,24 +554,37 @@ module Xiki
 
     def self.enter_junior
 
-      prefix = Keys.prefix
+      prefix = Keys.prefix :clear=>1
 
       Move.to_end if Line.before_cursor =~ /^ +$/   # If at awkward position, move
 
       cursor = View.cursor
       line = Line.value
       indent = Line.indent line
-      pipe = line =~ /^ *([|#])/ ? $1 : ""
+
+      prepend = line[/^ *([!|:#] +)/, 1]
+      prepend ||= ""
+
       if Line.left == cursor || Line.right == cursor   # If beginning or end, leave current line alone
         Move.to_end
       else   # In middle of line
         Deletes.delete_whitespace
       end
 
-      pipe = nil if prefix == :u   # up+ means to not carry over pipes etc.
+      if prepend =~ /^\| /
+        prefix = prefix == :u ? nil : :u
+      end
 
-      return View.<< "\n#{line[/^[ |#]*/]}  " if pipe
-      View << "\n#{indent}#{pipe}  "
+      prepend << "  " if prefix == :u
+      prepend = "  #{prepend[/. /]}" if prefix == nil   # up+, so make quote char be indented
+
+      prepend = "  " if prefix == 0   # up+ means to not carry over prepends etc.
+      prepend = "  | " if prefix == 1
+      prepend = "  : " if prefix == 2
+      prepend = "  # " if prefix == 3
+      prepend = "  - " if prefix == :-
+
+      View << "\n#{indent}#{prepend}"
     end
 
     def self.bullet bullet_text="- "
@@ -674,7 +605,7 @@ module Xiki
       if line.present?   # If non-blank line
         column = View.column
 
-        Move.to_end if line =~ /^ / && column <= indent.length   # If just entered a bullet, go to end first
+        Move.to_end if line =~ /^ / && (column-1) <= indent.length   # If just entered a bullet, go to end first
         Move.to_end if line =~ /^>/ || Line.at_left?   # If line is heading, or if at beginning of the line
 
         if View.cursor != Line.right
@@ -683,7 +614,7 @@ module Xiki
         View.insert "\n"
 
         # Do simple case if quoted
-        return View.<<("#{line[/^[ |#]*/]}  - ") if line =~ /^ *[|#]/
+        return View.<<("#{line[/^[ :|#]*/]}  - ") if line =~ /^ *[:|#]/
 
         # Do simple case if on heading
         return View.<<("- ") if line =~ /^>/
@@ -727,11 +658,14 @@ module Xiki
 
     end
 
-    def self.mouse_toggle
+    def self.mouse_click
+
+      # Clicked "+" or "-" on a "+ foo..." line, so expand or collapse
 
       # If next line is indented more, kill children
       # If starts with plus or minus, and on plus or minus, launch
       if Line.matches(/^\s*[+-]/) and View.char =~ /[+-]/
+        # Temp > disable plus bullet
         plus_or_minus = Tree.toggle_plus_and_minus
         if ! Tree.children?
 
@@ -747,7 +681,23 @@ module Xiki
           Tree.kill_under
           Line.to_beginning
         end
+        return
       end
+
+      # Clicked at same point as last click, so treat as double-click...
+
+      @@last_click_position ||= nil   # Undefined when the 1st time run
+      @@last_click_time ||= 0   # Undefined when the 1st time run
+      if @@last_click_position == View.cursor && (Time.now.to_f - @@last_click_time < 0.7)
+        @@last_click_position, @@last_click_time = nil, 0
+        Launcher.double_click
+      else
+
+        # Store position of last click
+
+        @@last_click_position, @@last_click_time = View.cursor, Time.now.to_f
+      end
+
     end
 
     #
@@ -768,15 +718,18 @@ module Xiki
         gsub(/(^|[^\n>])$/, "\\0<br>")
     end
 
-    def self.as_nav
+    def self.as_file
+
       prefix = Keys.prefix :clear=>true
       txt = ""
+
       if prefix == :u || prefix == :uu
         txt = Code.grab_containing_method
       end
 
       label = nil
-      if prefix == 9
+
+      if prefix == :u
         label = Keys.input :prompt=>"label: ", :timed=>1
         label = "do" if label.blank?
         label = Notes.expand_if_action_abbrev(label) || label
@@ -790,31 +743,40 @@ module Xiki
         txt = View.txt_per_prefix prefix, :selection=>1, :default_is_line=>1, :just_txt=>1
       end
 
+      orig = Location.new
+
       # If file has bullet or ends with slash, grab path
+
+      options = {}
 
       keep_tweeking = true
       if ! prefix && FileTree.handles?   # Grab tree
-        txt = Tree.ancestors_indented :just_sub_tree=>1
-        txt.sub! /^  /, '  - '
+
+        txt = Tree.construct_path :raw=>1
+        # Remove ##... if there
+        txt.delete_if{|o| o =~ /^##/}
+
+        options[:path] = txt[0..-2].join
+        if Search.fit_in_snippet(txt[-1], :path=>txt[0..-2].join)   # Insert it in existing tree if there
+          View << "    - #{label})\n" if label
+          return orig.go
+        end
+
+        txt = "#{txt[0..-3].join}\n  - #{txt[-2]}\n    #{txt[-1]}\n"
         keep_tweeking = false
       end
 
       file = View.file
-      orig = Location.new
 
-      if keep_tweeking
-        if Search.fit_in_snippet(txt)   # Insert it in existing tree if there
-          View << "    - #{label}:\n" if label
-          return orig.go
-        end
-      else
-        View.layout_files :no_blink=>1
+      if Search.fit_in_snippet(txt)   # Insert it in existing tree if there
+        View << "    - #{label})\n" if label
+        return orig.go
       end
 
       # Make it quoted, unless already a quote
       if keep_tweeking && (txt !~ /\A([+-] |\/)/ || txt !~ /^ +/)   # If txt isn't already a tree, make it one
         txt = FileTree.snippet :txt=>txt, :file=>file
-        txt.sub! /^    /, "    - #{label}:\n    " if label
+        txt.sub! /^    /, "    - #{label})\n    " if label
       end
 
       # Else, add it to top...
@@ -841,28 +803,41 @@ module Xiki
 
 
     def self.as_todo
+
       prefix = Keys.prefix :clear=>1
 
+      # Nothing was selected...
+
       txt = nil
+
+      # Something was selected, so use it...
+
+      selection = View.selection
 
       # If method, make it Foo.bar method call
       line = Line.value
 
-      if View.file =~ /_spec.rb/ && line =~ /^ *(it|describe) /
+      if ! selection && View.file =~ /_spec.rb/ && line =~ /^ *(it|describe) /
         return Specs.enter_as_rspec
       end
 
       buffer_name = $el.buffer_name
       file_name = View.file_name
-      path = Xiki.path rescue nil
+      path = Tree.path rescue nil
 
-      if prefix.nil?   # So 1+ or numeric prefix just grab normally
+      if prefix == :u   # up+, so add as quoted, with "- todo!"
+
+        txt = FileTree.snippet :txt=>Line.value, :file=>View.file
+        txt.sub! /^/, ">\n"
+        txt.sub! /:/, "- todo!\n    :"
+
+      elsif ! selection && prefix.nil?   # So 1+ or numeric prefix just grab normally
         if buffer_name == "*ol"   # Make it into "foo = bar" format
           txt = line[/\) (.+)/, 1]
           txt.sub!(": ", " = ") if txt
           txt ||= line[/ *- (.+?) /, 1]
 
-        elsif path && path.last =~ /(\w+)\.rb\/\| *def ([\w\.?]+)/
+        elsif path && path.last =~ /(\w+)\.rb\/: *def ([\w\.?]+)/
           clazz = $1
           method = $2
           clazz = TextUtil.camel_case clazz if method.slice! /^self\./
@@ -875,20 +850,28 @@ module Xiki
 
           txt = "#{clazz}.#{method}"
 
-        elsif line =~ /^ *\|/   # Make it into Foo.bar format
-          txt = line.sub /^ *\| ?/, ''
+        elsif line =~ /^ *[|:]/   # Make it into Foo.bar format
+          txt = line.sub /^ *[|:][+-]? ?/, ''
         elsif FileTree.handles?
           txt = Tree.dir
         elsif line =~ /(^ *[+-] |\/$)/   # Make it into Foo.bar format
-          txt = Xiki.path.last
+          txt = Tree.path.last
+        elsif line =~ /^ *Ol.>> (.+?)   # => (.+)/   # Make it into Foo.bar format
+          txt = "#{$1} = #{$2}"
+        elsif line =~ /^ *Ol.+, (.+?)   # => (.+)/   # Make it into Foo.bar format
+          txt = "#{$1} = #{$2}"
         end
       end
 
+      # No text yet, so maybe there's a selection, or a numeric prefix...
+
+      txt ||= selection
       txt ||= View.txt_per_prefix(prefix, :selection=>1, :just_txt=>1, :default_is_line=>1)
+
       txt.strip! if txt =~ /\A.+\n\z/   # Strip when only 1 linebreak
 
       options = prefix == :uu ? {:append=>1} : {}
-      Search.move_to "$t", txt, options
+      Search.move_to ":t", txt, options
     end
 
 
@@ -927,7 +910,7 @@ module Xiki
         Effects.glow :fade_in=>1, :what=>[left, right]
       end
 
-      def delete_content
+      def delete
         $el.delete_region left, right
       end
 
@@ -952,7 +935,7 @@ module Xiki
       # cuts the block, and stores it in archive.file.notes
       # example: ruby.notes -> archive.ruby.notes
       def archive
-        delete_content
+        delete
         filename = 'archive.' + $el.file_name_nondirectory(buffer_file_name)
         timestamp = "--- archived on #{Time.now.strftime('%Y-%m-%d at %H:%M')} --- \n"
         $el.append_to_file timestamp, nil, filename
@@ -960,7 +943,7 @@ module Xiki
       end
     end
 
-    def self.enter_note
+    def self.enter_note options={}
 
       if Line.blank? && Keys.prefix != :u
         return self.open_note :insert=>1
@@ -978,22 +961,25 @@ module Xiki
         $el.open_line 1
       end
 
-      Line << "#{indent}- !"
+      Line << "#{indent}- )"
       Move.backward
 
-      txt = Keys.input :timed=>1, :prompt=>'Enter a character: '
+      txt = options[:txt] || Keys.input(:timed=>1, :prompt=>'Your note (or a letter as a shortcut): ')
 
-      expanded = Notes.expand_if_action_abbrev txt
+      expanded = self.expand_if_action_abbrev txt
 
-      if ["borrow"].member?(expanded)   # If "borrow", change ! to :
+      # If ends in exclamation, remove paren
+
+      if expanded =~ /[:!]$/
         View.delete :char
-        View.<< ":", :dont_move=>1
       end
 
       View << (expanded || txt)
 
-      # If wasn't expanded prepare to edit
-      ControlLock.disable if expanded == txt
+      if expanded =~ /^[!:]$/
+        Move.left
+        ControlLock.disable
+      end
 
       if expanded
         # Do nothing
@@ -1007,6 +993,7 @@ module Xiki
     end
 
     def self.drill_split args
+
       items = [[], [], []]   # file, heading, content
 
       items_index = 0   # Increase it as we move through
@@ -1015,7 +1002,7 @@ module Xiki
         next items[2] << arg if items_index == 2
 
         items_index = 1 if arg =~ /^> /   # If >..., bump up to headings
-        items_index = 2 if arg =~ /^\|/   # If |..., bump up to content
+        items_index = 2 if arg =~ /^:|\n/   # If |..., bump up to content
 
         items[items_index] << arg
       end
@@ -1040,14 +1027,16 @@ module Xiki
     def self.drill file, *args
 
       prefix = Keys.prefix :clear=>true
+
       file = Bookmarks[file]
 
-      # *args examples:
-      # args = ["> Arrays", "| [1, 2]"]
-      # args = ["tech", "ruby", "> Arrays", "| [1, 2]"]
+      # Pull off options, to get prefix
 
-      # Divide up path.  Could look like...
-      # dir/dir/> heading/| contents
+      options = args[-1].is_a?(Hash) ? args.pop : {}
+      dropdown = options[:dropdown]
+
+      # Divide up path.  Could look like this:
+        # dir/dir/> heading/| contents
 
       # Pull off contents if any (quoted lines)
 
@@ -1057,12 +1046,10 @@ module Xiki
 
       heading = heading.any? ? heading.join("/") : nil
       content = content.any? ? content.join("/") : nil
-
+      line_orig = Line.value
       file << file_items.join("/")+"/" if file_items.any?
 
-
       # Check for whether foo.notes or foo/foo.notes exists for this path...
-
 
       if file =~ /\/$/ && File.exists?(found = file.sub(/\/$/, ".notes"))
         file = found
@@ -1098,24 +1085,12 @@ module Xiki
         return "| Set the following bookmark first. Then you'll be able to use this menu to\n| browse the file. The file should have '> ...' headings.\n\n@ $#{bm}\n"
       end
 
-      # docs/, so output docs string...
-
-      if heading == "docs"
-        message = "
-          > Summary
-          | Convenient way for browsing the headings in this file:
-          |
-          - @ #{file}
-          ".unindent
-        return message
-      end
-
       if ! File.exists? file
         return "
-          | File doesn't exist yet, do as+update to create it:
-          @#{file}
-            | > Heading
-            | Stuff
+          : File doesn't exist yet.  Type Ctrl+D to create it:
+          =#{file}
+            : > Heading
+            : Stuff
           "
       end
 
@@ -1124,78 +1099,117 @@ module Xiki
       # /, so show just headings...
 
       if ! heading
-        return View.open file if prefix == "open"   # If as+open, just jump there
+
+        return "~ headings\n~ navigate" if dropdown == []
+
+        if dropdown == ["navigate"]   # If as+open, just jump there
+          View.open file
+          return ""
+        end
 
         txt = txt.split("\n")
         txt = txt.grep /^\>( .+)/
-        return "| This file has no '>...' headings:\n@#{file}" if txt.empty?
+        return ": This file has no '>...' headings:\n=#{file}" if txt.empty?
         return txt.join("\n")  #.gsub /^> /, '| '
       end
 
-      heading.sub!(/^\| /, '> ')
+      heading.sub!(/^\: /, '> ')
       escaped_heading = Regexp.escape heading
 
-      # /> Heading, so show text under heading...
+      # /> Heading, so nav to it, or show text under heading...
 
       if ! content
-        if prefix == :u || prefix == "open"   # If C-u on a heading, just jump there
-          View.open file
-          View.to_highest
-          Search.forward "^#{$el.regexp_quote heading}$", :beginning=>1
-          View.recenter_top
-          return
+
+        return "~ navigate\n~ expand" if dropdown == []
+        if dropdown == ['expand']
+          txt = self.extract_block txt, heading
+          txt.sub! /\n\z/, ''
+
+          # If blank, assume it wasn't there, and show default message...
+
+          txt = "Create this new section by typing\nsome stuff here and expanding.\n" if txt.blank?
+
+          # Change "| foo/" to "=foo/" > add equals char for certain patterns
+          txt = Tree.quote txt, :unquote_menus=>1, :char=>"|"
+          return txt
         end
 
-        txt = self.extract_block txt, heading
-        ENV['no_slash'] = "1"
-        return txt.gsub(/^/, '| ').gsub(/^\| $/, '|')
+        # No comment, so just navigate...
+
+        View.open file
+        View.to_highest
+        Search.forward "^#{$el.regexp_quote heading}$", :beginning=>1
+        View.recenter_top
+        return ""
+
       end
 
       # /> Heading/| content, so navigate or save...
 
-      # If C-4, grab text and save it to file / update
-      if prefix == "update"
+      return "~ save\n~ navigate" if dropdown == []
+
+
+      # Update...
+
+      if dropdown == ["save"]
+
         # Extract parts from the file that won't change
         index = txt.index /^#{escaped_heading}$/
-        index += heading.length
 
-        before = txt[0..index]
+        if index
 
-        after = txt[index..-1]   # Part we're replacing and everything afterward
-        heading_after = after =~ /^> /
-        after = heading_after ? after[heading_after..-1] : ""   # If no heading, we replace all
+          index += heading.length
 
-        # Find heading, if there is one
+          before = txt[0..index]
 
-        content = Tree.siblings :string=>1   # Content we're saving
-        txt = "#{before}#{content}#{after}"
+          after = txt[index..-1]   # Part we're replacing and everything afterward
+          heading_after = after =~ /^> /
+          after = heading_after ? after[heading_after..-1] : ""   # If no heading, we replace all
 
-        DiffLog.save_diffs :patha=>file, :textb=>txt
+          # Find heading, if there is one
 
-        # return
+          content = Tree.siblings :children=>1   # Content we're saving
+          content.gsub! /^[|:] ?|^=/, ''
+          txt = "#{before}#{content}#{after}"
+
+          DiffLog.save_diffs :patha=>file, :textb=>txt
+
+        else   # If no index, it's not there, so append to the end
+
+          # =commit/Notes > create notes and headings if don't exist yet, and save by default.
+
+          content = Tree.siblings :children=>1   # Content we're saving
+          content.gsub! /^[|:] ?|^=/, ''
+          txt = "#{txt.strip}\n\n#{heading}\n#{content}"
+
+        end
+
         File.open(file, "w") { |f| f << txt }
 
-        # Revert file if it's open?
+        return "<! saved!"
 
-        View.flash "- Saved!"
-        return
       end
 
-      # navigate to heading and put cursor on line...
-      # return
+      # No dropdown (or ~navigate), so navigate to heading and put cursor on line...
+
       View.open file
       View.to_highest
       Search.forward "^#{$el.regexp_quote heading}$"
       View.recenter_top
-      Search.forward "^#{$el.regexp_quote content.sub(/^\| /, '')}"
+
+      line_orig.sub!(/^ *[|:]./, '')
+      Search.forward "^#{$el.regexp_quote line_orig}"
       Move.to_axis
-      nil
+
+      return ""
+
     end
+
 
     def self.extract_block txt, heading
       txt = txt.sub /.*^#{Regexp.escape heading}\n/m, ''   # Delete before block
       txt.sub! /^>( |$).*/m, ''   # Delete after block
-      txt  # = txt.gsub(/^.?/, "|\\1")   # Escape with pipes
+      txt
     end
 
     def self.read_block file, heading
@@ -1203,31 +1217,39 @@ module Xiki
     end
 
     def self.tab_key
+
+      path = Tree.path
+
+      if Line.at_right? &&   # Cursor is at the right, and
+        ((path.length == 1 && path[0] =~ /^\$( |$)/) ||   # A single "$ ..." path
+          (FileTree.handles?(path[-1]) && Path.split(path[-1])[-1] =~ /^\$ /))   # Or a file path ending in a "$ ..." line
+
+        return Shell.tab
+      end
+
       indent = Line.indent(Line.value 0)
       Line.sub! /^ */, indent
       Line.to_beginning
     end
 
-    @@single_letter_abbrev = {
-      "b"=>"borrow",
-      "c"=>"create",
-      "d"=>"do",
-      "de"=>"delete",
-      "e"=>"extract",
-      "er"=>"error",
-      "f"=>"fix",
-      "i"=>"implement",
-      "p"=>"pass",
-      "po"=>"port",
-      "r"=>"rename",
-      "t"=>"todo",
-      "u"=>"update",
-      }
-
     # If the string is "t" or "i", or a few others, return "todo" or "imprement" etc. respectively.
     def self.expand_if_action_abbrev txt
       @@single_letter_abbrev[txt] || txt
     end
+
+    @@single_letter_abbrev = {
+      "p"=>"",
+      "b"=>"borrow!",
+      "c"=>":",
+      "d"=>"do!",
+      "e"=>"!",
+      "er"=>"error!",
+      "f"=>"fix!",
+      "i"=>"implement!",
+      "r"=>"rename!",
+      "t"=>"todo!",
+      "u"=>"update!",
+    }
 
     def self.do_as_quote
       # Make this add or remove quotes
@@ -1252,12 +1274,11 @@ module Xiki
       # Get user input...
 
       keys = Keys.input :optional=>1, :message=>"Which note? (Type a key or two): "
-
       return open_or_insert.call "notes/" if ! keys
 
       # Get possible matches - files in ~/notes without extensions...
 
-      files = Dir.new(File.expand_path("~/notes/")).entries.grep /\A[^.]/
+      files = Dir.new(File.expand_path("~/xiki/notes/")).entries.grep /\A[^.]/
       files.map!{|o| o.sub /\..+/, ''}
 
       # Narrow down by input
@@ -1269,11 +1290,163 @@ module Xiki
       nil
     end
 
+    def self.open_tasks
+
+      prefix = Keys.prefix :clear=>1
+
+      file = Bookmarks[":t"]
+
+      FileUtils.mkdir_p File.dirname(file)
+
+      View.open file, :stay_in_bar=>1
+
+      # up+, so make heading...
+
+      if prefix == :u
+        View.to_highest
+        Notes.insert_heading :prefix=>:u
+        return
+      end
+
+    end
+
+    def self.append_to_section txt
+
+      orig = View.cursor
+      Search.forward "^>", :beginning=>true
+      View << ">>\ntxt\n"
+      View.cursor = orig
+
+    end
+
+    # Delegate to View.  Should probably move .block_positions into notes.rb.
+    def self.block_positions *args
+      View.block_positions *args
+    end
+
+    def self.next_paren_label
+      # Move forward if at beginning of line
+      Move.forward if Line.at_left? && ! View.at_top?
+      found = Search.forward "^ *[+-] [a-zA-Z +']*)\\($\\| \\)", :beginning=>true
+      return Move.backward if ! found
+      # label for the next line, so move to next line
+      Line.to_next if Line[/^ *[+-] [a-zA-Z +']*\)$/]   # '
+    end
+
+    def self.extract_paren_labels options={}
+
+      txt = ""
+
+      file, limit, indent = options[:file], options[:limit], options[:indent]
+
+      path = View.file_or_temp_file(:file=>file)
+      extract_from_next_line = nil
+      label = nil
+      IO.foreach(path, *Files.encoding_binary) do |line|
+
+        # The previous line was a blank label, ...
+
+        if label == ""
+          label = line[/\w.*/]
+          label.sub! /\/$/, ''   # No slashes at end
+          txt << "#{indent}+ #{label}\n"
+          label = nil
+          next
+        end
+
+        label = line[/^ *[+-] ([\w .+'>]*)\)( |$)/, 1]   # ' > label regex
+        next if ! label
+
+        if label == ""
+          label = line[/[.]?\w.+/]   # - ) foo, so use 1st word as label...
+          label.sub! /\/$/, '' if label   # No slashes at end
+          next label = "" if ! label
+        end
+
+        txt << "#{indent}+ #{label}\n"
+        limit -= 1
+        break if limit <= 0
+      end
+
+      txt
+
+    end
+
+
+    def self.zoom
+      ignore, left, right = View.block_positions "^>"   # Regex works with >\n lines
+      $el.narrow_to_region left, right
+    end
+
+
+    def self.chdir_when_xsh_session
+
+      # Only do something if this is a xsh session file...
+
+      return if ! View.file_name || View.dir != Bookmarks["~/xiki/sessions"]
+
+      # Change the dir to where it was originally created!
+
+      original_dir = File.read File.expand_path("~/xiki/misc/sessions_dirs/#{View.file_name}") rescue nil
+
+      if ! original_dir
+        # Todo > try to re-associate the file (via the file id thing I researched)
+        return
+      end
+
+      Shell.cd original_dir
+    end
+
+
+
+    def self.heading
+      # Move to heading if there
+      cursor = View.cursor
+      found = Search.backward "^>"
+      return if ! found
+
+      # Return heading and move back
+      line = Line.value
+      View.cursor = cursor
+      line
+    end
+
+
+    # Grabs the command out of our heading, if its format is "> foo/" or "> foo/ > something".
+    def self.command_heading options={}
+
+      heading = nil
+
+      # :check_current_line, so use current line if it's a heading...
+
+      if options[:check_current_line]
+        line = Line.value
+        heading = line if line =~ /^>/
+      end
+
+      # Grab heading from above
+
+      heading ||= self.heading
+      if heading =~ /^> (.+?)\/:?($| > )/   # Heading above, so return it
+        return $1
+      end
+
+      if heading =~ /^> =(.+?):?($| > )/   # Heading above, so return it
+        return $1
+      end
+
+      nil
+    end
+
   end
 
-  Notes.define_styles
-  Notes.init
-  Notes.keys  # Define local keys
+  # This only runs in emacs standalone mode
+
+  if $el
+    Notes.define_styles
+    Notes.init
+    Notes.keys  # Define local keys
+  end
 
   # TODO - how to turn these on conditionally?
     # What's the best approach for presentations?
