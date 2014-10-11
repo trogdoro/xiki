@@ -1,7 +1,10 @@
 module Xiki
   class OlHelper
 
-    # Finds last instance of file:line in /tmp/out_ol.notes.lines
+    # Finds last instance of file:line in /tmp/out_ol.notes.lines,
+    # and returns how far from the bottom of out_ol.notes.lines it is.
+    # OlHelper.source_to_output "/projects/foo/bah.rb", 6
+    #   17
     def self.source_to_output file, line
       target = "#{file}:#{line}\n"
 
@@ -19,13 +22,14 @@ module Xiki
       found
     end
 
+    # Expand while in ol buffer, so figure out where to navigate to
     def self.launch
       prefix = Keys.prefix :clear=>1
 
       # Get path from end
-      path = Ol.file_path #[/\/.+/]
+      path = Ol.file_path
 
-      # TODO: get total_lines - current_line
+      # Get total_lines - current_line
       distance_to_end = Line.number(View.bottom) - Line.number
 
       # Go to log.lines and get n from end
