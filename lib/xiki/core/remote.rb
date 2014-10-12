@@ -1,6 +1,3 @@
-gem 'net-ssh'
-require 'net/ssh'
-require 'net/sftp'
 require 'timeout'
 require 'xiki/core/ol'
 
@@ -84,28 +81,18 @@ module Xiki
       end
     end
 
-    def self.command root #, *path_append
-
-      the_command = root[-1][/\$ ?(.+)/, 1]
-
-      # Pull off command
-      while(root.last =~ /^\$/) do   # Remove all !foo lines from root
-        root.pop
-      end
-      root = root.join('')
+    # Handles only async?
+    def self.command root, command #, *path_append
 
       connection = self.connection root
 
       user, server, port, path = self.split_root(root)
 
-      path << "/" unless path =~ /\/$/   # Add slash to path if none there
-
       timeout(6) do
-        out = connection.exec!("cd \"#{path}\" && #{the_command}")
-        #       out = connection.exec!("cd \"#{path}\"; #{the_command}")
+        out = connection.exec!("cd \"#{path}\" && #{command}")
         out ||= ""
 
-        Tree.under out, :escape=>'| ', :no_slash=>1
+        out
       end
     end
 
@@ -114,6 +101,8 @@ module Xiki
     end
 
     def self.connection root
+      require 'net/ssh'
+      require 'net/scp'
       user, server, port, path = self.split_root root
       address = "#{user}@#{server}:#{port}"
       @@connections[address] ||= self.new_connection user, server, port.to_i
@@ -130,11 +119,10 @@ module Xiki
       end
     end
 
-
     def self.split_root root   # Splits name@server:port/path
       root = root.dup   # Append / at end if no / exists
 
-      user, server_port, path = root.match(/^(.+?)@(.+?)(\/.*?)$/)[1..3]
+      user, server_port, path = root.match(/^(.+?)@([^\/]+)(.*)/)[1..3]
 
       if(server_port =~ /(.+?):(.+)/)
         server, port = $1, $2
@@ -207,7 +195,50 @@ module Xiki
       self.dir path, file   # Delegate to Remote.dir
     end
 
+    # Handles if $... or %...
+    def self.expand_command path, options
+
+      # Not $... or %..., so we don't handle it...
+
+      path = Path.split path
+      return if path[-1] !~ /^[$%] /
+
+      shell_prompt, command = /(.).(.+)/.match(path.pop)[1..2]
+
+      # Get rid of any other nested
+      path.pop while(path.last =~ /^[$%] /)
+      path = path.join('/')
+
+      # $, so sync command...
+
+      return Remote.command path, command if shell_prompt == "$"
+
+      # %, so async command...
+
+      view_orig = View.name
+
+      Shell.to_shell_buffer path, :cd_and_wait=>true
+
+      View.insert command
+      Shell.enter
+
+      View.to_buffer view_orig if View.buffer_visible? view_orig
+
+      ""   # Handled it
+
+    end
+
     def self.expand path, options
+
+      # $ foo, so run as a shell command...
+
+      txt = self.expand_command path, options
+      if txt
+        return Tree.quote(txt) if txt.any?
+        return ""   # Async returns blank string so don't quote
+      end
+
+      # It's a dir (or file?)...
 
       dirs, files = self.remote_files_in_dir path
 
@@ -215,7 +246,7 @@ module Xiki
 
       # If empty, say so...
 
-      return "@flash/- dir is empty!" if files.empty? && dirs.empty?
+      return "<! dir is empty!" if files.empty? && dirs.empty?
 
       indent = "#{Line.indent}  "
 
@@ -232,13 +263,9 @@ module Xiki
       right = View.cursor
       View.cursor = left
       Line.to_beginning
-      Tree.search(:left=>left, :right=>right, :always_search=>true)
+      Tree.filter(:left=>left, :right=>right, :always_search=>true)
 
     end
-  end
-
-  Xiki.def("do+as+remote") do
-    Remote.save_file
   end
 
 end
