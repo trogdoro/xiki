@@ -1,4 +1,5 @@
 require 'xiki/core/tree_cursor'
+require 'json'
 
 module Xiki
   # Class for manipulating tree-like strings.  Nesting is done by 2-space
@@ -14,413 +15,75 @@ module Xiki
       "
       - api/
         > Get dir (or file) menu is nested under
-        @ p Tree.file
-        @ p Tree.file :require=>1   # Raise message if not nested under dir or file
-        @ p Tree.file :require=>'file'   # Raise message if not nested under file
-        @ p Tree.file :require=>'dir'   # Raise message if not nested under dir
+        =p Tree.file
+        =p Tree.file :require=>1   # Raise message if not nested under dir or file
+        =p Tree.file :require=>'file'   # Raise message if not nested under file
+        =p Tree.file :require=>'dir'   # Raise message if not nested under dir
 
         > Show siblings
-        @ p Tree.siblings
+        =p Tree.siblings
 
         | Include all siblings (current line is usually ommited), just
         | siblings before, or just siblings after:
-        @ p Tree.siblings :all=>1
-        @ p Tree.siblings :after=>1
-        @ p Tree.siblings :before=>1
-        @ p Tree.siblings :string=>1   # Consecutive lines, quotes removed
+        =p Tree.siblings :all=>1
+        =p Tree.siblings :after=>1
+        =p Tree.siblings :before=>1
+        =p Tree.siblings :string=>1   # Consecutive lines, quotes removed
 
         > Moving around
-        @ Tree.to_parent   # Go to parent, regardless of blanks
-        @ Tree.after_children   # Go after children of this element, crossing blank lines
-        @ Tree.before_siblings   # Jumps to first sibling, crossing blank lines, but not double-blank lines
-        @ Tree.after_siblings   # Go after last sibling, crossing blank lines, but not double-blank lines
+        =Tree.to_parent   # Go to parent, regardless of blanks
+        =Tree.after_children   # Go after children of this element, crossing blank lines
+        =Tree.before_siblings   # Jumps to first sibling, crossing blank lines, but not double-blank lines
+        =Tree.after_siblings   # Go after last sibling, crossing blank lines, but not double-blank lines
 
         > All methods
-        @ Tree.meths
+        =Tree.meths
       "
     end
 
-    def self.search options={}
 
+    def self.filter options={}   # Tree.filter / tree filter / tree search
 
-      # Deprecated: Is $xiki_no_search still used?
-      return $xiki_no_search=false if $xiki_no_search
+      $el.make_variable_buffer_local :xiki_tree_filter_options
+      $el.make_variable_buffer_local :xiki_bar_special_text
 
-
-      recursive = options[:recursive]
-      recursive_quotes = options[:recursive_quotes]
       left, right = options[:left], options[:right]
-      if ! left
-        ignore, left, right = View.block_positions "^>"
-      end
 
       # No search if there aren't more than 3 lines
-      return if((Line.number(right) - Line.number(left)) <= 1 && View.txt(left, right) !~ /\/$/) && options[:always_search].nil?
+      return if((Line.number(right) - Line.number(left)) <= 1 && View.txt(left, right) !~ /\/$/) && options[:always_search].nil? && ! options[:letter]
 
-      # Make cursor blue
-      Cursor.remember :before_file_tree
-
-      Cursor.box
-
-      error = ""
-
-      pattern = ""
-      lines = $el.buffer_substring(left, right).split "\n"
-
-      ch = nil
+      # If searching for :letter, use old behavior - it's ok to lock up the UI for now...
 
       if options[:letter]
-        ch, ch_raw = self.first_letter lines
-        return if ! ch
+        # Handles search based on one key, and usually returns
+        lines = $el.buffer_substring(left, right).split "\n"
+        ch, ch_raw = self.first_letter lines, options
+        return if ch_raw == 5   # Do nothing if C-g
+        return if ! ch   # If no char returned, .first_letter handled it
       end
 
-      Message << "filter... "
+      # Otherwise, just enable the keymap so A-Z filters...
 
-      ch, ch_raw = Keys.char if ch.nil?
+      options["filter"] = ""
+      $el.elvar.xiki_tree_filter_options = options.to_json
 
-      if ch.nil?
-        return Cursor.restore(:before_file_tree)
-      end
-
-      # While chars to search for (alpha chars etc.), narrow down list...
-
-      while ch.is_a?(String) && (ch =~ /[ -"&-)+-:<>?A-~]/ &&   # Be careful editing, due to ranges (_-_)
-          (ch_raw < 67108912 || ch_raw > 67108921) && ch_raw != 67108909) # ||   # If not control-<number> or C--
-
-        if ch == ' ' && pattern != ""   # If space and not already cleared out
-          pattern = ''
-        elsif ch_raw == 2   # C-b
-          while(Line.previous == 0)
-            next if FileTree.dir?   # Keep going if line is a dir
-            Line.to_words
-            break   # Otherwise, stop
-          end
-
-        elsif ch_raw == 6   # C-f
-          while(Line.next == 0)
-            next if FileTree.dir?   # Keep going if line is a dir
-            Line.to_words
-            break   # Otherwise, stop
-          end
-
-        else
-          if ch == "\\"  # If escape, get real char
-            ch = $el.char_to_string($el.read_char)
-          end
-          pattern << Regexp.quote(ch)
-
-          if pattern =~ /[A-Z]$/   # If upper, remove any lower
-            pattern.sub!(/^[a-z]+/, '')
-          elsif pattern =~ /[a-z]$/   # If lower, remove any upper
-            pattern.sub!(/^[A-Z]+/, '')
-          end
-
-          regexp = pattern
-
-          $el.delete_region left, right
-
-          regexp = "\\/$|#{regexp}" if recursive
-          # Always keep if "- file" or "- /dir"
-          regexp = "^ *:\\d|^ *[+-] [a-zA-Z0-9@:.\/]|#{regexp}" if recursive_quotes
-
-          regexp = /#{regexp}/i
-          lines_new = nil
-          if pattern =~ /[A-Z]$/   # If upper, search in directory
-            lines_new = search_dir_names(lines, /#{pattern}/i)
-          else
-            lines_new = lines.grep(regexp)
-          end
-          # If search not found, don't delete all
-          if lines_new.size == 0
-            error = "   ---------- no matches! ---------- "
-            View.beep
-          else
-            lines = lines_new
-          end
-
-          # Remove dirs with nothing under them
-          self.clear_empty_dirs! lines if recursive
-          self.clear_empty_dirs!(lines, :quotes=>true) if recursive_quotes
-
-          # Put back into buffer
-          View.insert(lines.join("\n") + "\n")
-          right = $el.point
-
-          # Go to first file
-          $el.goto_char left
-
-          # Move to first file
-          if recursive
-            FileTree.select_next_file
-          elsif recursive_quotes
-            Search.forward "|\\|#"
-            Line.to_beginning
-          else
-            Line.to_beginning
-          end
-        end
-
-        message = "filter... #{pattern}#{error}"
-        message << "    (space for 'and')" if pattern.present?
-        Message << message
-        ch, ch_raw = Keys.char   # => :meta_return, 13
-
-        if ch.nil?
-          return Cursor.restore(:before_file_tree)
-        end
-
-      end
-
-      Cursor.restore :before_file_tree   # Exiting, so restore cursor
-
-      # Search exited, do something based on char that exited search...
-
-      case ch
-        when "0"
-          file = self.construct_path   # Expand out ~
-          # Open in OS
-          $el.shell_command("open #{file}")
-          #     when "\C-a"
-          #       Line.to_left
-        when "\C-t"   # to+Item, starting with a character
-
-          ch = Keys.input :chars=>1
-          Move.to_axis
-          Search.forward "^ +[+-] #{ch}"#, :beginning=>1
-          Move.backward
-          CodeTree.kill_siblings
-          Keys.clear_prefix
-          Launcher.launch
-
-        when "\C-j"
-          ch = Keys.input :chars=>1
-          if ch == 't'   # just+time
-            self.to_parent
-            self.kill_under
-            FileTree.dir :date_sort=>true
-          elsif ch == 's'   # just+size
-            self.to_parent
-            self.kill_under
-            FileTree.dir :size_sort=>true
-          elsif ch == 'n'   # just+name
-            self.to_parent
-            self.kill_under
-            FileTree.dir
-          elsif ch == 'a'   # just+all > show's all recursively
-
-            # If a quote, insert lines indented lower
-            if Line.matches(/\|/)
-              CodeTree.kill_siblings
-              self.enter_under
-            elsif FileTree.dir?  # A Dir, so do recursive search
-              $el.delete_region(Line.left(2), right)
-              FileTree.dir_recursive
-            else   # A file, so enter lines
-              $el.delete_region(Line.left(2), right)
-              FileTree.enter_lines(//)  # Insert all lines
-            end
-          end
-        when :return   # Step in one level
-
-          Keys.clear_prefix
-          Launcher.launch
-
-        when :control_return, "\C-m", :meta_return, :control_period
-          Keys.clear_prefix
-          Launcher.launch
-
-
-
-          #         #
-          #         # Temporarily make Command+Return do old launch (until all menus are ported over from the unified refactor)
-          #         #
-          #       when :meta_return
-          #         Keys.clear_prefix
-          #         Launcher.launch_preunified
-          #       when :control_period
-          #         Keys.clear_prefix
-          #         Launcher.launch
-
-          #       when :meta_return, :control_period
-          #         Keys.clear_prefix
-          #         Launcher.launch
-
-
-
-        when "\t"   # If tab, hide siblings and go in
-          $el.delete_region(Line.left(2), right)
-          Keys.clear_prefix
-          Launcher.launch
-
-        when :backspace#, :control_slash   # Collapse this item and keep searching
-          self.to_parent
-          self.kill_under
-          self.search :left=>Line.left, :right=>Line.left(2)
-
-        when :control_backslash
-          Line.<< "/"
-          Launcher.launch
-
-        when :control_slash   # Move this line onto the end of its parent, and expand
-          line = Line.txt
-
-          # Don't kill siblings if "<<" or "<=" line
-
-          if line =~ /^<+=? /
-            Keys.clear_prefix
-            Launcher.launch
-            return
-          end
-
-          # If CodeTree search
-          if CodeTree.handles?
-            # Kill others
-            View.delete(Line.left(2), right)
-
-            if Line.without_label =~ /^\./   # If just a method
-              # Back up to first . on last line
-              Search.forward "\\."
-              right = View.cursor
-              Line.previous
-              Search.forward "\\."
-            else   # Else, just delete previous line
-              right = View.cursor
-              Line.previous
-              Line.to_beginning
-            end
-            View.delete(View.cursor, right)
-            return Launcher.launch
-          end
-
-          $el.delete_region(Line.left(2), right)  # Delete other files
-          $el.delete_horizontal_space
-          $el.delete_backward_char 1
-
-          # delete -|+ if there
-          if View.txt(View.cursor, Line.right) =~ /^[+-] /
-            $el.delete_char 2
-          end
-
-          # For now, always launch when C-/
-          Launcher.launch   # if line =~ /\/$/   # Only launch if it can expand
-
-        when "#"   # Show ##.../ search
-          self.stop_and_insert left, right, pattern
-          View.insert self.indent("- ##/", 0)
-          View.to(Line.right - 1)
-
-        when "*"   # Show **.../ search
-          self.stop_and_insert left, right, pattern
-          View.insert self.indent("- **/", 0)
-          View.to(Line.right - 1)
-
-        when "$"   # Insert '$ ' for command
-          self.stop_and_insert left, right, pattern
-          View.insert self.indent("$ ", 0)
-
-        when "%"   # Insert '!' for command
-          self.stop_and_insert left, right, pattern
-          View.insert self.indent("% ", 0)
-
-        when "-"   # Insert '-' for bullet
-          self.stop_and_insert left, right, pattern
-          View.insert self.indent("- ", 0)
-
-        when "@"   # Insert '@' for menus
-          self.stop_and_insert left, right, pattern
-          View.insert self.indent("@", 0)
-
-        when "="   # Insert '=' for menus
-          self.stop_and_insert left, right, pattern
-          View.insert self.indent("=", 0)
-
-        when "\C-e"
-          return Line.to_right
-
-        when "\C-a"
-          return Line.to_left
-
-        when "\C-o"   # When 9 or C-o, show methods, or outline
-          $el.delete_region(Line.left(2), right)   # Delete other files
-          return FileTree.drill_quotes_or_enter_lines self.construct_path.sub(/\|.*/, ''), Line.=~(/^ *\|/)
-        when "1".."9"   # If number, go to nth
-          #       if ch == "7" and ! View.bar?   # Open in bar
-          #         $el.delete_region(Line.left(2), right)  # Delete other files
-          #         View.bar
-          #         Keys.clear_prefix
-          #         return Launcher.launch   # Expand or open
-          #       end
-
-          Keys.clear_prefix
-          n = ch.to_i
-
-          # Pull whole string out
-          lines = View.txt(left, right).split "\n"
-          View.delete left, right
-          if recursive
-
-            # Recursive is different because we only count children
-
-            filtered = []
-            file_count = 0
-            # Replace out lines that don't match (and aren't dirs)
-            lines.each_with_index do |l, i|
-              is_dir = (l =~ /\/$/)
-              file_count += 1 unless is_dir
-              # If dir or nth, keep
-              filtered << l if (is_dir or (file_count == n))
-            end
-
-            # Remove dirs with nothing under them
-            self.clear_empty_dirs! filtered
-
-            # Put back into buffer
-            View.insert(filtered.join("\n") + "\n")
-            right = $el.point
-
-            # Go to first file and go back into search
-            $el.goto_char left
-            FileTree.select_next_file
-
-          else
-            nth = lines[n - 1]
-            View.insert "#{nth}\n"
-            $el.previous_line
-          end
-
-          Launcher.launch
-
-        when "\C-s"
-          $el.isearch_forward
-
-        when "\C-r"
-          $el.isearch_backward
-
-        when ";"   # Replace parent
-          Tree.collapse :replace_parent=>1
-          return Launcher.launch
-
-        when "\a"   # Typed C-g
-          View.beep
-        when :left
-          Move.backward
-        when :right
-          Move.forward
-        when :up
-          $el.previous_line
-        when :down
-          $el.next_line
-
-      else
-        $el.command_execute ch
-      end
+      $el.elvar.xiki_bar_special_text = "A-Z Filter    Ctrl+Q Quit    (or arrow keys to proceed)"
     end
 
+    # Finish the search and run the command according to the char that was typed
+    def self.search_finished
+      $el.elvar.xiki_bar_special_text = nil
+    end
 
-    def self.first_letter lines
+    # Called by Tree.filter
+    # Highlights 1st (or close to it) for each line.
+    # Then prompts for key.
+    def self.first_letter lines, options={}
       letters = {}
       lines.each_with_index do |l, i|
-        found = false
+        next if l =~ /^ *[|>]/   # Don't underline if |... or >... lines
+        next if options[:omit_slashes] && l =~ /\/$/   # Don't underline foo/, if :=>1
+
         l.length.times do |j|
           letter = l[j].chr.downcase
 
@@ -432,48 +95,85 @@ module Xiki
         end
       end
 
-      self.highlight_tree_keys letters, Line.number
+      self.highlight_tree_letters lines, letters, Line.number
 
-      # Get input
-      Message << "type 1st letter... "
+      $el.make_variable_buffer_local :xiki_bar_special_text
+      $el.elvar.xiki_bar_special_text = "A-Z Select    C+\\ Back"
+
+      # Get a character as input...
+
       ch, ch_raw = Keys.char
-      letterized = $el.char_to_string(Keys.remove_control ch_raw).to_s
+      letterized = $el.char_to_string(Keys.remove_control ch_raw).to_s if ch_raw
+
+      # They typed a letter, so process it...
+
       Message << ""   # Clear it so it doesn't stay around after
       Overlay.delete_all
 
+      if ch == :control_backslash
+        ControlTab.go
+        return self.search_finished
+      end
+
       if ch_raw == 7   # C-g
-        return Cursor.restore :before_file_tree
+        return self.search_finished
       end
 
       if letters[letterized]
-        Cursor.restore :before_file_tree
+        self.search_finished
         Line.next letters[letterized][0] - 1
-        CodeTree.kill_siblings
-        Launcher.launch
+        CodeTree.kill_siblings :cross_blank_lines=>1 #, :must_match=>"~ |--"
+
+        Launcher.launch :was_letter=>1
         return nil
       end
 
       # If was a valid letter but no match
-      if ch =~ /^[a-z0-9]$/i
-        return [ch, ch_raw]   # We didn't do anything, so continue on
+      if ch =~ /^[,a-z0-9]$/i
+
+        # Optionally pass letter as menu item when not found
+        if options[:letter_when_not_found] && ch != ","
+          indent = Line.indent
+          bounds = Tree.sibling_bounds :cross_blank_lines=>1
+          View.delete bounds[0], bounds[3]
+          View << "#{indent}#{ch}"
+          Launcher.launch :was_letter=>1, :letter_when_not_found=>1
+          return nil
+        end
+
+        return [ch, ch_raw]   # We didn't do anything, so continue on in Tree.filter
       end
 
-      Cursor.restore :before_file_tree
+      self.search_finished
       $el.command_execute ch
 
       nil   # We handled it
     end
 
-    def self.highlight_tree_keys letters, line
 
+    def self.highlight_tree_letters lines, letters, line
+
+      cursor = Line.left
+      before_moved = 0
       letters.each do |k, v|
-        View.line = line + v[0] - 1
-        cursor = View.cursor
-        Overlay.face :tree_keys, :left=>cursor-1+v[1], :right=>cursor+v[1]
+
+        # Move cursor up past each line not incremented yet
+        while(before_moved < v[0]-1)
+          cursor += lines[before_moved].length+1
+          before_moved += 1
+        end
+
+        current = lines[v[0]-1]
+
+        slash = current =~ /\/$/
+        indent = current[/^[ ~+-]+/].length
+
+        left = cursor+v[1]-1
+
+        face = slash ? :tree_letters2 : :tree_letters
+        Overlay.face face, :left=>left, :right=>left+1
+
       end
-
-      View.line = line
-
     end
 
 
@@ -526,16 +226,24 @@ module Xiki
     end
 
 
+    # Pretty much returns regex for dirs, or dirs and files
+    def self.regex_for_items_to_keep options={}
+      regex = options[:quotes] || options[:recursive_quotes] ?
+        /^ +[+-] [^#|:]+$|^ *:\d+$|^ *=/ :
+        /^[^|:]+\/$/
+
+    end
+
+
     def self.clear_empty_dirs! lines, options={}
-      regex = options[:quotes] ?
-        /^ +[+-] [^#|]+$|^ *:\d+$/ :
-        /^[^|]+\/$/
+
+      regex = self.regex_for_items_to_keep options
 
       lines = lines.split("\n") if lines.is_a?(String)
 
       file_indent = 0
       i = lines.length
-      while( i > 0)
+      while(i > 0)
         i -= 1
         l = lines[i]
 
@@ -586,11 +294,10 @@ module Xiki
     def self.after_siblings # options={}
       indent = Line.indent.size
 
-      return if indent == 0
-
       indent -= 2
 
       pattern = "\\(\n\n\n\\|^ \\{0,#{indent}\\}[^ \n]\\)"   # Find line with less indent
+      pattern = "\n\n\n" if indent == -2   # If at axis
 
       Search.forward pattern, :go_anyway=>1
       Line.to_left
@@ -620,20 +327,17 @@ module Xiki
 
       return if txt.nil?
 
-      txt = TextUtil.unindent(txt) if txt =~ /\A[ \n]/
+      txt = TextUtil.unindent(txt) if txt =~ /\A[ \n]/ && ! options[:not_under]
 
       escape = options[:escape] || ''
       txt = txt.gsub(/^/, escape)
-      txt.gsub!(/^\| $/, '|')
+      txt.gsub!(/^([|:]) $/, "\\1")   # Remove single trailing spaces
 
       # Add linebreak at end if none
       txt = "#{txt}\n" unless txt =~ /\n/
 
-      # Insert linebreak if at end of file
-
-      txt.gsub! /^  /, '' if options[:before] || options[:after]   # Move back to left
-
       self.output_and_search txt, options
+
       nil
     end
 
@@ -645,9 +349,8 @@ module Xiki
       # For now, don't handle if at root
 
       regex = "\\(\n\n\n\\|^#{indent}[^\t \n]\\)"
+      regex = "\n\n\n" if ! indent   # If at axis
       Search.backward regex, :go_anyway=>true
-
-      # Move.to_next_paragraph(:no_skip=>1)
       hit_two_blanks = View.cursor == Line.right
 
       return Move.to_next_paragraph(:no_skip=>1) if hit_two_blanks || Line.value(2).blank?
@@ -660,6 +363,8 @@ module Xiki
     def self.to_parent prefix=nil #, options={}
 
       prefix ||= Keys.prefix :clear=>true
+
+      Move.to_axis
 
       # U means go to previous line at margin
       if prefix == :u
@@ -676,7 +381,7 @@ module Xiki
 
         found = $el.search_backward_regexp "^#{indent}[^\t \n]", nil, true
 
-        # If failed, loop and search again until we get to root
+        # If none indented exacty 2 less, search for one indented less
         while ! found && indent.any?
           indent.sub! "  ", ""
           found = $el.search_backward_regexp "^#{indent}[^\t \n]", nil, true
@@ -707,18 +412,17 @@ module Xiki
     #
     # Examples:
     # a/
-    #   @b/
+    #   =b/
     #     c/
     #       p Tree.construct_path
     #         => "b/c/p Tree.construct_path"
     #       p Tree.construct_path :list=>1
     #         => ["b/", "c/", "p Tree.construct_path :list=>1"]
     #       p Tree.construct_path :all=>1, :slashes=>1
-    #         => "a/@b/c/p Tree.construct_path :all=>1"
+    #         => "a/=b/c/p Tree.construct_path :all=>1"
 
 
     def self.construct_path options={}
-
       # 2013-03-20 TODO: rewrite this to separate out
       # - 1) Raw retrieval of each line into list
       #   - probably always get whole path (never stop upon @... lines)
@@ -733,14 +437,22 @@ module Xiki
 
       # Until we're at a root...
 
-      line = Line.value
+      line_orig = line = Line.value
 
       clean = self.clean_path line, options
-      while(line =~ /^ / && (options[:all] || clean !~ /^@/))
+      while(line =~ /^ / && (options[:all] || clean !~ /^=/))
         line =~ /^  ( *)(.*)/
         spaces, item = $1, $2
         item = clean unless options[:labels]   # Removes labels and maybe ## and **
         if item != ""   # If item wasn't completely cleaned away
+
+          # Make it grab siblings if |... (and quote?)...
+
+          if item =~ /^\|/
+            siblings = Tree.siblings :quotes=>"|", :string=>1
+            item = Path.escape siblings
+          end
+
           path.unshift item  # Add item to list
         end
 
@@ -761,9 +473,31 @@ module Xiki
 
       # Add root of tree
       root = line.sub(/^ +/, '')
+      root_has_equals = root =~ /^=/
       root = self.clean_path(root, options) unless options[:labels]
-      root.slice! /^@ ?/
+      root.slice! /^= ?/
       path.unshift root
+
+
+      # Prepend command heading
+      # - if :all, put =... back on root if it was there
+
+      # Only add heading if :all or no "=" at root
+      if options[:all] || ! root_has_equals
+
+        cursor_on_heading = line_orig =~ /^>/
+
+        if command_heading = Notes.command_heading(:check_current_line=>(cursor_on_heading))
+          root.sub! /^/, "=" if root_has_equals   # Add "=" back on root if was there
+
+          # If blank path, replace, otherwise prepend to list
+          if path == [""] || cursor_on_heading
+            path[0].replace command_heading
+          else
+            path.unshift command_heading
+          end
+        end
+      end
 
       # At this point, items are broken up by line...
 
@@ -772,13 +506,16 @@ module Xiki
       } if options[:slashes]
 
       View.cursor = orig
-      if options[:indented]
-        indentify_path path
-      elsif options[:list]
-        path
-      else
-        path.join
-      end
+      path =
+        if options[:indented]
+          indentify_path path
+        elsif options[:list]
+          path
+        else
+          path.join
+        end
+
+      path
 
     rescue Exception=>e
       View.cursor = orig
@@ -810,7 +547,7 @@ module Xiki
         return
       end
 
-      while(line =~ /^\s/ && line !~ /^ *([+-] )?@/) do
+      while(line =~ /^\s/ && line !~ /^ *([+-] )?=/) do
         Tree.to_parent
         line = Line.value
       end
@@ -829,11 +566,12 @@ module Xiki
       # Ignore "##"
       path.sub!(/^([^|\n-]*)##.+/, "\\1") unless options[:keep_hashes]
       # Ignore "**"
-      path.sub!(/^([^|\n-]*)\*\*.+/, "\\1") unless options[:keep_hashes]
+      path.sub!(/^([^|\n*-]*)\*\*.+/, "\\1") unless options[:keep_hashes]
       path
     end
 
     def self.toggle_plus_and_minus
+
       orig = Location.new
       l = Line.value 1, :delete => true
       case l[/^\s*([+-])/, 1]
@@ -903,14 +641,69 @@ module Xiki
     end
 
     # Add "| " to the beginnig of each line.
+    #
+    # Tree.quote "a\nb\n"
+    # Tree.quote "a\nb\n", :unquote_menus=>1
+    def self.pipe txt, options={}
+      self.quote txt, options.merge(:char=>"|")
+    end
+
+    def self.quote! txt, options={}
+      txt.replace self.quote(txt, options)
+    end
+
     def self.quote txt, options={}
-      char = options[:char] || "|"
+
+      txt = txt.inspect if ! txt.is_a?(String)
+
+      # Change "| foo/" to "=foo/" > add equals char for certain patterns
+      return self.prepend_equals_for_some_patterns(txt, options) if options[:unquote_menus]
+
+      char = options[:char] || ":"
       if options[:leave_headings]
         return TextUtil.unindent(txt).gsub(/^([^>])/, "#{char} \\1").gsub(/^#{Regexp.quote char} $/, char)
       end
+
       txt = TextUtil.unindent(txt).gsub(/^/, "#{char} ").gsub(/^#{Regexp.quote char} $/, char)
       txt = txt.gsub(/^/, options[:indent]) if options[:indent]
       txt
+    end
+
+    # Adds :... quotes before each line, except for menu-ish
+    # lines and lines indented under them.
+    def self.prepend_equals_for_some_patterns txt, options={}
+      txt = txt.split "\n", -1
+
+      menuish_flag = false
+
+      char = options[:char] || ":"
+
+      txt.each do |line|
+
+        # If no indent, reset flag
+        menuish_flag = false if line !~ /^ /
+
+        # Treat double-blank lines as a barrier? > defeats the purpose
+        # Update so it sets 'menuish_flag = false' > if 2nd consecutive blank line!
+
+        # If this line looks menu-ish, enable flag
+
+        if line =~ /^\// ||
+            line =~ /^\w[\w_ -]*\// ||
+            line =~ /^https?:\/\// ||
+            line =~ /^(~|[%$] |\$\w+\/)/ ||
+            line =~ /^\^/
+          line.sub! /^/, '='
+          menuish_flag = true
+        end
+
+        next if menuish_flag
+
+        line.sub!(/^/, line == "" ? "#{char}" : "#{char} ")
+
+      end
+
+      txt.join "\n"
     end
 
     def self.colons txt, options={}
@@ -931,50 +724,26 @@ module Xiki
       end
 
       Line.to_words
-      # Do a search
 
       return if options[:no_search]
 
-      Tree.search(:left=>left, :right=>right)
+      Tree.filter(:left=>left, :right=>right)
     end
 
     def self.<< txt, options={}
       self.under txt.to_s, options
     end
 
-    # Inserts indented underneath.
-    # Not sure why it's calling View.under instead of Tree.under
-    def self.after txt
-      # Is anything calling this - maybe make them just call Tree.under.
-      # View.under does a couple lines, then calls Tree.under.
-      View.under txt, :after=>1
-    end
 
-    # Returns group of lines close to current line that are indented at the same level.
-    # The bounds are determined by any lines indented *less* than the current line (including
-    # blank lines).  In this context, lines having only spaces are not considered blank.
-    # Any lines indented *more* than the current line won't affect the bounds, but will be
-    # filtered out.
-    #
-    # Fake parent/
-      # p Tree.siblings              # Includes current line
-      # p Tree.siblings :string=>1   # As string, removing |... from quoted lines for some reason
-      # p Tree.siblings :children=>1          # Includes children (returns string)
-      # p Tree.siblings :cross_blank_lines=>1   # Includes current line, and crosses single blank lines (returns string)
-      # p Tree.siblings :quotes=>1, :string=>1  # Consecutive |... lines as string, with pipes removed
-      # p Tree.siblings :quotes=>":", :string=>1  # Consecutive :... lines as string, with pipes removed
-      # p Tree.siblings :exclude_current=>1   # Doesn't include current line
     def self.siblings options={}
 
-      return self.siblings.join("\n").gsub(/^ *\| ?/, '')+"\n" if options[:string] && ! options[:cross_blank_lines] && ! options[:before] && ! options[:after] && ! options[:quotes]
+      return self.siblings.join("\n").gsub(/^ *[|:] ?/, '')+"\n" if options[:string] && ! options[:cross_blank_lines] && ! options[:before] && ! options[:after] && ! options[:quotes]
 
-      if options[:cross_blank_lines]
-        left1, right2 = self.sibling_bounds :cross_blank_lines=>1
-      else
-        left1, right1, left2, right2 = self.sibling_bounds
-      end
+      left1, right1, left2, right2 = self.sibling_bounds options
 
-      quote = options[:quotes].is_a?(String) ? options[:quotes] : '|'
+      quote = options[:quotes].is_a?(String) ? options[:quotes] : nil
+      quote ||= Line[/^ *([|:])/, 1] || '|'
+
       quote = Regexp.quote quote
 
       # Combine and process siblings
@@ -1032,22 +801,36 @@ module Xiki
       siblings
     end
 
-    #
     # Gets position before and after sibling bounds.
     #
     # Tree.sibling_bounds   # Returns: start, current line start, current line end, end
     # Tree.sibling_bounds :cross_blank_lines=>1   # Returns: top, bottom
-    #
+    # Tree.sibling_bounds :must_match=>/^ *\*/   # Returns: top, bottom (only includes siblings that match regex, and their children)
     def self.sibling_bounds options={}
       if options[:cross_blank_lines]   # If :cross_blank_lines, just jump to parent, then use .after_children
-        orig = Location.new
-        Tree.before_siblings
-        left = Line.left
-        Tree.after_siblings
-        right = View.cursor
+        indent = Line.indent
 
-        orig.go
-        return [left, right]
+        coords = [0, Line.left, Line.right+1, 0]   # left, right1, left2, right]
+        cursor = View.cursor
+        self.before_siblings
+        coords[0] = Line.left
+
+        View.cursor = cursor
+        self.after_siblings
+        coords[3] = View.cursor
+
+        txt = View.txt coords[2], coords[3]
+        x = Xik.new txt, :leave_indent=>1
+
+        while x.indent != indent && ! x.at_last_line?
+          x.next
+        end
+        coords[2] += x.cursor-1
+        self.apply_must_match options, coords
+
+        View.cursor = cursor
+
+        return coords
       end
 
       indent_size = Line.indent.size   # Get indent
@@ -1080,12 +863,15 @@ module Xiki
       orig.go
 
       # If :quotes, cut off lines above and below that aren't quoted
-      if options[:quotes]
-        quote = options[:quotes].is_a?(String) ? options[:quotes] : '|'
+      if options[:quotes]# || options[:consecutive]
+
+        quote = options[:quotes].is_a?(String) ? options[:quotes] : ':'
+        quote = Regexp.quote quote
 
         # Limit til until 1st unquoted line below
         below = View.txt left2, right2
-        quote_end = below =~ /^ *[^ #{Regexp.quote quote}]/
+        quote_end = below =~ /^ *[^ #{quote}]/
+
         right2 = left2 + quote_end if quote_end
 
         # Limit til until 1st unquoted line above
@@ -1095,39 +881,66 @@ module Xiki
         above = above.split("\n")
         match_size = 0
         above.reverse.each do |o|
-          break if o !~ /^ *#{Regexp.quote quote}/
+          break if o !~ /^ *#{quote}/
           match_size += o.length+1
         end
         left1 = right1 - match_size
       end
 
-      [left1, right1, left2, right2]
+      coords = [left1, right1, left2, right2]
+      self.apply_must_match options, coords
+
+      coords
     end
 
-    # Call Tree.search with arguments appropriate to whether "output" string
+    # :must_match=>..., so subtract non-matching off from beginning and end...!
+    def self.apply_must_match options, coords
+
+      must_match = options[:must_match]   # If :cross_blank_lines, just jump to parent, then use .after_children
+      return if ! must_match
+
+      # Move left of window up to the 1st appropriate sibling...
+
+      txt = View.txt coords[0], coords[1]
+      first_matching_before = self.matching_siblings_start_index(txt, must_match)
+      coords[0] += (first_matching_before || txt.length)   # If none found, move past all
+
+      # Move right of window back to the 1st inappropriate sibling...
+
+      txt = View.txt coords[2], coords[3]
+      first_nonmatching_after = self.matching_siblings_end_index(txt, must_match)
+      coords[3] = coords[2] + first_nonmatching_after if first_nonmatching_after
+
+    end
+
+
+    # Call Tree.filter with arguments appropriate to whether "output" string
     # has nested children and/or quated children.
-    def self.search_appropriately left, right, output, options={}
+    def self.filter_appropriately left, right, txt, options={}
+      txt
 
       View.cursor = left unless options[:line_found]
-      Line.to_words
 
-      # Determine how to search based on output!
+      # Determine how to search based on txt!
 
       options.merge! :left=>left, :right=>right
 
-      root_indent = output[/\A */]
-      if output =~ /^#{root_indent}  /   # If any indenting
-        if output =~ /^  +\|/
-          Search.forward "^ +\\(|\\|- ##\\)", :beginning=>true
+      root_indent = txt[/\A */]
+
+      if txt =~ /^#{root_indent}  /   # If any indenting
+        if txt =~ /^  +[|:]/
+          Search.forward "^ +\\([|:]\\|- ##\\)", :beginning=>true
           Line.to_beginning
-          options[:recursive_quotes] = true
+          options[:recursive_quotes] = 1
         else
-          FileTree.select_next_file
-          options[:recursive] = true
+          FileTree.select_next_file if txt =~ /[^\n\/]$/
+          options[:recursive] = 1
         end
-        Tree.search options
+        Line.to_words
+        Tree.filter options
       else
-        Tree.search options
+        Line.to_words
+        Tree.filter options
       end
     end
 
@@ -1136,7 +949,10 @@ module Xiki
     def self.traverse tree, options={}, &block
       branch, line_indent, indent = [], 0, 0
 
-      tree = tree.split("\n")
+      if tree.is_a? String
+        tree = tree.split("\n", -1)
+      end
+
       tree.each_with_index do |line, i|
 
         # If empty line use last non-blank line's indent
@@ -1148,7 +964,7 @@ module Xiki
           raise "Blank lines in trees between parents and children, or 2 consecutive blank lines, aren't allowed." if line_indent > 0 && line_indent > last_indent
         else
           line_indent = line[/^ */].length / 2
-          line.sub! /^ +/, ''
+          line = line.sub /^ +/, ''
         end
 
         branch[line_indent] = line
@@ -1166,7 +982,8 @@ module Xiki
         flattened = branch_dup.dup
 
         flattened.map!{|o| o ? o.sub(/^[+-] /, '') : nil } if ! options[:no_bullets]   # Might have side-effects if done twice
-        flattened = flattened.join('')#.gsub(/[.:]/, '')   # Why were :'s removed??
+
+        flattened = Tree.join_path flattened
 
         block.call [branch_dup, flattened, i+1]
 
@@ -1438,12 +1255,7 @@ module Xiki
       result
     end
 
-    # Returns self and all siblings (without children).
-    def self.unset_env_vars
-      ENV['no_slash'] = nil
-    end
-
-    def self.output_and_search block_or_string, options={}
+    def self.output_and_search txt, options={}
 
       # TODO: passing blocks is deprecated, so can remove this
       if $el
@@ -1453,31 +1265,8 @@ module Xiki
       end
       error_happened = nil
 
-      # TODO: deprecated, right?
-      self.unset_env_vars
-
-      # If a block was passed, eval it...
-
-      output =
-        if block_or_string.is_a? String
-          block_or_string
-        else   # Must be a proc
-
-          Ol["Deprecated, so remove this soon?!"]
-          # TODO Is passing in a block deprecated?
-
-          begin
-            line = options[:line]
-            block_or_string.call line
-          rescue Exception=>e
-            message = e.message
-            error_happened = true
-            CodeTree.draw_exception e, Code.to_ruby(block_or_string)
-          end
-        end
-
       # Might be an array or hash?
-      return if !output.respond_to?(:blank?) || output.blank?
+      return if !txt.respond_to?(:blank?) || txt.blank?
 
       # TODO: move some of this stuff into the else block above? (block_or_string is proc)
 
@@ -1488,39 +1277,37 @@ module Xiki
         orig.go   # Go back to where we were before running code
       end
 
-      output = output.dup   # So nothing below alters the string
+      txt = txt.dup   # So nothing below alters the string
+
+      not_under = options[:not_under] || Line.blank?
 
       # Move what they printed over to left margin initally, in case they haven't
-      output = TextUtil.unindent(output) if output =~ /\A[ \n]/ && !options[:not_under]
-      output = CodeTree.returned_to_s output   # Turn bullets or strings into arrays
+      txt = TextUtil.unindent(txt) if txt =~ /\A[ \n]/ && !not_under
+      txt = CodeTree.returned_to_s txt   # Turn bullets or strings into arrays
 
-      output = "#{output.sub /\n+\z/, ''}\n"   # Make only one trailing linebreak
+      txt = "#{txt.sub /\n+\z/, ''}\n"   # Make only one trailing linebreak
 
-      return output if options[:just_return]
+      return txt if options[:just_return]
 
       # Add slash to end of line if not suppressed, and line isn't a quote
-      if !options[:no_slash] && ! ENV['no_slash'] && Line !~ /(^ *\||\/$)/
+      if !options[:no_slash] && !not_under && Line !~ /(^ *\||\/$)/
         Line << "/"
       end
 
       # Presumes cursor is at the parent node, so git indent and move to after...
-
-      indent = "#{Line.indent}  "
-      indent = "" if options[:not_under]
+      # $el.message "=3"
       Line.to_left
-
-      if options[:not_under]
-        # Do nothing
+      if not_under
+        indent = ""
       else
+        indent = "#{Line.indent}  "
         Line.next
       end
 
-
       left = View.cursor
+      txt.gsub! /^./, "#{indent}\\0"   # Add indent, except for blank lines
 
-      output.gsub! /^./, "#{indent}\\0"   # Add indent, except for blank lines
-
-      View.<< output, :utf8=>1
+      View.<< txt, :utf8=>1
       right = View.cursor
 
       orig.go   # Move cursor back  <-- why doing this?
@@ -1529,32 +1316,50 @@ module Xiki
 
       # Move to :line_found if any
       if options[:line_found] && options[:line_found] > 0
-        Line.previous if options[:not_under]   # Back up one if not inserting under
+        Line.previous if not_under   # Back up one if not inserting under
 
         Line.next(options[:line_found])
-        Line.to_beginning
+        Line.to_words
       end
 
-      if !error_happened && !$xiki_no_search &&!options[:no_search] && !buffer_changed && !moved
-        Tree.search_appropriately left, right, output, options
+      if !error_happened && !$xiki_no_search && !options[:no_search] && !options[:launch] && !buffer_changed && !moved
+        self.filter_appropriately left, right, txt, options
       elsif ! options[:line_found]
-        options[:not_under] ?
+        not_under ?
           Line.to_beginning :
           Line.to_beginning(:down=>1)
       end
-      output
+
+      Launcher.launch if options[:launch]
+
+      txt
     end
 
-    # Port to use Tree.path_unified
+    # Port to use Tree.path
     def self.closest_dir path=nil
-      path ||= Tree.path_unified
+      path ||= self.path
 
       dir = path.reverse.find{|o| FileTree.matches_root_pattern? o}
 
       dir = Bookmarks[dir]
       return nil if dir.nil?
+
+      trailing_slash = dir =~ /\/\z/
       dir = File.expand_path dir
-      FileTree.extract_filters! dir
+      FileTree.extract_filters! dir   # Remove ##.../ parts of path
+
+      # Remove $... parts of dir, and after
+
+      dir = Path.split dir
+      if found = dir.index{|o| o =~ /^[$%&]/}
+        dir = dir[0..found-1]
+      end
+      dir = Path.join dir
+
+      # Add slash back if gone
+
+      dir << "/" if trailing_slash
+
       dir
     end
 
@@ -1570,6 +1375,7 @@ module Xiki
     #
     # Tree.children "a\n  b\n  c", "a"
     def self.children tree=nil, target=nil, options={}
+      raise "Target should be a string or array, not a #{target.class}" if target && ! target.is_a?(String) && ! target.is_a?(Array)
 
       exclamations_normal = options[:exclamations_normal]
 
@@ -1578,11 +1384,17 @@ module Xiki
 
       include_subitems = options[:include_subitems]   # Include sub-items for all children
 
-      return self.children_at_cursor(tree) if tree.nil? || tree.is_a?(Hash)   # tree is actually options
+      if tree.nil? || tree.is_a?(Hash)   # tree is actually options
+        return self.children_at_cursor(tree)
+      end
 
       target = target.join("/") if target.is_a? Array
       target = "" if target == nil || target == "/"   # Must be at root if nil
-      tree = TextUtil.unindent tree
+
+      if tree.is_a? String
+        tree = TextUtil.unindent tree
+        tree = tree.sub! /\n\z/, ''   # The below treats it as though there's a linebreak, so remove last one??
+      end
 
       target.sub!(/^\//, '')
       target.sub!(/\/$/, '')
@@ -1618,14 +1430,14 @@ module Xiki
 
           next if target_match != :shorter && target_match != :same   # If we found where patch matched
 
-          # Found, so start collecting items as output...
+          # Found, so start collecting subsequent lines as output...
 
           options[:children_line] = i
           found = branch.length - 1   # Found, remember indent
 
         else
 
-        # Match was found and we're collecting items as output...
+        # Match was found and we're collecting more lines as output...
 
           current_indent = branch.length - 1
           # If found and still indented one deeper
@@ -1636,7 +1448,10 @@ module Xiki
             next result << "\n" if blank
 
             item = branch[-1]
+
+            # Let menus do it themselves
             item.sub!(/^- /, '+ ') if item =~ /\/$/
+
             item.sub!(/^([<+-][<=]* )?\./, "\\1")
             next if item =~ /^[+-] \*\/$/   # Skip asterixes
 
@@ -1647,8 +1462,13 @@ module Xiki
 
             @@under_preexpand = false if one_deeper
 
-            # Pre-expand if @... or doesn't end in slash
-            @@under_preexpand = true if one_deeper && (item =~ /^([+-] )?@/ || item !~ /\/$/)
+            # Remember to gather nested items in output in some cases...
+            # Nested under
+            #   =foo/
+            #   - no slash and no colon at beginning
+
+            # Pre-expand if =... or doesn't end in slash
+            @@under_preexpand = true if one_deeper && (item =~ /^([+-] )?=/ || (item !~ /\/$/ && item !~ /\A[+~] / && item !~ /^ *[|:]/))
 
             result << "#{item}\n"  # Output
 
@@ -1672,12 +1492,28 @@ module Xiki
       result.empty? ? nil : result
     end
 
+    # Returns tre at cursor.
+    def self.at_cursor options={}
+      orig = View.cursor
+
+      Tree.to_root :highest=>1 if Line.indent.any?
+      left = Line.left
+      Tree.after_children
+      right = View.cursor
+
+      View.cursor = orig
+      txt = View.txt left, right
+
+      return [left, right] if options[:range]
+
+      txt
+    end
+
     #
     # Returns children indented underneath.
     #
-    # Tree.children.inspect
-    # Tree.children(:string=>1).inspect
-    # Tree.children(:cross_blank_lines=>1).inspect
+    # Tree.children_at_cursor(:string=>1).inspect
+    # Tree.children_at_cursor(:cross_blank_lines=>1).inspect
       # a
         # ab
       # b
@@ -1690,7 +1526,6 @@ module Xiki
       child = self.child
       return nil if child.nil?   # Return if no child
 
-
       # If :cross_blank_lines, use Tree.after_children to find end
       if options[:cross_blank_lines]
         orig = Location.new
@@ -1699,33 +1534,19 @@ module Xiki
         Tree.after_children
         right = Line.left
         orig.go
-        # return
         return View.txt left, right
       end
 
       indent = Line.indent(Line.value(2)).size
 
-      # :as_hash isn't used anywhere
-      children = options[:as_hash] ? {} : []
+      children = []
       i = 2
 
-      # Add each child indented the same or more
+      # Go down and grab each line until indented less...
+
       while(Line.indent(Line.value(i)).size >= indent)
         child = Line.value(i)
-        if options[:as_hash]
-          match = child.match(/ *([\w -]+): (.+)/)
-          if match
-            k, v = match[1..2]
-            children[k] = v
-          else
-            i += 1
-            next
-          end
-
-        else
-          children << child
-        end
-
+        children << child
         i += 1
       end
 
@@ -1736,8 +1557,8 @@ module Xiki
       children
     end
 
+    # Whether next line is more indented
     def self.children?
-      # Whether next line is more indented
       Line.indent(Line.value(2)).size >
         Line.indent.size
     end
@@ -1771,17 +1592,19 @@ module Xiki
       orig = View.cursor
       left = Line.left
       Line.next
-      ignore, right = Tree.sibling_bounds :cross_blank_lines=>1
+
+      bounds = Tree.sibling_bounds :cross_blank_lines=>1
+      bounds[0] = left
       View.cursor = orig
 
-      txt = View.txt left, right
+      txt = View.txt bounds[0], bounds[3]
       txt
     end
 
     #
     # Goes to spot (from as+spot) and grabs path?
     #
-    def self.dir_at_spot options={}
+    def self.file_at_spot options={}
       orig = Location.new   # Save where we are
       Location.to_spot
 
@@ -1805,15 +1628,15 @@ module Xiki
       Bookmarks[path]
     end
 
-    # Returns the dir that a @menu is nested under, or says
+    # Returns the dir that a =menu is nested under, or says
     # must be nested under a dir.
     #
     # Tree.dir
-    def self.dir options={}
-      self.file options.merge(:require=>'dir')
+    def self.dir options={}   # Dir from ancestor in tree
+      self.file({:require=>'dir'}.merge(options))
     end
 
-    # Returns the dir or file that a @menu is nested under.
+    # Returns the dir or file that a =menu is nested under.
     # If cursor is on a file path, return just it.
     #
     # Tree.file
@@ -1821,16 +1644,18 @@ module Xiki
     # Tree.file :require=>'dir'   # Shows message if not nested under a dir
     # Tree.file :require=>'file'   # Shows message if not nested under a file
     # Tree.file :at_cursor=>1   # Returns path only if cursor is on a file
-    def self.file options={}
+    def self.file options={}   # ...that menu is nested under
+
       path = self.path
 
       # If tree we're in is a file tree, they probably just wanted that
 
       return Bookmarks[path[-1]] if FileTree.handles? path[-1]
-
       return nil if options[:at_cursor]
 
       dir = path[-2]
+
+      return nil if ! dir
 
       # Remove trailing slash for now
       dir.sub! /\/$/, ''
@@ -1840,6 +1665,7 @@ module Xiki
 
       return File.expand_path("~/Desktop") if options[:or] == :desktop
       kind_required = options[:require]
+
       return nil if ! kind_required
 
       guessed_menu = path.last.split('/').first
@@ -1852,45 +1678,27 @@ module Xiki
       nil
     end
 
-    def self.path__new options={}
-      return path.join if options[:string]
-      path
-    end
-
-    def self.path__old options={}
-      path = Tree.construct_path :all=>1, :slashes=>1
-      options[:string] ? path : path.split(/\/@ ?/)
-    end
-
-    def self.path__old_refactored options={}
-      path = Tree.construct_path :all=>1, :slashes=>1
-      return path if options[:string]
-      path = path.split(/\/@ ?/)
-    end
-
     # Post-unified way of grabbing the path for menus.  Maybe make this
     # replace .path?
-    def self.path_unified options={}
-      raw = self.construct_path :raw=>1
+    #     def self.path options={}
+    def self.path options={}
 
+      raw = self.construct_path :raw=>1
+      raw_orig = raw.map{|o| o.dup}
       return raw if raw == [""]
 
-      # Go through each line from tree, and escape |... and :... lines
+      # Go through each line from tree, and escape |..., $..., >... and :... lines
 
       raw.each do |item|
-        if item =~ /^\|.(.+)/
+        if item =~ /\A(:[^a-z]|\$ |% |& |> )..+/ && Path.unescape(item) !~ /\n/
           item.replace Path.escape item
         end
       end
 
-      # If :... grab siblings and merge together (but only if last line)
-      if raw[-1] =~ /^:/
-        txt = Tree.siblings :quotes=>":", :string=>1
-        txt = Path.escape txt
-        raw[-1] = txt
-      end
+      path = self.join_to_subpaths raw
 
-      self.join_to_subpaths raw
+      path
+
     end
 
     # Goes from [a/, @b/, c/] to [a/, b/c/]
@@ -1921,15 +1729,6 @@ module Xiki
       path.join ""
     end
 
-    # Deprecated.  After Unified refactor, delete this and replace it with implementation of .path_unified.
-    # Pre-unified way of grabbing the path for menus.
-    def self.path options={}
-      path = Tree.construct_path :all=>1, :slashes=>1
-      return path if options[:string]
-      path = path.split(/\/[@=] ?/)
-      self.add_slashes_except_last path
-      path
-    end
 
     def self.paths_to_tree paths
       result = ""
@@ -2016,8 +1815,12 @@ module Xiki
 
     def self.add_slashes_except_last list, options={}
       0.upto list.length-2 do |i|
-        next if options[:only_if_needed] && list[i] =~ /\/$/
-        next if options[:leave_blanks] && list[i] =~ /\A[@=]?\z/   # If blank or just @
+
+        # Don't add slash if :only_if_needed and already has slash (unless it's an escaped slash)
+        next if options[:only_if_needed] && list[i] =~ /\/\z/ && Path.split(list[i])[0] !~ /\/\z/
+
+        # If last is slash, but not escaped
+        next if options[:leave_blanks] && list[i] =~ /\A=?\z/   # If blank or just @
         list[i].sub! /$/, '/'
       end
     end
@@ -2085,6 +1888,290 @@ module Xiki
         new_part = path[-1].gsub(/^/, "#{indent}  ")
         "#{indent}#{item}\n#{new_part}\n"
       end
+    end
+
+    # Finds start of the group of siblings at the bottom, that match the pattern.
+    # Used to limit .sibling_bounds to only *..., etc.
+    def self.matching_siblings_start_index txt, must_start_with
+      return 0 if txt == ""
+
+      indent = txt[/\A */]
+
+      x = Xik.new txt, :leave_indent=>1
+      top_match = x.lines.length
+
+      # Make a Xik instance, and iterate up from the bottom...
+
+      x.to_bottom
+
+      # Keep moving up
+      while ! x.at_top?
+        x.previous
+
+        next if x.indent != indent    # Siblingxs are at the axis
+
+        # It's a sibling, so either remember and keep going, or exit...
+
+        # if match > set top_match
+        # next top_match = x.line if x =~ /^#{must_start_with}/
+        next top_match = x.line if x =~ /^#{indent}(#{must_start_with})/
+
+        # Non-matching sibling, so exit
+        break
+      end
+
+      x.line = top_match
+      x.cursor - 1   # Go back to zero-based
+
+    end
+
+    # Finds end of the group of siblings at the top, that match the pattern.
+    def self.matching_siblings_end_index txt, must_start_with
+      indent = txt[/\A */]   # Deduce indent from 1st line
+      result = txt.index(/^#{indent}(?!#{must_start_with}| )/)   # Find indent and then something other than the pattern or a space
+      result || txt.length
+    end
+
+    # Called once for each char typed after Tree.filter is called
+    def self.search_number ch, options
+      left, right = options[:left], options[:right]
+      recursive, recursive_quotes = options[:recursive], options[:recursive_quotes]
+
+      Keys.clear_prefix
+      n = ch.to_i
+
+      # Pull whole string out
+      lines = View.txt(left, right).split "\n"
+      View.delete left, right
+      if recursive || recursive_quotes
+
+        # Recursive is different because we only count children
+
+        filtered = []
+        file_count = 0
+        include_regex = self.regex_for_items_to_keep options
+
+        # Replace out lines that don't match (and aren't dirs)
+        lines.each_with_index do |l, i|
+          include_it = l =~ include_regex
+          file_count += 1 unless include_it
+          # If dir or nth, keep
+          filtered << l if (include_it or (file_count == n))
+        end
+
+        # Remove dirs with nothing under them
+        self.clear_empty_dirs! filtered, :quotes=>recursive_quotes
+
+        # Put back into buffer
+        View.insert(filtered.join("\n") + "\n")
+        right = $el.point
+
+        # Go to first file and go back into search
+        $el.goto_char left
+        recursive_quotes ?
+          Move.to_quote :
+          FileTree.select_next_file
+
+      else
+        nth = lines[n - 1]
+        View.insert "#{nth}\n"
+        $el.previous_line
+      end
+      Launcher.launch
+    end
+
+    # Delegated to by (xiki-tree-filter-pre-command-hook) when typing most chars.
+    def self.filter_once
+      letter = $el.this_command_keys
+
+      # Space or C-g, so just exit...
+
+      options = JSON[$el.elvar.xiki_tree_filter_options]
+      options = TextUtil.symbolize_hash_keys options
+      left, right = options[:left], options[:right]
+
+      # C-g or C-m, etc, so end and maybe launch again...
+
+      if letter =~ /[ \C-g\r\t\/$=#\x1F]/
+        $el.elvar.xiki_tree_filter_options, $el.elvar.xiki_bar_special_text = nil, nil
+
+        if letter == "\r"
+          Launcher.launch
+        elsif letter == "/"
+
+          line = Line.txt
+
+          # Don't kill siblings if "<<" or "<=" line
+
+          if line =~ /^<+=? /
+            Keys.clear_prefix
+            Launcher.launch
+            return
+          end
+
+          $el.delete_region(Line.left(2), right)  # Delete other files
+          $el.delete_horizontal_space
+          $el.delete_backward_char 1
+
+          # delete -|+ if there
+          if View.txt(View.cursor, Line.right) =~ /^[+-] /
+            $el.delete_char 2
+          end
+
+          # For now, always launch when C-/
+          Launcher.launch   # if line =~ /\/$/   # Only launch if it can expand
+
+        elsif letter == "\t"
+          $el.delete_region(Line.left(2), right)
+        elsif letter == "\x1F"
+          indent = Line.indent
+          $el.delete_region left, right-1
+          View.insert "#{indent}- "
+          ControlLock.disable
+        elsif letter == "$"
+          indent = Line.indent
+          $el.delete_region left, right-1
+          View.insert "#{indent}$ "
+          ControlLock.disable
+        elsif letter == "="
+          indent = Line.indent
+          $el.delete_region left, right-1
+          View.insert "#{indent}="
+          ControlLock.disable
+        elsif letter == "#"
+          indent = Line.indent
+          $el.delete_region left, right-1
+          View.insert "#{indent}- ##/"
+          Move.backward
+          ControlLock.disable
+        end
+        return
+
+      elsif letter =~ /[0-9]/
+
+        # Number, so jump to nth...
+
+        $el.elvar.xiki_tree_filter_options, $el.elvar.xiki_bar_special_text = nil, nil
+        self.search_number letter, options
+        return
+
+      elsif letter == ","
+
+        # Comma, so do "or"...
+
+        options[:filter] = ""
+        $el.elvar.xiki_tree_filter_options = options.to_json
+        return
+      end
+
+      if letter == ";"
+        letter = $el.char_to_string($el.read_char)
+      end
+
+      filter = options[:filter]
+      filter << letter
+
+      recursive, recursive_quotes = options[:recursive], options[:recursive_quotes]
+
+      if ! left
+        ignore, left, right = View.block_positions "^>"
+      end
+
+      # Extract special_text
+      lines = $el.buffer_substring(left, right).split "\n"
+
+      # Filter by letter
+
+      if filter =~ /[A-Z]$/   # If upper, search in directory
+        lines = search_dir_names(lines, /#{Regexp.quote filter}/i)
+      else
+        regexp = Regexp.quote filter
+        regexp = "\\/$|#{regexp}" if recursive
+        regexp = "^ *=|^ *:\\d|^ *[+-] [a-zA-Z0-9=:.\/]|#{regexp}" if recursive_quotes
+        regexp = /#{regexp}/i
+        lines = lines.grep(regexp)
+      end
+
+      # Remove dirs with nothing under them
+      self.clear_empty_dirs! lines if recursive
+      self.clear_empty_dirs!(lines, :quotes=>true) if recursive_quotes
+
+      # If search not found, don't delete all
+      if lines.size == 0 || (lines.size == 1 && recursive)
+        View.flash "- only matches: #{filter}\n", :times=>1
+        return
+      end
+
+      $el.delete_region left, right
+
+      # Put back into buffer
+      View.insert(lines.join("\n") + "\n")
+      options[:right] = $el.point
+      $el.goto_char left
+
+      # Go to first file
+      $el.goto_char left
+
+      # Move to first file
+      if recursive
+        FileTree.select_next_file
+      elsif recursive_quotes
+        Search.forward ":\\|#"
+        Line.to_beginning
+      else
+        Line.to_beginning
+      end
+
+      # Store options for next call
+      $el.elvar.xiki_tree_filter_options = options.to_json
+
+    end
+
+    def self.init_in_client
+      $el.el4r_lisp_eval %`
+        (progn
+          (defun xiki-tree-filter-once () (interactive) (el4r-ruby-eval "Xiki::Tree.filter_once"))
+          (defun xiki-launch () (interactive) (el4r-ruby-eval "Xiki::Launcher.launch"))
+
+          (defun xiki-tree-filter-pre-command-hook () (interactive)
+            ; (message "xiki-tree-filter-pre-command-hook")
+            (when (and (boundp 'xiki-tree-filter-options) xiki-tree-filter-options)
+
+              (let ((char (this-command-keys)))  ; Look at first key typed or event
+
+                ; If control char, use actual key (bypasses control-lock)
+                (if (and (stringp char) (string-match "[\C-a-\C-z]" char))
+                  (setq char (char-to-string (elt (recent-keys) (- (length (recent-keys)) 1))))
+                )
+
+                (force-mode-line-update)
+                (if (and (stringp char) (string-match "[a-z0-9.,;_$#+=/ \C-g\C-m\t\C-_-]" char))   ; Keys that delegate through to Tree.filter
+
+                  ; A char to filter or exit, so pass control to ruby...
+
+                  (progn
+                    (setq this-command 'xiki-tree-filter-once)   ; This makes it the next command that will be run
+                    ;(message "gone??")
+                    ;(message xiki-tree-filter-options)
+                  )
+
+                  ; Some other char typed, so clear out vars to turn off the Tree.filter...
+
+                  (progn
+                    (setq xiki-tree-filter-options nil)
+                    (setq xiki-bar-special-text nil)
+                    ;(message "fu----------------------")
+                  )
+                )
+
+              )
+            )
+          )
+
+          (add-hook 'pre-command-hook 'xiki-tree-filter-pre-command-hook)
+
+        )
+      `
     end
 
   end
