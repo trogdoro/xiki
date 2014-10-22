@@ -1,7 +1,7 @@
 module Xiki
   class MenuHandler
     def self.handle options
-      source_file = options[:ex]['menu']
+      source_file = options[:handlers]['menu']
       return if ! source_file || options[:output] || options[:halt]
       file = "#{options[:enclosing_source_dir]}#{source_file}"
 
@@ -27,7 +27,7 @@ module Xiki
       end
 
       line_number = options[:children_line]
-      line_number += 4 if source_file =~ /\.rb$/
+      line_number += 4 if line_number && source_file =~ /\.rb$/
 
       # TODO: to tighten up, only do this if all lines start with "!"
 
@@ -37,15 +37,18 @@ module Xiki
 
       # Run code based on whether a comment was found
 
-      if code =~ /\A.* \/\/ \.js/
+      if code =~ /\Atell application /
+        returned = Applescript.run code
+
+      elsif code =~ /\A.* \/\/ \.js/
         returned = JavascriptHandler.eval code, options.merge(:file=>source_file)
       elsif code =~ /\A.* # \.coffee/   # If Coffeescript
         returned = CoffeeHandler.eval code, options.merge(:file=>source_file)
-      elsif code =~ /\A.* # \.py/   # If Coffeescript  # If Python
+      elsif code =~ /\A.* # \.py/   # If Python
         returned = PythonHandler.eval code, options.merge(:file=>source_file)
       else   # If Ruby
         code = "args = #{exclamations_args.inspect}\n#{code}"
-        returned, out, exception = Code.eval code, source_file, line_number
+        returned, out, exception = Code.eval code, source_file, line_number, {}, options
       end
 
       returned ||= out || ""   # Use output if nothing returned

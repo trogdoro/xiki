@@ -1,7 +1,7 @@
 module Xiki
   class JpgHandler
     def self.handle options
-      source = options[:ex]['jpg']
+      source = options[:handlers]['jpg']
       return if ! source || options[:output] || options[:halt]
 
       path = "#{options[:enclosing_source_dir]}#{source}"

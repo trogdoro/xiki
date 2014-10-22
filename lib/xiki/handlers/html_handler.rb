@@ -2,15 +2,13 @@ module Xiki
   class HtmlHandler
     def self.handle options
 
-      source = options[:ex]['html']
+      source = options[:handlers]['html']
       return if ! source || options[:output] || options[:halt]
 
-      txt = File.read "#{options[:enclosing_source_dir]}#{source}"
+      Browser.url "http://localhost:8163/#{options[:name]}/"
 
-      # Quote if it's calling the menu from the editor
-      txt = Tree.quote(txt) if options[:client] =~ /^editor\b/
-
-      options[:output] = txt
+      View.flash "- showing in browser!"
+      options[:output] = ""
     end
   end
 end

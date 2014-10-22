@@ -1,15 +1,19 @@
 module Xiki
   class DirHandler
     def self.handle options
-
       # Does one of these amount to non-existing dir?
 
-      source = options[:ex]['/']
+      source = options[:handlers]['/']
+
       # This will soon be refactored to be called by hash
 
       return if ! source || options[:output] || options[:halt]
 
-      items = Dir.new(dir).entries.grep /^[^.]/
+      # Don't handle if there was extra path beyond the dir...
+
+      return if options[:args].any?
+
+      items = Dir.new("#{options[:enclosing_source_dir]}#{source}").entries.grep /^[^.]/
 
       items.delete "default.conf"   # ignore default conf
 

@@ -1,12 +1,18 @@
 module Xiki
   class NotesHandler
     def self.handle options
-      source = options[:ex]['notes']
+      source = options[:handlers]['notes']
 
-      return if ! options[:ex] || options[:output] || options[:halt]
+      return if ! options[:handlers] || options[:output] || options[:halt]
       path = "#{options[:enclosing_source_dir]}#{source}"
 
-      txt = Notes.drill path, *options[:args]||[]
+      args = options[:args]||[]
+
+      # If as+open, only pass in one line
+
+      args[-1] = options[:one_line] if options[:prefix] == "open" && options[:one_line]
+
+      txt = Notes.drill path, *args, options.select{|key, value| [:prefix, :dropdown].include?(key)}
 
       options[:output] = txt
       options[:halt] = 1   # Just in case there's no output

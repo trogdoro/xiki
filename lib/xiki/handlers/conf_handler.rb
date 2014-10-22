@@ -2,27 +2,28 @@ module Xiki
   class ConfHandler
     def self.handle options
 
-      # When expanding foo/@conf, ~/menu/conf/conf_index.rb will take over
+      # When expanding foo/=conf, ~/xiki/commands/conf/conf_index.rb will take over
 
-      source = options[:ex]['conf']
+      source = options[:handlers]['conf']
 
       return if options[:output] || options[:halt]   # Do nothing if something already handled
-      return if ! source || options[:ex].length > 1   # Only intercede for crud if they're launching a .conf and nothing else
+      return if ! source || options[:handlers].length > 1   # Only intercede for crud if they're launching a .conf and nothing else
 
-      # Handle crud when expanding ~/menu/conf/foo...
+      # Handle crud when expanding ~/xiki/commands/conf/foo...
 
       name, item = options[:items] # if options[:items]
 
       # TODO: remove Tree.txt editor dependency?
-      options[:output] = self.txt name, (item ? Tree.txt : nil), item, options
+      options[:output] = self.txt name, item, item, options
     end
 
     def self.txt name, content=nil, item=nil, options={}
 
       prefix = options[:prefix]
 
-      # If no content, get it
       custom_conf = "#{Xiki.menu_path_custom_dir}/conf/#{name}.conf"
+
+      # as+open...
 
       if prefix == "open"
         item.sub! /^\| /, ''
@@ -31,14 +32,16 @@ module Xiki
         return ""
       end
 
+      # No content, so get it...
+
       if ! content
-        return Tree.quote(File.read(custom_conf)) if File.exists?(custom_conf)
+        return Tree.quote(File.read(custom_conf), :char=>"|") if File.exists?(custom_conf)
 
         options = {:name=>name}
         Menu.root_sources_from_path_env options
         default_conf = "#{options[:menufied]}/default.conf"
 
-        return Tree.quote(File.read(default_conf)) if File.exists?(default_conf)
+        return Tree.quote(File.read(default_conf), :char=>"|") if File.exists?(default_conf)
 
         return "- No conf could be found!"
       end
@@ -49,7 +52,7 @@ module Xiki
 
       File.open(custom_conf, "w") { |f| f << content }
 
-      "@flash/- saved!"
+      "<! saved!"
     end
 
 
@@ -68,7 +71,7 @@ module Xiki
         # This file proxies control to the core conf menu
         #
 
-        # (when @conf/foo/ and conf/foo.conf doesn't exist yet).
+        # (when =conf/foo/ and conf/foo.conf doesn't exist yet).
         load "\#{Xiki.menu_path_core_dir}/conf/conf_index.rb"
 
         # This is here so we'll be expanded as a class
@@ -79,8 +82,8 @@ module Xiki
         `.unindent }
 
 
-      # TODO: create this file when creating ~/menu/conf/
-      # ~/menu/conf/
+      # TODO: create this file when creating ~/xiki/commands/conf/
+      # ~/xiki/commands/conf/
       #   - index.rb
       #     : # This file proxies control to the core conf menu
       #     : load "#{Xiki.menu_path_core_dir}/conf/conf_index.rb"

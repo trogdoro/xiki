@@ -1,9 +1,9 @@
 module Xiki
   class DeckHandler
     def self.handle options
-      source = options[:ex]['deck']
+      source = options[:handlers]['deck']
 
-      return if ! options[:ex] || options[:output] || options[:halt]
+      return if ! options[:handlers] || options[:output] || options[:halt]
       path = "#{options[:enclosing_source_dir]}#{source}"
 
       args = options[:args]

@@ -4,7 +4,7 @@
 module Xiki
   class MarkdownHandler
     def self.handle options
-      source = options[:ex]['markdown']
+      source = options[:handlers]['markdown']
       return if ! source || options[:output] || options[:halt]
 
       txt = options[:output] = File.read "#{options[:enclosing_source_dir]}#{source}"
@@ -12,7 +12,7 @@ module Xiki
 
       Browser.html html
 
-      options[:output] = "@flash/- showing in browser!"
+      options[:output] = "<! showing in browser!"
     end
 
     def self.render txt

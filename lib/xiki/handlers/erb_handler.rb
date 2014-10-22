@@ -1,10 +1,11 @@
-require 'erubis'
 
 module Xiki
   class ErbHandler
     def self.handle options
-      source = options[:ex]['erb']
+      source = options[:handlers]['erb']
       return if ! source || options[:output] || options[:halt]
+
+      require 'erubis'
 
       txt = File.read "#{options[:enclosing_source_dir]}#{source}"
 

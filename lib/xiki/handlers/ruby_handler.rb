@@ -2,14 +2,15 @@ module Xiki
   class RubyHandler
     def self.handle options
 
-      source = options[:ex]['rb']
+      source = options[:handlers]['rb']
       return if ! source || options[:output] || options[:halt]
       clazz_name = TextUtil.camel_case source[/\w+/]
 
       file = "#{options[:enclosing_source_dir]}#{source}"
       code = File.read file
 
-      options.merge! :dot_menu_file=>"#{options[:enclosing_source_dir]}#{options[:ex]['menu']}"
+      options.merge! :dot_menu_file=>"#{options[:enclosing_source_dir]}#{options[:handlers]['menu']}"
+
       txt =
         if code =~ /^ *(class|module) .*\b#{clazz_name}\b/   # Maybe check for actual class name
           options.merge! :clazz_name=>clazz_name
@@ -27,7 +28,7 @@ module Xiki
     def self.handle_script file, code, options
 
       # Pass in args and options?
-      args = Options.args options
+      args = Code.args options #, :double_assign=>1
       code = "#{args}\n#{code}"
 
       txt, out, exception = Code.eval code, file, 0, {:pretty_exception=>1}, options

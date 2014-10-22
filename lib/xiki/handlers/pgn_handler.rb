@@ -4,7 +4,7 @@ module Xiki
 
       options[:no_search] = 1
 
-      source = options[:ex]['pgn']
+      source = options[:handlers]['pgn']
       return if ! source || options[:output] || options[:halt]
 
       args = options[:args]

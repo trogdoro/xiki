@@ -2,9 +2,9 @@ module Xiki
   class StepsHandler
     def self.handle options
 
-      source = options[:ex]['steps']
+      source = options[:handlers]['steps']
 
-      return if ! options[:ex] || options[:output] || options[:halt]
+      return if ! options[:handlers] || options[:output] || options[:halt]
       path = "#{options[:enclosing_source_dir]}#{source}"
 
       options[:halt] = 1   # Just in case there's no output
@@ -29,20 +29,20 @@ module Xiki
       # /foo, so find item and use one after...
 
       # Get all lines
-      return options[:output] = "@beg/siblings/" if args[-1] !~ /\n/
+      return options[:output] = "=beg/siblings/" if args[-1] !~ /\n/
 
       section = args[-1].strip
 
       i = sections.index{|o| o =~ /\A#{Regexp.quote section}\z/}
-      return options[:output] = "@flash/- slash :(!" if ! i
+      return options[:output] = "<! slash :(!" if ! i
 
 
       i += options[:prefix] == :u ? -1 : 1
 
       following = sections[i]
-      return options[:output] = "@flash/- end!" if ! following
+      return options[:output] = "<! end!" if ! following
 
-      options[:output] = "@instead/siblings/\n#{sections[i].gsub(/^/, '  ')}"
+      options[:output] = "=replace/siblings/\n#{sections[i].gsub(/^/, '  ')}"
 
     end
   end

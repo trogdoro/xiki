@@ -2,7 +2,7 @@ module Xiki
   class CoffeeHandler
 
     def self.handle options
-      source = options[:ex]['coffee']
+      source = options[:handlers]['coffee']
       return if ! source || options[:output] || options[:halt]
 
       source = "#{options[:enclosing_source_dir]}#{source}"
@@ -20,7 +20,7 @@ module Xiki
         console.log JSON.stringify func()
         ".unindent
 
-      txt = Console.run "coffee --stdio", :sync=>true, :stdin=>txt
+      txt = Shell.run "coffee --stdio", :sync=>true, :stdin=>txt
       lines = txt.split "\n"
 
       # Last line is the return value...

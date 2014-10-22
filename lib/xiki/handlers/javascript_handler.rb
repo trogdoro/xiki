@@ -1,7 +1,7 @@
 module Xiki
   class JavascriptHandler
     def self.handle options
-      source = options[:ex]['js']
+      source = options[:handlers]['js']
       return if ! source || options[:output] || options[:halt]
 
       source = "#{options[:enclosing_source_dir]}#{source}"
@@ -24,7 +24,7 @@ module Xiki
         print(JSON.stringify(output))
         ".unindent
 
-      txt = Console.run "js -", :sync=>true, :stdin=>txt
+      txt = Shell.run "js", :sync=>true, :stdin=>txt
       lines = txt.split "\n"
 
       # Last line is the return value...

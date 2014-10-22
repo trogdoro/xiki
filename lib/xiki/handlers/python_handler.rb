@@ -2,7 +2,7 @@ class Xiki::PythonHandler
   include Xiki
 
   def self.handle options
-    source = options[:ex]['py']
+    source = options[:handlers]['py']
     return if ! source || options[:output] || options[:halt]
 
     # Better api call for this?  Maybe pass 'ex' in through options as well, so we don't need the param.
@@ -24,7 +24,7 @@ class Xiki::PythonHandler
       print(json.dumps(func()))
       ".unindent
 
-    txt = Console.run "python -", :sync=>true, :stdin=>txt
+    txt = Shell.run "python -", :sync=>true, :stdin=>txt
     lines = txt.split "\n"
 
     # Last line is the return value...
