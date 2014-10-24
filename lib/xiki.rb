@@ -1,23 +1,28 @@
 xiki_dir = File.expand_path "#{File.dirname(__FILE__)}/.."
 Dir.chdir xiki_dir
 
+require 'xiki/core/environment'
+
 # Used by a lot of classes
 module Xiki
   @@dir = "#{Dir.pwd}/"   # Store current dir when xiki first launches
+
+  @@loaded_already = nil
 
   # TODO Just use XIKI_DIR from above?
 
   def self.dir
     @@dir
   end
+
+  if Environment.gui_emacs   # Not defined yet
+    $el.el4r_lisp_eval '(ignore-errors (kill-buffer "Issues Loading Xiki"))'
+  end
+
 end
 
-# if $el.display_graphic_p
-$el.el4r_lisp_eval '(ignore-errors (kill-buffer "Issues Loading Xiki"))' if $el
-# end
 
 $el.set_process_query_on_exit_flag($el.get_buffer_process("*el4r:process*"), nil) if $el
-
 
 # $LOAD_PATH << "#{xiki_dir}/lib"
 # Require some of the core files
@@ -25,7 +30,7 @@ require 'rubygems'
 require 'xiki/core/ol'
 require 'xiki/core/requirer'
 require 'xiki/core/text_util'
-Xiki::Requirer.require_classes ['xiki/core/notes']
+
 require 'xiki/core/launcher'
 require 'xiki/core/mode'
 require 'xiki/core/menu'
@@ -34,66 +39,6 @@ require 'xiki/core/menu'
 module Xiki
 
   $el.elvar.xiki_loaded_once = nil if $el && ! $el.boundp(:xiki_loaded_once)
-
-  def self.install_icon arg
-
-    emacs_dir = "/Applications/Aquamacs Emacs.app"
-
-    return "- Couldn't find #{emacs_dir}!" if ! File.exists?("#{emacs_dir}")
-
-    plist_path = "#{emacs_dir}/Contents/Info.plist"
-
-    plist = File.read "#{emacs_dir}/Contents/Info.plist"
-
-    # TODO
-    # "Back up plist file - where - xiki root?!
-    # "Tell them where it was backed up!
-    # "Show diffs of change that was made!
-
-    return "- This file wasn't in the format we expected: #{plist_path}" if plist !~ %r"^\t<key>CFBundleDocumentTypes</key>\n\t<array>\n"
-
-    # TODO
-    # .plist
-      # if change was already made, say so
-
-    # TODO
-
-    # 1. Copy icon into app
-    # cp "#{Xiki.dir}etc/shark.icns" "/Applications/Aquamacs Emacs.app/Contents/Resources/"
-    # - /Applications/Aquamacs Emacs.app/
-    #   - Contents/Resources/
-    #     + shark.icns
-    #     + emacs-document.icns
-
-    # 2. Update Info.plist
-    # /Applications/Aquamacs Emacs.app/Contents/
-    #   - Info.plist
-    #     |+ 		<dict>
-    #     |+ 			<key>CFBundleTypeExtensions</key>
-    #     |+ 			<array>
-    #     |+ 				<string>notes</string>
-    #     |+ 				<string>menu</string>
-    #     |+ 				<string>xiki</string>
-    #     |+ 			</array>
-    #     |+ 			<key>CFBundleTypeIconFile</key>
-    #     |+ 			<string>shark.icns</string>
-    #     |+ 			<key>CFBundleTypeName</key>
-    #     |+ 			<string>Xiki File</string>
-    #     |+ 			<key>CFBundleTypeOSTypes</key>
-    #     |+ 			<array>
-    #     |+ 				<string>TEXT</string>
-    #     |+ 				<string>utxt</string>
-    #     |+ 			</array>
-    #     |+ 			<key>CFBundleTypeRole</key>
-    #     |+ 			<string>Editor</string>
-    #     |+ 		</dict>
-
-    # 3. Tell user to drag the .app icon out of the "Applications" folder and back in
-    #   - Or google to find a command that will do the same thing
-
-
-    "- TODO: finish implementing!"
-  end
 
   def self.menus
     CodeTree.menu
@@ -108,7 +53,7 @@ module Xiki
     txt.
       gsub(/^/, '| ').
       gsub(/ +$/, '').
-      gsub(/^\|(        )([+-])/) {|o| "|#{$2}#{$1}"}   # Make extra be green, missing be red
+      gsub(/^\|(        )([+-])/) {|o| "|#{$2 == '-' ? '+' : '-'}#{$1}"}   # Show "expected" correct value as green, and the incorrect "got" value as red
   end
 
   def self.tests clazz=nil, describe=nil, test=nil, quote=nil
@@ -125,7 +70,7 @@ module Xiki
 
     # If /class, list describes...
 
-    path = Bookmarks["$x/spec/#{clazz}_spec.rb"]
+    path = Bookmarks[":xiki/spec/#{clazz}_spec.rb"]
 
     sync_options = prefix == :u ? {} : {:sync=>1}
 
@@ -134,7 +79,7 @@ module Xiki
 
       if clazz == "all"   # Run all specs
         return self.quote_spec( #prefix == :u ?
-          Console.run("rspec spec", sync_options.merge(:dir=>Xiki.dir))
+          Shell.run("rspec spec", sync_options.merge(:dir=>Xiki.dir))
           )
       end
 
@@ -152,7 +97,7 @@ module Xiki
 
       if describe == "all"   # Run whole test
         return self.quote_spec(
-          Console.run("rspec spec/#{clazz}_spec.rb", sync_options.merge(:dir=>Xiki.dir))
+          Shell.run("rspec spec/#{clazz}_spec.rb", sync_options.merge(:dir=>Xiki.dir))
           )
       end
 
@@ -173,7 +118,7 @@ module Xiki
 
       if test == "all"   # Run all for describe
         return self.quote_spec(
-          Console.run("rspec spec/#{clazz}_spec.rb -e \"#{describe}\"", sync_options.merge(:dir=>Xiki.dir))
+          Shell.run("rspec spec/#{clazz}_spec.rb -e \"#{describe}\"", sync_options.merge(:dir=>Xiki.dir))
           )
       end
 
@@ -184,7 +129,7 @@ module Xiki
 
       # Run it
       command = "rspec spec/#{clazz}_spec.rb -e \"#{describe} #{test}\""
-      result = Console.run command, :dir=>"$x", :sync=>true
+      result = Shell.run command, :dir=>":xiki", :sync=>true
 
       if result =~ /^All examples were filtered out$/
         TextUtil.title_case! clazz
@@ -192,12 +137,12 @@ module Xiki
 
         return %`
           > Test doesn't appear to exist.  Create it?
-          @#{path}
-            | describe #{clazz}, "##{describe}" do
-            |   it "#{test}" do
-            |     #{clazz}.#{describe}.should == "hi"
-            |   end
-            | end
+          =#{path}
+            : describe #{clazz}, "##{describe}" do
+            :   it "#{test}" do
+            :     #{clazz}.#{describe}.should == "hi"
+            :   end
+            : end
         `
       end
 
@@ -214,7 +159,7 @@ module Xiki
     return if ! match
 
     file, line = match[1..2]
-    file.sub! /^\.\//, Bookmarks["$x"]
+    file.sub! /^\.\//, Bookmarks[":xiki"]
     View.open file
     View.to_line line.to_i
 
@@ -226,19 +171,7 @@ module Xiki
     View.to_highest
     searches.each { |s| Search.forward "[\"']#{$el.regexp_quote s}[\"']" }
     Move.to_axis
-    # Maybe restore this, but have option to only mark if not yet marked - Color.mark "light", :if_clear=>1
-    #     Color.mark "light"
     nil
-  end
-
-  # TODO: remove this, since it just delegates to .path.
-  # Make callers call .path instead.
-  def self.trunk options={}
-    self.path options
-  end
-
-  def self.path options={}
-    Tree.path options
   end
 
   def self.quote txt
@@ -272,11 +205,33 @@ module Xiki
 
   end
 
-  # Invoked by environment when Xiki starts up
+  # Invoked by Xiki.init after the fork.
+  def self.reload
+
+    # Do stuff here to load on top of existing fork
+
+    Keys.map_reset
+
+    Notes.define_styles
+    Notes.init
+    Notes.keys  # Define local keys
+    Effects.define_styles
+
+  end
+
+  # Invoked by environment when Xiki starts up.
   #
   # Xiki.init
   # Xiki.init :minimal=>1   # Don't do yaml or awesome_print conf that might interfere with some ruby environments (for embedded case).
   def self.init options={}
+
+    # If we're reloading on top of a process after a fork, delegate to .reload...
+
+    return self.reload if @@loaded_already
+
+    @@loaded_already = true
+
+    # Not loaded yet, so call .init methods of many classes...
 
     # TODO: A lot of this is deprecated after the Unified refactor
     #  - Stop loading the old menus soon!
@@ -305,55 +260,48 @@ module Xiki
 
     classes.map!{|i| i.sub(/\.rb$/, '')}.sort!
 
-    # Require classes
     Requirer.require_classes classes
 
     # key_shortcuts has many dependencies, require it last
-    #     Requirer.require_classes ['./lib/xiki/key_shortcuts.rb']
-
     Requirer.require_classes ["#{Xiki.dir}lib/xiki/core/key_shortcuts.rb"] if Xiki.environment != 'web'
 
     Launcher.add_class_launchers classes.map{|o| o[/.*\/(.+)/, 1]}
-    Launcher.reload_menu_dirs
-
+    Launcher.load_tools_dir
     Launcher.add "xiki"
     Launcher.add "ol"
-
-    # Pull out into .define_mode
-
-    Mode.define(:xiki, ".xiki") do
-      Xiki.on_open
-    end
-
-    if $el
-
-      # If the first time we've loaded, open @welcome in todo.notes...
-
-      if ! $el.elvar.xiki_loaded_once && ! Menu.line_exists?("misc config", /^- don't show welcome$/) && ! View.buffer_visible?("Issues Loading Xiki")
-        Launcher.open("welcome/", :no_search=>1)
-      end
-
-      $el.elvar.xiki_loaded_once = true
-    end
 
     self.unified_init
     if ! options[:minimal]
       self.awesome_print_setup
       self.yaml_setup
     end
+
+    # If the first time we've loaded, open =welcome (if not xsh)...
+
+    if $el
+
+      if ! $el.getenv("XSH") &&
+         (! $el.boundp(:xiki_loaded_once) || ! $el.elvar.xiki_loaded_once) &&
+         ! Menu.line_exists?("misc config", /^- don't show welcome$/) &&
+         ! View.buffer_visible?("Issues Loading Xiki")
+
+        Launcher.open("welcome/", :no_search=>1)
+      end
+      $el.elvar.xiki_loaded_once = true
+    end
   end
 
   # Invoked by environment when Xiki starts up.
   def self.unified_init
 
-    load "#{Xiki.dir}menu/patterns/core_patterns.rb"
+    load "#{Xiki.dir}commands/patterns/core_patterns.rb"
 
     # TODO
     # - Better name for core_patterns.rb?
-    # - Load core_patterns.rb in ~/menu as well
+    # - Load core_patterns.rb in ~/xiki/commands as well
     # - Later, pre-load all files in
-    #   @$x/menu/patterns/
-    #   @~/menu/patterns/
+    #   @:xiki/menu/patterns/
+    #   @~/xiki/commands/patterns/
     #     | (just grab Xiki.menu_path_custom_dir)
     #   - be sure to load core_patterns.rb first!
 
@@ -401,8 +349,8 @@ module Xiki
   # | Xiki.children "/tmp/", "a/b"   # /tmp/a... file with path "b"
   # | Xiki.children "/tmp/", ["a", "b"]   # /tmp/a... file with path "b"
   # | Xiki.children "/tmp//a"   # .children "/tmp/", "a"
-  # | Xiki.children "a"   # .children "~/menu/", "a"  # (or wherever in MENU_PATH "a" is first found)
-  # | Xiki.children "a/b"   # .children "~/menu/", "a/b"  # (or wherever in MENU_PATH "a" is first found)
+  # | Xiki.children "a"   # .children "~/xiki/commands/", "a"  # (or wherever in MENU_PATH "a" is first found)
+  # | Xiki.children "a/b"   # .children "~/xiki/commands/", "a/b"  # (or wherever in MENU_PATH "a" is first found)
   # | Xiki.children "a/\n  b/", "a"   # "b/"
   # | Xiki.children "/tmp/"   # delegate to file tree
   # | Xiki.children "/tmp/a.menu//"   # recurse to "/tmp//a/" ?
@@ -421,7 +369,7 @@ module Xiki
   #
   # > Ancestors vs multiple sources (not implemented yet)
   # | Xiki.children array   # Ancestors (eg ["/tmp/d", "rails"])
-  # | Xiki.children array, string   # Multiple sources (eg ["~/menus1/", "~/menus2/"], "foo")   # could be confused with: Xiki.children ancestors, path, so maybe one has to be an option
+  # | Xiki.children array, string   # Multiple sources (eg ["~/xiki/commandss1/", "~/xiki/commandss2/"], "foo")   # could be confused with: Xiki.children ancestors, path, so maybe one has to be an option
   #
   # > More thought
   # @/docs/todo/
@@ -490,17 +438,17 @@ module Xiki
   end
 
   # This dir is where user xiki puts user-created menus.
-  # Users can add other menu dirs to the MENU_PATH env var, but ~/menu is always added for now.
+  # Users can add other menu dirs to the MENU_PATH env var, but ~/xiki/commands is always added for now.
   # See TODO:... comment below for an improvement.
   def self.menu_path_custom_dir
-    File.expand_path("~/menu")
+    File.expand_path("~/xiki/commands")
   end
 
   def self.menu_path_core_dir
-    Bookmarks["$x/menu"]
+    Bookmarks[":xiki/commands"]
   end
 
-  # Return the MENU_PATH environment var, plus ~/menu/ and $x/menu.
+  # Return the MENU_PATH environment var, plus ~/xiki/commands/ and :xiki/commands.
   def self.menu_path_dirs
 
     # How many times called? - memo-ize this based on MENU_PATH value
@@ -512,14 +460,14 @@ module Xiki
 
     # TODO:
     #   - When user hasn't set MENU_PATH
-    #     - auto-add ~/menu to the beginning
+    #     - auto-add ~/xiki/commands to the beginning
     #   - Else
-    #     - assume user has added ~/menu (or the equivalent) to the beginning
+    #     - assume user has added ~/xiki/commands (or the equivalent) to the beginning
   end
 
   def self.menuish_parent options
     ancestors = options[:ancestors]
-    ancestors && ancestors[-1][/^([\w ]+)\/$/, 1]
+    ancestors && ancestors[-1][/\A[*^~?]?([\w ]+)\/$/, 1]
   end
 
   def self.yaml_setup
@@ -561,8 +509,38 @@ module Xiki
     self.expand *args
   end
 
+  def self.kill
+
+    # Get pid...
+
+    txt = Shell.sync "ps -eo pid,args"
+    txt = txt.split("\n").grep(/xsh forker/)
+
+    return "<! not running" if txt == []
+
+    pid = txt[0][/\d+/]
+
+    # kill it...
+
+    Shell.sync "kill #{pid}"
+
+    "<! killed!"
+  end
+
+  def self.init_in_client
+    Clipboard.init_in_client
+    Tree.init_in_client
+    Themes.init_in_client
+  end
+
   class << self
     attr_accessor :environment
   end
 
+end
+
+
+# Sure we want to do this globally?
+def X *args
+  Xiki.expand *args
 end
