@@ -1,5 +1,5 @@
-require 'net/http'
-require 'timeout'
+# require 'net/http'
+# require 'timeout'
 
 module Xiki
   class Twitter
@@ -19,7 +19,7 @@ module Xiki
 
     def self.list options={}
       View.handle_bar
-      Console.run "twitter timeline", :buffer => "*twitter timeline"
+      Shell.run "twitter timeline", :buffer => "*twitter timeline"
       Styles.define :twitter_name, :fg => '99f'
       Styles.define :twitter_date, :fg => 'ddd'
       Styles.apply '^\\(-- .+\\)\\( at .+\\)', nil, :twitter_name, :twitter_date

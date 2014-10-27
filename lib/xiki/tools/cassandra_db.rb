@@ -1,7 +1,7 @@
-gem 'cassandra'
-require 'xiki/core/cassandra'
+# gem 'cassandra'
+# require 'xiki/core/cassandra'
 
-require 'xiki/core/launcher'
+# require 'xiki/core/launcher'
 
 module Xiki
   # Cassandras structure:

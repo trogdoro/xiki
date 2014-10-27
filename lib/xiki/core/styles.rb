@@ -69,7 +69,11 @@ module Xiki
     end
 
     def self.dark_bg?
-      Styles.attribute(:default, :background)[1..1][/[0-7]/]
+      # $el.frame_parameter(nil, :background_mode).to_s == "light"
+      # Styles.attribute(:default, :background)[1..1][/[0-7]/]
+
+      # Hard-coded to true for now > try with light background!
+      true
     end
 
     def self.exand_colors options, keys
@@ -90,7 +94,14 @@ module Xiki
 
       self.exand_colors options, [:bg, :fg]
 
-      code = "(set-face-attribute (make-face '#{name.to_s.gsub("_", "-")}) nil\n"
+      frame = "nil" # if options[:all]
+      frame = "(selected-frame)" if @@frame_only
+
+      # How 'frame' param works:
+      #   - nil > all frames and new frames
+      #   - t > new frames
+
+      code = "(set-face-attribute (make-face '#{name.to_s.gsub("_", "-")}) #{frame}\n"
       code << "  :background \"##{options[:bg]}\"\n" if options[:bg]
       code << "  :foreground \"##{options[:fg]}\"\n" if options[:fg]
       code << "  :family \"#{options[:face]}\"\n" if options[:face]
@@ -108,6 +119,7 @@ module Xiki
       code += options[:overline] ? "  :overline t\n" : "  :overline nil\n" if options.has_key?(:overline)
 
       code += options[:bold] ? "  :weight 'bold\n" : "  :weight 'normal\n" if options.has_key?(:bold)
+
       if options[:border]
         border = options[:border]
         code <<
@@ -197,6 +209,11 @@ module Xiki
       # If no value, just return the default size
 
       $el.elvar.xiki_default_font_size
+    end
+
+    @@frame_only = nil
+    def self.frame_only= val
+      @@frame_only = val
     end
 
   end

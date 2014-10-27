@@ -1,12 +1,12 @@
-require 'net/telnet'
-require 'socket'
+# require 'net/telnet'
+# require 'socket'
 
-gem 'simple-tidy'
-require 'simple-tidy'
-# gem 'nokogiri-pretty'
-# require 'nokogiri-pretty'
+# gem 'simple-tidy'
+# require 'simple-tidy'
+# # gem 'nokogiri-pretty'
+# # require 'nokogiri-pretty'
 
-require "rexml/document"
+# require "rexml/document"
 
 module Xiki
   class Firefox
@@ -227,15 +227,24 @@ module Xiki
     end
 
     def self.exec txt, options={}
-
-      result = Firefox.mozrepl_command txt, options
+      result = self.mozrepl_command txt, options
 
       if result =~ /(jQuery|\$) is not defined/   # If no jquery wrap it and try again
         txt = Javascript.wrap_jquery_load txt
-        result = Firefox.mozrepl_command txt, options
+        result = self.mozrepl_command txt, options
+
+        # If had to load jquery, call back until it's loaded...
+
+        limit = 10
+        while(result =~ /(\.+> )?\"- loading jquery!\"/) do
+          raise "- Couldn't load jquery!" if (limit -= 1) < 0
+          View.pause 0.2
+          result = self.mozrepl_command txt, options
+        end
+
       elsif result =~ /\bp is not defined\b/   # If no jquery wrap it and try again
         txt = Javascript.wrap_jquery_load txt, "http://xiki.org/javascripts/util.js"
-        result = Firefox.mozrepl_command txt, options
+        result = self.mozrepl_command txt, options
       end
 
       result.sub! /^"(.+)"$/m, "\\1"   # Remove quotes
@@ -246,7 +255,7 @@ module Xiki
 
       # If brawser wasn't running, ask if they want to open it
 
-      raise "> Looks like Firefox isn\'t open.  Open it?\n@app/Firefox/\n\nOr, maybe the MozRepl Firefox extension isn't installed and on."
+      raise "> Looks like Firefox isn\'t open.  Open it?\n=applications/Firefox/\n\nOr, maybe the MozRepl Firefox extension isn't installed and on."
 
     end
 
@@ -259,6 +268,8 @@ module Xiki
       return ".prompt Type a url here." if url.empty?
 
       return $el.browse_url(url) if options[:new]
+
+      Applescript.run 'tell application "Firefox" to activate' if options[:activate]
 
       reload = "gBrowser.reload();";
       reload = "" if options[:no_reload];
@@ -379,6 +390,7 @@ module Xiki
     end
 
     def self.enter_as_url
+      require 'socket'
       if Keys.prefix_u
         self.exec "gBrowser.tabContainer.selectedIndex += 1", :browser=>true
       end
@@ -405,6 +417,10 @@ module Xiki
     end
 
     def self.mozrepl_command js, options={}
+      require 'net/telnet'
+      require 'socket'
+
+
       s = TCPSocket::new("localhost", "4242")
 
       initial_crap = mozrepl_read s
@@ -428,7 +444,7 @@ module Xiki
 
     # TODO Not used any more?
     def self.log
-      View.open "/Users/craig/.emacs.d/url_log.notes"
+      View.open File.expand_path("~/xiki/misc/logs/url_log.notes")
     end
 
     def self.xul txt
@@ -445,7 +461,7 @@ module Xiki
     def self.tabs *urls
       if urls.any?
         url = urls[-1]   # If nested quotes, just use the last
-        url.sub! /^\| /, ''
+        url.sub! /^\: /, ''
         self.url url, :new=>Keys.prefix_u
         return
       end
@@ -454,7 +470,7 @@ module Xiki
         var browsers = gBrowser.browsers;
         txt = "";
         for(var i = 0; i < browsers.length; i++)
-          txt += "| "+browsers[i].contentDocument.location.href+"\n";
+          txt += ": "+browsers[i].contentDocument.location.href+"\n";
         txt
         '.unindent
 
@@ -483,7 +499,7 @@ module Xiki
         }
         ".unindent
 
-      raise "@flash/- Added required js libs into page, try again!"
+      raise "<! Added required js libs into page, try again!"
     end
 
     def self.object name=nil, key=nil

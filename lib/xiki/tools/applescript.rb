@@ -24,10 +24,16 @@ module Xiki
           end tell
           ".unindent
 
-        return $el.do_applescript txt
+        return self.do_applescript txt
       end
 
-      $el.do_applescript "#{extra}#{command}"
+      self.do_applescript "#{extra}#{command}"
     end
+
+    def self.do_applescript txt
+      txt = File.open("/tmp/applescript.txt", "w") { |f| f << txt }
+      Shell.sync "osascript /tmp/applescript.txt"
+    end
+
   end
 end
