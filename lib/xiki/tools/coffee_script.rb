@@ -14,14 +14,13 @@ module Xiki
     end
 
     def self.execute txt
-      Console.sync 'coffee -s', :stdin=>txt
+      Shell.sync 'coffee -s', :stdin=>txt
     end
 
     def self.to_js txt
-      Console.sync 'coffee -sc', :stdin=>txt
+      Shell.sync 'coffee -sc', :stdin=>txt
     end
 
   end
 
-  Keys.do_as_coffee { CoffeeScript.run_block }
 end

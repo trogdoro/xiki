@@ -5,22 +5,23 @@ module Xiki
   class Couch
     @@server = 'http://localhost:5984'
 
-    def self.menu
-      "
+    MENU = "
       - .start/
-      - @db/
-      - .admin url/
+      - =db/
+      - .web admin/
+      - whether running/
+        =kill/couchdb/
+      =notes/
       "
-    end
 
     def self.start
       buffer = '*couchdb'
-      return "@flash/- *couchdb already open!" if View.buffer_open? buffer
+      return "<! *couchdb already open!" if View.buffer_open? buffer
 
-      Console.run('sudo couchdb', :buffer=>buffer)
+      Shell.run('sudo couchdb', :buffer=>buffer)
     end
 
-    def self.admin_url
+    def self.web_admin
       View.url "#{@@server}/_utils"
       nil
     end
@@ -69,35 +70,45 @@ module Xiki
 
       # If no id, show all id's
       if id.nil?
-        all = RestTree.request 'GET', "#{@@server}/#{db}_all_docs", nil
+        all = HTTParty.get "#{@@server}/#{db}_all_docs"
         rows = JSON[all]['rows']
         return rows.map{|i| "#{i['id']}/"}
       end
 
-      self.escape_slashes id
+      self.escape_slashes! id
 
       # If id, look it up to get rev
-      record = RestTree.request 'GET', "#{@@server}/#{db}#{id}", nil
+      record = HTTParty.get "#{@@server}/#{db}#{id}"
       rev = JSON[record]['_rev']
       # Delete it
       RestTree.request 'DELETE', "#{@@server}/#{db}#{id}?rev=#{rev}", nil
     end
 
-    def self.escape_slashes id
-      # If id has multiple slashes, escape all but the last
-      if id =~ /\/.+\/$/
-        id.sub! /\/$/, ''   # Remove last slash
-        id.gsub!('/', '%2F') unless id =~ /^_design/   # Escape slashes
-        id.sub! /$/, '/'   # Put last back
-      end
+    def self.escape_slashes! key
+
+      return if key =~ /^_design/   # Escape slashes
+
+      # Escape all slashes
+
+      key.gsub!('/', '%2F') unless
+
+      # Unescape the last
+
+      key.sub!(/%2F$/, '/')
     end
 
-    def self.docs db, id=nil, doc=nil
+    def self.docs db, *args
+      doc = args.pop if args[-1] =~ /\n/
+      key = args.join("/")
+      key = nil if key == ""
+
       db.sub! /\/$/, ''
 
-      # If no id, show all id's
-      if id.nil?
-        all = RestTree.request 'GET', "#{@@server}/#{db}/_all_docs", nil
+      # /db/, so show all key's...
+
+      if key.nil?
+
+        all = HTTParty.get "#{@@server}/#{db}/_all_docs"
 
         if all =~ /no_db_file/
           return "| DB not found, create it?\n- .create/"
@@ -114,25 +125,22 @@ module Xiki
         return rows.map{|i| "#{i['id']}/"}
       end
 
-      self.escape_slashes id
+      self.escape_slashes! key
 
-      # If just id, show doc
+      # /db/key/, so show doc...
 
       if doc.nil?
-
-        record = RestTree.request 'GET', "#{@@server}/#{db}/#{id}", nil
+        record = HTTParty.get "#{@@server}/#{db}/#{key}"
         record = JSON[record]
         record = record.to_yaml
         record.sub! /.+\n/, ''
         return record.gsub("\\n", "\n").gsub(/^/, '| ').gsub(/^\| $/, '|')
       end
 
-      # Doc passed, so save it
-
-      doc = ENV['txt'].dup
+      # /db/key/doc, so save it...
 
       # If a record is found, add rev
-      record = RestTree.request 'GET', "#{@@server}/#{db}/#{id}", nil
+      record = HTTParty.get "#{@@server}/#{db}/#{key}"
       if record !~ /404 /
         rev = JSON[record]['_rev']
 
@@ -147,8 +155,8 @@ module Xiki
       doc = YAML::load doc
       doc = doc.to_json
       # Update it
-      res = RestTree.request 'PUT', "#{@@server}/#{db}/#{id}", doc
-      "@flash/- updated!"
+      res = HTTParty.put "#{@@server}/#{db}/#{key}", :body=>doc
+      "<! updated!"
     end
 
     def self.views db
@@ -169,7 +177,7 @@ module Xiki
 
     def self.create db
       RestTree.request 'PUT', "#{@@server}/#{db}", nil
-      "@flash/- created!"
+      "<! created!"
     end
 
     def self.crud db

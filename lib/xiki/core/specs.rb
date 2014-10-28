@@ -1,6 +1,3 @@
-gem "rspec"
-require "rspec"
-
 module Xiki
   class Specs
 
@@ -216,7 +213,7 @@ module Xiki
 
       path = View.file.sub /.+\/spec\//, 'spec/'
       command = "rspec #{path}:#{View.line}"
-      result = Console.run command, :dir=>"$x", :sync=>true
+      result = Shell.run command, :dir=>":xiki", :sync=>true
       result = result.gsub(/^/, '    # ').gsub(/ +$/, '')
 
       Search.forward '^  +end$'
@@ -227,5 +224,4 @@ module Xiki
     end
   end
 
-  Menu.rspec :menu=>"specs"
 end

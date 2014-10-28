@@ -28,7 +28,7 @@ module Xiki
       # Write to temp file
       File.open("/tmp/tmp.py", "w") { |f| f << txt }
       # Call js
-      Console.run "python /tmp/tmp.py", :sync=>true
+      Shell.run "python /tmp/tmp.py", :sync=>true
     end
   end
 end

@@ -20,7 +20,7 @@ module Xiki
         View.flash "- '*memcached' is already open!", :times=>4
         return self.server
       end
-      Console.run('memcached -vv -p 11211 -m 64', :buffer=>buffer)
+      Shell.run('memcached -vv -p 11211 -m 64', :buffer=>buffer)
     end
 
     def self.server

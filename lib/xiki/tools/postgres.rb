@@ -6,7 +6,7 @@ module Xiki
       # If just /, show all db's...
 
       if db.nil?
-        txt = Console.run("psql -c '\\l'", :sync=>true)
+        txt = Shell.run("psql -c '\\l'", :sync=>true)
         txt = txt.scan(/^ (\w+)/).map{|i| "- #{i[0]}/"}
         return txt.join "\n"
       end
@@ -15,7 +15,7 @@ module Xiki
 
       if table.nil?
 
-        txt = Console.run("psql #{db} -c '\\d'", :sync=>true)
+        txt = Shell.run("psql #{db} -c '\\d'", :sync=>true)
         txt = txt.split "\n"
         txt = txt[3..-2]
         output = ""
@@ -30,7 +30,7 @@ module Xiki
 
       # If /mydb/mytable, show rows...
 
-      txt = Console.run("psql #{db} -c 'select * from #{table}'", :sync=>true)
+      txt = Shell.run("psql #{db} -c 'select * from #{table}'", :sync=>true)
       txt = txt.split "\n"
       header = txt.shift
       txt.shift
@@ -42,16 +42,16 @@ module Xiki
     end
 
     def self.create_db name
-      Console.run "createdb #{name}"
+      Shell.run "createdb #{name}"
     end
 
     def self.drop_db name
-      Console.run "dropdb #{name}"
+      Shell.run "dropdb #{name}"
     end
 
     def self.tables db
       db.sub! /\/$/, ''
-      txt = Console.run "psql #{db} -c '\\d'", :sync=>true
+      txt = Shell.run "psql #{db} -c '\\d'", :sync=>true
     end
 
   end

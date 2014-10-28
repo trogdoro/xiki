@@ -23,14 +23,14 @@ module Xiki
       if save.nil?
         dest = "#{tmp_dir}/#{dest}"
 
-        Console.sync %`convert "#{file}" -crop #{coords} "#{dest}"`, :dir=>dir
+        Shell.sync %`convert "#{file}" -crop #{coords} "#{dest}"`, :dir=>dir
         Image.>> dest, "_"
         return
       end
 
       # Image clicked on, so crop to destination
 
-      Console.sync %`convert "#{file}" -crop #{coords} "#{dest}"`, :dir=>dir
+      Shell.sync %`convert "#{file}" -crop #{coords} "#{dest}"`, :dir=>dir
       Line.previous
       Tree.to_parent
       Tree.kill_under

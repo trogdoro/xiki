@@ -17,7 +17,7 @@ module Xiki
       # Write to temp file
       File.open("/tmp/tmp.php", "w") { |f| f << "<?\n#{txt}\n?>\n" }
       # Call js
-      Console.run "php -f /tmp/tmp.php", :sync=>true
+      Shell.run "php -f /tmp/tmp.php", :sync=>true
     end
 
   end
