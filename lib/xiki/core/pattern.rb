@@ -90,15 +90,19 @@ module Xiki
     def self.expand options
 
       expander = options[:expanders][options[:expanders_index]]
-      options[:no_slash] = 1   # For menus, no slash by default, though they can remove the option
+      options[:no_slash] = 1   # For patterns, no slash by default, though they can remove the option
 
-      if options[:path] && expander[:proc]
+      prock = expander[:proc]
+
+      if options[:path] && prock
         begin
           output = expander[:proc].call(options[:path], options)
           options[:output] = output if output
           return
         rescue Exception=>e
-          return options[:output] = CodeTree.draw_exception(e, expander[:proc].source)
+          source = prock.respond_to?("source") ?
+            prock.source : "do 'gem install sourcify' and then we can show you the source of the errors"
+          return options[:output] = CodeTree.draw_exception(e, source)
         end
 
       end

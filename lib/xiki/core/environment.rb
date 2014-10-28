@@ -5,26 +5,20 @@ module Xiki
     # Environment.os
     def self.os
 
-      return :osx if RUBY_PLATFORM =~ /darwin/i
-      return :unix if RUBY_PLATFORM =~ /linux|solaris/i
-      return :windows if RUBY_PLATFORM =~ /mswin/i
-
-      #     if RUBY_PLATFORM =~ /darwin/i
-      #       { :os => "unix", :implementation => "macosx" }
-      #     elsif RUBY_PLATFORM =~ /linux/i
-      #       { :os => "unix", :implementation => "linux" }
-      #     elsif RUBY_PLATFORM =~ /cygwin/i
-      #       { :os => "unix", :implementation => "cygwin" }
-      #     elsif RUBY_PLATFORM =~ /mingw/i
-      #       { :os => "win32", :implementation => "mingw" }
-      #     elsif RUBY_PLATFORM =~ /mswin/i
-      #       { :os => "win32", :implementation => "mswin" }
-      #     elsif RUBY_PLATFORM =~ /solaris/i
-      #       { :os => "unix", :implementation => "solaris" }
-      #     else
-      #       { :os => "unknown", :implementation => "unknown" }
+      return "osx" if RUBY_PLATFORM =~ /darwin/i
+      return "linux" if RUBY_PLATFORM =~ /linux/i
+      return "solaris" if RUBY_PLATFORM =~ /solaris/i
+      return "windows" if RUBY_PLATFORM =~ /mswin/i
 
       :unknown
+    end
+
+    def self.xsh= val
+      $el.elvar.environment_xsh = val
+    end
+    def self.xsh?
+      return nil if ! $el.boundp(:environment_xsh)
+      $el.elvar.environment_xsh
     end
 
     def self.current_emacs_path
@@ -33,5 +27,14 @@ module Xiki
 
       result = `ps -ef`[/ (\/.+\/(Aquamacs|Aquamacs Emacs|Emacs)\.app)/, 1]
     end
+
+    def self.emacs
+      $el
+    end
+
+    def self.gui_emacs
+      @@gui_emacs ||= ($el && $el.display_graphic_p)
+    end
+
   end
 end

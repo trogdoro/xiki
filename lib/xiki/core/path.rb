@@ -12,8 +12,7 @@ module Xiki
       return if ! found
 
       path = path.slice!(found..-1).sub(/../, '')
-
-      path.sub! %r".+/\|", ""   # Remove ancestor quotes if multiple
+      path.sub! %r".+/[|:]", ""   # Remove ancestor quotes if multiple
 
       path
     end
@@ -30,13 +29,8 @@ module Xiki
       item.gsub! "/", ";/"
       item.sub! /^@/, ";@"   # At's only need escaping at the beginning
       item.gsub! "\n", ";0"
+      item.gsub! /\A\| =/, "| ;="
       item   # Just in case they look at return val
-    end
-
-    def self.escape item
-      item = item.dup
-      self.escape! item
-      item
     end
 
     def self.unescape! item
@@ -61,6 +55,14 @@ module Xiki
       result
     end
 
+    # Path.escape "Hey\nyou"
+    #   Hey;0you
+    def self.escape item
+      item = item.dup
+      self.escape! item
+      item
+    end
+
     def self.unescape item
       item = item.dup
       self.unescape! item
@@ -78,7 +80,7 @@ module Xiki
 
       result, last_was_escape = [""], false
 
-      # If :outer, split based on "/@"...
+      # If :outer, split based on "/="...
 
       if options[:outer]
         return self.split_outer path, options
@@ -120,7 +122,6 @@ module Xiki
     end
 
     def self.split_outer path, options={}
-
       result, last_was_escape = [""], false
 
       i = 0
@@ -129,7 +130,7 @@ module Xiki
         cc = path[i, 2]
 
         # If /= and not escaped
-        if cc =~ /^\/[@=]$/ && ! last_was_escape
+        if cc =~ /\A\/=$/ && ! last_was_escape
           result[-1] << "/"
           result << ""
           i += 1
@@ -141,7 +142,9 @@ module Xiki
       end
 
       # Remove = from beginning if there is one
-      result[0].sub!(/\A[@=]/, '') if result[0]
+      result[0].sub!(/\A= ?/, '') if result[0]
+
+      result.each{|o| o.sub! /^ +/, ''}
 
       result
     end
