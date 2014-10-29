@@ -7,7 +7,7 @@ module Xiki
       txt = File.read "/tmp/post_tmp"
 
       extension = txt =~ /^class / ? "rb" : "menu"
-      file_path = File.expand_path("~/menu/#{name}.#{extension}")
+      file_path = File.expand_path("~/xiki/commands/#{name}.#{extension}")
       File.open(file_path, "w") { |f| f << txt }
 
       require_menu file_path

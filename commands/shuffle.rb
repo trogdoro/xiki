@@ -3,22 +3,20 @@ module Xiki
     def self.menu *args
 
       message = "| This menu shuffles the siblings that follow it."
-      return message if args.any?
+      return message if args == []
 
       orig = Location.new
 
-      ignore, ignore2, left, right = Tree.sibling_bounds
+      left, ignore, ignore2, right = Tree.sibling_bounds
 
       return message if left == right
 
-      txt = View.txt left, right
-      View.delete left, right
-
-      Line.next
+      txt = View.delete left, right
 
       Code.randomize_lines txt
 
       orig.go
+      View.deselect
 
       nil
     end
