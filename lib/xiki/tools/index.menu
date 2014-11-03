@@ -1,4 +1,4 @@
 > Summary
 | These are older classes that were menus before the Unified refactor.
 | Many of them should be ported and moved into the menu dir:
-@$x/menu/
+=:xiki/commands/

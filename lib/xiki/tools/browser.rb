@@ -1,30 +1,9 @@
 module Xiki
   class Browser
-    #     def self.menu
-    #       "
-    #       - .url/
-    #       - .reload/
-    #       - .tabs/
-    #       - see/
-    #         <@ web development/
-    #         <@ firefox/
-    #       - api/
-    #         | This class lets you choose a default browser.
-    #         |
-    #         | Calls to Browser.url etc. will be delegated to the default browser.
-    #       - docs/
-    #         > Keys
-    #         | do+load+browser:  Reload the browser.
-    #         |
-    #         > See
-    #         | Many things have yet to be pulled out of firefox.rb and made generic.
-    #         << firefox/
-    #         |
-    #       "
-    #     end
 
     def self.url url, options={}
       Firefox.url url, options
+      "<! opened in browser"
     end
 
     def self.html html, options={}
@@ -45,7 +24,7 @@ module Xiki
 
       if path =~ /^(\w+)\.bootstrap\//
         name = $1
-        self.url "http://localhost:8161/#{name}"
+        self.url "http://localhost:8163/#{name}"
         return
       end
 
@@ -75,7 +54,7 @@ module Xiki
 
         if is_menu
           path.gsub! ' ', '-'
-          url = "http://localhost:8161/#{path}"
+          url = "http://localhost:8163/#{path}"
         else
           url = "file://#{path}"
         end
@@ -97,7 +76,7 @@ module Xiki
 
       # Optionally turn into local url, accounding url_mappings.menu...
 
-      mappings = Menu.menu_to_hash Bookmarks["~/menu/url_mappings.menu"] rescue {}
+      mappings = Menu.menu_to_hash Bookmarks["~/xiki/commands/url_mappings.menu"] rescue {}
       result = nil
       mappings.each do |k, v|
         break file.sub!(v, "#{k}/") if file.start_with? v
@@ -116,7 +95,7 @@ module Xiki
     end
 
     def self.markdown_render txt
-      require "#{Xiki.dir}menu/markdown.rb" if ! defined? Markdown
+      require "#{Xiki.dir}commands/markdown.rb" if ! defined? Markdown
       Markdown.render txt
     end
 
@@ -129,7 +108,7 @@ module Xiki
     end
 
     def self.source *url
-      return "@prompt/Pass me a url" if url == []
+      return "=prompt/Pass me a url" if url == []
       url = url.join '/'
 
       `curl -A "Mozilla/5.0" #{url}`

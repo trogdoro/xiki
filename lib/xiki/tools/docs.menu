@@ -3,10 +3,10 @@
   | their respective 'docs' menus.
 
   > Here are some to check out first
-  @keys/docs/
-  @menu/docs/
-  @files/docs/
-  @view/docs/
+  =keys/docs/
+  =menu/docs/
+  =files/docs/
+  =view/docs/
 - Try typing stuff/
   > Try just typing a word
   | Think of a menu name that might exist and sounds likely to solve your
@@ -20,7 +20,7 @@
   | only seconds to create them.
 
   > See
-  @menu/docs/how_to_create/
+  =menu/docs/how_to_create/
 - faq/
   - What is Xiki/
     Xiki is an environment that can be used in several ways:
@@ -40,7 +40,7 @@
     - Xiki is implemented mostly in ruby
       - but can use other languages like python, javascript, and coffeescript
   - What's the best way to figure out how to do something/
-    - @docs/Try typing stuff/
+    - =docs/Try typing stuff/
   - How can I keep up to date with the latest Xiki happenings/
     - Follow http://twitter.com/xiki
     - Join http://groups.google.com/group/xiki/
@@ -65,13 +65,13 @@
   experimental has security holes that need to be patched (blocking)
   non-priveleged users from using sensitive menus.
 
-  @web interface/
+  =web interface/
 
   Some of the more complicated menus that have editor dependencies
   will only be partially functional in the browser.
 
 > See
-@api/
+=api/
 
 > From the shell console, you can type stuff like this:
 $ xiki docs/Introduction

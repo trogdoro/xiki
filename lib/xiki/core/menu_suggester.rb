@@ -3,6 +3,8 @@ module Xiki
 
     def self.expands? options
 
+      return if options[:name].blank?   # If no name probably begins with a dot
+
       # Only interject if no launcher or just pre launcher
       return if options[:expanders].any? || options[:expanders] == [PrePattern]
 
@@ -15,34 +17,40 @@ module Xiki
     end
 
     def self.expand options
+
       return if options[:output] || options[:halt]
 
       name = options[:name]
 
       return if ! name   # Don't suggest if it's not menu-like
-
       if extension = options[:extension]
         options[:no_slash] = 1
 
         if items = options[:items]
           txt = items[0]
-          return options[:output] = "@beg/quoted/" if txt =~ /\A\| .+\z/
-          return options[:output] = "| Should either be no items or one quoted item" if items.length != 1 || items[0] !~ /\n/
-          file = "~/menu/#{Menu.format_name name}#{extension}"
+          if txt =~ /\A: .+\z/
+            return options[:output] = "- Use pipe quotes, not colons!"
+          end
+          if items.length != 1
+            return options[:output] = "| Should either be no items or one quoted item"
+          end
+          file = "~/xiki/commands/#{Menu.format_name name}#{extension}"
           file = File.expand_path file
           File.open(file, "w") { |f| f << txt }
-          return options[:output] = "@flash/- saved!"
+          return options[:output] = "<! saved!"
         end
 
-        load "#{Xiki.dir}menu/sample_menus/sample_menus_index.rb" if !defined?(SampleMenus)
+        require "#{Xiki.dir}commands/sample_menus/sample_menus_index.rb" # if !defined?(SampleMenus)
 
         txt = SampleMenus.by_extension(extension)
+        txt ||= SampleMenus.by_extension(".txt") if extension != "."   # Assume text if there's an extension but had no match
 
         if ! txt
           return options[:output] = "| Doesn't exist yet...\n"+Menu.handlers_with_samples.map{|o| "<< #{name}.#{o}\n"}.join("")
         end
 
-        return options[:output] = Tree.quote(txt)
+        return options[:output] = Tree.quote(txt, :char=>"|")
+
       end
 
       # Don't try to complete if line ends with a slash...
@@ -78,7 +86,7 @@ module Xiki
         # If they posted the form to create the menu, do it...
         if create_kind = options[:create_kind]
 
-          file = File.expand_path "~/menu/#{name.gsub(/[ -]/, '_')}#{options[:create_extension]}"
+          file = File.expand_path "~/xiki/commands/#{name.gsub(/[ -]/, '_')}#{options[:create_extension]}"
           txt = options[:create_txt]
           txt.gsub! "\r\n", "\n"
 
@@ -96,14 +104,16 @@ module Xiki
         sample_menus = "sample menus"
       end
 
+
       # We might need to pass more options in here... - :client, for example?
       txt = Expander.expand sample_menus, options[:items], expand_options   # Will handle if no items or a sample menu item
 
       if txt
-        txt.gsub! "<name>", name
-        txt.gsub! "<Name>", TextUtil.camel_case(name)
-        options[:output] = txt
-        return
+        if txt =~ /<name>/i
+          txt = "<<< ip/"
+        end
+
+        return options[:output] = txt
       end
 
       # User had items that weren't in @sample
@@ -116,7 +126,7 @@ module Xiki
         # that deletes it when saving.
         options[:output] = "
           > Make this into a menu?
-          @save menu/
+          =save menu/
           | Creates a new '#{options[:name]}' menu with these items.
           "
       end
