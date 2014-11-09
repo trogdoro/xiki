@@ -5,7 +5,7 @@ module Xiki
       children = Tree.children(:string=>1)
       children = children.unindent if children
 
-      trunk = Xiki.trunk
+      trunk = Tree.path
 
       # If no children and no parents, say how to use it.
       if children.blank? && trunk.length == 1
@@ -24,7 +24,7 @@ module Xiki
 
 
       if children.blank?
-        file = File.expand_path "~/menu/#{trunk[0]}.menu"
+        file = File.expand_path "~/xiki/commands/#{trunk[0]}.menu"
       else
         file = "/tmp/tmp.menu"
         File.open(file, "w") { |f| f << children }
@@ -33,13 +33,13 @@ module Xiki
       code = self.wrap_controller file
       Node.run_controller code
 
-      "@flash/- showing in browser!"
+      "<! showing in browser!"
     end
 
     def self.wrap_controller file
       %`
       var http = require('http');
-      var Xiki = require('#{Xiki.dir}etc/js/xiki.js');
+      var Xiki = require('#{Xiki.dir}misc/js/xiki.js');
       var fs = require('fs');
       http.createServer(function(req, res) {
 
@@ -50,7 +50,7 @@ module Xiki
         // If requesting js, just return it
         if(url.match(/^\\/js\\//)){
           res.writeHead(200, {'Content-Type': 'application/x-javascript'});
-          var js = fs.readFileSync('#{Xiki.dir}etc/js/'+url.replace(/.+\\//, ''), 'utf8');
+          var js = fs.readFileSync('#{Xiki.dir}misc/js/'+url.replace(/.+\\//, ''), 'utf8');
           res.end(js);
           return;
         }
@@ -71,8 +71,8 @@ module Xiki
         }
 
 
-      }).listen(8161, '127.0.0.1');
-      console.log('Server running at http://127.0.0.1:8161/');
+      }).listen(8163, '127.0.0.1');
+      console.log('Server running at http://127.0.0.1:8163/');
       `.unindent
     end
 

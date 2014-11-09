@@ -13,10 +13,10 @@ module Xiki
         }
 
       numbers = choices[choice]
-      raise "@flash/- '#{choice}' isn't a valid choice for View.visible!" if numbers.nil?
+      raise "<! '#{choice}' isn't a valid choice for View.visible!" if numbers.nil?
 
       $el.el4r_lisp_eval "(set-frame-parameter nil 'alpha '#{numbers})"   # full visible
-      View.kill :force_recent=>1 if View.name == "@window/visible/"
+      View.kill :force_recent=>1 if View.name == "window/visible/"
     end
 
   end

@@ -23,7 +23,7 @@ module Xiki
         return "| #{hash[key]}"
       end
 
-      "@flash/- updated!"
+      "<! updated!"
 
     end
   end

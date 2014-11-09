@@ -4,7 +4,7 @@ module Xiki
       children = Tree.children(:string=>1)
       children = children.unindent if children
 
-      trunk = Xiki.trunk
+      trunk = Tree.path
 
       # If no children and no parents, say how to use it.
       if children.blank? && trunk.length == 1
@@ -25,7 +25,7 @@ module Xiki
       menu = "untitled"
 
       if children.blank?
-        file = File.expand_path "~/menu/#{trunk[0]}.menu"
+        file = File.expand_path "~/xiki/commands/#{trunk[0]}.menu"
         menu = trunk[0]
         children = File.read file
       end
@@ -35,15 +35,15 @@ module Xiki
 
       Firefox.url "file:///tmp/untitled.html"
 
-      "@flash/- showing in browser!"
+      "<! showing in browser!"
     end
 
     def self.wrap_standalone children
       %`
       <head>
         <script src="http://code.jquery.com/jquery-1.6.4.min.js"></script>
-        <script src="file://#{Xiki.dir}etc/js/xiki.js"></script>
-        <script src="file://#{Xiki.dir}etc/js/menu1.js"></script>
+        <script src="file://#{Xiki.dir}misc/js/xiki.js"></script>
+        <script src="file://#{Xiki.dir}misc/js/menu1.js"></script>
         <script src="http://code.jquery.com/mobile/1.0/jquery.mobile-1.0.min.js"></script>
         <link rel="stylesheet" href="http://code.jquery.com/mobile/1.0/jquery.mobile-1.0.min.css" />
       </head>
