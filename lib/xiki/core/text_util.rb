@@ -30,7 +30,7 @@ module Xiki
         ['snake', lambda {|o| TextUtil.snake_case(o)}],
         ['plus', lambda {|o| TextUtil.plus_case(o)}],
         ['hyphen', lambda {|o| TextUtil.hyphen_case(o)}],
-        ]
+      ]
     end
 
     def self.unindent txt, options={}
@@ -57,11 +57,21 @@ module Xiki
     end
 
     # TextUtil.snake_case("hi there")   # -> hi_there
+    def self.snake s
+      self.snake_case s
+    end
     def self.snake_case s
-      s.gsub(/[ +-]/, '_').
+      s.gsub(/[ \/+-]/, '_').
         gsub(/([a-z0-9])([A-Z])/) {"#{$1}_#{$2}"}.downcase.
         gsub(/[^\w]/, "").
-        gsub(/__+/, "_")
+        gsub(/__+/, "_").
+        gsub(/_$/, "")
+    end
+
+    # Just words and spaces
+    # TextUtil.word_case("hi there")   # -> hi there
+    def self.word_case s
+      self.snake_case(s).gsub('_', ' ')
     end
 
     # TextUtil.plus_case("hi there")   # -> hi+there
@@ -81,6 +91,10 @@ module Xiki
     end
 
     # TextUtil.camel_case("hi there")   # -> HiThere
+    def self.camel s
+      self.camel_case s
+    end
+
     def self.camel_case s
       # If it's all capitals, make subsequent copitals lowercase
       if s =~ /^[A-Z_-]+$/
@@ -125,6 +139,31 @@ module Xiki
         txt << "#{w} "   # Add word
       end
       txt.strip
+    end
+
+    # TextUtil.ap({1=>2}).inspect
+    #   "1 => 2"
+    def self.ap txt
+      txt = txt.ai
+      txt.sub! /\A\{\n/, ''
+      txt.sub! /\n\}\z/, ''
+      txt.gsub! /^  /, ""
+      txt.sub! "[\n  [", "[["
+      txt
+    end
+
+    # p TextUtil["1 => 2"]
+    #   {1=>2}
+    def self.[] txt
+      txt = "{#{txt}}"
+      eval txt
+    end
+
+    def self.symbolize_hash_keys hash
+      hash.keys.inject({}) {|new_hash, key|
+        new_hash[key.to_sym] = hash[key]
+        new_hash
+      }
     end
 
   end

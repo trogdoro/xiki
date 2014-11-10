@@ -7,6 +7,11 @@ module Xiki
 
       # If line is blank, treat as enter+snippet...
 
+      if FileTree.handles?
+        Search.enter_search
+        return
+      end
+
       if line.blank?
         View << "@" if Line =~ /^ /
         Launcher.insert("snippet/")   # Until we port to unified
@@ -20,7 +25,7 @@ module Xiki
       if line =~ /^(xiki|http):\/\//
         server_name = line.sub(/^.+?\/\//, '')
         server_name.sub!(/\/$/, '')
-        mappings = Menu.menu_to_hash Bookmarks["~/menu/url_mappings.menu"] rescue {}
+        mappings = Menu.menu_to_hash Bookmarks["~/xiki/commands/url_mappings.menu"] rescue {}
         file = mappings[server_name]
         file = file ? "@#{file}" : "> Not found, add here\n@url mappings/"
 
@@ -34,6 +39,11 @@ module Xiki
 
         return
       end
+
+
+      # This leaves it up to the menu.
+        # Or do we want to take over > and delegate to =source?
+          # so it shows the source file tree underneath?
 
       if ! line.blank?
         Keys.prefix = "source"

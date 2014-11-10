@@ -7,7 +7,7 @@ module Xiki
         | Put '@executable' under a menu then run it again.  It should be under
         | the menu you want to create the executable for ou want to create the"
 
-      trunk = Xiki.trunk
+      trunk = Tree.path
 
       "
       - cake/

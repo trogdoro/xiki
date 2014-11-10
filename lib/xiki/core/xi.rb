@@ -59,9 +59,7 @@ module Xiki
             @! Xi("a"=>"aa", "b"=>"bb")
             @! Xi(["a", ["bb", "cc", {"a"=>"aa", "b"=>"bb"}]])
           - status/
-            > See notes at for progress / ideas
-            @/docs/todo/todo.notes
-              | > Xi inspect
+            | Unfinished...
           - ideas/
             | Ideas for improving Xi() in the future.  Since the "- /"
             | and "- {/" syntax are kind of crappy.

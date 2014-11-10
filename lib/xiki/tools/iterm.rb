@@ -15,14 +15,17 @@ module Xiki
     end
 
     def self.command txt
-      $el.do_applescript %`
+      Applescript.run %`
         #{txt} application "iTerm"
         `
       return nil
     end
 
     def self.run txt, options={}
-      $el.do_applescript %`
+      txt.gsub! "\\", '\\\\\\'
+      txt.gsub! '"', '\"'
+
+      Applescript.run %`
         tell application "iTerm"
           #{options[:activate] ? 'activate' : ''}
           tell the first terminal

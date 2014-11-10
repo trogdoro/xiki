@@ -2,7 +2,7 @@ module Xiki
   class Say
     def self.menu *args
       txt = args.join('/').gsub('"', '\"')
-      $el.do_applescript "say \"#{txt}\""
+      Applescript.run "say \"#{txt}\""
     end
   end
 end

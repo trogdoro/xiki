@@ -47,7 +47,7 @@ module Xiki
         xiki_directory = File.expand_path "#{File.dirname(__FILE__)}/../../.."
 
         ["xiki/core/ol", "xiki/core/core_ext", "xiki/core/line", "xiki/core/tree"].each{|o| require o}
-        require "#{xiki_directory}/menu/bootstrap.rb"
+        require "#{xiki_directory}/commands/bootstrap.rb"
 
         txt.slice! /.+\n/
         txt = txt.unindent
@@ -114,7 +114,7 @@ module Xiki
         <style>
           a {
             text-decoration: none;
-            font-size: 16px;
+            font-size: 15px;
           }
           .content a.selected {
             background: -moz-linear-gradient(center top, #58b, #7ad) repeat scroll 0 0 transparent;

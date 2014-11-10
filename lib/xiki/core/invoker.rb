@@ -76,7 +76,6 @@ module Xiki
       dotified = []
 
       if menu_text
-
         menu_text = menu_text.unindent if menu_text =~ /\A[ \n]/
         txt = Tree.children menu_text, args, options
 
@@ -106,7 +105,6 @@ module Xiki
           dotified = Tree.dotify menu_obscured, args, dotified
         end
       end
-
 
       # If MENU_HIDDEN exists, use it to route...
 
@@ -187,7 +185,7 @@ module Xiki
 
       #     # TODO: Unified: comment out for now - just comment out since we're doing no caching
       #     # reload 'path_to_class'
-      #     Menu.load_if_changed File.expand_path("~/menu/#{snake}.rb")
+      #     Menu.load_if_changed File.expand_path("~/xiki/commands/#{snake}.rb")
 
       # Call .menu_after if it exists...
 
@@ -209,7 +207,7 @@ module Xiki
         return nil if some_method_ran   # Only say "no output" if didn't call .menu, .menu_before|_after, or other action
 
         # For now, let's try not doing this
-        txt = "@flash/- no output!" if options[:client] =~ /^editor\b/
+        txt = "<! no output!" if options[:client] =~ /^editor\b/
       end
 
       txt
@@ -242,7 +240,8 @@ module Xiki
       txt = txt.sub /\A( *class .+?\n).+/m, "\\1"   # Remove everything after 1st class... line, so it doesn't look at internal irrelevant module statements in a script.
 
       # If it's class Foo::Bar, pull it out of there
-      if mod = txt[/class (.+)::/, 1]
+      # .commit/Fix federico bug, mistaking ...:: for a package
+      if mod = txt[/class ([\w:]+)::/, 1]
         return mod
       end
 

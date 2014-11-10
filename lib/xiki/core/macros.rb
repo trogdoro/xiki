@@ -45,6 +45,11 @@ module Xiki
 
       # Run it prefix times
       $el.call_last_kbd_macro $el.elvar.current_prefix_arg || 1
+
+      # Make C-. run macro again (macros might have changed this)
+
+      Keys.remember_key_for_repeat(proc {Macros.run})
+
     end
   end
 end

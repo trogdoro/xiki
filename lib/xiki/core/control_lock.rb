@@ -1,5 +1,5 @@
 module Xiki
-  # Simple wrapper around control_lock.el to turne
+  # Simple wrapper around control_lock.el to turn
   # it on and off (and handle the case where it's not)
   # installed.
   class ControlLock

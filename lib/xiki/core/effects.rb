@@ -9,38 +9,41 @@ module Xiki
       - api/
         | Try these out by double-clicking on them.
         - Glow/
-          @! Effects.glow
-          @! Effects.glow :times=>5
-          @! Effects.glow :what=>:paragraph
-          @! Effects.glow :what=>:block
-          @! Effects.glow :what=>[1, 100]
+          =! Effects.glow
+          =! Effects.glow :times=>5
+          =! Effects.glow :what=>:paragraph
+          =! Effects.glow :what=>:block
+          =! Effects.glow :what=>[1, 100]
           - Colors/
-            @! Effects.glow :color=>:fire
-            @! Effects.glow :color=>:water
-            @! Effects.glow :color=>:forest
-            @! Effects.glow :color=>:rainbow
-            @! Effects.glow :color=>:fat_rainbow
+            =! Effects.glow :color=>:fire
+            =! Effects.glow :color=>:water
+            =! Effects.glow :color=>:forest
+            =! Effects.glow :color=>:rainbow
+            =! Effects.glow :color=>:fat_rainbow
           - Fade in and out/
-            @! Effects.glow :fade_in=>1
-            @! Effects.glow :fade_out=>1
+            =! Effects.glow :fade_in=>1
+            =! Effects.glow :fade_out=>1
         - Blink/
           | Makes line blink orange. Using a longer time since the blink happens
           | anyway.
-          @! Effects.blink :time=>1
-        - View methods that use effects/
-          @! View.prompt
-          @! View.flash
-          @! View.flash 'Saved!'
+          =! Effects.blink :time=>1
+        - View methods/
+          =! View.prompt
+          =! View.flash
+          =! View.flash 'Saved!'
+        - Things menus return/
+          
       - docs/
         > Keys
         | do+line+effects: make line blink
         | up+do+line+effects: make line blink rainbow color
       - see/
-        <@ themes/
+        <= themes/
       "
 
     #
     # Effects.glow :color=>:forest
+    # Effects.glow :fade_in=>1
     #
     def self.glow options={}
 
@@ -55,7 +58,6 @@ module Xiki
       else
         left, right = Line.left, Line.right
       end
-
 
       # Set :times to 1 if no args and fade out
       times = 1 if ! options[:times] && (options[:fade_out] || options[:fade_in])
@@ -89,15 +91,20 @@ module Xiki
         else; [1] + (down + [7] + up + [1]) * times
         end
 
+      delay = options[:delay]
+      delay ||= Environment.gui_emacs ? 0.022 : 0.042
+
       sequence.each do |i|
         $el.overlay_put over, :face, (faces[i-1] || faces[0])
-        $el.sit_for 0.012
+        $el.sit_for delay
+
+        # Temp for video recording > wait for longer
+        # $el.sit_for 0.05
       end
 
       $el.delete_overlay over
     end
 
-    # Sample usages:
     def self.blink options={}
       what = options[:what]
       what ||= :line
@@ -142,5 +149,4 @@ module Xiki
     end
 
   end
-  Effects.define_styles
 end
