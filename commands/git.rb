@@ -140,13 +140,10 @@ module Xiki::Menu
 
         dropdown = options[:dropdown]
 
-        return "~ add\n~ add multiple\n~ remove" if dropdown == []
-        return self.dropdown_add file, dir if dropdown == ["add"]
-        return self.dropdown_add_multiple file, dir if dropdown == ["add multiple"]
-        return self.dropdown_remove file, dir if dropdown == ["remove"]
+        return "~ add\n~ add multiple\n~ remove\n~ unadd\n~ revert" if dropdown == []
+        return self.dropdown_item dropdown, file, dir if dropdown
 
         # "modified:", so show diff
-
         if label == "modified: "
           txt = self.diff_internal("git diff --patience --relative #{self.git_diff_options} #{file}", dir)
 
@@ -196,29 +193,42 @@ module Xiki::Menu
 
     end
 
-    def self.dropdown_add file, dir
+    def self.dropdown_item dropdown, file, dir
 
-      command = "git add \"#{file}\""
-      txt = Shell.sync command, :dir=>dir
-      return Tree.quote(txt) if txt.any?
-      "<! added!"
+      if dropdown == ["add"]
+        command = "git add \"#{file}\""
+        txt = Shell.sync command, :dir=>dir
+        return Tree.quote(txt) if txt.any?
+        return "<! added!"
+      end
+
+      if dropdown == ["add multiple"]
+        indent = Line.indent
+        Line.to_left
+        View.<< "#{indent}+ add/\n", :dont_move=>1
+        return ""
+      end
+
+      if dropdown == ["remove"]
+        command = "git rm -r \"#{file}\""
+        txt = Shell.sync command, :dir=>dir
+        return "<! removed!"
+      end
+
+      if dropdown == ["unadd"]
+        command = "git reset \"#{file}\""
+        txt = Shell.sync command, :dir=>dir
+        return "<! it was reset!"
+      end
+
+      if dropdown == ["revert"]
+        command = "git checkout \"#{file}\""
+        txt = Shell.sync command, :dir=>dir
+        return "<! file reverted!"
+      end
 
     end
 
-    def self.dropdown_add_multiple file, dir
-
-      indent = Line.indent
-      Line.to_left
-      View.<< "#{indent}+ add/\n", :dont_move=>1
-      ""
-
-    end
-
-    def self.dropdown_remove file, dir
-      command = "git rm -r \"#{file}\""
-      txt = Shell.sync command, :dir=>dir
-      "<! removed!"
-    end
 
     def self.status_raw
       dir = options[:dir]
