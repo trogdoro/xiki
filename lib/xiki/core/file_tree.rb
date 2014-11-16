@@ -2122,7 +2122,7 @@ module Xiki
       # ~ create dir, so create it...
 
       if dropdown == ["create dir"]
-        Dir.mkdir options[:file_path]
+        FileUtils.mkdir_p options[:file_path]
         return options[:output] = "<! created!"
       end
 
