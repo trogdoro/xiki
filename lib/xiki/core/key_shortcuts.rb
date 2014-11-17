@@ -189,6 +189,12 @@ module Xiki
 
       Xiki.def("jump+copy+here"){ FileTree.copy_to }
 
+      Xiki.def("jump+yours"){ FileTree.copy_to }
+
+      (1..9).each do |n|
+        Xiki.def("jump+#{n}"){ View.to_nth_fraction n }
+      end
+
     end
 
 
@@ -324,16 +330,9 @@ module Xiki
       # X
       # Z
 
-      Xiki.def("hop+0"){ View.to_nth_paragraph 0 }
-      Xiki.def("hop+1"){ View.to_nth_paragraph 1 }
-      Xiki.def("hop+2"){ View.to_nth_paragraph 2 }
-      Xiki.def("hop+3"){ View.to_nth_paragraph 3 }
-      Xiki.def("hop+4"){ View.to_nth_paragraph 4 }
-      Xiki.def("hop+5"){ View.to_nth_paragraph 5 }
-      Xiki.def("hop+6"){ View.to_nth_paragraph 6 }
-      Xiki.def("hop+7"){ View.to_nth_paragraph 7 }
-      Xiki.def("hop+8"){ View.to_nth_paragraph 8 }
-      Xiki.def("hop+9"){ View.to_nth_paragraph 9 }
+      (1..9).each do |n|
+        Xiki.def("hop+#{n}"){ View.to_nth_paragraph n }
+      end
 
     end
 
