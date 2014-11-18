@@ -1,0 +1,14 @@
+- gemcutter page/
+  @http://gemcutter.org/gems/xiki
+- 1. update version/
+  =:xiki/
+    $ git stash
+    - xiki.gemspec
+      |   s.version = "0.
+      | s.date = "
+      |   s.add_dependency('trogdoro-el4r', [">= 1.0.
+- 2. build and deploy/
+  =:xiki/
+    $ gem build xiki.gemspec
+    % gem push xiki-0.
+    $ git stash pop

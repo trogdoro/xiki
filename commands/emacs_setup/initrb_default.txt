@@ -1,0 +1,10 @@
+$LOAD_PATH << "{{xiki_dir}}lib/"
+require 'xiki'
+Xiki.init
+Xiki::KeyShortcuts.keys   # Use default key shortcuts
+Xiki::Themes.use "Default"  # Use xiki theme
+
+# Alternate configuration to just map Control+Return
+# (Comment out the KeyShortcuts.keys line above)
+# Xiki::KeyShortcuts.map_control_return
+

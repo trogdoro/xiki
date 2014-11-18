@@ -1,0 +1,17 @@
++ full
+  ! # Normal
+  ! View.dimensions_full
++ small
+  ! View.dimensions_set 100, 22, 60, 20
+  ! Styles.default_font_size
+  ! nil
++ new window
+  ! $el.new_frame
+  ! X"themes/list/Default"
+  ! View.dimensions_set 100, 22, 60, 20
+  ! #Cursor.white
++ current/
+  ! "
+  ! ! Styles.font_size #{Styles.get_font_size}
+  ! ! View.dimensions_set #{$el.frame_parameter(nil, :left)}, #{$el.frame_parameter(nil, :top)}, #{View.frame_width}, #{View.frame_height}
+  ! "

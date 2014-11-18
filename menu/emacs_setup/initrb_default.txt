@@ -1,6 +1,0 @@
-$LOAD_PATH << "{{xiki_dir}}lib/"
-# $LOAD_PATH << "/projects/xiki/lib/"
-require 'xiki'
-Xiki.init
-Xiki::KeyShortcuts.keys   # Use default key shortcuts
-Xiki::Themes.use "Default"  # Use xiki theme

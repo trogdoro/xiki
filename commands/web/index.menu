@@ -1,0 +1,75 @@
+- .start/
+- .control/
+  - .restart/
+  - .stop/
+  - .status/
+  - .reload/
+- .setup/
+  - tail log/
+    ! Ol.stack 8
+    ! Ol["!"]
+    ! Shell.run "tail -f xiki_web.output", :dir=>"/tmp"
+  - apache/
+    > Be sure to read this warning first
+    | Beware, the web interface is currently experimental and
+    | has security holes that need to be patched.  They include
+    | blocking non-priveleged users from using sensitive menus,
+    | blocking external sites from linking to Xiki url's.  If
+    | you're security-knowledgeable and want to help brainstorm
+    | about the best ways of dealing with these, tweet me
+    | at @xiki.
+    - Mac/
+      - 1. Configure Apache/
+        =/etc/apache2/other/
+          - Create conf file) % sudo touch xiki.vhost.conf
+          - xiki.vhost.conf
+            - Make writable) @chmod/777/
+            - Add contents (as+update):
+            | NameVirtualHost *:80
+            |
+            | AddHandler cgi-script .rb
+            |
+            | <VirtualHost *:80>
+            |   ServerName xiki
+            |   ServerAlias menu
+            |   DocumentRoot "#{Xiki.dir}misc/www/public"
+            |   ErrorDocument 503 "/error.html"
+            |
+            |   RewriteEngine On
+            |   RewriteCond %{REQUEST_URI} !^/error.html$
+            |   RewriteRule ^/(.*) http://localhost:8163/$1 [P]
+            |
+            |   <directory "#{Xiki.dir}misc/www/public">
+            |     Order deny,allow
+            |     Allow from 127.0.0.1
+            |   </directory>
+            | </VirtualHost>
+            - Restore) @chmod/644/
+      - 2. Update hosts file/
+        =/etc/hosts
+          - Make writable) @chmod/777/
+          - Add these two lines:
+          | 127.0.0.1       xiki
+          | 127.0.0.1       menu
+          - Restore) @chmod/644/
+      - 3. Restart Apache/
+        @apache/restart/
+    - Linux/
+      | The steps are the same as for the Mac, but with these
+      | differences:
+      | - Use the 'sites-available' dir instead of 'other'
+      | - Run "a2ensite xiki" on the command line before restarting apache
+- docs/
+- more/
+  > Url's
+  | By default you can go to this url:
+  @http://localhost:8163
+
+  | Optionally, you can setup your apache config and hosts
+  | file so that this url works:
+  @http://xiki
+  | See this menu for how:
+  @web/setup/apache/
+- see/
+  <@ web development/
+  <@ servers/

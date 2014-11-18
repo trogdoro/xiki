@@ -1,5 +1,0 @@
-- xiki/
-  ! File.open("#{Xiki.dir}xiki.gemspec").grep(/^ *s\.version/)[0][/\d[\d.\w]*/]
-- editor/
-  ! $el.emacs_version
-- @ruby/version/
