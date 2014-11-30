@@ -1,0 +1,101 @@
+> Things menus can return to request more info
+- docs/
+  - summary/
+    | Menus can return "=beg/siblings/" and similar things to indicate
+    | they want the Xiki client to re-invoke them with more
+    | information. Normally when you launch a menu only the path is
+    | sent as input (and a few other pieces of info).
+    |
+    | Returning something like this makes Xiki re-invoke the menu,
+    | passing in the additional information (unless there's a reason
+    | not to).
+    |
+    | See the items below for examples.
+  - source/
+    | Here's the start of the code that handles this:
+    =/projects/xiki/lib/xiki/core/launcher.rb
+      + ##if\ beg\ ==/
+  - future todo maybe/
+    - when colons, way to beg multiple lines, but with colons, to distinguish/
+      - example/
+        - when...
+          : multiple
+          : lines
+        - would return
+          ": multiple\n: lines\n"
+    - have character equivalants/
+      | So maybe these will be equivalent
+      | =beg/quoted/
+      | <?:
+- quoted/
+  | Menus can return "=beg/quoted/" to indicate they want to be
+  | invoked again, with a big multi-line string passed in. The
+  | adjoining :... lines will be included, separated by linebreaks.
+  | (The colons will be striped off.)
+  - example/
+    =/tmp/
+      - normal_behavior.rb
+        : args[0].inspect
+      - normal_behavior//
+        : expand one of
+        : these lines
+      - colon_beggar.rb
+        : # If not multi-line string passed in, ask for it
+        : return "=beg/quoted/" if args[0] !~ /\n/
+        :
+        : args[0].inspect
+      - colon_beggar//
+        : expand one of
+        : these lines
+  - about pipes/
+    | Note that if the lines are quoted with pipes, lines will be
+    | passed in automatically as a big string automatically.
+    | Example:
+    =args/
+      : []
+      + docs/
+    =echo/
+      | expand one of
+      | these lines
+  - example/
+    =~/xiki/commands/beggar.rb
+      | # Beg for multiple lines when only 1 given (check for a linebreak)
+      | return "=beg/quoted/" if args[0] !~ /\n/
+      |
+      | "I got #{args}"
+    =beggar/
+      - bullet
+      | quoted
+      | lines
+- neighbors/
+  | Menus can return "=beg/neighbors/" to indicate want to be
+  | invoked again with siblings passed, except for those separated
+  | by blank lines.
+  - example/
+    =~/xiki/commands/beggar.rb
+      | # Beg for multiple lines when only 1 given (check for a linebreak)
+      | return "=beg/neighbors/" if args[0] !~ /\n/
+      |
+      | "I got #{args}"
+    =beggar/
+      - bullet
+      | quoted
+
+      - separated
+- siblings/
+  | Menus can return "=beg/siblings/" to indicate want to be
+  | invoked again, with all the siblings passed in as the last
+  | argument, including ones separated by single blank lines.
+  - example/
+    =~/xiki/commands/beggar.rb
+      | # Beg for multiple lines when only 1 given (check for a linebreak)
+      | return "=beg/siblings/" if args[0] !~ /\n/
+      |
+      | "I got #{args}"
+    =beggar/
+      - bullet
+      | quoted
+
+      - separated
+<= replace/
+<= bullets/
