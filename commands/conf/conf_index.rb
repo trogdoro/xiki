@@ -14,7 +14,7 @@ module Xiki::Menu
     #   - foo/
     #     | content
     # foo/
-    #   @conf/
+    #   =conf/
     #     | content
     #     - docs/
     def self.menu_after output=nil, *args  # arg1=nil, arg2=nil
@@ -22,12 +22,16 @@ module Xiki::Menu
       return if output && args.any?   # MENU handled everything, if there was a path and autput
       options = yield
 
-      # Use parent as menu name if foo/@conf...
+      # Use ancestor (or ancestor) as menu name if foo/=conf...
 
-      menuish_parent = Xiki.menuish_parent options
+      if ancestors = options[:ancestors]
+        menuish_ancestor = ancestors[-1][/[\w ]+/]
+      end
 
-      # Don't use parent if there's a foo/@conf/bar item that overrides
-      args.unshift menuish_parent if menuish_parent && (args.blank? || args[0] =~ /^\|/)
+      # menuish_ancestor = Xiki.menuish_parent options
+
+      # Don't use ancestor it's a herring/=conf/legit situation (if child is item-ish, use it)
+      args.unshift menuish_ancestor if menuish_ancestor && (args.blank? || args[0] =~ /\n/)
       name, content = args
 
       # /..., so list all conf-able menus...
@@ -40,8 +44,8 @@ module Xiki::Menu
 
       item = args[-1]
 
-      # TODO: remove Tree.txt editor dependency?
-      ConfHandler.txt name, (content ? Tree.txt : nil), item, options
+      # Content seems sufficient
+      ConfHandler.txt name, content, item, options
     end
 
 
@@ -52,7 +56,6 @@ module Xiki::Menu
       Xiki.menu_path_dirs.each do |path_dir|
 
         Dir["#{path_dir}/*"].each do |menu_dir|
-          #Ol "menu_dir", menu_dir
           conf_path = "#{menu_dir}/default.conf"
           next unless File.exists? conf_path
 
