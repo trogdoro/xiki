@@ -113,7 +113,7 @@ module Xiki::Menu
 
       if args == []
 
-        txt = Shell.command("git status", :dir=>dir)
+        txt = Shell.command("git status .", :dir=>dir)
         txt = Tree.quote txt
         txt.gsub! /^: #/, ':'
 
@@ -171,7 +171,7 @@ module Xiki::Menu
         # a.txt (no label), so just show from disk...
 
         if ! label || label == "new file: "
-          txt = Tree.quote File.read("#{dir}#{file}")
+          txt = File.read("#{dir}#{file}").gsub(/^/, ":+")
           txt = ":@@ +1\n#{txt}"
           return txt
           return "todo > show from disk"
@@ -676,7 +676,7 @@ module Xiki::Menu
     def self.remove_options siblings
       siblings = siblings.map{|l| l.sub /^[+-] /, ""}
       siblings = siblings.map{|l| l.sub /^[a-z ]+: /, ""}
-      siblings = siblings.select{|o| o !~ /^(commit|delete|revert|add|unadd)\// && o =~ /^\w/ }
+      siblings = siblings.select{|o| o !~ /^(commit|delete|revert|add|unadd|remove)\// && o =~ /^\w/ }
       siblings = siblings.map{|o| o.sub(/^(modified|deleted|renamed): /, '')}
       siblings
     end
@@ -693,8 +693,8 @@ module Xiki::Menu
         return "<! Provide some files (on lines next to this menu, with no blank lines, and no untracked files)!"
       end
 
-      siblings = siblings.join("\\\n  ")
-      siblings.gsub!(" -> ", " ")   # In case any "a -> b" exist, from renames
+      siblings = siblings.map{|o| "\"#{o}\""}.join("\\\n  ")
+      siblings.gsub!(" -> ", "\" \"")   # In case any "a -> b" exist, from renames
 
       Shell.run "git commit -m \"#{message}\" #{siblings}", :dir=>dir
     end
@@ -732,7 +732,6 @@ module Xiki::Menu
     end
 
     def self.remove
-
       options = yield
       dir = options[:dir]
 
@@ -742,7 +741,7 @@ module Xiki::Menu
 
       return "- No files to unadd (they should be siblings of delete)!" if siblings.empty?   # Error if no siblings
 
-      command = "rm #{siblings.join(' ')}"
+      command = "git rm #{siblings.map{|o| "\"#{o}\""}.join(' ')}"
       txt = Shell.sync command, :dir=>dir
       return Tree.quote txt if txt.any?
       "<! deleted!"
