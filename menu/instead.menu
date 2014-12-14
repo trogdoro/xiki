@@ -1,7 +1,0 @@
-- docs/
-  | Menus can return "@instead/siblings/" and similar things, with
-  | items indented underneath, to indicate the Xiki client should
-  | insert the items in place of what's currently in the tree.
-- quoted/
-- neighbors/
-- siblings/

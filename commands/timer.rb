@@ -8,10 +8,11 @@ class Timer
     end
 
     elapsed = Time.now - Time.parse(started)
-    elapsed /= 60.0
-    elapsed  = sprintf('%.2f', elapsed)
+    elapsed = elapsed.to_i
+    seconds = (elapsed % 60).to_s
+    elapsed = "#{elapsed / 60}:#{seconds.sub /^.$/, "0\\0"}"
 
-    "| #{elapsed} minutes elapsed"
+    "| #{elapsed} elapsed"
 
   end
 end

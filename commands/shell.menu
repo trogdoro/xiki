@@ -1,0 +1,6 @@
+- current/
+  ! Shell.current *args
+- history/
+  ! Shell.history *args
+- all/
+  ! Shell.all *args
