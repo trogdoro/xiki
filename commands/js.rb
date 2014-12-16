@@ -2,7 +2,12 @@ Applescript.exec("Firefox", "activate") if Keys.prefix_u
 
 return "| $('h1').toggle(1000)  // Type some javascript here (to run in the browser)" if args.blank?
 
-return "@beg/quoted/" if args[-1] !~ /\n/
+txt = args[-1]   # => alert(\"1\")"
+txt.sub! /\A: /, ''
 
-Firefox.js args[-1]
+n = Keys.prefix_n || 1
+n.times do
+  Firefox.js args[-1]
+end
+
 nil
