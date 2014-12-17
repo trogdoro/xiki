@@ -1,0 +1,67 @@
+> Things menus can return with output, to control where it goes
+- docs/
+  - summary/
+    | Menus can return "=replace/siblings/" and similar things.  This
+    | means to replace the siblings in the tree with what is returned.  It
+    | should have some items indented underneath, like this:
+    |
+    | =replace/siblings/
+    |   stuff to replace with/
+    |
+    | items indented underneath, to indicate the Xiki client should
+    | insert the items in place of what's currently in the tree.
+  - future args that might be worth doing/
+    - line/
+      : would just show the full line?
+        : what about when multiple items in a line - like a/b/
+    - code/
+      : <!
+      :   ! some code
+      :   ! remote clients could send back remote code they want you to run locally
+      :   could be shell commands to - maybe any xiki path?
+      :   /tmp/$ df
+  - source/
+    =:xiki/lib/xiki/core/launcher.rb
+      + ##if\ arg =/
+- words/
+  - siblings/
+    =/tmp/
+      - foo.menu
+        : - a/
+        : - b/
+        :   =replace/siblings/
+        :     - c/
+        :     - d/
+      - foo//
+    - example passing an integer/
+      =/tmp/
+        - foo.menu
+          : - a/
+          : - b/
+          :   - bb/
+          :     =replace/siblings/2/
+          :       - c/
+          :       - d/
+        - foo//
+  - quoted/
+    - todo > add example
+  - neighbors/
+    - todo > add example
+  - line/
+    - todo > add example
+- symbols/
+  : <* Message to flash underneath
+  - example/
+    =/tmp/
+      - foo.rb
+        : "<* hi"
+      - foo//
+  : <? Message to flash after
+  - example 2/
+    =/tmp/
+      - foo.rb
+        : "<? hi"
+      - foo//
+  : <$ Thing to replace last $... line with
+<= beg/
+<= bullets/
