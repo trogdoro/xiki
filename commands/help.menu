@@ -1,0 +1,12 @@
+| Try typing this on the command line:
+|
+|   $ xsh --help
+|
+<< keys/
+<< tutorial/
+
++ advanced/
+  + list all xiki commands/
+    <<<< all/
+  + elisp
+    ! $el.info "elisp"
