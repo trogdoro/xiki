@@ -146,6 +146,7 @@ module Xiki::Menu
         # "modified:", so show diff
         if label == "modified: "
           txt = self.diff_internal("git diff --patience --relative #{self.git_diff_options} #{file}", dir)
+          txt = "-no changes" if txt == ""
 
           txt.gsub!(/^/, ':')
           txt.gsub!(/^:(---|\+\+\+|diff|index) .+\n/, '')
@@ -155,7 +156,7 @@ module Xiki::Menu
         if label == "renamed: "
           file.sub! /.+ -> /, ''   # Remove the first file
           txt = self.diff_internal("git diff --patience --relative #{self.git_diff_options} #{file}", dir)
-          txt = " no diffs" if txt == ""
+          txt = "-no changes" if txt == ""
           txt.gsub!(/^/, ':')
           txt.gsub!(/^:(---|\+\+\+|diff|index) .+\n/, '')
           return txt
