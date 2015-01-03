@@ -181,7 +181,9 @@ module Xiki
 
       "se"=>"~/xiki/sessions/",
       "t"=>"~/xiki/tasks.notes",
+      "tasks"=>"~/xiki/tasks.notes",
       "f"=>"~/xiki/files.notes",
+      "files"=>"~/xiki/files.notes",
 
       "n"=>"~/xiki/notes/",
       "c"=>"~/xiki/commands/",
