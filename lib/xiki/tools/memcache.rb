@@ -1,6 +1,6 @@
-gem 'memcached'
-require 'memcached'
-require 'net/telnet'
+# gem 'memcached'
+# require 'memcached'
+# require 'net/telnet'
 
 module Xiki
   class Memcache
