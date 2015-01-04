@@ -88,9 +88,12 @@ describe Path, "#split" do
   #     #Path.split("aa/|b/b/|c/c").should == ["aa", "|b/b", "|c/c"]
   #   end
 
-
   it "turns ;0 into linebreaks" do
     Path.split("a;0b").should == ["a\nb"]
+  end
+
+  it "splits ancestors when spaces" do
+    Path.split("a/b/= c/d/", :outer=>1).should == ["a/b/", "c/d/"]
   end
 
 #   it "handles :return_path with pipes" do

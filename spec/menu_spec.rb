@@ -1,6 +1,6 @@
 $:.unshift "spec/"
 
-%w"core_ext ol tree core_ext menu menu_source launcher expander".each {|o| require "xiki/core/#{o}"}
+%w"core_ext ol tree core_ext menu launcher expander".each {|o| require "xiki/core/#{o}"}
 
 require './spec/spec_helper'
 
@@ -64,7 +64,7 @@ describe :Menu, "#root_sources_from_path_env" do
     options = {:name=>"path", :path=>"path/"}
     Menu.root_sources_from_path_env options
     options.should == {
-      :menufied => "/projects/xiki/menu/path",
+      :menufied => "/projects/xiki/commands/path",
       :name => "path",
       :path => "path/",
       :sources => [["path.menu"], :incomplete]
@@ -72,13 +72,13 @@ describe :Menu, "#root_sources_from_path_env" do
   end
 
   it "finds source for menu with space" do
-    options = {:name=>"menu_path", :path=>"menu path/"}
+    options = {:name=>"command_path", :path=>"command path/"}
     Menu.root_sources_from_path_env options
     options.should == {
-      :menufied => "/projects/xiki/menu/menu_path",
-      :name => "menu_path",
-      :path => "menu path/",
-      :sources => [["menu_path.rb"], :incomplete]
+      :menufied => "/projects/xiki/commands/commands_path",
+      :name => "command_path",
+      :path => "command path/",
+      :sources => [["command_path.rb"], :incomplete]
       }
   end
 end
@@ -96,7 +96,7 @@ describe :Menu, "#expands?" do
       :name      => "path",
       :path      => "path/",
       :sources   => [["path.rb"], :incomplete ],
-      :menufied  => "/projects/xiki/menu/path",
+      :menufied  => "/projects/xiki/commands/path",
       :expanders => [Menu]
     }
   end

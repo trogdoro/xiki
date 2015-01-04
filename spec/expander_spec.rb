@@ -10,11 +10,12 @@ Dir["./lib/xiki/*_handler.rb"].each{|o|
 
 require 'xiki/core/expander'
 require 'xiki/core/pattern'
+require 'xiki/core/control_tab'
 
 # describe Expander, "#expand" do
 describe Expander, "#extract_ancestors" do
   it "pulls out one path" do
-    args = "a/@b/", {}
+    args = "a/=b/", {}
     Expander.extract_ancestors *args
     args.should == ["b/", {:ancestors=>["a/"]}]
   end
@@ -26,7 +27,7 @@ describe Expander, "#extract_ancestors" do
   end
 
   it "ignores quoted path" do
-    args = "a/| a/@b/", {}
+    args = "a/| a/=b/", {}
     Expander.extract_ancestors *args
     args.should == ["b/", {:ancestors=>["a/| a/"]}]
   end
@@ -55,8 +56,8 @@ describe Expander, "#expand_file_path" do
   end
 
   it "doesn't remove double slashes for bookmarks" do
-    stub(Bookmarks).[]("$f") {"/tmp/file.txt"}
-    Expander.expand_file_path("$f//").should == "/tmp/file.txt//"
+    stub(Bookmarks).[](":f") {"/tmp/file.txt"}
+    Expander.expand_file_path(":f//").should == "/tmp/file.txt//"
   end
 end
 
@@ -155,12 +156,12 @@ describe Expander, "#parse" do
   end
 
   it "handles ancestors in string" do
-    Expander.parse("z/@a/").should ==
+    Expander.parse("z/=a/").should ==
       {:name=>"a", :ancestors=>["z/"], :path => "a/"}
   end
 
   it "handles ancestors with path in string" do
-    Expander.parse("x/y/@a/b/").should ==
+    Expander.parse("x/y/=a/b/").should ==
       {:name=>"a", :items=>["b"], :ancestors=>["x/y/"], :path => "a/b/"}
   end
 
@@ -210,6 +211,40 @@ describe Expander, "#parse" do
     }
   end
 
+
+
+
+
+  it "moves dropdown items into :dropdown" do
+    options = Expander.parse("hi/* delete")
+    options.should == {
+      :dropdown=>"delete",
+      :name=>"hi",
+      :path=>"hi",
+    }
+  end
+
+    # Also test these...
+    # options = Expander.parse("select * from/* delete")
+    # options = Expander.parse("/tmp/* delete")
+
+  it "moves pattern dropdown items into :dropdown" do
+    options = Expander.parse("select * from hi/* delete")
+    options.should == {
+      :dropdown=>"delete",
+      :path=>"select * from hi"
+    }
+  end
+
+  it "moves file dropdown items into :dropdown" do
+    options = Expander.parse("/tmp/* delete")
+    options.should == {
+      :dropdown=>"delete",
+      :file_path=>"/tmp"
+    }
+  end
+
+
 end
 
 describe Expander, "#expand method" do
@@ -228,7 +263,6 @@ describe Expander, "#expand method" do
   end
 
   it "takes a path list as 2nd arg" do
-    Ol["Maybe pull 'echo' out as its own menu - and pass options to make it cached?!"]
     Expander.def(:echo) { |path| path.inspect }
 
     Expander.expand("echo", ["a", "b"]).should == '["a", "b"]'
@@ -244,5 +278,17 @@ describe Expander, "#expand method" do
 
   it "expands menufied path" do
     Expander.expand("#{Xiki.dir}spec/fixtures/menu/dr//").should == "+ a/\n+ b/\n"
+  end
+
+end
+
+describe Expander, ".extract_dropdown_items" do
+  before(:each) do
+    stub_menu_path_dirs   # Has to be before each for some reason
+  end
+
+  it "extracts when normal" do
+    # Expander.def(:echo) { |path| path.inspect }
+    # Expander.expand("echo").should == '[]'
   end
 end
