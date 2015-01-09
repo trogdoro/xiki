@@ -1,0 +1,1143 @@
+# A slimmed-down and network-ified version of the el4r project.
+# El4r was created by rubikitch, and was incorporated into Xiki
+# with his permission.
+
+xiki_dir = File.expand_path $0
+4.times { xiki_dir = File.dirname xiki_dir }
+XIKI_DIR = xiki_dir
+
+require "#{XIKI_DIR}/lib/xiki/core/ol.rb"
+
+require 'etc'
+
+require 'forwardable'
+
+load "#{XIKI_DIR}/misc/emacs/el4r/.el4rrc.rb";
+
+module El4r
+  ErrorUtils = Module.new
+  class << ErrorUtils
+    def error_description(exception = nil)
+      exception ||= $!
+      sprintf("%s (%s)", exception.to_s, exception.class).gsub("\n", "  ")
+    end
+
+    def backtrace_message(backtrace = nil)
+      backtrace ||= caller(1)
+      lines = []
+      backtrace.each do |line|
+        lines << sprintf("  from %s", line)
+      end
+      lines.join("\n")
+    end
+
+    def stacktrace_message(exception = nil)
+      exception ||= $!
+      lines = []
+
+      lines << error_description(exception)
+      lines << backtrace_message(exception.backtrace)
+      lines.join("\n")
+    end
+  end
+
+  El4rError = Class.new(StandardError)
+  ELError = Class.new(El4rError)
+
+  ELISP_INTEGER_RANGE = (-134217727..134217727)
+
+  class << self
+    def lisp_dump_string(string)
+      dumped = string.dup
+      # \ -> \\
+      dumped.gsub! %r"\\" do '\\\\' end
+      # " -> \"
+      dumped.gsub! %r'"' do '\\"' end
+      # (zero byte) -> \0
+      dumped.gsub! %r'\0' do "\\\0" end
+      %Q'"#{dumped}"'
+    end
+
+    def name_rb2el(rbname)
+      rbname.gsub(/_/, "-")
+    end
+  end
+
+  ELExpression = Struct.new(:expression)
+
+  # Reference of an EmacsLisp object.
+  class ELObject < Struct.new(:instance, :object_id)
+    def initialize(*args)
+      ObjectSpace.define_finalizer(self, ELObject.finalizer_proc(*args))
+      super(*args)
+    end
+
+    def to_lisp
+      "(el4r-lisp-object-from-id #{object_id})"
+    end
+
+    def inspect
+      "#<#{self.class} id=#{object_id}>"
+    end
+
+    def to_s
+      instance.prin1_to_string(self)
+    end
+    alias :to_str :to_s
+
+    def ==(x)
+      ELObject === x   or return false
+      object_id == x.object_id or instance.equal(self,x)
+    end
+
+    def self.finalizer_proc(instance, object_id)
+      proc {
+        instance.el4r_add_garbage_lispobj(object_id)
+      }
+    end
+  end
+
+  class ELSequence < ELObject
+    include Enumerable
+
+    def inspect
+      "#{self.class.to_s.split(/::/)[-1]}#{to_a.inspect}"
+    end
+
+    def check(x)
+      @length ||= to_a.length
+      Fixnum === x or raise TypeError, "must be Fixnum"
+      @length <= x and raise ArgumentError, "Args out of range #{inspect}[#{x}]"
+    end
+
+    def [](*args)
+      check args[0]
+      to_a[*args]
+    end
+
+    def each(&block)
+      to_a.each(&block)
+    end
+
+    def to_a
+      # subclass must define `to_a_func' method
+      @ary ||= instance.__send__(to_a_func, self)
+    end
+    alias :to_ary :to_a
+
+  end
+
+  # An Array like object converted from a list object of EmacsLisp.
+  class ELListCell < ELSequence
+    def to_a_func () :el4r_list_to_rubyary end
+
+    # Convert alist -> Hash
+    def to_hash
+      hash = {}
+      each { |cell|
+        cell.kind_of?(ELListCell) or raise(TypeError, "Malformed assoc list.")
+        hash[instance.car(cell)] = instance.cdr(cell)
+      }
+      hash
+    end
+  end
+
+  # An Array like object converted from a cons cell of EmacsLisp.
+  class ELConsCell < ELListCell
+    def to_a_func () :el4r_cons_to_rubyary end
+  end
+
+  # An Array like object converted from a vector object of EmacsLisp.
+  class ELVector < ELSequence
+    def []=(x,y)
+      check x
+      x < 0 and x = @length+x
+
+      @ary[x]=y
+      instance.aset(self, x, y)
+    end
+
+    def to_a_func () :el4r_vector_to_rubyary end
+  end
+
+
+  # EmacsLisp objects stock.
+  class ELRubyObjectStock
+    attr_accessor :gc_trigger_count, :gc_trigger_increment
+    def initialize(instance)
+      @instance = instance
+      conf = instance.conf
+      @oid_to_obj_hash = {}
+      @gc_trigger_count = conf.ruby_gc_trigger_count
+      @gc_trigger_increment = conf.ruby_gc_trigger_increment
+    end
+
+    def garbage_collect_if_required
+      if count_of_stocked_objects >= @gc_trigger_count
+        garbage_collect
+        @gc_trigger_count =
+          count_of_stocked_objects + @gc_trigger_increment
+      end
+    end
+
+    def pre_gc_hook
+    end
+
+    def post_gc_hook
+    end
+
+    def garbage_collect
+      pre_gc_hook
+      stock_ids = @oid_to_obj_hash.keys
+      stock_ids.sort!
+      @instance.el4r_debug { "(GC) 1" }
+      alive_ids = @instance.el4r_rubyobj_get_alive_ids.to_a # funcall
+      @instance.el4r_debug { "(GC) 2" }
+      alive_ids.collect! { |id| id.to_i; }
+      alive_ids.sort!
+
+      @instance.el4r_debug { "(GC) Stocked IDs: #{stock_ids.inspect}"; }
+      @instance.el4r_debug { "(GC) Alive IDs: #{alive_ids.inspect}"; }
+
+      freed_ids = []
+      while aid = alive_ids.pop
+        while true
+          sid = stock_ids.pop or raise(El4rError, "Can't happen!")
+
+          break if sid == aid
+          freed_ids << sid
+        end
+      end
+      freed_ids.concat(stock_ids)
+
+      @instance.el4r_debug { "(GC) IDs to free: #{freed_ids.inspect}"; }
+      freed_ids.each { |id|
+        @oid_to_obj_hash.delete(id)
+      }
+
+      @instance.el4r_debug { "(GC) Count of stocked object is reduced to #{count_of_stocked_objects}"; }
+      post_gc_hook
+    end
+
+    def obj2lisp(obj)
+      # NOTE: Ruby's object ID exceeds elisp's 28-bit integer limitation.
+      "(el4r-rubyobj-create \"#{obj2id(obj)}\")"
+    end
+
+    def obj2id(obj)
+      garbage_collect_if_required
+      oid = obj.__id__
+      @oid_to_obj_hash[oid] ||= obj
+      oid
+    end
+
+    def id2obj(oid)
+      @oid_to_obj_hash[oid] or
+        raise(El4rError, "No such object for ID: #{oid}")
+    end
+
+    def count_of_stocked_objects
+      @oid_to_obj_hash.size
+    end
+  end
+
+  # A Struct like object to handle EmacsLisp variables.
+  class ELVariables < Struct.new(:instance)
+    def [](name)
+      instance.getq(name)
+    end
+
+    def []=(name, value)
+      instance.setq(name, value)
+    end
+
+    def method_missing(name, value = nil)
+      name = name.to_s
+      if name[-1] == ?=
+        instance.setq(name[0..-2], value)
+      else
+        instance.getq(name)
+      end
+    end
+  end
+
+  # EmacsLisp wrapper methods
+  module ELMethodsMixin
+    # Call an EmacsLisp function
+    def funcall(name_or_lambda, *args, &block)
+      func = case name_or_lambda
+             when Symbol, String
+               El4r.name_rb2el(name_or_lambda.to_s)
+             when ELObject, ELExpression
+               "funcall #{el4r_ruby2lisp(name_or_lambda)}"
+             else
+               raise(TypeError,
+                     "Invalid 1st argument for funcall: #{name_or_lambda.inspect}")
+             end
+      funcall_internal(func, *args, &block)
+    end
+    alias method_missing funcall
+
+    def funcall_internal(funcexpr, *args, &block)
+      el4r_lisp_eval("(#{funcexpr} #{el4r_args_to_lispseq(*args, &block)})")
+    end
+
+    # Call (func FORMS...) type function
+    def with(name, *args, &block)
+      args << el("(funcall #{el4r_rubyproc_to_lambda(&block)})")
+      funcall(name, *args)
+    end
+
+    # EmacsLisp's defun.
+    #
+    # +attrs+ is a Hash.
+    # attrs[:interactive]:: If the function is interactive, set +true+ or String.
+    # attrs[:docstring]::   The docstring.
+    #
+    # The function arguments are block arguments.
+    def defun(name, attrs = nil, &block)
+      String === name  and  name = el("'#{name}")
+      funcall_internal("el4r-define-function", name, el_lambda(attrs, &block))
+    end
+
+    def defvar(name, value=nil, docstring="")
+      funcall_internal :defvar, el(name), value, docstring
+    end
+
+    # EmacsLisp's define-key.
+    #
+    # +map+ is a +Symbol+ or +ELObject+ refering to a keymap object.
+    # This method can be called with block.
+    def define_key(map, key, command = nil, &block)
+      map = el(map) unless map.kind_of?(ELObject)
+      key = el(%Q'"#{key}"') if key.kind_of?(String)
+      command = el_lambda(:interactive => true, &block) if block_given?
+      funcall_internal("define-key", map, key, command)
+    end
+
+    def symbol_value(name)
+      el4r_lisp_eval(El4r.name_rb2el(name.to_s))
+    end
+    alias getq symbol_value
+
+    def setq(name, value)
+      el4r_lisp_eval("(setq #{El4r.name_rb2el(name.to_s)} #{el4r_ruby2lisp(value)})")
+    end
+    alias set setq
+
+    def _init_eval_after_load
+      @eval_after_load_func = "el4r-eval-after-load-function-1"
+    end
+
+    # EmacsLisp's eval-after-load
+    def eval_after_load(lib, &block)
+      raise ArgumentError, "must have block" unless block
+      defun(@eval_after_load_func, &block)
+      el4r_lisp_eval "(eval-after-load #{el4r_ruby2lisp(lib)} '(#{@eval_after_load_func}))" # '
+      @eval_after_load_func.succ!
+      nil
+    end
+
+    # EmacsLisp's let.
+    # +name_and_value_list+ is [variable_name, value, variable_name, value...].
+    # +name_and_value_list.length+ must be even.
+    # +variable_name+ is a Symbol.
+    def let(*name_and_value_list, &block)
+      (name_and_value_list.size % 2) == 0 or
+        raise(ArgumentError, "Invalid count of arguments.")
+
+      letexpr = "(let ("
+      until name_and_value_list.empty?
+        name = El4r.name_rb2el(name_and_value_list.shift.to_s)
+        value = el4r_ruby2lisp(name_and_value_list.shift)
+        letexpr << "(#{name} #{value}) "
+      end
+      letexpr << ") (funcall #{el4r_rubyproc_to_lambda(&block)}))"
+      el4r_lisp_eval(letexpr)
+    end
+
+    # Create a new buffer with some initialization.
+    # With block, newbuf execute it by the context of the generated buffer.
+    #
+    # A parameter is a Hash.
+    # :name      :: buffer-name
+    # :file      :: find-file-noselect / insert-file-contents [with :name]
+    # :contents  :: buffer-string
+    # :line      :: goto-line
+    # :point     :: goto-char  [default is (point-max)]
+    # :display   :: :pop / :only / true
+    # :current   :: set-buffer
+    # :read_only :: buffer-read-only
+    # :bury      :: bury-buffer
+    def newbuf(x)
+      Hash === x            or raise ArgumentError, "argument must be a hash!"
+      x[:name] || x[:file]  or raise ArgumentError, "`:name' or `:file' key is mandatory!"
+      x[:name]              and b = get_buffer_create(x[:name])
+      x[:file] && !x[:name] and b = find_file_noselect(x[:file])
+
+      check = lambda{|key, type|  x[key] && (type===x[key] or raise ArgumentError) }
+      with(:with_current_buffer, b) {
+        elvar.buffer_read_only = nil
+        # TODO: coding-system
+        x[:name]              and erase_buffer
+        x[:name] && x[:file]  and insert_file_contents(x[:file])
+        x[:contents]          and insert x[:contents].to_s
+        check[:line,Integer]  and goto_line x[:line]
+        check[:point,Integer] and goto_char x[:point]
+        block_given?          and yield
+        x[:read_only]         and elvar.buffer_read_only = true
+      }
+
+      case x[:display]
+      when :pop;  pop_to_buffer b
+      when :only; delete_other_windows; switch_to_buffer b
+      when true;  display_buffer b
+      else
+      end
+
+      x[:bury]     and bury_buffer b
+      x[:current]  and set_buffer b
+
+      b
+    end
+
+    # Extended buffer-string.
+    # +buf+ is a buffer object.
+    def bufstr(buf=current_buffer)
+      with(:with_current_buffer, buf) { buffer_string }
+    end
+
+    def ad_do_it
+      el4r_lisp_eval("(funcall --defadvice-ad-do-it--)")
+    end
+
+    # EmacsLisp's defadvice.
+    # +func+ is Symbol or String refering to the function.
+    # +args+ is parameters to defadvice such as :before, :after, :around, :activate.
+    # In the block, you can call +ad_do_it+. [around advice]
+
+    def defadvice(func, *args, &block)
+      Hash === args[-1]  and  attrs = args.pop
+
+      param = args.map{|a| El4r.name_rb2el(a.to_s)}.join(' ')
+      forms =  "#{El4r.name_rb2el(func.to_s)} (#{param})\n"
+
+      if attrs
+        _handle_attrs attrs, forms, false
+      end
+
+      forms << "(setq --defadvice-ad-do-it-- (lambda () ad-do-it))\n"
+      with(:defadvice, el(forms), &block)
+    end
+
+    def _handle_attrs(attrs, forms, quote)
+      docstring = attrs[:docstring]
+      forms << el4r_ruby2lisp(docstring) << "\n" if docstring
+      interactive = attrs[:interactive]
+      if  interactive
+        forms << "'" if quote
+        case interactive
+        when Proc;
+          lmd = el4r_ruby2lisp(interactive)
+          el4r_lisp_eval %Q((el4r-register-lambda #{lmd}))
+          forms << "(interactive (eval (list #{lmd})))"
+        when true; forms << "(interactive)\n"
+        else; forms << "(interactive #{el4r_ruby2lisp(interactive)})\n"
+        end
+      end
+    end
+
+    # Call defun-type macro. `mode' is an EmacsLisp function to define.
+    # Most case the first argument is the function name.
+    #
+    # `define_derived_mode' and `define_minor_mode' are examples of this method's usage.
+    def with_preserved_block(funcexpr, mode, *args, &block)
+      mode = el(mode)
+      subfuncexpr = "#{mode.expression}--el4r-function"
+      block ||= lambda{}
+      defun(subfuncexpr, &block)
+      args << el("(#{subfuncexpr})")
+
+      funcall_internal(funcexpr, mode, *args)
+    end
+
+    # EmacsLisp's define-derived-mode.
+    def define_derived_mode(child, parent, name, docstring=nil, &block)
+      with_preserved_block "define-derived-mode", child, el(parent), name, docstring, &block
+    end
+
+    # EmacsLisp's define-minor-mode
+    def define_minor_mode(mode, doc, init_value=nil, lighter=nil, keymap=nil, &block)
+      with_preserved_block "define-minor-mode", mode, doc, init_value, lighter, keymap, &block
+    end
+
+    # Ruby's require.
+    def require(*args)
+      Kernel.require(*args)
+    end
+
+    # EmacsLisp's require.
+    def el_require(*args)
+      funcall_internal("require", *args)
+    end
+
+    # EmacsLisp's load.
+    def el_load(*args)
+      funcall_internal("load", *args)
+    end
+
+    # EmacsLisp's lambda.
+    def el_lambda(attr = nil, &block)
+      el(el4r_rubyproc_to_lambda(attr, &block))
+    end
+
+    # Bare EmacsLisp expression.
+    def el(expression)
+      case expression
+      when Symbol; ELExpression.new(El4r.name_rb2el(expression.to_s))
+      when String; ELExpression.new(expression)
+      when ELExpression; expression
+      else
+        raise(TypeError,
+              "Cannot treat as lisp expression: <#{expression.inspect}>")
+      end
+    end
+  end
+
+  # Pseudo $stdout object for el4r.
+  # This object appends to *el4r output* buffer
+  class El4rOutput
+    def initialize(instance)
+      @instance = instance
+    end
+
+    def write(s)
+      @instance.instance_eval do
+        princ(s.to_s, get_buffer_create(conf.output_buffer))
+      end
+      nil
+    end
+
+    def flush
+      self
+    end
+  end
+
+  def self.create_instance options={}
+    input = options[:input] || STDIN
+    output = options[:output] || STDOUT
+
+    el4r = El4r::ELInstance.new __conf__, input, output
+    STDERR.reopen(el4r.el4r_log_io) if ! options[:boot_standalone]
+    el4r
+  end
+
+  # class ChildKickedException < RuntimeError; end
+
+
+  def self.main options={}
+
+    # Trap and handle signal when user types C-g...
+
+    Signal.trap( "SIGUSR1" ){
+      throw :child_kicked_exception, :child_kicked_exception
+    }
+
+    $el ||= self.create_instance(options)
+
+
+    # Assign intput and output streams
+
+    $el.emacs_in = options[:input] if options[:input]
+    $el.emacs_out = options[:output] if options[:output]
+
+    $el.el4r_log "Booted."
+    $el.el4r_wait_expr_loop
+
+  end
+
+  class ELInstance
+    include ELMethodsMixin
+    extend Forwardable
+
+    attr_accessor :outer        # maybe thread-unsafe(no problem)
+    attr_reader :el4r_rubyobj_stock
+
+    # An Struct like object to handle EmacsLisp's variable.
+    attr_reader :elvar
+
+    # If +true+, verbose log output.
+    attr_accessor :el4r_is_debug
+
+    # For setting streams after instanciating
+    attr_accessor :emacs_in, :emacs_out
+
+    # settings by ~/.el4rrc.rb
+    attr_reader :conf
+
+    def_delegators :@conf, :root_dir, :site_dir
+    def log_path
+      "/tmp/el4r-#{Etc.getlogin}.#{Process.pid}.log"
+    end
+
+    def initialize_log
+      @log = File.open(log_path, "w")
+    end
+
+    def initialize(conf, input=STDIN, output=STDOUT)
+      @conf = conf
+      @emacs_in = input
+      @emacs_out = output
+      @call_level = 0
+      @last_error = nil
+      @el4r_is_debug = ENV["EL4R_DEBUG"]
+      @elvar = ELVariables.new(self)
+      @el4r_rubyobj_stock = ELRubyObjectStock.new(self)
+      @el4r_garbage_elobj_ids = []
+
+      @el4r_output = El4rOutput.new self
+
+      initialize_log
+
+      @el_backtrace_reset_threshold = 1 # very nasty hack!
+      @el_backtrace = []
+
+      _init_eval_after_load
+
+    end
+
+    # --------------------------------
+    # Methods for user
+
+    def instance_eval_invoker path
+      source = File.read(path)
+      instance_eval source, path
+    end
+
+    # Eval an EmacsLisp expression.
+    def el4r_lisp_eval(lispexpr)
+      el4r_interrupt if el4r_callback?
+      el4r_with_call {
+        el4r_send(lispexpr)
+        result=el4r_get
+        el4r_debug{"}"}
+        result
+      }
+    end
+
+    # Convert a Ruby Regexp into EmacsLisp.
+    def el4r_conv_regexp(re)
+      s = re.source.dup
+      s.gsub!(/[\|\(\)]/){'\\'+$&}
+      s.sub!(/\\A/){'\`'}
+      s.sub!(/\\Z/){'\\\''}
+      s.sub!(/\\w/, '[0-9A-Za-z_]')
+      s.sub!(/\\W/, '[^0-9A-Za-z_]')
+
+      s
+    end
+
+    # Convert a Ruby object into EmacsLisp.
+    def el4r_ruby2lisp(obj)
+      case obj
+      when nil, false; "nil"
+      when true; "t"
+      when String; El4r.lisp_dump_string(obj)
+      when Regexp; El4r.lisp_dump_string(el4r_conv_regexp(obj))
+      when Symbol; "'#{El4r.name_rb2el(obj.to_s)}"
+      when Proc; el4r_rubyproc_to_lambda(&obj)
+      when Integer
+        (ELISP_INTEGER_RANGE === obj) or
+          raise(RangeError,
+                "Integer #{obj} exceed elisp limitation (#{ELISP_INTEGER_RANGE})")
+        obj.to_s
+      when Numeric; obj.to_s
+      when Array; "(list #{el4r_args_to_lispseq(*obj)})"
+      when ELObject; obj.to_lisp
+      when ELExpression; obj.expression
+      else; el4r_rubyobj_stock.obj2lisp(obj)
+      end
+    end
+
+    # Convert a Ruby Proc into EmacsLisp
+    # +attrs+ is the same as that of +defun+.
+    def el4r_rubyproc_to_lambda(attrs = nil, &block)
+      forms =
+        ["el4r-lambda-for-rubyproc \"#{el4r_rubyobj_stock.obj2id(block)}\""]
+      if attrs
+        _handle_attrs attrs, forms, true
+      end
+      "(#{forms.join(' ')})"
+    end
+
+    def el4r_args_to_lispseq(*args, &block)
+      elargs = args
+      elargs << block if block_given?
+      elargs.collect! { |form|
+        el4r_ruby2lisp(form)
+      }
+      elargs.join(' ')
+    end
+
+    # Write a log message.
+    def el4r_log(msg)
+      @log.print(Time.now.strftime("%H:%M:%S:%L  "))
+      # @log.print(Time.now, ":")
+      @log.puts(msg); @log.flush
+    end
+
+    # String representation. obj.inspect and (prin1-to-string obj).
+    def el4r_prin1_to_string(obj)
+      "[ruby] #{obj.inspect} / [lisp] #{prin1_to_string(obj)}"
+    end
+
+    # Write string representation(both in Ruby and in EmacsLisp) of all the argument to the log.
+    def el4r_prin1(*objs)
+      objs.each { |obj|
+        el4r_log("el4r_prin1: #{el4r_prin1_to_string(obj)}")
+      }
+    end
+
+    # Write string representation(only in Ruby) of all the argument to the log.
+    def el4r_p(*objs)
+      el4r_log("el4r_p: #{objs.inspect}")
+    end
+
+    # Write a backtrace message to the log.
+    def el4r_backtrace(msg = nil)
+      msg ||= "*backtrace*"
+      # el4r_log "#{msg}\n#{ErrorUtils.backtrace_message(caller(2))}"
+      el4r_log "- #{msg}\n#{ErrorUtils.backtrace_message(caller(2))}"
+    end
+
+    # --------------------------------
+    # Methods for internal use
+
+    # Startup el4r without loading init.rb.
+    def el4r_boot__noinit
+      logbuf = get_buffer_create conf.log_buffer
+      elvar.el4r_log_path = el4r_log_io.path
+
+      el4r_lisp_eval('(defun el4r-show-log () (interactive)
+                       (with-current-buffer (get-buffer-create el4r-log-buffer)
+                         (setq buffer-read-only nil)
+                         (erase-buffer)
+                         (insert-file-contents el4r-log-path)
+                         (setq buffer-read-only t)
+                         (goto-char (point-max))
+                         (pop-to-buffer (current-buffer))))')
+      el4r_install_builtin_functions
+      $> = @el4r_output
+    end
+
+    #     def el4r_process_autoloads(dir=conf.autoload_dir)
+    #       Dir["#{dir}/[0-9][0-9]*.rb"].sort.each do |rb|
+    #         el4r_load rb
+    #       end
+    #     end
+
+    # Startup el4r.
+    def el4r_boot
+      el4r_boot__noinit
+      instance_eval File.read "#{XIKI_DIR}/misc/emacs/el4r/init.rb"
+    end
+
+    # Obsolete.
+    def el4r_shutdown
+    end
+
+    def el4r_add_garbage_lispobj(id)
+      @el4r_garbage_elobj_ids << id
+    end
+
+    def el4r_get_garbage_lispobj_ids
+      GC.start
+      ids = @el4r_garbage_elobj_ids
+      @el4r_garbage_elobj_ids = []
+      ids
+    end
+
+    def el4r_readfile(file)
+      File.open(file) { |io| io.read || ""; }
+    end
+
+    def el4r_wait_expr_loop
+      result = catch(:child_kicked_exception) do
+        el4r_log "Starting, waiting for expression."
+        el4r_wait_expr until @emacs_in.eof?
+      end
+
+      # Start loop again if there was an error...
+      if result == :child_kicked_exception
+        el4r_wait_expr_loop
+      end
+
+
+    rescue Exception => e
+      el4r_log El4r::ErrorUtils.stacktrace_message(e)
+    ensure
+      el4r_log "Exiting."
+    end
+
+    def el4r_wait_expr
+      @last_error = nil
+      el4r_with_call {
+        lispexpr = nil
+        begin
+          result = el4r_get
+          el4r_debug { "Result: <#{result.inspect}>"; }
+          lispexpr = el4r_ruby2lisp(result)
+        rescue ELError
+          el4r_debug { "Passing lisp error: #{ErrorUtils.stacktrace_message($!)}"; }
+          lispexpr = "(el4r-signal-last-error)"
+        rescue StandardError, ScriptError
+          @last_error or
+            el4r_log("Error: #{ErrorUtils.stacktrace_message($!)}")
+          @last_error = $!
+          lispexpr = "(signal 'el4r-ruby-error nil)"
+        end
+        el4r_send(lispexpr)
+      }
+    end
+
+    def el4r_get
+      expr = el4r_recv
+      expr.force_encoding("binary") if expr.respond_to? :force_encoding   # For ruby 1.9
+      while expr.empty?
+        el4r_debug { "Received callback interrupt."; }
+        el4r_wait_expr
+        expr = el4r_recv
+      end
+      el4r_ruby_eval(expr)
+    end
+
+    def el4r_recv
+      el4r_debug { "Waiting for Ruby expression"; }
+      expr = @emacs_in.readline("\0\n")
+      expr.slice!(-2, 2)
+      el4r_debug { "Received Ruby expression[ #{expr}"; }
+      expr
+    end
+
+    def el4r_send(lispexpr)
+      el4r_debug { "Sending Lisp expression{ #{lispexpr}"; }
+      @emacs_out.print(lispexpr)
+      @emacs_out.print("\0")
+      @emacs_out.flush
+    end
+
+    def el4r_interrupt
+      el4r_debug { "Sending callback interrupt."; }
+      @emacs_out.print("\0")
+    end
+
+    # Create an ELObject.
+    def el4r_elobject_new(id, klass = nil)
+      (klass || ELObject).new(self, id)
+    end
+
+    # Write a log message if el4r is debug.
+    def el4r_debug(msg = nil, &block)
+      if @el4r_is_debug
+        msg ||= yield
+        el4r_log("[DEBUG] (#{@call_level}) #{msg}")
+      end
+    end
+
+    # Log IO object.
+    def el4r_log_io
+      @log
+    end
+
+    def el4r_with_call(&block)
+      @call_level += 1
+      begin
+        yield
+      ensure
+        @call_level -= 1
+        @call_level <= @el_backtrace_reset_threshold and @el_backtrace = []
+      end
+    end
+
+    # Eval +source.
+    # When an Exception is raised, write a stacktrace message to the log.
+    def el4r_ruby_eval(source)
+      begin
+        # instance_eval(source)
+        result = instance_eval(source, "/tmp/el4r")   # Passing fake path makes it show all the way up the stack for some reason
+        el4r_debug{"]"}
+        result
+      rescue Exception
+        el4r_debug { "Error in evaluating '#{source}': #{ErrorUtils.stacktrace_message($!)}"; }
+        raise
+      end
+    end
+
+    def el4r_reraise_last_error
+      raise @last_error
+    end
+
+    def el4r_raise_lisp_error
+      msg = el4r_lisp_eval("(prin1-to-string el4r-last-error-desc)")
+      @el_backtrace << el4r_lisp_eval("(prin1-to-string el4r-error-lisp-expression)")
+      raise(ELError, "Error in lisp code.:#{msg}\n#{@el_backtrace.join("\n")}")
+    end
+
+    def el4r_callback?
+      @call_level != 0
+    end
+
+    # Treat EmacsLisp strings containing C-c, C-d, C-q, C-s, C-v, C-w, C-z
+    def el4r_treat_ctrl_codes(&block)
+      let(:el4r_treat_ctrl_codes, true, &block)
+    end
+
+    private
+    # Install the built in functions.
+    def el4r_install_builtin_functions
+      path = "#{XIKI_DIR}/misc/emacs/el4r/stdlib.rb"
+      instance_eval File.read(path), path
+
+      el4r_install_xemacs_workaround
+    end
+
+    # Install an xemacs workaround.
+    def el4r_install_xemacs_workaround
+      # delete-other-windows at xemacs workaround! very nasty hack!
+      if elvar.noninteractive and featurep(:xemacs)
+        defun(:delete_other_windows) do
+          windows = []
+          walk_windows{|w| windows << w}
+
+          curwin = selected_window
+          windows.each do |w|
+            delete_window w unless eq(w,curwin)
+          end
+          select_window curwin
+          nil
+        end
+      end
+
+    end
+
+  end
+end
+
+module El4rAccessor
+  # The el4r object.
+  def el4r
+    $el
+  end
+
+end
+
+# A mix-in to add EmacsRuby features.
+module ElMixin
+  include El4rAccessor
+  # Eval the block in the el4r context.
+  # +outer+ is the caller of this method.
+  def elisp(&block)
+    el4r.outer = self
+    el4r.instance_eval(&block)
+  end
+
+  def method_missing(func, *args, &block)
+#Ol()
+    el4r.__send__(func, *args, &block)
+  end
+
+end
+
+# A class with EmacsRuby features.
+class ElApp
+  include ElMixin
+  extend El4rAccessor
+  @@instances = {}
+
+  # Run the application.
+  def self.run(params={})
+    obj = new(params)
+    (@@instances[self] ||= []) << obj # preserve from GC
+    process_defun(obj)
+    obj
+  end
+
+  def self._change_receiver_of(orgblock, obj, name)
+    ## HACK Yuck!
+    defunmeth = "#{name}__defun__"
+    define_method(defunmeth, orgblock)
+    private defunmeth
+
+    obj.instance_eval{ lambda{|*args| __send__(defunmeth, *args)}}
+  end
+  private_class_method :_change_receiver_of
+
+  def self.process_defun(obj)
+    (@defuns || []).each do |name, attrs, block|
+      block = _change_receiver_of(block, obj, name)
+      obj.defun(name, attrs, &block)
+    end
+  end
+  private_class_method :process_defun
+
+  def initialize(params)
+  end
+
+  # EmacsLisp's defun. See El4r::ELMethodsMixin#defun.
+  #
+  # It is a convenient defun. Note that +block+ is evaluated within a
+  # context of INSTANCE.
+  def self.defun(name, attrs=nil, &block)
+    (@defuns ||= []) << [name, attrs, block]
+  end
+
+  extend SingleForwardable
+
+  # Import EmacsLisp (and El4r::ELMethodsMixin) functions within class definition.
+
+  def self.import_function(*funcs)
+    def_delegators :el4r, *funcs
+  end
+  import_function :defvar, :el4r_lisp_eval
+
+end
+
+if __FILE__ == $0
+  if ARGV[0] == 'forker'
+
+    # Scenario 1: Started by emacs, to create parent that forks...
+
+    STDIN.close
+    grandparent_pid = Process.pid
+    Signal.trap("TERM") { puts "the xiki process is listening or 8161 and ready to fork!"; exit }
+
+    parent_pid = Process.fork do
+
+      # Parent (server process)
+
+      $0 = "xsh forker"
+      Process.setsid   # Makes sure this process is in its own process group and session
+
+      # Slow boot stuff...
+
+      el4r = El4r.create_instance #(options)
+      el4r.instance_eval_invoker "#{XIKI_DIR}/misc/emacs/el4r/init.rb"
+
+      $el = el4r
+
+      require 'socket'
+
+      socket_file = File.expand_path "~/.xikisock"
+
+      File.delete socket_file if File.exists? socket_file
+
+      orig = File.umask 077   # Create /tmp/xikisock with tighter security
+      server = UNIXServer.new socket_file
+
+      File.umask orig
+
+      Process.kill("TERM", grandparent_pid)   # The initial process just waits around until the server started. Tell it to die so el4r will continue on.
+
+      GC.start   # Force garbage collection, so it won't potentially happen after each fork
+
+      while true
+
+        socket = server.accept
+
+        # Comment this to do single process
+        child_pid = Process.fork do
+
+          $0 = "xsh fork"
+
+          server.close
+          # ...notifying parent via socket when done
+
+          # Enable verbose el4r logging during startup (slows down startup time a lot)
+          if false   # Todo > Make setting for whether to log during startup (default to off)
+            el4r.initialize_log
+            el4r.el4r_is_debug = 1
+          end
+
+          # Fast boot stuff (emacs will call el4r_boot again after we return)...
+
+          El4r.main :input=>socket, :output=>socket # , :boot_first=>1
+        end
+        Process.detach child_pid   # Release pid into pool, so we don't hog them
+        socket.close
+      end
+
+    end
+
+    Process.detach parent_pid   # Release pid into pool, so we don't potentially hog them
+    sleep   # Just wait until your child kills you because it's ready to handle a connection. Control will return to elisp...
+
+  elsif ARGV[0] == 'single_process'
+
+    # Scenario 2: Started manually in shell (a single emacs will connect to us)...
+
+    puts "starting ecaleb4craigr (no pre-load)..."
+    require 'socket'
+    server = TCPServer.new "127.0.0.1", 8161
+    while true
+      socket = server.accept
+      El4r.main :input=>socket, :output=>socket
+    end
+
+  elsif ARGV[0] == 'single_process_with_boot'
+
+    # Scenario 3: Started manually in shell (and boot is run)...
+
+    puts "starting el4r bridge..."
+
+    el4r = El4r.create_instance
+
+    el4r.instance_eval_invoker "#{XIKI_DIR}/misc/emacs/el4r/init.rb"
+
+    $el = el4r
+
+    require 'socket'
+    server = TCPServer.new "127.0.0.1", 8161
+    while true
+      Ol()
+      socket = server.accept
+      El4r.main :input=>socket, :output=>socket
+    end
+
+
+  elsif ARGV[0] == 'single_process_unixdomain'
+
+    puts "starting el4r bridge..."
+    el4r = El4r.create_instance
+    el4r.instance_eval_invoker "#{XIKI_DIR}/misc/emacs/el4r/init.rb"
+
+    $el = el4r
+
+    require 'socket'
+    server = UNIXServer.new "/tmp/xikisock"
+    while true
+      Ol()
+      socket = server.accept
+      El4r.main :input=>socket, :output=>socket
+    end
+
+
+  elsif ARGV[0] == 'test_boot'
+
+    el4r = El4r.create_instance :boot_standalone=>1
+
+    el4r.instance_eval_invoker "#{XIKI_DIR}/misc/emacs/el4r/init.rb"
+
+    puts "Booted."
+    $el = el4r
+    El4r.main
+  elsif ARGV[0] == nil
+    # Scenario 4: Emacs started us as slave process (controlled via pipe)...
+
+    El4r.main
+  end
+
+end
+
+# Local Variables:
+# mode: ruby
+# End:
