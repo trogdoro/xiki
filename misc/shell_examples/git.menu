@@ -1,0 +1,33 @@
++ log/
+  + one line/
+    $ git log --oneline
+  + just show five/
+    $ git log -5
+  + within date range/
+    $ git log --since="yesterday"
+    $ git log --since="1 month ago" --until="yesterday"
+  + with branch graph/
+    $ git log --graph --oneline --decorate
+    : All branches, limiting to last 35
+    $ git log --graph --all --oneline --decorate -35
++ status/
+  $ git status
++ undo/
+  + undo adds/
+    $ git reset
+    $ git reset foo.txt
+  + whipe out modifications to files/
+    $ git checkout .
+  + make local file be like repo version/
+    $ git checkout foo.txt
+  + undo last commit, leaving your changes/
+    $ git reset HEAD^
+  + undo last commit, deleting your changes/
+    $ git reset --hard HEAD^
++ more/
+  + clone a repo/
+    $ git clone https://github.com/foo/bar
+  + init a new repo/
+    $ git init
+  + change the commit date of the last commit/
+    $ git commit --amend --date="Jan 7 13:59:37 2015 -0800"

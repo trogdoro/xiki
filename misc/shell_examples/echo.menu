@@ -1,0 +1,2 @@
+- show an env var/
+  $ echo $PATH

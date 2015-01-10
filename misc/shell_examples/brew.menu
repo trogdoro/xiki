@@ -1,0 +1,2 @@
+- reinstall/
+  $ brew reinstall foo
