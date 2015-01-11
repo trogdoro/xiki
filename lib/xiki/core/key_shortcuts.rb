@@ -191,6 +191,8 @@ module Xiki
 
       Xiki.def("jump+yours"){ FileTree.copy_to }
 
+      Xiki.def("jump+status"){ Git.do_status }
+
       (1..9).each do |n|
         Xiki.def("jump+#{n}"){ View.to_nth_fraction n }
       end

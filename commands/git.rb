@@ -91,19 +91,6 @@ module Xiki::Menu
     end
 
 
-    def self.do_status
-      dir = Keys.bookmark_as_path :prompt=>"Enter a bookmark to show git status: "
-
-      menu = "
-        #{dir}
-          - @git/
-            + status/
-      ".unindent.strip
-      Launcher.open(menu)
-
-      nil
-    end
-
     def self.status *args
 
       options = yield
