@@ -1327,10 +1327,10 @@ module Xiki
     def self.next_paren_label
       # Move forward if at beginning of line
       Move.forward if Line.at_left? && ! View.at_top?
-      found = Search.forward "^ *[+-] [a-zA-Z +']*)\\($\\| \\)", :beginning=>true
+      found = Search.forward "^ *[+-] [a-zA-Z0-9 +']*)\\($\\| \\)", :beginning=>true
       return Move.backward if ! found
       # label for the next line, so move to next line
-      Line.to_next if Line[/^ *[+-] [a-zA-Z +']*\)$/]   # '
+      Line.to_next if Line[/^ *[+-] [a-zA-Z0-9 +']*\)$/]   # '
     end
 
     def self.extract_paren_labels options={}
