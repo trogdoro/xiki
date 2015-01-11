@@ -262,6 +262,7 @@ module Xiki::Menu
         return "- choose the branch!"
       end
 
+      options = yield
       dir = options[:dir]
 
       self.push_internal branch, dir
