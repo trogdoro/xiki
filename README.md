@@ -1,6 +1,6 @@
 ## Install
 
-To install xsh (XikiShell), just execute the 'xsh' command, located in the 'bin' dir:
+To run and optionally install xsh (XikiShell), just execute the 'xsh' command, located in the 'bin' dir:
 
       $ ./bin/xsh
 
