@@ -19,8 +19,7 @@ module Xiki
 
       file = Keys.bookmark_as_path :prompt=>"Enter a bookmark to git diff in: "
       branch = self.branch_name file
-
-      menu = "
+      txt = "
         #{file}
           =git/
             - push/#{branch}/
@@ -28,12 +27,12 @@ module Xiki
         ".unindent
 
       if prefix == :-
-        View.insert menu
+        View.insert txt
         Line.previous
         Launcher.launch
       else
         View.bar if prefix == "outline"
-        Launcher.open(menu)
+        Launcher.open txt, :buffer_name=>"git diff"
       end
 
       nil

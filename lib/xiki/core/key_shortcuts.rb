@@ -192,6 +192,7 @@ module Xiki
       Xiki.def("jump+yours"){ FileTree.copy_to }
 
       Xiki.def("jump+status"){ Git.do_status }
+      Xiki.def("jump+diff"){ Git.do_push }   # Commit to repos, push, etc
 
       (1..9).each do |n|
         Xiki.def("jump+#{n}"){ View.to_nth_fraction n }
@@ -212,7 +213,6 @@ module Xiki
 
       Xiki.def("run+indent"){ Code.indent_to }
       Xiki.def("run+comment"){ Code.comment }
-      Xiki.def("run+push"){ Git.do_push }   # Commit to repos, push, etc
       Xiki.def("run+eval"){ Code.run }   # run code as ruby
       Xiki.def("run+omit"){ Deletes.forward }
       Xiki.def("run+kill"){ Clipboard.kill }
