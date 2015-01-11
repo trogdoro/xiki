@@ -1219,6 +1219,21 @@ Ol["oh, this path is an array: #{path}!"] if path.is_a?(Array)
       ControlLock.disable
     end
 
+    # Mapped to jump+command.
+    def self.open_nested_command
+
+      dir = Keys.bookmark_as_path :prompt=>"Bookmark nest command under: "
+
+      View.to_buffer View.unique_name("untitled.notes")
+      Notes.mode
+
+      View << "#{dir}\n  ="
+      View >> "\n\n\n"
+
+      ControlLock.disable
+
+    end
+
 
     def self.dropdown
 

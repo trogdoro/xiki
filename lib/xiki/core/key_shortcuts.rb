@@ -186,13 +186,17 @@ module Xiki
 
       Xiki.def("jump+move+file"){ Launcher.open("Todo > Find method that moves the current file...", :no_launch=>1) }
       Xiki.def("jump+move+here"){ FileTree.move_to }
-
-      Xiki.def("jump+copy+here"){ FileTree.copy_to }
+      Xiki.def("jump+move+copy"){ FileTree.copy_to }
 
       Xiki.def("jump+yours"){ FileTree.copy_to }
 
       Xiki.def("jump+status"){ Git.do_status }
       Xiki.def("jump+diff"){ Git.do_push }   # Commit to repos, push, etc
+
+      Xiki.def("jump+command"){ Launcher.open_nested_command }
+      Xiki.def("jump+prompt"){ Shell.prompt_for_bookmark }
+
+      Xiki.def("jump+history"){ Shell.history_for_bookmark }
 
       (1..9).each do |n|
         Xiki.def("jump+#{n}"){ View.to_nth_fraction n }
@@ -209,7 +213,6 @@ module Xiki
       Xiki.def("run+macro"){ Macros.run }   # do last macro
       Xiki.def("run+task"){ Launcher.do_task }
       Xiki.def("run+up"){ Launcher.do_last_launch :here=>1 }
-      Xiki.def("run+shell"){ Shell.search_last_commands }
 
       Xiki.def("run+indent"){ Code.indent_to }
       Xiki.def("run+comment"){ Code.comment }

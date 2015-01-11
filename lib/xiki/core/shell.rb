@@ -516,7 +516,8 @@ module Xiki
       Tree.filter
     end
 
-    def self.search_last_commands
+    # Mapped to jump+history
+    def self.history_for_bookmark
       bm = Keys.input(:timed => true, :prompt => "bookmark to show shell commands for (space for all, comma for current): ")
 
       return Launcher.open("shell/all/") if bm == " "
@@ -527,6 +528,19 @@ module Xiki
       end
 
       Launcher.open("shell/history/:#{bm}/")
+    end
+
+    def self.prompt_for_bookmark
+      dir = Keys.bookmark_as_path :prompt=>"Bookmark to show prompt for: "
+
+      View.to_buffer View.unique_name("untitled.notes")
+      Notes.mode
+
+      View << "#{dir}\n  $ "
+      View >> "\n\n\n"
+
+      ControlLock.disable
+
     end
 
     def self.current *args
