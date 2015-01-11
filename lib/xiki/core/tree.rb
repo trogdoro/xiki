@@ -2023,6 +2023,7 @@ module Xiki
 
         elsif letter == "\t"
           $el.delete_region(Line.left(2), right)
+          Launcher.launch   # if line =~ /\/$/   # Only launch if it can expand
         elsif letter == "\x1F"
           indent = Line.indent
           $el.delete_region left, right-1
