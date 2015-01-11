@@ -695,11 +695,11 @@ module Xiki
 
       return self.shell_history(options) if ! args && dropdown && dropdown[0] == "history"
       return self.shell_favorites(options) if ! args && dropdown && dropdown[0] == "favorites"
-      return self.shell_notes(options) if (! args && dropdown[0] == "notes") || args && args[0] =~ />/
+      return self.shell_notes(options) if (! args && dropdown[0] == "notes") || args && args[0] =~ /^>/
       return self.shell_examples(options) if dropdown && dropdown[0] == "examples"
 
       # :... arg, so delegate to shell wrapper
-      return self.shell_wrapper(options) if args && args[0] =~ /:/
+      return self.shell_wrapper(options) if args && args[0] =~ /^:/
 
       # Todo > pipe to the command
       # For now, make |... just pipe the multi-line input into commands
@@ -905,8 +905,7 @@ module Xiki
       dir, command, args, dropdown = options[:dir], options[:command], options[:args], options[:dropdown]
       command_root = command.sub(/ .*/, '')   # Cut off after the space
 
-      Ol["TODO > pass path and args here as 2nd arg > instead of in the string"]
-      Ol["Escape in case the contain a slash!"]
+      # Escape in case the contain a slash!
 
       # Delegate to the "shell foo" command to handle it...
 
