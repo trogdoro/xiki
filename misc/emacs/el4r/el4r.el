@@ -5,8 +5,8 @@
 ; Define keys to reload and jump...
 ; This function is called from the Xiki config
 (defun el4r-troubleshooting-keys ()
-  (global-set-key (kbd "C-x C-r") 'el4r-kill-and-restart)
-  (global-set-key (kbd "C-x C-l") 'el4r-jump-to-error)
+  (global-set-key (kbd "C-x C-r") 'el4r-kill-and-restart)   ; xiki+reload (C-x C-r)
+  (global-set-key (kbd "C-x C-l") 'el4r-jump-to-error)      ; xiki+log (C-x C-l)
   )
 
 (or (>= emacs-major-version 21)
@@ -517,13 +517,11 @@
   "Load .emacs (reloading EmacsRuby)"
   (let ((lock (control-lock-enabled)))
 
-
-
-    ; only kill if xiki running
+    ; Only kill if xiki running
     (when (or (eq (process-status el4r-process) 'run) (eq (process-status el4r-process) 'open))
       (el4r-ruby-eval "Xiki.kill"))
 
-    (when (get-buffer "tasks.notes")
+    (when (get-buffer "*el4r:process*")
       (let (kill-buffer-query-functions)   ; So it doesn't prompt us to delete the buffer
         (kill-buffer "*el4r:process*")
       )
