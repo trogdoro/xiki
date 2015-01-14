@@ -198,6 +198,7 @@ module Xiki
 
       Xiki.def("jump+history"){ Shell.history_for_bookmark }
 
+      # jump+N > jump to nth visible paragraph (ie jump+5 to jump to the 5th paragraph)
       (1..9).each do |n|
         Xiki.def("jump+#{n}"){ View.to_nth_fraction n }
       end
@@ -335,6 +336,7 @@ module Xiki
       # X
       # Z
 
+      # hop+N > jump to nth fraction of the screen (ie hop+5 to jump to middle)
       (1..9).each do |n|
         Xiki.def("hop+#{n}"){ View.to_nth_paragraph n }
       end
@@ -455,10 +457,10 @@ module Xiki
       Xiki.def("search+just+line"){ $el.toggle_truncate_lines }   # Line wrap without exiting isearch
 
       Xiki.def("search+just+menu"){ Search.just_menu }
-      Xiki.def("search+just+swap"){ Search.search_just_swap }   # Add "##search" line in tree for match
+      Xiki.def("search+just+swap"){ Search.search_just_swap }   # Swap the match with what's in the clipboard (put the match where the search started)
       Xiki.def("search+just+restart"){ Search.isearch_restart :top }
 
-      Xiki.def("search+just+order"){ Search.isearch_just_adjust }
+      Xiki.def("search+just+order"){ Search.isearch_just_adjust }   # Swap/toggle the two characters in match
       Xiki.def("search+just+variable"){ Search.isearch_just_surround_with_char '#{', '}' }
       Xiki.def("search+just+parens"){ Search.isearch_just_surround_with_char '(', ')' }
       Xiki.def("search+just+brackets"){ Search.isearch_just_surround_with_char '[', ']' }

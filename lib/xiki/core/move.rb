@@ -321,7 +321,11 @@ module Xiki
     def self.hop_left_key
       prefix = Keys.prefix :clear=>1
 
-      return View.column = 3 if prefix == :u
+      if prefix == :u
+        Line.to_beginning
+        Move.forward 2
+        return
+      end
 
       if prefix.is_a? Fixnum
         Line.next prefix

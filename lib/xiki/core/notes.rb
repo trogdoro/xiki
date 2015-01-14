@@ -1238,6 +1238,7 @@ module Xiki
     end
 
     @@single_letter_abbrev = {
+      " "=>"",
       "p"=>"",
       "b"=>"borrow!",
       "c"=>":",

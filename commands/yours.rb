@@ -6,7 +6,7 @@ if args == []
 
   # Get latest "tasks.notes" and "files.notes" contents...
 
-  tasks = Notes.extract_paren_labels :file=>":t", :limit=>(prefix == :u ? 100 : 15)
+  tasks = Notes.extract_paren_labels :file=>":t", :limit=>(prefix == :u ? 100 : 12)
   files = Notes.extract_paren_labels :file=>":f", :limit=>100, :indent=>"  "
 
   # Remove dups
