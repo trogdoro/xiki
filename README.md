@@ -10,11 +10,7 @@ You can download Xiki from: https://github.com/trogdoro/xiki/archive/master.tar.
 
 ### Git
 
-If you have git, you can get Xiki from github via "git clone https://github.com/trogdoro/xiki.git"
-
-### Older versions
-
-For older versions, check out https://github.com/trogdoro/xiki/releases
+Or, if you have git, you can get Xiki from github via "git clone https://github.com/trogdoro/xiki.git"
 
 ### Supported platforms
 
