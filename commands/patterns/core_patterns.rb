@@ -475,6 +475,11 @@ module Xiki
     "<! Saved these as 'before' and 'after'"
   end
 
-  # %foo or :foo, so redirect to bookmark...
+  # :foo, so must not have been handled as a file, so say bookmark doesn't exist...
+
+  Xiki.def(%r"^:[a-z]+(/|$)") do |path, options|
+    # Note that this only runs if FileHandler doesn't handle it already
+    "<! Bookmark doesn't exist"
+  end
 
 end
