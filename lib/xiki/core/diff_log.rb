@@ -427,7 +427,27 @@ module Xiki
     end
 
 
-    # Mapped to C-q.  Just quits, or shows =unsaved/ if some unsaved.
+    # Mapped to C-g
+    def self.quit_and_go
+
+      # Grab line and write to file
+
+      path = Tree.path[-1]
+
+      # If file handles, just do a cd
+
+      if FileTree.handles?(path)
+        # Add quotes, but only if there's a slash?
+          # Or, use quote thing caleb showed me
+
+        commands = "cd #{path}"
+
+        File.open("/tmp/xiki_go.txt", "w") { |f| f << "#{commands.strip}\n" }
+      end
+
+      self.quit
+    end
+
     def self.quit
 
       prefix = Keys.prefix

@@ -257,7 +257,7 @@ case $1 in
 
     save_args_to_envs "$@"
 
-    exec $emacs -nw -Q -l "$xiki_dir/misc/emacs/start_xiki.el"
+    $emacs -nw -Q -l "$xiki_dir/misc/emacs/start_xiki.el"
   else
 
     # Emacs 23+, so use --daemon (will make for immediate startup)...
@@ -280,12 +280,25 @@ case $1 in
 
     save_args_to_files "$@"
 
-
-
     # Now run it.  The hook will run when it opens and load the params
 
-
     $emacsclient -s $unique -t
+
+  fi
+
+
+  # Grab any "go" text, and run it...
+
+  if [ -f "/tmp/xiki_go.txt" ]; then
+    go_text=`cat /tmp/xiki_go.txt`
+
+    # Run each line in the file
+    while read p; do
+      echo \$ $p
+      $p
+    done </tmp/xiki_go.txt
+
+    rm /tmp/xiki_go.txt
 
   fi
 
