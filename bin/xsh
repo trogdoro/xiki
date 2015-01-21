@@ -47,8 +47,8 @@ if [ "$ruby_is_installed" = "" ] || [ "$emacs_is_installed" = "" ]; then
     exit 1
   fi
 
-  if [ -n "$yum_is_installed" -a -n "$aptget_is_installed" ]; then        
-    echo -e "\n\nIt appears you have both apt-get and yum installed.  Which should we use?"
+  if [ -n "$yum_is_installed"  -a -n "$aptget_is_installed"  -a -n  "$pacman_is_installed" ]; then
+    echo -e "\n\nIt appears you have both apt-get, yum and pacman installed.  Which should we use?"
     echo "  a: apt-get"
     echo "  y: yum"
     echo "  p: pacman"
