@@ -73,6 +73,6 @@ elvar.sort_fold_case = true   # To avoid stupid bug
 
 Xiki::Ruby.keys   # Ruby mode shortcuts custom+next and custom+previous
 
-startup_rb = "~/xiki/misc/startup.rb"
-load File.expand_path(startup_rb) if File.exists? startup_rb
+startup_rb = File.expand_path "~/xiki/misc/startup.rb"
+load startup_rb if File.exists? startup_rb
 
