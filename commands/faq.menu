@@ -6,4 +6,7 @@
 : How can I contribute to this faq?
   | Edit <xiki source dir>/commands/faq.menu, commit, and send a pull
   | request.
-
+: What are the next steps for this readme file, to make it more accessible?
+  | 1. Mirror to a markdown file
+  | 2. Link to it from the README, so it'll be more visible
+  |   - https://help.github.com/articles/relative-links-in-readmes
