@@ -28,9 +28,11 @@ emacs_is_installed=`which emacs`
 
 yum_is_installed=`which yum`
 aptget_is_installed=`which apt-get`
+pacman_is_installed=`which pacman`
 
 yum_install="sudo yum install" #?????
 aptget_install="sudo apt-get -qq -y install"
+pacman_install="sudo pacman -S "
 
 if [ "$ruby_is_installed" = "" ] || [ "$emacs_is_installed" = "" ]; then
   echo "It looks like you haven't yet installed the"
@@ -45,16 +47,18 @@ if [ "$ruby_is_installed" = "" ] || [ "$emacs_is_installed" = "" ]; then
     exit 1
   fi
 
-  if [ -n "$yum_is_installed" -a -n "$aptget_is_installed" ]; then
-    echo -e "\n\nIt appears you have both apt-get and yum installed.  Which should we use?"
+  if [ -n "$yum_is_installed"  -a -n "$aptget_is_installed"  -a -n  "$pacman_is_installed" ]; then
+    echo -e "\n\nIt appears you have both apt-get, yum and pacman installed.  Which should we use?"
     echo "  a: apt-get"
     echo "  y: yum"
-    echo ""
-    read -n1 -p "(a/y): " choice
+    echo "  p: pacman"
+    read -n1 -p "(a/y/p): " choice
     if [ "$choice" = "a" ]; then
       install="$aptget_install"
     elif [ "$choice" = "y" ]; then
       install="$yum_install"
+    elif [ "$choice" = "p" ]; then
+      install="$pacman_install"
     else
       echo "You didn't type 'a' or 'y'."
       exit 1
@@ -64,6 +68,8 @@ if [ "$ruby_is_installed" = "" ] || [ "$emacs_is_installed" = "" ]; then
     install="$aptget_install"
   elif [ -n "$yum_is_installed" ]; then
     install="$yum_install"
+  elif [ -n "$pacman_is_installed" ]; then
+    install="$pacman_install"
   else
     dir="$xiki_dir/misc/install"
     install="sudo bash $dir/install_source_dependency.sh"
@@ -109,7 +115,6 @@ fi
 
 
 # Proceed to run the command...
-
 
 function save_args_to_envs {
   let i=1
