@@ -82,6 +82,7 @@ module Xiki
 
     def self.read_setting key
       txt = File.read Bookmarks[":hx/commands/conf/xsh.conf"] rescue nil
+      return nil if ! txt
       txt[/^#{key}: (.*)/, 1]   # => noob
     end
 

@@ -1,10 +1,16 @@
 #!/bin/bash -f
 
 export bin_dir=`dirname $0`
-# Will only happen if xsh not in $PATH yet
+
+# Dir might be ., only if xsh not in $PATH yet
 if [ "$bin_dir" = "." ]; then
   bin_dir=`pwd`
 fi
+# Sometimes relative path, so prepend where we are
+if [[ ! "$bin_dir" =~ ^/ ]]; then
+  bin_dir=`pwd`/$bin_dir
+fi
+
 export xiki_dir=`dirname $bin_dir`
 
 emacs="emacs"
