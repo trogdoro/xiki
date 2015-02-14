@@ -1,7 +1,5 @@
 module Xiki
   Styles.define :trailing_whitespace, :bg=>'444'
-  Styles.define :default, :fg=>'fff'
-  Styles.define :fringe, :bg=>'000', :fg=>'111111'
 
   Cursor.white
 

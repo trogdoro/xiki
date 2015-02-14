@@ -5,8 +5,14 @@
 
 (defun control-lock-letter (l ch)
   "Called when keys are pressed.  If we deem control-lock to be enabled, it returns the control-version of the key.  Otherwise it just returns the key."
-  (if (control-lock-enabled-p)
-    ch l))
+
+  ; If it's not as escape sequence
+
+  (let* ((this-keys (this-command-keys)) (this-keys (if (stringp this-keys) (string-to-char this-keys) "")))
+    (if (and (not (eq this-keys 27)) (control-lock-enabled-p))
+      ch l)
+  )
+)
 
 (defun control-lock-enabled-p ()
   "Returns whether control lock should be enabled at a given point"
@@ -21,7 +27,7 @@
       )
 
     ; not defined and true
-    (not (and (boundp 'xiki-tree-filter-options) xiki-tree-filter-options))
+    (not (and (boundp 'xiki-filter-options) xiki-filter-options))
 
     (not isearch-mode)
     (not (string-match "\\*Minibuf" (buffer-name)))))
@@ -31,14 +37,15 @@
 
 (setq control-lock-disable-once nil)
 
-(defun control-lock-map-key (l ch fun &optional shift)
+(defun control-lock-map-key (l ch fun &optional shift disable)
   "Makes function to handle one key, and maps it to that key"
+
   (eval (read
     (concat
       "(progn "
         "(defun control-lock-" fun " (p) "
-           "(setq control-lock-shift " (if shift "t" "nil") ")"
-           "(control-lock-letter (kbd \"" l "\") (kbd \"" ch "\"))"
+          "(setq control-lock-shift " (if shift "t" "nil") ")"
+          "(control-lock-letter (kbd \"" l "\") (kbd \"" ch "\"))"
         ") "
         "(define-key key-translation-map (kbd \"" l "\") 'control-lock-" fun ")"
       ")"
@@ -99,8 +106,15 @@
         (set 'control-lock-color-old color)
       )
     )
+    (let ((color (face-attribute 'mode-line-transparent-activatable :background)))
+      (if (not (string= control-lock-color-transparent color))
+        (set 'control-lock-color-transparent-old color)
+      )
+    )
 
     (set-face-attribute 'mode-line nil :background control-lock-color)
+    (set-face-attribute 'mode-line-transparent-activatable nil :background control-lock-color-transparent)
+    (set-face-attribute 'mode-line-transparent-underline-activatable nil :background control-lock-color-transparent)
   ))
 )
 
@@ -112,8 +126,10 @@
       (save-window-excursion   ; Unnecessary, but forces cursor to refresh immediately
         (customize-set-variable 'cursor-type '(bar . 3)))
 
-      (if (and (boundp 'control-lock-color-old) control-lock-color-old)
+      (when (and (boundp 'control-lock-color-old) control-lock-color-old)
         (set-face-attribute 'mode-line nil :background control-lock-color-old)
+        (set-face-attribute 'mode-line-transparent-activatable nil :background control-lock-color-transparent-old)
+        (set-face-attribute 'mode-line-transparent-underline-activatable nil :background control-lock-color-transparent-old)
       )
     )
     (progn   ; Else, enable it

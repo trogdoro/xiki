@@ -165,7 +165,6 @@ module Xiki
 
     # Creates a new window by splitting the current one
     def self.create_vertical
-      Xsh.use_default_theme_maybe
       $el.split_window_horizontally
       View.next if ! Keys.prefix_u
     end
@@ -174,8 +173,6 @@ module Xiki
       prefix ||= Keys.prefix
 
       # Xsh and first time we've split, so change theme to default...
-
-      Xsh.use_default_theme_maybe
 
       if prefix == :u
         $el.split_window_vertically
@@ -191,6 +188,7 @@ module Xiki
     end
 
     def self.show_txt txt, options={}
+
       View.to_buffer(options[:name] || "message")
       View.kill_all
       Notes.mode
@@ -219,14 +217,14 @@ module Xiki
 
       path, options = nil, path if path.is_a?(Hash)
 
-      return self.show_txt(options[:txt], options.merge(:name=>path)) if options[:txt]
+      return self.show_txt(options[:txt], {:name=>path}.merge(options)) if options[:txt]
 
       # Pull off line number if there
       path = path.sub(/(.+?:\d+).*/, "\\1")
       line_number = path.slice!(/:\d+$/)
 
       # Open after bar if in bar
-      if View.in_bar? && (! options[:stay_in_bar]) && path != "$0" && path != Bookmarks[':t'] && path != Bookmarks[':f']
+      if View.in_bar? && (! options[:stay_in_bar]) && path != "$0" && path != Bookmarks[':t'] && path != Bookmarks[':n']
         View.to_after_bar
       end
 
@@ -251,7 +249,6 @@ module Xiki
         # Do nothing if already visible
       end
 
-
       if expanded
         if options[:same_view]
           $el.find_file expanded
@@ -270,8 +267,14 @@ module Xiki
 
           if File.directory? expanded   # If a dir, open it in new buffer
             expanded = FileTree.add_slash_maybe expanded
-            return Launcher.open expanded, options.merge(:buffer_name=>View.unique_name("ls"), :buffer_dir=>expanded)
+
+            return Launcher.open expanded, options.merge(:buffer_name=>"#{expanded[/([^\/]+)\/$/]}", :buffer_dir=>expanded)
+
           end
+
+          # Load 'image' library separately, because if not it loads during find-file and shows annoying message
+          #           $el.load "image"
+          #           $el.message ""
 
           $el.find_file expanded
         end
@@ -927,8 +930,10 @@ module Xiki
       result
     end
 
-    def self.dir= to
-      $el.elvar.default_directory = File.expand_path(to)+"/"
+    def self.dir= dir
+      dir = File.expand_path dir
+      dir << "/" if dir != "/"
+      $el.elvar.default_directory = dir
     end
 
     # Returns path to current file if saved.
@@ -1543,7 +1548,7 @@ module Xiki
       Effects.blink(:what=>:line) unless options[:no_blink]
     end
 
-    def self.layout_files options={}
+    def self.layout_nav options={}
       FileTree.open_in_bar
       View.to_nth 1
       Effects.blink(:what=>:line) unless options[:no_blink]
@@ -1562,7 +1567,7 @@ module Xiki
       # If already showing, just go to it
 
       if ! View.buffer_visible?("*ol")
-        View.layout_files if ! View.bar?   # If not already showing bar, do it first, so it shows up on left
+        View.layout_nav if ! View.bar?   # If not already showing bar, do it first, so it shows up on left
       end
 
       # If we were on an Ol line, jump to it later...

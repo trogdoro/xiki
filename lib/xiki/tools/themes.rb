@@ -24,22 +24,22 @@ module Xiki
     def self.init_in_client
 
       $el.el4r_lisp_eval %`
-        (defun xiki-bar-add-padding (txt &rest format-space)
+        (defun xiki-bar-add-padding (txt &optional space-face face)
           (let ((total (window-width)) left right)
             (setq left (- total (length txt)))
             (setq left (/ left 2))
             (when (> 0 left) (setq left 2))
             (setq right (- total (+ left (length txt))))
             (when (> 0 right) (setq right 2))
-            (if format-space
+            (if space-face
               (concat
-                (propertize (make-string left ? ) 'face 'mode-line-sides)   ; Make string of spaces
-                txt
-                (propertize (make-string right ? ) 'face 'mode-line-sides)   ; Make string of spaces
+                (propertize (make-string left ? ) 'face space-face)   ; Make string of spaces
+                (if face (propertize txt 'face face) txt)
+                (propertize (make-string right ? ) 'face space-face)   ; Make string of spaces
               )
               (concat
                 (make-string left ? )   ; Make string of spaces
-                txt
+                (if face (propertize txt 'face face) txt)
                 (make-string right ? )   ; Make string of spaces
               )
             )

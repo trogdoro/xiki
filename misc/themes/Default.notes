@@ -1,7 +1,10 @@
 module Xiki
-  Themes.use "Black BG"
-  Themes.use "Path In Bar"
-  Themes.use "Middle Bar"   # Put this last, since it changes the bar, and will thus fix the control lock color
+  Themes.use 'Rainbow Fonts'
+  Themes.use "Tab Bar Text"   # Long complicated elisp that draws text
+
+  # Put this last, since it changes the bar, and will thus fix the control lock color
+  Themes.use "Tab Bar Styles"   # Styles
+
 end
 
 $el.tool_bar_mode -1 if Xiki::Environment.gui_emacs

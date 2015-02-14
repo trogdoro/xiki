@@ -1,9 +1,6 @@
 module Xiki
   Styles.define :trailing_whitespace, :bg=>'444'
 
-  # Temp > for fucked-up bg color in Noob&Beardie image
-  Styles.define :fringe, :bg=>'080908', :fg=>'080908'
-
   Cursor.white
 
   Styles.minibuffer_prompt :size=>"+0", :face=>"Monaco", :fg=>"#bbb"

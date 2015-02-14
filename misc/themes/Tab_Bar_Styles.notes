@@ -1,0 +1,67 @@
+module Xiki
+  Themes.use 'Dark Black BG'
+
+  Styles.mode_line(
+    :bold=>true,
+    :bg=>'#aaa',
+    :fg=>"#666",
+    )
+
+  Styles.mode_line_inactive(
+    :bg=>'#aaa',
+    :fg=>"#666",
+    :bold=>true,
+    )
+
+  Styles.mode_line_transparent(
+    :bg=>"unspecified",
+    :fg=>"#666",
+    :underline=>nil,
+    )
+  Styles.mode_line_transparent_activatable(
+    :bg=>"unspecified",
+    :fg=>"#666",
+    :underline=>nil,
+    )
+
+  Styles.mode_line_transparent_underline(
+    :bg=>"unspecified",
+    :fg=>"#666",
+    :underline=>1,
+    )
+  Styles.mode_line_transparent_underline_activatable(
+    :bg=>"unspecified",
+    :fg=>"#666",
+    :underline=>1,
+    )
+
+  Styles.mode_line_sides(
+    :bg=>"unspecified",
+    :fg=>"#aaaaaa",
+    :underline=>nil,
+    )
+  Styles.mode_line_sides_underline(
+    :bg=>"unspecified",
+    :fg=>"#aaaaaa",
+    :underline=>1,
+    )
+
+  Styles.mode_line_file(
+    :fg=>"#fff",
+    )
+
+  Styles.vertical_border :fg=>"#aaa", :bg=>'#aaa', :underline=>nil
+
+  Styles.region(
+    :bg=>"#333",
+    )
+
+
+  # Message area at bottom
+  Styles.minibuffer_prompt :size=>110, :face=>"Monaco", :fg=>"#666"
+  Styles.minibuffer :size=>110, :face=>"Monaco", :fg=>"#666"
+  Styles.echo_area :size=>110, :face=>"Monaco", :fg=>"#666"
+
+  Styles.define :trailing_whitespace, :bg=>'444'
+
+end

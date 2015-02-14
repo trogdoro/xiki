@@ -1,0 +1,78 @@
+$el.elvar.bottom_bar_shows_file_paths = Xiki::Keys.read_setting("bottom bar") == "paths"
+
+$el.el4r_lisp_eval %`
+  (progn
+
+    (setq xiki-bar-special-text nil)
+
+    ; Update variable that identifies the actual window that's selected ()
+    (defun actual-selected-window-handler ()
+      (when (not (minibuffer-selected-window))
+        (setq actual-selected-window (selected-window))
+      )
+    )
+
+    ; Hook to store actual selected window
+    (add-hook 'post-command-hook 'actual-selected-window-handler)
+
+    (setq-default mode-line-format
+      (quote (
+        (:eval
+
+          (let (
+              (multiple-p (> (length (window-list)) 1))
+              (active-p (or (not (boundp 'actual-selected-window)) (eq (selected-window) actual-selected-window)))
+              (paths-p (and (boundp 'bottom-bar-shows-file-paths) bottom-bar-shows-file-paths))
+            )
+            (concat
+
+              ; If not active window, or paths and no special text
+              (if (and (or (not active-p) (and paths-p (not xiki-bar-special-text))) (not (and (string= "xsh" (buffer-name)) (not (buffer-file-name)))))
+
+                ; Display the path
+                (let
+                  (
+                    (dir  (replace-regexp-in-string (getenv "HOME") "~" (replace-regexp-in-string "^//$" "/" default-directory))  )
+                    (star (if (and (or (buffer-file-name) (string-match "\\\\." (buffer-name))) (buffer-modified-p)) "*" " "))
+                  )
+
+                  (xiki-bar-add-padding (concat
+                    "  "
+                    star
+                    dir
+                    (propertize (buffer-name) 'face 'mode-line-file)
+
+                    ":"
+                    (number-to-string (line-number-at-pos))
+                    "   "
+                    ) 'mode-line-sides-underline)
+                )
+
+                ; Inactive or special text
+
+                (if xiki-bar-special-text
+
+                  ; If special text, just show it
+
+                  ; Face should be underline only if split
+                  (let ((face (if multiple-p 'mode-line-sides-underline 'mode-line-sides)))
+                    (propertize (xiki-bar-add-padding xiki-bar-special-text) 'face face)
+                  )
+
+                  ; Face should be underline only if split
+
+                  (if multiple-p
+                    (xiki-bar-add-padding "   Ctrl+X Expand/collapse    Ctrl+K Keys    Ctrl+Q Quit   " 'mode-line-transparent-underline (if active-p 'mode-line-transparent-underline-activatable 'mode-line-transparent-underline))
+                    (xiki-bar-add-padding "   Ctrl+X Expand/collapse    Ctrl+K Keys    Ctrl+Q Quit   " 'mode-line-transparent (if active-p 'mode-line-transparent-activatable 'mode-line-transparent))
+                  )
+
+                )
+              )
+
+            )
+          )
+
+        )
+    )))
+  )
+`
