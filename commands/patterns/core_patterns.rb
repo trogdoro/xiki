@@ -307,11 +307,6 @@ module Xiki
     txt.gsub(/^\+ /, "<< ^")
   end
 
-  Xiki.def(/^~$/) do |path, options|
-    Line.sub! /$/, "/"
-    Launcher.launch
-  end
-
   Xiki.def(/\A\+\w[\w ]+(\z|\/)/) do |path, options|
     Menu.expand_define path, options
   end
@@ -455,10 +450,10 @@ module Xiki
     nil
   end
 
-  # .foo > call menu declared in same file...
+  # .foo > call command declared in same file...
 
-  Xiki.def(%r"^\.(\w+|)(\/|$)") do |path, options|   # "
-    # next Xiki["css/list/"].gsub(/^\+/, "<<") if path == "."
+  # TODO > remove ".foo" convention, and look for local command if "foo" (make them have precedence over global commands)
+  Xiki.def(%r"^\.(\w+)(\/|$)") do |path, options|   # "
     Launcher.launch_local path, options
   end
 
