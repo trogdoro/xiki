@@ -207,7 +207,7 @@ module Xiki
         return nil if some_method_ran   # Only say "no output" if didn't call .menu, .menu_before|_after, or other action
 
         # For now, let's try not doing this
-        txt = "<! no output!" if options[:client] =~ /^editor\b/
+        txt = "" if options[:client] =~ /^editor\b/
       end
 
       txt

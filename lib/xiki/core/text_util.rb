@@ -166,5 +166,9 @@ module Xiki
       }
     end
 
+    def self.parse_time txt
+      txt.sub(/ .*/, '').sub(/^:/, '0:').sub(/^\d+$/, "\\0:00")
+    end
+
   end
 end

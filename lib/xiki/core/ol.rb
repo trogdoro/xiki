@@ -563,7 +563,7 @@ def Ol *args
     if args == []
       nil
     elsif args.length == 1   # Just text
-      args[0].inspect
+      args[0].is_a?(String) ? args[0] : args[0].inspect
     else   # Label and text
       "#{args[0]}: #{args[1].inspect}"
     end
