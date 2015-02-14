@@ -113,7 +113,7 @@ module Xiki
       # Move down one if just a label
       Move.forward if Line.without_label.blank?
 
-      Tree.kill_under
+      Tree.collapse
       Launcher.launch
 
       nil

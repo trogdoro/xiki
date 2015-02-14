@@ -33,7 +33,7 @@ module Xiki
       # /foo/N/next, so go to next (or previous)...
 
       Tree.to_parent
-      Tree.kill_under
+      Tree.collapse
 
       launch_options = {}
       step_next = if command == "previous"

@@ -385,8 +385,8 @@ module Xiki
       # If was a string, show tree in new view...
 
       if source.is_a?(String)
-        Launcher.open(source, :no_launch=>1)
-        Launcher.enter_all   # Show dir recursively, or file contents in tree
+        View.open(:txt=>source, :line_found=>2)
+        Launcher.enter_all if Line =~ /\/$/   # Show dir recursively, or file contents in tree
         return
       end
 
@@ -395,6 +395,7 @@ module Xiki
       file, line_number = source
 
       View.open file
+
       return View.line = line_number if line_number
 
       # Try to find string we were on when key was pressed
@@ -540,7 +541,7 @@ module Xiki
         # If no items left on current line, jump to parent and delete
         if Line =~ /^[ +-]+$/
           Tree.to_parent
-          Tree.kill_under
+          Tree.collapse
           Move.to_end
         end
 
@@ -572,7 +573,7 @@ module Xiki
 
       # Go up to root, and kill under
       arrows.times { Tree.to_root }
-      Tree.kill_under
+      Tree.collapse
 
       # Insert line, and launch
       old = Line.delete :leave_linebreak
@@ -605,7 +606,7 @@ module Xiki
       # Shouldn't this be looping like self.collapser_launcher ?
       Tree.to_parent
       Tree.to_parent
-      Tree.kill_under :no_plus=>1
+      Tree.collapse :no_plus=>1
       Tree << output
     end
 
@@ -644,7 +645,7 @@ module Xiki
 
       launch = false if prefix == :u
 
-      Tree.kill_under
+      Tree.collapse
 
       Line.sub! /^([ @=]*).+/, "\\1#{txt}"
 
@@ -660,7 +661,7 @@ module Xiki
       txt = Tree.path.last
       Tree.to_root(:highest=>1)
 
-      Tree.kill_under
+      Tree.collapse
       Line.sub! /^([ @=]*).+/, "\\1#{txt}"
 
       Keys.prefix = "outline"
@@ -1032,6 +1033,7 @@ module Xiki
     end
 
     def self.determine_handlers options
+
       sources = options[:sources][-1]
       options[:handlers] = ex = {}   # {"/"=>"a/", "rb"=>"a.rb"}
 

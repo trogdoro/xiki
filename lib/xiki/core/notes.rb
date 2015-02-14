@@ -402,6 +402,7 @@ module Xiki
         Styles.define :notes_h1_green, :fg=>"8f4", :bg=>"444", :face=>'arial', :size=>"+3", :bold=>nil
         Styles.define :notes_h1_green_pipe, :fg=>"555", :bg=>"444", :face=>'arial', :size=>"+3", :bold=>true
 
+        Styles.define :escape_glyph, :fg=>"666"   # Red special char was too ugly
       else   # If white bg
         Styles.define :notes_h2, :face=>'arial', :size=>"-1", :fg=>'fff'
         Styles.define :notes_h2_pipe, :face=>'arial', :size=>"-1", :fg=>'b0b0b0'
@@ -411,6 +412,8 @@ module Xiki
         Styles.define :notes_h0_green_pipe, :fg=>"b0b0b0", :bg=>"909090", :face=>'arial', :size=>"+8", :bold=>true
         Styles.define :notes_h1_green, :fg=>"af0", :bg=>"909090", :face=>'arial', :size=>"+3", :bold=>1
         Styles.define :notes_h1_green_pipe, :fg=>"b0b0b0", :bg=>"909090", :face=>'arial', :size=>"+3", :bold=>true
+
+        Styles.define :escape_glyph, :fg=>"999"   # Red special char was too ugly
       end
 
       Styles.define :quote_hidden, :fg=>bg_color
@@ -532,7 +535,7 @@ module Xiki
         Notes.apply_styles
         FileTree.apply_styles_at_end
         $el.use_local_map $el.elvar.notes_mode_map
-        Notes.chdir_when_xsh_session
+        Xsh.chdir_when_xsh_session
       }
       $el.el4r_lisp_eval %q<
         (progn
@@ -592,11 +595,11 @@ module Xiki
 
       if prefix == :u
         Move.forward if Line.at_right?
-        return Tree.collapse
+        return Tree.collapse_upward
       end
 
       if prefix == :uu
-        return Tree.collapse :replace_parent=>1
+        return Tree.collapse_upward :replace_parent=>1
       end
 
       line = Line.value
@@ -678,7 +681,7 @@ module Xiki
           end
 
         else   # If -, kill under
-          Tree.kill_under
+          Tree.collapse
           Line.to_beginning
         end
         return
@@ -978,7 +981,6 @@ module Xiki
 
       if expanded =~ /^[!:]$/
         Move.left
-        ControlLock.disable
       end
 
       if expanded
@@ -1020,7 +1022,7 @@ module Xiki
     #   - accounts.rb
     #     | class Accounts
     #     |   def self.menu *args
-    #     |     Notes.drill '$accounts', *args
+    #     |     Notes.drill ':accounts', *args
     #     |   end
     #     | end
     #
@@ -1082,7 +1084,7 @@ module Xiki
 
       if file =~ /^\$(\w+)/   # If bookmark that wasn't found, complain
         bm = $1
-        return "| Set the following bookmark first. Then you'll be able to use this menu to\n| browse the file. The file should have '> ...' headings.\n\n@ $#{bm}\n"
+        return "| Set the following bookmark first. Then you'll be able to use this menu to\n| browse the file. The file should have '> ...' headings.\n\n@ :#{bm}\n"
       end
 
       if ! File.exists? file
@@ -1220,12 +1222,21 @@ module Xiki
 
       path = Tree.path
 
+      # $... path, so run Xiki command for the shell command
+
       if Line.at_right? &&   # Cursor is at the right, and
         ((path.length == 1 && path[0] =~ /^\$( |$)/) ||   # A single "$ ..." path
           (FileTree.handles?(path[-1]) && Path.split(path[-1])[-1] =~ /^\$ /))   # Or a file path ending in a "$ ..." line
 
         return Shell.tab
       end
+
+      # /file/path, so just expand
+
+      if FileTree.handles?
+        return Launcher.launch
+      end
+
 
       indent = Line.indent(Line.value 0)
       Line.sub! /^ */, indent
@@ -1291,11 +1302,11 @@ module Xiki
       nil
     end
 
-    def self.open_tasks
+    def self.open_tasks options={}
 
       prefix = Keys.prefix :clear=>1
 
-      file = Bookmarks[":t"]
+      file = Bookmarks[options[:bookmark] || ":t"]
 
       FileUtils.mkdir_p File.dirname(file)
 
@@ -1344,12 +1355,15 @@ module Xiki
       extract_from_next_line = nil
       label = nil
       IO.foreach(path, *Files.encoding_binary) do |line|
+        break if limit <= 0
 
         # The previous line was a blank label, ...
 
         if label == ""
           label = line[/\w.*/]
+          next if ! label
           label.sub! /\/$/, ''   # No slashes at end
+          limit -= 1
           txt << "#{indent}+ #{label}\n"
           label = nil
           next
@@ -1366,7 +1380,6 @@ module Xiki
 
         txt << "#{indent}+ #{label}\n"
         limit -= 1
-        break if limit <= 0
       end
 
       txt
@@ -1378,26 +1391,6 @@ module Xiki
       ignore, left, right = View.block_positions "^>"   # Regex works with >\n lines
       $el.narrow_to_region left, right
     end
-
-
-    def self.chdir_when_xsh_session
-
-      # Only do something if this is a xsh session file...
-
-      return if ! View.file_name || View.dir != Bookmarks["~/xiki/sessions"]
-
-      # Change the dir to where it was originally created!
-
-      original_dir = File.read File.expand_path("~/xiki/misc/sessions_dirs/#{View.file_name}") rescue nil
-
-      if ! original_dir
-        # Todo > try to re-associate the file (via the file id thing I researched)
-        return
-      end
-
-      Shell.cd original_dir
-    end
-
 
 
     def self.heading

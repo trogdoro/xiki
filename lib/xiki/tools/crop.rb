@@ -33,7 +33,7 @@ module Xiki
       Shell.sync %`convert "#{file}" -crop #{coords} "#{dest}"`, :dir=>dir
       Line.previous
       Tree.to_parent
-      Tree.kill_under
+      Tree.collapse
       indent = Line.indent Line.value(0)
       Line.next
       View.<< "#{indent}- #{dest}\n", :dont_move=>1

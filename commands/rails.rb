@@ -37,7 +37,7 @@ module Xiki
 
     def self.nest
       Tree.to_parent
-      Tree.kill_under
+      Tree.collapse
       Line.delete
       txt = "
         /tmp/rails1/
