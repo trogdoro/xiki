@@ -132,7 +132,7 @@ module Xiki
 
       Search.append_log path, "- #{prepend}#{regex}/"
 
-      View.to_buffer "*tree grep"
+      View.to_buffer "tree filter/"
       View.dir = Files.dir_of(path)
       View.clear; Notes.mode
 
@@ -341,7 +341,7 @@ module Xiki
         Styles.define :diff_green_pipe, :bg=>"130", :fg=>"228822", :size=>"0", :face=>"xiki", :bold=>true
 
         Styles.define :diff_yellow, :bg=>"330", :fg=>"ec0", :size=>"-1"
-        Styles.define :diff_yellow_pipe, :bg=>"330", :fg=>"440", :size=>"0", :face=>"xiki", :bold=>true
+        Styles.define :diff_yellow_pipe, :bg=>"330", :fg=>"770", :size=>"0", :face=>"xiki", :bold=>true
 
         Styles.define :diff_small, :fg=>"222", :size=>"-11"
 
@@ -545,10 +545,19 @@ module Xiki
     end
 
     def self.matches_root_pattern? item
+
+      # Just leave in for a bit, to catch deprecated $foo... paths
+      if item =~ /^\$[._a-zA-Z0-9-]+(\/|$)/   # Path starts with $xxx, so pull it out and look it up...
+        raise "Don't use $..., use :... > #{path}!"
+      end
+
+      item == "." ||   # just ~ or .
+      item == "~" ||   # just ~ or .
       item =~ /^\/(\w|$)/ ||   # /... or /
       item =~ /^:\w/ ||
-      item =~ /^\$\w/ ||   # Deprecated > remove soon
-      item =~ %r"^(~/|\.\.?/|\$\w)"
+
+      item =~ %r"^(~/|\.\.?/)"
+
     end
 
     def self.suggest_creating quote_string
@@ -810,7 +819,7 @@ module Xiki
       if options[:open_in_bar] || options[:here]
         # Don't upen buffer
       else
-        View.to_buffer "*tree #{name}"
+        View.to_buffer "#{name}/"
         View.clear
         View.dir = Bookmarks.dir_only dir
         Notes.mode
@@ -889,9 +898,9 @@ module Xiki
 
         View.to_nth 1
 
-        # If 2nd view isn't :f, open it
-        if $el.buffer_file_name( $el.window_buffer( View.list[1] ) ) != Bookmarks[":f"]
-          $el.find_file Bookmarks[":f"]
+        # If 2nd view isn't :n, open it
+        if $el.buffer_file_name( $el.window_buffer( View.list[1] ) ) != Bookmarks[":n"]
+          $el.find_file Bookmarks[":n"]
         end
 
         View.to_nth 0
@@ -1129,6 +1138,9 @@ module Xiki
         return
       end
 
+
+      # up+, so start with blank
+
       # Line has content, so indent under...
 
       txt = txt.unindent unless options[:leave_indent]
@@ -1158,6 +1170,12 @@ module Xiki
 
       txt = txt.gsub /^/, "#{indent}#{quote} "
       txt = txt.gsub /^( *[|:#]) $/, "\\1"   # Remove trailing spaces
+
+      if prefix == :u
+        View.insert "#{indent}#{quote} \n"
+        Move.backward
+        return
+      end
 
       View.insert "#{txt}\n"
     end
@@ -1375,7 +1393,7 @@ module Xiki
       options.merge!(:recursive=>1) if prefix == :u   # If up+, expand dir recursively
 
       if prefix == :-   # If up+up+, insert /the/path//
-        Line << %Q"#{Bookmarks["$#{Keys.input(:timed=>1)}"]}/"
+        Line << %Q"#{Bookmarks[":#{Keys.input(:timed=>1)}"]}/"
 
         Launcher.go
         return
@@ -1604,7 +1622,7 @@ module Xiki
 
       # Eventually only do if :client =~ ^editor\b
 
-      Tree.kill_under
+      Tree.collapse
       Effects.glow :fade_out=>1
       Line.delete
       Line.to_beginning
@@ -1616,7 +1634,7 @@ module Xiki
     end
 
     def self.move_latest_screenshot_to dest_path, dest_dir
-      desktop = Bookmarks['$dt']
+      desktop = Bookmarks[':dt']
 
       latest_screenshot = `ls -t #{desktop} "Screen shot*"`[/Screen shot .*/]
 
@@ -1816,7 +1834,7 @@ module Xiki
       mode = View.mode
 
       path = View.file
-      View.to_buffer("*tree outline")
+      View.to_buffer("outline/")
       View.clear;  Notes.mode
 
       if path
@@ -1907,8 +1925,8 @@ module Xiki
         return
       elsif dropdown == ["cd"]
         return self.cd file_path
-      elsif dropdown == ["cd and exit"]
-        $el.kill_emacs "cd #{Files.tilda_for_home file_path, :escape=>1}"
+      elsif dropdown == ["exit and cd"]
+        Shell.exit_and_cd file_path
         return ""
       elsif dropdown == ["rename"] || prefix == "rename"
         return self.rename_file
@@ -1975,21 +1993,24 @@ module Xiki
             ~ rename
             ~ delete
             ~ shell command
-            ~ all
+
+            ~ contents
             ~ outline
             ~ search
+            ~ bookmark
             "
 
         elsif dropdown == ["edit"]
           options[:nest] = 1
           return options[:output] = "+ emacs\n+ vim\n+ sublime"
         elsif dropdown == ["shell command"]
-          ControlLock.disable
           Tree.<< "$ ", :no_search=>1, :no_slash=>1
           Move.to_end
           return options[:output] = ""
+        elsif dropdown == ["bookmark"]
+          Bookmarks.save arg=nil
+          return options[:output] = ""
         elsif dropdown == ["search"]
-          ControlLock.disable
           Search.enter_search
           return options[:output] = ""
         elsif dropdown == ["edit", "vim"]
@@ -2003,7 +2024,7 @@ module Xiki
         return options[:output] = self.filter_one_file(file_path).join("\n") if dropdown == ["outline"] || prefix == "outline"
         return options[:output] = self.filter_one_file(file_path, /^> .+:$/).join("\n") if prefix == "u outline"
 
-        return options[:output] = Tree.quote(File.read(file_path, *Files.encoding_binary)) if dropdown == ["all"] || prefix == "all"
+        return options[:output] = Tree.quote(File.read(file_path, *Files.encoding_binary)) if dropdown == ["contents"] || prefix == "all"
 
         return options[:output] = self.save(file_path, options) if (dropdown == ["save"] || prefix == "update" || prefix == "save") && options[:quote]
 
@@ -2033,42 +2054,39 @@ module Xiki
 
           require "#{Xiki.dir}commands/sample_menus/sample_menus_index.rb" # if !defined?(SampleMenus)
 
-          cd_and_exit = Environment.xsh? ? "\n            ~ cd and exit" : ""
+          cd_and_exit = Environment.xsh? ? "\n            ~ exit and cd" : ""
 
           menu = Xik.new '
             ~ rename
             ~ delete
             ~ cd'+cd_and_exit+'
-            ~ shell command
-              ! ControlLock.disable
-              ! Tree.<< "$ ", :no_search=>1
-              ! Move.to_end
+            ~ bookmark
+              ! Bookmarks.save arg=nil
               ! ""
             ~ recent
               ! # Expand with special flag
               ! FileTree.dir :date_sort=>true
               ! ""
-            ~ new
-              ! Notes.bullet
+
+            ~ search
+              ! ControlLock.disable
+              ! Tree.<< "- ##/", :no_search=>1
+              ! View.column = -1
               ! ""
+            ~ tree
+              ! FileTree.expand_dir_recursively :file_path=>'+file_path.inspect+'
+              ! # "todo > how to just set var saying to add the :all flag? > maybe just handle this one above
+              ! #   or > find method to just insert it here? > but what about recursive search?"
             ~ filter/
-              + search
-                ! ControlLock.disable
-                ! Tree.<< "- ##/", :no_search=>1
-                ! View.column = -1
-                ! ""
-              + all
-                ! txt = FileTree.grep('+file_path.inspect+', "").join("\n")
-                ! txt.sub(/.+\n/, "")   # Delete 1st line > the redundant dir
-              + filenames
-                ! FileTree.expand_dir_recursively :file_path=>'+file_path.inspect+'
-                ! # "todo > how to just set var saying to add the :all flag? > maybe just handle this one above
-                ! #   or > find method to just insert it here? > but what about recursive search?"
               + search filenames
                 ! ControlLock.disable
                 ! Tree.<< "- **/", :no_search=>1
                 ! View.column = -1
                 ! ""
+              + all contents
+                ! txt = FileTree.grep('+file_path.inspect+', "").join("\n")
+                ! txt.sub(/.+\n/, "")   # Delete 1st line > the redundant dir
+
             ~ create/
               + txt
                 ! "+ foo.txt\n#{Tree.quote SampleMenus.by_extension("txt"), :indent=>"  "}"
@@ -2094,6 +2112,15 @@ module Xiki
                 ! Dir.mkdir("'+file_path+'/d") rescue nil
                 ! File.write "'+file_path+'/d/d.txt", "ddd\nddd\n"
                 ! "- a.txt\n- b.txt\n- c.notes\n- d/\n  - d.txt"
+            ~ more/
+              ~ shell command
+                ! ControlLock.disable
+                ! Tree.<< "$ ", :no_search=>1
+                ! Move.to_end
+                ! ""
+              ~ new
+                ! Notes.bullet
+                ! ""
             '
 
           # / and :mouse, so return whole menu...
