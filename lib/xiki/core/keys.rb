@@ -26,7 +26,7 @@ module Xiki
         "as"=>nil,
 
         "run"=>nil,
-        "write"=>nil,
+        "enter"=>nil,
         "tile"=>nil,
 
         "hop"=>nil,
@@ -34,6 +34,7 @@ module Xiki
 
         "search"=>nil,
         "custom"=>nil,
+        "window"=>nil,
 
         "expand"=>nil,
         "dropdown"=>nil,
@@ -44,13 +45,9 @@ module Xiki
       {
         "open"=>nil,
         "as"=>nil,
-
-        "tile"=>nil,
         "hop"=>nil,
+        "jump"=>nil,
 
-        "search"=>nil,
-
-        "expand"=>nil,
         "dropdown"=>nil,
       }
     end
@@ -59,13 +56,11 @@ module Xiki
     @@map_noob ||= Keys.map_default_noob
     @@noob_mode = nil
 
-    def self.persist_noob_mode value=nil
-      self.noob_mode value
+    def self.persist_setting key, value
 
       # Read in file...
 
       user_conf = Bookmarks[":hx/commands/conf/xsh.conf"]
-
       txt = File.read(user_conf) rescue nil
 
       # If not there, read from default...
@@ -76,12 +71,7 @@ module Xiki
 
       # Update file accordingly
 
-      if value   # Noob mode on, so advanced=>false
-        changed = txt.sub! /^(advanced mode:) true/, "\\1 false"
-      else   # Noob mode off, so advanced=>true
-        changed = txt.sub! /^#(advanced mode: true)/, "\\1"
-        changed ||= txt.sub! /^(advanced mode:) false/, "\\1 true"
-      end
+      txt.sub! /^(#{key}:).*/, "\\1 #{value}"
 
       # Write file...
 
@@ -90,18 +80,27 @@ module Xiki
     end
 
 
+    def self.read_setting key
+      txt = File.read Bookmarks[":hx/commands/conf/xsh.conf"] rescue nil
+      txt[/^#{key}: (.*)/, 1]   # => noob
+    end
+
     def self.noob_mode value=nil
-      # No value, so return
+
+      # No value, so return the result
       if value == nil
+
+        # Memo-ize it, so we don't look it up every time
         if @@noob_mode == nil
-          txt = File.read Bookmarks[":hx/commands/conf/xsh.conf"] rescue nil
-          @@noob_mode = txt =~ /^ *advanced mode: true *$/ ? false : true
+          value = self.read_setting "key shortcuts"
+          @@noob_mode = ! value || value == "noob"
         end
         return @@noob_mode
       end
 
-      # No value, so return
+      # Value passed so set it in the cache and on the disk
       @@noob_mode = value
+      self.persist_setting 'key shortcuts', (value ? 'noob' : 'advanced')
     end
 
     # Called when expanding key shortcuts are press.
@@ -143,7 +142,7 @@ module Xiki
 
       options = {:bar_is_fine=>1}
       if key != ","
-        options.merge! :letter=>1, :letter_when_not_found=>1
+        options.merge! :hotkey=>1, :letter_when_not_found=>1
       end
 
       # First arg is apparently the command and what the buffer will be named
@@ -156,55 +155,72 @@ module Xiki
     def self.more args, options
 
       txt = "
-        + help/
-          ! Launcher.open('help/')
-        + tutorial/
-          ! Launcher.open('tutorial/')
-        + more keys/
-          + copying and pasting/
-            | You can use these keys to copy and paste, etc:
-            |
-            |   Ctrl+C, Ctrl+V, Ctrl+X, Ctrl+Z
-            |
-            | To select some text for copying or cutting, type Ctrl+Space and
-            | then move the arrow keys.
-          + arrow keys/
-            | You can type the arrow keys to move the cursor around.
-            |
-            | Often much of what you'll do in Xiki is use the arrow keys and
-            | type Ctrl+E to expand and collapse things.
-            |
-            | Also, the arrow keys can help you escape out of odd situations,
-            | like when you start typing a key shortcut and become confused.
-            | (Note that the escape key doesn't escape out of things, due to
-            | the limitations of shell consoles.)
-          + mouse/
-            | If you're using a terminal that has mouse support (like iTerm),
-            | you can you the mouse to...
-            |
-            | - click to reposition the cursor
-            | - double-click to expand
-            | - right-click to see a dropdown menu
-        ".unindent
+        + arrow keys/
+          | You can type the arrow keys to move the cursor around.
+          |
+          | Often much of what you'll do in Xiki is use the arrow keys and
+          | type Ctrl+X to expand and collapse things.
+          |
+          | Also, the arrow keys can help you escape out of odd situations,
+          | like when you start typing a key shortcut and become confused.
+          | (Note that the escape key doesn't escape out of things, due to
+          | the limitations of shell consoles.)
+        + copying and pasting, etc/
+          | You can use these keys to copy, paste, cut, and undo:
+          |
+          |   Ctrl+C, Ctrl+V, Ctrl+X, Ctrl+Z
+          |
+          | To select some text before copying or cutting, type Ctrl+Space
+          | and then move the arrow keys to select.
+        + mouse/
+          | If you're using a terminal that has mouse support (like iTerm),
+          | you can you the mouse to...
+          |
+          | - click to reposition the cursor
+          | - double-click to expand
+          | - right-click to see a dropdown menu
 
+      ".unindent
+
+      txt << "\n"
       txt <<
         if Keys.noob_mode
-          "
+          %`
           + show advanced key shortcuts
-            ! Keys.persist_noob_mode false
-            ! options[:no_slash] = 1
-            ! '<! Setting updated. Type Ctrl+K to redisplay.'
-          ".unindent
+            ! Keys.noob_mode false
+            ! "<! Type Ctrl+K again to see the advanced key shortcuts."
+          `.unindent
 
         else
-          "
-          + show only noob key shortcuts
-            ! Keys.persist_noob_mode true
-            ! options[:no_slash] = 1
-            ! '<! Setting updated. Type Ctrl+K to redisplay.'
-          ".unindent
+          %`
+          + show noob key shortcuts only
+            ! Keys.noob_mode true
+            ! "<! Type Ctrl+K again to see the noob key shortcuts."
+          `.unindent
 
         end
+
+      # Not yet left initial theme, so show option to show paths...
+      if $el.boundp(:bottom_bar_shows_file_paths) && $el.elvar.bottom_bar_shows_file_paths # || ! $el.elvar.bottom_bar_shows_file_paths
+        txt << %`
+          + key shortcuts in bottom bar
+            ! $el.elvar.bottom_bar_shows_file_paths = nil
+            ! Keys.persist_setting 'bottom bar', 'keys'
+            ! options[:no_slash] = 1
+            ! "<! Done"
+          `.unindent
+      else
+        # Todo > make options (:no_slash) affect actual hash
+        txt << %`
+          + file paths in bottom bar
+            ! $el.elvar.bottom_bar_shows_file_paths = 1
+            ! Keys.persist_setting 'bottom bar', 'paths'
+            ! options[:no_slash] = 1
+            ! "<! Done"
+          `.unindent
+      end
+
+      txt << "\n<= help/"
 
       Xik.new(txt).expand args, options.merge(:eval=>1)
 
@@ -214,7 +230,7 @@ module Xiki
     def self.menu_expander path, options={}
 
       in_own_view = View.name =~ /\/$/
-      options[:letter] = 1 if options[:was_letter]
+      options[:hotkey] = 1 if options[:was_letter]
 
       # keys/copying and pasting/, so do special handling of this item...
 
@@ -289,7 +305,10 @@ module Xiki
 
       if self.noob_mode
         if path == []
-          txt.gsub!(/\+ [e]/, "\n\\0")
+          txt.gsub!(/\+ [ad]/, "\n\\0")
+          return
+        elsif path == ["open"]
+          txt.gsub!(/\+ [fp]/, "\n\\0")
           return
         end
       end
@@ -297,19 +316,21 @@ module Xiki
       # All keys shown, so add spaces
 
       if path == []
-        txt.gsub!(/\+ [hreqb]/, "\n\\0")
+        txt.gsub!(/^\+ (xpand|quit)\n/, "")   # Remove quit and xpand
+        txt.gsub!(/(^\+ (backward|forward|previous|next)\n)+/, "")   # Remove backward, forward, previous, next
+        txt.gsub!(/\+ [hrdb]/, "\n\\0")
 
       elsif path == ["as"]
         txt.gsub!(/\+ [lth]/, "\n\\0")
-      elsif path == ["write"]
+      elsif path == ["enter"]
         txt.gsub!(/\+ [jhqi]/, "\n\\0")
 
       elsif path == ["hop"]
         txt.gsub!(/\+ [uch]/, "\n\\0")
       elsif path == ["jump"]
-        txt.gsub!(/\+ [c]/, "\n\\0")
+        txt.gsub!(/\+ [cry]/, "\n\\0")
       elsif path == ["open"]
-        txt.gsub!(/\+ [hceto]/, "\n\\0")
+        txt.gsub!(/\+ [fcetolz]/, "\n\\0")
 
 
       elsif path == ["tile"]
@@ -329,43 +350,57 @@ module Xiki
 
     end
 
+    @@descriptions = {
+      []=>"
+        Keyboard shortcuts. Right now, and anywhere in xsh, you
+        can type the first letter of one of the below words while
+        holding down Ctrl (example: Ctrl+O for open).
+
+        The arrow keys always move around.  ESC moves between views.
+        Try using the arrow keys then Ctrl+X to explore items below.
+        ".unindent+"\n",
+      ["as"]=>"Saving and remembering",
+      ["enter"]=>"Inserting stuff",
+
+      ["hop"]=>"Cursor movement",
+
+      ["jump"]=>"Going to specific places",
+
+      ["open"]=>"Displaying things",
+
+      ["tile"]=>"Splitting and navigating views",
+      ["run"]=>"Running and processing things",
+      ["search"]=>"Shortcuts you can use during a Ctrl+S search",
+      ["custom"]=>"Related to the kind of file you're viewing",
+
+      ["window"]=>"Arranging the window",
+
+      ["run", "version"]=>"Diffing and listing versions",
+
+    }
+
     def self.decorate_items path, txt
 
       self.decorate_with_spacing path, txt
 
       # Maybe don't show > require right-click?
-      description = {
-        []=>"
-          Keyboard shortcuts. You can type the first letter of one
-          | of these, while holding down Ctrl. Or use the arrow keys
-          | and Ctrl+E to expand and see help messages.
-          ".unindent,
-        ["as"]=>"Saving and remembering",
-        ["write"]=>"Inserting stuff",
+      description = @@descriptions[path]
 
-        ["hop"]=>"Simple cursor movement",
+      # keys/ in advanced mode, so don't show the long decription
+      description = nil if path == [] && ! self.noob_mode
 
-        ["jump"]=>"Advanced cursor movement",
-
-        ["open"]=>"Displaying things and lists",
-
-        ["tile"]=>"Splitting and navigating views",
-        ["run"]=>"Running and processing things",
-        ["search"]=>"Shortcuts you can use during a Ctrl+S search",
-        ["custom"]=>"Related to the kind of file you're viewing",
-
-        ["run", "version"]=>"Diffing and listing versions",
-
-      }[path]
-      txt = "| #{description}\n#{txt}" if description
+      txt = "#{Tree.pipe(description).strip}\n#{txt}" if description
 
       # Special extra text for root "keys"...
 
       txt << "\n"+"
         + more/
-
-        | Use Ctrl+\\ to move between views
         ".unindent if path == []
+        #
+        #|          Ctrl+X Expand/collapse    Ctrl+Q Quit
+
+        #
+        # | Use Ctrl+\\ to move between views
 
       txt
     end
@@ -425,7 +460,7 @@ module Xiki
     end
 
     # Have user type in key.  Returns...
-    #   ["as", "write"], <Proc...>
+    #   ["as", "enter"], <Proc...>
     def self.prompt_for_key
 
       combo, found = [], nil
@@ -542,6 +577,7 @@ module Xiki
     # Keys.input :optional=>1   # Terminated by pause
     #   - A pause at the beginning will result in no input (nil)
     def self.input *args
+
       prompt = args.shift if args[0].is_a?(String)
 
       options = args[0] || {}
@@ -578,7 +614,7 @@ module Xiki
         keys = self.to_letter(c)
       end
 
-      if c == 7
+      if c == 7 || c == 27
         $el.keyboard_quit
       end
 
@@ -716,6 +752,7 @@ module Xiki
     end
 
     def self.timed_insert options={}
+
       prefix = Keys.prefix
 
       # 0 prefix, so insert in a way that works with macros...
@@ -734,6 +771,11 @@ module Xiki
 
       # Get first char and insert
       c = $el.read_char(prompt).chr
+
+      # Do nothing if it was escape
+
+      return if c == "\e"
+
       inserted = "#{c}"
       self.timed_insert_handle_char c
 
@@ -770,6 +812,8 @@ module Xiki
         end
 
       end
+
+      inserted
 
     end
 
@@ -883,6 +927,8 @@ module Xiki
 
       bm = options[:bm] || Keys.input(:timed=>true, :prompt=>options[:prompt]||"Enter a bookmark: ")
 
+      return if bm == "\e"
+
       if bm == " "   # If space, return special token
         return :space
       elsif bm == "/"   # If slash, return special token
@@ -899,7 +945,7 @@ module Xiki
         return dir
       end
 
-      dir = Bookmarks.expand "$#{bm}"
+      dir = Bookmarks.expand ":#{bm}"
 
       if dir.nil?   # If no dir, return nil
         View.beep "- Bookmark '#{bm}' doesn't exist."
@@ -1013,8 +1059,12 @@ module Xiki
       $el.el4r_lisp_eval("(elt (recent-keys) (- (length (recent-keys)) #{nth}))").to_s
     end
 
-    def self.before_last
-      $el.el4r_lisp_eval("(elt (recent-keys) (- (length (recent-keys)) 2))").to_s
+    # Returns codes for ast few keys pressed, in the order:
+    #   [recent, one ago, two ago]
+    def self.recent_few
+
+      return $el.recent_keys.to_a.reverse
+
     end
 
     def self.isearch_prefix shortcut_length=2
@@ -1222,7 +1272,7 @@ module Xiki
     # show =keys/.
     def self.k_key
       # Just open the menu
-      Launcher.open "keys", :bar_is_fine=>1, :letter=>1
+      Launcher.open "keys/", :bar_is_fine=>1, :hotkey=>1
 
       # # If we want a delay when C-k (probably not the best tradeoff)
       # Keys.expand []
@@ -1310,11 +1360,52 @@ module Xiki
 
     def self.el4r_init
       $el.el4r_lisp_eval "
-        (setq xiki-az-keymap
-          '(keymap
-            (3 . next-line)
-            (24 . previous-line)
+        (progn
+          ; Just defined, so you can use it as a local map
+          (setq xiki-az-keymap
+            '(keymap
+              (3 . next-line)
+              (24 . previous-line)
+              (27 . keyboard-quit)   ; Makes escape work
+            )
           )
+          ; Added to emulation-mode-map-alists
+          (setq xiki-az-control-keymap
+            '(keymap
+              (1 . next-line)
+              (2 . next-line)
+              (3 . next-line)
+              (4 . next-line)
+              (5 . next-line)
+              (6 . next-line)
+              (7 . next-line)
+              (8 . next-line)
+              (9 . next-line)
+              (10 . next-line)
+              (11 . next-line)
+              (12 . next-line)
+              (13 . next-line)
+              (14 . next-line)
+              (15 . next-line)
+              (16 . next-line)
+              (17 . next-line)
+              (18 . next-line)
+              (19 . next-line)
+              (20 . next-line)
+              (21 . next-line)
+              (22 . next-line)
+              (23 . next-line)
+              (24 . next-line)
+              (25 . next-line)
+              (26 . next-line)
+
+            )
+          )
+          ; Wraps and toggles
+          (setq xiki-az-control-keymap-toggler
+            `((xiki-filter-hotkey . ,xiki-az-control-keymap))
+          )
+          (add-to-ordered-list 'emulation-mode-map-alists 'xiki-az-control-keymap-toggler 200)
         )
       "
     end
