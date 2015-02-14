@@ -206,7 +206,9 @@ module Menu
         File.open(file, "w") { |f| f << "#{txt.sub(/\n+\z/, '')}\n\n\nsource ~/.xsh\n\n" }
       end
 
-      return "
+      Xiki.kill   # So the forker will reload later, in a process that has bin in its path
+
+      "
         =replace/siblings/3/
           |+Success!
           |
@@ -221,7 +223,7 @@ module Menu
           | Expand this item for help with using Xiki:
           |
           << help
-        ".unindent
+      ".unindent
 
     end
   end
