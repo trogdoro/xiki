@@ -84,9 +84,11 @@ module Xiki
     def self.do_status
       dir = Keys.bookmark_as_path :prompt=>"Enter a bookmark to show git status: "
 
+      branch = Xiki::Git.branch_name
       menu = "
         #{dir}
           $ git
+            + push/#{branch}/
             + status/
       ".unindent.strip
       Launcher.open(menu)
