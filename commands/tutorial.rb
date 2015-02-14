@@ -6,7 +6,7 @@ class Tutorial
     - menu item/
       : Good job! Now use the arrow keys to collapse this menu
       : item, by using the arrow keys to move up to the "menu item"
-      : line again and type Ctrl+E.
+      : line again and type Ctrl+X.
       :
     - filtering/
       >
@@ -72,12 +72,14 @@ class Tutorial
         :
         : Let's start by expanding some menu items. Use the arrow
         : keys to move the cursor down to the "menu item" line below.
-        : Then type Ctrl+E to expand it.
+        : Then type Ctrl+X to expand it.
         :
         + menu item/
         :
         : Or, browse all topics:
         - topics/
+        :
+        :?Note: this tutorial is inprogress, and is unfinished
         `
     end
 
