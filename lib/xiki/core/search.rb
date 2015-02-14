@@ -61,7 +61,7 @@ module Xiki
           | search_delete: Delete found
           | search_diffs (without searching): Search in diffs
           | search_todo: Search in :t bookmark
-          | search_files: Search in :f bookmark
+          | search_files: Search in :n bookmark
           | search_paths: Search history of menus
         - miscellaneous/
           | search_search: Re-do the last search
@@ -130,6 +130,7 @@ module Xiki
       self.to_start  # Go back to start
       #       View.insert match, :dont_move=>1
       View.insert match #, :dont_move=>1
+      View.message ""
     end
 
     def self.isearch_have_wikipedia
@@ -308,7 +309,7 @@ module Xiki
 
       if match.nil?   # If nothing searched for yet
         Location.as_spot
-        Search.isearch_restart ":f", :restart=>true
+        Search.isearch_restart ":n", :restart=>true
         return
       end
 
@@ -417,6 +418,8 @@ module Xiki
 
       prefix = Keys.isearch_prefix
       path = Keys.bookmark_as_path :include_file=>1   # Get path (from bookmark)
+
+      return if ! path
 
       # If C-u, just jump to bookmark and search from the top
       if prefix == :u
@@ -562,7 +565,7 @@ module Xiki
       new_args << ", #{new_options.inspect[1..-2]}" unless new_options.empty?
 
       View.bar if options[:in_bar]
-      $el.switch_to_buffer "*tree find in buffers"
+      $el.switch_to_buffer "find in buffers/"
       Notes.mode
       $el.erase_buffer
 
@@ -787,6 +790,7 @@ module Xiki
     def self.cancel
       self.stop
       self.to_start  # Go back to start
+      View.message ""
     end
 
     #   def self.not_found?
@@ -958,7 +962,7 @@ module Xiki
           dir = nil
         end
       else
-        dir = Bookmarks.expand("$#{bm}")
+        dir = Bookmarks.expand(":#{bm}")
       end
 
       View.insert("#{dir}" || "")
@@ -1150,7 +1154,7 @@ module Xiki
 
     def self.just_menu
       match = self.stop
-      View.open "$ml"
+      View.open ":ml"
       View.to_bottom
       Search.isearch match, :reverse=>true
     end
@@ -1187,7 +1191,7 @@ module Xiki
       match = self.stop
 
       if match.nil?   # If nothing searched for yet
-        Launcher.open "ze/", :letter=>1
+        Launcher.open "ze/", :hotkey=>1
         return
       end
 
@@ -1203,13 +1207,12 @@ module Xiki
       # No string searched for, so pretend key was: search+xiki (show xiki search options)...
 
       if ! match
-        return Launcher.open "search xiki", :letter=>1
+        return Launcher.open "search xiki", :hotkey=>1
       end
 
-      # Match found, so behave like: search+cut...
 
+      # Match found, so behave like: search+cut...
       Clipboard.set(0, match)
-      #       $el.set_register ?X, match
       View.delete self.left, self.right
       Location.as_spot('killed')
 
@@ -1217,18 +1220,17 @@ module Xiki
 
     def self.isearch_restart path, options={}
       term = self.stop
-
       Location.as_spot if options[:as_here]
 
       if path == ":t"   # If :t, open bar
         View.layout_todo
-      elsif path == ":f"
-        View.layout_files
-      elsif path == "$o"
+      elsif path == ":n"
+        View.layout_nav
+      elsif path == ":o"
         View.layout_outlog
         options[:reverse] = true
-      elsif path == "$d"
-        View.open "$d"
+      elsif path == ":d"
+        View.open ":d"
         options[:reverse] = true
       elsif path == :top
         # Will go to highest below
@@ -1300,7 +1302,7 @@ module Xiki
       if match.nil?   # If nothing searched for yet
 
         Location.as_spot
-        Search.isearch_restart ":f", :restart=>true
+        Search.isearch_restart ":o", :restart=>true
 
       else
         if ! View.file   # If buffer, not file
@@ -1316,7 +1318,7 @@ module Xiki
 
         dir = View.dir
         file_name = View.file_name
-        View.to_buffer "*tree grep";  View.dir = dir
+        View.to_buffer "tree filter/";  View.dir = dir
         View.clear;  Notes.mode
 
         regex = Regexp.quote(match).gsub("/", '\/')
@@ -1359,11 +1361,12 @@ module Xiki
       self.move_to_search_start match
     end
 
-    def self.isearch_after
+    def self.isearch_nav
       match = self.stop
 
       if ! match   # Nothing searched for...
-        return self.search_last_launched
+        Location.as_spot
+        Search.isearch_restart ":n", :restart=>true
       end
 
       # Something searched for, so move to the right of it...
@@ -1449,7 +1452,7 @@ module Xiki
     def self.fit_in_snippet match, options={}
 
       target_path = options[:path] || View.file
-      View.layout_files :no_blink=>1
+      View.layout_nav :no_blink=>1
 
       View.to_highest
       Move.to_junior   # Go to first file
@@ -1475,9 +1478,9 @@ module Xiki
       orig = Location.new
       was_in_bar = View.in_bar?
 
-      if path == ":t"   # If :f, grab path also
+      if path == ":t"   # If :n, grab path also
         View.layout_todo :no_blink=>1
-      elsif path == ":f"   # If :f, grab path also
+      elsif path == ":n"   # If :n, grab path also
         match = self.move_to_files match
         return orig.go if ! match   # It handled it if it didn't return the match
       else
@@ -1506,7 +1509,7 @@ module Xiki
 
       View.to_highest
 
-      # Which case was this handling?  Being in :f?  Why leave cursor in :t when in :f?
+      # Which case was this handling?  Being in :n?  Why leave cursor in :t when in :n?
       #     return if path == ":t" && was_in_bar && orig.buffer != "todo.notes"
 
       orig.go
@@ -1815,7 +1818,7 @@ module Xiki
       if match.nil?   # If nothing searched for yet, do search_edits
         bm = Keys.input :timed=>true, :prompt=>"Enter a bookmark to search edits: "
         return Launcher.open("diff log/diffs/") if bm == "8" || bm == " "
-        path = bm == "." ? View.file : "$#{bm}/"
+        path = bm == "." ? View.file : ":#{bm}/"
         return Launcher.open("#{path}\n  =edits/")
       end
 
@@ -1842,7 +1845,7 @@ module Xiki
     def self.like_expanded
       match = Search.stop
       Tree.to_parent
-      Tree.kill_under
+      Tree.collapse
       Launcher.launch :no_search=>1
       Search.isearch match
     end

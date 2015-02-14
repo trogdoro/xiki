@@ -20,7 +20,7 @@ module Xiki
         =p Bookmarks[":t"]
         |
         | > Expand bookmark in a path
-        =p Bookmarks["$tm/hi.txt"]
+        =p Bookmarks[":tm/hi.txt"]
         |
         > Where Emacs stores bookmarks
         =~/.emacs.bmk
@@ -56,8 +56,10 @@ module Xiki
       if ! Keys.prefix_u? && in_a_file_tree && ! Line[/^ *\|/]
         path = Tree.construct_path
         keys = Keys.input(:timed=>true, :prompt=>"Name of bookmark for #{path.sub(/.+\/(.)/, "\\1")}: ") || "0"
+        path = File.expand_path path, View.dir
+
         self.set keys, :file=>path
-        View.flash "- bookmarked as: $#{keys}", :times=>3
+        View.flash "- bookmarked as: :#{keys}", :times=>3
         return
       end
 
@@ -67,7 +69,7 @@ module Xiki
       if arg && arg.class == Symbol
         prefix = arg.to_s
       elsif arg && arg.class == String
-        self.set(arg.sub(/^\$/, ""))
+        self.set(arg.sub(/^\:/, ""))
         return
       end
 
@@ -116,7 +118,10 @@ module Xiki
       # Use input from user or "default"
       keys ||= Keys.input(:timed=>true, :prompt=>"Type ., /, or a bookmark: ") || "0"
 
+      return if keys == "\e"   # They typed escape
+
       # Non-word, so delegate to FileTree.tree, since it knows how to hilight the current file
+
       return FileTree.tree :bm=>keys if keys =~ /^[.\/]+$/
 
       path = keys =~ /^\w/ ?
@@ -129,7 +134,7 @@ module Xiki
 
       # If up+, open bookmark as menu
       if prefix == :u
-        Launcher.open "$#{keys}//" #, :unified=>1
+        Launcher.open ":#{keys}//" #, :unified=>1
         return
       elsif prefix == :uu   # Jump up one level if up+up+
         path = File.dirname path
@@ -182,16 +187,19 @@ module Xiki
       "se"=>"~/xiki/sessions/",
       "t"=>"~/xiki/tasks.notes",
       "tasks"=>"~/xiki/tasks.notes",
-      "f"=>"~/xiki/files.notes",
-      "files"=>"~/xiki/files.notes",
+      "n"=>"~/xiki/nav.notes",
+      "nav"=>"~/xiki/nav.notes",
 
-      "n"=>"~/xiki/notes/",
+      "no"=>"~/xiki/notes/",
       "c"=>"~/xiki/commands/",
       "cf"=>"~/xiki/commands/conf/",
 
       "dl"=>"~/Downloads/",
 
       "q"=>"~/xiki/notes/quick.notes",
+      "qq"=>"~/xiki/notes/quick2.notes",
+      "ti"=>"~/xiki/notes/timer.notes",
+      "f"=>"~/xiki/notes/facts.notes",
 
       "xc"=>"#{Xiki.dir}commands",
       "c2"=>"#{Xiki.dir}commands",
@@ -238,9 +246,13 @@ module Xiki
         bm, slash, rest = path, nil, nil
       elsif path =~ /^:([._a-zA-Z0-9-]+)([\\\/]?)(.*)/   # Path starts with $xxx, so pull it out and look it up...
         bm, slash, rest = $1, $2, $3
-      elsif path =~ /^\$([._a-zA-Z0-9-]+)([\\\/]?)(.*)/   # Path starts with $xxx, so pull it out and look it up...
-        bm, slash, rest = $1, $2, $3
-        Ol["Deprecated > use :... instead > #{path}!"]
+
+
+      # Just leave in for a bit, to catch deprecated $foo... paths
+      elsif path =~ /^\$[._a-zA-Z0-9-]+(\/|$)/   # Path starts with $xxx, so pull it out and look it up...
+        Ol.stack 7
+        raise "Don't use $..., use :... > #{path}!"
+
       else   # If no $..., just return the literal path...
         return path
       end

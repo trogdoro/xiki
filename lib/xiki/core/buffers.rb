@@ -30,19 +30,21 @@ module Xiki
 
       if name.empty?
         # Show all by default
+
         if ! prefix || prefix == :u || prefix == "all" || quoted
+
           result = Buffers.list.map do |b|
             name = $el.buffer_name(b)
             next if prefix != :u && name =~ /^\*/
             next if name =~ /^ \*/
 
-            next if ["views/", "edited/", "*ol", "files.notes", "tasks.notes", "difflog.notes"].member?(name)
-            next if quoted && (name =~ /^\*/ || ["edited/", "*ol", "files.notes", "tasks.notes", "difflog.notes"].member?(name))   # Skip the current buffer
+            next if !prefix && ["views/", "edited/", "*ol", "nav.notes", "tasks.notes", "difflog.notes"].member?(name)
+            next if quoted && (name =~ /^\*/ || ["edited/", "*ol", "nav.notes", "tasks.notes", "difflog.notes"].member?(name))   # Skip the current buffer
             modified = $el.buffer_file_name(b) && $el.buffer_modified_p(b) ? "+" : " "
 
             # Use ":" if modified or name has crazy chars
 
-            bullet = (modified == "+" || name =~ /[^a-z_.]/i) ? ":" : "-"
+            bullet = (modified == "+" || name =~ /[^a-z0-9_ .-]/i) ? ":" : "-"
 
             txt = "#{bullet}#{modified}#{name}\n"
 
@@ -98,7 +100,7 @@ module Xiki
         Buffers.delete name[0]
         if name.length > 1
           Tree.to_parent
-          Tree.kill_under
+          Tree.collapse
         end
         Line.delete
         return
@@ -148,7 +150,7 @@ module Xiki
         next if file =~ /_ol.notes/
 
         if options[:buffer].nil?   # If we're not searching in one buffer
-          next if ["tasks.notes", "files.notes"].
+          next if ["tasks.notes", "nav.notes"].
             member? file.sub(/.+\//, '')
         end
 

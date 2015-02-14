@@ -4,10 +4,10 @@ prefix = Keys.prefix
 
 if args == []
 
-  # Get latest "tasks.notes" and "files.notes" contents...
+  # Get latest "tasks.notes" and "nav.notes" contents...
 
   tasks = Notes.extract_paren_labels :file=>":t", :limit=>(prefix == :u ? 100 : 12)
-  files = Notes.extract_paren_labels :file=>":f", :limit=>100, :indent=>"  "
+  files = Notes.extract_paren_labels :file=>":n", :limit=>100, :indent=>"  "
 
   # Remove dups
   tasks = tasks.split("\n", -1).uniq.join("\n")
@@ -15,7 +15,7 @@ if args == []
 
   txt = "#{tasks}- files/\n#{files}"
 
-  options[:letter] = 1
+  options[:hotkey] = 1
   options[:omit_slashes] = 1
 
   return txt
@@ -37,7 +37,7 @@ View.kill if ! dropdown && View.name == "yours/"
 launch_options = {}
 if args.length == 2 and args[0] == "files"
   args.shift
-  launch_options[:bookmark] = ":f"
+  launch_options[:bookmark] = ":n"
 end
 
 launch_options[:label] = args[0]
