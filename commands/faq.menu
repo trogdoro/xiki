@@ -1,4 +1,4 @@
-: What key shortcuts are like Ctrl+A, Ctrl+E and Ctrl+X in bash?
+: What key shortcuts are like Ctrl+A, Ctrl+E and Ctrl+K in bash?
   | You can do Alt+A, Alt+E, and Alt+K ("option" instead of "alt"
   | on the mac).
 : Why aren't there more questions in this faq?

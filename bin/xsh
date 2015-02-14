@@ -1,6 +1,10 @@
 #!/bin/bash -f
 
 export bin_dir=`dirname $0`
+# Will only happen if xsh not in $PATH yet
+if [ "$bin_dir" = "." ]; then
+  bin_dir=`pwd`
+fi
 export xiki_dir=`dirname $bin_dir`
 
 emacs="emacs"
