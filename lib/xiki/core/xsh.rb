@@ -7,14 +7,13 @@ module Xiki
 
     def self.setup
       # Probably move to somewhere else
-      $el.elvar.control_lock_color = "#f90"   # Yellow
+      $el.elvar.control_lock_color = "#f90"   # Orange
+      $el.elvar.control_lock_color_transparent = "#f90"   # Orange
       $el.menu_bar_mode -1
     end
 
     # def self.run *args #, options={}
     def self.run options={}
-
-      $el.message ""
 
       options_in = {}
 
@@ -22,8 +21,11 @@ module Xiki
       # though when :args_via_env, .run is only called once
 
       Environment.xsh = true
+
       Xiki.init_in_client   # Do client-specific init stuff (normal .init methods can run before the process is connected to a client)
+
       # Define keys and such...
+
       self.setup
 
       if options[:args_via_daemon]
@@ -45,43 +47,79 @@ module Xiki
 
       # Check for various flags...
 
-      if args.slice! /^-s /
-        args = "./###{args}/"
+      if args.slice! /^-g /
+        # Grab on line, so don't launch (just insert)
+        options[:dont_expand] = 1
+        args = "$ #{args}"
+      elsif args.slice! /^-g\b/
+
+        tmp_dir = File.expand_path "~/xiki/misc/tmp"
+        FileUtils.mkdir_p tmp_dir   # Make sure dir exists
+        file = "#{tmp_dir}/last_quit_location.notes"
+
+        location = File.read(file) rescue nil
+        location ||= "/tmp/"
+
+        location.strip!
+        View.open location
+        options[:do_nothing] = 1
+
+      elsif args.slice! /^-s /
+
+        args = "./\n  - ###{args}/"
       elsif args =~ /^:\w/
         options[:not_shell] = 1
-        args = Bookmarks[args]
+        View.open Bookmarks[args]
+        options[:do_nothing] = 1
       elsif args =~ /^http:\/\//
         options[:not_shell] = 1
       elsif args =~ /\Aselect .+ from /
         options[:not_shell] = 1
       elsif args == "-e"
         args = "edited"
-      elsif args.slice! /^-i ?/   # isolated
+      elsif args.slice! /^-i( |\b)/   # isolated
         options[:dont_expand] = 1
-        # Do nothing, just remove it
-        #options[:no_socket] = 1
       elsif args.slice! /^-w /
-        Ol["Start server if not running yet!"]
         args = "http://localhost:8161/#{args}"
-
 
       elsif args == "-h"
         args = "$"
-      elsif args.slice! /^-h ?/
+      elsif args.slice! /^-h( |\b)/
         args = "$ #{args}\n  ~ history/"
 
-
-      elsif args.slice! /^-f /
+      elsif args.slice! /^-fa /
         args = "$ #{args}\n  ~ favorites/"
-      elsif args.slice! /^-n /
-        args = "./**#{args}/"
+      elsif args.slice! /^-f /
+        args = "./\n  - **#{args}/"
+      elsif args.slice! /^-b /
+        options_in[:dropdown] = ["bookmark"]
+
+        args = args == "." ?
+          "./" :
+          "./\n  - #{args}"
       elsif args.slice! /^-e /
         args = "$ #{args}\n  ~ examples/"
       elsif args.slice! /^-m /
         args = "$ #{args}\n  ~ menu/"
+      elsif args.slice! /^-r( |\b)/
+        # Escape+Ctrl+R, so delegate to Shell.reverse_history
+        options[:reverse] = args
+        args = ""
+      elsif args == "-t"
+        # Escape+Tab with no args, so explain why it doesn't make sense
+        args = "
+          | Doing Escape+Tab on a blank prompt doesn't make sense.
+          | Next time, type a command or file path to autocomplete
+          | it before doing Escape+Tab.
+        ".unindent
+        options[:dont_expand] = 1
+      elsif args.slice! /^-t /
+        # Escape+Tab, so delegate to Notes.tab_key
+        options[:tab] = 1
+        args = "$ #{args}" if args =~ /\A\w/   # Treat as shell command if it's just a word
       elsif args.slice! /^-d /
         options_in[:dropdown] = []
-        args = "$ #{args}"
+        args = "$ #{args}" if args =~ /\A\w/   # Treat as shell command if it's just a word
       elsif args.slice! /^-slashify /
         args.sub! ' ', '/'
       elsif args == "$"
@@ -98,38 +136,48 @@ module Xiki
         options[:dont_expand] = 1
       elsif args =~ /\A[a-z]/i && ! options[:not_shell]
         args = "$ #{args}"
-      elsif args =~ /^--?/   # If -foo, just treat as a command
-        args.sub! /^--?/, ''
       elsif args =~ /^=/   # If =foo, make it nest under dir?
         args.sub! /^=/, ''
+      end
+
+      # -foo, so cut off dash
+
+      if args =~ /^--?/   # If -foo, just treat as a command
+        args.sub! /^--?/, ''
       end
 
       args.sub! /^\$ (\d\d\d-)/, "\\1"
 
       args = "./" if args == "."
+
+      Themes.use 'Default'
+      Styles.reload_styles   # So it uses dark headings
+
+      return if options[:do_nothing]
+
       dir = options[:dir] || $el.elvar.default_directory
 
       View.to_buffer View.unique_name("xsh")
       View.kill_all
 
       View.refresh   # Attempt to minimize flickering (show the blank screen) - didn't work, but leave it in anyway I guess
-
       View.dir = dir
       Notes.mode
 
-      Themes.use 'Default Sparse'
-      Styles.reload_styles   # So it uses dark headings
-
       exists_in_path = Shell.sync('which xsh').any?
       if ! exists_in_path
-        welcome = Xiki["welcome", :add_xiki_to_path=>1]
-        View << "welcome/\n#{welcome.gsub /^/, '  '}\n\n\n"
+        welcome = Xiki["welcome"]
+        View << "\nwelcome/\n#{welcome.gsub /^/, '  '}\n\n"
       end
 
       # Check for some args late in the game...
-      if args == "n"
+      if args == "s"
         View.<< "./"
-        Launcher.launch :dropdown=>["filter", "filenames"]
+        Launcher.launch :dropdown=>["filter", "all contents"]
+        return
+      elsif args == "f"
+        View.<< "./"
+        Launcher.launch :dropdown=>["tree"]
         return
       elsif args =~ /\A\+(\w.*)/
         # xsh +foo, so create xiki command...
@@ -207,7 +255,9 @@ module Xiki
       Move.backward 3
       View.tab_width 12
       View.refresh
-
+      # Escape+Tab
+      return Notes.tab_key if options[:tab]
+      return Shell.reverse_history(options[:reverse]) if options[:reverse]
       Launcher.launch(options_in) unless options[:dont_expand]
 
     end
@@ -263,21 +313,33 @@ module Xiki
 
     end
 
-    def self.use_default_theme_maybe
 
-      # If not set, declare it as frame local...
-      if ! $el.boundp(:left_initial_theme)
-        $el.make_variable_frame_local :left_initial_theme
+    def self.chdir_when_xsh_session
+
+      # Only do something if this is a xsh session file...
+
+      return if ! View.file_name || View.dir != Bookmarks["~/xiki/sessions"]
+
+      # Change the dir to where it was originally created!
+
+      original_dir = self.determine_session_orig_dir View.file_name
+
+      if ! original_dir
+        # Todo > try to re-associate the file (via the file id thing I researched)
+        return
       end
 
-      # if Environment.xsh? && ! self.left_initial_theme
-      if Environment.xsh? && ! $el.elvar.left_initial_theme
-        Styles.frame_only = 1
-        Themes.use('Default') rescue nil   # In case we moved the files after starting
-        Styles.frame_only = nil
-        $el.elvar.left_initial_theme = 1
-      end
+      Shell.cd original_dir
+    end
 
+    def self.determine_session_orig_dir file_name
+      File.read File.expand_path("~/xiki/misc/sessions_dirs/#{file_name}") rescue nil
+    end
+
+    def self.save_grab_commands commands
+      tmp_dir = File.expand_path "~/xiki/misc/tmp"
+      FileUtils.mkdir_p tmp_dir   # Make sure dir exists
+      File.open("#{tmp_dir}/grabbed_commands.notes", "w") { |f| f << "#{commands.strip}\n" }
     end
 
   end
