@@ -11,7 +11,7 @@ module Xiki
       "
       .open/
       .diffs/
-      .diffs/$p/
+      .diffs/:p/
       docs/
         > Summary
         | The difflog tracks diffs of all the changes you make to file
@@ -131,7 +131,7 @@ module Xiki
       name = View.suggest_filename
       name = "#{name}.notes"
 
-      View.to_buffer "=save as/"
+      View.to_buffer "save as/"
       Notes.mode
       View.delete_all
       $el.make_local_variable :buffer_to_save
@@ -144,10 +144,10 @@ module Xiki
 
     end
 
-    def self.save
+    def self.save options={}
 
       return if View.file_name == "difflog.notes"
-      if View.name == "*diff with saved*"   # If viewing diff, close it and save the actual file...
+      if View.name == "diff with saved/"   # If viewing diff, close it and save the actual file...
         file = View.txt[/.+\n.+/].sub("\n  - ", "")
         View.kill
         View.open file
@@ -159,15 +159,13 @@ module Xiki
       return self.save_newly_created if ! View.file
 
 
-      self.save_diffs
+      self.save_diffs if prefix != :u && ! options[:no_diffs]
 
       $el.save_buffer
 
       if prefix == :-   # Dash+, so load in browser after
         sleep(0.3)
         Firefox.reload
-      elsif prefix == :u   # up+, so load current .rb file
-        Code.run
       elsif prefix == 9
         Launcher.do_last_launch
       end
@@ -213,7 +211,7 @@ module Xiki
       # up+up+, so do side-by-side...
 
       if Keys.prefix_u
-        return Launcher.open("unsaved/")
+        return Launcher.open("unsaved/", :name=>"unsaved changes")
       end
 
       if Keys.prefix_uu
@@ -231,6 +229,7 @@ module Xiki
       end
 
       diff = self.save_diffs :just_return=>1
+      View.message ""   # To avoid message when writing
       diff = "" if diff.nil?
       no_difference = diff.count("\n") <= 2
 
@@ -238,7 +237,7 @@ module Xiki
         $el.set_buffer_modified_p nil
       end
 
-      View.to_buffer("*diff with saved*")
+      View.to_buffer("diff with saved/")
       View.clear
       Notes.mode
 
@@ -248,7 +247,7 @@ module Xiki
         View.insert("- No unsaved changes!\n\nclose view/\n")
         Line.previous 1
       else
-        View.insert diff + "\nsave\nrevert\nas task\n"
+        View.insert diff + "\nsave\nrevert\nsave without diff\n"
         Line.previous 3
       end
     end
@@ -332,6 +331,8 @@ module Xiki
 
       source_path = Tree.file_at_spot
       dest_path = Tree.dir :file=>1
+
+      FileTree.extract_filters! dest_path   # Remove ##.../ parts of path
 
       [source_path, dest_path].each {|o| raise ": File doesn't exist: #{o}" if ! File.exists? o }
 
@@ -418,7 +419,7 @@ module Xiki
 
       # Display in a view
 
-      View.to_buffer("*do+compare+with")
+      View.to_buffer("do+compare+with")
       View.clear
       Notes.mode
       View.insert txt
@@ -430,20 +431,95 @@ module Xiki
     # Mapped to C-g
     def self.quit_and_go
 
+      # Just quit if any prefix
+      return $el.keyboard_quit if Keys.prefix
+
       # Grab line and write to file
 
-      path = Tree.path[-1]
+      path = Tree.path
+      last = Path.split path[-1]
 
-      # If file handles, just do a cd
+      view_dir = View.dir
 
-      if FileTree.handles?(path)
+      # If just $... by itself
+      if last.length == 1 && last[0] =~ /^[$%] (.+)/
+        command = $1
+
+        # They cd'ed in this session > so do cd in the shell...
+
+        session_dir = File.expand_path Bookmarks.bookmarks_optional("se")
+        in_session_dir = view_dir == session_dir
+
+        orig_dir = if in_session_dir
+          # If session, do based on view dir
+          Xsh.determine_session_orig_dir View.file_name
+        else
+          # If normal file, do based on stored dir
+          view_dir
+        end
+
+        orig_dir.sub! /\/$/, ''   # To ensure a fair comparison
+
+        commands = ""
+
+        # They did a cd, so add it...
+
+        view_file = View.file
+
+        dir = nil
+        dir = Shell.dir
+        dir.sub!(/\/$/, '') if dir != "/"
+
+        # If it's a view without a file, always do cd
+        if ! View.file || orig_dir != dir   # Or if they changed the dir
+          dir = "\"#{dir}\"" if dir !~ /^[a-z_\/.-]+$/i
+          commands << "cd #{dir}\n"
+        end
+
+        commands << "#{command}\n"
+
+      elsif FileTree.handles?(path[-1])
+
+        # Could be /tmp, "/tmp/$ pwd", or "/tmp/$ pwd/item"
+
+        if found = last.index{|o| o =~ /^[$%]/}
+
+          # "/tmp/$ pwd/item", so just exit
+          if found < last.length-1
+            return self.quit
+          else
+            # "/tmp/$ pwd", so just do cd and run command
+            command = last.pop.sub(/^[$%] /, '')
+            dir = last.join "/"
+          end
+
+        else
+          dir = path[-1]
+          command = nil
+        end
+
+        # "/tmp/", so just cd
+
+        # If file handles, just do a cd
+
         # Add quotes, but only if there's a slash?
           # Or, use quote thing caleb showed me
 
-        commands = "cd #{path}"
+        dir.sub!(/\/$/, '')
 
-        File.open("/tmp/xiki_go.txt", "w") { |f| f << "#{commands.strip}\n" }
+        # Add quotes unless it's all slashes and letters
+        dir = "\"#{dir}\"" if dir !~ /^[a-z_\/.-]+$/i
+        commands = "cd #{dir}\n"
+        commands << command if command
+
+      else
+        # Just exit
+        return self.quit
       end
+
+      # Extract -> to .save_grab_commands
+
+      Xsh.save_grab_commands commands
 
       self.quit
     end
@@ -453,22 +529,8 @@ module Xiki
       prefix = Keys.prefix
 
       # up+, so just suspend...
-
       if prefix == :u
         $el.suspend_emacs
-        return
-      end
-
-      if prefix == :uu
-        $el.kill_emacs
-        return
-      end
-
-      # If running as emacsclient, just kill the frame...
-
-      if $el.boundp :server_socket_dir
-        # $el.delete_frame   # This ends the emacsclient session without killing the server
-        $el.kill_emacs   # We want to kill the server, since we're currently doing one server per client (strange, but a good tradeoff for non-flashing vs weird locking across terminals)
         return
       end
 
@@ -478,34 +540,37 @@ module Xiki
 
         # Unsaved "xsh" buffer, so save it...
 
-        self.save_xsh_sessions
+        self.save_xsh_sessions   # Last file we were in (if buffer)
+
+        self.save_grab_location   # Save file and line number
+
+        # If not already there, but xsh is open
+        if View.name != "xsh" && View.buffer_open?("xsh")
+          $el.set_buffer "xsh"
+          self.save_xsh_sessions
+        end
 
         $el.kill_emacs
       else
-        View.open :txt=>"unsaved/\n#{txt.gsub /^/, '  '}", :line_found=>2
+        View.open :txt=>"unsaved/\n#{txt.gsub /^/, '  '}", :line_found=>2, :name=>"unsaved/"
       end
+
+      nil
 
     end
 
 
     def self.save_xsh_sessions
 
-      buffer = View.buffer_open? "xsh"
-
-      # Do nothing if no unsaved 'xsh' view...
-
-      return if ! buffer
-
-      # Xsh is open, so go to it and save it as foo.2014-09-19
-
-      orig = View.name
-      $el.set_buffer "xsh"
-
       return if View.file   # Return if it has a file - it means it's not the "xsh" session (it's just a file with that name)
+
+      # Avoid saving certain buffers
+      View.kill if ["unsaved/"].member?(View.name)
 
       # Save session to file...
 
       name = View.suggest_filename
+
       return if ! name
 
       sessions_dir = File.expand_path "~/xiki/sessions"
@@ -515,16 +580,30 @@ module Xiki
       file = File.expand_path "#{sessions_dir}/#{name}.notes"
       file = Files.unique_name file
 
-      $el.write_region nil, nil, file
+      $el.write_file file
 
       # Save which dir it was in to corresponding file in misc/sessions_dirs...
 
-      file.sub! "sessions/", "misc/sessions_dirs/"
+      sessions_dirs_file = file.sub "sessions/", "misc/sessions_dirs/"
       FileUtils.mkdir_p File.expand_path("~/xiki/misc/sessions_dirs/")
-      File.open(file, "w") { |f| f << View.dir }
+      File.open(sessions_dirs_file, "w") { |f| f << Shell.dir }
+
+      file
 
     end
 
+    def self.save_grab_location #file
+
+      file = View.file
+
+      # .save_xsh_sessions didn't deem to save this view, so we should ignore it too
+      return if ! file
+
+      tmp_dir = File.expand_path "~/xiki/misc/tmp"
+      FileUtils.mkdir_p tmp_dir   # Make sure dir exists
+      File.open("#{tmp_dir}/last_quit_location.notes", "w") { |f| f << "#{file}\n" }
+
+    end
 
     def self.file_list options={}
 
