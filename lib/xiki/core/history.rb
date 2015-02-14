@@ -74,7 +74,7 @@ module Xiki
           View.open paths[0]
         end
 
-        View.to_buffer("*tree of current")
+        View.to_buffer("outline/")
         View.clear;  Notes.mode
 
         raise "Thought this wouldn't happen :(" if paths.length > 1
@@ -98,7 +98,7 @@ module Xiki
 
     def self.open_history
       times = self.prefix_times
-      View.to_buffer("*tree of history")
+      View.to_buffer("history/")
       View.clear;  notes_mode
 
       self.insert_history times
