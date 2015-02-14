@@ -1,3 +1,10 @@
+(message "")   ; This stops some flickering
+
+; Not proven to affect flickering
+;; (set-face-attribute (make-face 'menu) nil :background "#666666")
+;; (set-face-attribute (make-face 'menu) nil :foreground "#00ffff")
+;; (setq inhibit-startup-echo-area-message "craig")
+
 ; Where is this being over-written??
 (set-frame-parameter nil 'background-mode 'dark)   ; Temp.......................
 
@@ -7,14 +14,16 @@
 ; Change this back to emacs 23 behavior, if emacs 24
 (define-key isearch-mode-map (kbd "C-y") 'isearch-yank-line)
 
-(setq-default indent-tabs-mode nil)   ;tp Otherwise, it'll insert tabs?
+(setq-default indent-tabs-mode nil)   ; Otherwise, it'll insert tabs?
 (setq-default tab-width 2)
+(setq ring-bell-function 'ignore)   ; Don't make noise when escape
 
 (add-to-list 'load-path (concat (getenv "XIKI_DIR") "/misc/emacs/libs/"))
 
-; Control Lock...
-
+; Control Lock
 (require 'control-lock)
+; Allow treating escape like cancel
+(require 'normal-escape)
 
 ; Ruby mode...
 
@@ -57,15 +66,14 @@
 (fset 'yes-or-no-p 'y-or-n-p)
 
 (message "")
+(cua-mode 1)
+(message "")
+(setq cua-auto-tabify-rectangles nil)   ; Doesn't seem to work :/
 
 (add-to-list 'load-path (concat (getenv "XIKI_DIR") "/misc/emacs/el4r/"))
 (require 'el4r)
 (el4r-troubleshooting-keys)
 (el4r-boot)
-
-(cua-mode 1)
-(setq cua-auto-tabify-rectangles nil)   ; Doesn't seem to work :/
-(transient-mark-mode 1)
 
 ; Save cursor location when closing, and restore next time the file is visited
 (require 'saveplace)
@@ -74,7 +82,7 @@
 
 (custom-set-variables
   '(auto-revert-interval 1)
-  '(echo-keystrokes 2)   ; Don't show partial key strokes, unless pause is more than 3 seconds
+  '(echo-keystrokes 0.5)   ; Delay until showing the prefix keys at the bottom (when user types C-x or C-c)
   '(search-ring-max 30)   ; Remember a few more searches
   '(show-trailing-whitespace t)   ; Expose trailing whitespace
 )
@@ -89,4 +97,24 @@
 ; Local Variables:
 ; mode: lisp
 ; End:
+
+; Set some keys for doing what lisp normally does
+
+(global-set-key (kbd "M-s") 'eval-last-sexp)   ; Like emacs C-x C-e
+(global-set-key (kbd "M-q") 'save-buffers-kill-emacs)   ; Like emacs C-x C-q
+
+; Beginning of line, end, and kill
+(global-set-key (kbd "M-a") 'move-beginning-of-line)
+(global-set-key (kbd "M-e") 'move-end-of-line)
+(global-set-key (kbd "M-k") 'kill-line)
+
+; Emacs help
+(global-unset-key (kbd "M-h"))
+(global-set-key (kbd "M-h M-k") 'describe-key)
+(global-set-key (kbd "M-h M-f") 'describe-function)
+(global-set-key (kbd "M-h M-v") 'describe-variable)
+
+; Enable and disable control lock (move these definitions to control-lock.el__?)
+(global-set-key (kbd "M-C-L") 'control-lock-enable)
+(global-set-key (kbd "M-L") 'control-lock-enable)
 

@@ -3,113 +3,120 @@
 export bin_dir=`dirname $0`
 export xiki_dir=`dirname $bin_dir`
 
+emacs="emacs"
+emacsclient="emacsclient"
 
 # Complain if project dir is ~/xiki/...
 
 if [ "$xiki_dir" = "$HOME" ]; then
-  echo "Please move or rename the ~/xiki dir first. Since"
-  echo "~/xiki will be the path of the dir where user"
-  echo "customizations are stored."
-  echo ""
-  echo "You can move it pretty much anywhere. Or use one or"
-  echo "both of these to rename it:"
-  echo ""
-  echo "  $ mv ~/xiki ~/xiki_src"
-  echo "  $ mkdir ~/xiki mv ~/xiki_src ~/xiki/src"
-  echo ""
+  cat "$xiki_dir/misc/command/shell_please_move.txt"
   exit
 fi
 
 # Maybe don't add this if it's already there, or if ruby and emacs are in the path already
 export PATH="$PATH":/usr/local/bin
 
-ruby_is_installed=`which ruby`
-emacs_is_installed=`which emacs`
 
-yum_is_installed=`which yum`
-aptget_is_installed=`which apt-get`
+# Get emacs version, or blank if emacs not found...
 
-yum_install="sudo yum install" #?????
-aptget_install="sudo apt-get -qq -y install"
-
-if [ "$ruby_is_installed" = "" ] || [ "$emacs_is_installed" = "" ]; then
-  echo "It looks like you haven't yet installed the"
-  echo -e "dependencies xsh needs.  Install them? (y/n)\n"
-
-  echo -e "Or type d to see the dependencies.\n"
-
-  read -n1 -p "(y/n/d): " doit
-
-  if [ "$doit" = "n" ]; then
-    echo -e "\n\nXsh can't run without it's dependencies :(\n"
-    exit 1
-  fi
-
-  if [ -n "$yum_is_installed" -a -n "$aptget_is_installed" ]; then
-    echo -e "\n\nIt appears you have both apt-get and yum installed.  Which should we use?"
-    echo "  a: apt-get"
-    echo "  y: yum"
-    echo ""
-    read -n1 -p "(a/y): " choice
-    if [ "$choice" = "a" ]; then
-      install="$aptget_install"
-    elif [ "$choice" = "y" ]; then
-      install="$yum_install"
-    else
-      echo "You didn't type 'a' or 'y'."
-      exit 1
-    fi
-
-  elif [ -n "$aptget_is_installed" ]; then
-    install="$aptget_install"
-  elif [ -n "$yum_is_installed" ]; then
-    install="$yum_install"
-  else
-    dir="$xiki_dir/misc/install"
-    install="sudo bash $dir/install_source_dependency.sh"
-  fi
-
-  case "$doit" in
-    y|Y)
-      echo -e "\n\n"
-      if [ "$ruby_is_installed" = "" ]; then
-        if ! $install ruby || [ -z "`which ruby`" ]; then
-          echo ruby install failed\!
-          exit 1
-        fi
-      fi
-      if [ "$emacs_is_installed" = "" ]; then
-        if ! $install emacs || [ -z "`which emacs`" ]; then
-          echo emacs install failed\!
-          exit 1
-        fi
-      fi
-      echo -e "\n\n"
-      # No exit, so continue on to run xsh
-      ;;
-    d|D)
-      echo -e "\n\nThese are run to install xsh's dependencies:\n"
-      if [ "$ruby_is_installed" = "" ]; then
-        echo "  $ $install ruby"
-      fi
-      if [ "$emacs_is_installed" = "" ]; then
-        echo "  $ $install emacs"
-      fi
-      echo -e "\nNote that xsh's dependencies are largely transparent\nto the user.  You don't need to have any expertise\nabout them to use xsh."
-      echo -e "\nRun 'xsh' again. (You can optionally install the\ndependencies yourself first.)\n"
-      exit
-      ;;
-    *)
-      echo -e "\n\nXsh can't run without it's dependencies :(\n"
-      exit 1
-      ;;
-  esac
-
+emacs_version=`$emacs --version 2>&1`
+if [[ $emacs_version =~ "command not found" ]]; then
+  emacs_version=""
 fi
 
 
-# Proceed to run the command...
+function check_dependencies {
 
+  ruby_is_installed=`which ruby`
+
+  if [ "$ruby_is_installed" = "" ] || [ "$emacs_version" = "" ]; then
+
+    yum_is_installed=`which yum`
+    aptget_is_installed=`which apt-get`
+
+    yum_install="sudo yum install" #?????
+    aptget_install="sudo apt-get -qq -y install"
+
+    echo "It looks like you haven't yet installed the"
+    echo -e "dependencies xsh needs.  Install them? (y/n)\n"
+
+    echo -e "Or type d to see the dependencies.\n"
+
+    read -n1 -p "(y/n/d): " doit
+
+    if [ "$doit" = "n" ]; then
+      echo -e "\n\nXsh can't run without it's dependencies :(\n"
+      exit 1
+    fi
+
+    if [ -n "$yum_is_installed" -a -n "$aptget_is_installed" ]; then
+      echo -e "\n\nIt appears you have both apt-get and yum installed.  Which should we use?"
+      echo "  a: apt-get"
+      echo "  y: yum"
+      echo ""
+      read -n1 -p "(a/y): " choice
+      if [ "$choice" = "a" ]; then
+        install="$aptget_install"
+      elif [ "$choice" = "y" ]; then
+        install="$yum_install"
+      else
+        echo "You didn't type 'a' or 'y'."
+        exit 1
+      fi
+
+    elif [ -n "$aptget_is_installed" ]; then
+      install="$aptget_install"
+    elif [ -n "$yum_is_installed" ]; then
+      install="$yum_install"
+    else
+      dir="$xiki_dir/misc/install"
+      install="sudo bash $dir/install_source_dependency.sh"
+    fi
+
+    case "$doit" in
+      y|Y)
+        echo -e "\n\n"
+        if [ "$ruby_is_installed" = "" ]; then
+          if ! $install ruby || [ -z "`which ruby`" ]; then
+            echo ruby install failed\!
+            exit 1
+          fi
+        fi
+        if [ "$emacs_version" = "" ]; then
+          if ! $install emacs || [ -z "`which emacs`" ]; then
+            echo emacs install failed\!
+            exit 1
+          fi
+        fi
+        echo -e "\n\n"
+        # No exit, so continue on to run xsh
+        ;;
+      d|D)
+        echo -e "\n\nThese are run to install xsh's dependencies:\n"
+        if [ "$ruby_is_installed" = "" ]; then
+          echo "  $ $install ruby"
+        fi
+        if [ "$emacs_version" = "" ]; then
+          echo "  $ $install emacs"
+        fi
+        echo -e "\nNote that xsh's dependencies are largely transparent\nto the user.  You don't need to have any expertise\nabout them to use xsh."
+        echo -e "\nRun 'xsh' again. (You can optionally install the\ndependencies yourself first.)\n"
+        exit
+        ;;
+      *)
+        echo -e "\n\nXsh can't run without it's dependencies :(\n"
+        exit 1
+        ;;
+    esac
+
+  fi
+
+}
+
+check_dependencies
+
+
+# Proceed to run the command...
 
 function save_args_to_envs {
   let i=1
@@ -148,87 +155,21 @@ function save_args_to_files {
 
 export TERM=xterm-256color
 
-emacs="emacs"
-emacsclient="emacsclient"
-
 # emacs_mac_app="/Applications/Emacs.app/Contents/MacOS/Emacs"
 # if [ -f $emacs_mac_app ]; then
 #   emacs=$emacs_mac_app
 #   emacsclient="/Applications/Emacs.app/Contents/MacOS/bin/emacsclient"
 # fi
 
-# echo $emacs
-# echo $emacsclient
-
-
-  # if [ "$1" = "-i" ]; then
 case $1 in
 --help)
-  echo "Xikishell: Expanding shell commands!"
-  echo ""
-  echo "Usage:"
-  echo "  xsh"
-  echo "  xsh <shell command>"
-  echo "  xsh [<options>] <shell command>"
-  echo "  xsh -<any command that has a menu>"
+  cat "$xiki_dir/misc/command/external_shell_help.txt"
 
-  echo ""
-  echo "Options:"
-  echo "  -d  dropdown actions"
-  echo "  -h  history"
-  echo "  -f  favorites"
-  echo "  -n  notes"
-  echo "  -e  examples"
-  echo "  -m  menu items"
-  echo "  -l  list xsh sessions"
-  echo "  -s  search in files"
-  echo "  -i  isolated - don't connect to the cached xsh process for"
-  echo "      faster startup"
-  echo "  -b  list file bookmarks"
-  echo "  -a  list all commands"
-  echo "  todo > rename these"
-  echo "  -sn  search in file names"   # maybe "-fn"? or maybe "-t" for file tree
-  echo "  -e  recently edited files"
-  echo "  -d  diffs of recent edits"
-  echo ""
-  echo "examples:"
-  echo "  xsh"
-  echo "    Starts up a xsh session in the current dir. You can then"
-  echo "    type xiki commands or shell commands (precede with '$ ')."
-  echo "  xsh ls"
-  echo "    Then you can type to incrementally filter down the output."
-  echo "    And you can expand the directories by typing Ctrl+E."
-  echo "    Type Ctrl+Q when you're done."
-  echo "  xsh -ip"
-  echo "    Run the 'ip' xiki command.  Xiki commands are kind of like"
-  echo "    shell commands, but are more interactive and friendly."
-  echo "  xsh ."
-  echo "    Browse the dirs and files in the current directory."
-  echo "  xsh ~"
-  echo "    Browse the dirs and files in your home directory."
-  echo "  xsh :d"
-  echo "    Browse desktop directory"
-  echo "  xsh -s"
-  echo "    Recursively show all files and their content. You can then"
-  echo "    type to incrementally filter."
-  echo "  xsh -n"
-  echo "    Recursively show all files. You can then type to"
-  echo "    incrementally filter."
-  echo "  xsh -s foo"
-  echo "    Search for 'foo' in all files, showing matching lines as"
-  echo "    a tree."
-  echo "  xsh -n foo"
-  echo "    Search for 'foo' in all filenames, showing matching lines"
-  echo "    as a tree."
+  exit
+  ;;
 
-  echo ""
-  echo "Advanced Usage:"
-  echo "  xsh <absolute file path>"
-  echo "  xsh ./<relative file path>"
-  echo "  xsh <path of file to run as command>//"
-  echo "  xsh <something else>"
-  echo "    Including: urls, code, google searches, css selectors,"
-  echo "    contacts, sql statements, git commit hashes"
+--examples)
+  cat "$xiki_dir/misc/command/external_shell_examples.txt"
 
   exit
   ;;
@@ -251,17 +192,19 @@ case $1 in
 
   # Load normally, so save args and launch emacs...
 
-  if [[ `$emacs --version` =~ "Emacs 22" ]]; then
+  if [[ $emacs_version =~ "Emacs 22" ]]; then
 
     # Emacs 22, so don't use --daemon (a little slower, but won't flicker in Emacs 22)...
 
     save_args_to_envs "$@"
 
-    $emacs -nw -Q -l "$xiki_dir/misc/emacs/start_xiki.el"
+    # Run emacs command
+
+    exec $emacs --no-splash -nw -Q -l "$xiki_dir/misc/emacs/start_xiki.el"
+
   else
 
     # Emacs 23+, so use --daemon (will make for immediate startup)...
-
 
     # If emacs --daemon not running yet, start it up and make it load xiki...
 
@@ -283,22 +226,6 @@ case $1 in
     # Now run it.  The hook will run when it opens and load the params
 
     $emacsclient -s $unique -t
-
-  fi
-
-
-  # Grab any "go" text, and run it...
-
-  if [ -f "/tmp/xiki_go.txt" ]; then
-    go_text=`cat /tmp/xiki_go.txt`
-
-    # Run each line in the file
-    while read p; do
-      echo \$ $p
-      $p
-    done </tmp/xiki_go.txt
-
-    rm /tmp/xiki_go.txt
 
   fi
 

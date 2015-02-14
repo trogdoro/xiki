@@ -1,0 +1,9 @@
+Please move or rename the ~/xiki dir first. Since
+~/xiki will be the path of the dir where user
+customizations are stored.
+
+You can move it pretty much anywhere. Or use one or
+both of these to rename it:
+
+  $ mv ~/xiki ~/xiki_src
+  $ mkdir ~/xiki mv ~/xiki_src ~/xiki/src

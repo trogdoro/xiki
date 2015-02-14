@@ -1,11 +1,28 @@
-(message "")   ; Helps a tiny bit to keep the flicker down
+(message "")
 
-(set-face-attribute 'mode-line nil :foreground "unspecified")
+; This line makes > the top bar not flash white bg
+; must be before > the sit-for line
+(menu-bar-mode -1)
+
+; This line makes > the bottom bar not flash gray bg
+; must be before > the sit-for line
 (set-face-attribute 'mode-line nil :background "unspecified")
 
-(menu-bar-mode 0)
+; These 2 lines being in this order > is critical to help the flashing
+; This line makes > the bottom bar not flash black text
+; must be before > the sit-for line
 (setq-default mode-line-format "")   ; Clear out modeline so it doesn't flash during startup
+
 (sit-for 0)
+
+; Load some libraries separately, because if not it loads during find-file and shows annoying message
+(load "image")
+(load "disp-table")
+(load "cua-base")
+(load "edmacro")
+(load "xt-mouse")
+(message "")
+
 
 (setenv "XIKI_DIR"
   (replace-regexp-in-string "/misc/emacs/start_xiki.\\w+$" "" load-file-name)
@@ -19,12 +36,10 @@
   (cond
     ((string-equal "Mark set" fmt))
     ((string-equal "Mark activated" fmt))
-    ((string-match "^Loading " fmt))   ; Fails :(
 
     ((and
       args
       (or
-        (string-match "^Loading " (car args))   ; Fails :(
         (string-match "^When done with this frame, type " (car args))
       )
     ))
@@ -36,12 +51,11 @@
 (setq-default mode-line-format "")   ; Clear out modeline so it doesn't flash during startup
 (set-face-attribute 'mode-line nil :background 'unspecified)
 
+
 ; Starts up el4r...
 
 (load (concat (getenv "XIKI_DIR") "/misc/emacs/xsh.emacs"))
-
-
-(message "")   ; Keep it from showing stuff on the bottom
+(message "")
 
 ; Call ruby method that processes command line args...
 
@@ -58,8 +72,6 @@
 
 (populate-xsh-command-line-args)
 
-(message "-----")
-(pp xsh-command-line-args)
 
 (if (not (and (boundp 'xiki-emacs-daemon) xiki-emacs-daemon))
   (el4r-ruby-eval "Xiki::Xsh.run :args_via_env=>1")
