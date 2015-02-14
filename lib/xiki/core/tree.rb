@@ -44,30 +44,31 @@ module Xiki
 
     def self.filter options={}   # Tree.filter / tree filter / tree search
 
-      $el.make_variable_buffer_local :xiki_tree_filter_options
+      $el.make_variable_buffer_local :xiki_filter_options
+      $el.make_variable_buffer_local :xiki_filter_hotkey
       $el.make_variable_buffer_local :xiki_bar_special_text
 
       left, right = options[:left], options[:right]
 
       # No search if there aren't more than 3 lines
-      return if((Line.number(right) - Line.number(left)) <= 1 && View.txt(left, right) !~ /\/$/) && options[:always_search].nil? && ! options[:letter]
+      return if((Line.number(right) - Line.number(left)) <= 1 && View.txt(left, right) !~ /\/$/) && options[:always_search].nil? && ! options[:hotkey]
 
-      # If searching for :letter, use old behavior - it's ok to lock up the UI for now...
-
-      if options[:letter]
-        # Handles search based on one key, and usually returns
-        lines = $el.buffer_substring(left, right).split "\n"
-        ch, ch_raw = self.first_letter lines, options
-        return if ch_raw == 5   # Do nothing if C-g
-        return if ! ch   # If no char returned, .first_letter handled it
-      end
+      # If searching for :hotkey, use old behavior - it's ok to lock up the UI for now...
 
       # Otherwise, just enable the keymap so A-Z filters...
 
       options["filter"] = ""
-      $el.elvar.xiki_tree_filter_options = options.to_json
+      # This forces the before filter to delegate to .filter_each
+      $el.elvar.xiki_filter_options = options.to_json
 
-      $el.elvar.xiki_bar_special_text = "A-Z Filter    Ctrl+Q Quit    (or arrow keys to proceed)"
+      if options[:hotkey]
+        # Do initial extract to just highlight
+        self.filter_hotkey_extract_letters options.merge(:just_highlight=>1)
+        $el.elvar.xiki_filter_hotkey = true   # Enables local map that forces C-a to C-z to be single keys
+        $el.elvar.xiki_bar_special_text = "   A-Z Select     ESC Back     (or arrow keys)   "
+      else
+        $el.elvar.xiki_bar_special_text = "   A-Z Filter     Ctrl+Q Quit     (or arrow keys)   "
+      end
     end
 
     # Finish the search and run the command according to the char that was typed
@@ -75,43 +76,35 @@ module Xiki
       $el.elvar.xiki_bar_special_text = nil
     end
 
-    # Called by Tree.filter
+    # Called by Tree.filter :hotkey=>1
     # Highlights 1st (or close to it) for each line.
     # Then prompts for key.
-    def self.first_letter lines, options={}
-      letters = {}
-      lines.each_with_index do |l, i|
-        next if l =~ /^ *[|>]/   # Don't underline if |... or >... lines
-        next if options[:omit_slashes] && l =~ /\/$/   # Don't underline foo/, if :=>1
+    def self.filter_hotkey letter, options={}
 
-        l.length.times do |j|
-          letter = l[j].chr.downcase
+      $el.elvar.xiki_filter_options, $el.elvar.xiki_bar_special_text = nil, nil
+      $el.elvar.xiki_filter_hotkey = nil
 
-          next if letter !~ /[a-z0-9]/i
-          next if letters[letter]
-
-          letters[letter] = [i+1, j+1]   # Set letter to index, if not there yet
-          break
-        end
-      end
-
-      self.highlight_tree_letters lines, letters, Line.number
-
-      $el.make_variable_buffer_local :xiki_bar_special_text
-      $el.elvar.xiki_bar_special_text = "A-Z Select    C+\\ Back"
+      letters = self.filter_hotkey_extract_letters options
 
       # Get a character as input...
 
-      ch, ch_raw = Keys.char
+      ch = letter
+      ch_raw = $el.string_to_char ch
+
+      self.delete_hotkey_overlays
+
       letterized = $el.char_to_string(Keys.remove_control ch_raw).to_s if ch_raw
 
       # They typed a letter, so process it...
 
       Message << ""   # Clear it so it doesn't stay around after
-      Overlay.delete_all
 
-      if ch == :control_backslash
-        ControlTab.go
+      if ! ch
+        return self.search_finished
+      end
+
+      if ch == :control_backslash   # Ctrl+\, so just stop
+        ControlTab.clear_once   # Make this Ctrl+\ be separate from the ControlTab ones
         return self.search_finished
       end
 
@@ -150,8 +143,43 @@ module Xiki
       nil   # We handled it
     end
 
+    def self.filter_hotkey_escape
+      View.kill if View.name =~ /\/$/
+    end
 
-    def self.highlight_tree_letters lines, letters, line
+    def self.delete_hotkey_overlays
+      Overlay.delete_all
+    end
+
+    def self.filter_hotkey_extract_letters options
+      left, right = options[:left], options[:right]
+      lines = $el.buffer_substring(left, right).split "\n"
+
+      letters = {}
+      lines.each_with_index do |l, i|
+        next if l =~ /^ *[|>]/   # Don't underline if |... or >... lines
+        next if options[:omit_slashes] && l =~ /\/$/   # Don't underline foo/, if :=>1
+
+        l.length.times do |j|
+          letter = l[j].chr.downcase
+
+          next if letter !~ /[a-z0-9]/i
+          next if letters[letter]
+
+          letters[letter] = [i+1, j+1]   # Set letter to index, if not there yet
+          break
+        end
+      end
+
+      if options[:just_highlight]
+        return self.highlight_hotkey_letters lines, letters, Line.number
+      end
+
+      return letters
+    end
+
+
+    def self.highlight_hotkey_letters lines, letters, line
 
       cursor = Line.left
       before_moved = 0
@@ -307,7 +335,7 @@ module Xiki
       nil
     end
 
-    def self.kill_under options={}
+    def self.collapse options={}
 
       # Get indent
       orig = View.cursor
@@ -664,7 +692,10 @@ module Xiki
         return TextUtil.unindent(txt).gsub(/^([^>])/, "#{char} \\1").gsub(/^#{Regexp.quote char} $/, char)
       end
 
-      txt = TextUtil.unindent(txt).gsub(/^/, "#{char} ").gsub(/^#{Regexp.quote char} $/, char)
+      txt = TextUtil.unindent(txt) if txt =~ /\A[ \n]/
+
+      txt = txt.gsub(/^/, "#{char} ").gsub(/^#{Regexp.quote char} $/, char)
+
       txt = txt.gsub(/^/, options[:indent]) if options[:indent]
       txt
     end
@@ -947,6 +978,7 @@ module Xiki
     # Iterate through each line in the tree
     # Tree.traverse("a\n  b") {|o| p o}
     def self.traverse tree, options={}, &block
+
       branch, line_indent, indent = [], 0, 0
 
       if tree.is_a? String
@@ -1221,7 +1253,7 @@ module Xiki
     #   Tree.collapse :replace_parent=>1
     #       =>
     # Tree.collapse
-    def self.collapse options={}
+    def self.collapse_upward options={}
 
       # If at root or end of line, go to next
       Line.next if Line !~ /^ / || Line.at_right?
@@ -1614,7 +1646,7 @@ module Xiki
 
       if options[:delete]
         Effects.glow :fade_out=>1
-        Tree.kill_under
+        Tree.collapse
         Line.delete
 
         # Adjust orig if in same file and above
@@ -1821,6 +1853,7 @@ module Xiki
 
         # If last is slash, but not escaped
         next if options[:leave_blanks] && list[i] =~ /\A=?\z/   # If blank or just @
+
         list[i].sub! /$/, '/'
       end
     end
@@ -1980,23 +2013,34 @@ module Xiki
       Launcher.launch
     end
 
-    # Delegated to by (xiki-tree-filter-pre-command-hook) when typing most chars.
-    def self.filter_once
+    # Delegated to by (xiki-filter-pre-command-handler) when typing most chars.
+    def self.filter_each
+
       letter = $el.this_command_keys
 
       # Space or C-g, so just exit...
 
-      options = JSON[$el.elvar.xiki_tree_filter_options]
+      options = JSON[$el.elvar.xiki_filter_options]
       options = TextUtil.symbolize_hash_keys options
+
+      if options[:hotkey]
+        return self.filter_hotkey letter, options
+      end
+
       left, right = options[:left], options[:right]
 
       # C-g or C-m, etc, so end and maybe launch again...
 
-      if letter =~ /[ \C-g\r\t\/$=#\x1F]/
-        $el.elvar.xiki_tree_filter_options, $el.elvar.xiki_bar_special_text = nil, nil
+      if letter =~ /[ \C-g\r\t\/$=#\x1F\C-\\]/
+        $el.elvar.xiki_filter_options, $el.elvar.xiki_bar_special_text = nil, nil
 
         if letter == "\r"
           Launcher.launch
+        elsif letter == "\x1C"   # Ctrl+\
+          ControlTab.clear_once
+
+          # Do nothing, just continue
+
         elsif letter == "/"
 
           line = Line.txt
@@ -2045,6 +2089,8 @@ module Xiki
           View.insert "#{indent}- ##/"
           Move.backward
           ControlLock.disable
+        elsif letter == "\a"
+          DiffLog.quit_and_go
         end
         return
 
@@ -2052,16 +2098,18 @@ module Xiki
 
         # Number, so jump to nth...
 
-        $el.elvar.xiki_tree_filter_options, $el.elvar.xiki_bar_special_text = nil, nil
+        $el.elvar.xiki_filter_options, $el.elvar.xiki_bar_special_text = nil, nil
         self.search_number letter, options
         return
+
+      elsif letter == "\a"
 
       elsif letter == ","
 
         # Comma, so do "or"...
 
         options[:filter] = ""
-        $el.elvar.xiki_tree_filter_options = options.to_json
+        $el.elvar.xiki_filter_options = options.to_json
         return
       end
 
@@ -2124,44 +2172,61 @@ module Xiki
       end
 
       # Store options for next call
-      $el.elvar.xiki_tree_filter_options = options.to_json
+      $el.elvar.xiki_filter_options = options.to_json
 
     end
 
     def self.init_in_client
+
       $el.el4r_lisp_eval %`
         (progn
-          (defun xiki-tree-filter-once () (interactive) (el4r-ruby-eval "Xiki::Tree.filter_once"))
-          (defun xiki-launch () (interactive) (el4r-ruby-eval "Xiki::Launcher.launch"))
 
-          (defun xiki-tree-filter-pre-command-hook () (interactive)
-            ; (message "xiki-tree-filter-pre-command-hook")
-            (when (and (boundp 'xiki-tree-filter-options) xiki-tree-filter-options)
+          ; For Tree.filter (normal type to narrow down)
+
+          (defun xiki-filter-each () (interactive) (el4r-ruby-eval "Xiki::Tree.filter_each"))
+
+          (defun xiki-filter-pre-command-handler () (interactive)
+
+            (when (and (boundp 'xiki-filter-options) xiki-filter-options)
 
               (let ((char (this-command-keys)))  ; Look at first key typed or event
 
+                ; This might not be doing anything (maybe only necessary in gui emacs?)
                 ; If control char, use actual key (bypasses control-lock)
-                (if (and (stringp char) (string-match "[\C-a-\C-z]" char))
+                (when (and (stringp char) (string-match "[\C-a-\C-z]" char))
                   (setq char (char-to-string (elt (recent-keys) (- (length (recent-keys)) 1))))
                 )
 
                 (force-mode-line-update)
-                (if (and (stringp char) (string-match "[a-z0-9.,;_$#+=/ \C-g\C-m\t\C-_-]" char))   ; Keys that delegate through to Tree.filter
+
+                ; If it was one of the characters we need
+
+                (cond
+
+                  ; A hotkey char to filter or exit, so pass control to ruby...
+
+                  ((and xiki-filter-hotkey (stringp char) (string-match "[a-z0-9,\C-a-\C-z]" char))   ; Keys that delegate through to Tree.filter
+                    (setq this-command 'xiki-filter-each)   ; It'll do hotkey because options[:hotkey]
+                  )
 
                   ; A char to filter or exit, so pass control to ruby...
 
-                  (progn
-                    (setq this-command 'xiki-tree-filter-once)   ; This makes it the next command that will be run
-                    ;(message "gone??")
-                    ;(message xiki-tree-filter-options)
+                  ((and (stringp char) (string-match "[a-z0-9.,;_$#+=/ \C-g\C-m\t\C-_\C-\\-]" char))   ; Keys that delegate through to Tree.filter
+                    (setq this-command 'xiki-filter-each)   ; This makes it the next command that will be run
                   )
 
                   ; Some other char typed, so clear out vars to turn off the Tree.filter...
 
-                  (progn
-                    (setq xiki-tree-filter-options nil)
+                  (t
+                    (setq xiki-filter-options nil)
+
+                    (setq xiki-filter-just-finished
+                      (if xiki-filter-hotkey 'hotkey 'filter)
+                    )
+
+                    (setq xiki-filter-hotkey nil)
                     (setq xiki-bar-special-text nil)
-                    ;(message "fu----------------------")
+                    (el4r-ruby-eval "Xiki::Tree.delete_hotkey_overlays")
                   )
                 )
 
@@ -2169,7 +2234,14 @@ module Xiki
             )
           )
 
-          (add-hook 'pre-command-hook 'xiki-tree-filter-pre-command-hook)
+          (defun xiki-filter-post-command-handler () (interactive)
+            (if (boundp 'xiki-filter-just-finished)
+              (makunbound 'xiki-filter-just-finished)
+            )
+          )
+
+          (add-hook 'pre-command-hook 'xiki-filter-pre-command-handler)
+          (add-hook 'post-command-hook 'xiki-filter-post-command-handler)
 
         )
       `
