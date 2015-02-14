@@ -22,7 +22,13 @@ end
 
 # ~, so show or run ~ navigate item...
 
-return "~ navigate" if options[:dropdown] == []
+file_path = args[1] ? args[1].sub(/^: /, '') : nil
+
+if options[:dropdown] == []
+  txt = "~ navigate\n~ delete bookmark"
+  txt << "\n~ exit and cd" if file_path && File.directory?(file_path)
+  return txt
+end
 
 if options[:dropdown] == ["navigate"]
   file = Bookmarks[":hx/bookmarks/#{args[0]}.notes"]
@@ -39,6 +45,17 @@ if options[:dropdown] == ["navigate"]
 
   View.open file
   return nil
+
+elsif options[:dropdown] == ["exit and cd"]
+  dir = Bookmarks[file_path]
+  Shell.exit_and_cd dir
+  return nil
+
+elsif options[:dropdown] == ["delete bookmark"]
+  file = Bookmarks[":hx/bookmarks/#{args[0]}.notes"]
+  FileUtils.rm file
+  return "<! deleted"
+
 end
 
 # /foo, so jump to bookmark...
