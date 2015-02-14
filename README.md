@@ -4,7 +4,7 @@ To run and optionally install xsh (XikiShell), just execute the 'xsh' command, l
 
       $ ./bin/xsh
 
-It may walk you through a couple setup instructions.
+It will walk you through a couple setup steps. If you run into trouble, try running "./bin/xsh -i", which may give better error messages.
 
 You can download Xiki from: https://github.com/trogdoro/xiki/archive/master.tar.gz
 
@@ -18,8 +18,11 @@ Supported platforms: MacOS and Linux.  Pair with me if you want to see Windows s
 
 ## Getting help
 
-Join the google group for help with installing, or to chat about
-whatever or share your ideas:
+Jump into the xiki chat room to get help and chat about Xiki!
+
+http://webchat.freenode.net/?channels=xiki
+
+Join the google group for help with installing:
 
 http://groups.google.com/group/xiki
 
