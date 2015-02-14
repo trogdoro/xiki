@@ -50,7 +50,7 @@ module Xiki
 
         # Line is blank, so insert a comment...
 
-        return Code.enter_insert_comment if line =~ /^ *$/
+        return self.enter_insert_comment if line =~ /^ *$/
 
       elsif prefix == 0   # If 0 prefix, comment paragraph
         left, right = View.paragraph(:bounds => true)
@@ -705,15 +705,15 @@ module Xiki
       end
 
       prefix = Keys.prefix
-      if options[:exclamation] || prefix == :u || prefix == 1 || prefix == 3
-        extra = prefix == 3 ? "# " : ""
-        View.insert "Ol[\"#{extra}!\"]"
-        ControlLock.disable
-        return Move.backward 3
+
+      if prefix == 1 || options[:exclamation]
+        View.insert "Ol \"!\""
+        return Move.backward 2
       end
 
-      View.insert "Ol()"
-      Line.to_beginning
+      View.insert "Ol \"\""
+      Move.backward 1
+
     end
 
     def self.enter_log_out
@@ -923,7 +923,6 @@ module Xiki
         View.<< "...", :dont_move=>1
       end
 
-      ControlLock.disable    # insert date string (and time if C-u)
     end
 
     def self.launch_dot_at_end line
