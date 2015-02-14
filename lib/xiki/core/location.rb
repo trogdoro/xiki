@@ -59,7 +59,7 @@ module Xiki
         loc = Keys.input(:optional=>true)
         loc ||= "0"
         loc = "_#{loc}"
-        View.open("$#{loc}")
+        View.open(":#{loc}")
         # Optionally go to point
         $el.bookmark_jump(loc) unless $el.elvar.current_prefix_arg
 
@@ -67,7 +67,7 @@ module Xiki
 
       # If symbol, look up location in map and go to it
       elsif path.class == Symbol
-        View.open("$#{path.to_s}")
+        View.open(":#{path.to_s}")
         @@spots[path.to_s].go
 
         return

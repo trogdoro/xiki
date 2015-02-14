@@ -685,9 +685,9 @@ end
 #     assert_equal true, Tree.is_root?("  /hey")
 #     assert_equal true, Tree.is_root?("  ./hey")
 #     assert_equal false, Tree.is_root?("  .you")
-#     assert_equal true, Tree.is_root?("  $tr/")
-#     assert_equal true, Tree.is_root?("  $tr/##abc/")
-#     #     assert_equal false, Tree.is_root?("  $tr")
+#     assert_equal true, Tree.is_root?("  :tr/")
+#     assert_equal true, Tree.is_root?("  :tr/##abc/")
+#     #     assert_equal false, Tree.is_root?("  :tr")
 #   end
 
 

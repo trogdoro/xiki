@@ -149,7 +149,7 @@ module Xiki
 
       if ! file || Keys.prefix_u
         bm = Keys.input(:timed=>true, :prompt=>"Enter bookmark of file to tail (or period for current file): ")
-        file = (bm == ".") ? View.file : Bookmarks["$#{bm}"]
+        file = (bm == ".") ? View.file : Bookmarks[":#{bm}"]
       end
 
       Shell.run "tail -f #{file}", :buffer => "*tail of #{file}"
@@ -230,7 +230,7 @@ module Xiki
 
     def self.do_load_file
 
-      if View.name == "*diff with saved*"   # If viewing diff, close it and save the actual file...
+      if View.name == "diff with saved/"   # If viewing diff, close it and save the actual file...
         file = View.txt[/.+\n.+/].sub("\n  - ", "")
         View.kill
         View.open file
@@ -257,7 +257,7 @@ module Xiki
       path = Keys.input "#{message}: ", :timed=>1
 
       # They typed a word, so expand it as a bookmark
-      path = Bookmarks["$#{path}"] if path =~/^\w/
+      path = Bookmarks[":#{path}"] if path =~/^\w/
       path = File.expand_path path
 
       is_dir = File.directory? path
@@ -283,8 +283,8 @@ module Xiki
     # This is currently mac-specific
     def self.open_last_screenshot
 
-      dirs = `ls -t #{Bookmarks["$dt"]}`
-      screenshot = Bookmarks["$dt"]+dirs[/.+/]
+      dirs = `ls -t #{Bookmarks[":dt"]}`
+      screenshot = Bookmarks[":dt"]+dirs[/.+/]
 
       self.open_as screenshot, "Adobe Illustrator"
 
@@ -336,7 +336,7 @@ module Xiki
 
       prefix == :u ?
         View.layout_todo(:no_blink=>1) :
-        View.layout_files(:no_blink=>1)
+        View.layout_nav(:no_blink=>1)
 
       if nth != 0
         View.to_highest

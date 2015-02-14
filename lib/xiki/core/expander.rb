@@ -158,7 +158,11 @@ module Xiki
 
       # Eventually, remove $...
 
-      thing = self.expand_file_path thing if thing =~ /^[~.:$]/   # Expand out file shortcuts if any
+      # If just "." or "~", treat as file path
+      thing = "./" if thing == "."
+      thing = "~/" if thing == "~"
+
+      thing = self.expand_file_path thing if thing =~ /^[~.:]/   # Expand out file shortcuts if any
 
       # If not a file, it's probably a pattern, so store in line and return...
 
@@ -290,6 +294,7 @@ module Xiki
         ~ tutorial/
         ~ all menus/
         ~ recent menus/
+        ~ quit/
         "
 
       # Dropdown root, so show items...
@@ -458,18 +463,17 @@ module Xiki
     end
 
 
-    # Just expands out ~/, ./, ../, and $foo/ at beginning of paths,
+    # Just expands out ~/, ./, ../, and :foo/ at beginning of paths,
     # leaving the rest in tact
     #
     # Expander.expand_file_path(":xiki/a//b").should =~ %r".+/xiki/a//b$"
     # Expander.expand_file_path(":xiki//")
     #   /projects/xiki//
-    # Expander.expand_file_path("$ru//")
+    # Expander.expand_file_path(":ru//")
     #   /Users/craig/notes/ruby/ruby.notes//
     def self.expand_file_path path
 
-      # Probably restore this line
-      return path if path !~ %r"^(~/|\.|:\w|\$\w)"   # One regex to speed up when obviously not a match
+      return path if path !~ %r"^(~/|\.|:\w)"   # One regex to speed up when obviously not a match
 
       # Expand out ~
       return path.sub "~", File.expand_path("~") if path =~ %r"^~/"
@@ -478,11 +482,11 @@ module Xiki
 
       return path.sub $1, File.expand_path($1, View.dir) if path =~ %r"^(\.+)/"
 
-      # Expand out $foo/ bookmarks
-      if path =~ %r"^([:$][\w]+)(/|$)"
+      # Expand out :foo/ bookmarks
+      if path =~ %r"^(:[\w]+)(/|$)"
         file = Bookmarks[$1]
         file.sub! /\/$/, ''   # Clear trailing slash so we can replace consistently with dirs and files
-        return path.sub /[:$]\w+/, file
+        return path.sub /:\w+/, file
       end
 
       # TODO > Make bookmarks not emacs dependant > Use Bookmarks2 to expand bookmarks - or just update Bookmarks?!
@@ -498,7 +502,7 @@ module Xiki
 
       # 2nd arg is string, so treat it like a menu ...
 
-      # Example: Xiki.def "view+dimensions", "dimensions/", :letter=>1
+      # Example: Xiki.def "view+dimensions", "dimensions/", :hotkey=>1
       if args.length == 2 && menu.is_a?(String)
         options.merge! :bar_is_fine=>1
         block =

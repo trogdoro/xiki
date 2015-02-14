@@ -146,7 +146,7 @@ xiki loc/
 
 
 > 2. Deploy
-$p/xiki.org/www/
+:p/xiki.org/www/
 /projects/xiki.org/www/
   $ scp index.html xiki@xiki.org:/var/www/xiki.org/index.html
   =http://xiki.org

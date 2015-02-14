@@ -167,7 +167,7 @@
         : Xiki["/tmp/foo/", args]
     - bookmark/
       =~/xiki/commands/<name>.rb
-        : Xiki["$tm//", args]
+        : Xiki[":tm//", args]
   - dropdown/
     =~/xiki/commands/<name>.dropdown
       : - sample item/

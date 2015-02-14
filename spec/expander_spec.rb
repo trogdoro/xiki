@@ -44,10 +44,10 @@ describe Expander, "#expand_file_path" do
   end
 
   it "expands bookmarks" do
-    stub(Bookmarks).[]("$d") {"/tmp/dir/"}
-    Expander.expand_file_path("$d/a//b").should == "/tmp/dir/a//b"
-    Expander.expand_file_path("$d").should == "/tmp/dir"
-    Expander.expand_file_path("$d/").should == "/tmp/dir/"
+    stub(Bookmarks).[](":d") {"/tmp/dir/"}
+    Expander.expand_file_path(":d/a//b").should == "/tmp/dir/a//b"
+    Expander.expand_file_path(":d").should == "/tmp/dir"
+    Expander.expand_file_path(":d/").should == "/tmp/dir/"
   end
 
   it "doesn't remove double slashes for home and current dir" do
@@ -56,8 +56,8 @@ describe Expander, "#expand_file_path" do
   end
 
   it "doesn't remove double slashes for bookmarks" do
-    stub(Bookmarks).[](":f") {"/tmp/file.txt"}
-    Expander.expand_file_path(":f//").should == "/tmp/file.txt//"
+    stub(Bookmarks).[](":n") {"/tmp/file.txt"}
+    Expander.expand_file_path(":n//").should == "/tmp/file.txt//"
   end
 end
 
