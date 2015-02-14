@@ -581,7 +581,7 @@ module Xiki
        # Delete it from the tree
 
        Tree.to_parent if command
-       Tree.kill_under
+       Tree.collapse
        Line.delete
 
        Line.previous if Line =~ /^$/
@@ -612,9 +612,9 @@ module Xiki
 
     def self.shell_command_per_prompt prompt, options
 
-      dir, command = options[:dir], options[:command]
+      dir, command, dropdown = options[:dir], options[:command], options[:dropdown]
 
-      if ! options[:dropdown] && command !~ /^[%$]/
+      if ! dropdown && command !~ /^[%$]/
         self.append_log command, dir, "#{prompt} "
       end
 
@@ -624,9 +624,18 @@ module Xiki
         return "<$ #{command}"
       end
 
-      # Just $ or % without command, so show history for all commands (we don't have the command, so it's the only option that makes sense)...
+      # Just "$ " or "% " without command, so quit the shell
+
       if ! command && prompt =~ /[%$]/
+
+        # Ctrl+D on a blank prompt, so quit...
+
+        return DiffLog.quit if dropdown
+
+        # Ctrl+X on a blank prompt, so show the history...
+
         return self.shell_history(:dir=>dir)
+
       end
 
       # Normal prompt with command, so run it...
@@ -674,7 +683,12 @@ module Xiki
 
       when "&"
 
-        return Xsh.exit_and_run(command) if ! Environment.gui_emacs
+        if ! Environment.gui_emacs
+
+          # Quit and run in external shell
+
+          return Shell.parent command
+        end
 
         # Temp > for presentation > don't activate iterm
         # Applescript.run 'tell application "iTerm" to activate'
@@ -703,7 +717,7 @@ module Xiki
         ~ notes
 
         ~ examples/
-        ~ menu
+        ~ xiki command
         ~ man
         ".unindent if ! args && dropdown == []
 
@@ -720,7 +734,7 @@ module Xiki
       #       return self.shell_pipe options if args[0] =~ /\n/
 
       # If any args (and not :... or >...), delegate to the =foo menu
-      return self.shell_menu(options) if dropdown == ["menu"] || args
+      return self.shell_menu(options) if dropdown == ["xiki command"] || args
       return self.shell_man(options) if dropdown == ["man"]
 
       # /args, so do special handling :dropdown items, so do nothing...
@@ -762,7 +776,7 @@ module Xiki
       # Is this too simplistic?
       dir = Shell.dir if ! dir   # We're not nested under a dir, so grab dir from shell
 
-      dir = Bookmarks["$hx/misc/favorites"]
+      dir = Bookmarks[":hx/misc/favorites"]
       file = "#{dir}/#{command_root}.notes"
       FileUtils.mkdir_p dir   # Make sure it exists
 
@@ -850,7 +864,7 @@ module Xiki
       command_root = command.sub(/ .*/, '')   # Cut off after the space
 
       options[:nest] = 1
-      options[:letter] = 1
+      options[:hotkey] = 1
       options[:no_dropdown] = 1
 
       # Also look in project dir?
@@ -959,6 +973,10 @@ module Xiki
       self.sync "cd '#{File.expand_path dir}'", :session_key=>View.name
     end
 
+    def self.exit_and_cd dir
+      $el.kill_emacs "cd #{Files.tilda_for_home(dir, :escape=>1)}"
+    end
+
     # Shell.dir
     #   "/Users/craig/Dropbox/xiki"
     def self.dir
@@ -966,11 +984,11 @@ module Xiki
       # Return the view dir if no session (don't unnecessarily create a session)
       if ! self.sessions[key]
         dir = View.dir
-        dir = FileTree.add_slash_maybe dir
-        return dir
+        return  FileTree.add_slash_maybe dir
       end
 
-      self.sync("pwd", :session_key=>key).strip + "/"
+      dir = self.sync("pwd", :session_key=>key).strip
+      FileTree.add_slash_maybe dir
     end
 
     # When a tab key pressed at the end of a $... line
@@ -980,7 +998,7 @@ module Xiki
 
       # Delegate to ~ menu
 
-      Launcher.launch :dropdown=>["menu"]
+      Launcher.launch :dropdown=>["xiki command"]
 
     end
 
@@ -1008,6 +1026,33 @@ module Xiki
       txt.join("\n")
 
     end
+
+    def self.parent command
+      Xsh.save_grab_commands command
+      DiffLog.quit
+    end
+
+    def self.reverse_history args
+
+      txt = File.read File.expand_path("~/xiki/misc/tmp/reverse_history.notes")
+
+      txt.gsub!(/ +$/, '')   # Remove trailing spaces
+      txt = txt.split("\n").reverse.uniq.join("\n")
+      txt.sub!(/^\n/, '')
+      txt.gsub!(/^/, '$ ')
+
+      txt.sub!(/^.+\n/, '')   # cut of 1st, it's the one we just did (xsh -r)
+
+      # arg, so only show lines starting with the arg
+      if args.any?
+        txt = txt.split("\n").select{|o| o =~ /^\$ #{args}\b/}.join("\n")
+      end
+
+      View.insert txt, :dont_move=>1
+      Tree.filter :left=>1, :right=>(View.bottom - 2)
+
+    end
+
 
   end
 
