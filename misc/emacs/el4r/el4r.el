@@ -5,17 +5,30 @@
 ; Define keys to reload and jump...
 ; This function is called from the Xiki config
 (defun el4r-troubleshooting-keys ()
-  (global-set-key (kbd "C-x C-r") 'el4r-kill-and-restart)   ; xiki+reload (C-x C-r)
-  (global-set-key (kbd "C-x C-l") 'el4r-jump-to-error)      ; xiki+log (C-x C-l)
+
+  ; Reload
+  (global-set-key (kbd "M-r") 'el4r-kill-and-restart)
+
+  ; Jump to log and show error
+  (global-set-key (kbd "M-l") 'el4r-jump-to-error)
+)
+
+(defun ol (txt)
+  (el4r-ruby-eval
+    (if (stringp txt)
+      (concat "Ol \"" txt "\"")   ; String, so no need to inspect
+      (concat "Ol \"" (pp-to-string txt) "\"")
+    )
   )
+)
 
 (or (>= emacs-major-version 21)
-    (error "Sorry, el4r requires (X)Emacs21 or later, because it uses weak hash."))
+    (error "Sorry, el4r requires (X)Emacs21 or later, because it uses weak hashes."))
 
 (put 'el4r-ruby-error
      'error-conditions
      '(error el4r-ruby-error))
-(put 'el4r-ruby-error 'error-message "Error raised in Ruby.  Type Ctrl+x Ctrl+r to reload or Ctrl+x Ctrl+l to show the log with the error message.")
+(put 'el4r-ruby-error 'error-message "Error raised in Ruby.  Type Escape+R to reload or Escape+L to show the log with the error message.")
 
 (defvar el4r-ruby-program
   "ruby"
