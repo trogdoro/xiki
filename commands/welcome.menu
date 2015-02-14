@@ -1,6 +1,6 @@
-| Welcome to Xiki! It appears you may not have made the 'xsh'
-| shell command available system-wide yet. To do so, expand
-| 'make xsh available' below (use the arrow keys to move your
-| cursor to it, then type Ctrl+X):
+| Welcome to Xiki! You may not have made the 'xsh' shell
+| command available system-wide yet. To do so, expand
+| 'make xsh available' below (use the arrow keys to move
+| your cursor to it, then type Ctrl+X):
 |
 << make xsh available
