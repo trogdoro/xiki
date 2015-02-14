@@ -244,7 +244,7 @@ module Xiki
 
       # No prefix, so show menu of colors...
 
-      return Launcher.open("mark/", :letter=>1, :bar_is_fine=>1) if ! prefix
+      return Launcher.open("mark/", :hotkey=>1, :bar_is_fine=>1) if ! prefix
 
       # N+, so jump to nth visible label...
 

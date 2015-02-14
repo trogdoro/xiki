@@ -40,7 +40,7 @@ module Xiki
       - docs/
         > Summary
         | Launcher is the class that handles "launching" things (double-clicking
-        | on a line, or typing Ctrl-enter).
+        | on a line, or typing Ctrl+X).
       - api/
         > Open menu in new buffer
         @ Launcher.open "computer"
@@ -283,7 +283,7 @@ module Xiki
       return if options[:dont_launch]
       # Ol()
 
-      Tree.kill_under
+      Tree.collapse
 
       Effects.blink
 
@@ -312,9 +312,9 @@ module Xiki
 
       View.line, View.column = line, column if line
 
-      # Don't go to orig if :f > and we already went to a file...
+      # Don't go to orig if :n > and we already went to a file...
 
-      return if options[:bookmark] == ":f" && View.file != Bookmarks[":f"]
+      return if options[:bookmark] == ":n" && View.file != Bookmarks[":n"]
 
       View.to_nth orig
 
@@ -346,7 +346,7 @@ module Xiki
         elsif bm == ";" || bm == ":" || bm == "-"   # What does this mean?
           "nav history/:/"
         else
-          "nav history/$#{bm}/"
+          "nav history/:#{bm}/"
         end
     end
 
@@ -701,7 +701,7 @@ Ol["oh, this path is an array: #{path}!"] if path.is_a?(Array)
         View.flash message
         path = Keys.input "#{message}: ", :timed=>1
 
-        path = Bookmarks["$#{path}"] if path =~/^\w/   # They typed a word, so expand it as a bookmark
+        path = Bookmarks[":#{path}"] if path =~/^\w/   # They typed a word, so expand it as a bookmark
 
         View.insert path
 
@@ -733,7 +733,7 @@ Ol["oh, this path is an array: #{path}!"] if path.is_a?(Array)
       # If no prefixes and children exist, collapse
       if ! Keys.prefix && ! Line.blank? && Tree.children? && View.name != "*ol"
         Tree.minus_to_plus
-        Tree.kill_under
+        Tree.collapse
         return
       end
 
@@ -814,13 +814,13 @@ Ol["oh, this path is an array: #{path}!"] if path.is_a?(Array)
 
       # Pull out certain options set by implementation, meant to control how it's inserted...
 
-      options.each{|k, v| insert_options[k] = v if [:no_slash, :no_search, :line_found, :letter, :omit_slashes].include?(k)}
+      options.each{|k, v| insert_options[k] = v if [:no_slash, :no_search, :line_found, :hotkey, :omit_slashes].include?(k)}
 
       # Re-add dropdown items and restore cursor if requested to put output under dropdown...
 
       if options[:dropdown] && options[:nest] && dropdown_orig
         # Keep using letters if under dropdown
-        insert_options[:letter] = 1 if ! options[:no_dropdown]
+        insert_options[:hotkey] = 1 if ! options[:no_dropdown]
         Line.next
         View << dropdown_orig
         View.line = line_number
@@ -832,9 +832,11 @@ Ol["oh, this path is an array: #{path}!"] if path.is_a?(Array)
 
       insert_options[:no_slash] = 1 if options[:args] && options[:args].last =~ /(^[>|:]|\n)/
 
+      # "~ foo" dropdown item, so don't insert slashes after, and use hotkey search
+
       if txt =~ /\A\s*~ /
-        insert_options[:no_slash] = 1
-        insert_options[:letter] = 1
+        insert_options[:no_slash] = 1 unless options[:file_path]   # However, don't suppress adding slashes on file paths, so it's obvious they're dirs
+        insert_options[:hotkey] = 1
       end
 
       return if self.process_bullets_in_output txt, options, insert_options
@@ -929,7 +931,7 @@ Ol["oh, this path is an array: #{path}!"] if path.is_a?(Array)
           line = Line.value
         end
 
-        Tree.kill_under :no_plus=>1
+        Tree.collapse :no_plus=>1
         Line.sub! /( *).*/, "\\1#{txt}"
 
         Launcher.launch
@@ -1164,7 +1166,7 @@ Ol["oh, this path is an array: #{path}!"] if path.is_a?(Array)
       end
 
       if prefix == :u   # Insert @last to see recent menu names and drill in.
-        Line << "$#{Keys.input :timed=>1}//"
+        Line << ":#{Keys.input :timed=>1}//"
         Launcher.go
         return
       end
@@ -1201,8 +1203,8 @@ Ol["oh, this path is an array: #{path}!"] if path.is_a?(Array)
       Notes.mode
       View >> "\n\n\n"
 
-      Keys.timed_insert :prompt=>"Type a command to run!"
-      Launcher.launch
+      inserted = Keys.timed_insert :prompt=>"Type a command to run!"
+      Launcher.launch if inserted
 
     end
 
@@ -1284,6 +1286,9 @@ Ol["oh, this path is an array: #{path}!"] if path.is_a?(Array)
 
     # Jumps up to :t and runs first "- )" line.
     def self.do_task options={}
+      if Keys.prefix_u :clear=>1
+        Code.load_this_file
+      end
       Launcher.do_last_launch :nth=>1, :prefix=>:u
     end
 
