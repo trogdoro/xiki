@@ -55,23 +55,20 @@ module Menu
     end
 
     MENU = %`
-      | Explore these menu items to find the setup that's right
-      | for you. (Use the arrow keys and type Ctrl+X to expand
-      | and collapse each of them).
+      | Explore these menu items to find the setup that's right for
+      | you. Then enable one of them. (Use the arrow keys and type
+      | Ctrl+X to expand and collapse the items below).
       |
       + the 'xsh' command, and remapped key shortcuts/
-        | Enable the 'xsh' shell command. Also remap the following
+        | Enables the 'xsh' shell command. Also remaps the following
         | key shortcuts in your existing shell, to make them quickly
         | switch to xsh:
         |
         |   Ctrl+X  Expand a shell shell command in xsh
         |   Ctrl+D  Dropdown of options for a shell command
         |   Ctrl+G  Grab shell commands to and from Xiki
-        |   Escape+Tab     Auto-complete
-        |   Escape+Ctrl+R  Shell history
-        |
-        | This is recommended if you (and any other people who use this
-        | account) don't use Ctrl+X, Ctrl+D, and Ctrl+G in your shell.
+        |   Esc, Tab     Auto-complete
+        |   Esc, Ctrl+R  Shell history
         |
         + enable this configuration
           | Expand 'save' below, and the following changes will be made:
@@ -80,17 +77,20 @@ module Menu
           + .save
           |
         |
+        | This is recommended if you (and any other people who use this
+        | account) don't use Ctrl+X, Ctrl+D, and Ctrl+G in your shell.
+        |
         | (You can use the arrow keys and Ctrl+X to select the above item.)
         |
       - xsh 'xsh' command, and safer key shortcuts/
         | This is like the previous option, but creates key shortcuts
         | that don't conflict with your shells default shortcuts:
         |
-        |   Escape+Ctrl+X  Expand a shell shell command in xsh
-        |   Escape+Ctrl+D  Dropdown of options for a shell command
-        |   Escape+Ctrl+G  Grab shell commands to and from Xiki
-        |   Escape+Tab     Auto-complete
-        |   Escape+Ctrl+R  Shell history
+        |   Esc, Ctrl+X  Expand a shell shell command in xsh
+        |   Esc, Ctrl+D  Dropdown of options for a shell command
+        |   Esc, Ctrl+G  Grab shell commands to and from Xiki
+        |   Esc, Tab     Auto-complete
+        |   Esc, Ctrl+R  Shell history
         |
         + enable this configuration
           | Expand 'save' below, and the following changes will be made:
@@ -124,64 +124,30 @@ module Menu
 
         # Make the 'xsh' command available in all shells
         export PATH=$PATH:#{Xiki.dir}bin
+      `.unindent+"\n"
+      txt << File.read("#{Xiki.dir}misc/install/.xsh.default")
+      txt << %`
+        # Enable the key shortcuts and the xsh wrapper function
+        source #{Xiki.dir}bin/.xsh
       `.unindent
-
-      txt << "\n"
 
       case choice
       when /remapped key shortcuts/
-        txt << %`
-          # Define some key shortcuts for quickly switching from your shell to xsh
-          xiki_open_key="\\C-x"        # Ctrl+X to expand in xsh
-          xiki_dropdown_key="\\C-d"    # Ctrl+D to show a dropdown menu for a command
-          xiki_grab_key="\\C-g"        # Ctrl+G to grab commands to and from xsh
-          xiki_tab_key="\\e\\C-i"       # Escape+Tab to do autocomplete
-          xiki_reverse_key="\\e\\C-r"   # Escape+Ctrl+R to search shell history
-
-          # Some examples, in case you want to update this file:
-          # xiki_open_key="\\C-x"      # Ctrl+X
-          # xiki_open_key="\\e\\C-X"    # Escape+Ctrl+X
-
-          # Enable the key shortcuts and the xsh wrapper function
-          source #{Xiki.dir}bin/.xsh
-        `.unindent
+        # Do nothing
       when /safer key shortcuts/
-        txt << %`
-          # Define some key shortcuts for quickly switching from your shell to xsh
-          xiki_open_key="\\e\\C-x"        # Escape+Ctrl+X to expand in xsh
-          xiki_dropdown_key="\\e\\C-d"    # Escape+Ctrl+D to show a dropdown menu for a command
-          xiki_grab_key="\\e\\C-g"        # Escape+Ctrl+G to grab commands to and from xsh
-          xiki_tab_key="\\e\\C-i"       # Escape+Tab to do autocomplete
-          xiki_reverse_key="\\e\\C-r"   # Escape+Ctrl+R to search shell history
+        # Change \C to \e\C
 
-          # Some examples, in case you want to update this file:
-          # xiki_open_key="\\C-x"      # Ctrl+X
-          # xiki_open_key="\\e\\C-X"    # Escape+Ctrl+X
+        txt.sub! '\C-x', '\e\C-x'
+        txt.sub! '\C-d', '\e\C-d'
+        txt.sub! '\C-g', '\e\C-g'
 
-          # Enable the key shortcuts and the xsh wrapper function
-          source #{Xiki.dir}bin/.xsh
-        `.unindent
-      else
-        txt << %`
-          # Commented out, since user chose no key shortcuts:
-          #
-          # Define some key shortcuts for quickly switching from your shell to xsh
-          # xiki_open_key="\\C-x"        # Ctrl+X to expand in xsh
-          # xiki_dropdown_key="\\C-d"    # Ctrl+D to show a dropdown menu for a command
-          # xiki_grab_key="\\C-g"        # Ctrl+G to grab commands to and from xsh
-          # xiki_tab_key="\\e\\C-i"       # Escape+Tab to do autocomplete
-          # xiki_reverse_key="\\e\\C-r"   # Escape+Ctrl+R to search shell history
-          #
-          # Some examples, in case you want to update this file:
-          # xiki_open_key="\\C-x"      # Ctrl+X
-          # xiki_open_key="\\e\\C-X"    # Escape+Ctrl+X
-          #
-          # Enable the key shortcuts and the xsh wrapper function
-          # source #{Xiki.dir}bin/.xsh
-        `.unindent
+      else   # just the 'xsh' command
+        # Comment everything out
+
+        txt.gsub!(/^[xs]/, "# \\0")
+
+        txt.gsub!("# Define", "\n# Commented out, since user chose no key shortcuts:\n\n\\0")
       end
-
-      txt << "\n"
 
       dot_xsh_path = File.expand_path("~/.xsh")
 
