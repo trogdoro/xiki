@@ -102,19 +102,19 @@ module Xiki
       elsif args.slice! /^-m /
         args = "$ #{args}\n  ~ menu/"
       elsif args.slice! /^-r( |\b)/
-        # Escape+Ctrl+R, so delegate to Shell.reverse_history
+        # Esc, Ctrl+R, so delegate to Shell.reverse_history
         options[:reverse] = args
         args = ""
       elsif args == "-t"
-        # Escape+Tab with no args, so explain why it doesn't make sense
+        # Esc, Tab with no args, so explain why it doesn't make sense
         args = "
-          | Doing Escape+Tab on a blank prompt doesn't make sense.
+          | Doing Esc, Tab on a blank prompt doesn't make sense.
           | Next time, type a command or file path to autocomplete
-          | it before doing Escape+Tab.
+          | it before doing Esc, Tab.
         ".unindent
         options[:dont_expand] = 1
       elsif args.slice! /^-t /
-        # Escape+Tab, so delegate to Notes.tab_key
+        # Esc, Tab, so delegate to Notes.tab_key
         options[:tab] = 1
         args = "$ #{args}" if args =~ /\A\w/   # Treat as shell command if it's just a word
       elsif args.slice! /^-d /
@@ -255,7 +255,7 @@ module Xiki
       Move.backward 3
       View.tab_width 12
       View.refresh
-      # Escape+Tab
+      # Esc, Tab
       return Notes.tab_key if options[:tab]
       return Shell.reverse_history(options[:reverse]) if options[:reverse]
       Launcher.launch(options_in) unless options[:dont_expand]

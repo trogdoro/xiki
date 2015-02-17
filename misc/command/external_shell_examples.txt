@@ -10,8 +10,8 @@ Examples when using key shortcuts:
   :foo <Ctrl+X>  Navigates a "foo" dir you've created
   -ip <Ctrl+X>   Show your ip (runs the "ip" xiki command)
   -tables <Ctrl+X>   Navigate and update your mysql db tables
-  cd <Escape+Ctrl+R> Shows the previous cd commands you've typed
-  git <Escape+Tab>   Shows the previous cd commands you've typed
+  cd <Esc, Ctrl+R> Shows the previous cd commands you've typed
+  git <Esc, Tab>   Shows the previous cd commands you've typed
 
 Examples:
   xsh

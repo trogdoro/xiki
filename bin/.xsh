@@ -27,7 +27,7 @@ function xsh {
     exit
   fi
 
-  # Escape+Ctrl+R, so write history to a temp file
+  # Esc, Ctrl+R, so write history to a temp file
 
   if [ "$1" = "-r" ]; then
     dir="$HOME/xiki/misc/tmp"

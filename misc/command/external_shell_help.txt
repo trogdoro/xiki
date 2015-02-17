@@ -18,8 +18,8 @@ Key shortcuts for your external shell (the default):
   Ctrl+G    Grab shell command into xsh, but don't run it.
   Ctrl+D    Dropdown of actions for a shell command.
             (examples, favorites, etc.)
-  Escape+Ctrl+R     External shell history (like Ctrl+R)
-  Escape+Tab        Auto-complete (not quite finished)
+  Esc, Ctrl+R     External shell history (like Ctrl+R)
+  Esc, Tab        Auto-complete (not quite finished)
 
 Options:
   -g  Grab shell command into xsh
