@@ -429,7 +429,7 @@ module Xiki
 
 
     # Mapped to C-g
-    def self.quit_and_go
+    def self.grab
 
       # Just quit if any prefix
       return $el.keyboard_quit if Keys.prefix
@@ -441,8 +441,53 @@ module Xiki
 
       view_dir = View.dir
 
-      # If just $... by itself
-      if last.length == 1 && last[0] =~ /^[$%] (.+)/
+      # If just $... (Is this too liberal?)
+
+      if FileTree.handles?(path[-1])
+
+        # Could be /tmp, "/tmp/$ pwd", or "/tmp/$ pwd/item"
+
+        # $... somewhere in it, so try to pull it off
+        if last.find{|o| o =~ /^[$%]/}
+
+          # Grab last item (should be a command...
+
+          command = last.pop
+
+          # Last isn't $..., so just quit
+          return View.flash("- Can only grab commands and dirs!") if command !~ /^[$%]/
+
+          command.sub!(/^[$%] /, '')
+
+          # Pop off any others at end that are $... or ~...
+
+          while last[-1] =~ /^[~$%&]/
+            last.pop
+          end
+
+          dir = last.join "/"
+
+        else   # No $... anywhere, so assume it's just a dir
+          dir = path[-1]
+          command = nil
+        end
+
+        # "/tmp/", so just cd
+
+        # If file handles, just do a cd
+
+        # Add quotes, but only if there's a slash?
+          # Or, use quote thing caleb showed me
+
+        dir.sub!(/\/$/, '')
+
+        # Add quotes unless it's all slashes and letters
+        dir = "\"#{dir}\"" if dir !~ /^[a-z_\/.-]+$/i
+        commands = "cd #{dir}\n"
+        commands << command if command
+
+      elsif last[-1] =~ /^[$%] (.+)/
+
         command = $1
 
         # They cd'ed in this session > so do cd in the shell...
@@ -478,46 +523,12 @@ module Xiki
 
         commands << "#{command}\n"
 
-      elsif FileTree.handles?(path[-1])
-
-        # Could be /tmp, "/tmp/$ pwd", or "/tmp/$ pwd/item"
-
-        if found = last.index{|o| o =~ /^[$%]/}
-
-          # "/tmp/$ pwd/item", so just exit
-          if found < last.length-1
-            return self.quit
-          else
-            # "/tmp/$ pwd", so just do cd and run command
-            command = last.pop.sub(/^[$%] /, '')
-            dir = last.join "/"
-          end
-
-        else
-          dir = path[-1]
-          command = nil
-        end
-
-        # "/tmp/", so just cd
-
-        # If file handles, just do a cd
-
-        # Add quotes, but only if there's a slash?
-          # Or, use quote thing caleb showed me
-
-        dir.sub!(/\/$/, '')
-
-        # Add quotes unless it's all slashes and letters
-        dir = "\"#{dir}\"" if dir !~ /^[a-z_\/.-]+$/i
-        commands = "cd #{dir}\n"
-        commands << command if command
-
       else
-        # Just exit
-        return self.quit
-      end
 
-      # Extract -> to .save_grab_commands
+        # Just exit
+        return View.flash("- Can only grab commands and dirs!")
+
+      end
 
       Xsh.save_grab_commands commands
 
