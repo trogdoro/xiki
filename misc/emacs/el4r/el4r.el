@@ -8,9 +8,12 @@
 
   ; Reload
   (global-set-key (kbd "M-r") 'el4r-kill-and-restart)
+  (global-set-key [2222] 'el4r-kill-and-restart)   ; For Terminal.app
 
   ; Jump to log and show error
   (global-set-key (kbd "M-l") 'el4r-jump-to-error)
+  (global-set-key [2220] 'el4r-jump-to-error)   ; For Terminal.app
+
 )
 
 (defun ol (txt)
