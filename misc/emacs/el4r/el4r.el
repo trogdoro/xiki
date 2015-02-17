@@ -28,7 +28,8 @@
 (put 'el4r-ruby-error
      'error-conditions
      '(error el4r-ruby-error))
-(put 'el4r-ruby-error 'error-message "Error raised in Ruby.  Type Escape+R to reload or Escape+L to show the log with the error message.")
+
+(put 'el4r-ruby-error 'error-message "Error raised in Ruby.  Type Alt+R (or Option+R) to reload or Alt+L (or Option+L) to show the log with the error message.")
 
 (defvar el4r-ruby-program
   "ruby"
