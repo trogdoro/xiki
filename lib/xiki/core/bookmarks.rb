@@ -183,6 +183,10 @@ module Xiki
       "tm"=>"/tmp/",
       "et"=>"/etc/",
       "b"=>"~/xiki/bookmarks/",
+      "dl"=>"~/Downloads/",
+
+      "e"=>"~/.emacs",
+      "br"=>"~/.bashrc",
 
       "se"=>"~/xiki/sessions/",
       "t"=>"~/xiki/tasks.notes",
@@ -193,8 +197,6 @@ module Xiki
       "no"=>"~/xiki/notes/",
       "c"=>"~/xiki/commands/",
       "cf"=>"~/xiki/commands/conf/",
-
-      "dl"=>"~/Downloads/",
 
       "q"=>"~/xiki/notes/quick.notes",
       "qq"=>"~/xiki/notes/quick2.notes",
