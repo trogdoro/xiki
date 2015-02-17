@@ -424,6 +424,7 @@ module Xiki
       Xiki.def("search+expand"){ Search.expand }   # Stop and just expand the line
       Xiki.def("search+dropdown"){ Search.isearch_diffs }   # Delete (or search+difflog if no search)
       Xiki.def("search+good"){ Search.cancel }   # Stop searching
+      $el.define_key(:isearch_mode_map, "\e"){ Search.cancel }
 
       $el.define_key :isearch_mode_map, $el.kbd("C-h"), nil
 
@@ -558,14 +559,13 @@ module Xiki
 
     def self.misc
 
-      Xiki.def("grab+"){ DiffLog.quit_and_go }
-      $el.define_key(:global_map, $el.kbd("M-C-g")){ DiffLog.quit_and_go }
+      Xiki.def("grab+"){ DiffLog.grab }
+      $el.define_key(:global_map, $el.kbd("M-C-g")){ DiffLog.grab }
 
       Xiki.def("quit+", :noob=>1){ DiffLog.quit }
 
       Keys.set("\e\e"){ ControlTab.go; ControlTab.go }   # Make two quick escapes switch to the last view
 
-      $el.define_key :isearch_mode_map, "\e", :isearch_abort
       $el.define_key :isearch_mode_map, "\C-q", :isearch_quote_char   # This is necessary so "C-s C-q" won't quit
       $el.define_key :minibuffer_local_map, "\C-q", :quoted_insert   # So C-q still quotes control chars in the minibuffer
       Xiki.def("lock+"){ $el.control_lock_enable }

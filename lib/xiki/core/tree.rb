@@ -2090,7 +2090,10 @@ module Xiki
           Move.backward
           ControlLock.disable
         elsif letter == "\a"
-          DiffLog.quit_and_go
+
+          # "What is this? C-g during tree search? Why would it grab?"
+          DiffLog.grab
+
         end
         return
 
