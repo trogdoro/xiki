@@ -38,7 +38,8 @@ Ol()
         txt = txt.split("\n").grep(/#{filter}/i).join("\n")
       end
 
-      txt = "| none found" if txt == ""
+      return "| none found\n#{output}" if txt == ""
+
       txt.gsub!(/ +$/, '')
       return "> Expand a process to kill it\n#{txt}\n#{output}"
     end
