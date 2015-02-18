@@ -3,5 +3,6 @@ Xiki.kill
 
 "
 - Stopped the xsh daemon.
-| The next time you start xsh, it'll reload everything.
+| The next time you start xsh, it'll reload everything
+| (and thus take slightly longer).
 "
