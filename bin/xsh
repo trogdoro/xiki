@@ -50,9 +50,9 @@ function check_dependencies {
     echo "It looks like you haven't yet installed the"
     echo -e "dependencies xsh needs.  Install them? (y/n)\n"
 
-    echo -e "Or type d to see the dependencies.\n"
+    echo -e "Or type s to show the dependencies.\n"
 
-    read -n1 -p "(y/n/d): " doit
+    read -n1 -p "(y/n/s): " doit
 
     if [ "$doit" = "n" ]; then
       echo -e "\n\nXsh can't run without it's dependencies :(\n"
@@ -101,7 +101,7 @@ function check_dependencies {
         echo -e "\n\n"
         # No exit, so continue on to run xsh
         ;;
-      d|D)
+      s|S)
         echo -e "\n\nThese are run to install xsh's dependencies:\n"
         if [ "$ruby_is_installed" = "" ]; then
           echo "  $ $install ruby"
