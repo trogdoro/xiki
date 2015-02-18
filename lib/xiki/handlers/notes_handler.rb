@@ -1,7 +1,7 @@
 module Xiki
   class NotesHandler
     def self.handle options
-      source = options[:handlers]['notes']
+      source = options[:handlers]['notes'] || options[:handlers]['xiki']
 
       return if ! options[:handlers] || options[:output] || options[:halt]
       path = "#{options[:enclosing_source_dir]}#{source}"

@@ -708,6 +708,9 @@ module Xiki
       Mode.define(:menu, ".menu") do
         Xiki::Notes.mode
       end
+      Mode.define(:xiki, ".xiki") do
+        Xiki::Notes.mode
+      end
 
     end
 
@@ -998,6 +1001,7 @@ module Xiki
         "conf"=>ConfHandler,   # This should always run
         "rb"=>RubyHandler,
         "menu"=>MenuHandler,
+        "xiki"=>XikiHandler,
         "deck"=>DeckHandler,
         "steps"=>StepsHandler,
         "notes"=>NotesHandler,
@@ -1157,8 +1161,9 @@ module Xiki
 
       dir = dir.gsub ' ', '[ -_]'   # For spaces in menus, match source files with underscores or dashes, etc
       name.gsub! ' ', '[ -_]'
-
-      list = Dir.glob ["#{dir}/", "#{dir}.*", "#{dir}/index.*", "#{dir}/#{name}_index.*"]
+      list = Dir.glob ["#{dir}/", "#{dir}.*", "#{dir}/index.*", "#{dir}/#{name}_index.*",
+         "#{dir}/menu.*", "#{dir}/#{name}_menu.*"
+        ]
       return nil if list.empty?
 
       containing_dir_length = dir[/.*\//].length

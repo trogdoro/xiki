@@ -1,7 +1,8 @@
 module Xiki
   class MenuHandler
     def self.handle options
-      source_file = options[:handlers]['menu']
+      source_file = options[:handlers]['menu'] || options[:handlers]['xiki']
+
       return if ! source_file || options[:output] || options[:halt]
       file = "#{options[:enclosing_source_dir]}#{source_file}"
 
