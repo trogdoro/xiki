@@ -1,1 +1,1 @@
-Xiki.dir
+"=" + Xiki.dir
