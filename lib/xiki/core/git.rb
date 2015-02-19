@@ -17,10 +17,10 @@ module Xiki
     def self.do_push
       prefix = Keys.prefix :clear=>true
 
-      file = Keys.bookmark_as_path :prompt=>"Enter a bookmark to git diff in: "
-      branch = self.branch_name file
+      dir = Keys.bookmark_as_path :prompt=>"Enter a bookmark to git diff in: "
+      branch = self.branch_name dir
       txt = "
-        #{file}
+        #{dir}
           =git/
             - push/#{branch}/
             - diff/
@@ -32,7 +32,7 @@ module Xiki
         Launcher.launch
       else
         View.bar if prefix == "outline"
-        Launcher.open txt, :buffer_name=>"git diff"
+        Launcher.open txt, :buffer_name=>"git diff", :buffer_dir=>dir
       end
 
       nil
@@ -84,14 +84,14 @@ module Xiki
     def self.do_status
       dir = Keys.bookmark_as_path :prompt=>"Enter a bookmark to show git status: "
 
-      branch = Xiki::Git.branch_name
+      branch = Xiki::Git.branch_name dir
       menu = "
         #{dir}
           $ git
             + push/#{branch}/
             + status/
       ".unindent.strip
-      Launcher.open(menu)
+      Launcher.open menu, :buffer_dir=>dir
 
       nil
     end
