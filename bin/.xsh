@@ -50,14 +50,14 @@ function xsh {
     commandz=""
 
     # Run each line in the file
-    while read p; do
+    while read -r p; do
 
       # Don't do redundant cd (to the same dir)
       if [ "$p" != "$cd_to_ignore" ]; then
 
         # Store in a var and eval later, since eval inside this
         # loop doesn't allow async commands like top, etc.
-        commandz+=$p
+        commandz+="$p"
         commandz+=$'\n'
 
       fi
