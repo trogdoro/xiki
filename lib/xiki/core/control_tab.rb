@@ -28,9 +28,10 @@ module Xiki
 
       return $el.keyboard_escape_quit if View.name =~ /^ \*Minibuf/
 
-      # They pressed escape to get here
-      if options[:from_escape]
 
+      # They pressed escape to get here, so maybe quit or kill...
+
+      if options[:from_escape]
         views_open = Buffers.list.map { |o| name = $el.buffer_name(o) }.select { |o| o !~ /^ ?\*/ && o != "views/" }
 
         # In a filter or hotkey search, so do nothing
@@ -42,14 +43,19 @@ module Xiki
 
           return if View.name !~ /\/$/ && ! (View.name == "xsh" && views_open.length == 1)
 
+          # This was the 1st search done in this temporary view, so kill view
+
+          View.kill if $el.elvar.xiki_filter_count == 1
+
+          DiffLog.quit if views_open.length == 1
+
+          return
+
         end
 
         # No other view open (aside from *... and views/), so just quit
         return DiffLog.quit if views_open.length == 1
 
-        # Maybe do this only when the first tab in the sequence?
-        # If in temp view, just close it
-        return View.kill if View.name =~ /\/$/
       end
 
       Keys.remember_key_for_repeat(proc {ControlTab.go :subsequent=>1}, :movement=>1)
@@ -70,6 +76,10 @@ module Xiki
       first_tab_in_sequence = false if recent_few[1] == 28 || recent_few[1] == 92   # One before last was / or C-/
 
       first_tab_in_sequence = nil if options[:subsequent]
+
+
+
+
 
       if @@clear_once   # If .clear_once was called recently
         first_tab_in_sequence = true

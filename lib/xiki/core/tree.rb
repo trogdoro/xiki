@@ -82,6 +82,7 @@ module Xiki
     def self.filter_hotkey letter, options={}
 
       $el.elvar.xiki_filter_options, $el.elvar.xiki_bar_special_text = nil, nil
+      $el.xiki_filter_completed
       $el.elvar.xiki_filter_hotkey = nil
 
       letters = self.filter_hotkey_extract_letters options
@@ -701,7 +702,9 @@ module Xiki
     end
 
     # Adds :... quotes before each line, except for menu-ish
-    # lines and lines indented under them.
+    # lines and lines indented under them. For menu-ish lines,
+    # it leaves them exposed (unquoted) and prepends equals to
+    # the root.
     def self.prepend_equals_for_some_patterns txt, options={}
       txt = txt.split "\n", -1
 
@@ -2031,8 +2034,9 @@ module Xiki
 
       # C-g or C-m, etc, so end and maybe launch again...
 
-      if letter =~ /[ \C-g\r\t\/$=#\x1F\C-\\]/
+      if letter =~ /[ \C-g\r\t\/$=#*\x1F\C-\\]/
         $el.elvar.xiki_filter_options, $el.elvar.xiki_bar_special_text = nil, nil
+        $el.xiki_filter_completed
 
         if letter == "\r"
           Launcher.launch
@@ -2089,6 +2093,12 @@ module Xiki
           View.insert "#{indent}- ##/"
           Move.backward
           ControlLock.disable
+        elsif letter == "*"
+          indent = Line.indent
+          $el.delete_region left, right-1
+          View.insert "#{indent}- **/"
+          Move.backward
+          ControlLock.disable
         elsif letter == "\a"
 
           # "What is this? C-g during tree search? Why would it grab?"
@@ -2102,6 +2112,7 @@ module Xiki
         # Number, so jump to nth...
 
         $el.elvar.xiki_filter_options, $el.elvar.xiki_bar_special_text = nil, nil
+        $el.xiki_filter_completed
         self.search_number letter, options
         return
 
@@ -2188,6 +2199,14 @@ module Xiki
 
           (defun xiki-filter-each () (interactive) (el4r-ruby-eval "Xiki::Tree.filter_each"))
 
+          (defun xiki-filter-completed ()
+            (if (boundp 'xiki-filter-count)
+              (setq xiki-filter-count (+ 1 xiki-filter-count))
+              (make-local-variable 'xiki-filter-count)
+              (setq xiki-filter-count 1)
+            )
+          )
+
           (defun xiki-filter-pre-command-handler () (interactive)
 
             (when (and (boundp 'xiki-filter-options) xiki-filter-options)
@@ -2214,7 +2233,7 @@ module Xiki
 
                   ; A char to filter or exit, so pass control to ruby...
 
-                  ((and (stringp char) (string-match "[a-z0-9.,;_$#+=/ \C-g\C-m\t\C-_\C-\\-]" char))   ; Keys that delegate through to Tree.filter
+                  ((and (stringp char) (string-match "[a-z0-9.,;_$#*+=/ \C-g\C-m\t\C-_\C-\\-]" char))   ; Keys that delegate through to Tree.filter
                     (setq this-command 'xiki-filter-each)   ; This makes it the next command that will be run
                   )
 
@@ -2222,7 +2241,10 @@ module Xiki
 
                   (t
                     (setq xiki-filter-options nil)
+                    (xiki-filter-completed)
 
+                    ; Remember what we just did, for later
+                    (make-local-variable 'xiki-filter-just-finished)
                     (setq xiki-filter-just-finished
                       (if xiki-filter-hotkey 'hotkey 'filter)
                     )
@@ -2238,7 +2260,7 @@ module Xiki
           )
 
           (defun xiki-filter-post-command-handler () (interactive)
-            (if (boundp 'xiki-filter-just-finished)
+            (when (boundp 'xiki-filter-just-finished)
               (makunbound 'xiki-filter-just-finished)
             )
           )
@@ -2248,6 +2270,7 @@ module Xiki
 
         )
       `
+      nil
     end
 
   end
