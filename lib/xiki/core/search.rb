@@ -870,7 +870,6 @@ module Xiki
         return
       end
 
-      Firefox.log
       Search.isearch nil, :from_bottom=>true
 
     end

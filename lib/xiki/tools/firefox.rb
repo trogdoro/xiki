@@ -442,11 +442,6 @@ module Xiki
     end
 
 
-    # TODO Not used any more?
-    def self.log
-      View.open File.expand_path("~/xiki/misc/logs/url_log.notes")
-    end
-
     def self.xul txt
       Firefox.mozrepl_command txt, :browser=>true
     end

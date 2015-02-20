@@ -85,6 +85,8 @@
   '(echo-keystrokes 0.5)   ; Delay until showing the prefix keys at the bottom (when user types C-x or C-c)
   '(search-ring-max 30)   ; Remember a few more searches
   '(show-trailing-whitespace t)   ; Expose trailing whitespace
+  '(auto-save-interval 999999)   ; Don't do auto-saving
+  '(auto-save-timeout 999999)   ; Don't do auto-saving
 )
 
 ; Lines from .emacs that should be uncommented?...

@@ -47,7 +47,7 @@ module Xiki
           | > Other platforms and more info
           @http://code.google.com/p/memcached/wiki/NewStart
           |
-          " if `which memcached`.empty?
+          " if `which memcached` !~ /\A\//
 
         return "
           > Not running

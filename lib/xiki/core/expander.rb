@@ -285,15 +285,15 @@ module Xiki
       dropdown = options[:dropdown]
 
       menu =  "
-        ~ create menu/
-          - inline menu/
+        ~ tutorial/
+        ~ all commands/
+        ~ recent commands/
+        ~ create command/
+          - inline command/
           - script/
           - shell command/
           - pattern/
           - more/
-        ~ tutorial/
-        ~ all menus/
-        ~ recent menus/
         ~ quit/
         "
 

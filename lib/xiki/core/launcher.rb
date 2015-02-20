@@ -322,12 +322,6 @@ module Xiki
       View.layout_outlog(:prefix=>:-) if prefix == :u && Line =~ /^ *Ol( |!|\.>>)/
     end
 
-    # Used any more? - should be replaced by menu log - delete this
-    def self.urls
-      txt = File.read File.expand_path("~/xiki/misc/logs/url_log.notes")
-      txt = txt.split("\n").reverse.uniq.join("\n")
-    end
-
     def self.enter_last_launched
       Launcher.insert self.last_launched_menu
     end
