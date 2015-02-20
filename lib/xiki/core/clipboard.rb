@@ -401,9 +401,13 @@ module Xiki
         to_os_code = '"copy_from_osx" "*Messages*" "pbcopy"'
       end
 
-      if Environment.xsh? && Environment.os == "linux" && Shell.sync("which xclip") =~ /\A\//
-        from_os_code = '"xclip -o -selection clipboard"'
-        to_os_code = '"xclip" "*Messages*" "xclip" "-selection" "clipboard"'
+      if Environment.xsh? && Environment.os == "linux"
+        txt, error = Shell.sync("xclip -o -selection clipboard", :return_error=>1)
+        # Only use xclip if it exists and it's not returning an error
+        if error == ""
+          from_os_code = '"xclip -o -selection clipboard"'
+          to_os_code = '"xclip" "*Messages*" "xclip" "-selection" "clipboard"'
+        end
       end
 
       return if ! from_os_code

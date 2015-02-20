@@ -196,6 +196,10 @@ module Xiki
           session.execute("cd '#{dir_orig}'")
         end
 
+        # Return stderr separately if :return_error flag
+
+        return [stdout, stderr] if options[:return_error]
+
         stdout += "\n> error\n#{stderr}" if stderr.any?
         return stdout
 
