@@ -69,7 +69,7 @@ module Xiki
       Xiki.def("open+prompt", :noob=>1){ Launcher.open_prompt }
 
       Xiki.def("open+edited"){ Files.open_edited }   # show recently edited files
-      Xiki.def("open+recent", "recent files/")
+      Xiki.def("open+recent", "recent/")
       Xiki.def("open+diffs"){ DiffLog.open }   # shows diffs of what you've edited
 
       Xiki.def("open+notes", :noob=>1){ Notes.open_note }

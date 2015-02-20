@@ -218,5 +218,30 @@ module Xiki
       "to-does"
     end
 
+    def self.init_in_client
+
+      $el.el4r_lisp_eval %`
+        (ol "init!")
+        (progn
+          (defun xiki-history-find-file-handler ()
+            (ol "----xiki-history-find-file-handler")
+            (el4r-ruby-eval "Xiki::History.log")
+          )
+          (add-hook 'find-file-hook 'xiki-history-find-file-handler)
+        )
+      `
+
+    end
+
+    def self.log
+
+      tmp_dir = File.expand_path "~/xiki/misc/logs"
+      FileUtils.mkdir_p tmp_dir   # Make sure dir exists
+      file = "#{tmp_dir}/recent.notes"
+      File.open(file, "a") { |f| f << "#{View.file}\n" }
+
+    end
+
   end
+
 end
