@@ -174,22 +174,20 @@ module Menu
 
       Xiki.kill   # So the forker will reload later, in a process that has bin in its path
 
-      "
+      %`
         =replace/siblings/3/
           |+Success!
           |
           | Your shell conf files have been updated. You can now type
-          | 'xsh' from any directory.
-          |
-          | Note: be sure to close any existing shell sessions before
-          | trying it, since config updates won't be reflected in them.
+          | 'xsh' from any directory (assuming you run ". ~/.bashrc"
+          | in any currently open shell sessions, or start new ones.)
           |
           | Xsh is alpha at this point. Experiment, but be careful!
           |
           | Expand this item for help with using Xiki:
           |
           << help
-      ".unindent
+      `.unindent
 
     end
   end

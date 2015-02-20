@@ -44,11 +44,11 @@ function check_dependencies {
     yum_is_installed=`which yum 2>&1`
     aptget_is_installed=`which apt-get 2>&1`
 
-    yum_install="sudo yum install" #?????
-    aptget_install="sudo apt-get -qq -y install"
+    yum_install="sudo yum install -q -y"
+    aptget_install="sudo apt-get install -qq -y"
 
-    echo "It looks like you haven't yet installed the"
-    echo -e "dependencies xsh needs.  Install them?\n"
+    echo "It looks like you haven't yet installed the dependencies"
+    echo -e "xsh needs. Install them?\n"
 
     # Underline formatting
     u=`tput smul`
@@ -116,7 +116,7 @@ function check_dependencies {
           echo "  $ $install emacs"
         fi
         echo -e "\nNote that xsh's dependencies are largely transparent\nto the user.  You don't need to have any expertise\nabout them to use xsh."
-        echo -e "\nRun 'xsh' again. (You can optionally install the\ndependencies yourself first.)\n"
+        echo -e "\nRun the 'xsh' command again. (You can optionally install the\ndependencies yourself first.)\n"
         exit
         ;;
       *)
