@@ -312,7 +312,8 @@ module Xiki
         $el.define_key(:notes_mode_map, $el.kbd("C-c C-#{n}")){ Launcher.do_last_launch :nth=>n, :here=>1, :dont_launch=>1 }
       end
 
-      $el.define_key(:notes_mode_map, $el.kbd("C-m")) { View.insert_line }
+      # For now, don't over-ride return > it's messing up pasting in the terminal
+      #       $el.define_key(:notes_mode_map, $el.kbd("C-m")) { View.insert_line }
 
       $el.define_key(:notes_mode_map, $el.kbd("C-i")) { Notes.tab_key }
 
