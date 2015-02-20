@@ -52,13 +52,25 @@ class Xiki::Menu::Notes
 
     # foo/=notes/, so use foo as name...
 
-    if (parent = Xiki.menuish_parent(options)) &&
-      path[0] !~ /\A\w/   # Only if there's not a menu-ish item underneath.
+    if path[0] !~ /\A\w/   # Only if there's not a menu-ish item underneath.
 
-      # We're nested under a menu-like item, so use it as the name
-      (items||=[]).unshift parent
-      output = nil   # Blank out output so we won't get mislead below
+      if parent = Xiki.menuish_parent(options)
+
+        # We're nested under a menu-like item, so use it as the name
+        (items||=[]).unshift parent
+        output = nil   # Blank out output so we won't get mislead below
+
+      # $ foo/=notes/, so use foo as name...
+
+      elsif parent = options[:ancestors] && options[:ancestors][-1][/\A\$ (\w+)/, 1]
+
+        # We're nested under a menu-like item, so use it as the name
+        (items||=[]).unshift parent
+        output = nil   # Blank out output so we won't get mislead below
+      end
+
     end
+
 
     # /, so list notes at top...
 
