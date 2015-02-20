@@ -768,9 +768,11 @@ module Xiki
     def self.shell_favorites options
 
       dir, command, dropdown = options[:dir], options[:command], options[:dropdown]
+
       dropdown.shift if dropdown   # Remove the "favorites" item
       command_root = command.sub(/ .*/, '')   # Cut off after the space
 
+      options[:nest] = 1
       options[:no_dropdown] = 1
 
       # Is this too simplistic?
@@ -780,29 +782,32 @@ module Xiki
       file = "#{dir}/#{command_root}.notes"
       FileUtils.mkdir_p dir   # Make sure it exists
 
-      # ~ favorites, so list any favorites and "add this" option...
+      # Todo > ~ favorites/add, so create favorite file for this
 
-      if dropdown == []
-        options[:nest] = 1
-        txt = File.read(file) rescue nil
-        if txt
-          txt = txt.split("\n").reverse.uniq.join("\n")
-        else
-          txt = "| You haven't added any favorites for the '#{command}' command yet.\n| Add some and then try again."
-        end
-        return "#{txt}\n+ add this"
-      end
-
-      # Todo > ~ favorites/add this, so create favorite file for this
-
-      if dropdown == ["add this"]
-        File.open(file, "a") { |f| f << "$ #{command}\n" }
+      if dropdown == ["add"]
+        return "- add some args to the command first!" if command !~ / /
+        txt = File.read(file) rescue ""
+        File.open(file, "w") { |f| f << "$ #{command}\n#{txt}" }
         return "<! - added favorite!"
       end
 
-      # $ command, so just run it
-      options[:nest] = 1
-      "<$ #{dropdown[-1]}"
+      # Last item is $..., so just run
+
+      if dropdown && dropdown[-1] =~ /^\$/
+        command = dropdown[-1]
+        return "<$ #{command}"
+      end
+
+      # ~ favorites, so list any favorites and "add" option...
+
+      txt = File.read(file) rescue nil
+      if txt
+        txt = "+ add\n#{txt}"
+        txt = Tree.children txt, dropdown
+        return txt
+      else
+        txt = "+ add\n| You haven't added any favorites for the '#{command}' command yet.\n| Add some and then try again."
+      end
 
     end
 
