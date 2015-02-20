@@ -164,7 +164,8 @@ module Xiki
       View.dir = dir
       Notes.mode
 
-      exists_in_path = Shell.sync('which xsh').any?
+      exists_in_path = Shell.sync('which xsh') =~ /\A\//
+
       if ! exists_in_path
         welcome = Xiki["welcome"]
         View << "\nwelcome/\n#{welcome.gsub /^/, '  '}\n\n"

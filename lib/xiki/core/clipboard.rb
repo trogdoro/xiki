@@ -401,7 +401,7 @@ module Xiki
         to_os_code = '"copy_from_osx" "*Messages*" "pbcopy"'
       end
 
-      if Environment.xsh? && Environment.os == "linux" && Shell.sync("which xclip").any?
+      if Environment.xsh? && Environment.os == "linux" && Shell.sync("which xclip") =~ /\A\//
         from_os_code = '"xclip -o -selection clipboard"'
         to_os_code = '"xclip" "*Messages*" "xclip" "-selection" "clipboard"'
       end

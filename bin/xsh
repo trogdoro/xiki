@@ -37,29 +37,35 @@ fi
 
 function check_dependencies {
 
-  ruby_is_installed=`which ruby`
+  ruby_is_installed=`which ruby 2>&1`
 
-  if [ "$ruby_is_installed" = "" ] || [ "$emacs_version" = "" ]; then
+  if [[ ! "$ruby_is_installed" =~ ^/ ]] || [ "$emacs_version" = "" ]; then
 
-    yum_is_installed=`which yum`
-    aptget_is_installed=`which apt-get`
+    yum_is_installed=`which yum 2>&1`
+    aptget_is_installed=`which apt-get 2>&1`
 
     yum_install="sudo yum install" #?????
     aptget_install="sudo apt-get -qq -y install"
 
     echo "It looks like you haven't yet installed the"
-    echo -e "dependencies xsh needs.  Install them? (y/n)\n"
+    echo -e "dependencies xsh needs.  Install them?\n"
 
-    echo -e "Or type s to show the dependencies.\n"
+    # Underline formatting
+    u=`tput smul`
+    uu=`tput rmul`
 
-    read -n1 -p "(y/n/s): " doit
+    echo -e "  ${u}i${uu}nstall the dependencies"
+    echo -e "  ${u}c${uu}ancel"
+    echo -e "  ${u}s${uu}how them first\n"
 
-    if [ "$doit" = "n" ]; then
+    read -n1 -p "Type one of the underlined letters: " doit
+
+    if [ "$doit" = "c" ]; then
       echo -e "\n\nXsh can't run without it's dependencies :(\n"
       exit 1
     fi
 
-    if [ -n "$yum_is_installed" -a -n "$aptget_is_installed" ]; then
+    if [[ "$yum_is_installed" =~ ^/ ]] && [[ "$aptget_is_installed" =~ ^/ ]]; then
       echo -e "\n\nIt appears you have both apt-get and yum installed.  Which should we use?"
       echo "  a: apt-get"
       echo "  y: yum"
@@ -74,9 +80,9 @@ function check_dependencies {
         exit 1
       fi
 
-    elif [ -n "$aptget_is_installed" ]; then
+    elif [[ "$aptget_is_installed" =~ ^/ ]]; then
       install="$aptget_install"
-    elif [ -n "$yum_is_installed" ]; then
+    elif [[ "$yum_is_installed" =~ ^/ ]]; then
       install="$yum_install"
     else
       dir="$xiki_dir/misc/install"
@@ -84,16 +90,16 @@ function check_dependencies {
     fi
 
     case "$doit" in
-      y|Y)
+      i|I)
         echo -e "\n\n"
-        if [ "$ruby_is_installed" = "" ]; then
-          if ! $install ruby || [ -z "`which ruby`" ]; then
+        if [[ ! "$ruby_is_installed" =~ ^/ ]]; then
+          if ! $install ruby || [[ ! "`which ruby 2>&1`" =~ ^/ ]]; then
             echo ruby install failed\!
             exit 1
           fi
         fi
         if [ "$emacs_version" = "" ]; then
-          if ! $install emacs || [ -z "`which emacs`" ]; then
+          if ! $install emacs || [[ ! "`which emacs 2>&1`" =~ ^/ ]]; then
             echo emacs install failed\!
             exit 1
           fi
@@ -102,8 +108,8 @@ function check_dependencies {
         # No exit, so continue on to run xsh
         ;;
       s|S)
-        echo -e "\n\nThese are run to install xsh's dependencies:\n"
-        if [ "$ruby_is_installed" = "" ]; then
+        echo -e "\n\nThis will be run to install xsh's dependencies:\n"
+        if [[ ! "$ruby_is_installed" =~ ^/ ]]; then
           echo "  $ $install ruby"
         fi
         if [ "$emacs_version" = "" ]; then
