@@ -201,7 +201,7 @@ module Xiki
       "q"=>"~/xiki/notes/quick.notes",
       "qq"=>"~/xiki/notes/quick2.notes",
       "ti"=>"~/xiki/notes/timer.notes",
-      "f"=>"~/xiki/notes/facts.notes",
+      "fa"=>"~/xiki/notes/facts.notes",
 
       "xc"=>"#{Xiki.dir}commands",
       "c2"=>"#{Xiki.dir}commands",
@@ -212,7 +212,7 @@ module Xiki
       "m"=>"~/xiki/misc/",
       "v"=>"~/xiki/misc/versions/",
       "lo"=>"~/xiki/misc/logs/",
-      "fa"=>"~/xiki/misc/favorites/",
+      "f"=>"~/xiki/misc/favorites/",
       "st"=>"~/xiki/misc/startup.rb",
       "cl"=>"~/xiki/misc/logs/command_log.notes",
       "pi"=>"~/Pictures/",
