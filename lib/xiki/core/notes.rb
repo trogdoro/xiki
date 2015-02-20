@@ -1123,7 +1123,9 @@ module Xiki
       if ! content
 
         return "~ navigate\n~ expand" if dropdown == []
-        if dropdown == ['expand']
+
+        # No '~ navigate' dropdown, so always expand
+        if dropdown != ['navigate']
           txt = self.extract_block txt, heading
           txt.sub! /\n\z/, ''
 
@@ -1131,8 +1133,11 @@ module Xiki
 
           txt = "Create this new section by typing\nsome stuff here and expanding.\n" if txt.blank?
 
+          # Don't do this for now, since it'll probably look ugly/confusing to new xsh users, and headings for ~/xiki/notes files navigate instead of expanding now anyway
           # Change "| foo/" to "=foo/" > add equals char for certain patterns
-          txt = Tree.quote txt, :unquote_menus=>1, :char=>"|"
+          #           txt = Tree.quote txt, :unquote_menus=>1, :char=>"|"
+
+          txt = Tree.pipe "#{txt}\n"
           return txt
         end
 
