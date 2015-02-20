@@ -477,4 +477,17 @@ module Xiki
     "<! Bookmark doesn't exist"
   end
 
+  # .. or ..., etc, so replace with absolute dir, n-1 higher...
+
+  Xiki.def(/^\.\.+$/) do |path, options|
+    dir = View.dir
+
+    # Chop off one dir for each dot (minus 1)
+    (path.length-1).times do
+      dir.sub! /\/[^\/]+$/, ''
+    end
+
+    "<<< #{dir}"
+  end
+
 end
