@@ -61,6 +61,8 @@ module Xiki
       # Read in file...
 
       user_conf = Bookmarks[":hx/commands/conf/xsh.conf"]
+      FileUtils.mkdir_p File.dirname user_conf   # In case it doesn't exist yet
+
       txt = File.read(user_conf) rescue nil
 
       # If not there, read from default...
@@ -311,6 +313,9 @@ module Xiki
         elsif path == ["open"]
           txt.gsub!(/\+ [fp]/, "\n\\0")
           return
+        elsif path == ["hop"]
+          txt.gsub!(/\+ [o]/, "\n\\0")
+          return
         end
       end
 
@@ -342,6 +347,8 @@ module Xiki
         txt.gsub!(/\+ [rb]/, "\n\\0")
       elsif path == ["run", "delete"]
         txt.gsub!(/\+ [icm]/, "\n\\0")
+      elsif path == ["window"]
+        txt.gsub!(/\+ [o]/, "\n\\0")
 
       elsif path == ["search"]
         txt.gsub!(/\+ [vtbeh]/, "\n\\0")
