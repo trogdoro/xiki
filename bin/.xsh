@@ -27,15 +27,17 @@ function xsh {
     exit
   fi
 
-  # Esc, Ctrl+R, so write history to a temp file
+  # Always write history to a temp file, in case it was Ctrl+R, or they'll do a open+recent
 
-  if [ "$1" = "-r" ]; then
-    dir="$HOME/xiki/misc/tmp"
-    mkdir -p $dir
-    history -w "$dir/reverse_history.notes"
-  fi
+  dir="$HOME/xiki/misc/tmp"
+  mkdir -p $dir
+  history -w "$dir/recent_history_external.notes"
+
+
+  # Run the actual xsh command...
 
   command xsh $*
+
 
   # Grab any "go" text, and run it...
 
@@ -74,15 +76,21 @@ function xsh {
 
       i="${i%"${i##*[![:space:]]}"}"   # remove trailing whitespace characters
 
+      # Add the command to the history...
       if [ -n "$ZSH_VERSION" ]; then
+        this_command="xsh "$*
+        if [[ ! $this_command = "xsh -r" ]]; then
+          print -s $this_command
+        fi
         print -s $i
+
       else   # Assume bash or bash-compatible
+        this_command="xsh "$*
+        if [[ ! $this_command = "xsh -r" ]]; then
+          history -s $this_command
+        fi
         history -s $i
-        # It seems to be replacing :(
-        # Todo > deal with this later
-        # - maybe write the current command too?
-        #   - how would we know that? > see what's in end of the history now?
-        #   - see how it works in newer bash first
+
       fi
 
       # Show the command
