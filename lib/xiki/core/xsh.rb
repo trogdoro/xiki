@@ -47,10 +47,25 @@ module Xiki
 
       # Check for various flags...
 
-      if args.slice! /^-g /
+      if args == ""
+        # New session, or not in xsh file, so presume "$ "
+        args = "$ "
+        options[:dont_expand] = 1
+
+      elsif args.slice! /^-g /
+
+        # Grab on :foo, so just cd and exit...
+
+        if args =~ /^:\w+/
+          dir = Shell.quote_file_maybe Bookmarks[args]
+          Xsh.save_grab_commands "cd #{dir}"
+          DiffLog.quit
+        end
+
         # Grab on line, so don't launch (just insert)
         options[:dont_expand] = 1
         args = "$ #{args}"
+
       elsif args.slice! /^-g\b/
 
         tmp_dir = File.expand_path "~/xiki/misc/tmp"
@@ -68,7 +83,6 @@ module Xiki
 
         args = "./\n  - ###{args}/"
       elsif args =~ /^:\w/
-        options[:not_shell] = 1
         View.open Bookmarks[args]
         options[:do_nothing] = 1
       elsif args =~ /^http:\/\//
@@ -99,12 +113,25 @@ module Xiki
           "./\n  - #{args}"
       elsif args.slice! /^-e /
         args = "$ #{args}\n  ~ examples/"
-      elsif args.slice! /^-m /
-        args = "$ #{args}\n  ~ menu/"
-      elsif args.slice! /^-r( |\b)/
-        # Esc, Ctrl+R, so delegate to Shell.reverse_history
-        options[:reverse] = args
-        args = ""
+
+      elsif args.slice! /^-m\b/
+        options[:do_nothing] = 1
+        View.open "#{View.dir}/menu.xiki"
+
+      elsif args.slice! /^-o\b/
+
+        # -o foo, so open it as a file...
+
+        if args.any?
+          options[:do_nothing] = 1
+          View.open "#{View.dir}/#{args.strip}"
+        else
+          args = "opened/"
+        end
+
+      elsif args.slice! /^-x /
+        args = "$ #{args}\n  ~ xiki command/"
+
       elsif args == "-t"
         # Esc, Tab with no args, so explain why it doesn't make sense
         args = "
@@ -128,16 +155,13 @@ module Xiki
       elsif args == "-" # || args == ""
         args = ""
         options[:dont_expand] = 1
-      elsif args == "-r" || args == ""
-        options[:dont_expand] = 1
 
-        # New session, or not in xsh file, so presume "$ "
-        args = "$ "
-        options[:dont_expand] = 1
       elsif args =~ /\A[a-z]/i && ! options[:not_shell]
         args = "$ #{args}"
       elsif args =~ /^=/   # If =foo, make it nest under dir?
         args.sub! /^=/, ''
+      elsif args == "."
+        args = View.dir
       end
 
       # -foo, so cut off dash
@@ -148,21 +172,23 @@ module Xiki
 
       args.sub! /^\$ (\d\d\d-)/, "\\1"
 
-      args = "./" if args == "."
-
       Themes.use 'Default'
       Styles.reload_styles   # So it uses dark headings
 
       return if options[:do_nothing]
 
-      dir = options[:dir] || $el.elvar.default_directory
+      # Open the "xsh" view...
 
+      dir = options[:dir] || $el.elvar.default_directory
       View.to_buffer View.unique_name("xsh")
       View.kill_all
 
-      View.refresh   # Attempt to minimize flickering (show the blank screen) - didn't work, but leave it in anyway I guess
       View.dir = dir
       Notes.mode
+
+      # Moved this higher
+      View.<< "\n\n\n", :dont_move=>1
+      View.tab_width 12
 
       exists_in_path = Shell.sync('which xsh') =~ /\A\//
 
@@ -171,15 +197,22 @@ module Xiki
         View << "\nwelcome/\n#{welcome.gsub /^/, '  '}\n\n"
       end
 
-      # Check for some args late in the game...
+      # Alternate ways of expanding the args...
+
       if args == "s"
         View.<< "./"
         Launcher.launch :dropdown=>["filter", "all contents"]
         return
+
       elsif args == "f"
         View.<< "./"
         Launcher.launch :dropdown=>["tree"]
         return
+
+      elsif args == "r"
+        Shell.recent_history_external(options[:reverse]) # if options[:reverse]
+        return
+
       elsif args =~ /\A\+(\w.*)/
         # xsh +foo, so create xiki command...
 
@@ -245,20 +278,12 @@ module Xiki
         View.<< txt if View.txt == ""
         return
 
-      elsif args == "s"
-        View.<< "./"
-        Launcher.launch :dropdown=>["filter", "all"]
-        return
       end
 
-      View << "#{args}\n\n\n"
+      View << args
 
-      Move.backward 3
-      View.tab_width 12
-      View.refresh
       # Esc, Tab
       return Notes.tab_key if options[:tab]
-      return Shell.reverse_history(options[:reverse]) if options[:reverse]
       Launcher.launch(options_in) unless options[:dont_expand]
 
     end
