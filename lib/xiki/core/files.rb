@@ -233,7 +233,9 @@ module Xiki
       if View.name == "diff with saved/"   # If viewing diff, close it and save the actual file...
         file = View.txt[/.+\n.+/].sub("\n  - ", "")
         View.kill
-        View.open file
+
+        # Way to move to the buffer that doesn't show warnings
+        $el.set_buffer $el.get_file_buffer(file)
       end
 
       $el.revert_buffer(true, true, true) rescue nil
@@ -332,18 +334,18 @@ module Xiki
     end
 
     def self.open_nth nth
-      prefix = Keys.prefix# :clear=>1
+      prefix = Keys.prefix  # :clear=>1
 
       prefix == :u ?
-        View.layout_todo(:no_blink=>1) :
-        View.layout_nav(:no_blink=>1)
+        View.open(":t") :
+        View.open(":n")
 
       if nth != 0
         View.to_highest
         nth.times { Move.to_quote }
       end
 
-      Effects.blink
+      Effects.blink if View.list.length > 1
       Launcher.launch
     end
 
