@@ -188,7 +188,7 @@ module Xiki
 
     # Collapses and re-runs line in current view, or in :t (sometimes jumping to the nth labeled line).
     def self.do_last_launch options={}
-      # Ol "options", options
+
       prefix = options[:prefix] || Keys.prefix(:clear=>true)
 
       # Clear out time of last log, so it always shows heading
@@ -278,10 +278,7 @@ module Xiki
 
       Tree.to_parent if Line =~ /^ +- backtrace:$/   # If we went to "- backtrace:", go up again
 
-
-      # Ol "options[:dont_launch]", options[:dont_launch]
       return if options[:dont_launch]
-      # Ol()
 
       Tree.collapse
 
@@ -829,7 +826,12 @@ Ol["oh, this path is an array: #{path}!"] if path.is_a?(Array)
       # "~ foo" dropdown item, so don't insert slashes after, and use hotkey search
 
       if txt =~ /\A\s*~ /
-        insert_options[:no_slash] = 1 unless options[:file_path]   # However, don't suppress adding slashes on file paths, so it's obvious they're dirs
+
+        # Suppress adding slash if doing a dropdown on a quote
+        insert_options[:no_slash] = 1 if options[:quote]
+        # Suppress adding slash, unless on a file path (it will only add if it's actually a dir, which we want)
+        insert_options[:no_slash] = 1 if ! options[:file_path]
+
         insert_options[:hotkey] = 1
       end
 

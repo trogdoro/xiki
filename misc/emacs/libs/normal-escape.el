@@ -11,22 +11,20 @@
       (progn
         (setq normal-escape-enabled t)   ; Makes sure we re-enable escape checking
 
-        (if mark-active
-          ; Mark active, so just deactivate it
-          (progn
+        ; In the minibuffer, so just quit
+        (cond
+          ; Not sure if we get called when in the minibuffer?
+          ((window-minibuffer-p)
+            (keyboard-quit)
+          )
+          (mark-active
             (goto-char (mark))
             (deactivate-mark)
             (message "")   ; So it doesn't show "Cleared Mark"
           )
-
-          ; Else, normal, so just run hooks and quit
-          ; (run-hooks 'normal-escape-hook)   ; Run hooks
-
-          ; Put this into a hook?
-          ; Trying out > just single escape
-          (el4r-ruby-eval "Xiki::ControlTab.go :from_escape=>1")
-
-          ;(keyboard-quit)
+          (t
+            (el4r-ruby-eval "Xiki::ControlTab.go :from_escape=>1")
+          )
         )
 
       )

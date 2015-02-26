@@ -202,8 +202,8 @@ module Xiki
       if options[:just_return]
         return [View.txt(left, right), left, right]
       end
-      $el.goto_char left
-      $el.set_mark right
+      $el.goto_char right
+      $el.set_mark left
       Effects.blink(:left=>left, :right=>right)
     end
 

@@ -21,7 +21,7 @@ module Xiki
       branch = self.branch_name dir
       txt = "
         #{dir}
-          =git/
+          $ git
             - push/#{branch}/
             - diff/
         ".unindent
@@ -32,7 +32,7 @@ module Xiki
         Launcher.launch
       else
         View.bar if prefix == "outline"
-        Launcher.open txt, :buffer_name=>"git diff", :buffer_dir=>dir
+        Launcher.open txt, :buffer_name=>"git diff/", :buffer_dir=>dir
       end
 
       nil

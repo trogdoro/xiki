@@ -115,6 +115,12 @@
     (set-face-attribute 'mode-line nil :background control-lock-color)
     (set-face-attribute 'mode-line-transparent-activatable nil :background control-lock-color-transparent)
     (set-face-attribute 'mode-line-transparent-underline-activatable nil :background control-lock-color-transparent)
+
+    (set-face-attribute 'mode-line-transparent-activatable nil :foreground "#ffc")
+    (set-face-attribute 'mode-line-transparent-underline-activatable nil :foreground "#ffc")
+
+    (set-face-attribute 'mode-line-transparent-underline-activatable nil :underline nil)
+
   ))
 )
 
@@ -130,6 +136,10 @@
         (set-face-attribute 'mode-line nil :background control-lock-color-old)
         (set-face-attribute 'mode-line-transparent-activatable nil :background control-lock-color-transparent-old)
         (set-face-attribute 'mode-line-transparent-underline-activatable nil :background control-lock-color-transparent-old)
+
+        (set-face-attribute 'mode-line-transparent-activatable nil :foreground "#777")
+        (set-face-attribute 'mode-line-transparent-underline-activatable nil :foreground "#aaa")
+        (set-face-attribute 'mode-line-transparent-underline-activatable nil :underline t)
       )
     )
     (progn   ; Else, enable it

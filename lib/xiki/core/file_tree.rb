@@ -351,8 +351,8 @@ module Xiki
 
         # dir/
         Styles.define :ls_dir, :fg => "888", :face => "verdana", :size => "-1", :bold => true
-        Styles.define :dropdown_bullet_slash, :fg => "666", :face => "verdana", :size => "-1", :bold => true
-        Styles.define :dropdown_bullet, :fg => "777"
+        Styles.define :dropdown_bullet_slash, :fg => "777", :face => "verdana", :size => "-1", :bold => true
+        Styles.define :dropdown_bullet, :fg => "888"
 
       else   # if white bg
         Styles.define :quote_heading_h0, :fg=>"444", :size=>"+8", :face=>"arial", :bold=>true

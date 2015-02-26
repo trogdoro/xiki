@@ -174,7 +174,7 @@ module Xiki
       end
 
 
-      View.layout_todo :no_blink=>1
+      View.layout_todo_and_nav :no_blink=>1
       View.to_highest
 
       View.insert("\n", :dont_move=>1) unless line.empty?   # Make room if line not blank

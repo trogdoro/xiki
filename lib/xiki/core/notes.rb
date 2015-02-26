@@ -308,6 +308,7 @@ module Xiki
       $el.define_key(:notes_mode_map, $el.kbd("<C-mouse-1>"), :notes_mouse_double_click)
 
       # custom+N, to jump to nth visible label
+      # custom+1, custom+2, etc
       (1..9).each do |n|
         $el.define_key(:notes_mode_map, $el.kbd("C-c C-#{n}")){ Launcher.do_last_launch :nth=>n, :here=>1, :dont_launch=>1 }
       end
@@ -575,7 +576,7 @@ module Xiki
         Deletes.delete_whitespace
       end
 
-      if prepend =~ /^\| /
+      if prepend =~ /^[|:] /
         prefix = prefix == :u ? nil : :u
       end
 
@@ -733,10 +734,15 @@ module Xiki
 
       label = nil
 
+      Effects.blink(:what=>:line)
+
       if prefix == :u
         label = Keys.input :prompt=>"label: ", :timed=>1
         label = "do" if label.blank?
         label = Notes.expand_if_action_abbrev(label) || label
+
+        # Only add ")" at end of label if not "!" at end
+        label = "#{label})" if label !~ /!$/
 
         prefix = nil
       end
@@ -762,7 +768,7 @@ module Xiki
 
         options[:path] = txt[0..-2].join
         if Search.fit_in_snippet(txt[-1], :path=>txt[0..-2].join)   # Insert it in existing tree if there
-          View << "    - #{label})\n" if label
+          View << "    - #{label}\n" if label
           return orig.go
         end
 
@@ -773,14 +779,14 @@ module Xiki
       file = View.file
 
       if Search.fit_in_snippet(txt)   # Insert it in existing tree if there
-        View << "    - #{label})\n" if label
+        View << "    - #{label}\n" if label
         return orig.go
       end
 
       # Make it quoted, unless already a quote
       if keep_tweeking && (txt !~ /\A([+-] |\/)/ || txt !~ /^ +/)   # If txt isn't already a tree, make it one
         txt = FileTree.snippet :txt=>txt, :file=>file
-        txt.sub! /^    /, "    - #{label})\n    " if label
+        txt.sub! /^    /, "    - #{label}\n    " if label
       end
 
       # Else, add it to top...
@@ -820,6 +826,8 @@ module Xiki
 
       # If method, make it Foo.bar method call
       line = Line.value
+
+      Effects.blink(:what=>:line)
 
       if ! selection && View.file =~ /_spec.rb/ && line =~ /^ *(it|describe) /
         return Specs.enter_as_rspec
@@ -1345,10 +1353,10 @@ module Xiki
     def self.next_paren_label
       # Move forward if at beginning of line
       Move.forward if Line.at_left? && ! View.at_top?
-      found = Search.forward "^ *[+-] [a-zA-Z0-9 +']*)\\($\\| \\)", :beginning=>true
+      found = Search.forward "^ *[+-] [a-zA-Z0-9 +'.]*)\\($\\| \\)", :beginning=>true
       return Move.backward if ! found
       # label for the next line, so move to next line
-      Line.to_next if Line[/^ *[+-] [a-zA-Z0-9 +']*\)$/]   # '
+      Line.to_next if Line[/^ *[+-] [a-zA-Z0-9 +'.]*\)$/]   # '
     end
 
     def self.extract_paren_labels options={}

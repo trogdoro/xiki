@@ -2,36 +2,34 @@ module Xiki
   Themes.use 'Dark Black BG'
 
   Styles.mode_line(
-    :bold=>true,
     :bg=>'#aaa',
-    :fg=>"#666",
+    :fg=>"#444",
+    :bold=>true,
     )
-
   Styles.mode_line_inactive(
     :bg=>'#aaa',
-    :fg=>"#666",
+    :fg=>"#444",
     :bold=>true,
     )
 
   Styles.mode_line_transparent(
     :bg=>"unspecified",
-    :fg=>"#666",
+    :fg=>"#aaa",
     :underline=>nil,
     )
   Styles.mode_line_transparent_activatable(
     :bg=>"unspecified",
-    :fg=>"#666",
+    :fg=>"#aaa",
     :underline=>nil,
     )
-
   Styles.mode_line_transparent_underline(
     :bg=>"unspecified",
-    :fg=>"#666",
+    :fg=>"#aaa",
     :underline=>1,
     )
   Styles.mode_line_transparent_underline_activatable(
     :bg=>"unspecified",
-    :fg=>"#666",
+    :fg=>"#aaa",
     :underline=>1,
     )
 

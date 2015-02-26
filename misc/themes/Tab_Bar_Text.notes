@@ -33,7 +33,7 @@ $el.el4r_lisp_eval %`
                 (let
                   (
                     (dir  (replace-regexp-in-string (getenv "HOME") "~" (replace-regexp-in-string "^//$" "/" default-directory))  )
-                    (star (if (and (or (buffer-file-name) (string-match "\\\\." (buffer-name))) (buffer-modified-p)) "*" " "))
+                    (star (if (and (or (buffer-file-name) (string-match "\\\\." (buffer-name))) (buffer-modified-p)) (propertize "*" 'face 'mode-line-file) " "))
                   )
 
                   (xiki-bar-add-padding (concat

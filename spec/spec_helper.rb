@@ -6,6 +6,7 @@ require 'awesome_print'
 # RSpec::Runner.configure do |config|
 RSpec.configure do |config|
   config.mock_with :rr
+  config.expect_with(:rspec) { |c| c.syntax = :should }
 end
 
 module Xiki

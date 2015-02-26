@@ -32,7 +32,7 @@ if args == []
   end
 
   at_top = "+ quit anyway\n+ save all"
-  txt = "#{at_top}\n#{txt}- keys/\n  | Key shortcut: open+not+saved\n"
+  txt = "#{at_top}\n#{txt}\n"
 
   return txt
 end

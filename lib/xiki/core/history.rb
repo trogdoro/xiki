@@ -221,10 +221,8 @@ module Xiki
     def self.init_in_client
 
       $el.el4r_lisp_eval %`
-        (ol "init!")
         (progn
           (defun xiki-history-find-file-handler ()
-            (ol "----xiki-history-find-file-handler")
             (el4r-ruby-eval "Xiki::History.log")
           )
           (add-hook 'find-file-hook 'xiki-history-find-file-handler)
