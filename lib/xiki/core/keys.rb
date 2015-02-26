@@ -348,7 +348,7 @@ module Xiki
       elsif path == ["run", "delete"]
         txt.gsub!(/\+ [icm]/, "\n\\0")
       elsif path == ["window"]
-        txt.gsub!(/\+ [o]/, "\n\\0")
+        txt.gsub!(/\+ [oq]/, "\n\\0")
 
       elsif path == ["search"]
         txt.gsub!(/\+ [vtbeh]/, "\n\\0")
@@ -1426,6 +1426,26 @@ module Xiki
       yield
 
       @@accumulate, @@accumulated = nil, nil
+
+    end
+
+    def self.open_project_menu
+
+      # Move up until no dirs left
+
+      dir = "#{View.dir}/tmp"   # Add on 'tmp' so first pass checks the actual dir
+
+      found = nil
+
+      while dir != "/"
+        dir = File.dirname dir
+        file = "#{dir.sub(/\/$/, '')}/menu.xiki"
+        break found = file if File.exists? file
+      end
+
+      return View.flash("- No 'menu.xiki' file found in this dir or any ancestor dirs!", :times=>3) if ! found
+
+      View.open file
 
     end
 
