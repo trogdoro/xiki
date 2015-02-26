@@ -67,8 +67,8 @@ module Menu
         |   Ctrl+X  Expand a shell shell command in xsh
         |   Ctrl+D  Dropdown of options for a shell command
         |   Ctrl+G  Grab shell commands to and from Xiki
+        |   Ctrl+R  Shell history
         |   Esc, Tab     Auto-complete
-        |   Esc, Ctrl+R  Shell history
         |
         + enable this configuration
           | Expand 'save' below, and the following changes will be made:
@@ -90,7 +90,7 @@ module Menu
         |   Esc, Ctrl+D  Dropdown of options for a shell command
         |   Esc, Ctrl+G  Grab shell commands to and from Xiki
         |   Esc, Tab     Auto-complete
-        |   Esc, Ctrl+R  Shell history
+        |   Ctrl+R  Shell history
         |
         + enable this configuration
           | Expand 'save' below, and the following changes will be made:
@@ -123,7 +123,7 @@ module Menu
         #!/bin/sh
 
         # Make the 'xsh' command available in all shells
-        export PATH=$PATH:#{Xiki.dir}bin
+        export PATH=#{Xiki.dir}bin:$PATH
       `.unindent+"\n"
       txt << File.read("#{Xiki.dir}misc/install/.xsh.default")
       txt << %`
@@ -140,6 +140,7 @@ module Menu
         txt.sub! '\C-x', '\e\C-x'
         txt.sub! '\C-d', '\e\C-d'
         txt.sub! '\C-g', '\e\C-g'
+        txt.sub! '\C-r', '\e\C-r'
 
       else   # just the 'xsh' command
         # Comment everything out

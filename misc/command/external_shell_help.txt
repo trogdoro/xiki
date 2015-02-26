@@ -18,21 +18,22 @@ Key shortcuts for your external shell (the default):
   Ctrl+G    Grab shell command into xsh, but don't run it.
   Ctrl+D    Dropdown of actions for a shell command.
             (examples, favorites, etc.)
-  Esc, Ctrl+R     External shell history (like Ctrl+R)
+  Ctrl+R     External shell history (like Ctrl+R)
   Esc, Tab        Auto-complete (not quite finished)
 
 Options:
   -g  Grab shell command into xsh
   -d  Dropdown actions for a shell command
-  -r  External shell history (like Ctrl+R)
+  -r  Recent shell history, like Ctrl+R (for external shell)
   -t  Tab, to auto-complete (not quite finished)
   -s  Search in files
   -f  Search filenames
   -e  Examples
-  -h  History (internal)
+  -h  History (internal shell commands)
   -n  Notes
   -fa Favorites
   -l  List xsh sessions
+  -o  Opened files (in this session and in previous ones)
   -i  Isolated - Better mode to debug startup problems
       Doesn't connect to the cached xsh process for faster startup
   -b  List file bookmarks

@@ -196,8 +196,10 @@ module Xiki
           session.execute("cd '#{dir_orig}'")
         end
 
-        # Return stderr separately if :return_error flag
+        # :raise_when_error flag, so just raise stderr...
+        raise stderr if stderr.any? && options[:raise_when_error]
 
+        # :return_error flag, so return stderr separately...
         return [stdout, stderr] if options[:return_error]
 
         stdout += "\n> error\n#{stderr}" if stderr.any?
@@ -1041,25 +1043,60 @@ module Xiki
       DiffLog.quit
     end
 
-    def self.reverse_history args
+    def self.recent_history_external args=nil, options={}
 
-      txt = File.read File.expand_path("~/xiki/misc/tmp/reverse_history.notes")
+
+      # Called from key shortcut, so create a new view for it...
+
+      if options[:create_view]
+
+        dir = View.dir
+        View.to_buffer "recent/"
+        View.dir = dir
+        Shell.cd dir
+        View.kill_all
+        View.<< "\n\n\n", :dont_move=>1
+        Notes.mode
+
+      end
+
+      txt = File.read File.expand_path("~/xiki/misc/tmp/recent_history_external.notes")
 
       txt.gsub!(/ +$/, '')   # Remove trailing spaces
       txt = txt.split("\n").reverse.uniq.join("\n")
       txt.sub!(/^\n/, '')
       txt.gsub!(/^/, '$ ')
 
-      txt.sub!(/^.+\n/, '')   # cut of 1st, it's the one we just did (xsh -r)
+      # Delete first line, but only if "xsh -r" or "xsh"
+
+      txt.sub!(/\A\$ xsh( -r)?\n/, '')   # cut of 1st, it's the one we just did (xsh -r)
 
       # arg, so only show lines starting with the arg
       if args.any?
-        txt = txt.split("\n").select{|o| o =~ /^\$ #{args}\b/}.join("\n")
+        txt = txt.split("\n").select{|o| o =~ /^\$ #{args}/}.join("\n")
       end
 
-      View.insert txt, :dont_move=>1
-      Tree.filter :left=>1, :right=>(View.bottom - 2)
+      # Add stuff at top
+      View.insert "
+        | Type Ctrl+G to grab a command back to your shell.
+        " .unindent+"\n"
 
+      View.insert txt, :dont_move=>1
+      left = View.cursor
+      Tree.filter :left=>left, :right=>(left+txt.length)
+
+    end
+
+
+    # Utility method, for wrapping quotes around a file only
+    # when necessary, so we don't make things look busy by
+    # using quotes when not necessary.
+    def self.quote_file_maybe path
+
+      # Do nothing if it doesn't have spaces or weird chars
+      return path if path =~ /\A[\w.\/-]+\z/i
+
+      "\"#{path}\""
     end
 
 
