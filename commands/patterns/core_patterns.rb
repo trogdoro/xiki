@@ -490,4 +490,15 @@ module Xiki
     "<<< #{dir}"
   end
 
+
+  # %foo/, so search file we're nested under...
+
+  Xiki.def(/^%/) do |path, options|
+
+    path = path[/\A%(.+)\//, 1]
+
+    txt = Xiki.expand "f/#{path}", options.select{|k, v| [:dropdown, :ancestors].include?(k) }
+    txt
+  end
+
 end
