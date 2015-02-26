@@ -37,10 +37,8 @@
 
 ; Backup files > with tilda and hash in names
 
-(setq backup-directory-alist
-  `((".*" . ,temporary-file-directory)))
-(setq auto-save-file-name-transforms
-  `((".*" ,temporary-file-directory t)))
+(setq backup-inhibited t)   ; Disable backup
+(setq auto-save-default nil)   ; Disable auto save
 
 (require 'mouse)
 (xterm-mouse-mode t)
@@ -68,7 +66,29 @@
 (message "")
 (cua-mode 1)
 (message "")
-(setq cua-auto-tabify-rectangles nil)   ; Doesn't seem to work :/
+(setq cua-auto-tabify-rectangles nil)   ; Seems to be working
+
+; Make Shift+Rightarrow enable selection and move
+(global-set-key (kbd "<S-right>") (lambda () (interactive)
+  (if (not (region-active-p)) (cua-set-mark))
+  (forward-char)
+))
+; Make Shift+Leftarrow enable selection and move
+(global-set-key (kbd "<S-left>") (lambda () (interactive)
+  (if (not (region-active-p)) (cua-set-mark))
+  (backward-char)
+))
+; Make Shift+Downarrow enable selection and move
+(global-set-key (kbd "<S-down>") (lambda () (interactive)
+  (if (not (region-active-p)) (cua-set-mark))
+  (next-line)
+))
+; Make Shift+Uparrow enable selection and move
+(global-set-key (kbd "<S-up>") (lambda () (interactive)
+  (if (not (region-active-p)) (cua-set-mark))
+  (previous-line)
+))
+
 
 (add-to-list 'load-path (concat (getenv "XIKI_DIR") "/misc/emacs/el4r/"))
 (require 'el4r)
