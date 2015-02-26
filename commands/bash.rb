@@ -8,6 +8,15 @@ if args == []
     "
 end
 
+# dropdown+, so show items
+
+return "~ exit and run" if dropdown == []
+
+if dropdown == ["exit and run"]
+  Xsh.save_grab_commands args[0]
+  return DiffLog.quit
+end
+
 # /code, so run it
 
 txt = args[0]
