@@ -655,20 +655,11 @@ module Xiki
         return
       end
 
-      # If 2 or more windows open
-      if View.list.size == 2
-        View.to_nth(1)   # Go to 2rd
-      elsif View.list.size >= 3
-        View.to_nth(2)
-        unless View.left_edge == 0   # If 3nd not at left, go to 2nd
-          View.to_nth(1)
-          unless View.left_edge == 0   # If not at left, go to first
-            View.to_nth(0)
-          end
-          View.create
-        end
-      end
+      # If not in bar, open the bar
 
+      if ! View.bar?
+        View.bar
+      end
 
       # If buffer open (but not visible), just switch to it
       if View.buffer_open? buffer
@@ -777,7 +768,7 @@ module Xiki
       # Indent over, and add file path and percent...
 
       txt.gsub! /^/, "  "
-      txt = "#{View.file}\n#{txt}(#{View.percent}%)"
+      txt = "#{View.file}\n#{txt}(line #{View.line}, #{View.percent}%)"
 
       View.cursor = orig   # Go back in case we moved
 

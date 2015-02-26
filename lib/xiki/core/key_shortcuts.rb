@@ -69,28 +69,29 @@ module Xiki
       Xiki.def("open+prompt", :noob=>1){ Launcher.open_prompt }
 
       Xiki.def("open+edited"){ Files.open_edited }   # show recently edited files
-      Xiki.def("open+recent", "recent/")
       Xiki.def("open+diffs"){ DiffLog.open }   # shows diffs of what you've edited
 
       Xiki.def("open+notes", :noob=>1){ Notes.open_note }
       Xiki.def("open+bookmarks"){ Launcher.open "bookmarks/" }
 
       Xiki.def("open+sessions", :noob=>1){ Launcher.open "sessions/" }
-      Xiki.def("open+ordered"){ Bookmarks.go nil, :date_sort=>true }
+      Xiki.def("open+time"){ Bookmarks.go nil, :date_sort=>true }
+      Xiki.def("open+opened", "opened/")
       Xiki.def("open+quotes"){ Launcher.open("views/", :dropdown=>["quoted"]) }
 
       Xiki.def("open+key"){ Keys.jump_to_code }   # jump to ruby code of key definition
       Xiki.def("open+whereabouts"){ Code.do_list_ancestors }
+      Xiki.def("open+menu"){ Keys.open_project_menu }
 
       # G: leave unmapped for escape
 
-      Xiki.def("open+list+bookmarks"){ Launcher.open("This is currently broken - re-do > was > bookmarks/list/") }   # list
-
       Xiki.def("open+list+faces"){ Styles.list_faces }   # list
 
-      Xiki.def("open+as+output"){ OlHelper.open_last_outlog }   # last
 
-      Xiki.def("open+list+urls"){ Launcher.open "last/urls/" }   # last
+      # open+menu > __ open xiki.
+      Xiki.def("open+recent"){ Shell.recent_history_external nil, :create_view=>1 }
+      Xiki.def("open+as+output"){ OlHelper.open_last_outlog }   # last
+      #       Xiki.def("open+list+urls"){ Launcher.open "last/urls/" }   # last
 
       Xiki.def("open+in+browser"){ Browser.open_in_browser }
       Xiki.def("open+in+left"){ View.open_in_bar }
@@ -193,6 +194,7 @@ module Xiki
 
       Xiki.def("jump+status"){ Git.do_status }
       Xiki.def("jump+diff"){ Git.do_push }   # Commit to repos, push, etc
+      Xiki.def("jump+edits"){ DiffLog.show_edits }   # Diffs in particular file
 
       Xiki.def("jump+command"){ Launcher.open_nested_command }
       Xiki.def("jump+prompt"){ Shell.prompt_for_bookmark }
@@ -352,7 +354,12 @@ module Xiki
 
       Xiki.def("window+tasks"){ View.layout_todo }
       Xiki.def("window+nav"){ View.layout_nav }
+      Xiki.def("window+both"){ View.layout_todo_and_nav }
+
       Xiki.def("window+output"){ View.layout_outlog }
+      Xiki.def("window+all"){ View.layout_outlog :all=>1 }
+
+      Xiki.def("window+quick"){ View.layout_quick }
     end
 
 
@@ -366,8 +373,6 @@ module Xiki
 
       Xiki.def("tile+next"){ View.next(:blink=>true) }
       Xiki.def("tile+previous"){ View.previous(:blink=>true) }
-
-
 
       Xiki.def("tile+edge"){ View.recenter_top_key }
       Xiki.def("tile+alone"){ View.hide_others }
@@ -403,7 +408,7 @@ module Xiki
 
       Xiki.def("search+copy"){ Search.isearch_copy }   # Clipboard (copy) (or search+commands if no search)
 
-      Xiki.def("search+xut"){ Search.xiki }   # search+xiki+__ mapped inside this method
+      Xiki.def("search+xpand"){ Search.xiki }   # search+xiki+__ mapped inside this method
 
       Xiki.def("search+kill"){ Search.isearch_clear }   # cut (or search at point of last cut, if no search)
 
@@ -415,13 +420,15 @@ module Xiki
       Xiki.def("search+files"){ Search.bookmark }   # when no search, prompt for input
       Xiki.def("search+outline"){ Search.isearch_outline }   # Outline (or search+outlog if nothing searched for yet)
 
+      Xiki.def("search+exchange"){ Search.isearch_query_replace }   # Outline (or search+outlog if nothing searched for yet)
+      # Search+i > available
+
       Xiki.def("search+nav"){ Search.isearch_nav }   # isearch for this string in :n
       Xiki.def("search+usurp"){ Search.isearch_pull_in_sexp }   # usurp: pull sexp into search string
 
       Xiki.def("search+before"){ Search.isearch_or_copy("1") }
       Xiki.def("search+after"){ Search.isearch_or_copy("2") }
 
-      Xiki.def("search+expand"){ Search.expand }   # Stop and just expand the line
       Xiki.def("search+dropdown"){ Search.isearch_diffs }   # Delete (or search+difflog if no search)
       Xiki.def("search+good"){ Search.cancel }   # Stop searching
       $el.define_key(:isearch_mode_map, "\e"){ Search.cancel }
@@ -512,8 +519,9 @@ module Xiki
       $el.el4r_lisp_eval %`
         (progn
           ; Has to be defined in lisp, since passing C-@ fails (it's null, and that's what we use as a delimiter)
+          ; Definition for search+Space
           (define-key isearch-mode-map (kbd "C-@") (lambda () (interactive)
-            (el4r-ruby-eval "Xiki::Search.isearch_query_replace")
+            (el4r-ruby-eval "Xiki::Search.isearch_highlight_match")
           ))
           ; Lixe isearch-abort, but aborts even if partially matching search in progress
           (defun isearch-abort-really ()
@@ -559,7 +567,7 @@ module Xiki
 
     def self.misc
 
-      Xiki.def("grab+"){ DiffLog.grab }
+      Xiki.def("grab+", :noob=>1){ DiffLog.grab }
       $el.define_key(:global_map, $el.kbd("M-C-g")){ DiffLog.grab }
 
       Xiki.def("quit+", :noob=>1){ DiffLog.quit }
@@ -647,6 +655,9 @@ module Xiki
       $el.define_key(:cua__cua_keys_keymap, "\C-x"){ Launcher.go }   # expand+
       Xiki.def("xpand+") { Launcher.go }   # expand+
       $el.define_key(:global_map, $el.kbd("M-C-x")){ Launcher.go }
+
+      # Meta+T for tasks.notes
+      $el.define_key(:global_map, $el.kbd("M-t")){ View.open ":t" }
 
     end
 

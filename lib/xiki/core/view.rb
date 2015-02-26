@@ -269,12 +269,7 @@ module Xiki
             expanded = FileTree.add_slash_maybe expanded
 
             return Launcher.open expanded, options.merge(:buffer_name=>"#{expanded[/([^\/]+)\/$/]}", :buffer_dir=>expanded)
-
           end
-
-          # Load 'image' library separately, because if not it loads during find-file and shows annoying message
-          #           $el.load "image"
-          #           $el.message ""
 
           $el.find_file expanded
         end
@@ -1542,16 +1537,47 @@ module Xiki
 
     end
 
-    def self.layout_todo options={}
-      prefix = Keys.prefix :clear=>1
+
+
+    def self.layout_todo
+
+      # There's no bar yet and in tasks.notes, so switch to next (avoid showing :t in both views)
+      if View.file == Bookmarks[":t"] && ! View.bar?
+        View.to_buffer Buffers.names_array.find{|o| ! ["tasks.notes"].member? o}
+      end
+
+      View.bar
+      View.open ":t", :stay_in_bar=>1
+    end
+
+    def self.layout_todo_and_nav options={}
+
       FileTree.open_in_bar
+
+      # Switch to one that's not :t or :n
+      View.to_nth 2
+      View.to_buffer Buffers.names_array.find{|o| ! ["tasks.notes", "nav.notes", "*ol"].member? o}
+      View.to_nth 1
+
       Effects.blink(:what=>:line) unless options[:no_blink]
     end
 
-    def self.layout_nav options={}
-      FileTree.open_in_bar
-      View.to_nth 1
-      Effects.blink(:what=>:line) unless options[:no_blink]
+    def self.layout_nav
+
+      # There's no bar yet and in nav.notes, so switch to next (avoid showing :t in both views)
+      ControlTab.go if View.file == Bookmarks[":n"] && ! View.bar?
+
+      View.bar
+      View.open ":n", :stay_in_bar=>1
+    end
+
+    def self.layout_quick
+
+      # There's no bar yet and in nav.notes, so switch to next (avoid showing :t in both views)
+      View.to_buffer Buffers.names_array.find{|o| ! ["tasks.notes", "nav.notes", "*ol", "quick.notes"].member? o}
+
+      View.bar
+      View.open ":q", :stay_in_bar=>1
     end
 
     def self.layout_outlog options={}
@@ -1566,8 +1592,11 @@ module Xiki
 
       # If already showing, just go to it
 
-      if ! View.buffer_visible?("*ol")
-        View.layout_nav if ! View.bar?   # If not already showing bar, do it first, so it shows up on left
+      if options[:all]
+        View.layout_todo_and_nav
+
+        View.to_nth 1
+        View.create
       end
 
       # If we were on an Ol line, jump to it later...
@@ -1594,7 +1623,6 @@ module Xiki
         Launcher.launch
         return
       end
-
 
       if found
         if found >= (Line.number(View.bottom) - 1)   # If too far back to be shown
@@ -1669,7 +1697,7 @@ module Xiki
       prefix = Keys.prefix :clear=>true
       orig = Location.new
 
-      View.layout_todo :no_blink=>true
+      View.open ":t"
       todo_orig = Location.new
       View.to_highest
 

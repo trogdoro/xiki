@@ -386,25 +386,36 @@ module Xiki
       nil
     end
 
-    def self.isearch_query_replace after=nil
+    def self.isearch_query_replace # after=nil
       match = self.stop
+
+      # No match, so prompt for before...
+
+      if ! match
+        no_match_existed = true
+        match = Keys.input(:prompt=>"Change occurrences of what?: ")
+      end
+
       was_upper = match =~ /[A-Z]/
 
       match.downcase!
       left, right = Search.left, Search.right
       before = $el.regexp_quote(match)   # Always start with isearch match
 
-      # If before not there or is :match, prompt for input
-      if after.nil? || after == :match
-        initial_input = after == :match ? before : ''
-        after = Keys.input(:prompt=>"Change instances of '#{before}' to: ", :initial_input=>initial_input)
-        @@query_from, @@query_to = before, after
-      end
+      # Prompt for after...
 
-      View.delete left, right
-      View.insert was_upper ?
-        TextUtil.title_case(after) :
-        after
+      initial_input = ''
+      after = Keys.input(:prompt=>"Change occurrences of '#{before}' to: ", :initial_input=>initial_input)
+      @@query_from, @@query_to = before, after
+
+      # We're replacing a match right here, so do it before doing query replace...
+
+      if ! no_match_existed
+        View.delete left, right
+        View.insert was_upper ?
+          TextUtil.title_case(after) :
+          after
+      end
 
       $el.query_replace_regexp before, after
       nil
@@ -590,7 +601,12 @@ module Xiki
       $el.highlight_regexp(Regexp.quote(match), :notes_label)
     end
 
-    def self.highlight_found
+    def self.isearch_highlight_match
+      match = self.stop
+      View.selection = [self.right, self.left]
+    end
+
+    def self.highlight_all_found
       match = self.stop
 
       $el.highlight_regexp(Regexp.quote(match), :hi_yellow)
@@ -1206,14 +1222,13 @@ module Xiki
       # No string searched for, so pretend key was: search+xiki (show xiki search options)...
 
       if ! match
-        return Launcher.open "search xiki", :hotkey=>1
+        return Launcher.open "search xiki/", :hotkey=>1
       end
 
+      # No match, so treat like search+expand
 
-      # Match found, so behave like: search+cut...
-      Clipboard.set(0, match)
-      View.delete self.left, self.right
-      Location.as_spot('killed')
+      self.stop
+      Launcher.launch
 
     end
 
@@ -1226,7 +1241,7 @@ module Xiki
       elsif path == ":n"
         View.layout_nav
       elsif path == ":o"
-        View.layout_outlog
+        Code.open_log_view
         options[:reverse] = true
       elsif path == ":d"
         View.open ":d"
@@ -1451,7 +1466,7 @@ module Xiki
     def self.fit_in_snippet match, options={}
 
       target_path = options[:path] || View.file
-      View.layout_nav :no_blink=>1
+      View.open(":n")
 
       View.to_highest
       Move.to_junior   # Go to first file
@@ -1478,7 +1493,7 @@ module Xiki
       was_in_bar = View.in_bar?
 
       if path == ":t"   # If :n, grab path also
-        View.layout_todo :no_blink=>1
+        View.open(":t")
       elsif path == ":n"   # If :n, grab path also
         match = self.move_to_files match
         return orig.go if ! match   # It handled it if it didn't return the match
@@ -1804,26 +1819,6 @@ module Xiki
       # Go back to start and insert text_a
       self.to_start  # Go back to start
       View << txt_a
-    end
-
-    def self.expand
-
-      # Grab and delete what's selected
-
-      match = self.stop
-
-      # No match, so search+edits...
-
-      if match.nil?   # If nothing searched for yet, do search_edits
-        bm = Keys.input :timed=>true, :prompt=>"Enter a bookmark to search edits: "
-        return Launcher.open("diff log/diffs/") if bm == "8" || bm == " "
-        path = bm == "." ? View.file : ":#{bm}/"
-        return Launcher.open("#{path}\n  =edits/")
-      end
-
-      # Expand current line
-      Launcher.go
-
     end
 
 
