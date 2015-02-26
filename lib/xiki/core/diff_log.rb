@@ -434,7 +434,7 @@ module Xiki
       # Just quit if any prefix
       return $el.keyboard_quit if Keys.prefix
 
-      # Grab line and write to file
+      # Grab line and write to file...
 
       path = Tree.path
       last = Path.split path[-1]
@@ -495,14 +495,13 @@ module Xiki
         session_dir = File.expand_path Bookmarks.bookmarks_optional("se")
         in_session_dir = view_dir == session_dir
 
-        orig_dir = if in_session_dir
-          # If session, do based on view dir
-          Xsh.determine_session_orig_dir View.file_name
-        else
-          # If normal file, do based on stored dir
-          view_dir
-        end
 
+        # If session, do based on view dir
+        orig_dir = Xsh.determine_session_orig_dir(View.file_name) if in_session_dir
+
+        # If couldn't find, or normal dir, default to current dir
+
+        orig_dir ||= view_dir
         orig_dir.sub! /\/$/, ''   # To ensure a fair comparison
 
         commands = ""
@@ -547,7 +546,9 @@ module Xiki
 
       txt = X'unsaved'
 
-      if txt == "- No files unsaved!\n"
+      # No files to save, or all are "no changes"
+
+      if txt == "- No files unsaved!\n" || txt !~ /^  (?!: no changes$)/   #!~ /^  : (?!no changes$)/
 
         # Unsaved "xsh" buffer, so save it...
 
@@ -633,6 +634,16 @@ module Xiki
       txt.scan(/^(.*)\n  - (.*)$/){|m| files << "#{m[0]}#{m[1]}"}
       return files.reverse.uniq
 
+    end
+
+
+    # Show diffs for just one file ("." for current)
+    def self.show_edits
+
+      bm = Keys.input :timed=>true, :prompt=>"Enter a bookmark to search edits: "
+      return Launcher.open("diff log/diffs/") if bm == "8" || bm == " "
+      path = bm == "." ? View.file : ":#{bm}/"
+      return Launcher.open("#{path}\n  =edits/")
     end
 
   end
