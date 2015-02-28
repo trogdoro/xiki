@@ -175,6 +175,8 @@ module Xiki
       Themes.use 'Default'
       Styles.reload_styles   # So it uses dark headings
 
+      View.message ""   # Suppresses "Loading places from..." message at startup > it happens when "xsh :foo", etc.
+
       return if options[:do_nothing]
 
       # Open the "xsh" view...
