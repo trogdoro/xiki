@@ -4,7 +4,6 @@ Examples when using key shortcuts:
   . <Ctrl+X>     Shows the current dir,
   -f <Ctrl+X>    Show tree of files, then you can type to filter
   . <Ctrl+G>     Shows the current dir, with actions to perform on it
-  ^html <Ctrl+X> Shows headings for your notes about "html"
   :d <Ctrl+X>    Navigates the desktop dir
   -b . <Ctrl+X>  Creates a bookmark for your current dir
   :foo <Ctrl+X>  Navigates a "foo" dir you've created
@@ -12,6 +11,7 @@ Examples when using key shortcuts:
   -tables <Ctrl+X>   Navigate and update your mysql db tables
   cd <Ctrl+R> Shows the previous cd commands you've typed
   git <Esc, Tab>   Shows the previous cd commands you've typed
+  ^html <Ctrl+X> Shows headings for your notes about "html"
 
 Examples:
   xsh

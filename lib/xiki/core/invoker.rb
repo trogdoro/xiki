@@ -2,7 +2,7 @@ module Xiki
   class Invoker
     # Invokes actions on menu source classes.
     #
-    # The actioun is often the .menu method, but could alternateyl be handled
+    # The actioun is often the .menu method, but could alternately be handled
     # by the MENU constant or the foo.menu file.  Also, MENU or foo.menu may route
     # to a different method, in which case that will be invoked.
     #
