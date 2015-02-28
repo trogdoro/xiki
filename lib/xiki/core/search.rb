@@ -1493,6 +1493,9 @@ module Xiki
       was_in_bar = View.in_bar?
 
       if path == ":t"   # If :n, grab path also
+
+        was_visible = View.file_visible? Bookmarks[':n']
+
         View.open(":t")
       elsif path == ":n"   # If :n, grab path also
         match = self.move_to_files match
@@ -1526,7 +1529,9 @@ module Xiki
       # Which case was this handling?  Being in :n?  Why leave cursor in :t when in :n?
       #     return if path == ":t" && was_in_bar && orig.buffer != "todo.notes"
 
-      orig.go
+      # Go to original location, unless it was as+task, and tasks.notes was visible to begin with (becase it makes sense to leave the cursor in tasks.notes)
+
+      orig.go if path != ":t" || was_visible
 
       if path == ":t" && orig.buffer == "tasks.notes"
         Line.next line-1
