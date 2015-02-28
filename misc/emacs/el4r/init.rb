@@ -76,6 +76,7 @@ module ::Xiki
 
   # Try loading user's startup.rb if it exists
   startup_rb = File.expand_path "~/xiki/misc/startup.rb"
-  load startup_rb if File.exists? startup_rb
+
+  Code.load startup_rb if File.exists? startup_rb
 end
 

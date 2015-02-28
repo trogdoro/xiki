@@ -987,5 +987,11 @@ module Xiki
       ".unindent
     end
 
+    # Load a file in the context of Xsh
+    def self.load path
+      path = Bookmarks[path]
+      self.eval File.read(path), path, 1
+    end
+
   end
 end
