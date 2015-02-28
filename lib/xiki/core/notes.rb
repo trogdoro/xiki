@@ -299,7 +299,6 @@ module Xiki
 
       Xiki.def("custom+heading", :map=>:notes_mode_map){ Notes.insert_heading }
 
-      $el.message ""
       $el.define_key(:notes_mode_map, $el.kbd("<double-mouse-1>"), :notes_mouse_double_click)
       $el.define_key(:notes_mode_map, $el.kbd("<mouse-1>"), :notes_mouse_toggle)
 
@@ -318,7 +317,7 @@ module Xiki
 
       $el.define_key(:notes_mode_map, $el.kbd("C-i")) { Notes.tab_key }
 
-      $el.message ""
+      $el.define_key(:notes_mode_map, $el.kbd("C-m")) { Notes.return_wrapper }
 
     end
 
@@ -736,6 +735,8 @@ module Xiki
 
       Effects.blink(:what=>:line)
 
+      was_visible = View.file_visible? Bookmarks[':n']
+
       if prefix == :u
         label = Keys.input :prompt=>"label: ", :timed=>1
         label = "do" if label.blank?
@@ -780,7 +781,9 @@ module Xiki
 
       if Search.fit_in_snippet(txt)   # Insert it in existing tree if there
         View << "    - #{label}\n" if label
-        return orig.go
+
+        orig.go if was_visible   # Go to original place, if :n was already visible
+        return
       end
 
       # Make it quoted, unless already a quote
@@ -807,8 +810,9 @@ module Xiki
       end
 
       View.<< result, :dont_move=>1
+      Line.next 3
 
-      orig.go
+      orig.go if was_visible   # Go to original place, if :n was already visible
     end
 
 
@@ -1271,6 +1275,7 @@ module Xiki
       "e"=>"!",
       "er"=>"error!",
       "f"=>"fix!",
+      "fi"=>"finish!",
       "i"=>"implement!",
       "r"=>"rename!",
       "t"=>"todo!",
@@ -1444,6 +1449,49 @@ module Xiki
       end
 
       nil
+    end
+
+
+    def self.return_wrapper
+
+      # Add a linebreak
+
+      line = Line.value
+      View << "\n"
+
+      # Weren't at end of a "$ foo", so do nothing else...
+
+      return if line !~ /^\$ ./ || ! Line.at_right?
+
+      # Var not bound yet, so sync with disk...
+
+      if ! $el.boundp(:xiki_return_warning)
+        disk_value = Keys.read_setting 'return warning'
+        # Set to disk value or default (4)
+        $el.elvar.xiki_return_warning = disk_value || "4"
+      end
+
+      # Just because reading from the elisp var is slightly slower than the ruby var
+      value_orig = $el.elvar.xiki_return_warning
+
+      # 0, so just return...
+
+      return if value_orig == "0"
+
+      # Decrement it
+      value_new = (value_orig.to_i - 1).to_s
+      $el.elvar.xiki_return_warning = value_new
+
+      # Write new value to disk
+
+      Keys.persist_setting "return warning", value_new
+
+      # Flash that many times
+
+      View.flash "- Typing return just adds a linebreak!", :times=>value_orig.to_i
+      View.pause 0.6
+      View.flash "- Use Ctrl+X to execute a command!", :times=>value_orig.to_i
+
     end
 
   end

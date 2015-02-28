@@ -56,6 +56,10 @@ module Xiki
     @@map_noob ||= Keys.map_default_noob
     @@noob_mode = nil
 
+    # Saves by into ~/xiki/commands/conf/ by replacing
+    # the line (copying the default conf over first, if
+    # it's not there yet.
+    # Keys.persist_setting "return warning", " 4"
     def self.persist_setting key, value
 
       # Read in file...
@@ -82,6 +86,8 @@ module Xiki
     end
 
 
+    # Reads from ~/xiki/commands/conf/
+    # Keys.read_setting "return warning"
     def self.read_setting key
       txt = File.read Bookmarks[":hx/commands/conf/xsh.conf"] rescue nil
       return nil if ! txt

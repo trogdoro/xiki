@@ -245,7 +245,7 @@ module Xiki
           # dropdown, so show options...
           return self.blank_line_dropdown options if options[:dropdown]
 
-          return "<! Blank line, try dropdown (Control+D)!"
+          return "<! Move to a non-blank line first"
         end
 
         return "<! No menu or pattern found!"
