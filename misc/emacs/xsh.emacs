@@ -18,7 +18,8 @@
 (setq-default tab-width 2)
 (setq ring-bell-function 'ignore)   ; Don't make noise when escape
 
-(add-to-list 'load-path (concat (getenv "XIKI_DIR") "/misc/emacs/libs/"))
+; Add to end of path, so libs (like ruby-mode) won't super-cede ones already installed
+(add-to-list 'load-path (concat (getenv "XIKI_DIR") "/misc/emacs/libs/") t)
 
 ; Control Lock
 (require 'control-lock)
