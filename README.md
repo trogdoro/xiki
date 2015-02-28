@@ -22,7 +22,7 @@ Or, if you have git, you can get Xiki from github via "git clone https://github.
 
 ### Troubleshooting
 
-If you run into trouble, try running "./bin/xsh -i", which may give better error messages. Also, not that there's a cached "xsh forker" process that stays alive to speed up execution. Try "ps aux|grep forker" to find it. During trouble-shooting you may need to kill it.
+If you run into trouble, try running "bin/xsh -i", which may give better error messages. Also, not that there's a cached "xsh forker" process that stays alive to speed up execution. Try "ps aux|grep forker" to find it. During trouble-shooting you may need to kill it.
 
 ### Supported platforms
 

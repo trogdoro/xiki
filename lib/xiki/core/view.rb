@@ -293,7 +293,9 @@ module Xiki
       if line_number
         View.to_line line_number[/\d+/]
       end
-      View.message ""   # To keep "Loading..." from flashing at the bottom
+
+      # Can't do this, because it suppresses output of run+eval
+      #View.message ""   # To keep "Loading..." from flashing at the bottom
 
       nil
     end

@@ -1466,7 +1466,7 @@ module Xiki
       # Var not bound yet, so sync with disk...
 
       if ! $el.boundp(:xiki_return_warning)
-        disk_value = Keys.read_setting 'return warning'
+        disk_value = Keys.read_from_conf 'return warning'
         # Set to disk value or default (4)
         $el.elvar.xiki_return_warning = disk_value || "4"
       end
@@ -1484,7 +1484,7 @@ module Xiki
 
       # Write new value to disk
 
-      Keys.persist_setting "return warning", value_new
+      Keys.write_to_conf "return warning", value_new
 
       # Flash that many times
 

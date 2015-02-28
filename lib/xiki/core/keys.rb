@@ -59,8 +59,8 @@ module Xiki
     # Saves by into ~/xiki/commands/conf/ by replacing
     # the line (copying the default conf over first, if
     # it's not there yet.
-    # Keys.persist_setting "return warning", " 4"
-    def self.persist_setting key, value
+    # Keys.write_to_conf "return warning", " 4"
+    def self.write_to_conf key, value
 
       # Read in file...
 
@@ -77,18 +77,23 @@ module Xiki
 
       # Update file accordingly
 
-      txt.sub! /^(#{key}:).*/, "\\1 #{value}"
+      result = txt.sub! /^(#{key}:).*/, "\\1 #{value}"
+
+      # No replacement means it somehow wasn't in the file, so append to the end...
+
+      txt << "\n#{key}: #{value}\n" if ! result
 
       # Write file...
 
       File.open(user_conf, "w") { |f| f << txt }
 
+      nil
     end
 
 
     # Reads from ~/xiki/commands/conf/
-    # Keys.read_setting "return warning"
-    def self.read_setting key
+    # Keys.read_from_conf "return warning"
+    def self.read_from_conf key
       txt = File.read Bookmarks[":hx/commands/conf/xsh.conf"] rescue nil
       return nil if ! txt
       txt[/^#{key}: (.*)/, 1]   # => noob
@@ -101,7 +106,7 @@ module Xiki
 
         # Memo-ize it, so we don't look it up every time
         if @@noob_mode == nil
-          value = self.read_setting "key shortcuts"
+          value = self.read_from_conf "key shortcuts"
           @@noob_mode = ! value || value == "noob"
         end
         return @@noob_mode
@@ -109,7 +114,7 @@ module Xiki
 
       # Value passed so set it in the cache and on the disk
       @@noob_mode = value
-      self.persist_setting 'key shortcuts', (value ? 'noob' : 'advanced')
+      self.write_to_conf 'key shortcuts', (value ? 'noob' : 'advanced')
     end
 
     # Called when expanding key shortcuts are press.
@@ -214,7 +219,7 @@ module Xiki
         txt << %`
           + key shortcuts in bottom bar
             ! $el.elvar.bottom_bar_shows_file_paths = nil
-            ! Keys.persist_setting 'bottom bar', 'keys'
+            ! Keys.write_to_conf 'bottom bar', 'keys'
             ! options[:no_slash] = 1
             ! "<! Done"
           `.unindent
@@ -223,7 +228,7 @@ module Xiki
         txt << %`
           + file paths in bottom bar
             ! $el.elvar.bottom_bar_shows_file_paths = 1
-            ! Keys.persist_setting 'bottom bar', 'paths'
+            ! Keys.write_to_conf 'bottom bar', 'paths'
             ! options[:no_slash] = 1
             ! "<! Done"
           `.unindent

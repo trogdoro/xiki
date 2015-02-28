@@ -1,4 +1,4 @@
-$el.elvar.bottom_bar_shows_file_paths = Xiki::Keys.read_setting("bottom bar") == "paths"
+$el.elvar.bottom_bar_shows_file_paths = Xiki::Keys.read_from_conf("bottom bar") == "paths"
 
 $el.el4r_lisp_eval %`
   (progn
