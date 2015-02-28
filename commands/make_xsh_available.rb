@@ -67,7 +67,7 @@ module Menu
         |   Ctrl+X  Expand a shell shell command in xsh
         |   Ctrl+D  Dropdown of options for a shell command
         |   Ctrl+G  Grab shell commands to and from Xiki
-        |   Ctrl+R  Shell history
+        |   Ctrl+R  Recent commands (like existing Ctrl+R)
         |   Esc, Tab     Auto-complete
         |
         + enable this configuration
@@ -89,8 +89,8 @@ module Menu
         |   Esc, Ctrl+X  Expand a shell shell command in xsh
         |   Esc, Ctrl+D  Dropdown of options for a shell command
         |   Esc, Ctrl+G  Grab shell commands to and from Xiki
+        |   Esc, Ctrl+R  Recent commands (like existing Ctrl+R)
         |   Esc, Tab     Auto-complete
-        |   Ctrl+R  Shell history
         |
         + enable this configuration
           | Expand 'save' below, and the following changes will be made:
