@@ -55,6 +55,11 @@ module Xiki
       txt = txt.reverse.uniq
       path ||= Tree.dir   # Pull from tree if there
 
+      # Temp fix > remove slash from path (Tree.dir is adding slashes whet it's a file in the path)
+      # Longer-term fix is to make Tree.dir not add slash when quotes
+      path.sub! /\/$/, ''
+
+
       path = Bookmarks[path] if path
 
       if ! path
@@ -146,7 +151,6 @@ module Xiki
 
     def self.save options={}
 
-      return if View.file_name == "difflog.notes"
       if View.name == "diff with saved/"   # If viewing diff, close it and save the actual file...
         file = View.txt[/.+\n.+/].sub("\n  - ", "")
         View.kill
@@ -546,9 +550,9 @@ module Xiki
 
       txt = X'unsaved'
 
-      # No files to save, or all are "no changes"
+      # No files to save, or all are "no changes" or "File no longer exists?"
 
-      if txt == "- No files unsaved!\n" || txt !~ /^  (?!: no changes$)/   #!~ /^  : (?!no changes$)/
+      if txt == "- No files unsaved!\n" || txt !~ /^  (?!: no changes|: File no longer exists\?$)/
 
         # Unsaved "xsh" buffer, so save it...
 
