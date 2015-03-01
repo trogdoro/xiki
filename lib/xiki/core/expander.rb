@@ -127,7 +127,7 @@ module Xiki
       self.extract_ancestors thing, options   # Move ...@ ancestors into options if any
 
       # Split up all path types, to pull off options...
-      self.extract_dropdown_items thing, options
+      self.extract_task_items thing, options
 
       # If menu-like, extract menu and items and return...
 
@@ -226,7 +226,7 @@ module Xiki
         self.expanders options
       end
 
-      # Dropdown, so make future C-.'s expand with dropdown...
+      # Task, so make future C-.'s expand with task...
 
       # If it's a class, just .invoke it directly
       return Invoker.invoke *args if options[:class]
@@ -242,8 +242,8 @@ module Xiki
 
           return MenuSuggester.blank_at options[:ancestors] if options[:ancestors]
 
-          # dropdown, so show options...
-          return self.blank_line_dropdown options if options[:dropdown]
+          # task, so show options...
+          return self.blank_line_task options if options[:task]
 
           return "<! Move to a non-blank line first"
         end
@@ -281,8 +281,8 @@ module Xiki
     end
 
 
-    def self.blank_line_dropdown options
-      dropdown = options[:dropdown]
+    def self.blank_line_task options
+      task = options[:task]
 
       menu =  "
         ~ tutorial/
@@ -297,11 +297,11 @@ module Xiki
         ~ quit/
         "
 
-      # Dropdown root, so show items...
+      # Task root, so show items...
 
-      if dropdown == []
+      if task == []
         # If mouse right-click, return all of them nested
-        # If Control+dropdown, drill in one step at a time
+        # If Control+task, drill in one step at a time
 
         return menu if options[:mouse]
         return Tree.children menu, ""
@@ -309,7 +309,7 @@ module Xiki
 
       # ~ foo/..., so see if there's a sub-item...
 
-      result = Tree.children menu, "~ #{Path.join dropdown}"
+      result = Tree.children menu, "~ #{Path.join task}"
 
       # If there was a result, show it as nested item...
 
@@ -320,8 +320,8 @@ module Xiki
 
       # Otherwise, launch item as menu...
 
-      return "<<< all/" if dropdown == ["all menus"]   # For now, assume there are menus with the corresponding names
-      return "<<< #{Path.join dropdown}/"   # For now, assume there are menus with the corresponding names
+      return "<<< all/" if task == ["all menus"]   # For now, assume there are menus with the corresponding names
+      return "<<< #{Path.join task}/"   # For now, assume there are menus with the corresponding names
 
     end
 
@@ -357,24 +357,24 @@ module Xiki
       end
     end
 
-    # Expander.extract_dropdown_items "foo/~ rename/"
+    # Expander.extract_task_items "foo/~ rename/"
     # Extracts "* foo" items from the path, removing them.
-    def self.extract_dropdown_items thing, options={}
+    def self.extract_task_items thing, options={}
 
       path = Path.split thing
 
-      # *... item, so pull them off and store in :dropdown...
+      # *... item, so pull them off and store in :task...
 
       index = path.index{|o| o =~ /^~ /}
 
       return if ! index
 
-      dropdown = path.slice! index..-1
+      task = path.slice! index..-1
       path = Path.join path
 
-      dropdown[0].sub! /^~ /, ''
+      task[0].sub! /^~ /, ''
 
-      options[:dropdown] = dropdown
+      options[:task] = task
 
       thing.replace path
     end

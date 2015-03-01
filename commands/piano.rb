@@ -280,12 +280,12 @@ Ol["!"]
       # right-click, so delegate to setup...
 
 
-      if dropdown = options[:dropdown]
+      if task = options[:task]
         menu = Xik.new(Tree.children(MENU, "setup", :include_subitems=>1))
-        # return menu.txt_without_code if dropdown == [] && options[:mouse]   # Show all if mouse
-        return menu.txt if dropdown == [] && options[:mouse]   # Show all if mouse
+        # return menu.txt_without_code if task == [] && options[:mouse]   # Show all if mouse
+        return menu.txt if task == [] && options[:mouse]   # Show all if mouse
 
-        return Xiki.expand "piano/setup/#{Path.join dropdown}"
+        return Xiki.expand "piano/setup/#{Path.join task}"
 
         return menu
       end

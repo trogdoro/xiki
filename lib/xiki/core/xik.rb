@@ -156,7 +156,7 @@ module Xiki
       if eval_options = options[:eval]
 
         # :eval means to eval the exclamations.
-        # We're setting :nest=>1 (in the main options, which is the expected value) in case it's this Xiki is used for a dropdown menu
+        # We're setting :nest=>1 (in the main options, which is the expected value) in case it's this Xiki is used for a tasks menu
         #   - Is this the best place to do that?
         #   - Does it make sense to only do it when :eval?
 

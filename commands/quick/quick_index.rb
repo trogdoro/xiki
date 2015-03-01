@@ -5,9 +5,9 @@ module Xiki
       =conf/
       - .docs/
         - keys/
-          - labels in tasks.notes/
+          - labels in todo.notes/
             > do+quick
-            | Grabs labelled lines from tasks.notes.
+            | Grabs labelled lines from todo.notes.
           - shortcuts in =conf/
             > as+quick
             | Saves current file in the =quick menu.

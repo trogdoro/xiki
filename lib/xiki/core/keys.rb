@@ -23,32 +23,37 @@ module Xiki
     def self.map_default
       {
         "open"=>nil,
-        "as"=>nil,
-
-        "run"=>nil,
-        "enter"=>nil,
-        "tile"=>nil,
+        "window"=>nil,
 
         "hop"=>nil,
         "jump"=>nil,
 
+        "as"=>nil,
+        "enter"=>nil,
+
+        "do"=>nil,
+        "run"=>nil,
+
         "search"=>nil,
         "custom"=>nil,
-        "window"=>nil,
 
-        "expand"=>nil,
-        "dropdown"=>nil,
+        "tasks"=>nil,
+        "grab"=>nil,
+        "quit"=>nil,
       }
     end
 
     def self.map_default_noob
       {
         "open"=>nil,
-        "as"=>nil,
+        "window"=>nil,
+
         "hop"=>nil,
         "jump"=>nil,
 
-        "dropdown"=>nil,
+        "tasks"=>nil,
+        "grab"=>nil,
+        "quit"=>nil,
       }
     end
 
@@ -140,7 +145,7 @@ module Xiki
 
           # Eventually handle also
           #   Keys.prefix arg
-          #   :dropdown arg
+          #   :task arg
           return hash[name].call
         end
 
@@ -192,7 +197,7 @@ module Xiki
           |
           | - click to reposition the cursor
           | - double-click to expand
-          | - right-click to see a dropdown menu
+          | - right-click to see a tasks menu
 
       ".unindent
 
@@ -288,11 +293,11 @@ module Xiki
 
       # Leaf key (proc), so run it...
 
-      # Dropdown, so show options or navigate...
+      # Task, so show options or navigate...
 
-      if dropdown = options[:dropdown]
-        return "~ source\n~ run" if dropdown == []
-        if dropdown == ["source"]
+      if task = options[:task]
+        return "~ source\n~ run" if task == []
+        if task == ["source"]
           file, line = item.source_location   # => ["/projects/xiki/lib/xiki/core/key_shortcuts.rb", 755]
           View.open file
           View.line = line
@@ -319,7 +324,8 @@ module Xiki
 
       if self.noob_mode
         if path == []
-          txt.gsub!(/\+ [ad]/, "\n\\0")
+          txt.gsub!(/^\+ (quit)\n/, "")   # Remove quit and xpand
+          txt.gsub!(/\+ [ht]/, "\n\\0")
           return
         elsif path == ["open"]
           txt.gsub!(/\+ [fp]/, "\n\\0")
@@ -335,7 +341,7 @@ module Xiki
       if path == []
         txt.gsub!(/^\+ (xpand|quit)\n/, "")   # Remove quit and xpand
         txt.gsub!(/(^\+ (backward|forward|previous|next)\n)+/, "")   # Remove backward, forward, previous, next
-        txt.gsub!(/\+ [hrdb]/, "\n\\0")
+        txt.gsub!(/\+ [hrat]/, "\n\\0")
 
       elsif path == ["as"]
         txt.gsub!(/\+ [lth]/, "\n\\0")
@@ -350,7 +356,7 @@ module Xiki
         txt.gsub!(/\+ [fcetolz]/, "\n\\0")
 
 
-      elsif path == ["tile"]
+      elsif path == ["window"]
         txt.gsub!(/\+ [netuw]/, "\n\\0")
       elsif path == ["run"]
         txt.gsub!(/\+ [ievh]/, "\n\\0")
@@ -358,7 +364,7 @@ module Xiki
         txt.gsub!(/\+ [rb]/, "\n\\0")
       elsif path == ["run", "delete"]
         txt.gsub!(/\+ [icm]/, "\n\\0")
-      elsif path == ["window"]
+      elsif path == ["do"]
         txt.gsub!(/\+ [oq]/, "\n\\0")
 
       elsif path == ["search"]
@@ -387,12 +393,12 @@ module Xiki
 
       ["open"]=>"Displaying things",
 
-      ["tile"]=>"Splitting and navigating views",
+      ["window"]=>"Splitting and navigating",
+      ["do"]=>"Arranging",
+
       ["run"]=>"Running and processing things",
       ["search"]=>"Shortcuts you can use during a Ctrl+S search",
       ["custom"]=>"Related to the kind of file you're viewing",
-
-      ["window"]=>"Arranging the window",
 
       ["run", "version"]=>"Diffing and listing versions",
 
@@ -1353,7 +1359,7 @@ module Xiki
         when "jump", "next", "previous"
           kind = :movement
         when "tile"
-          return if ["upper", "tasks", "files"].member? path[1]   # Don't remember
+          return if ["upper", "todo", "files"].member? path[1]   # Don't remember
           kind = :movement if ! ["delete", "hide", "create"].member? path[1]   # Certain ones are actions
           # The rest are movements
         when "custom"

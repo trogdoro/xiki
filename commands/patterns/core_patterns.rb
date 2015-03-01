@@ -32,7 +32,7 @@ module Xiki
 
   Xiki.def(%r"^(https?://[^/]|file://)") do |path, options|
 
-    if options[:dropdown] == []
+    if options[:task] == []
       next "
         ~ source/
         ~ browser/
@@ -49,7 +49,7 @@ module Xiki
     url = path[/(http|file).?:\/\/.+/]
 
     # Make this look for "~ source/" in path?
-    if prefix == "all" || options[:dropdown] == ["source"]
+    if prefix == "all" || options[:task] == ["source"]
       gem 'httparty'; Kernel.require 'httparty'
       txt = HTTParty.get(url).body
 
@@ -316,7 +316,7 @@ module Xiki
   Xiki.def(/\A\^([\w -]+)/) do |path, options|
     name = options[:expanders].find{|o| o[:match]}[:match][1]
     options.delete :no_slash if options[:path] !~ /\//
-    Xiki.expand options[:path].sub(/^\^/, "notes/"), options.select{|key, value| [:prefix, :dropdown].include?(key)}
+    Xiki.expand options[:path].sub(/^\^/, "notes/"), options.select{|key, value| [:prefix, :task].include?(key)}
   end
 
   # @ (by itself)...
@@ -345,7 +345,7 @@ module Xiki
 
     Launcher.append_log path
 
-    Xiki.expand "twilio/#{path}", options.select{|k, v| [:dropdown].include?(k) }
+    Xiki.expand "twilio/#{path}", options.select{|k, v| [:task].include?(k) }
   end
 
   # @foo, so treat as tweet...
@@ -390,9 +390,9 @@ module Xiki
 
     path = Path.split options[:path]   # => ["craig.muth@gmail.com", "The body of\nthe email.\n"]
 
-    # Dropdown...
+    # Tasks...
 
-    if dropdown = options[:dropdown]
+    if task = options[:task]
 
       # No items, so list templates...
 
@@ -400,12 +400,12 @@ module Xiki
       array = txt.scan(/^> (.+?)\n([^>]+)/m).flatten
       emails = Hash[*array]
 
-      if dropdown == []
+      if task == []
         # next txt.scan(/^> (.+)/).map{|o| "~ #{o[0]}/\n"}.join
         next emails.keys.map{|o| "~ #{o}/\n"}.join
       end
 
-      txt = emails[dropdown[0]]
+      txt = emails[task[0]]
       txt.gsub! /^/, "| "
       txt.sub! /\| - subject: /, "> "
       next txt
@@ -442,10 +442,10 @@ module Xiki
 
     # right-clicked root, so show "memorize" option...
 
-    next "~ memorize\n~ save to Memorize.com" if options[:dropdown] == []
+    next "~ memorize\n~ save to Memorize.com" if options[:task] == []
     Kernel.require "#{Xiki.dir}commands/memorize"
-    next Memorize.dropdown_memorize if options[:dropdown] == ["memorize"]
-    next Memorize.dropdown_save_to_memorize if options[:dropdown] == ["save to Memorize.com"]
+    next Memorize.tasks_memorize if options[:task] == ["memorize"]
+    next Memorize.tasks_save_to_memorize if options[:task] == ["save to Memorize.com"]
 
     nil
   end
@@ -497,7 +497,7 @@ module Xiki
 
     path = path[/\A%(.+)\//, 1]
 
-    txt = Xiki.expand "f/#{path}", options.select{|k, v| [:dropdown, :ancestors].include?(k) }
+    txt = Xiki.expand "f/#{path}", options.select{|k, v| [:task, :ancestors].include?(k) }
     txt
   end
 

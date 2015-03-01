@@ -1011,7 +1011,7 @@ module Xiki
         "bootstrap"=>BootstrapHandler,
         "txt"=>TxtHandler,
         "py"=>PythonHandler,
-        "dropdown"=>DropdownHandler,
+        "task"=>TaskHandler,
         "js"=>JavascriptHandler,
         "coffee"=>CoffeeHandler,
         "sh"=>ShHandler,
@@ -1019,7 +1019,7 @@ module Xiki
         "pgn"=>PgnHandler,
         "erb"=>ErbHandler,
         "/"=>DirHandler,
-        }
+      }
     end
 
     def self.handlers_with_samples
@@ -1316,16 +1316,16 @@ module Xiki
 
     end
 
-    # Xiki::Menu.dropdown "a"
-    # Xiki::Menu.dropdown "a\nb"
-    # Xiki::Menu.dropdown "a\n  b"
-    # Xiki::Menu.dropdown "a\n  b", :no_root=>1
-    # Xiki::Menu.dropdown "a\n  b\n    c"
-    # Xiki::Menu.dropdown "a\nb\n  c\n    d"
-    # Xiki::Menu.dropdown "a\n  b\n  c\n    d"
-    # Xiki::Menu.dropdown "a\nb", :cursor=>View.cursor
-    # Xiki::Menu.dropdown "a\nb", :cursor=>Line.left
-    def self.dropdown txt, options={}
+    # Xiki::Menu.tasks "a"
+    # Xiki::Menu.tasks "a\nb"
+    # Xiki::Menu.tasks "a\n  b"
+    # Xiki::Menu.tasks "a\n  b", :no_root=>1
+    # Xiki::Menu.tasks "a\n  b\n    c"
+    # Xiki::Menu.tasks "a\nb\n  c\n    d"
+    # Xiki::Menu.tasks "a\n  b\n  c\n    d"
+    # Xiki::Menu.tasks "a\nb", :cursor=>View.cursor
+    # Xiki::Menu.tasks "a\nb", :cursor=>Line.left
+    def self.tasks txt, options={}
 
       txt.unindent! if txt =~ /\A\n/   # Unindent if passed in indented over
 
@@ -1354,7 +1354,7 @@ module Xiki
         y += offset[1]
       end
 
-      # Setting ns-menu-display-services makes aquamacs not add the google etc menu items to the dropdown.
+      # Setting ns-menu-display-services makes aquamacs not add the google etc menu items to the task.
 
       lisp = "
         (easy-menu-define my-menu nil \"temp menu\"\n'#{txt.strip}\n)

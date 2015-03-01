@@ -1,5 +1,5 @@
 # /, so show example...
-return "| Expand to see the docs...\n#{Tree.quote File.read('/Users/craig/xiki/notes/elisp/variables.notes')}" if ! args[0]
+return "| Expand to see the docs...\n#{Tree.quote File.read(File.expand_path '~/xiki/notes/elisp/variables.notes')}" if ! args[0]
 
 # /foo, so show source
 

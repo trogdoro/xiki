@@ -24,13 +24,13 @@ end
 
 file_path = args[1] ? args[1].sub(/^: /, '') : nil
 
-if options[:dropdown] == []
+if options[:task] == []
   txt = "~ navigate\n~ delete bookmark"
   txt << "\n~ exit and cd" if file_path && File.directory?(file_path)
   return txt
 end
 
-if options[:dropdown] == ["navigate"]
+if options[:task] == ["navigate"]
   file = Bookmarks[":hx/bookmarks/#{args[0]}.notes"]
 
   if ! File.exists? file
@@ -46,12 +46,12 @@ if options[:dropdown] == ["navigate"]
   View.open file
   return nil
 
-elsif options[:dropdown] == ["exit and cd"]
+elsif options[:task] == ["exit and cd"]
   dir = Bookmarks[file_path]
   Shell.exit_and_cd dir
   return nil
 
-elsif options[:dropdown] == ["delete bookmark"]
+elsif options[:task] == ["delete bookmark"]
   file = Bookmarks[":hx/bookmarks/#{args[0]}.notes"]
   FileUtils.rm file
   return "<! deleted"

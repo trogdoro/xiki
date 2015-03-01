@@ -936,7 +936,7 @@ module Xiki
     # Returns path to current file if saved.
     # If file not saved or file is a buffer, it writes it to a temp file and returns that path.
     #
-    # View.file_or_temp_file :buffer=>"tasks.notes"
+    # View.file_or_temp_file :buffer=>"todo.notes"
     # View.file_or_temp_file :file=>":t"
     def self.file_or_temp_file options={}
 
@@ -1017,8 +1017,8 @@ module Xiki
     end
 
     # Returns whether a buffer is open / exists
-    # View.buffer_open? "tasks.notes"
-    #   #<buffer tasks.notes>
+    # View.buffer_open? "todo.notes"
+    #   #<buffer todo.notes>
     def self.buffer_open? name
       $el.get_buffer(name) ? true : nil
     end
@@ -1543,9 +1543,9 @@ module Xiki
 
     def self.layout_todo
 
-      # There's no bar yet and in tasks.notes, so switch to next (avoid showing :t in both views)
+      # There's no bar yet and in todo.notes, so switch to next (avoid showing :t in both views)
       if View.file == Bookmarks[":t"] && ! View.bar?
-        View.to_buffer Buffers.names_array.find{|o| ! ["tasks.notes"].member? o}
+        View.to_buffer Buffers.names_array.find{|o| ! ["todo.notes"].member? o}
       end
 
       View.bar
@@ -1558,7 +1558,7 @@ module Xiki
 
       # Switch to one that's not :t or :n
       View.to_nth 2
-      View.to_buffer Buffers.names_array.find{|o| ! ["tasks.notes", "nav.notes", "*ol"].member? o}
+      View.to_buffer Buffers.names_array.find{|o| ! ["todo.notes", "nav.notes", "*ol"].member? o}
       View.to_nth 1
 
       Effects.blink(:what=>:line) unless options[:no_blink]
@@ -1576,7 +1576,7 @@ module Xiki
     def self.layout_quick
 
       # There's no bar yet and in nav.notes, so switch to next (avoid showing :t in both views)
-      View.to_buffer Buffers.names_array.find{|o| ! ["tasks.notes", "nav.notes", "*ol", "quick.notes"].member? o}
+      View.to_buffer Buffers.names_array.find{|o| ! ["todo.notes", "nav.notes", "*ol", "quick.notes"].member? o}
 
       View.bar
       View.open ":q", :stay_in_bar=>1
@@ -1710,13 +1710,13 @@ module Xiki
         lines_to_delete = 1
         Line.delete
 
-        in_tasks = Bookmarks[':t'] == orig.file
-        orig.line -= 1 if in_tasks   # If in :t, adjust position by how much is deleted
+        in_todo = Bookmarks[':t'] == orig.file
+        orig.line -= 1 if in_todo   # If in :t, adjust position by how much is deleted
 
         # If blank line after, delete it
         if Line.blank?
           Line.delete
-          orig.line -= 1 if in_tasks   # If in :t, adjust position by how much is deleted
+          orig.line -= 1 if in_todo   # If in :t, adjust position by how much is deleted
         end
       end
 
@@ -1946,8 +1946,8 @@ module Xiki
     end
 
     # View.unique_name "hi"
-    # View.unique_name "tasks.notes"
-    #   tasks2.notes
+    # View.unique_name "todo.notes"
+    #   todo2.notes
     def self.unique_name name
       return name if ! self.buffer_open? name
       i, limit = 2, 1000

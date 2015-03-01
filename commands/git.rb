@@ -125,10 +125,10 @@ module Xiki::Menu
 
       if ! quote
 
-        dropdown = options[:dropdown]
+        task = options[:task]
 
-        return "~ add\n~ add multiple\n~ remove\n~ unadd\n~ revert" if dropdown == []
-        return self.dropdown_item dropdown, file, dir if dropdown
+        return "~ add\n~ add multiple\n~ remove\n~ unadd\n~ revert" if task == []
+        return self.tasks_item task, file, dir if task
 
         # "modified:", so show diff
         if label == "modified: "
@@ -181,35 +181,35 @@ module Xiki::Menu
 
     end
 
-    def self.dropdown_item dropdown, file, dir
+    def self.tasks_item task, file, dir
 
-      if dropdown == ["add"]
+      if task == ["add"]
         command = "git add \"#{file}\""
         txt = Shell.sync command, :dir=>dir
         return Tree.quote(txt) if txt.any?
         return "<! added!"
       end
 
-      if dropdown == ["add multiple"]
+      if task == ["add multiple"]
         indent = Line.indent
         Line.to_left
         View.<< "#{indent}+ add/\n", :dont_move=>1
         return ""
       end
 
-      if dropdown == ["remove"]
+      if task == ["remove"]
         command = "git rm -r \"#{file}\""
         txt = Shell.sync command, :dir=>dir
         return "<! removed!"
       end
 
-      if dropdown == ["unadd"]
+      if task == ["unadd"]
         command = "git reset \"#{file}\""
         txt = Shell.sync command, :dir=>dir
         return "<! it was reset!"
       end
 
-      if dropdown == ["revert"]
+      if task == ["revert"]
         command = "git checkout \"#{file}\""
         txt = Shell.sync command, :dir=>dir
         return "<! file reverted!"

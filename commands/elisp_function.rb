@@ -1,16 +1,19 @@
 # /, so list all functions...
-return "| Expand to see the docs...\n#{Tree.quote File.read('/Users/craig/xiki/notes/elisp/functions.notes')}" if ! args[0]
 
-# /foo, so show source or dropdown...
+# Todo > get it to auto-generate these
+
+return "| Expand to see the docs...\n#{Tree.quote File.read(File.expand_path '~/xiki/notes/elisp/functions.notes')}" if ! args[0]
+
+# /foo, so show source or tasks...
 
 func = args[0].sub(/^: /, "")
 func = TextUtil.snake_case(func).to_sym
 
-return "~ docs\n~ source" if dropdown == []
+return "~ docs\n~ source" if task == []
 
 # ~ source, so jump to it
 
-if dropdown == ["source"]
+if task == ["source"]
   result = $el.find_definition_noselect func, nil
   buffer, pos = result
   View.to_buffer buffer

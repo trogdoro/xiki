@@ -12,7 +12,7 @@ module Xiki
 
       args[-1] = options[:one_line] if options[:prefix] == "open" && options[:one_line]
 
-      txt = Notes.drill path, *args, options.select{|key, value| [:prefix, :dropdown].include?(key)}
+      txt = Notes.drill path, *args, options.select{|key, value| [:prefix, :task].include?(key)}
 
       options[:output] = txt
       options[:halt] = 1   # Just in case there's no output

@@ -48,7 +48,7 @@ class Xiki::Menu::Notes
 
     # Prepend parent to items if foo/=menu...
 
-    items, dropdown = options[:items], options[:dropdown]
+    items, task = options[:items], options[:task]
 
     # foo/=notes/, so use foo as name...
 
@@ -76,7 +76,7 @@ class Xiki::Menu::Notes
 
     if ! items
       # Or navigate there if open+
-      if dropdown == ["source"]
+      if task == ["source"]
         Launcher.open "~/xiki/notes/"
         return ""
       end
@@ -89,7 +89,7 @@ class Xiki::Menu::Notes
 
     # /foo, so delegate to ~/notes dir...
     # Just pass prefix
-    txt = Xiki["~/xiki/notes//", items, options.select{|key, value| [:prefix, :dropdown].include?(key)}]
+    txt = Xiki["~/xiki/notes//", items, options.select{|key, value| [:prefix, :task].include?(key)}]
 
     return txt if txt
 
@@ -103,18 +103,18 @@ class Xiki::Menu::Notes
       return "
         > Sample heading
           | These notes don't exist yet.
-          | Edit this text and type Ctrl+D to create
-          | (or type Ctrl+D and select 'clear').
+          | Edit this text and type Ctrl+T to create
+          | (or type Ctrl+T and select 'clear').
           |
         "
     end
 
     # ~, so show option
 
-    return "~ create\n~ clear" if !dropdown || dropdown == []
+    return "~ create\n~ clear" if !task || task == []
 
     if items.length > 1
-      if dropdown == ["create"]
+      if task == ["create"]
 
         name, heading, content = items
         return "=beg/siblings/" if content !~ /\n/
@@ -127,14 +127,14 @@ class Xiki::Menu::Notes
         return "<! created!"
       end
 
-      if dropdown == ["clear"]
+      if task == ["clear"]
         # return the code that clears
         return "=replace/siblings/\n  | hi\n  |"
       end
 
     end
 
-    # File doesn't exist, so allow creating via dropdown...
+    # File doesn't exist, so allow creating via task...
 
     #     "
     #     - Note doesn't exist yet!

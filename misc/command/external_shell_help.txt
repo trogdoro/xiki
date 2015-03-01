@@ -16,14 +16,14 @@ Key shortcuts for your external shell (the default):
   Ctrl+X    Just open xsh, when empty shell prompt.
             If you type a shell command first, run it in xsh.
   Ctrl+G    Grab shell command into xsh, but don't run it.
-  Ctrl+D    Dropdown of actions for a shell command.
+  Ctrl+T    Menu of tasks for a shell command or dir.
             (examples, favorites, etc.)
   Ctrl+R     External shell history (like Ctrl+R)
   Esc, Tab        Auto-complete (not quite finished)
 
 Options:
   -g  Grab shell command into xsh
-  -d  Dropdown actions for a shell command
+  -t  Menu of tasks for a shell command or dir
   -r  Recent shell history, like Ctrl+R (for external shell)
   -t  Tab, to auto-complete (not quite finished)
   -s  Search in files

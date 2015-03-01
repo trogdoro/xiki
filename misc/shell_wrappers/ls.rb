@@ -26,20 +26,20 @@ file << relative
 
 # file, so open it...
 
-dropdown = options[:dropdown]
+task = options[:task]
 
 if File.file? file
 
-  # Dropdown, so show items...
+  # Task, so show items...
 
-  return "~ edit/\n~ rename\n~ delete\n~ all\n~ outline\n~ search" if dropdown == []
-  if dropdown == ["edit"]
+  return "~ edit/\n~ rename\n~ delete\n~ all\n~ outline\n~ search" if task == []
+  if task == ["edit"]
     options[:nest] = 1
     return "+ emacs/\n+ vim/\n+ sublime/"
-  elsif dropdown == ["edit", "vim"]
+  elsif task == ["edit", "vim"]
     $el.suspend_emacs "clear\nvim '#{file}'"
     return ""
-  elsif dropdown == ["edit", "sublime"]
+  elsif task == ["edit", "sublime"]
     Shell.sync "subl '#{file}'"
     return "<! opened in Sublime"
   end
@@ -50,11 +50,11 @@ end
 
 # dir, so do another ls...
 
-# dropdown, so render...
+# task, so render...
 
-return "~ cd and exit\n~ cd\n~ delete\n~ rename\n~ shell command" if dropdown == []
+return "~ cd and exit\n~ cd\n~ delete\n~ rename\n~ shell command" if task == []
 
-if dropdown == ["cd and exit"]
+if task == ["cd and exit"]
   file = Files.tilda_for_home file, :escape=>1
   $el.suspend_emacs "clear\ncd #{file}"
   return ""

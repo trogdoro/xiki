@@ -215,10 +215,10 @@ describe Expander, "#parse" do
 
 
 
-  it "moves dropdown items into :dropdown" do
+  it "moves task items into :task" do
     options = Expander.parse("hi/* delete")
     options.should == {
-      :dropdown=>"delete",
+      :task=>"delete",
       :name=>"hi",
       :path=>"hi",
     }
@@ -228,18 +228,18 @@ describe Expander, "#parse" do
     # options = Expander.parse("select * from/* delete")
     # options = Expander.parse("/tmp/* delete")
 
-  it "moves pattern dropdown items into :dropdown" do
+  it "moves pattern task items into :task" do
     options = Expander.parse("select * from hi/* delete")
     options.should == {
-      :dropdown=>"delete",
+      :task=>"delete",
       :path=>"select * from hi"
     }
   end
 
-  it "moves file dropdown items into :dropdown" do
+  it "moves file task items into :task" do
     options = Expander.parse("/tmp/* delete")
     options.should == {
-      :dropdown=>"delete",
+      :task=>"delete",
       :file_path=>"/tmp"
     }
   end
@@ -282,7 +282,7 @@ describe Expander, "#expand method" do
 
 end
 
-describe Expander, ".extract_dropdown_items" do
+describe Expander, ".extract_task_items" do
   before(:each) do
     stub_menu_path_dirs   # Has to be before each for some reason
   end

@@ -11,10 +11,10 @@ txt = CGI.escape txt
 
 url = "http://maps.google.com/maps?q=#{txt.gsub "\n", ", "}"
 
-# Dropdown to just show the url
+# Task to just show the url
 
-if dropdown = options[:dropdown]
-  return "~ url" if dropdown == []
+if task = options[:task]
+  return "~ url" if task == []
   options[:no_slash] = 1
   return "=#{url}"
 end

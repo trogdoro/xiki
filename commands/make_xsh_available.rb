@@ -65,7 +65,7 @@ module Menu
         | switch to xsh:
         |
         |   Ctrl+X  Expand a shell shell command in xsh
-        |   Ctrl+D  Dropdown of options for a shell command
+        |   Ctrl+T  Menu of possible tasks for a command or dir
         |   Ctrl+G  Grab shell commands to and from Xiki
         |   Ctrl+R  Recent commands (like existing Ctrl+R)
         |   Esc, Tab     Auto-complete
@@ -78,7 +78,7 @@ module Menu
           |
         |
         | This is recommended if you (and any other people who use this
-        | account) don't use Ctrl+X, Ctrl+D, and Ctrl+G in your shell.
+        | account) don't use Ctrl+X, Ctrl+T, and Ctrl+G in your shell.
         |
         | (You can use the arrow keys and Ctrl+X to select the above item.)
         |
@@ -87,7 +87,7 @@ module Menu
         | that don't conflict with your shells default shortcuts:
         |
         |   Esc, Ctrl+X  Expand a shell shell command in xsh
-        |   Esc, Ctrl+D  Dropdown of options for a shell command
+        |   Esc, Ctrl+T  Menu of possible tasks for a command or dir
         |   Esc, Ctrl+G  Grab shell commands to and from Xiki
         |   Esc, Ctrl+R  Recent commands (like existing Ctrl+R)
         |   Esc, Tab     Auto-complete
@@ -138,7 +138,7 @@ module Menu
         # Change \C to \e\C
 
         txt.sub! '\C-x', '\e\C-x'
-        txt.sub! '\C-d', '\e\C-d'
+        txt.sub! '\C-t', '\e\C-t'
         txt.sub! '\C-g', '\e\C-g'
         txt.sub! '\C-r', '\e\C-r'
 

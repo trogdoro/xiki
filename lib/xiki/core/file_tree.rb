@@ -333,7 +333,7 @@ module Xiki
         Styles.define :quote_heading_bracket, :fg=>"4c4c4c", :size=>"-2", :face=>"arial black", :bold=>true
         Styles.define :quote_heading_small, :fg=>"fff", :size=>"-2", :face=>"arial black", :bold=>true
 
-        Styles.define :diff_line_number, :bold=>true, :size=>"-2", :fg=>"444444"
+        Styles.define :diff_line_number, :bold=>true, :size=>"-2", :fg=>"666"
         Styles.define :diff_red, :bg=>"400", :fg=>"ee3333", :size=>"-1"
         Styles.define :diff_red_pipe, :bg=>"400", :fg=>"711", :size=>"0", :face=>"xiki", :bold=>true
 
@@ -351,8 +351,8 @@ module Xiki
 
         # dir/
         Styles.define :ls_dir, :fg => "888", :face => "verdana", :size => "-1", :bold => true
-        Styles.define :dropdown_bullet_slash, :fg => "777", :face => "verdana", :size => "-1", :bold => true
-        Styles.define :dropdown_bullet, :fg => "888"
+        Styles.define :task_bullet_slash, :fg => "777", :face => "verdana", :size => "-1", :bold => true
+        Styles.define :task_bullet, :fg => "888"
 
       else   # if white bg
         Styles.define :quote_heading_h0, :fg=>"444", :size=>"+8", :face=>"arial", :bold=>true
@@ -381,8 +381,8 @@ module Xiki
 
         # dir/
         Styles.define :ls_dir, :fg => "777", :face => "verdana", :size => "-1", :bold => true
-        Styles.define :dropdown_bullet_slash, :fg => "aaa", :face => "verdana", :size => "-1", :bold => true
-        Styles.define :dropdown_bullet, :fg => "999"
+        Styles.define :task_bullet_slash, :fg => "aaa", :face => "verdana", :size => "-1", :bold => true
+        Styles.define :task_bullet, :fg => "999"
 
       end
 
@@ -518,8 +518,8 @@ module Xiki
 
       # Has to be at bottom, to override other styles...
 
-      Styles.apply("^[ \t]*\\([*~]\\)\\( \\)\\(.*\\)", nil, :ls_bullet_darker, :variable, :dropdown_bullet)   # ~ fooo
-      Styles.apply("^[ \t]*\\([*~]\\)\\( \\)\\(.*\/$\\)", nil, :ls_bullet_darker, :variable, :dropdown_bullet_slash)   # ~ foo/
+      Styles.apply("^[ \t]*\\([*~]\\)\\( \\)\\(.*\\)", nil, :ls_bullet_darker, :variable, :task_bullet)   # ~ fooo
+      Styles.apply("^[ \t]*\\([*~]\\)\\( \\)\\(.*\/$\\)", nil, :ls_bullet_darker, :variable, :task_bullet_slash)   # ~ foo/
 
     end
 
@@ -612,7 +612,7 @@ module Xiki
     def self.save path, options
 
       # If no prefix, prompt to save (file must not exist since we were called)
-      if options[:prefix] != "update" && options[:dropdown] != ["save"] && options[:dropdown] != ["create"]
+      if options[:prefix] != "update" && options[:task] != ["save"] && options[:task] != ["create"]
         return "~ create/"
       end
 
@@ -1906,7 +1906,7 @@ module Xiki
 
     def self.expand options
 
-      prefix, dropdown = options[:prefix], options[:dropdown]
+      prefix, task = options[:prefix], options[:task]
 
       file_path = options[:file_path]
 
@@ -1918,17 +1918,17 @@ module Xiki
 
 
       # Ones that apply to both files and dirs
-      if dropdown == ["delete"] || prefix == "delete"
+      if task == ["delete"] || prefix == "delete"
         # Over-ride, so we don't have to do promt
-        Keys.remember_key_for_repeat(proc {Launcher.launch :dropdown=>["delete"], :no_prompt=>1})
+        Keys.remember_key_for_repeat(proc {Launcher.launch :task=>["delete"], :no_prompt=>1})
         self.delete_file file_path, options
         return
-      elsif dropdown == ["cd"]
+      elsif task == ["cd"]
         return self.cd file_path
-      elsif dropdown == ["exit and cd"]
+      elsif task == ["exit and cd"]
         Shell.exit_and_cd file_path
         return ""
-      elsif dropdown == ["rename"] || prefix == "rename"
+      elsif task == ["rename"] || prefix == "rename"
         return self.rename_file
       end
 
@@ -1983,9 +1983,9 @@ module Xiki
 
         options[:no_slash] = 1
 
-        # Dropdown, so just return the options...
+        # Task, so just return the options...
 
-        if dropdown == []
+        if task == []
           return options[:output] = "~ save/" if options[:quote]
 
           return options[:output] = "
@@ -2000,33 +2000,33 @@ module Xiki
             ~ bookmark
             "
 
-        elsif dropdown == ["edit"]
+        elsif task == ["edit"]
           options[:nest] = 1
           return options[:output] = "+ emacs\n+ vim\n+ sublime"
-        elsif dropdown == ["shell command"]
+        elsif task == ["shell command"]
           Tree.<< "$ ", :no_search=>1, :no_slash=>1
           Move.to_end
           return options[:output] = ""
-        elsif dropdown == ["bookmark"]
+        elsif task == ["bookmark"]
           Bookmarks.save arg=nil
           return options[:output] = ""
-        elsif dropdown == ["search"]
+        elsif task == ["search"]
           Search.enter_search
           return options[:output] = ""
-        elsif dropdown == ["edit", "vim"]
+        elsif task == ["edit", "vim"]
           $el.suspend_emacs "clear\nvim '#{file_path}'"
           return options[:output] = ""
-        elsif dropdown == ["edit", "sublime"]
+        elsif task == ["edit", "sublime"]
           Shell.sync "subl '#{file_path}'"
           return options[:output] = "<! opened in Sublime"
         end
 
-        return options[:output] = self.filter_one_file(file_path).join("\n") if dropdown == ["outline"] || prefix == "outline"
+        return options[:output] = self.filter_one_file(file_path).join("\n") if task == ["outline"] || prefix == "outline"
         return options[:output] = self.filter_one_file(file_path, /^> .+:$/).join("\n") if prefix == "u outline"
 
-        return options[:output] = Tree.quote(File.read(file_path, *Files.encoding_binary)) if dropdown == ["contents"] || prefix == "all"
+        return options[:output] = Tree.quote(File.read(file_path, *Files.encoding_binary)) if task == ["contents"] || prefix == "all"
 
-        return options[:output] = self.save(file_path, options) if (dropdown == ["save"] || prefix == "update" || prefix == "save") && options[:quote]
+        return options[:output] = self.save(file_path, options) if (task == ["save"] || prefix == "update" || prefix == "save") && options[:quote]
 
         # If editor, tell it to open the file...
         if options[:client] =~ /^editor\b/
@@ -2050,7 +2050,7 @@ module Xiki
 
       if File.directory? file_path
 
-        if dropdown
+        if task
 
           require "#{Xiki.dir}commands/sample_menus/sample_menus_index.rb" # if !defined?(SampleMenus)
 
@@ -2063,7 +2063,7 @@ module Xiki
             ~ bookmark
               ! Bookmarks.save arg=nil
               ! ""
-            ~ recent
+            ~ time
               ! # Expand with special flag
               ! FileTree.dir :date_sort=>true
               ! ""
@@ -2125,13 +2125,13 @@ module Xiki
 
           # / and :mouse, so return whole menu...
 
-          return options[:output] = menu.txt_without_code if dropdown == [] && options[:mouse]
+          return options[:output] = menu.txt_without_code if task == [] && options[:mouse]
 
           # /something, so expand menu...
 
-          dropdown[0] = "~ #{dropdown[0]}" if dropdown[0]
+          task[0] = "~ #{task[0]}" if task[0]
 
-          txt = menu[dropdown, :eval=>options]
+          txt = menu[task, :eval=>options]
           return options[:output] = txt if txt
 
           # If no output, it should just continue on...
@@ -2148,12 +2148,12 @@ module Xiki
 
       # ~ create dir, so create it...
 
-      if dropdown == ["create dir"]
+      if task == ["create dir"]
         FileUtils.mkdir_p options[:file_path]
         return options[:output] = "<! created!"
       end
 
-      # Non-existing dir (whether dropdown or not), so show "~ create dir"...
+      # Non-existing dir (whether task or not), so show "~ create dir"...
 
       return options[:output] = "~ create dir/" if options[:file_path] =~ /\/$/
 
@@ -2169,13 +2169,13 @@ module Xiki
         return options[:output] = ": file doesn't exist!"
       end
 
-      # dropdown, so show options for non-existant file...
+      # task, so show options for non-existant file...
 
-      return self.dropdown_for_new_file options if dropdown
+      return self.tasks_for_new_file options if task
 
-      # if dropdown == ""
+      # if task == ""
       #   return options[:output] = "~ create/"
-      # elsif dropdown == "create"
+      # elsif task == "create"
       #   return options[:output] = "
       #     : Content of the
       #     : file to create...
@@ -2194,14 +2194,14 @@ module Xiki
       "~ create dir/"
     end
 
-    def self.dropdown_for_new_file options
+    def self.tasks_for_new_file options
 
       options[:no_slash] = 1
-      dropdown = options[:dropdown]
+      task = options[:task]
 
       extension = File.extname(options[:file_path])[/\w+/]
 
-      if dropdown == []
+      if task == []
         # Special treatment for .rb > 2 options
         return options[:output] = "~ script/\n~ class/" if extension == "rb"
         return options[:output] = "~ create/"
@@ -2209,7 +2209,7 @@ module Xiki
 
       # Special treatment for .rb...
 
-      case "#{extension}/#{dropdown[0]}"
+      case "#{extension}/#{task[0]}"
       # when "rb/script"   # The default behavior is fine
       when "rb/class"
         clazz = TextUtil.camel_case File.basename options[:file_path], ".*"

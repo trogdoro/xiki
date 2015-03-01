@@ -197,9 +197,20 @@ module Xiki
         return
       end
 
-      # Match found, so do dropdown here...
+      # Match found, so behave like search+dir...
 
-      Launcher.dropdown
+      # Search for filenames in dir
+
+      dir = Keys.bookmark_as_path :prompt=>"Enter bookmark to look in (or space for recently edited): "
+
+      return View.message("Use space!", :beep=>1) if dir == :comma
+
+      return self.open_file_and_method(match) if dir == :space   # If key is comma, treat as last edited
+
+      TextUtil.snake_case! match if match =~ /[a-z][A-Z]/   # If camel case, file is probably snake
+      FileTree.grep_with_hashes dir, match, '**'   # Open buffer and search
+
+
 
     end
 
@@ -675,7 +686,7 @@ module Xiki
     end
 
     # During isearch, open most recently edited file with the search string in its name
-    def self.isearch_tasks
+    def self.isearch_todo
       match = self.stop
 
       if match.nil?   # If nothing searched for yet
@@ -684,16 +695,11 @@ module Xiki
 
       else
 
-        # search+tree
+        # Match found, so do task menu here...
 
-        dir = Keys.bookmark_as_path :prompt=>"Enter bookmark to look in (or space for recently edited): "
+        Launcher.tasks
 
-        return View.message("Use space!", :beep=>1) if dir == :comma
 
-        return self.open_file_and_method(match) if dir == :space   # If key is comma, treat as last edited
-
-        TextUtil.snake_case! match if match =~ /[a-z][A-Z]/   # If camel case, file is probably snake
-        FileTree.grep_with_hashes dir, match, '**'   # Open buffer and search
       end
     end
 
@@ -1529,11 +1535,11 @@ module Xiki
       # Which case was this handling?  Being in :n?  Why leave cursor in :t when in :n?
       #     return if path == ":t" && was_in_bar && orig.buffer != "todo.notes"
 
-      # Go to original location, unless it was as+task, and tasks.notes was visible to begin with (becase it makes sense to leave the cursor in tasks.notes)
+      # Go to original location, unless it was as+task, and todo.notes was visible to begin with (becase it makes sense to leave the cursor in todo.notes)
 
       orig.go if path != ":t" || was_visible
 
-      if path == ":t" && orig.buffer == "tasks.notes"
+      if path == ":t" && orig.buffer == "todo.notes"
         Line.next line-1
         View.column = orig.column
       end

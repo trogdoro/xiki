@@ -36,6 +36,7 @@
   (cond
     ((string-equal "Mark set" fmt))
     ((string-equal "Mark activated" fmt))
+    ((string-match "^Loading places from " fmt))
 
     ((and
       args

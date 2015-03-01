@@ -269,7 +269,7 @@ module Xiki
 
         Move.to_quote :pipes=>1
 
-        # If 1st diff isn't tasks.notes, and difflog not already open!
+        # If 1st diff isn't todo.notes, and difflog not already open!
         if ! View.file_visible?(first_diff_file) && ! was_open
           View.create
           View.recenter(View.line - View.number_of_lines)

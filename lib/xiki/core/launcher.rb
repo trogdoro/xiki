@@ -700,7 +700,7 @@ Ol["oh, this path is an array: #{path}!"] if path.is_a?(Array)
 
       # If there's a numeric prefix, add it
 
-      Launcher.launch :dropdown=>["outline"]
+      Launcher.launch :task=>["outline"]
     end
 
 
@@ -765,9 +765,9 @@ Ol["oh, this path is an array: #{path}!"] if path.is_a?(Array)
 
       if prefix = Keys.prefix; options[:prefix] = prefix; end
 
-      # Launching a "* dropdown" item, so delete the siblings (the'll be added back later)...
+      # Launching a "~ task" item, so delete the siblings (the'll be added back later)...
 
-      dropdown_orig = self.delete_dropdown_siblings path
+      task_orig = self.delete_task_siblings path
 
       # Maybe nest these within new :limits option (and delete before
       # passing to menu) to avoid too many options passed into menus.
@@ -788,7 +788,7 @@ Ol["oh, this path is an array: #{path}!"] if path.is_a?(Array)
 
       self.adjust_line_number_maybe path, options
 
-      if options[:path_append]   # Append item to path (used for :dropdown)
+      if options[:path_append]   # Append item to path (used for :task)
         path[-1] << "/" if path[-1] =~ /[^\/]$/   # Append slash if content that doesn't end in slash
         path[-1] << options[:path_append]
       end
@@ -807,13 +807,13 @@ Ol["oh, this path is an array: #{path}!"] if path.is_a?(Array)
 
       options.each{|k, v| insert_options[k] = v if [:no_slash, :no_search, :line_found, :hotkey, :omit_slashes].include?(k)}
 
-      # Re-add dropdown items and restore cursor if requested to put output under dropdown...
+      # Re-add task items and restore cursor if requested to put output under task...
 
-      if options[:dropdown] && options[:nest] && dropdown_orig
-        # Keep using letters if under dropdown
-        insert_options[:hotkey] = 1 if ! options[:no_dropdown]
+      if options[:task] && options[:nest] && task_orig
+        # Keep using letters if under task
+        insert_options[:hotkey] = 1 if ! options[:no_task]
         Line.next
-        View << dropdown_orig
+        View << task_orig
         View.line = line_number
       end
 
@@ -823,11 +823,11 @@ Ol["oh, this path is an array: #{path}!"] if path.is_a?(Array)
 
       insert_options[:no_slash] = 1 if options[:args] && options[:args].last =~ /(^[>|:]|\n)/
 
-      # "~ foo" dropdown item, so don't insert slashes after, and use hotkey search
+      # "~ foo" task item, so don't insert slashes after, and use hotkey search
 
       if txt =~ /\A\s*~ /
 
-        # Suppress adding slash if doing a dropdown on a quote
+        # Suppress adding slash if doing a task on a quote
         insert_options[:no_slash] = 1 if options[:quote]
         # Suppress adding slash, unless on a file path (it will only add if it's actually a dir, which we want)
         insert_options[:no_slash] = 1 if ! options[:file_path]
@@ -1037,7 +1037,7 @@ Ol["oh, this path is an array: #{path}!"] if path.is_a?(Array)
     end
 
 
-    def self.delete_dropdown_siblings path=nil #, line=nil
+    def self.delete_task_siblings path=nil #, line=nil
 
       line = Line.value
       path ||= Tree.path
@@ -1233,16 +1233,13 @@ Ol["oh, this path is an array: #{path}!"] if path.is_a?(Array)
     end
 
 
-    def self.dropdown
+    def self.tasks
 
-      Keys.remember_key_for_repeat ["dropdown"]
-
-      return self.dropdown_on_this_file if Keys.prefix_u(:clear=>1)
-
-      Launcher.launch :dropdown=>[]
+      Keys.remember_key_for_repeat ["task"]
+      Launcher.launch :task=>[]
     end
 
-    def self.dropdown_on_this_file
+    def self.tasks_on_this_file
 
       file = View.file   # Get path of this file
 
@@ -1251,7 +1248,7 @@ Ol["oh, this path is an array: #{path}!"] if path.is_a?(Array)
       View.new_file
       View << file
 
-      Launcher.launch :dropdown=>[]
+      Launcher.launch :task=>[]
 
     end
 
@@ -1263,7 +1260,7 @@ Ol["oh, this path is an array: #{path}!"] if path.is_a?(Array)
 
       path = Tree.path
 
-      expand_options = {:dropdown=>[]}
+      expand_options = {:task=>[]}
       expand_options[:mouse] = 1 # unless options[:no_mouse]
 
       txt = Xiki.expand path, expand_options
@@ -1272,7 +1269,7 @@ Ol["oh, this path is an array: #{path}!"] if path.is_a?(Array)
       txt_with_stars = txt.dup
       txt.gsub! /~ /, ""
 
-      result = Menu.dropdown txt, :offset=>[23, 21], :cursor=>Line.left+Line.indent.length
+      result = Menu.tasks txt, :offset=>[23, 21], :cursor=>Line.left+Line.indent.length
 
       return if ! result
 

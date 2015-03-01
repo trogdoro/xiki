@@ -983,7 +983,7 @@ module Xiki
 
     def self.args options, opts={}
       "
-        args, path, dir, dropdown = options[:args]||[], options[:path], options[:dir], options[:dropdown]
+        args, path, dir, task = options[:args]||[], options[:path], options[:dir], options[:task]
       ".unindent
     end
 

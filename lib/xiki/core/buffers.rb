@@ -23,7 +23,7 @@ module Xiki
 
       options = yield
 
-      quoted = options[:dropdown] == ["quoted"]
+      quoted = options[:task] == ["quoted"]
       prefix = Keys.prefix :clear=>1
 
       # /, so show list of buffers...
@@ -38,8 +38,8 @@ module Xiki
             next if prefix != :u && name =~ /^\*/
             next if name =~ /^ \*/
 
-            next if !prefix && ["views/", "edited/", "*ol", "nav.notes", "tasks.notes", "difflog.notes"].member?(name)
-            next if quoted && (name =~ /^\*/ || ["edited/", "*ol", "nav.notes", "tasks.notes", "difflog.notes"].member?(name))   # Skip the current buffer
+            next if !prefix && ["views/", "edited/", "*ol", "nav.notes", "todo.notes", "difflog.notes"].member?(name)
+            next if quoted && (name =~ /^\*/ || ["edited/", "*ol", "nav.notes", "todo.notes", "difflog.notes"].member?(name))   # Skip the current buffer
             modified = $el.buffer_file_name(b) && $el.buffer_modified_p(b) ? "+" : " "
 
             # Use ":" if modified or name has crazy chars
@@ -90,13 +90,13 @@ module Xiki
 
       name[0].sub! /^\:./, ''
 
-      dropdown = options[:dropdown]
+      task = options[:task]
 
       # Right-clicked, so show options
-      return "~ close" if dropdown == []
+      return "~ close" if task == []
 
       # If as+delete, just delete buffer, and line
-      if dropdown == ["close"]
+      if task == ["close"]
         Buffers.delete name[0]
         if name.length > 1
           Tree.to_parent
@@ -150,7 +150,7 @@ module Xiki
         next if file =~ /_ol.notes/
 
         if options[:buffer].nil?   # If we're not searching in one buffer
-          next if ["tasks.notes", "nav.notes"].
+          next if ["todo.notes", "nav.notes"].
             member? file.sub(/.+\//, '')
         end
 

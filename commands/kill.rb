@@ -50,29 +50,29 @@ Ol()
 
     # right click, so show options...
 
-    return "~ kill\n~ sudo kill\n~ force kill" if options[:dropdown] == []
+    return "~ kill\n~ sudo kill\n~ force kill" if options[:task] == []
 
     # Should just continue on
-    # return "<! killed" if options[:dropdown] == ["kill"]
+    # return "<! killed" if options[:task] == ["kill"]
 
     pid = process.split(/ +/)[2]
     command = "kill #{pid}"
-    command = "kill -9 #{pid}" if options[:prefix] == :u || options[:dropdown] == ["force kill"]
+    command = "kill -9 #{pid}" if options[:prefix] == :u || options[:task] == ["force kill"]
 
     # Dash+, so do sudo...
 
-    # if options[:dropdown] == ["sudo kill"]
+    # if options[:task] == ["sudo kill"]
     #   Console
     #   return "<! fu"
     # end
 
-    if options[:dropdown] == ["sudo kill"] || options[:prefix] == :-
+    if options[:task] == ["sudo kill"] || options[:prefix] == :-
       command = "sudo #{command}"
       Shell.async command
       return
     end
 
-    # if options[:dropdown] == ["force kill"]
+    # if options[:task] == ["force kill"]
     #   command = "kill -9 #{command}"
     #   Shell.async command
     #   return

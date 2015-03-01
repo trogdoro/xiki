@@ -1,9 +1,9 @@
-class Xiki::DropdownHandler
+class Xiki::TaskHandler
   include Xiki
 
   def self.handle options
 
-    source = options[:handlers]['dropdown']
+    source = options[:handlers]['task']
     return if ! source || options[:output] || options[:halt]
 
     # Better api call for this?  Maybe pass 'ex' in through options as well, so we don't need the param.
@@ -22,7 +22,7 @@ class Xiki::DropdownHandler
 
     cursor = Line.left + Line.indent.length
 
-    result = Xiki::Menu.dropdown txt, :cursor=>cursor, :offset=>[25, 19], :no_root=>1
+    result = Xiki::Menu.tasks txt, :cursor=>cursor, :offset=>[25, 19], :no_root=>1
 
     code = Tree.children txt_with_code, result
 

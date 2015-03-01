@@ -154,11 +154,11 @@ module Xiki
 
       if key && ! content
 
-        if dropdown = options[:dropdown]
+        if task = options[:task]
           return "
             ~ delete
             ~ duplicate
-            " if dropdown == []
+            " if task == []
         end
 
         # If "create it", create table
@@ -167,7 +167,7 @@ module Xiki
           return "<! created!"
         end
 
-        if dropdown == ["delete"] || options[:prefix] == "delete"   # If delete, kill it
+        if task == ["delete"] || options[:prefix] == "delete"   # If delete, kill it
           r(database).table(table).get(key).delete.run
           View.flash "- deleted!", :times=>1
           Line.delete

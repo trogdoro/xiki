@@ -189,8 +189,8 @@ module Xiki
       "br"=>"~/.bashrc",
 
       "se"=>"~/xiki/sessions/",
-      "t"=>"~/xiki/tasks.notes",
-      "tasks"=>"~/xiki/tasks.notes",
+      "t"=>"~/xiki/todo.notes",
+      "todo"=>"~/xiki/todo.notes",
       "n"=>"~/xiki/nav.notes",
       "nav"=>"~/xiki/nav.notes",
 

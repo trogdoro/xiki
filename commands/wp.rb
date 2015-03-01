@@ -4,9 +4,9 @@ return "<? - type wikipedia page name" if args.empty?
 
 name, item = args[0].sub(/^: /, ""), args[1]
 
-# /name and :dropdown, so show right-click options...
+# /name and :task, so show right-click options...
 
-if options[:dropdown] # && ! item
+if options[:task] # && ! item
   return "
     - source/
     " if ! item

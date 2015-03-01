@@ -11,7 +11,7 @@
 #
 #   ~/.bashrc
 #     : xiki_open_key="\C-x"   # Ctrl+X to open xsh
-#     : xiki_drop_key="\C-d"   # Ctrl+D to show dropdown
+#     : xiki_drop_key="\C-t"   # Ctrl+T to show tasks
 #     : xiki_grab_key="\C-g"   # Ctrl+G to grab to and from xsh
 #     : source /Users/craig/Dropbox/xiki/bin/.xsh
 #
@@ -19,13 +19,6 @@
 # Wraps the 'xsh' shell command.  Calls it and then runs any commands
 # it wrote to ~/xiki/misc/tmp/grabbed_commands.notes.
 function xsh {
-
-  # Ctrl+D on blank line, so do normal shell behavion and exit (zsh gives us control when Ctrl+D on a blank line)...
-
-  if [ "$1" = "-d" ] && [ $# = 1 ]; then
-    echo "exit"
-    exit
-  fi
 
   # Always write history to a temp file, in case it was Ctrl+R, or they'll do a open+recent
 
@@ -147,13 +140,13 @@ if [ $xiki_grab_key ]; then
   fi
 fi
 
-# 'xiki dropdown' shortcut (usually Ctrl+D) var exists, so define key...
+# 'xiki tasks' shortcut (usually Ctrl+T) var exists, so define key...
 
-if [ $xiki_dropdown_key ]; then
+if [ $xiki_tasks_key ]; then
   if [ -n "$ZSH_VERSION" ]; then
-    bindkey -s $xiki_dropdown_key '\C-axsh -d \n'
+    bindkey -s $xiki_tasks_key '\C-axsh -t \n'
   else   # Assume bash or bash-compatible
-    bind \"$xiki_dropdown_key'" "\C-axsh -d \n"'
+    bind \"$xiki_tasks_key'" "\C-axsh -t \n"'
   fi
 fi
 
@@ -163,9 +156,9 @@ fi
 
 if [ $xiki_tab_key ]; then
   if [ -n "$ZSH_VERSION" ]; then
-    bindkey -s $xiki_tab_key '\C-axsh -t \n'
+    bindkey -s $xiki_tab_key '\C-axsh -tab \n'
   else   # Assume bash or bash-compatible
-    bind \"$xiki_tab_key'" "\C-axsh -t \n"'
+    bind \"$xiki_tab_key'" "\C-axsh -tab \n"'
   fi
 fi
 

@@ -20,8 +20,8 @@ module Xiki
           "
       end
 
-      if dropdown = options[:dropdown]
-        return "~ standalone" if dropdown == []
+      if task = options[:task]
+        return "~ standalone" if task == []
 
         # ~ standalone, so run in console...
 

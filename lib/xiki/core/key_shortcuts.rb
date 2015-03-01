@@ -7,14 +7,17 @@ module Xiki
       Menu.init
 
       # Keys.accumulate do
-      self.as_keys
       self.open_keys
-      self.enter_keys
-      self.hop_keys
-      self.tile_keys
       self.window_keys
-      self.run_keys
+
+      self.as_keys
+      self.enter_keys
+
+      self.hop_keys
       self.jump_keys
+
+      self.do_keys
+      self.run_keys
       self.search_keys   # time > (0.073769)
       self.misc   # time > (0.0451)
 
@@ -24,27 +27,28 @@ module Xiki
 
       # This breaks > probably unset C-a first, so we can go back to this
 
-      Xiki.def("as+save", :noob=>1){ DiffLog.save }
+      #       Xiki.def("as+save", :noob=>1){ DiffLog.save }
+      Xiki.def("as+save"){ View.beep "- changed to window+save!" }
 
       Xiki.def("as+command"){ Menu.as_menu }
-      Xiki.def("as+bookmark", :noob=>1){ Bookmarks.save }
+      Xiki.def("as+bookmark"){ Bookmarks.save }
 
       Xiki.def("as+line"){ Clipboard.as_line }
       Xiki.def("as+paragraph"){ Clipboard.copy_paragraph }   # copy paragraph
       Xiki.def("as+rest"){ Clipboard.copy_paragraph(:rest => true) }
-      Xiki.def("as+unsaved", :noob=>1){ DiffLog.compare_with_saved }
+      Xiki.def("as+unsaved"){ DiffLog.compare_with_saved }
       Xiki.def("as+all"){ Clipboard.copy_everything }
       Xiki.def("as+directory"){ FileTree.copy_path }   # copy dir to clipboard from tree
 
       Xiki.def("as+task"){ Notes.as_todo }
-      Xiki.def("as+nav", :noob=>1){ Notes.as_file }   # Save in :n
+      Xiki.def("as+nav"){ Notes.as_file }   # Save in :n
 
       Xiki.def("as+here"){ Location.as_spot }   # remember point in file
       Xiki.def("as+version"){ History.backup_file }   # creates backup
       Xiki.def("as+indented"){ CodeTree.as_indented }
       Xiki.def("as+macro"){ Macros.record }   # start recording macro
 
-      # Todo > remove as+open after dropdown items supercede it (in notes, etc.)?
+      # Todo > remove as+open after task items supercede it (in notes, etc.)?
       #   Wait > these may be 2 distinct cases (think about :n)
       #     as+open may still be needed, like when you want to open a file from :n, but it has an outline underneath that you don't want to close
       Xiki.def("as+open"){ Launcher.as_open }
@@ -77,7 +81,8 @@ module Xiki
       Xiki.def("open+sessions", :noob=>1){ Launcher.open "sessions/" }
       Xiki.def("open+time"){ Bookmarks.go nil, :date_sort=>true }
       Xiki.def("open+opened", "opened/")
-      Xiki.def("open+quotes"){ Launcher.open("views/", :dropdown=>["quoted"]) }
+      Xiki.def("open+quotes"){ Launcher.open("views/", :task=>["quoted"]) }
+      Xiki.def("open+recent"){ Shell.recent_history_external nil, :create_view=>1 }
 
       Xiki.def("open+key"){ Keys.jump_to_code }   # jump to ruby code of key definition
       Xiki.def("open+whereabouts"){ Code.do_list_ancestors }
@@ -89,7 +94,6 @@ module Xiki
 
 
       # open+menu > __ open xiki.
-      Xiki.def("open+recent"){ Shell.recent_history_external nil, :create_view=>1 }
       Xiki.def("open+as+output"){ OlHelper.open_last_outlog }   # last
       #       Xiki.def("open+list+urls"){ Launcher.open "last/urls/" }   # last
 
@@ -141,7 +145,7 @@ module Xiki
       Xiki.def("enter+url"){ Firefox.enter_as_url }
 
       Xiki.def("enter+history"){ View << "$"; Launcher.launch }
-      Xiki.def("enter+tasks"){ View.enter_upper }
+      Xiki.def("enter+todo"){ View.enter_upper }
       Xiki.def("enter+file"){ Files.enter_file }   # in tree, enter methods or headings
       Xiki.def("enter+outline"){ Launcher.enter_outline }   # in tree, enter methods or headings
 
@@ -172,9 +176,9 @@ module Xiki
 
     def self.jump_keys
 
-      Xiki.def("jump+tasks", :noob=>1){ Notes.open_tasks }   # shows diffs of what you've edited
-      Xiki.def("jump+nav", :noob=>1){ Notes.open_tasks :bookmark=>":n" }   # shows diffs of what you've edited
-      Xiki.def("jump+quick"){ Notes.open_tasks :bookmark=>":q" }   # shows diffs of what you've edited
+      Xiki.def("jump+todo", :noob=>1){ Notes.open_todo }   # shows diffs of what you've edited
+      Xiki.def("jump+nav", :noob=>1){ Notes.open_todo :bookmark=>":n" }   # shows diffs of what you've edited
+      Xiki.def("jump+quick"){ Notes.open_todo :bookmark=>":q" }   # shows diffs of what you've edited
 
       Xiki.def("jump+line"){ Move.to_line }
       Xiki.def("jump+file"){ FileTree.tree :recursive=>1 }
@@ -349,57 +353,61 @@ module Xiki
 
     end
 
-    def self.window_keys
+    def self.do_keys
       # Use for: dealing with windows
 
-      Xiki.def("window+tasks"){ View.layout_todo }
-      Xiki.def("window+nav"){ View.layout_nav }
-      Xiki.def("window+both"){ View.layout_todo_and_nav }
+      Xiki.def("do+todo"){ View.layout_todo }
+      Xiki.def("do+nav"){ View.layout_nav }
+      Xiki.def("do+both"){ View.layout_todo_and_nav }
 
-      Xiki.def("window+output"){ View.layout_outlog }
-      Xiki.def("window+all"){ View.layout_outlog :all=>1 }
+      Xiki.def("do+output"){ View.layout_outlog }
+      Xiki.def("do+all"){ View.layout_outlog :all=>1 }
 
-      Xiki.def("window+quick"){ View.layout_quick }
+      Xiki.def("do+quick"){ View.layout_quick }
     end
 
-
-    def self.tile_keys
+    def self.window_keys
       # Use for: adjusting the layout, changing what is visible
 
-      Xiki.def("tile+create"){ View.create }
+      Xiki.def("window+save", :noob=>1){ DiffLog.save }
 
-      Xiki.def("tile+hide"){ View.hide }
-      Xiki.def("tile+delete"){ View.kill }
+      Xiki.def("window+create"){ View.create }
 
-      Xiki.def("tile+next"){ View.next(:blink=>true) }
-      Xiki.def("tile+previous"){ View.previous(:blink=>true) }
+      Xiki.def("window+hide"){ View.hide }
+      Xiki.def("window+delete"){ View.kill }
 
-      Xiki.def("tile+edge"){ View.recenter_top_key }
-      Xiki.def("tile+alone"){ View.hide_others }
-      Xiki.def("tile+bigger"){ View.enlarge }
-      Xiki.def("tile+middle"){ View.recenter }   # LL - recenter (L's emacs default)
+      Xiki.def("window+next"){ View.next(:blink=>true) }
+      Xiki.def("window+previous"){ View.previous(:blink=>true) }
 
-      Xiki.def("tile+uniform"){ 3.times { View.balance } }
-      Xiki.def("tile+wrap"){ $el.toggle_truncate_lines }   # wrap lines
-      Xiki.def("tile+jump"){ View.shift }
+      Xiki.def("window+edge"){ View.recenter_top_key }
+      Xiki.def("window+alone"){ View.hide_others }
+      Xiki.def("window+bigger"){ View.enlarge }
+      Xiki.def("window+middle"){ View.recenter }   # LL - recenter (L's emacs default)
 
-      Xiki.def("tile+select"){ Clipboard.select }
+      Xiki.def("window+uniform"){ 3.times { View.balance } }
+      Xiki.def("window+wrap"){ $el.toggle_truncate_lines }   # wrap lines
+      Xiki.def("window+jump"){ View.shift }
 
-      Xiki.def "tile+kind", "tile settings/", :hotkey=>1   # Used to be +visible
-      Xiki.def("tile+vertical"){ View.create_vertical }
+      Xiki.def("window+tasks"){ Launcher.tasks_on_this_file }
+
+      # Ctrl+Space > change to do+select?
+      #       Xiki.def("window+select"){ Clipboard.select }
+
+      Xiki.def "window+kind", "tile settings/", :hotkey=>1   # Used to be +visible
+      Xiki.def("window+vertical"){ View.create_vertical }
 
       # Q
-      Xiki.def("tile+indent"){ Hide.hide_by_indent }   # only show lines indented less than x
-      Xiki.def("tile+right"){ View.to_upper(:blink=>true) }
-      Xiki.def("tile+last"){ Move.to_last_window(:blink=>true) }
-      Xiki.def("tile+zoom"){ View.zoom }   # show selection only
+      Xiki.def("window+indent"){ Hide.hide_by_indent }   # only show lines indented less than x
+      Xiki.def("window+right"){ View.to_upper(:blink=>true) }
+      Xiki.def("window+last"){ Move.to_last_window(:blink=>true) }
+      Xiki.def("window+zoom"){ View.zoom }   # show selection only
 
-      Xiki.def("tile+1"){ Move.to_window(1, :blink=>true) }
-      Xiki.def("tile+2"){ Move.to_window(2, :blink=>true) }
-      Xiki.def("tile+3"){ Move.to_window(3, :blink=>true) };  Xiki.def("tile+4"){ Move.to_window(4, :blink=>true) }
-      Xiki.def("tile+5"){ Move.to_window(5, :blink=>true) };  Xiki.def("tile+6"){ Move.to_window(6, :blink=>true) };  Xiki.def("tile+7"){ Move.to_window(7, :blink=>true) };  Xiki.def("tile+8"){ Move.to_window(8, :blink=>true) }
-      Xiki.def("tile+9"){ Move.to_last_window(:blink=>true) }
-      Xiki.def("tile+0"){ View.recenter_top }   # Layout 0: scroll so cursor is 0 lines from top of window
+      Xiki.def("window+1"){ Move.to_window(1, :blink=>true) }
+      Xiki.def("window+2"){ Move.to_window(2, :blink=>true) }
+      Xiki.def("window+3"){ Move.to_window(3, :blink=>true) };  Xiki.def("window+4"){ Move.to_window(4, :blink=>true) }
+      Xiki.def("window+5"){ Move.to_window(5, :blink=>true) };  Xiki.def("window+6"){ Move.to_window(6, :blink=>true) };  Xiki.def("window+7"){ Move.to_window(7, :blink=>true) };  Xiki.def("window+8"){ Move.to_window(8, :blink=>true) }
+      Xiki.def("window+9"){ Move.to_last_window(:blink=>true) }
+      Xiki.def("window+0"){ View.recenter_top }   # Layout 0: scroll so cursor is 0 lines from top of window
 
     end
 
@@ -416,7 +424,7 @@ module Xiki
       Xiki.def("search+pull"){ Search.isearch_pull }   # Pull back to search start (or search+push if nothing searched for yet)
       Xiki.def("search+zap"){ Search.zap }   # zap - delete up until search start
 
-      Xiki.def("search+tasks"){ Search.isearch_tasks }   # To: open file / jump to method
+      Xiki.def("search+todo"){ Search.isearch_todo }   # To: open file / jump to method
       Xiki.def("search+files"){ Search.bookmark }   # when no search, prompt for input
       Xiki.def("search+outline"){ Search.isearch_outline }   # Outline (or search+outlog if nothing searched for yet)
 
@@ -429,7 +437,7 @@ module Xiki
       Xiki.def("search+before"){ Search.isearch_or_copy("1") }
       Xiki.def("search+after"){ Search.isearch_or_copy("2") }
 
-      Xiki.def("search+dropdown"){ Search.isearch_diffs }   # Delete (or search+difflog if no search)
+      Xiki.def("search+diffs"){ Search.isearch_diffs }   # Delete (or search+difflog if no search)
       Xiki.def("search+good"){ Search.cancel }   # Stop searching
       $el.define_key(:isearch_mode_map, "\e"){ Search.cancel }
 
@@ -451,7 +459,7 @@ module Xiki
       Xiki.def("search+have+push"){ Git.search_just_push }   # When search match
 
       Xiki.def("search+have+right"){ Search.have_right }
-      Xiki.def("search+have+tasks"){ Search.isearch_move_to ":t" }
+      Xiki.def("search+have+todo"){ Search.isearch_move_to ":t" }
       Xiki.def("search+have+variable"){ Search.insert_var_at_search_start }
 
       Xiki.def("search+have+wikipedia"){ Search.isearch_have_wikipedia }   # Grab everything except chars on edges
@@ -499,7 +507,7 @@ module Xiki
 
       Xiki.def("search+like+layout"){ $el.recenter 1 }
       Xiki.def("search+like+middle"){ $el.recenter 20
-        Ol["Get this to use the actual middle > borrow: tile+middle!"]
+        Ol["Get this to use the actual middle > borrow: window+middle!"]
       }
 
       Xiki.def("search+like+output"){ Search.isearch_restart ":o" }
@@ -507,7 +515,7 @@ module Xiki
 
       Xiki.def("search+like+expanded"){ Search.like_expanded }
       Xiki.def("search+like+special"){ Search.isearch_just_special }
-      Xiki.def("search+like+tasks"){ Search.isearch_restart ":t", :as_here=>1 }
+      Xiki.def("search+like+todo"){ Search.isearch_restart ":t", :as_here=>1 }
       Xiki.def("search+like+variable"){ Search.just_name }
       Xiki.def("search+like+web"){ Search.isearch_google }   # make match be snake case
       Xiki.def("search+like+xiki"){ View.open ":xiki/#{Search.stop.strip}" }
@@ -610,8 +618,8 @@ module Xiki
 
       View.sensible_defaults
 
-      Xiki.def("dropdown+", :noob=>1){ Launcher.dropdown }   # expand+
-      $el.define_key(:global_map, $el.kbd("M-C-d")){ Launcher.dropdown }
+      Xiki.def("tasks+", :noob=>1){ Launcher.tasks }   # expand+
+      $el.define_key(:global_map, $el.kbd("M-C-t")){ Launcher.tasks }
 
       Xiki.def("backward+"){ Move.backward_key }
       Xiki.def("forward+"){ Move.forward_key }
@@ -656,7 +664,7 @@ module Xiki
       Xiki.def("xpand+") { Launcher.go }   # expand+
       $el.define_key(:global_map, $el.kbd("M-C-x")){ Launcher.go }
 
-      # Meta+T for tasks.notes
+      # Meta+T for todo.notes
       $el.define_key(:global_map, $el.kbd("M-t")){ View.open ":t" }
 
     end
@@ -664,13 +672,13 @@ module Xiki
     # Defines right-click
     def self.right_click
 
-      # When not gui emacs, invoke what ctrl+D does...
+      # When not gui emacs, invoke what ctrl+T does...
 
       if ! Environment.gui_emacs
 
         $el.define_key(:global_map, $el.kbd("<mouse-3>"), $el.el_lambda(:interactive=>"e") {|e|
           $el.mouse_set_point(e)
-          Launcher.dropdown
+          Launcher.tasks
         })
 
         return

@@ -618,9 +618,9 @@ module Xiki
 
     def self.shell_command_per_prompt prompt, options
 
-      dir, command, dropdown = options[:dir], options[:command], options[:dropdown]
+      dir, command, task = options[:dir], options[:command], options[:task]
 
-      if ! dropdown && command !~ /^[%$]/
+      if ! task && command !~ /^[%$]/
         self.append_log command, dir, "#{prompt} "
       end
 
@@ -634,9 +634,9 @@ module Xiki
 
       if ! command && prompt =~ /[%$]/
 
-        # Ctrl+D on a blank prompt, so quit...
+        # Ctrl+T on a blank prompt, so quit...
 
-        return DiffLog.quit if dropdown
+        return DiffLog.quit if task
 
         # Ctrl+X on a blank prompt, so show the history...
 
@@ -649,9 +649,9 @@ module Xiki
       case prompt
       when "$"
 
-        # Takes control if items underneath (dropdown or normal)...
+        # Takes control if items underneath (task or normal)...
 
-        if result = self.shell_items(options)   # if options[:dropdown] || options[:args]
+        if result = self.shell_items(options)   # if options[:task] || options[:args]
           return result
         end
 
@@ -704,18 +704,18 @@ module Xiki
     end
 
     #       # Mouse, so return all...
-    #       return menu if dropdown == [] && options[:mouse]
+    #       return menu if task == [] && options[:mouse]
 
     # Delegated to by .shell_command_per_prompt to handle when right-clicking or items under the command.
     def self.shell_items options   # New version
 
-      dir, command, args, dropdown = options[:dir], options[:command], options[:args], options[:dropdown]
+      dir, command, args, task = options[:dir], options[:command], options[:args], options[:task]
 
-      # No args or :dropdown items, so do nothing...
+      # No args or :task items, so do nothing...
 
-      return nil if ! dropdown && ! args
+      return nil if ! task && ! args
 
-      # /~, so show dropdown list...
+      # /~, so show task list...
 
       return "
         ~ history/
@@ -725,12 +725,12 @@ module Xiki
         ~ examples/
         ~ xiki command
         ~ man
-        ".unindent if ! args && dropdown == []
+        ".unindent if ! args && task == []
 
-      return self.shell_history(options) if ! args && dropdown && dropdown[0] == "history"
-      return self.shell_favorites(options) if ! args && dropdown && dropdown[0] == "favorites"
-      return self.shell_notes(options) if (! args && dropdown[0] == "notes") || args && args[0] =~ /^>/
-      return self.shell_examples(options) if dropdown && dropdown[0] == "examples"
+      return self.shell_history(options) if ! args && task && task[0] == "history"
+      return self.shell_favorites(options) if ! args && task && task[0] == "favorites"
+      return self.shell_notes(options) if (! args && task[0] == "notes") || args && args[0] =~ /^>/
+      return self.shell_examples(options) if task && task[0] == "examples"
 
       # :... arg, so delegate to shell wrapper
       return self.shell_wrapper(options) if args && args[0] =~ /^:/
@@ -740,46 +740,46 @@ module Xiki
       #       return self.shell_pipe options if args[0] =~ /\n/
 
       # If any args (and not :... or >...), delegate to the =foo menu
-      return self.shell_menu(options) if dropdown == ["xiki command"] || args
-      return self.shell_man(options) if dropdown == ["man"]
+      return self.shell_menu(options) if task == ["xiki command"] || args
+      return self.shell_man(options) if task == ["man"]
 
-      # /args, so do special handling :dropdown items, so do nothing...
+      # /args, so do special handling :task items, so do nothing...
 
-      # Note > We used to pre-populate it so it would work with a GUI dropdown, but not doing this for now
+      # Note > We used to pre-populate it so it would work with a GUI task, but not doing this for now
 
       nil
 
     end
 
     def self.shell_history options
-      dir, command, dropdown = options[:dir], options[:command], options[:dropdown]
-      dropdown.shift if dropdown   # Remove the "history" item
+      dir, command, task = options[:dir], options[:command], options[:task]
+      task.shift if task   # Remove the "history" item
       command_root = (command||"").sub(/ .*/, '')   # Cut off after the space
 
       # ~ history, so list history for this command and this dir...
 
       options[:nest] = 1
 
-      if dropdown == [] || dropdown == nil
-        options[:no_dropdown] = 1
+      if task == [] || task == nil
+        options[:no_task] = 1
         # Is this too simplistic?
         dir = Shell.dir if ! dir   # We're not nested under a dir, so grab dir from shell
         return self.history dir, :command=>command_root
       end
 
-      "<$ #{dropdown[-1]}"
+      "<$ #{task[-1]}"
 
     end
 
     def self.shell_favorites options
 
-      dir, command, dropdown = options[:dir], options[:command], options[:dropdown]
+      dir, command, task = options[:dir], options[:command], options[:task]
 
-      dropdown.shift if dropdown   # Remove the "favorites" item
+      task.shift if task   # Remove the "favorites" item
       command_root = command.sub(/ .*/, '')   # Cut off after the space
 
       options[:nest] = 1
-      options[:no_dropdown] = 1
+      options[:no_task] = 1
 
       # Is this too simplistic?
       dir = Shell.dir if ! dir   # We're not nested under a dir, so grab dir from shell
@@ -790,7 +790,7 @@ module Xiki
 
       # Todo > ~ favorites/add, so create favorite file for this
 
-      if dropdown == ["add"]
+      if task == ["add"]
         return "- add some args to the command first!" if command !~ / /
         txt = File.read(file) rescue ""
         File.open(file, "w") { |f| f << "$ #{command}\n#{txt}" }
@@ -799,8 +799,8 @@ module Xiki
 
       # Last item is $..., so just run
 
-      if dropdown && dropdown[-1] =~ /^\$/
-        command = dropdown[-1]
+      if task && task[-1] =~ /^\$/
+        command = task[-1]
         return "<$ #{command}"
       end
 
@@ -809,7 +809,7 @@ module Xiki
       txt = File.read(file) rescue nil
       if txt
         txt = "+ add\n#{txt}"
-        txt = Tree.children txt, dropdown
+        txt = Tree.children txt, task
         return txt
       else
         txt = "+ add\n| You haven't added any favorites for the '#{command}' command yet.\n| Add some and then try again."
@@ -819,12 +819,12 @@ module Xiki
 
     def self.shell_notes options
 
-      dir, command, args, dropdown = options[:dir], options[:command], options[:args], options[:dropdown]
+      dir, command, args, task = options[:dir], options[:command], options[:args], options[:task]
       command_root = command.sub(/ .*/, '')   # Cut off after the space
 
-      # $... and no dropdown, so just run it...
+      # $... and no task, so just run it...
 
-      if args && args[-1] =~ /^\$/ && ! dropdown
+      if args && args[-1] =~ /^\$/ && ! task
         command = args[-1]
         return "<$ #{command}"
       end
@@ -836,16 +836,16 @@ module Xiki
         args[-1].sub! /$/, "\n"   # Make it look like note contents
       end
 
-      options[:no_dropdown] = 1
+      options[:no_task] = 1
 
       return Xiki.expand "notes/#{command_root}" if ! args   # Must be ~ notes, so just get the headings
 
       path = Path.join([command_root] + args)
 
-      # If expanding the heading and no dropdown, force "~ expand"
-      options[:dropdown] = ["expand"] if args.length == 1 && ! dropdown
+      # If expanding the heading and no task, force "~ expand"
+      options[:task] = ["expand"] if args.length == 1 && ! task
 
-      txt = Xiki.expand "notes/#{path}", options.select{|k, v| [:dropdown].include?(k) }
+      txt = Xiki.expand "notes/#{path}", options.select{|k, v| [:task].include?(k) }
 
       txt.gsub! /^=\$/, '$'   # Change "=$ foo" lines to just "$ foo"
       txt.sub! /(\n\|)+\Z/, ''   # Strip trailing lines at end
@@ -869,14 +869,14 @@ module Xiki
 
     def self.shell_examples options
 
-      dir, command, dropdown = options[:dir], options[:command], options[:dropdown]
+      dir, command, task = options[:dir], options[:command], options[:task]
 
-      dropdown.shift if dropdown   # Remove the "examples" item
+      task.shift if task   # Remove the "examples" item
       command_root = command.sub(/ .*/, '')   # Cut off after the space
 
       options[:nest] = 1
       options[:hotkey] = 1
-      options[:no_dropdown] = 1
+      options[:no_task] = 1
 
       # Also look in project dir?
 
@@ -900,13 +900,13 @@ module Xiki
         " if ! File.exists? file
 
       # Last item is $..., so just run
-      if dropdown && dropdown[-1] =~ /^\$/
-        command = dropdown[-1]
+      if task && task[-1] =~ /^\$/
+        command = task[-1]
         return "<$ #{command}"
       end
 
       txt = File.read file
-      result = Tree.children txt, dropdown
+      result = Tree.children txt, task
 
       result
 
@@ -914,24 +914,24 @@ module Xiki
 
     def self.shell_man options
 
-      command, dropdown = options[:command], options[:dropdown]
+      command, task = options[:command], options[:task]
       command_root = command.sub(/ .*/, '')   # Cut off after the space
 
-      Tree.quote Shell.sync("man #{command_root} | col -x -b") if dropdown == ["man"]
+      Tree.quote Shell.sync("man #{command_root} | col -x -b") if task == ["man"]
 
     end
 
     def self.shell_menu options
-      dir, command, args, dropdown = options[:dir], options[:command], options[:args], options[:dropdown]
+      dir, command, args, task = options[:dir], options[:command], options[:args], options[:task]
 
       command_root = command.sub(/ .*/, '')   # Cut off after the space
 
-      options[:no_dropdown] = 1
+      options[:no_task] = 1
 
       path = [command_root]
       path += args if args
 
-      txt = Xiki.expand Path.join(path), options.select{|k, v| [:dir, :dropdown].include?(k) }
+      txt = Xiki.expand Path.join(path), options.select{|k, v| [:dir, :task].include?(k) }
 
       txt || ""   # Return blank string in case xiki command returned nil (if it returned nil, it'll continue on)
 
@@ -941,7 +941,7 @@ module Xiki
     # Delegates to shell_foo menu when "$ foo" with :... args.
     def self.shell_wrapper options
 
-      dir, command, args, dropdown = options[:dir], options[:command], options[:args], options[:dropdown]
+      dir, command, args, task = options[:dir], options[:command], options[:args], options[:task]
       command_root = command.sub(/ .*/, '')   # Cut off after the space
 
       # Escape in case the contain a slash!
@@ -966,13 +966,13 @@ module Xiki
 
       path = wrapper + Path.join(args)
 
-      options = {:dir=>dir, :dropdown=>dropdown, :shell_command=>command}
+      options = {:dir=>dir, :task=>task, :shell_command=>command}
       Xiki.expand path, options
 
     end
 
-    def self.dropdown_source command_name
-      favorites = Xiki::Menu.source_files "shell #{command_name} dropdown"
+    def self.tasks_source command_name
+      favorites = Xiki::Menu.source_files "shell #{command_name} task"
       return nil if favorites == []
       raise "- The '#{command_name} favorites' menu must be a single .menu file" if favorites.length > 1
 
@@ -1009,7 +1009,7 @@ module Xiki
 
       # Delegate to ~ menu
 
-      Launcher.launch :dropdown=>["xiki command"]
+      Launcher.launch :task=>["xiki command"]
 
     end
 

@@ -278,7 +278,7 @@ module Xiki
 
       # File, so expand as contents...
 
-      Launcher.launch :dropdown=>["all"]
+      Launcher.launch :task=>["all"]
 
     end
 

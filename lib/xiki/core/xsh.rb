@@ -106,7 +106,7 @@ module Xiki
       elsif args.slice! /^-f /
         args = "./\n  - **#{args}/"
       elsif args.slice! /^-b /
-        options_in[:dropdown] = ["bookmark"]
+        options_in[:task] = ["bookmark"]
 
         args = args == "." ?
           "./" :
@@ -132,21 +132,32 @@ module Xiki
       elsif args.slice! /^-x /
         args = "$ #{args}\n  ~ xiki command/"
 
-      elsif args == "-t"
-        # Esc, Tab with no args, so explain why it doesn't make sense
-        args = "
-          | Doing Esc, Tab on a blank prompt doesn't make sense.
-          | Next time, type a command or file path to autocomplete
-          | it before doing Esc, Tab.
-        ".unindent
-        options[:dont_expand] = 1
-      elsif args.slice! /^-t /
+      elsif args == "-tab"
+        # Esc, Tab with no args, so do tasks menu on blank line
+
+        # Todo > fix > Ctrl+T on a blank line > errors when at very top of file
+
+        args = ""
+        options_in[:task] = []
+
+      elsif args.slice! /^-tab /
         # Esc, Tab, so delegate to Notes.tab_key
         options[:tab] = 1
         args = "$ #{args}" if args =~ /\A\w/   # Treat as shell command if it's just a word
-      elsif args.slice! /^-d /
-        options_in[:dropdown] = []
-        args = "$ #{args}" if args =~ /\A\w/   # Treat as shell command if it's just a word
+
+      elsif args.slice! /^-t\b/
+        args.strip!
+        options_in[:task] = []
+
+        # It's a blank prompt, so use the current dir...
+        if args == ""
+          args = View.dir
+        elsif args =~ /\A\w/   # Treat as shell command if it's just a word
+          args = "$ #{args}"
+        elsif args =~ /\A:\w/   # Bookmark
+          args = Bookmarks[args]
+        end
+
       elsif args.slice! /^-slashify /
         args.sub! ' ', '/'
       elsif args == "$"
@@ -175,8 +186,6 @@ module Xiki
       Themes.use 'Default'
       Styles.reload_styles   # So it uses dark headings
 
-      View.message ""   # Suppresses "Loading places from..." message at startup > it happens when "xsh :foo", etc.
-
       return if options[:do_nothing]
 
       # Open the "xsh" view...
@@ -203,12 +212,12 @@ module Xiki
 
       if args == "s"
         View.<< "./"
-        Launcher.launch :dropdown=>["filter", "all contents"]
+        Launcher.launch :task=>["filter", "all contents"]
         return
 
       elsif args == "f"
         View.<< "./"
-        Launcher.launch :dropdown=>["tree"]
+        Launcher.launch :task=>["tree"]
         return
 
       elsif args == "r"

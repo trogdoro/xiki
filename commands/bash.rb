@@ -8,11 +8,11 @@ if args == []
     "
 end
 
-# dropdown+, so show items
+# tasks+, so show items
 
-return "~ exit and run" if dropdown == []
+return "~ exit and run" if task == []
 
-if dropdown == ["exit and run"]
+if task == ["exit and run"]
   Xsh.save_grab_commands args[0]
   return DiffLog.quit
 end

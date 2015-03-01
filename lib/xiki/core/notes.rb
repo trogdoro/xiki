@@ -1048,7 +1048,7 @@ module Xiki
       # Pull off options, to get prefix
 
       options = args[-1].is_a?(Hash) ? args.pop : {}
-      dropdown = options[:dropdown]
+      task = options[:task]
 
       # Divide up path.  Could look like this:
         # dir/dir/> heading/| contents
@@ -1102,7 +1102,7 @@ module Xiki
 
       if ! File.exists? file
         return "
-          : File doesn't exist yet.  Type Ctrl+D to create it:
+          : File doesn't exist yet.  Type Ctrl+T to create it:
           =#{file}
             : > Heading
             : Stuff
@@ -1115,9 +1115,9 @@ module Xiki
 
       if ! heading
 
-        return "~ headings\n~ navigate" if dropdown == []
+        return "~ headings\n~ navigate" if task == []
 
-        if dropdown == ["navigate"]   # If as+open, just jump there
+        if task == ["navigate"]   # If as+open, just jump there
           View.open file
           return ""
         end
@@ -1135,10 +1135,10 @@ module Xiki
 
       if ! content
 
-        return "~ navigate\n~ expand" if dropdown == []
+        return "~ navigate\n~ expand" if task == []
 
-        # No '~ navigate' dropdown, so always expand
-        if dropdown != ['navigate']
+        # No '~ navigate' task, so always expand
+        if task != ['navigate']
           txt = self.extract_block txt, heading
           txt.sub! /\n\z/, ''
 
@@ -1166,12 +1166,12 @@ module Xiki
 
       # /> Heading/| content, so navigate or save...
 
-      return "~ save\n~ navigate" if dropdown == []
+      return "~ save\n~ navigate" if task == []
 
 
       # Update...
 
-      if dropdown == ["save"]
+      if task == ["save"]
 
         # Extract parts from the file that won't change
         index = txt.index /^#{escaped_heading}$/
@@ -1210,7 +1210,7 @@ module Xiki
 
       end
 
-      # No dropdown (or ~navigate), so navigate to heading and put cursor on line...
+      # No task (or ~navigate), so navigate to heading and put cursor on line...
 
       View.open file
       View.to_highest
@@ -1321,7 +1321,7 @@ module Xiki
       nil
     end
 
-    def self.open_tasks options={}
+    def self.open_todo options={}
 
       prefix = Keys.prefix :clear=>1
 

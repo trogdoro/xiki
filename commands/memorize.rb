@@ -270,10 +270,10 @@ Ol "args", args   # => ["France : Paris\nEngland : London\nJapan : Tokyo\nGerman
 
     # Only do something if right-click...
 
-    dropdown = yield[:dropdown]
-    return if ! dropdown
+    task = yield[:task]
+    return if ! task
 
-    Ol "dropdown", dropdown   # => ["save to Memorize.com"]
+    Ol "task", task   # => ["save to Memorize.com"]
 
     # /, so show "start with an example"?...
 
@@ -281,13 +281,13 @@ Ol "args", args   # => ["France : Paris\nEngland : London\nJapan : Tokyo\nGerman
     # /some content, so offer to save to memorize.com...
 
     if args[0] =~ /\n/ # || args[0] =~ /^\|/
-      return "~ memorize\n~ save to Memorize.com" if dropdown == []
-      if dropdown == ["save to Memorize.com"]
+      return "~ memorize\n~ save to Memorize.com" if task == []
+      if task == ["save to Memorize.com"]
 Ol["populate!"]
         return self.browser args[0]
       end
 
-      # If dropdown is "~memorize", it'll just continue on as normal expand, and start
+      # If task is "~memorize", it'll just continue on as normal expand, and start
 
     end
 
@@ -376,7 +376,7 @@ Ol "@progress", @progress   # => [[], []]
 
   # They right-clicked on a "a : b" table at the left margin
 
-  def self.dropdown_save_to_memorize
+  def self.tasks_save_to_memorize
 
     # Grab paragraph...
 
@@ -391,7 +391,7 @@ Ol.a txt
 
   # They right-clicked on a "a : b" table at the left margin
 
-  def self.dropdown_memorize
+  def self.tasks_memorize
 
     # Grab paragraph...
 

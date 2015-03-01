@@ -63,8 +63,8 @@ class Tutorial
 
       # ~, so show options
 
-      return "~ topics" if options[:dropdown] == []
-      return self.topics if options[:dropdown] == ["topics"]
+      return "~ topics" if options[:task] == []
+      return self.topics if options[:task] == ["topics"]
 
       return %`
         > Welcome
