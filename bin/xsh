@@ -1,30 +1,26 @@
 #!/bin/bash -f
 
-export bin_dir=`dirname $0`
 
-# Dir might be ., only if xsh not in $PATH yet
-if [ "$bin_dir" = "." ]; then
-  bin_dir=`pwd`
-fi
-# Sometimes relative path, so prepend where we are
-if [[ ! "$bin_dir" =~ ^/ ]]; then
-  bin_dir=`pwd`/$bin_dir
-fi
+# Resolve the xiki dir even if this shell script is symlinked. See for more
+# information http://stackoverflow.com/a/246128
 
-export xiki_dir=`dirname $bin_dir`
-
-emacs="emacs"
-emacsclient="emacsclient"
+SOURCE="${BASH_SOURCE[0]}"
+while [ -h "$SOURCE" ]; do 
+  DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+  SOURCE="$(readlink "$SOURCE")"
+  [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE" # 
+done
+export xiki_dir=`dirname "$( cd -P "$( dirname "$SOURCE" )" && pwd )"`
 
 # Complain if project dir is ~/xiki/...
-
 if [ "$xiki_dir" = "$HOME" ]; then
   cat "$xiki_dir/misc/command/shell_please_move.txt"
   exit
 fi
 
-# Maybe don't add this if it's already there, or if ruby and emacs are in the path already
-export PATH="$PATH":/usr/local/bin
+
+emacs="emacs"
+emacsclient="emacsclient"
 
 
 # Get emacs version, or blank if emacs not found...
