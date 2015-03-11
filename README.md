@@ -2,9 +2,9 @@
 
 ### One-line installer
 
-If you want a one-line installer, this should do the trick:
+If you want a one-line installer, this should do the trick (paste into your terminal):
 
-      $ cd ~; wget https://github.com/trogdoro/xiki/archive/master.tar.gz; tar xzf master.tar.gz; xiki-master/bin/xsh
+      cd ~; wget https://github.com/trogdoro/xiki/archive/master.tar.gz; tar xzf master.tar.gz; xiki-master/bin/xsh
 
 It will walk you through a couple setup steps.
 
@@ -12,9 +12,9 @@ It will walk you through a couple setup steps.
 
 You can download Xiki from: https://github.com/trogdoro/xiki/archive/master.tar.gz. Extract it into your home dir, or some other dir where you keep projects or downloaded things.
 
-Then, to run (and optionally install xsh) just execute the 'xsh' command, located in the 'bin' dir:
+Then, to run (and optionally install xsh) just execute the 'xsh' command in your terminal, located in the 'bin' dir:
 
-      $ bin/xsh
+      bin/xsh
 
 ### Git Install
 
