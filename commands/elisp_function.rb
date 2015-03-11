@@ -1,8 +1,26 @@
 # /, so list all functions...
 
-# Todo > get it to auto-generate these
+if ! args[0]
 
-return "| Expand to see the docs...\n#{Tree.quote File.read(File.expand_path '~/xiki/notes/elisp/functions.notes')}" if ! args[0]
+  txt = File.read "/tmp/elisp_functions.notes" rescue nil
+
+  if ! txt   # Cached file not found, so create it
+    View.flash "caching in /tmp/...", :times=>1
+    txt ||= $el.el4r_lisp_eval %`
+    (let ((txt ""))
+      (mapatoms (lambda (x)
+        (when (fboundp x)
+          (setq txt (concat txt (pp-to-string x) "\n"))
+          )))
+      txt)
+    `
+    txt = txt.split("\n").sort.join("\n")
+    File.open("/tmp/elisp_functions.notes", "w") { |f| f << txt }
+  end
+
+  return "| Expand to see the docs...\n#{Tree.quote txt}"
+end
+
 
 # /foo, so show source or tasks...
 
