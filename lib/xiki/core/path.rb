@@ -83,7 +83,7 @@ module Xiki
       # If :outer, split based on "/="...
 
       if options[:outer]
-        return self.split_outer path, options
+        return self.split_outer path #, options
       end
 
       # Else, split based on "/"...
@@ -121,18 +121,29 @@ module Xiki
 
     end
 
+    # Splits apart path based on "/=" tokens, properly handling ";" escaping.
+    # A newer feature is to also split on "/$".
+    # Path.split.split_outer(["a/=c"])
+    #   ["a/b/", "c"]
     def self.split_outer path, options={}
+
       result, last_was_escape = [""], false
 
       i = 0
       while i < path.length
         c = path[i]
         cc = path[i, 2]
+        ccc = path[i, 3]
 
         # If /= and not escaped
         if cc =~ /\A\/=$/ && ! last_was_escape
           result[-1] << "/"
           result << ""
+          i += 1
+        # If /$ and not escaped
+        elsif ccc =~ /\A\/\$ $/ && ! last_was_escape
+          result[-1] << "/"
+          result << "$"
           i += 1
         else
           result[-1] << c

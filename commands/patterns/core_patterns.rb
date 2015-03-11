@@ -5,17 +5,40 @@ load "#{Xiki.dir}commands/mysql/mysql_index.rb"
 module Xiki
   Menu::Mysql.def_patterns
 
-  # $$... shell commands (exit and run)...
-
-  Xiki.def(/^\$\$ .+/) do |path, options|
-    path.sub! /^\$\$ /, ''
-    Xsh.exit_and_run path
-    ""
-  end
-
-  # $... or %... shell commands (when not under dir)...
+  # $... or %... shell commands...
 
   Xiki.def(/^([$%&])( |$| ?\/)/) do |path, options|
+
+    # There's a ~task in the above ancestor, so collapse up to it and run...
+
+    if (ancestors = options[:ancestors]) && (last = Path.split ancestors[-1]) && (last.find{|o| o =~ /^~ /})
+
+      # Grab this line, then collapse up to before the tasks
+      command = Line.without_label
+
+      Tree.to_parent
+      Tree.collapse
+
+      # Delete up until and including ~... level
+      Launcher.delete_task_siblings
+
+      line = Line.without_label
+
+      # Line is $..., so replace it
+      if line =~ /^\$ /
+        Line.sub! /( *).*/, "\\1#{command}"
+      else
+        # Line not $..., so insert $... underneath
+        Line.sub! /( *).*/, "\\0\n\\1  #{command}"
+        Line.next
+      end
+
+      next Launcher.launch
+
+    end
+
+    # Normal parent root, so put command under it...
+
     prompt = path[/^[$%&]/]
     command = path[/^..(.+)/, 1]
     if command
@@ -142,16 +165,17 @@ module Xiki
     ""
   end
 
-  # Various lines that mean run as ruby
-  # p ...
-  # puts ...
-  # etc.
+  # Ol "foo"...
   Xiki.def(/^(a |Ol[ \[])/) do |line|
     line.sub! /^a /, "Ol.a "
     CodeTree.run line, :quote=>1
     "=flash/"
   end
 
+  # Various lines that mean run as ruby
+  # p ...
+  # puts ...
+  # etc.
   Xiki.def(/^(p|pp|print|puts) /) do |line|
     # Don't quote temporarily, for presentation
     CodeTree.run line#, :quote=>1
@@ -243,7 +267,7 @@ module Xiki
   #   Xiki["css/list/#{path}"]
   # end
 
-  # Foo.bar...
+  # Foo.bar, so invoke method on class...
   Xiki.def(%r'\AX[" ]|\A[A-Z][:A-Za-z]+\.[a-z]') do |path, options|
 
     # Eval comment inline
@@ -283,9 +307,13 @@ module Xiki
     nil
   end
 
+  # foo+bar ? ...
+
   Xiki.def(/^[a-z]+\+[a-z.+]*.?(\/|$)/) do |path, options|
     Keys.expand_plus_syntax Path.split(path), options
   end
+
+  # foo.com...
 
   Xiki.def(/\A[.a-z]+\.(org|com|edu|net|co|cc|in|de|loc)(:\d+)?(\/|\z)/) do |path, options|
     options.delete :no_slash

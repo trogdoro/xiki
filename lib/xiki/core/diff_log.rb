@@ -133,7 +133,7 @@ module Xiki
       # Store original buffer in local var, so we can make sure we go back to the right place
       buffer_to_save = View.name
 
-      name = View.suggest_filename
+      name = View.suggest_filename_from_txt
       name = "#{name}.notes"
 
       View.to_buffer "save as/"
@@ -251,7 +251,7 @@ module Xiki
         View.insert("- No unsaved changes!\n\nclose view/\n")
         Line.previous 1
       else
-        View.insert diff + "\nsave\nrevert\nsave without diff\n"
+        View.insert diff + "\nsave\nsave without diff\nrevert\n"
         Line.previous 3
       end
     end
@@ -432,8 +432,8 @@ module Xiki
     end
 
 
-    # Mapped to C-g
-    def self.grab
+    # Mapped to Ctrl+G
+    def self.grab options={}
 
       # Just quit if any prefix
       return $el.keyboard_quit if Keys.prefix
@@ -449,93 +449,96 @@ module Xiki
 
       if FileTree.handles?(path[-1])
 
+        # /foo/, so just cd to the dir
+
         # Could be /tmp, "/tmp/$ pwd", or "/tmp/$ pwd/item"
 
-        # $... somewhere in it, so try to pull it off
-        if last.find{|o| o =~ /^[$%]/}
+        dir = path[-1]
+        command = nil
 
-          # Grab last item (should be a command...
-
-          command = last.pop
-
-          # Last isn't $..., so just quit
-          return View.flash("- Can only grab commands and dirs!") if command !~ /^[$%]/
-
-          command.sub!(/^[$%] /, '')
-
-          # Pop off any others at end that are $... or ~...
-
-          while last[-1] =~ /^[~$%&]/
-            last.pop
-          end
-
-          dir = last.join "/"
-
-        else   # No $... anywhere, so assume it's just a dir
-          dir = path[-1]
-          command = nil
-        end
-
-        # "/tmp/", so just cd
-
-        # If file handles, just do a cd
-
-        # Add quotes, but only if there's a slash?
-          # Or, use quote thing caleb showed me
 
         dir.sub!(/\/$/, '')
 
         # Add quotes unless it's all slashes and letters
         dir = "\"#{dir}\"" if dir !~ /^[a-z_\/.-]+$/i
+
         commands = "cd #{dir}\n"
         commands << command if command
 
-      elsif last[-1] =~ /^[$%] (.+)/
+        Xsh.save_grab_commands commands
 
-        command = $1
+        return self.quit
+      end
 
-        # They cd'ed in this session > so do cd in the shell...
+      # Not $..., so explain why we can't expand...
 
-        session_dir = File.expand_path Bookmarks.bookmarks_optional("se")
-        in_session_dir = view_dir == session_dir
-
-
-        # If session, do based on view dir
-        orig_dir = Xsh.determine_session_orig_dir(View.file_name) if in_session_dir
-
-        # If couldn't find, or normal dir, default to current dir
-
-        orig_dir ||= view_dir
-        orig_dir.sub! /\/$/, ''   # To ensure a fair comparison
-
-        commands = ""
-
-        # They did a cd, so add it...
-
-        view_file = View.file
-
-        dir = nil
-        dir = Shell.dir
-        dir.sub!(/\/$/, '') if dir != "/"
-
-        # If it's a view without a file, always do cd
-        if ! View.file || orig_dir != dir   # Or if they changed the dir
-          dir = "\"#{dir}\"" if dir !~ /^[a-z_\/.-]+$/i
-          commands << "cd #{dir}\n"
-        end
-
-        commands << "#{command}\n"
-
-      else
-
+      if last[-1] !~ /^[$%] (.+)/
         # Just exit
         return View.flash("- Can only grab commands and dirs!")
+      end
+
+      command = $1
+
+      ancestors = options[:ancestors] || Tree.ancestors
+
+      # /foo/$..., so grab command and dir...
+
+      if ancestors && FileTree.handles?(ancestors[-1])
+
+        dir = ancestors[-1]
+        dir = Shell.quote_file_maybe dir
+
+        # Todo > Do this, when there are args?
+        #           # Pop off any others at end that are $... or ~...
+        #           while last[-1] =~ /^[~$%&]/
+        #             last.pop
+        #           end
+
+        commands = "cd #{dir}\n#{command}"
+        Xsh.save_grab_commands commands
+
+        self.quit
 
       end
+
+      # $..., so grab command, and figure out the dir...
+
+      # They cd'ed in this session > so do cd in the shell...
+
+      session_dir = File.expand_path Bookmarks.bookmarks_optional("se")
+      in_session_dir = view_dir == session_dir
+
+
+      # If session, do based on view dir
+      orig_dir = Xsh.determine_session_orig_dir(View.file_name) if in_session_dir
+
+      # If couldn't find, or normal dir, default to current dir
+
+      orig_dir ||= view_dir
+      orig_dir.sub! /\/$/, ''   # To ensure a fair comparison
+
+      commands = ""
+
+      # They did a cd, so add it...
+
+      view_file = View.file
+
+      dir = nil
+      dir = Shell.dir
+      dir.sub!(/\/$/, '') if dir != "/"
+
+      # If it's a view without a file, always do cd
+      if ! View.file || orig_dir != dir   # Or if they changed the dir
+        dir = "\"#{dir}\"" if dir !~ /^[a-z_\/.-]+$/i
+        commands << "cd #{dir}\n"
+      end
+
+      commands << "#{command}\n"
 
       Xsh.save_grab_commands commands
 
       self.quit
+
     end
 
     def self.quit
@@ -566,6 +569,12 @@ module Xiki
           self.save_xsh_sessions
         end
 
+        # Todo > write cached shell commands to somewhere where bash will write them to the history
+        # Shell.session_cache
+        # Loop through and add them one at a time, or do a one-time load:
+        #   history -r
+        #   also, find zsh way of doing it
+
         $el.kill_emacs
       else
         View.open :txt=>"unsaved/\n#{txt.gsub /^/, '  '}", :line_found=>2, :name=>"unsaved/"
@@ -585,7 +594,7 @@ module Xiki
 
       # Save session to file...
 
-      name = View.suggest_filename
+      name = View.suggest_filename_from_txt
 
       return if ! name
 

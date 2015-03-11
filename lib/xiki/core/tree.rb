@@ -153,6 +153,7 @@ module Xiki
     end
 
     def self.filter_hotkey_extract_letters options
+
       left, right = options[:left], options[:right]
       lines = $el.buffer_substring(left, right).split "\n"
 
@@ -173,6 +174,7 @@ module Xiki
       end
 
       if options[:just_highlight]
+        View.cursor = left
         return self.highlight_hotkey_letters lines, letters, Line.number
       end
 
@@ -184,6 +186,7 @@ module Xiki
 
       cursor = Line.left
       before_moved = 0
+
       letters.each do |k, v|
 
         # Move cursor up past each line not incremented yet
@@ -1028,6 +1031,7 @@ module Xiki
 
     # Insert section from a file under it in tree
     def self.enter_under
+
       Line.beginning
       path = Tree.construct_path  # Get path
       path.sub!(/\|.+/, '')  # Remove file
@@ -1278,6 +1282,13 @@ module Xiki
 
     # Gets path from root to here, indenting each line by 2 spaces deeper.
     # Tree.ancestors_indented
+    def self.ancestors
+      path = Tree.path
+      return if path.length < 2
+
+      path[0..-2]
+    end
+
     def self.ancestors_indented options={}
 
       all = options[:just_sub_tree] ? nil : 1
@@ -2159,8 +2170,11 @@ module Xiki
       self.clear_empty_dirs! lines if recursive
       self.clear_empty_dirs!(lines, :quotes=>true) if recursive_quotes
 
+      # Not sure why it was doing this > in recursive it can be 1 match
+      # if lines.size == 0 || (lines.size == 1 && recursive)
+
       # If search not found, don't delete all
-      if lines.size == 0 || (lines.size == 1 && recursive)
+      if lines.size == 0
         View.flash "- only matches: #{filter}\n", :times=>1
         return
       end
