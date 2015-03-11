@@ -54,50 +54,59 @@ module Menu
       txt.strip
     end
 
+    MENU_HIDDEN = "
+      - */
+        - .save these changes/
+      "
+
     MENU = %`
       | Explore these menu items to find the setup that's right for
       | you. Then enable one of them. (Use the arrow keys and type
       | Ctrl+X to expand and collapse the items below).
       |
-      + the 'xsh' command, and remapped key shortcuts/
+      + the 'xsh' command, and some shell key shortcut remappings/
         | Enables the 'xsh' shell command. Also remaps the following
         | key shortcuts in your existing shell, to make them quickly
         | switch to xsh:
         |
-        |   Ctrl+X  Expand a shell shell command in xsh
-        |   Ctrl+T  Menu of possible tasks for a command or dir
-        |   Ctrl+G  Grab shell commands to and from Xiki
-        |   Ctrl+R  Recent commands (like existing Ctrl+R)
-        |   Esc, Tab     Auto-complete
+        |   Ctrl+X   Expand a shell command in xsh
+        |   Ctrl+T   Menu of all tasks for a command or dir
+        |   Ctrl+G   Grab shell commands to and from Xiki
+        |   Ctrl+R   Recent commands (like existing Ctrl+R)
+        |   Esc+Tab  Xiki command menu
         |
         + enable this configuration
-          | Expand 'save' below, and the following changes will be made:
-          |\n#{self.files_to_update_preview.gsub(/^/, '          ')}
-          |
-          + .save
-          |
+          =replace/siblings/
+            | Expand 'save these changes', to save the following changes.
+            |
+            + save these changes
+            |
+#{self.files_to_update_preview.gsub(/^/, '            ')}
+            |
         |
         | This is recommended if you (and any other people who use this
         | account) don't use Ctrl+X, Ctrl+T, and Ctrl+G in your shell.
         |
         | (You can use the arrow keys and Ctrl+X to select the above item.)
         |
-      - xsh 'xsh' command, and safer key shortcuts/
+      - the 'xsh' command, and safer key shortcuts/
         | This is like the previous option, but creates key shortcuts
         | that don't conflict with your shells default shortcuts:
         |
-        |   Esc, Ctrl+X  Expand a shell shell command in xsh
+        |   Esc, Ctrl+X  Expand a shell command in xsh
         |   Esc, Ctrl+T  Menu of possible tasks for a command or dir
         |   Esc, Ctrl+G  Grab shell commands to and from Xiki
         |   Esc, Ctrl+R  Recent commands (like existing Ctrl+R)
-        |   Esc, Tab     Auto-complete
+        |   Esc+Tab     Auto-complete
         |
         + enable this configuration
-          | Expand 'save' below, and the following changes will be made:
-          |\n#{self.files_to_update_preview.gsub(/^/, '          ')}
-          |
-          + .save
-          |
+          =replace/siblings/
+            | Expand 'save these changes', to save the following changes.
+            |
+            + save these changes
+            |
+#{self.files_to_update_preview.gsub(/^/, '            ')}
+            |
         |
         | (You can use the arrow keys and Ctrl+X to select the above item.)
         |
@@ -106,15 +115,17 @@ module Menu
         | shortcuts in your existing shell.
         |
         + enable this configuration
-          | Expand 'save' below, and the following changes will be made:
-          |\n#{self.files_to_update_preview.gsub(/^/, '          ')}
-          |
-          + .save
-          |
+          =replace/siblings/
+            | Expand 'save these changes', to save the following changes.
+            |
+            + save these changes
+            |
+#{self.files_to_update_preview.gsub(/^/, '            ')}
+            |
         |
     `
 
-    def self.save choice, confirmed=nil
+    def self.save_these_changes choice
 
       options = yield
       options[:no_slash] = 1
@@ -132,7 +143,7 @@ module Menu
       `.unindent
 
       case choice
-      when /remapped key shortcuts/
+      when /some shell key shortcut remappings/
         # Do nothing
       when /safer key shortcuts/
         # Change \C to \e\C
@@ -176,12 +187,12 @@ module Menu
       Xiki.kill   # So the forker will reload later, in a process that has bin in its path
 
       %`
-        =replace/siblings/3/
+        =replace/siblings/2/
           |+Success!
           |
-          | Your shell conf files have been updated. You can now type
-          | 'xsh' from any directory (assuming you run ". ~/.bashrc"
-          | in any currently open shell sessions, or start new ones.)
+          | Run ". ~/.bashrc" (or the appropriate command) in any
+          | currently open shell sessions to reload the conf, or start
+          | new sessions. You can now type 'xsh' from any directory.
           |
           | Xsh is alpha at this point. Experiment, but be careful!
           |
