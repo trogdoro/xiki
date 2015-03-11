@@ -215,13 +215,14 @@ module Xiki
         Launcher.launch :task=>["filter", "all contents"]
         return
 
+      elsif args.slice! /^r( |\b)/
+        # Ctrl+R, so delegate to Shell.recent_history_external
+        Shell.recent_history_external(args)
+        return
+
       elsif args == "f"
         View.<< "./"
         Launcher.launch :task=>["tree"]
-        return
-
-      elsif args == "r"
-        Shell.recent_history_external(options[:reverse]) # if options[:reverse]
         return
 
       elsif args =~ /\A\+(\w.*)/

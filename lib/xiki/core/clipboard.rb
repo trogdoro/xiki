@@ -362,18 +362,17 @@ module Xiki
     def self.kill
       prefix = Keys.prefix # :clear=>1
 
-      # 0+, so delete line without linebreak
-      return $el.kill_region Line.left, Line.right if prefix == :u
+      if prefix == :u
+        # Delete the blank line, if nothing here
+        return Line.delete if Line.blank?
+        return Line.delete(:leave_linebreak)
+      end
 
       if prefix # == :u
         Line.to_left
       end
 
       # up+, so just delete (don't save in clipboard)
-
-      if prefix == :u
-        return Line.delete
-      end
 
       $el.kill_line prefix
     end

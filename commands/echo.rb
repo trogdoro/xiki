@@ -26,6 +26,4 @@ path = args.any? ?
 
 # ancestors/=echo, so use ancestors...
 
-path << "\n<= menu steps/" if ! menu_steps
-
-path
+"| #{path}"

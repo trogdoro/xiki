@@ -365,7 +365,7 @@ module Xiki
 
       # *... item, so pull them off and store in :task...
 
-      index = path.index{|o| o =~ /^~ /}
+      index = path.index{|o| o =~ /^~ / && o !~ /\n/}   # Tasks won't have linebreaks
 
       return if ! index
 

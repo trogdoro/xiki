@@ -18,8 +18,8 @@ Key shortcuts for your external shell (the default):
   Ctrl+G    Grab shell command into xsh, but don't run it.
   Ctrl+T    Menu of tasks for a shell command or dir.
             (examples, favorites, etc.)
-  Ctrl+R     External shell history (like Ctrl+R)
-  Esc, Tab        Auto-complete (not quite finished)
+  Ctrl+R    External shell history (like Ctrl+R)
+  Esc+Tab   Xiki command items
 
 Options:
   -g  Grab shell command into xsh

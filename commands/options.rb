@@ -30,7 +30,7 @@ module Xiki
       txt = TextUtil.ap options_result
       txt = Tree.quote txt, :char=>"|"
 
-      txt << "<= menu steps/" if ! menu_steps   # if options_result[:menufied]   # Sources menu helps for menus
+      txt << "\n<= menu steps/" if ! menu_steps   # if options_result[:menufied]   # Sources menu helps for menus
 
       txt
 

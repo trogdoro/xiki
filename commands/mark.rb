@@ -2,8 +2,10 @@ class Mark
   MENU = "
     - .next
     - .previous
+
     - .show
     - .all
+
     - light
     - red
     - orange
@@ -12,6 +14,7 @@ class Mark
     - blue
     - purple
     - white
+
     - .delete
     - .clear
     "

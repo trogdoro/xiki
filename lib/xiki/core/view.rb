@@ -2138,8 +2138,10 @@ module Xiki
       percent = (percent * 100).round
     end
 
-    def self.suggest_filename
+    def self.suggest_filename_from_txt
       txt = View.txt
+
+      txt.sub! /\A\| Type Ctrl\+G .+\n\n/, ''
 
       return if txt.scan(/^[^ \n].*/) == ["sessions/"]   # Don't store session if only command is sessions/...
 

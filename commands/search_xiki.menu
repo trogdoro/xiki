@@ -1,9 +1,13 @@
 + methods/
   ! Launcher.open("#{Xiki.dir}\n  - ##^ *def /")
-+ files/
++ dir/
   ! FileTree.tree :recursive=>1, :bm=>"xiki"
   ! nil
 + key shortcuts/
   ! Launcher.open("#{Xiki.dir}lib/xiki/core/key_shortcuts.rb\n  - ##^ *Xiki.def..\\w+\\+/")
++ tests/
+  ! Launcher.open("#{Xiki.dir}spec/\n  - ##^ *(describe|it) /")
++ comments/
+  ! Launcher.open("#{Xiki.dir}\n  - ##^ *# /")
 + facts/
   ! Launcher.open(":fa\n  - ##xiki|isearch/")

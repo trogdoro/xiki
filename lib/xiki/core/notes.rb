@@ -1137,7 +1137,8 @@ module Xiki
 
         return "~ navigate\n~ expand" if task == []
 
-        # No '~ navigate' task, so always expand
+        # No '~ navigate' task, so always expand...
+
         if task != ['navigate']
           txt = self.extract_block txt, heading
           txt.sub! /\n\z/, ''
@@ -1151,6 +1152,7 @@ module Xiki
           #           txt = Tree.quote txt, :unquote_menus=>1, :char=>"|"
 
           txt = Tree.pipe "#{txt}\n"
+
           return txt
         end
 
@@ -1169,7 +1171,7 @@ module Xiki
       return "~ save\n~ navigate" if task == []
 
 
-      # Update...
+      # Save, so replace or add...
 
       if task == ["save"]
 
@@ -1200,7 +1202,7 @@ module Xiki
 
           content = Tree.siblings :children=>1   # Content we're saving
           content.gsub! /^[|:] ?|^=/, ''
-          txt = "#{txt.strip}\n\n#{heading}\n#{content}"
+          txt = "#{heading}\n#{content.strip}\n\n#{txt.strip}\n\n"
 
         end
 
@@ -1275,6 +1277,7 @@ module Xiki
       "e"=>"!",
       "er"=>"error!",
       "f"=>"fix!",
+      "fa"=>"favorite!",
       "fi"=>"finish!",
       "i"=>"implement!",
       "r"=>"rename!",
