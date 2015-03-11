@@ -22,10 +22,15 @@ function xsh {
 
   # Always write history to a temp file, in case it was Ctrl+R, or they'll do a open+recent
 
-  dir="$HOME/xiki/misc/tmp"
+  dir="$HOME/xiki/misc/logs"
   mkdir -p $dir
-  history -w "$dir/recent_history_external.notes"
 
+  if [ -n "$ZSH_VERSION" ]; then
+    echo "$dir/shell_external_log.notes"
+    fc -W "$dir/shell_external_log.notes"
+  else   # Assume bash or bash-compatible
+    history -w "$dir/shell_external_log.notes"
+  fi
 
   # Run the actual xsh command...
 

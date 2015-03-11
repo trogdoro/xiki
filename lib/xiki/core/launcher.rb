@@ -9,7 +9,7 @@ module Xiki
       "*ol",
       ]
 
-    @@log = File.expand_path("~/xiki/misc/logs/command_log.notes")
+    @@log = File.expand_path("~/xiki/misc/logs/xiki_commands_log.notes")
 
     # Use @launcher/options/show or launch/ to enable.
 
@@ -278,7 +278,10 @@ module Xiki
 
       Tree.to_parent if Line =~ /^ +- backtrace:$/   # If we went to "- backtrace:", go up again
 
-      return if options[:dont_launch]
+      if options[:dont_launch]
+        Line.to_beginning
+        return
+      end
 
       Tree.collapse
 
@@ -844,7 +847,8 @@ Ol["oh, this path is an array: #{path}!"] if path.is_a?(Array)
 
       self.process_bullets_after line, txt, insert_options   # Delete stuff if bullet was <~ or <+!
 
-      Tree.plus_to_minus unless insert_options[:leave_bullet]   # There was output, so change + to -
+      # There was output, so change + to -
+      Tree.plus_to_minus unless insert_options[:leave_bullet] || insert_options[:task]
 
       Tree.<< txt, insert_options
       nil
@@ -900,6 +904,24 @@ Ol["oh, this path is an array: #{path}!"] if path.is_a?(Array)
       Expander.expand options
     end
 
+
+
+    # This might not be used any more > after making $... handle themselves
+
+    def self.collapse_items_up_to_dollar txt
+      Tree.to_parent
+
+      line = Line.value
+      while(line =~ /^\s/ && line !~ /^ *\$/) do
+        Tree.to_parent
+        line = Line.value
+      end
+
+      Tree.collapse :no_plus=>1
+      Line.sub! /( *).*/, "\\1#{txt}"
+      nil
+    end
+
     # Called by .launch to do appriate thing if output starts with
     # =replace/, =open file/, =flash/, <!..., <<<..., or something else that
     # instructs the editor to take an action.
@@ -915,23 +937,13 @@ Ol["oh, this path is an array: #{path}!"] if path.is_a?(Array)
       end
 
       # <$ foo, so move output up to $... line and replaces it...
+      # This might not be used any more > after making $... handle themselves
 
       if txt.strip =~ /\A<\$ (.+)\z/
         txt = $1
 
-        Tree.to_parent
-
-        line = Line.value
-        while(line =~ /^\s/ && line !~ /^ *\$/) do
-          Tree.to_parent
-          line = Line.value
-        end
-
-        Tree.collapse :no_plus=>1
-        Line.sub! /( *).*/, "\\1#{txt}"
-
+        self.collapse_items_up_to_dollar txt
         Launcher.launch
-
         return true
       end
 
@@ -1229,14 +1241,11 @@ Ol["oh, this path is an array: #{path}!"] if path.is_a?(Array)
       View >> "\n\n\n"
 
       ControlLock.disable
-
     end
 
-
     def self.tasks
-
       Keys.remember_key_for_repeat ["task"]
-      Launcher.launch :task=>[]
+      self.launch :task=>[]
     end
 
     def self.tasks_on_this_file
@@ -1248,12 +1257,12 @@ Ol["oh, this path is an array: #{path}!"] if path.is_a?(Array)
       View.new_file
       View << file
 
-      Launcher.launch :task=>[]
+      self.launch :task=>[]
 
     end
 
     def self.double_click
-      Launcher.go
+      self.go
     end
 
     def self.right_click options={}
@@ -1273,7 +1282,7 @@ Ol["oh, this path is an array: #{path}!"] if path.is_a?(Array)
 
       return if ! result
 
-      Launcher.launch :path_append=>"~ #{result}"
+      self.launch :path_append=>"~ #{result}"
 
     end
 

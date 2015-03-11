@@ -235,7 +235,7 @@ module Xiki
 
       tmp_dir = File.expand_path "~/xiki/misc/logs"
       FileUtils.mkdir_p tmp_dir   # Make sure dir exists
-      file = "#{tmp_dir}/recent.notes"
+      file = "#{tmp_dir}/opened_files_log.notes"
       File.open(file, "a") { |f| f << "#{View.file}\n" }
 
     end
