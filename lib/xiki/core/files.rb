@@ -267,19 +267,6 @@ module Xiki
 
       View.insert path
 
-
-      # up+, so don't expand...
-
-      return if Keys.prefix_u
-
-      # Dir, so expand normally...
-
-      return Launcher.launch if is_dir
-
-      # File, so expand as contents...
-
-      Launcher.launch :task=>["all"]
-
     end
 
     # This is currently mac-specific
@@ -398,9 +385,14 @@ module Xiki
 
     # Replaces home with tilda
     # Files.tilda_for_home "/Users/craig/projects/"
+
+    # Todo > fix spelling mistake > "tilda" -> "tilde"
+
     def self.tilda_for_home path, options={}
+
       home = ENV['HOME']
       return path if ! home
+
       path = path.sub(/\A#{Regexp.quote home}/, "~")
       path.gsub!(' ', '\ ') if options[:escape]
       path

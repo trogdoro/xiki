@@ -305,7 +305,7 @@ module Xiki
 
         Styles.define :ls_bullet_darker,
           :face => 'menlo', :size => "+2",  # Mac
-          :fg => "444", :bold=>nil
+          :fg => "555", :bold=>nil
 
       else
         Styles.define :ls_bullet_darker,
@@ -1088,6 +1088,7 @@ module Xiki
 
     # Enter what's in clipboard with | to on the left margin, with appropriate indent
     def self.enter_quote txt=nil, options={}
+
       prefix = Keys.prefix :clear=>1
 
       # Skip forward if on heading
@@ -1393,7 +1394,8 @@ module Xiki
       options.merge!(:recursive=>1) if prefix == :u   # If up+, expand dir recursively
 
       if prefix == :-   # If up+up+, insert /the/path//
-        Line << %Q"#{Bookmarks[":#{Keys.input(:timed=>1)}"]}/"
+        Line << "#{Bookmarks[":#{Keys.input(:timed=>1)}"]}/"   # "
+
 
         Launcher.go
         return
@@ -1450,6 +1452,7 @@ module Xiki
     end
 
     # Returns the files in the dir
+    # FileTree.files_in_dir "/tmp/d", :date_sort=>1
     def self.files_in_dir dir, options={}
       dir = FileTree.add_slash_maybe dir
       all = Dir.glob("#{dir}*", File::FNM_DOTMATCH).
@@ -1461,6 +1464,8 @@ module Xiki
       elsif options[:size_sort]
         all = all.sort{|a,b| File.size(b) <=> File.size(a)}
       end
+
+      return all if options[:merged]
 
       dirs = all.select{|i| File.directory?(i)}#.sort
       files = all.select{|i| File.file?(i)}#.sort
@@ -1785,15 +1790,13 @@ module Xiki
       has_dot = line =~ /\./
       has_dot ?
         line.sub!(/^( *)([+-] )?.+(\..+)/, "\\1=rename/\\3") :
-        line.sub!(/^( *)([+-] ).+/, "\\1=rename/")
+        line.sub!(/^( *)([+-] )?.+/, "\\1=rename/")
 
       Tree.<< line, :no_slash=>1, :no_search=>1
       Move.to_end
       Search.backward("\\.") if has_dot   # Move cursor to before extension
 
-      ControlLock.disable
       ""
-      # Move.backward column_from_right   # Put cursor on same port of filename
 
     end
 
@@ -1858,7 +1861,6 @@ module Xiki
       when 4   # Get ready to run $... shell command on file
         $el.delete_char(1)
         View << "$ "
-        ControlLock.disable
       when 5   # Unique
         self.enter_lines nil, :current_line=>current_line, :unique=>1
       when 6   # List methods by date (use 'git blame')
@@ -1869,8 +1871,6 @@ module Xiki
         Launcher.launch
       when 8
         Launcher.enter_all
-
-
 
       when 9
         self.enter_lines(/^> (feature|important) > /i, :current_line=>current_line)
@@ -1916,35 +1916,7 @@ module Xiki
 
       # If right-click, set prefix to item...
 
-
-      # Ones that apply to both files and dirs
-      if task == ["delete"] || prefix == "delete"
-        # Over-ride, so we don't have to do promt
-        Keys.remember_key_for_repeat(proc {Launcher.launch :task=>["delete"], :no_prompt=>1})
-        self.delete_file file_path, options
-        return
-      elsif task == ["cd"]
-        return self.cd file_path
-      elsif task == ["exit and cd"]
-        Shell.exit_and_cd file_path
-        return ""
-      elsif task == ["rename"] || prefix == "rename"
-        return self.rename_file
-      end
-
       return options[:output] = self.expand_filter(filters_at_end, options) if filters_at_end
-
-      # $..., so it's a shell command...
-
-      if file_path =~ %r"^(/[\w./ -]+/)([$%&])( .*|\z|\/.*)"   # If $... or %..., etc.
-        dir, prompt, command = $1, $2, $3
-        command.sub! /^ /, ''
-        command.sub! /^\//, ''
-        command = Path.split command
-        options.merge!(:dir=>dir, :prompt=>prompt, :command=>command.shift)
-        options.merge!(:args=>command) if command.any?
-        return options[:output] = self.expand_shell(options)
-      end
 
       # If quoted line, pull it off into :quote...
 
@@ -1983,52 +1955,57 @@ module Xiki
 
         options[:no_slash] = 1
 
-        # Task, so just return the options...
+        # Task, so return or process the task...
 
-        if task == []
+        if task
+
           return options[:output] = "~ save/" if options[:quote]
 
-          return options[:output] = "
-            ~ edit/
-            ~ rename
-            ~ delete
-            ~ shell command
+          if task == ["edit", "vim"]
+            $el.suspend_emacs "clear\nvim '#{file_path}'"
+            return options[:output] = ""
+          elsif task == ["edit", "sublime"]
+            Shell.sync "subl '#{file_path}'"
+            return options[:output] = "<! opened in Sublime"
+          end
 
-            ~ contents
-            ~ outline
+          return options[:output] = self.save(file_path, options) if task == ["save"] && options[:quote]
+
+          menu = Xik.new %`
             ~ search
-            ~ bookmark
-            "
+              ! Search.enter_search
+            ~ contents
+              ! Tree.quote(File.read(options[:file_path], *Files.encoding_binary))
+            ~ outline
+              ! FileTree.filter_one_file(options[:file_path]).join("\\n")
 
-        elsif task == ["edit"]
-          options[:nest] = 1
-          return options[:output] = "+ emacs\n+ vim\n+ sublime"
-        elsif task == ["shell command"]
-          Tree.<< "$ ", :no_search=>1, :no_slash=>1
-          Move.to_end
-          return options[:output] = ""
-        elsif task == ["bookmark"]
-          Bookmarks.save arg=nil
-          return options[:output] = ""
-        elsif task == ["search"]
-          Search.enter_search
-          return options[:output] = ""
-        elsif task == ["edit", "vim"]
-          $el.suspend_emacs "clear\nvim '#{file_path}'"
-          return options[:output] = ""
-        elsif task == ["edit", "sublime"]
-          Shell.sync "subl '#{file_path}'"
-          return options[:output] = "<! opened in Sublime"
+            ~ file/
+              + rename
+                ! FileTree.rename_file
+              + delete
+                ! Keys.remember_key_for_repeat(proc {Launcher.launch :task=>["delete"], :no_prompt=>1})
+                ! FileTree.delete_file options[:file_path], options
+              + command on it
+                ! Tree.<< "$ ", :no_search=>1, :no_slash=>1
+                ! Move.to_end
+            ~ bookmark
+              ! Bookmarks.save
+
+            ~ expand
+              ! Launcher.launch
+            ~ grab
+              ! DiffLog.grab options
+          `
+
+          task[0] = "~ #{task[0]}" if task[0]
+
+          result = menu[task, :eval=>options]
+          return options[:output] = result || ""
+
         end
 
-        return options[:output] = self.filter_one_file(file_path).join("\n") if task == ["outline"] || prefix == "outline"
-        return options[:output] = self.filter_one_file(file_path, /^> .+:$/).join("\n") if prefix == "u outline"
-
-        return options[:output] = Tree.quote(File.read(file_path, *Files.encoding_binary)) if task == ["contents"] || prefix == "all"
-
-        return options[:output] = self.save(file_path, options) if (task == ["save"] || prefix == "update" || prefix == "save") && options[:quote]
-
         # If editor, tell it to open the file...
+
         if options[:client] =~ /^editor\b/
           txt = "=open file/#{file_path}"
 
@@ -2054,30 +2031,73 @@ module Xiki
 
           require "#{Xiki.dir}commands/sample_menus/sample_menus_index.rb" # if !defined?(SampleMenus)
 
-          cd_and_exit = Environment.xsh? ? "\n            ~ exit and cd" : ""
+          # Dir tasks menu...
 
           menu = Xik.new '
-            ~ rename
-            ~ delete
-            ~ cd'+cd_and_exit+'
-            ~ bookmark
-              ! Bookmarks.save arg=nil
-              ! ""
-            ~ time
-              ! # Expand with special flag
-              ! FileTree.dir :date_sort=>true
-              ! ""
-
             ~ search
-              ! ControlLock.disable
               ! Tree.<< "- ##/", :no_search=>1
               ! View.column = -1
               ! ""
-            ~ tree
+            ~ all files
               ! FileTree.expand_dir_recursively :file_path=>'+file_path.inspect+'
-              ! # "todo > how to just set var saying to add the :all flag? > maybe just handle this one above
-              ! #   or > find method to just insert it here? > but what about recursive search?"
-            ~ filter/
+
+            ~ example commands/
+              ! FileTree.example_commands options
+            ~ recent commands/
+              ! options[:nest] = 1
+              ! options[:no_task] = 1
+              ! txt = Shell.external_plus_sticky_history
+            ~ in dir/
+              ! options[:nest] = 1
+              ! options[:no_task] = 1
+              ! file_path = options[:file_path]
+              ! Shell.history file_path #, :command=>"echo"
+
+            ~ dir/
+              + rename
+                ! FileTree.rename_file
+              + delete
+                ! Keys.remember_key_for_repeat(proc {Launcher.launch :task=>["delete"], :no_prompt=>1})
+                ! FileTree.delete_file options[:file_path], options
+              + prompt here
+                ! Tree.<< "$ "
+                ! Line.to_right
+                ! ""
+              + bullet
+                ! Tree.<< "- "
+                ! Line.to_right
+                ! ""
+
+              + cd
+                ! FileTree.cd options[:file_path]
+              + exit and cd
+                ! Shell.exit_and_cd options[:file_path]
+              + create/
+                + txt
+                  ! "+ foo.txt\n#{Tree.quote SampleMenus.by_extension("txt"), :indent=>"  "}"
+                + rb
+                  ! "+ foo.rb\n#{Tree.quote SampleMenus.by_extension("rb"), :indent=>"  "}"
+                + py
+                  ! "+ foo.py\n#{Tree.quote SampleMenus.by_extension("py"), :indent=>"  "}"
+                + js
+                  ! "+ foo.js\n#{Tree.quote SampleMenus.by_extension("js"), :indent=>"  "}"
+                + dir
+                  ! "+ foo/"
+                + a few files
+                  ! options[:no_search] = 1
+                  ! File.write "'+file_path+'/a.txt", "aaa\naaa\n"
+                  ! File.write "'+file_path+'/b.txt", "bbb\nbbb\n"
+                  ! File.write "'+file_path+'/c.notes", "> heading\nccc\nccc\n\n> another\nc c c\n"
+                  ! "- a.txt\n- b.txt\n- c.notes"
+                + files and dir
+                  ! options[:no_search] = 1
+                  ! File.write "'+file_path+'/a.txt", "aaa\naaa\n"
+                  ! File.write "'+file_path+'/b.txt", "bbb\nbbb\n"
+                  ! File.write "'+file_path+'/c.notes", "> heading\nccc\nccc\n\n> another\nc c c\n"
+                  ! Dir.mkdir("'+file_path+'/d") rescue nil
+                  ! File.write "'+file_path+'/d/d.txt", "ddd\nddd\n"
+                  ! "- a.txt\n- b.txt\n- c.notes\n- d/\n  - d.txt"
+            ~ more/
               + search filenames
                 ! ControlLock.disable
                 ! Tree.<< "- **/", :no_search=>1
@@ -2086,61 +2106,40 @@ module Xiki
               + all contents
                 ! txt = FileTree.grep('+file_path.inspect+', "").join("\n")
                 ! txt.sub(/.+\n/, "")   # Delete 1st line > the redundant dir
-
-            ~ create/
-              + txt
-                ! "+ foo.txt\n#{Tree.quote SampleMenus.by_extension("txt"), :indent=>"  "}"
-              + rb
-                ! "+ foo.rb\n#{Tree.quote SampleMenus.by_extension("rb"), :indent=>"  "}"
-              + py
-                ! "+ foo.py\n#{Tree.quote SampleMenus.by_extension("py"), :indent=>"  "}"
-              + js
-                ! "+ foo.js\n#{Tree.quote SampleMenus.by_extension("js"), :indent=>"  "}"
-              + dir
-                ! "+ foo/"
-              + a few files
-                ! options[:no_search] = 1
-                ! File.write "'+file_path+'/a.txt", "aaa\naaa\n"
-                ! File.write "'+file_path+'/b.txt", "bbb\nbbb\n"
-                ! File.write "'+file_path+'/c.notes", "> heading\nccc\nccc\n\n> another\nc c c\n"
-                ! "- a.txt\n- b.txt\n- c.notes"
-              + files and dir
-                ! options[:no_search] = 1
-                ! File.write "'+file_path+'/a.txt", "aaa\naaa\n"
-                ! File.write "'+file_path+'/b.txt", "bbb\nbbb\n"
-                ! File.write "'+file_path+'/c.notes", "> heading\nccc\nccc\n\n> another\nc c c\n"
-                ! Dir.mkdir("'+file_path+'/d") rescue nil
-                ! File.write "'+file_path+'/d/d.txt", "ddd\nddd\n"
-                ! "- a.txt\n- b.txt\n- c.notes\n- d/\n  - d.txt"
-            ~ more/
-              ~ shell command
-                ! ControlLock.disable
-                ! Tree.<< "$ ", :no_search=>1
-                ! Move.to_end
+              + time sort
+                ! FileTree.dir :date_sort=>true
                 ! ""
-              ~ new
-                ! Notes.bullet
-                ! ""
-            '
+            ~ bookmark
+              ! Bookmarks.save
+            ~ xiki command
+              ! Line << "/"
+              ! Launcher.launch
+            ~ expand
+              ! Launcher.launch
+            ~ grab
+              ! DiffLog.grab options
+          '
 
           # / and :mouse, so return whole menu...
 
-          return options[:output] = menu.txt_without_code if task == [] && options[:mouse]
+          # return options[:output] = menu.txt_without_code if task == [] && options[:mouse]
 
           # /something, so expand menu...
 
           task[0] = "~ #{task[0]}" if task[0]
 
-          txt = menu[task, :eval=>options]
-          return options[:output] = txt if txt
+          result = menu[task, :eval=>options]
+
+          options[:nest] = 1 if [["~ dir"], ["~ more"]].member?(task)
+
+          return options[:output] = result || ""
 
           # If no output, it should just continue on...
           # Might cause problems?
 
         end
 
-        # TODO: maybe deprecate C-8 prefix for this, only make it enter+all ("all")
-        return options[:output] = self.expand_dir_recursively(options) if prefix == 8 || prefix == "all"
+        # No task, so just expand dir...
 
         options[:date_sort] = 1 if prefix == 6
         return options[:output] = self.expand_one_dir(options)
@@ -2190,6 +2189,65 @@ module Xiki
 
     end
 
+    def self.edit_with editor, options
+
+      file_path = Shell.quote_file_maybe options[:file_path]
+
+      editor = {
+        "default editor"=>ENV['EDITOR'],
+        "vim"=>'vim',
+        "sublime"=>'subl',
+      }[editor]
+
+      Xsh.save_grab_commands "#{ENV['EDITOR']} #{file_path}"
+      DiffLog.quit
+    end
+
+    def self.example_commands options
+
+      options[:nest] = 1
+
+      task = options[:task]
+
+      task = task[1..-1]   # Remove "~ example commands"
+
+      # ~ example commands, so list examples by date...
+
+      home_examples_dir = Bookmarks[":xh/misc/shell_examples/"]
+      source_examples_dir = Bookmarks[":xs/misc/shell_examples/"]
+
+      if task == []
+        # home_examples = home_examples_dir
+        home = FileTree.files_in_dir(home_examples_dir, :date_sort=>1, :merged=>1) rescue []
+        source = FileTree.files_in_dir(source_examples_dir, :date_sort=>1, :merged=>1) rescue []
+
+        return (home + source).map{|o| "+ #{File.basename(o, ".*")}/"}.uniq.join("\n")
+      end
+
+      # ~ example commands/foo, so grab from the file...
+
+      options[:no_task] = 1
+
+      command = task.shift
+
+      home_root = "#{home_examples_dir}#{command}//"
+      source_root = "#{source_examples_dir}#{command}//"
+
+      # Try :xh and :xs or, if root, concat both...
+
+      if task == []
+        txt = Expander.expand(home_root, task) rescue ""
+        txt = "#{txt.strip}\n"
+        return txt + Expander.expand(source_root, task) rescue ""
+      end
+
+      txt = Expander.expand(home_root, task) rescue nil
+      txt ||= Expander.expand(source_root, task) rescue ""
+
+      txt
+
+    end
+
     def self.suggest_mkdir file_path
       "~ create dir/"
     end
@@ -2229,12 +2287,6 @@ module Xiki
 
       return options[:output] = Tree.quote(txt)
     end
-
-    def self.expand_shell options
-      options[:no_slash] = 1
-      Shell.shell_command_per_prompt options[:prompt], options
-    end
-
 
     # Removes all ##.../ and **.../ strings.  Returns those that
     # are at the end.
