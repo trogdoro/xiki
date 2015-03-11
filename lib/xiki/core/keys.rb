@@ -69,7 +69,7 @@ module Xiki
 
       # Read in file...
 
-      user_conf = Bookmarks[":hx/commands/conf/xsh.conf"]
+      user_conf = Bookmarks[":xh/commands/conf/xsh.conf"]
       FileUtils.mkdir_p File.dirname user_conf   # In case it doesn't exist yet
 
       txt = File.read(user_conf) rescue nil
@@ -99,7 +99,7 @@ module Xiki
     # Reads from ~/xiki/commands/conf/
     # Keys.read_from_conf "return warning"
     def self.read_from_conf key
-      txt = File.read Bookmarks[":hx/commands/conf/xsh.conf"] rescue nil
+      txt = File.read Bookmarks[":xh/commands/conf/xsh.conf"] rescue nil
       return nil if ! txt
       txt[/^#{key}: (.*)/, 1]   # => noob
     end
@@ -241,7 +241,11 @@ module Xiki
 
       txt << "\n<= help/"
 
-      Xik.new(txt).expand args, options.merge(:eval=>1)
+      txt = Xik.new(txt).expand args, options.merge(:eval=>1)
+
+      txt ||= "<! Already set!" if args[0] =~ / in bottom bar\z/
+
+      txt
 
     end
 
@@ -330,6 +334,9 @@ module Xiki
         elsif path == ["open"]
           txt.gsub!(/\+ [fp]/, "\n\\0")
           return
+        elsif path == ["window"]
+          # No spaces
+          return
         elsif path == ["hop"]
           txt.gsub!(/\+ [o]/, "\n\\0")
           return
@@ -353,8 +360,7 @@ module Xiki
       elsif path == ["jump"]
         txt.gsub!(/\+ [cry]/, "\n\\0")
       elsif path == ["open"]
-        txt.gsub!(/\+ [fcetolz]/, "\n\\0")
-
+        txt.gsub!(/\+ [pfeolz]/, "\n\\0")
 
       elsif path == ["window"]
         txt.gsub!(/\+ [netuw]/, "\n\\0")
@@ -391,7 +397,7 @@ module Xiki
 
       ["jump"]=>"Going to specific places",
 
-      ["open"]=>"Displaying things",
+      ["open"]=>"Opening files, views, and lists",
 
       ["window"]=>"Splitting and navigating",
       ["do"]=>"Arranging",

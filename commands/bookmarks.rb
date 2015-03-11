@@ -31,7 +31,7 @@ if options[:task] == []
 end
 
 if options[:task] == ["navigate"]
-  file = Bookmarks[":hx/bookmarks/#{args[0]}.notes"]
+  file = Bookmarks[":xh/bookmarks/#{args[0]}.notes"]
 
   if ! File.exists? file
     options[:no_slash] = 1
@@ -52,7 +52,7 @@ elsif options[:task] == ["exit and cd"]
   return nil
 
 elsif options[:task] == ["delete bookmark"]
-  file = Bookmarks[":hx/bookmarks/#{args[0]}.notes"]
+  file = Bookmarks[":xh/bookmarks/#{args[0]}.notes"]
   FileUtils.rm file
   return "<! deleted"
 

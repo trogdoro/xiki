@@ -155,16 +155,15 @@ module Xiki
     end
 
     @@bookmarks_required = {
-      "hx"=>"~/xiki/",
       "x"=>"~/xiki/",
+      "xh"=>"~/xiki/",
+
+      "home"=>"~/",
 
       "xiki"=>Xiki.dir,
       "source"=>Xiki.dir,
+      "xs"=>Xiki.dir,
       "s"=>Xiki.dir,
-
-      "xiki"=>Files.tilda_for_home(Xiki.dir),
-      "source"=>Files.tilda_for_home(Xiki.dir),
-      "s"=>Files.tilda_for_home(Xiki.dir),
 
     }
 
@@ -206,15 +205,18 @@ module Xiki
       "xc"=>"#{Xiki.dir}commands",
       "c2"=>"#{Xiki.dir}commands",
 
+      "cp"=>"#{Xiki.dir}commands/patterns/core_patterns.rb",
+
       "ir"=>"#{Xiki.dir}misc/emacs/el4r/init.rb",
       "th"=>"#{Xiki.dir}misc/themes/",
+      "xs"=>"#{Xiki.dir}spec/",
 
       "m"=>"~/xiki/misc/",
       "v"=>"~/xiki/misc/versions/",
       "lo"=>"~/xiki/misc/logs/",
       "f"=>"~/xiki/misc/favorites/",
       "st"=>"~/xiki/misc/startup.rb",
-      "cl"=>"~/xiki/misc/logs/command_log.notes",
+      "cl"=>"~/xiki/misc/logs/xiki_commands_log.notes",
       "pi"=>"~/Pictures/",
       "k"=>"#{Xiki.dir}lib/xiki/core/key_shortcuts.rb",
       "us"=>"/usr/",
@@ -339,10 +341,10 @@ module Xiki
     # Bookmarks.bookmarkify_path "/Users/craig/xiki/misc/logs/"
     def self.bookmarkify_path path
 
-      # Expand out tilda in path if not there, since paths in bookmarks have tildas
+      # Expand out tilde in path if not there, since paths in bookmarks have tildes
 
       path = Files.tilda_for_home path
-      bookmarks = self.bookmarks_required   # => {"hx"=>"~/xiki/", "x"=>"~/xiki/", "xiki"=>"/Users/craig/Dropbox/xiki/", "source"=>"/Users/craig/Dropbox/xiki/", "s"=>"/Users/craig/Dropbox/xiki/"}
+      bookmarks = self.bookmarks_required
 
       self.bookmarks_required.each do |bookmark, dir|
         return path.sub(/^#{dir}/, ":#{bookmark}/") if path =~ /^#{dir}/
