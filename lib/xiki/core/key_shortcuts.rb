@@ -7,7 +7,7 @@ module Xiki
       Menu.init
 
       # Keys.accumulate do
-      self.open_keys
+     self.open_keys
       self.window_keys
 
       self.as_keys
@@ -40,7 +40,7 @@ module Xiki
       Xiki.def("as+all"){ Clipboard.copy_everything }
       Xiki.def("as+directory"){ FileTree.copy_path }   # copy dir to clipboard from tree
 
-      Xiki.def("as+task"){ Notes.as_todo }
+      Xiki.def("as+todo"){ Notes.as_todo }
       Xiki.def("as+nav"){ Notes.as_file }   # Save in :n
 
       Xiki.def("as+here"){ Location.as_spot }   # remember point in file
@@ -65,24 +65,26 @@ module Xiki
 
       Xiki.def("open+help", :noob=>1){ Launcher.open("help/") }   # OO - open line (O's emacs default)
 
+      Xiki.def("open+prompt", :noob=>1){ Launcher.open_prompt }
+      Xiki.def("open+recent", :noob=>1){ Shell.recent_history_external nil, :create_view=>1 }
+      Xiki.def("open+sessions", :noob=>1){ Launcher.open "sessions/" }
+
       Xiki.def("open+file", :noob=>1){ Bookmarks.go }
       Xiki.def("open+untitled", :noob=>1){ View.new_file }
       Xiki.def("open+views", :noob=>1){ Launcher.open("views/") }
 
+      Xiki.def("open+notes", :noob=>1){ Notes.open_note }
+
       Xiki.def("open+command"){ Launcher.open_command }
-      Xiki.def("open+prompt", :noob=>1){ Launcher.open_prompt }
 
       Xiki.def("open+edited"){ Files.open_edited }   # show recently edited files
       Xiki.def("open+diffs"){ DiffLog.open }   # shows diffs of what you've edited
 
-      Xiki.def("open+notes", :noob=>1){ Notes.open_note }
       Xiki.def("open+bookmarks"){ Launcher.open "bookmarks/" }
 
-      Xiki.def("open+sessions", :noob=>1){ Launcher.open "sessions/" }
       Xiki.def("open+time"){ Bookmarks.go nil, :date_sort=>true }
       Xiki.def("open+opened", "opened/")
       Xiki.def("open+quotes"){ Launcher.open("views/", :task=>["quoted"]) }
-      Xiki.def("open+recent"){ Shell.recent_history_external nil, :create_view=>1 }
 
       Xiki.def("open+key"){ Keys.jump_to_code }   # jump to ruby code of key definition
       Xiki.def("open+whereabouts"){ Code.do_list_ancestors }
@@ -382,10 +384,14 @@ module Xiki
       Xiki.def("window+edge"){ View.recenter_top_key }
       Xiki.def("window+alone"){ View.hide_others }
       Xiki.def("window+bigger"){ View.enlarge }
+
+      # Hmm, was going to use window+bigger, but it's awkward to type
+      # Xiki.def("window+grow"){ View.enlarge }
+
       Xiki.def("window+middle"){ View.recenter }   # LL - recenter (L's emacs default)
 
       Xiki.def("window+uniform"){ 3.times { View.balance } }
-      Xiki.def("window+wrap"){ $el.toggle_truncate_lines }   # wrap lines
+      Xiki.def("window+wrap", :noob=>1){ $el.toggle_truncate_lines }   # wrap lines
       Xiki.def("window+jump"){ View.shift }
 
       Xiki.def("window+tasks"){ Launcher.tasks_on_this_file }
@@ -470,7 +476,6 @@ module Xiki
       Xiki.def("search+just+delete"){ Search.like_delete }   # Delete all lines that contain the match
       Xiki.def("search+just+edited"){ Search.just_edits }   # Search in diff of edits to this file
 
-      Xiki.def("search+just+filename"){ Search.isearch_open }   # Open match as filename
       Xiki.def("search+just+thesaurus"){ Search.search_thesaurus }
 
       Xiki.def("search+just+have"){ Search.just_select }   # select match
@@ -498,6 +503,7 @@ module Xiki
       Xiki.def("search+like+after"){ Search.query_replace_with_2 }
       Xiki.def("search+like+command"){ Launcher.search_like_menu }
       Xiki.def("search+like+difflog"){ Search.jump_to_difflog }   # find last string in difflog
+      Xiki.def("search+like+filename"){ Search.isearch_open }   # Open match as filename
 
       Xiki.def("search+like+nav"){ Search.isearch_restart ":n", :as_here=>1 }
       Xiki.def("search+like+previous"){ Search.isearch_restart :previous }
@@ -646,21 +652,30 @@ module Xiki
       # Make Ctrl+X be expand, and make cua-mode play nicely with it
       # $el.define_key(:global_map, $el.kbd("C-x C-@")){ Launcher.go }   # expand+
       # C+X, C+Space > do what C-x C-x used to do
+
+
+      # Add a fallback keymap with "Ctrl+X <timeout>" mapped to kill-region.
+      #   added where? : emulation-mode-map-alists
+
       $el.el4r_lisp_eval %`
         (progn
-          ; cua-mode falls back to a "Ctrl+X <timeout>" mapping, so create it.
+
+          ; Add a keymap with "Ctrl+X" mapped to kill-region, that pre-empts cua--keymap-alist when there's a selection.
           (defvar xiki-cua--keymap-alist
-           '((cua-mode keymap
-             (24 keymap
-               (timeout . kill-region)))
-           )
+           '((cua--ena-region-keymap keymap
+             (24 . kill-region)
+             )))
+
+          (add-to-ordered-list 'emulation-mode-map-alists 'xiki-cua--keymap-alist 200)
+
+          (defun xiki-launch () (interactive)
+            (el4r-ruby-eval "Xiki::Launcher.go")
           )
-          ; Then add to end of special elisp map > so it'll apply when not found in all the other maps
-          (add-to-ordered-list 'emulation-mode-map-alists 'xiki-cua--keymap-alist 500)
         )
       `
 
-      $el.define_key(:cua__cua_keys_keymap, "\C-x"){ Launcher.go }   # expand+
+      $el.define_key(:cua__cua_keys_keymap, "\C-x", :xiki_launch)   # expand+
+
       Xiki.def("xpand+") { Launcher.go }   # expand+
       $el.define_key(:global_map, $el.kbd("M-C-x")){ Launcher.go }
 
