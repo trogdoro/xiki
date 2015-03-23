@@ -8,11 +8,13 @@
 
   ; Reload
   (global-set-key (kbd "M-r") 'el4r-kill-and-restart)
-  (global-set-key [2222] 'el4r-kill-and-restart)   ; For Terminal.app
+  (global-set-key [174] 'el4r-kill-and-restart)   ; For Terminal.app, in emacs24
+  (global-set-key [2222] 'el4r-kill-and-restart)   ; For Terminal.app, in emacs22
 
   ; Jump to log and show error
   (global-set-key (kbd "M-l") 'el4r-jump-to-error)
-  (global-set-key [2220] 'el4r-jump-to-error)   ; For Terminal.app
+  (global-set-key [172] 'el4r-jump-to-error)   ; For Terminal.app, in emacs24
+  (global-set-key [2220] 'el4r-jump-to-error)   ; For Terminal.app, in emacs22
 
 )
 
@@ -20,7 +22,7 @@
   (el4r-ruby-eval
     (if (stringp txt)
       (concat "Ol \"" txt "\"")   ; String, so no need to inspect
-      (concat "Ol \"" (pp-to-string txt) "\"")
+      (concat "Ol \"" (replace-regexp-in-string "\"" "\\\\\"" (pp-to-string txt)) "\"")
     )
   )
 )
@@ -148,7 +150,7 @@
             (make-network-process :remote (expand-file-name "~/.xikisock") :name el4r-process-name :buffer buffer)
 
             (file-error
-              (let ((process-name (start-process "xiki-forker" (get-buffer-create "*xiki-forker*") el4r-ruby-program el4r-instance-program "forker")))
+             (let ((process-name (start-process "xiki-forker" (get-buffer-create "*xiki-forker*") el4r-ruby-program el4r-instance-program "forker")))
                 (accept-process-output process-name)
               )
 
@@ -192,22 +194,62 @@
               )))
     )))
 
+;; Alternate method that loops and continually checks to see if el4r
+;; is still running. If we hit escape, it cancels out of it.
 
-;; All of a sudden, the original old accept-process-output
-;; method seems to work, so this hack is no longer necessary.
-;; (if (string-match "Emacs 2[34].+apple-" (emacs-version))   ;; If emacs 23 or 24 on the Mac, do work-around
-(if nil
+(if t
+
   ; Work-around
   (defun el4r-recv ()
-    (let ((expr))
-      (while (eq nil (progn (setq expr (el4r-scan-expr-from-ruby)) expr))
+    (let ((lock-time 20000) (expr) (deactivate-mark-orig deactivate-mark) (limit 0) (succeeded t))
+
+      ; 1. Check frequently for a couple seconds, with no chance of interruption...
+
+      (while (and (< limit lock-time) (eq nil (progn (setq expr (el4r-scan-expr-from-ruby)) expr)))
         (el4r-check-alive)
-        ; Call alterative version that loops and waits
-        ; to avoid severe slowdown with (accept-process-output)
-        ; on Mac Emacs23+ versions.
-        (accept-process-output2 el4r-process))
-      expr))
-  ; Original method
+        (sleep-for 0.00001)
+        (setq limit (1+ limit))
+      )
+
+      ; 2. Exceeded that, so check somewhat frequently, watching for an interruption...
+
+      (when (>= limit lock-time)
+
+        (message "Command taking a while. Press esc to cancel.")
+
+        (setq succeeded (sit-for 0.1))
+
+        (while (eq nil (progn (setq expr (el4r-scan-expr-from-ruby)) expr))
+          ; Wait a bit
+          (setq succeeded (sit-for 0.1))
+
+          ; Original > check for escape and following events
+          (if (and (not succeeded) (next-event-is-escape))
+            (progn
+
+              ; Move to the beginning of the command, to indicate it's cancelled
+              (beginning-of-line)
+              (skip-chars-forward " -$%")
+              (setq quit-flag t)
+
+            )
+            ; Re-display message > it's going away for some reason
+            (message "Command taking a while. Press esc to cancel.")
+          )
+
+          ; Else, keep on going
+
+        )
+        (message "")   ; To clear "Command taking a while..." message
+      )
+
+      (if (not deactivate-mark-orig)   ; If mark wasn't set to deactivate before, don't let the above elisp deactivate it
+        (setq deactivate-mark nil)
+      )
+      expr
+    ))
+
+  ; Original method > disabled for now
   (defun el4r-recv ()
     (let ((expr) (deactivate-mark-orig deactivate-mark))
       (while (eq nil (progn (setq expr (el4r-scan-expr-from-ruby)) expr))
@@ -216,15 +258,9 @@
       (if (not deactivate-mark-orig)   ; If mark wasn't set to deactivate before, don't let the above elisp deactivate it
         (setq deactivate-mark nil)
       )
-      expr)))
+      expr))
 
-; Alterative version that loops
-(defun accept-process-output2 (process)
-  (save-match-data
-    (with-current-buffer (process-buffer process)
-      (while (or (eq (point-max) 1) (not (string-match "\0" (buffer-string))))
-        ;; (sleep-for 0.1)))))
-        (sleep-for 0.00001)))))
+)
 
 (defun el4r-send (rubyexpr)
   (el4r-check-alive)
@@ -352,13 +388,11 @@
           result2
           (progn
             ; Do stuff when C-g aborted half way through...
+
             (setq quit-flag nil)
 
             ; Send signal to raise exception  Kill process and start new?
-            (message "sending signal")
-            (prin1 xiki-child-pid)
             (signal-process xiki-child-pid 'SIGUSR1)
-            (message "sent signal")
 
           )
         )

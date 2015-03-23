@@ -6,10 +6,18 @@
 ; It's our job to make this emacs ready for emacsclient sessions to join, so set up the hook, define variable, and load start_xiki.el in this dir...
 
 (add-hook 'after-make-frame-functions (lambda (frame) (interactive)
+
   (set-buffer "*scratch*")
   (run-with-idle-timer 0 nil (lambda ()
     (el4r-ruby-eval "::Xiki::Xsh.run :args_via_daemon=>1")
+
+    ;; Hack to simulate key press, since it seems to wait for one
+    (setq unread-command-events (cons 2 unread-command-events))
+
   ))
+
+  nil
+
 ))
 
 (setq xiki-emacs-daemon t)
