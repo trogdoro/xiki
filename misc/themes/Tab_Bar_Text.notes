@@ -1,9 +1,14 @@
-$el.elvar.bottom_bar_shows_file_paths = Xiki::Keys.read_from_conf("bottom bar") == "paths"
-
 $el.el4r_lisp_eval %`
   (progn
 
     (setq xiki-bar-special-text nil)
+
+    ; Add hook to always update modeline when editing a line > since it could make "^X Expand" appear
+    (defun xiki-before-change (begin end)
+      (force-mode-line-update)
+    )
+    (add-hook 'before-change-functions 'xiki-before-change)
+
 
     ; Update variable that identifies the actual window that's selected ()
     (defun actual-selected-window-handler ()
@@ -23,24 +28,25 @@ $el.el4r_lisp_eval %`
               (multiple-p (> (length (window-list)) 1))
               (active-p (or (not (boundp 'actual-selected-window)) (eq (selected-window) actual-selected-window)))
               (paths-p (and (boundp 'bottom-bar-shows-file-paths) bottom-bar-shows-file-paths))
+              (buffer-name (buffer-name))
             )
             (concat
 
-              ; If not active window, or paths and no special text
-              (if (and (or (not active-p) (and paths-p (not xiki-bar-special-text))) (not (and (string= "xsh" (buffer-name)) (not (buffer-file-name)))))
+              ; If not in "xsh" and no special text
+              (if (and (or (not active-p) (not xiki-bar-special-text)) (not (and (string= "xsh" buffer-name) (not (buffer-file-name)))) (not (string-match "/$" buffer-name)))
 
                 ; Display the path
                 (let
                   (
                     (dir  (replace-regexp-in-string (getenv "HOME") "~" (replace-regexp-in-string "^//$" "/" default-directory))  )
-                    (star (if (and (or (buffer-file-name) (string-match "\\\\." (buffer-name))) (buffer-modified-p)) (propertize "*" 'face 'mode-line-file) " "))
+                    (star (if (and (or (buffer-file-name) (string-match "\\\\." buffer-name)) (buffer-modified-p)) (propertize "*" 'face 'mode-line-file) " "))
                   )
 
                   (xiki-bar-add-padding (concat
                     "  "
                     star
                     dir
-                    (propertize (buffer-name) 'face 'mode-line-file)
+                    (propertize buffer-name 'face 'mode-line-file)
 
                     ":"
                     (number-to-string (line-number-at-pos))
@@ -59,11 +65,30 @@ $el.el4r_lisp_eval %`
                     (propertize (xiki-bar-add-padding xiki-bar-special-text) 'face face)
                   )
 
-                  ; Face should be underline only if split
+                  (force-mode-line-update)
+                  (let* (
+                    (line (buffer-substring (point-at-bol) (point-at-eol)))
+                    (match1 (string-match "^ *" line))
+                    (line-indent (match-end 0))
 
-                  (if multiple-p
-                    (xiki-bar-add-padding "   Ctrl+X Expand/collapse    Ctrl+K Keys    Ctrl+Q Quit   " 'mode-line-transparent-underline (if active-p 'mode-line-transparent-underline-activatable 'mode-line-transparent-underline))
-                    (xiki-bar-add-padding "   Ctrl+X Expand/collapse    Ctrl+K Keys    Ctrl+Q Quit   " 'mode-line-transparent (if active-p 'mode-line-transparent-activatable 'mode-line-transparent))
+                    (line-next (buffer-substring (point-at-bol 2) (point-at-eol 2)))
+                    (match1 (string-match "^ *" line-next))
+                    (line-next-indent (match-end 0))
+                    (has-child (> line-next-indent line-indent))
+
+                    (prompt (string-match "^[ =]*[$%&] ." line))
+                    (left (if has-child "^X Collapse  " (if prompt " ^X Execute  " " ^X Expand   ")))
+                    (left (if (equal line "") "             " left))
+                    (right (if (not prompt) "          " "   ^G Grab"))
+                    (esc (if (equal buffer-name "xsh") "" "   ESC Back"))
+                    (txt (concat "  " left "^T Tasks   ^K Keys   ^Q Quit" esc right "   "))
+                    )
+
+                    ; Face should be underline only if split
+                    (if multiple-p
+                      (xiki-bar-add-padding txt 'mode-line-transparent-underline (if active-p 'mode-line-transparent-underline-activatable 'mode-line-transparent-underline))
+                      (xiki-bar-add-padding txt 'mode-line-transparent (if active-p 'mode-line-transparent-activatable 'mode-line-transparent))
+                    )
                   )
 
                 )
