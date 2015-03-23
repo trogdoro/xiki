@@ -26,7 +26,6 @@ function xsh {
   mkdir -p $dir
 
   if [ -n "$ZSH_VERSION" ]; then
-    echo "$dir/shell_external_log.notes"
     fc -W "$dir/shell_external_log.notes"
   else   # Assume bash or bash-compatible
     history -w "$dir/shell_external_log.notes"
@@ -34,7 +33,21 @@ function xsh {
 
   # Run the actual xsh command...
 
-  command xsh $*
+  command xsh "$@"
+
+  # Save xsh internal shell commands into our history...
+
+  file="$HOME/xiki/misc/tmp/recent_history_internal.notes"
+  if [ -f $file ]; then
+
+    if [ -n "$ZSH_VERSION" ]; then
+      fc -R $file
+    else   # Assume bash or bash-compatible
+      history -r $file
+    fi
+    # Be sure to delete it
+    rm $file
+  fi
 
 
   # Grab any "go" text, and run it...
