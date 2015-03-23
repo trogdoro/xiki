@@ -167,6 +167,7 @@ module Xiki
     def self.create_vertical
       $el.split_window_horizontally
       View.next if ! Keys.prefix_u
+      ControlTab.go
     end
 
     def self.create prefix=nil
@@ -184,6 +185,7 @@ module Xiki
       else   # Normal split
         $el.split_window_vertically
         View.next
+        ControlTab.go
       end
     end
 
@@ -241,7 +243,6 @@ module Xiki
       if options[:other_view] && ! View.file_visible?(expanded) && View.windows_in_my_column.length > 1
         # If we're at the top, go to next
         Keys.clear_prefix
-
         View.windows_in_my_column.index(View.current) == 0 ?
           View.next : View.previous
         # Else go to previous
@@ -267,8 +268,7 @@ module Xiki
 
           if File.directory? expanded   # If a dir, open it in new buffer
             expanded = FileTree.add_slash_maybe expanded
-
-            return Launcher.open expanded, options.merge(:buffer_name=>"#{expanded[/([^\/]+)\/$/]}", :buffer_dir=>expanded)
+            return Launcher.open expanded, options.merge(:buffer_name=>"#{expanded[/([^\/]*)\/$/]}", :buffer_dir=>expanded)
           end
 
           $el.find_file expanded
@@ -446,8 +446,7 @@ module Xiki
       $el.delete_other_windows
 
       # Width of bar (layout+todo etc.)
-      $el.split_window_horizontally 48
-      #     $el.split_window_horizontally 28
+      $el.split_window_horizontally
 
       $el.other_window 1
       o = nil
@@ -485,9 +484,9 @@ module Xiki
     end
 
     # Accounts for bar
-    def self.balance
+    def self.balance options={}
       $el.balance_windows
-      return if Keys.prefix_u
+      return if ! Keys.prefix_u && ! options[:narrow_bar]
       if self.bar?
         buffer = $el.selected_window
         $el.select_window $el.frame_first_window
@@ -505,14 +504,22 @@ module Xiki
       $el.point_min != 1 || $el.point_max != $el.buffer_size+1
     end
 
-    def self.hide
+    def self.hide options={}
+
+      size = View.list.size
+
+      # It's the only window, so kill the view
+      if size == 1
+        View.kill if options[:kill_if_only]
+        return
+      end
+
       Keys.prefix_times.times do
         left = View.left_edge
 
         # If there's one above me and before me
         index = View.index
         middle = false
-        size = View.list.size
         if index > 0 && index < (size - 1)   # Check existance
           if( left == View.left_edge(View.list[index - 1]) &&
             left == View.left_edge(View.list[index + 1]) )  # Check alignment
@@ -1469,7 +1476,7 @@ module Xiki
         if prefix == :u || prefix == :-   # Use prefix chars from previous line
           ""
         else
-          line[/^[ |#:!%*+-]*/]
+          line[/^[ |#;:!%*+-]*/]
         end
 
       Deletes.delete_whitespace if ! Line.at_left? && ! Line.at_right?
@@ -1559,7 +1566,7 @@ module Xiki
       # Switch to one that's not :t or :n
       View.to_nth 2
       View.to_buffer Buffers.names_array.find{|o| ! ["todo.notes", "nav.notes", "*ol"].member? o}
-      View.to_nth 1
+      View.to_nth 0
 
       Effects.blink(:what=>:line) unless options[:no_blink]
     end
@@ -2138,14 +2145,19 @@ module Xiki
       percent = (percent * 100).round
     end
 
-    def self.suggest_filename_from_txt
-      txt = View.txt
+    def self.extract_suggested_filename_from_txt txt=nil
+      txt ||= View.txt
 
+      # Remove text that appears when Ctrl+R
       txt.sub! /\A\| Type Ctrl\+G .+\n\n/, ''
 
-      return if txt.scan(/^[^ \n].*/) == ["sessions/"]   # Don't store session if only command is sessions/...
+      # Don't store session if only command is sessions/...
+      return if txt.scan(/^[^ \n].*/) == ["sessions/"]
 
-      name = txt[/[a-z][a-z.0-9 ']*/i]   # '
+      # Change some chars, to dashes
+      txt.gsub!(/ > /, ' - ')
+
+      name = txt[/[a-z][a-z.0-9 '-]*/i]   # '
 
       return if ! name   # Do nothing if no words in the file
 
@@ -2162,6 +2174,11 @@ module Xiki
 
     def self.scan regex
       self.txt.scan regex
+    end
+
+    def self.close
+      self.kill
+      self.hide
     end
 
   end
