@@ -1959,7 +1959,12 @@ module Xiki
 
         if task
 
-          return options[:output] = "~ save/" if options[:quote]
+          if options[:quote]
+            # : foo/~ save, so do save
+            return options[:output] = self.save(file_path, options) if task == ["save"]
+            # : foo, so show "~ save/"
+            return options[:output] = "~ save/"
+          end
 
           if task == ["edit", "vim"]
             $el.suspend_emacs "clear\nvim '#{file_path}'"
@@ -1969,8 +1974,6 @@ module Xiki
             return options[:output] = "<! opened in Sublime"
           end
 
-          return options[:output] = self.save(file_path, options) if task == ["save"] && options[:quote]
-
           menu = Xik.new %`
             ~ search
               ! Search.enter_search
@@ -1979,17 +1982,17 @@ module Xiki
             ~ outline
               ! FileTree.filter_one_file(options[:file_path]).join("\\n")
 
+            ~ delete
+              ! Keys.remember_key_for_repeat(proc {Launcher.launch :task=>["delete"], :no_prompt=>1})
+              ! FileTree.delete_file options[:file_path], options
+            ~ bookmark
+              ! Bookmarks.save
             ~ file/
               + rename
                 ! FileTree.rename_file
-              + delete
-                ! Keys.remember_key_for_repeat(proc {Launcher.launch :task=>["delete"], :no_prompt=>1})
-                ! FileTree.delete_file options[:file_path], options
               + command on it
                 ! Tree.<< "$ ", :no_search=>1, :no_slash=>1
                 ! Move.to_end
-            ~ bookmark
-              ! Bookmarks.save
 
             ~ expand
               ! Launcher.launch
@@ -2047,11 +2050,10 @@ module Xiki
               ! options[:nest] = 1
               ! options[:no_task] = 1
               ! txt = Shell.external_plus_sticky_history
-            ~ in dir/
+            ~ dir history/
               ! options[:nest] = 1
               ! options[:no_task] = 1
-              ! file_path = options[:file_path]
-              ! Shell.history file_path #, :command=>"echo"
+              ! Shell.history options[:file_path]
 
             ~ dir/
               + rename
@@ -2106,7 +2108,7 @@ module Xiki
               + all contents
                 ! txt = FileTree.grep('+file_path.inspect+', "").join("\n")
                 ! txt.sub(/.+\n/, "")   # Delete 1st line > the redundant dir
-              + time sort
+              + ordered by time
                 ! FileTree.dir :date_sort=>true
                 ! ""
             ~ bookmark
@@ -2206,6 +2208,8 @@ module Xiki
     def self.example_commands options
 
       options[:nest] = 1
+      options[:no_task] = 1   # Don't highlight?
+
 
       task = options[:task]
 
@@ -2225,8 +2229,6 @@ module Xiki
       end
 
       # ~ example commands/foo, so grab from the file...
-
-      options[:no_task] = 1
 
       command = task.shift
 

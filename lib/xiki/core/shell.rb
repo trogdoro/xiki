@@ -387,6 +387,8 @@ module Xiki
 
     def self.append_log command, dir, prefix=''
 
+      return if command.blank?
+
       Shell.session_cache_add "$ #{command}"
 
       return if View.name =~ /_log.notes$/ || ! command
@@ -636,9 +638,14 @@ module Xiki
 
       if ! command && prompt =~ /[%$]/
 
-        # Ctrl+X on a blank prompt, so show the history...
+        return self.tasks_for_blank_prompt(task, dir, options) if task
 
-        return self.shell_history(:dir=>dir)
+        # Ctrl+X on a blank prompt, so show "~ recent/"...
+
+        Tree.<< "~ recent/", :no_slash=>1
+        Launcher.launch
+
+        return ""
 
       end
 
@@ -704,6 +711,32 @@ module Xiki
     #       # Mouse, so return all...
     #       return menu if task == [] && options[:mouse]
 
+
+    def self.tasks_for_blank_prompt task, dir, options
+
+      task[0] = "~ #{task[0]}" if task[0]
+
+      menu = Xik.new "
+        ~ examples/
+          ! FileTree.example_commands options
+        ~ recent/
+          ! options[:nest] = 1
+          ! options[:no_task] = 1
+          ! txt = Shell.external_plus_sticky_history
+        ~ dir history/
+          ! options[:nest] = 1
+          ! options[:no_task] = 1
+          ! Shell.history options[:dir]
+      "
+
+      result = menu[task, :eval=>options]
+
+      result || ""
+
+    end
+
+
+
     # Delegated to by .shell_command_per_prompt to handle when right-clicking or items under the command.
     def self.shell_items options   # New version
 
@@ -735,7 +768,7 @@ module Xiki
 
         ~ recent/
           ! Shell.shell_recent options
-        ~ in dir/
+        ~ dir history/
           ! Shell.shell_in_dir options
 
         ~ grab
@@ -1151,7 +1184,7 @@ module Xiki
 
       txt.gsub!(/ +$/, '')   # Remove trailing spaces
       txt = txt.split("\n").reverse.uniq.join("\n")
-      txt.sub!(/^\n/, '')
+      txt.sub!(/^\$\n/, '')
 
       txt
 
@@ -1162,7 +1195,7 @@ module Xiki
 
       # Called from key shortcut, so create a new view for it...
 
-      if options[:create_view]
+      if options[:from_key_shortcut]
         dir = View.dir
         View.to_buffer "recent/"
         View.dir = dir
@@ -1190,7 +1223,11 @@ module Xiki
 
       View.insert txt, :dont_move=>1
       left = View.cursor
-      Tree.filter :left=>left, :right=>(left+txt.length)
+
+      filter_options = {:left=>left, :right=>(left+txt.length)}
+      filter_options.merge!(:recent_history_external=>1) if ! options[:from_key_shortcut]
+
+      Tree.filter filter_options
 
     end
 
@@ -1216,12 +1253,11 @@ module Xiki
 
     def self.session_cache_add command
 
-      val = $el.boundp(:xiki_shell_commands_session_cache) ?
-        $el.elvar.xiki_shell_commands_session_cache :
-        ""
+      return if command.blank?
 
-      val << "\n#{command}"
-      val.strip!
+      val = self.session_cache
+
+      val ? val.<<("#{command}\n") : val = "#{command}\n"
 
       $el.elvar.xiki_shell_commands_session_cache = val
 
