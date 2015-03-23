@@ -133,7 +133,7 @@ module Xiki
       # Store original buffer in local var, so we can make sure we go back to the right place
       buffer_to_save = View.name
 
-      name = View.suggest_filename_from_txt
+      name = View.extract_suggested_filename_from_txt
       name = "#{name}.notes"
 
       View.to_buffer "save as/"
@@ -158,10 +158,8 @@ module Xiki
       end
       prefix = Keys.prefix :clear=>1
 
-
       # It's unsaved and not associated with a file yet, so prompt for where to save it
       return self.save_newly_created if ! View.file
-
 
       self.save_diffs if prefix != :u && ! options[:no_diffs]
 
@@ -569,11 +567,13 @@ module Xiki
           self.save_xsh_sessions
         end
 
-        # Todo > write cached shell commands to somewhere where bash will write them to the history
-        # Shell.session_cache
-        # Loop through and add them one at a time, or do a one-time load:
-        #   history -r
-        #   also, find zsh way of doing it
+        # Save any shell commands we've run back to the external shell's history...
+
+        txt = Shell.session_cache
+        if txt
+          txt.gsub!(/^\$ /, '')
+          File.open(Bookmarks[":x/misc/tmp/recent_history_internal.notes"], "w") { |f| f << txt }
+        end
 
         $el.kill_emacs
       else
@@ -594,7 +594,7 @@ module Xiki
 
       # Save session to file...
 
-      name = View.suggest_filename_from_txt
+      name = View.extract_suggested_filename_from_txt
 
       return if ! name
 
@@ -633,6 +633,9 @@ module Xiki
     def self.file_list options={}
 
       txt = File.read File.expand_path("~/xiki/misc/logs/difflog.notes"), *Xiki::Files.encoding_binary
+      # Avoids "invalid byte sequence in UTF-8" error
+      txt.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '')
+
       files = []
 
       # :tree_format, so return navigable tree with file indented...
