@@ -141,7 +141,7 @@ module Xiki
           result << ""
           i += 1
         # If /$ and not escaped
-        elsif ccc =~ /\A\/\$ $/ && ! last_was_escape
+        elsif ccc =~ /\A\/\$[ \/]?$/ && ! last_was_escape
           result[-1] << "/"
           result << "$"
           i += 1

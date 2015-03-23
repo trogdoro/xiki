@@ -9,7 +9,7 @@ module Xiki
 
   Xiki.def(/^([$%&])( |$| ?\/)/) do |path, options|
 
-    # There's a ~task in the above ancestor, so collapse up to it and run...
+    # There's a ~task in the ancestor above this prompt, so collapse up to it and run...
 
     if (ancestors = options[:ancestors]) && (last = Path.split ancestors[-1]) && (last.find{|o| o =~ /^~ /})
 
@@ -25,7 +25,7 @@ module Xiki
       line = Line.without_label
 
       # Line is $..., so replace it
-      if line =~ /^\$ /
+      if line =~ /^\$( | ?$)/
         Line.sub! /( *).*/, "\\1#{command}"
       else
         # Line not $..., so insert $... underneath
@@ -487,11 +487,11 @@ module Xiki
 
   # :-... or :+..., so save as before and after...
 
-  Xiki.def(%r"^:[+-]") do |path, options|
+  Xiki.def(%r"^:[?+-]") do |path, options|
 
     txt = Tree.siblings :quotes=>":", :string=>1
-    before = txt.scan(/^-.+/).join("\n").gsub(/^-/, '')
-    after = txt.scan(/^\+.+/).join("\n").gsub(/^\+/, '')
+    before = txt.scan(/^[?-].+/).join("\n").gsub(/^./, '')
+    after = txt.scan(/^\+.+/).join("\n").gsub(/^./, '')
     Clipboard.register("1", before)
     Clipboard.register("2", after)
 
@@ -519,9 +519,9 @@ module Xiki
   end
 
 
-  # %foo/, so search file we're nested under...
+  # %foo/, so filter output for pattern...
 
-  Xiki.def(/^%/) do |path, options|
+  Xiki.def(/^%[^ \n]/) do |path, options|
 
     path = path[/\A%(.+)\//, 1]
 
