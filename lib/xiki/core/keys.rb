@@ -22,8 +22,8 @@ module Xiki
 
     def self.map_default
       {
-        "open"=>nil,
         "window"=>nil,
+        "open"=>nil,
 
         "hop"=>nil,
         "jump"=>nil,
@@ -45,8 +45,8 @@ module Xiki
 
     def self.map_default_noob
       {
-        "open"=>nil,
         "window"=>nil,
+        "open"=>nil,
 
         "hop"=>nil,
         "jump"=>nil,
@@ -122,13 +122,18 @@ module Xiki
       self.write_to_conf 'key shortcuts', (value ? 'noob' : 'advanced')
     end
 
-    # Called when expanding key shortcuts are press.
+    # Called when expanding key shortcuts are pressed.
     def self.expand path
-
-      # Get key shortcut...
 
       prefix = Keys.prefix
       key = Keys.input(:optional=>true, :chars=>1, :prompt=>"")
+
+      # [] and key was "k", so do keys+kill...
+
+      if path == [] and key == "k"
+        Keys.remember_key_for_repeat(proc {Clipboard.kill})
+        return Clipboard.kill
+      end
 
       # Key pressed quickly, so recurse...
 
@@ -169,6 +174,11 @@ module Xiki
       buffer_name = path.join("+")+"/"
       Launcher.open command, options.merge(:buffer_name=>buffer_name)
 
+    end
+
+    def self.kill # args, options
+      View.kill if View.name == "keys/"
+      Clipboard.kill
     end
 
     def self.more args, options
@@ -216,34 +226,36 @@ module Xiki
             ! Keys.noob_mode true
             ! "<! Type Ctrl+K again to see the noob key shortcuts."
           `.unindent
-
         end
 
-      # Not yet left initial theme, so show option to show paths...
-      if $el.boundp(:bottom_bar_shows_file_paths) && $el.elvar.bottom_bar_shows_file_paths # || ! $el.elvar.bottom_bar_shows_file_paths
-        txt << %`
-          + key shortcuts in bottom bar
-            ! $el.elvar.bottom_bar_shows_file_paths = nil
-            ! Keys.write_to_conf 'bottom bar', 'keys'
-            ! options[:no_slash] = 1
-            ! "<! Done"
-          `.unindent
-      else
-        # Todo > make options (:no_slash) affect actual hash
-        txt << %`
-          + file paths in bottom bar
-            ! $el.elvar.bottom_bar_shows_file_paths = 1
-            ! Keys.write_to_conf 'bottom bar', 'paths'
-            ! options[:no_slash] = 1
-            ! "<! Done"
-          `.unindent
-      end
+
+      # "file paths in bottom bar" conf setting. Commented, but leave here in case we want it again
+      #   - it's possble being able to toggle the bottom bar between shortcuts and files will seem desirable again at some point
+
+      # # Not yet left initial theme, so show option to show paths...
+      # if $el.boundp(:bottom_bar_shows_file_paths) && $el.elvar.bottom_bar_shows_file_paths # || ! $el.elvar.bottom_bar_shows_file_paths
+      #   txt << %`
+      #     + key shortcuts in bottom bar
+      #       ! $el.elvar.bottom_bar_shows_file_paths = nil
+      #       ! Keys.write_to_conf 'bottom bar', 'keys'
+      #       ! options[:no_slash] = 1
+      #       ! "<! Done"
+      #     `.unindent
+      # else
+      #   # Todo > make options (:no_slash) affect actual hash
+      #   txt << %`
+      #     + file paths in bottom bar
+      #       ! $el.elvar.bottom_bar_shows_file_paths = 1
+      #       ! Keys.write_to_conf 'bottom bar', 'paths'
+      #       ! options[:no_slash] = 1
+      #       ! "<! Done"
+      #     `.unindent
+      # end
+
 
       txt << "\n<= help/"
 
       txt = Xik.new(txt).expand args, options.merge(:eval=>1)
-
-      txt ||= "<! Already set!" if args[0] =~ / in bottom bar\z/
 
       txt
 
@@ -257,6 +269,7 @@ module Xiki
 
       # keys/copying and pasting/, so do special handling of this item...
 
+      return self.kill if path[0] == "kill"
       return self.more(path[1..-1], options) if path[0] == "more"
 
       # Special args of keys menu
@@ -335,7 +348,7 @@ module Xiki
           txt.gsub!(/\+ [fp]/, "\n\\0")
           return
         elsif path == ["window"]
-          # No spaces
+          txt.gsub!(/\+ [c]/, "\n\\0")
           return
         elsif path == ["hop"]
           txt.gsub!(/\+ [o]/, "\n\\0")
@@ -351,27 +364,27 @@ module Xiki
         txt.gsub!(/\+ [hrat]/, "\n\\0")
 
       elsif path == ["as"]
-        txt.gsub!(/\+ [lth]/, "\n\\0")
+        txt.gsub!(/\+ [clut]/, "\n\\0")
       elsif path == ["enter"]
-        txt.gsub!(/\+ [jhqi]/, "\n\\0")
+        txt.gsub!(/\+ [bjhqi]/, "\n\\0")
 
       elsif path == ["hop"]
-        txt.gsub!(/\+ [uch]/, "\n\\0")
+        txt.gsub!(/\+ [stuoc]/, "\n\\0")
       elsif path == ["jump"]
-        txt.gsub!(/\+ [cry]/, "\n\\0")
+        txt.gsub!(/\+ [oqlryc]/, "\n\\0")
       elsif path == ["open"]
-        txt.gsub!(/\+ [pfeolz]/, "\n\\0")
+        txt.gsub!(/\+ [tpfuel]/, "\n\\0")
 
       elsif path == ["window"]
-        txt.gsub!(/\+ [netuw]/, "\n\\0")
+        txt.gsub!(/\+ [hndeatwq]/, "\n\\0")
       elsif path == ["run"]
-        txt.gsub!(/\+ [ievh]/, "\n\\0")
+        txt.gsub!(/\+ [miehv]/, "\n\\0")
       elsif path == ["run", "version"]
         txt.gsub!(/\+ [rb]/, "\n\\0")
       elsif path == ["run", "delete"]
         txt.gsub!(/\+ [icm]/, "\n\\0")
       elsif path == ["do"]
-        txt.gsub!(/\+ [oq]/, "\n\\0")
+        txt.gsub!(/\+ [ntq]/, "\n\\0")
 
       elsif path == ["search"]
         txt.gsub!(/\+ [vtbeh]/, "\n\\0")
@@ -400,7 +413,7 @@ module Xiki
       ["open"]=>"Opening files, views, and lists",
 
       ["window"]=>"Splitting and navigating",
-      ["do"]=>"Arranging",
+      ["do"]=>"Various actions",
 
       ["run"]=>"Running and processing things",
       ["search"]=>"Shortcuts you can use during a Ctrl+S search",
@@ -424,14 +437,11 @@ module Xiki
 
       # Special extra text for root "keys"...
 
-      txt << "\n"+"
+      txt << "
+        + kill
+
         + more/
         ".unindent if path == []
-        #
-        #|          Ctrl+X Expand/collapse    Ctrl+Q Quit
-
-        #
-        # | Use Ctrl+\\ to move between views
 
       txt
     end
@@ -511,7 +521,8 @@ module Xiki
           word = val.keys.find{|o| o =~ /^#{key}/}
           if ! word
             View.flash "- Key not defined: #{combo+[key]}!"
-            raise "key not defined"
+            return
+            # raise "key not defined"
           end
           combo << word
         else
@@ -952,7 +963,9 @@ module Xiki
     #   /notes/ruby/index.notes
     # Keys.bookmark_as_path :prompt=>"Enter something"   # Show message
     # Keys.bookmark_as_path :bm=>"ru"   # Don't prompt
-    # Keys.bookmark_as_path :bm=>"."   # Current dir works
+    # Keys.bookmark_as_path :bm=>"."   # Current file
+    # Keys.bookmark_as_path :bm=>".."   # Current dir
+    # Keys.bookmark_as_path :bm=>"..."   # Parent dir
     #   /projects/xiki/lib/xiki/core/
     def self.bookmark_as_path options={}
 
@@ -964,11 +977,11 @@ module Xiki
         return :space
       elsif bm == "/"   # If slash, return special token
         return :slash
-      elsif bm == "-"   # Dash means the current file
+      elsif bm == "."   # Dash means the current file
         return View.file
       elsif bm =~ /^\.+$/   # If .+ do tree in current dir
         dir = View.dir :force_slash=>1
-        (bm.size - 1).times do
+        (bm.size - 2).times do
           dir.sub! /\/$/, ''   # Remove / on end if there
           dir.sub! /[^\/]+$/, ''   # Remove dir
         end
@@ -1302,6 +1315,7 @@ module Xiki
     # Mapped to C-k. Usually people will pause after, and it'll just
     # show =keys/.
     def self.k_key
+
       # Just open the menu
       Launcher.open "keys/", :bar_is_fine=>1, :hotkey=>1
 
@@ -1358,7 +1372,8 @@ module Xiki
         when "run"
           return if ["save"].member? path[1]   # Don't remember
         when "hop"
-          return if ["left", "right"].member?(path[1]) && ! prefix   # Don't remember
+          return kind = :action if ["hack"].member? path[1]   # Certain ones are actions
+          return if ["start", "end"].member?(path[1]) && ! prefix   # Don't remember
           return if ["top", "bottom"].member?(path[1])   # Don't remember
           return if path[1] =~ /^[0-9]$/
           kind = :movement
@@ -1392,7 +1407,7 @@ module Xiki
     def self.el4r_init
       $el.el4r_lisp_eval "
         (progn
-          ; Just defined, so you can use it as a local map
+          ; Just defined, so we can use it as a local map
           (setq xiki-az-keymap
             '(keymap
               (3 . next-line)
@@ -1400,36 +1415,46 @@ module Xiki
               (27 . keyboard-quit)   ; Makes escape work
             )
           )
-          ; Added to emulation-mode-map-alists
+
+          ; Does nothing
+          (defun xiki-noop () (interactive)
+          )
+
+          ; Temporarily map Ctrl+A (etc) as single char commands...
+
+          ; This map can be temporarily enabled to make Ctrl+A (etc) be
+          ; part of a single command. The keys are mapped to xiki-noop
+          ; since, when the map is used, the pre-command-hook will change
+          ; the command to something else anyway.
+
           (setq xiki-az-control-keymap
             '(keymap
-              (1 . next-line)
-              (2 . next-line)
-              (3 . next-line)
-              (4 . next-line)
-              (5 . next-line)
-              (6 . next-line)
-              (7 . next-line)
-              (8 . next-line)
-              (9 . next-line)
-              (10 . next-line)
-              (11 . next-line)
-              (12 . next-line)
-              (13 . next-line)
-              (14 . next-line)
-              (15 . next-line)
-              (16 . next-line)
-              (17 . next-line)
-              (18 . next-line)
-              (19 . next-line)
-              (20 . next-line)
-              (21 . next-line)
-              (22 . next-line)
-              (23 . next-line)
-              (24 . next-line)
-              (25 . next-line)
-              (26 . next-line)
-
+              (1 . xiki-noop)
+              (2 . xiki-noop)
+              (3 . xiki-noop)
+              (4 . xiki-noop)
+              (5 . xiki-noop)
+              (6 . xiki-noop)
+              (7 . xiki-noop)
+              (8 . xiki-noop)
+              (9 . xiki-noop)
+              (10 . xiki-noop)
+              (11 . xiki-noop)
+              (12 . xiki-noop)
+              (13 . xiki-noop)
+              (14 . xiki-noop)
+              (15 . xiki-noop)
+              (16 . xiki-noop)
+              (17 . xiki-noop)
+              (18 . xiki-noop)
+              (19 . xiki-noop)
+              (20 . xiki-noop)
+              (21 . xiki-noop)
+              (22 . xiki-noop)
+              (23 . xiki-noop)
+              (24 . xiki-noop)
+              (25 . xiki-noop)
+              (26 . xiki-noop)
             )
           )
           ; Wraps and toggles
