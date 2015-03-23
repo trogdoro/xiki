@@ -40,8 +40,7 @@ module Xiki
         args = $el.elvar.xsh_command_line_args.to_a
       end
 
-      args = args.shelljoin
-      args.gsub! "\\^", "^"   # Undo backslash escaping of some chars
+      args.gsub! /\A\\\^/, "^"   # Undo backslash escaping of some chars
 
       # if -c, pull it off and set :xic...
 
@@ -49,8 +48,8 @@ module Xiki
 
       if args == ""
         # New session, or not in xsh file, so presume "$ "
-        args = "$ "
         options[:dont_expand] = 1
+        args = "$ "
 
       elsif args.slice! /^-g /
 
@@ -120,7 +119,7 @@ module Xiki
 
       elsif args.slice! /^-o\b/
 
-        # -o foo, so open it as a file...
+        # -o foo, so open it as a file
 
         if args.any?
           options[:do_nothing] = 1
@@ -149,7 +148,7 @@ module Xiki
         args.strip!
         options_in[:task] = []
 
-        # It's a blank prompt, so use the current dir...
+        # It's a blank prompt, so use the current dir
         if args == ""
           args = View.dir
         elsif args =~ /\A\w/   # Treat as shell command if it's just a word
@@ -181,7 +180,10 @@ module Xiki
         args.sub! /^--?/, ''
       end
 
-      args.sub! /^\$ (\d\d\d-)/, "\\1"
+      # What was this doing?
+      # args.sub! /^\$ (\d\d\d-)/, "\\1"
+
+      # Enable theme and styles...
 
       Themes.use 'Default'
       Styles.reload_styles   # So it uses dark headings
@@ -215,9 +217,10 @@ module Xiki
         Launcher.launch :task=>["filter", "all contents"]
         return
 
-      elsif args.slice! /^r( |\b)/
+      elsif args.slice! /^r( |\b)/   # C-r, ^R
+
         # Ctrl+R, so delegate to Shell.recent_history_external
-        Shell.recent_history_external(args)
+        Shell.recent_history_external args
         return
 
       elsif args == "f"
@@ -296,24 +299,19 @@ module Xiki
 
       # Esc, Tab
       return Notes.tab_key if options[:tab]
+
+      # Todo > use .shellsplit, and .shellescape > to quote args with spaces instead of backslash-escaping spaces
+
       Launcher.launch(options_in) unless options[:dont_expand]
 
     end
 
-    # Called when a new emacsclient session joins
+    # Loads args passed by xsh bash script function in ~/xiki/misc/params/.
     def self.populate_args_from_arg_dir
-      dir = File.expand_path "~/xiki/misc/params"
-      return if ! File.directory? dir
 
-      files = Dir["#{dir}/*"].sort
-      args = files.map{|o| File.read(o).strip }
-
-      return nil if args == []
-      args = [] if args == [""]
-
-      files.map{|o| File.delete(o) }
-
-      args
+      txt = File.read File.expand_path("~/xiki/misc/tmp/params.txt")
+      txt.sub!(/ $/, '')   # Way we save the args makes them always have a trailing slash
+      txt
 
     end
 

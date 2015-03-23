@@ -37,7 +37,13 @@ fi
 
 function check_dependencies {
 
+  # Underline formatting
+  u=`tput smul`
+  uu=`tput rmul`
+
   ruby_is_installed=`which ruby 2>&1`
+
+  # No emacs or no ruby, so figure out how to install...
 
   if [[ ! "$ruby_is_installed" =~ ^/ ]] || [ "$emacs_version" = "" ]; then
 
@@ -49,10 +55,6 @@ function check_dependencies {
 
     echo "It looks like you haven't yet installed the dependencies"
     echo -e "xsh needs. Install them?\n"
-
-    # Underline formatting
-    u=`tput smul`
-    uu=`tput rmul`
 
     echo -e "  ${u}i${uu}nstall the dependencies"
     echo -e "  ${u}c${uu}ancel"
@@ -127,6 +129,42 @@ function check_dependencies {
 
   fi
 
+  # Mac and emacs22, so recommend "brew install emacs"...
+
+  if [[ "$emacs_version" =~ "Emacs 22" ]] && [ `uname` = "Darwin" ] && [[ `which brew 2>&1` =~ ^/ ]]; then
+
+    echo "Additional optional dependencies are recommended to"
+    echo "make xsh run more smoothly. It should take less than"
+    echo -e "a minute over a fast internet connection.\n"
+
+    echo -e "  ${u}i${uu}nstall the dependencies"
+    echo -e "  ${u}p${uu}roceed without them"
+    echo -e "  ${u}s${uu}how them first\n"
+
+    read -n1 -p "Type one of the underlined letters: " doit
+
+    case "$doit" in
+      i|I)
+        echo -e "\n\n"
+        brew install emacs
+        ;;
+      p|P)
+        echo
+        ;;
+      s|S)
+        echo -e "\n\nThis will be run:\n"
+        echo "  brew install emacs"
+        echo -e "\nRun the 'xsh' command again.\n"
+        exit
+        ;;
+      *)
+        echo -e "\n\nYour choice wasn't understood. Run xsh again.\n"
+        exit 1
+        ;;
+    esac
+
+  fi
+
 }
 
 check_dependencies
@@ -143,34 +181,30 @@ function save_args_to_envs {
   done
 }
 
+storeargs() {
+  while [ $# -gt 0 ]
+  do
+    printf "%q " "$1"
+    shift
+  done
+}
+
 function save_args_to_files {
   let i=1
 
-  params_dir=~/xiki/misc/params
-  if [ ! -d $params_dir ]; then
-    orig=`umask`
-    umask 077
-    mkdir -p $params_dir
-    umask $orig
-  fi
+  # New
+  dir=~/xiki/misc/tmp
+  mkdir -p $dir
 
-  for var in "$@"
-  do
-    echo "$var" > $params_dir/p$i
-    let "i++"
-  done
+  storeargs "$@" > $dir/params.txt
 
-  # If no args, have a single blank file, since if there are no files, the hook won't do anything...
-
-  if [ $# -eq 0 ]; then
-    echo "" > $params_dir/p1
-  fi
 }
 
 # Force 256 colors (what if terminal doesn't handle it? > probably only do this recognizable $TERM, $TERM_PROGRAM and $COLORTERM vars)...
 
 export TERM=xterm-256color
 
+# Maybe use /Applications/Emacs.app if it exists?
 # emacs_mac_app="/Applications/Emacs.app/Contents/MacOS/Emacs"
 # if [ -f $emacs_mac_app ]; then
 #   emacs=$emacs_mac_app
@@ -192,7 +226,8 @@ case $1 in
 
 -i)
 
-  # -i is for "isolated".
+  # -i, for "isolated", so just run with no deamon...
+
   # Alternatives considered: unique, unconnected, separate, alone, peerless
 
   # Load with xiki-no-socket flag, so pull of 1st arg...
