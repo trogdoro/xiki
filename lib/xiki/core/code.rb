@@ -288,6 +288,9 @@ module Xiki
     def self.eval_inner code, file, line, eval_options, options
       target = eval_options[:target_module] || Object
 
+      # Put here to be made available to code being eval'ed
+      args, path, dir, task = options[:args]||[], options[:path], options[:dir], options[:task]
+
       if code.is_a? Proc
         target.module_eval &code
       elsif eval_options[:global] || ! $el

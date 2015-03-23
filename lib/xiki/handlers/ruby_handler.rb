@@ -27,11 +27,7 @@ module Xiki
 
     def self.handle_script file, code, options
 
-      # Pass in args and options?
-      args = Code.args options #, :double_assign=>1
-      code = "#{args}\n#{code}"
-
-      txt, out, exception = Code.eval code, file, -1, {:pretty_exception=>1}, options
+      txt, out, exception = Code.eval code, file, 1, {:pretty_exception=>1}, options
 
       # Print any output
       Ol.a(out, :stack_line=>"#{file}:1:in `script'") if out
