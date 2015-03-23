@@ -44,6 +44,8 @@ module Xiki
 
     def self.filter options={}   # Tree.filter / tree filter / tree search
 
+      filter_count = $el.elvar.xiki_filter_count rescue 0
+
       $el.make_variable_buffer_local :xiki_filter_options
       $el.make_variable_buffer_local :xiki_filter_hotkey
       $el.make_variable_buffer_local :xiki_bar_special_text
@@ -67,7 +69,15 @@ module Xiki
         $el.elvar.xiki_filter_hotkey = true   # Enables local map that forces C-a to C-z to be single keys
         $el.elvar.xiki_bar_special_text = "   A-Z Select     ESC Back     (or arrow keys)   "
       else
-        $el.elvar.xiki_bar_special_text = "   A-Z Filter     Ctrl+Q Quit     (or arrow keys)   "
+
+        # If in xsh view, and no filters yet, show "ESC" instead of quit
+        quit_key = filter_count == 0 && View.name == "xsh" && ! View.file ?
+          "ESC Quit" :
+          "^Q Quit"
+
+        $el.elvar.xiki_bar_special_text = options[:recent_history_external] ?
+          "   A-Z Filter   RETURN Execute in shell   ESC Quit   (or arrow keys)   " :
+          "   A-Z Filter     #{quit_key}     (or arrow keys)   "
       end
     end
 
@@ -92,7 +102,7 @@ module Xiki
       ch = letter
       ch_raw = $el.string_to_char ch
 
-      self.delete_hotkey_overlays
+      self.delete_hotkey_underlines
 
       letterized = $el.char_to_string(Keys.remove_control ch_raw).to_s if ch_raw
 
@@ -148,7 +158,7 @@ module Xiki
       View.kill if View.name =~ /\/$/
     end
 
-    def self.delete_hotkey_overlays
+    def self.delete_hotkey_underlines
       Overlay.delete_all
     end
 
@@ -2050,7 +2060,14 @@ module Xiki
         $el.xiki_filter_completed
 
         if letter == "\r"
-          Launcher.launch
+
+          # This is right after ^R from bash, so do a grab
+          if options[:recent_history_external]
+            DiffLog.grab
+          else
+            Launcher.launch
+          end
+
         elsif letter == "\x1C"   # Ctrl+\
           ControlTab.clear_once
 
@@ -2204,6 +2221,28 @@ module Xiki
 
     end
 
+    # Maybe quits, and closes the view
+    def self.filter_escape
+
+      # Probably set this > in ControlTab
+      ControlTab.last_escape_was_something_else = 1
+
+      views_open = Buffers.list.map { |o| name = $el.buffer_name(o) }.select { |o| o !~ /^ ?\*/ && o != "views/" }
+
+      # Return (gracefully stop search) if it's a permanent-named view, and it's not xsh with only one other view
+      # If xsh and just one other view, it should continue.
+
+      return if View.name !~ /\/$/ && ! (View.name == "xsh" && views_open.length == 1)
+
+      # This was the 1st search done in this temporary view, so kill view
+
+      if $el.elvar.xiki_filter_count == 1
+        View.kill
+        DiffLog.quit if views_open.length == 1
+      end
+
+    end
+
     def self.init_in_client
 
       $el.el4r_lisp_eval %`
@@ -2225,7 +2264,7 @@ module Xiki
 
             (when (and (boundp 'xiki-filter-options) xiki-filter-options)
 
-              (let ((char (this-command-keys)))  ; Look at first key typed or event
+              (let ((char (this-command-keys)))   ; Look at first key typed or event
 
                 ; This might not be doing anything (maybe only necessary in gui emacs?)
                 ; If control char, use actual key (bypasses control-lock)
@@ -2254,23 +2293,41 @@ module Xiki
                   ; Some other char typed, so clear out vars to turn off the Tree.filter...
 
                   (t
-                    (setq xiki-filter-options nil)
-                    (xiki-filter-completed)
-
-                    ; Remember what we just did, for later
-                    (make-local-variable 'xiki-filter-just-finished)
-                    (setq xiki-filter-just-finished
-                      (if xiki-filter-hotkey 'hotkey 'filter)
+                    (if (equal char "\\C-[")
+                      ; Esc (possibly the 1st pass for an arrow key etc) so set override that'll be called if its esc.
+                      ; The normal-escape function clears the override, or calls it if it was just esc.
+                      ; The override only closes the view or quits if it's the 1st filter in a temporary or 'xsh' view.
+                      (setq xiki-escape-override 'xiki-filter-cancel-and-escape)
+                      ; Else, just cancel the filter
+                      (xiki-filter-cancel)
                     )
-
-                    (setq xiki-filter-hotkey nil)
-                    (setq xiki-bar-special-text nil)
-                    (el4r-ruby-eval "Xiki::Tree.delete_hotkey_overlays")
                   )
+
                 )
 
               )
             )
+          )
+
+          (defun xiki-filter-cancel-and-escape ()
+            (xiki-filter-cancel)
+            (el4r-ruby-eval "Xiki::Tree.filter_escape")
+          )
+
+          (defun xiki-filter-cancel ()
+
+            (setq xiki-filter-options nil)
+            (xiki-filter-completed)
+
+            ; Remember what we just did, for later
+            (make-local-variable 'xiki-filter-just-finished)
+            (setq xiki-filter-just-finished
+              (if xiki-filter-hotkey 'hotkey 'filter)
+            )
+
+            (setq xiki-filter-hotkey nil)
+            (setq xiki-bar-special-text nil)
+            (el4r-ruby-eval "Xiki::Tree.delete_hotkey_underlines")
           )
 
           (defun xiki-filter-post-command-handler () (interactive)
