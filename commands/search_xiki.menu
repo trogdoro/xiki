@@ -8,6 +8,6 @@
 + tests/
   ! Launcher.open("#{Xiki.dir}spec/\n  - ##^ *(describe|it) /")
 + comments/
-  ! Launcher.open("#{Xiki.dir}\n  - ##^ *# /")
+  ! Launcher.open("#{Xiki.dir}\n  - ##^ *[#;] /")
 + facts/
   ! Launcher.open(":fa\n  - ##xiki|isearch/")

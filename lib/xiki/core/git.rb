@@ -11,7 +11,7 @@ module Xiki
 
     def self.branch_name dir=nil
       dir ||= Tree.closest_dir
-      Shell.run("git status", :sync=>true, :dir=>dir)[/# On branch (.+)/, 1]
+      Shell.command("git status", :dir=>dir)[/# On branch (.+)/, 1]
     end
 
     def self.do_push

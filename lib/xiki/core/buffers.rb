@@ -88,6 +88,7 @@ module Xiki
 
       # /foo, so jump to or delete buffer...
 
+      name = [": /"] if name == [": "]   # Somehow it cuts off the slash when just "/"
       name[0].sub! /^\:./, ''
 
       task = options[:task]

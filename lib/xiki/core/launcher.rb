@@ -1211,7 +1211,9 @@ Ol["oh, this path is an array: #{path}!"] if path.is_a?(Array)
       Notes.mode
       View >> "\n\n\n"
 
-      inserted = Keys.timed_insert :prompt=>"Type a command to run!"
+      View.flash "- Type a command to run!"
+
+      inserted = Keys.timed_insert :prompt=>""
       Launcher.launch if inserted
 
     end
@@ -1248,11 +1250,17 @@ Ol["oh, this path is an array: #{path}!"] if path.is_a?(Array)
       self.launch :task=>[]
     end
 
-    def self.tasks_on_this_file
+    def self.tasks_menu_on_bookmark options={}
 
-      file = View.file   # Get path of this file
+      # file = View.file   # Get path of this file
+      file = Keys.bookmark_as_path options.merge(:include_file=>1)
 
-      file.sub! /.+\//, "\\0\n  - "   # Indent before file
+      return View.message("This view doesn't have a file.") if ! file
+
+      # If not a dir, indent file under
+      if file !~ /\/$/
+        file.sub! /.+\//, "\\0\n  - "   # Indent before file
+      end
 
       View.new_file
       View << file

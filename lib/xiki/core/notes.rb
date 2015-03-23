@@ -738,7 +738,7 @@ module Xiki
       was_visible = View.file_visible? Bookmarks[':n']
 
       if prefix == :u
-        label = Keys.input :prompt=>"label: ", :timed=>1
+        label = Keys.input :prompt=>"label: "
         label = "do" if label.blank?
         label = Notes.expand_if_action_abbrev(label) || label
 
@@ -980,7 +980,7 @@ module Xiki
       Line << "#{indent}- )"
       Move.backward
 
-      txt = options[:txt] || Keys.input(:timed=>1, :prompt=>'Your note (or a letter as a shortcut): ')
+      txt = options[:txt] || Keys.input(:prompt=>'Your note (or a letter as a shortcut): ')
 
       expanded = self.expand_if_action_abbrev txt
 
@@ -1456,6 +1456,8 @@ module Xiki
 
 
     def self.return_wrapper
+
+      Keys.remember_key_for_repeat(proc {Notes.return_wrapper})
 
       # Add a linebreak
 

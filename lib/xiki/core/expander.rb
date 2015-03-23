@@ -557,7 +557,7 @@ module Xiki
         return unless path[0] =~ /^[sc]/   # search+... and custom+... keys still need to be defined the old way
       end
 
-      # search+..., custom+..., or other first word, so map the standard emacs way
+      # search+..., custom+..., or other first word, so map the standard emacs way...
 
       key = Keys.words_to_letters args[0]
 

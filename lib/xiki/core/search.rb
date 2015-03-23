@@ -1243,9 +1243,9 @@ module Xiki
       Location.as_spot if options[:as_here]
 
       if path == ":t"   # If :t, open bar
-        View.layout_todo
+        View.open ":t"
       elsif path == ":n"
-        View.layout_nav
+        View.open ":n"
       elsif path == ":o"
         Code.open_log_view
         options[:reverse] = true

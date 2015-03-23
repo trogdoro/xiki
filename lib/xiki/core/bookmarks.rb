@@ -87,13 +87,17 @@ module Xiki
       end
     end
 
-    # Like bookmark-set, but accepts buffers
+    # Lower level method > saves actual bookmark
     def self.set name, options={}
 
       file = options[:file] || View.file
       file = self.bookmarkify_path file
 
-      File.open(File.expand_path("~/xiki/bookmarks/#{name}.notes"), "w") { |f| f << "#{file}\n" }
+      dir = File.expand_path "~/xiki/bookmarks/"
+
+      FileUtils.mkdir_p dir
+
+      File.open("#{dir}/#{name}.notes", "w") { |f| f << "#{file}\n" }
 
       # Handle bookmarks for buffers?
       # Format of file?
@@ -112,7 +116,6 @@ module Xiki
         prefix_to_bm = bookmark.to_s
       elsif bookmark && bookmark.class == String
         keys = bookmark
-        #       return self.jump(bookmark.sub(/^\$/, ""))
       end
 
       # Use input from user or "default"
@@ -157,14 +160,11 @@ module Xiki
     @@bookmarks_required = {
       "x"=>"~/xiki/",
       "xh"=>"~/xiki/",
-
       "home"=>"~/",
-
       "xiki"=>Xiki.dir,
       "source"=>Xiki.dir,
       "xs"=>Xiki.dir,
       "s"=>Xiki.dir,
-
     }
 
     # Bookmarks.bookmarks_optional "t"
@@ -184,8 +184,8 @@ module Xiki
       "b"=>"~/xiki/bookmarks/",
       "dl"=>"~/Downloads/",
 
-      "e"=>"~/.emacs",
       "br"=>"~/.bashrc",
+      "de"=>"~/.emacs",
 
       "se"=>"~/xiki/sessions/",
       "t"=>"~/xiki/todo.notes",
@@ -209,9 +209,11 @@ module Xiki
 
       "ir"=>"#{Xiki.dir}misc/emacs/el4r/init.rb",
       "th"=>"#{Xiki.dir}misc/themes/",
+      "li"=>"#{Xiki.dir}lib/",
       "xs"=>"#{Xiki.dir}spec/",
 
       "m"=>"~/xiki/misc/",
+      "e"=>"~/xiki/misc/shell_examples/",
       "v"=>"~/xiki/misc/versions/",
       "lo"=>"~/xiki/misc/logs/",
       "f"=>"~/xiki/misc/favorites/",
@@ -220,6 +222,7 @@ module Xiki
       "pi"=>"~/Pictures/",
       "k"=>"#{Xiki.dir}lib/xiki/core/key_shortcuts.rb",
       "us"=>"/usr/",
+      "lo"=>"/usr/local/",
       "ap"=>"/Applications/",
       "vo"=>"/Volumes/",
     }

@@ -1,3 +1,11 @@
+# ~ or ~ manual, so handle
+
+return "~ manual" if task == []
+if task == ["manual"]
+  $el.info "elisp"
+  return ""
+end
+
 # /, so give sample lisp...
 
 return "

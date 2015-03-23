@@ -88,6 +88,7 @@ class Xiki::Menu::Notes
     return output if output
 
     # /foo, so delegate to ~/notes dir...
+
     # Just pass prefix
     txt = Xiki["~/xiki/notes//", items, options.select{|key, value| [:prefix, :task].include?(key)}]
 
@@ -114,6 +115,9 @@ class Xiki::Menu::Notes
     return "~ create\n~ clear" if !task || task == []
 
     if items.length > 1
+
+      # ~ create, so create the file for the first time!
+
       if task == ["create"]
 
         name, heading, content = items

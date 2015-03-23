@@ -106,8 +106,17 @@
   '(echo-keystrokes 0.5)   ; Delay until showing the prefix keys at the bottom (when user types C-x or C-c)
   '(search-ring-max 30)   ; Remember a few more searches
   '(show-trailing-whitespace t)   ; Expose trailing whitespace
+
+  ; Does this keep backups from being made?
   '(auto-save-interval 999999)   ; Don't do auto-saving
-  '(auto-save-timeout 999999)   ; Don't do auto-saving
+  '(auto-save-timeout 999999)    ; Don't do auto-saving
+
+  '(cua-prefix-override-inhibit-delay 0.1)   ; Only small delay after Ctrl+C, for cua-mode
+
+  '(search-whitespace-regexp nil) ; Otherwise it includes linebreaks
+  '(electric-indent-mode nil)   ; Stop auto-indenting in ruby (etc) modes
+  '(setq backup-inhibited t)
+  '(setq auto-save-default nil)
 )
 
 ; Lines from .emacs that should be uncommented?...
@@ -123,8 +132,9 @@
 
 ; Set some keys for doing what lisp normally does
 
-(global-set-key (kbd "M-s") 'eval-last-sexp)   ; Like emacs C-x C-e
-(global-set-key (kbd "M-q") 'save-buffers-kill-emacs)   ; Like emacs C-x C-q
+(global-set-key (kbd "M-s") 'eval-last-sexp)   ; elisp script > Like emacs C-x C-e
+(global-set-key (kbd "M-q") 'save-buffers-kill-emacs)   ; quit, when Ctrl+Q doesn't work > Like emacs C-x C-q
+(global-set-key (kbd "M-g") 'keyboard-quit)   ; Escape out of emacs trouble > like Ctrl+G
 
 ; Beginning of line, end, and kill
 (global-set-key (kbd "M-a") 'move-beginning-of-line)

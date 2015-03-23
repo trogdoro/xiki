@@ -134,7 +134,9 @@ module Xiki
     end
 
     def self.to_spot key='0'
-      @@spots[key].go
+      loc = @@spots[key]
+      return if ! loc
+      loc.go
     end
 
   end
