@@ -3,7 +3,6 @@
 file = File.expand_path "~/xiki/misc/logs/opened_files_log.notes"
 txt = File.read file
 
-# Reverse
 txt = txt.split("\n").reverse
 
 # Don't do this, since recently-opened ones would be after them all
@@ -14,10 +13,6 @@ txt = txt.split("\n").reverse
 
 txt = txt.uniq.join("\n")
 txt.gsub!(/(.+)\/(.+)/, "=\\1/\n  - \\2")
-
-# Can't add message at top, because it messes up the search
-#   - add option to tell it what kind of search it should do?
-#"- Files opened in xiki recently (in this session and pass sessions)\n#{txt}"
 
 txt
 
