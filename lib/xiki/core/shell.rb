@@ -698,7 +698,7 @@ module Xiki
 
           # Quit and run in external shell
 
-          return Shell.parent command
+          return DiffLog.quit_and_run command
         end
 
         # Temp > for presentation > don't activate iterm
@@ -1107,9 +1107,7 @@ module Xiki
 
     def self.exit_and_cd dir
 
-      Xsh.save_grab_commands "cd #{Files.tilda_for_home(dir, :escape=>1)}"
-
-      DiffLog.quit
+      DiffLog.quit_and_run "cd #{Files.tilda_for_home(dir, :escape=>1)}"
 
       ""
     end
@@ -1168,8 +1166,6 @@ module Xiki
       Xsh.save_grab_commands command
       DiffLog.quit
     end
-
-
 
     def self.external_plus_sticky_history
 

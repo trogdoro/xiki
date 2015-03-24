@@ -463,9 +463,7 @@ module Xiki
         commands = "cd #{dir}\n"
         commands << command if command
 
-        Xsh.save_grab_commands commands
-
-        return self.quit
+        return self.quit_and_run commands
       end
 
       # Not $..., so explain why we can't expand...
@@ -493,9 +491,7 @@ module Xiki
         #           end
 
         commands = "cd #{dir}\n#{command}"
-        Xsh.save_grab_commands commands
-
-        self.quit
+        self.quit_and_run commands
 
       end
 
@@ -533,9 +529,7 @@ module Xiki
 
       commands << "#{command}\n"
 
-      Xsh.save_grab_commands commands
-
-      self.quit
+      self.quit_and_run commands
 
     end
 
@@ -551,9 +545,12 @@ module Xiki
 
       txt = X'unsaved'
 
+
       # No files to save, or all are "no changes" or "File no longer exists?"
 
-      if txt == "- No files unsaved!\n" || txt !~ /^  (?!: no changes|: File no longer exists\?$)/
+
+      # if txt == "- No files unsaved!\n" || txt !~ /^  (?!: no changes|: File no longer exists\?$)/
+      if self.nothing_unsaved txt
 
         # Unsaved "xsh" buffer, so save it...
 
@@ -582,6 +579,15 @@ module Xiki
 
       nil
 
+    end
+
+    def self.quit_and_run commands
+      Xsh.save_grab_commands commands
+      self.quit
+    end
+
+    def self.nothing_unsaved txt
+      txt == "- No files unsaved!\n" || txt !~ /^  (?!: no changes|: File no longer exists\?$)/
     end
 
 

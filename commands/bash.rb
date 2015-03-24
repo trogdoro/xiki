@@ -12,10 +12,7 @@ end
 
 return "~ exit and run" if task == []
 
-if task == ["exit and run"]
-  Xsh.save_grab_commands args[0]
-  return DiffLog.quit
-end
+return DiffLog.quit_and_run args[0] if task == ["exit and run"]
 
 # /code, so run it
 

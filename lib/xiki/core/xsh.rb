@@ -57,8 +57,7 @@ module Xiki
 
         if args =~ /^:\w+/
           dir = Shell.quote_file_maybe Bookmarks[args]
-          Xsh.save_grab_commands "cd #{dir}"
-          DiffLog.quit
+          DiffLog.quit_and_run "cd #{dir}"
         end
 
         # Grab on line, so don't launch (just insert)
