@@ -213,7 +213,7 @@ module Xiki
     def self.list
       regex = Regexp.quote View.name
       current_file = View.file.sub(/.+\//, "\\0\n  + ")
-      Launcher.open "#{current_file}\n:x/misc/versions/\n  - ***^#{regex}\./"
+      Launcher.open "#{current_file}\n:x/misc/versions/\n  - **^#{regex}\./"
 
       "to-does"
     end
