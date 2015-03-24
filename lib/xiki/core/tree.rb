@@ -126,7 +126,8 @@ module Xiki
       if letters[letterized]
         self.search_finished
         Line.next letters[letterized][0] - 1
-        CodeTree.kill_siblings :cross_blank_lines=>1 #, :must_match=>"~ |--"
+        View.delete Line.right+1, options[:right]
+        View.delete options[:left], Line.left
 
         Launcher.launch :was_letter=>1
         return nil
