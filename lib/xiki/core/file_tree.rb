@@ -1966,14 +1966,6 @@ module Xiki
             return options[:output] = "~ save/"
           end
 
-          if task == ["edit", "vim"]
-            $el.suspend_emacs "clear\nvim '#{file_path}'"
-            return options[:output] = ""
-          elsif task == ["edit", "sublime"]
-            Shell.sync "subl '#{file_path}'"
-            return options[:output] = "<! opened in Sublime"
-          end
-
           menu = Xik.new %`
             ~ search
               ! Search.enter_search
@@ -1993,6 +1985,23 @@ module Xiki
               + command on it
                 ! Tree.<< "$ ", :no_search=>1, :no_slash=>1
                 ! Move.to_end
+            ~ edit with/
+              + sublime
+                ! Shell.command "subl \#{options[:file_path]}"
+                ! Ol "options[:file_path]", options[:file_path]
+                ! ""
+              + vim
+                ! DiffLog.quit_and_run "vim \#{options[:file_path]}"
+                ! ""
+              + emacs
+                ! # Probably delete -Q?
+                ! DiffLog.quit_and_run "emacs -nw \#{options[:file_path]}"
+              + default editor
+                ! DiffLog.quit_and_run "\#{ENV['EDITOR']} \#{options[:file_path]}"
+              + xsh
+                ! Ol.a options
+                ! "- todoz!"
+                ! View.open options[:file_path]
 
             ~ expand
               ! Launcher.launch
@@ -2189,20 +2198,6 @@ module Xiki
       # - can probably assume there won't be an update prefix
       #   - so, what will it do?  Maybe it'll send a multiline string if it wants to save?  Probably worry about this later?
 
-    end
-
-    def self.edit_with editor, options
-
-      file_path = Shell.quote_file_maybe options[:file_path]
-
-      editor = {
-        "default editor"=>ENV['EDITOR'],
-        "vim"=>'vim',
-        "sublime"=>'subl',
-      }[editor]
-
-      Xsh.save_grab_commands "#{ENV['EDITOR']} #{file_path}"
-      DiffLog.quit
     end
 
     def self.example_commands options
