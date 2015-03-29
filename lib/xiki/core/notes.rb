@@ -1244,19 +1244,17 @@ module Xiki
 
       # $... path, so run Xiki command for the shell command
 
-      if Line.at_right? &&   # Cursor is at the right, and
-        ((path.length == 1 && path[0] =~ /^\$( |$)/) ||   # A single "$ ..." path
-          (FileTree.handles?(path[-1]) && Path.split(path[-1])[-1] =~ /^\$ /))   # Or a file path ending in a "$ ..." line
+      if path[-1] =~ /^\$( |$)/ &&   # A $... line,
+        Line.at_right?   # and the cursor is at the right
 
         return Shell.tab
       end
 
       # /file/path, so just expand
 
-      if FileTree.handles?
+      if Line.at_right? && FileTree.handles?
         return Launcher.launch
       end
-
 
       indent = Line.indent(Line.value 0)
       Line.sub! /^ */, indent
