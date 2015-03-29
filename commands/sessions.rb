@@ -1,5 +1,23 @@
 dir = File.expand_path '~/xiki/sessions'
 
+file = "#{dir}/#{(args[0]||"").gsub ' ', '_'}.notes"
+
+if task == []
+  return "~ save as command/"
+elsif task == ["save as command"]
+  options[:nest] = 1
+  options[:no_task] = 1
+  options[:line_found] = 2
+  return "| Give your command a name\nfoo"
+elsif task && task[0] == "save as command"
+  name = task[1].gsub('_', ' ')
+  txt = File.read file
+  commands_dir = File.expand_path("~/xiki/commands/")
+  FileUtils.mkdir_p commands_dir
+  File.open("#{commands_dir}/#{name}.xiki", "w") { |f| f << txt }
+  return "<! - saved ~/xiki/commands/#{name}.xiki"
+end
+
 # /, so read in dir, but order by date...
 
 if args == []
@@ -12,7 +30,6 @@ end
 
 # /foo/:contents, so navigate to it...
 
-file = "#{dir}/#{args[0].gsub ' ', '_'}.notes"
 View.open file
 
 ""
