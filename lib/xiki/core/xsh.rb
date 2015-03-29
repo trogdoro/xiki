@@ -37,7 +37,7 @@ module Xiki
       end
 
       if options[:args_via_env]
-        args = $el.elvar.xsh_command_line_args.to_a
+        args = $el.elvar.xsh_command_line_args.to_a.join(' ')
       end
 
       args.gsub! /\A\\\^/, "^"   # Undo backslash escaping of some chars
@@ -83,6 +83,12 @@ module Xiki
       elsif args =~ /^:\w/
         View.open Bookmarks[args]
         options[:do_nothing] = 1
+      elsif args == "-d"
+        options[:do_nothing] = 1
+        Search.isearch_diffs
+      elsif args == "-b"
+        options[:do_nothing] = 1
+        Launcher.open "bookmarks/"
       elsif args =~ /^http:\/\//
         options[:not_shell] = 1
       elsif args =~ /\Aselect .+ from /
