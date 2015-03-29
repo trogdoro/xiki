@@ -32,13 +32,17 @@ if File.file? file
 
   # Task, so show items...
 
-  return "~ edit/\n~ rename\n~ delete\n~ all\n~ outline\n~ search" if task == []
-  if task == ["edit"]
+  if task == []
+    return "~ edit/\n~ contents/\n~ rename\n~ delete\n~ all\n~ outline\n~ search"
+  end
+
+  if task == ["contents"]
+    return Tree.quote File.read(file)
+  elsif task == ["edit"]
     options[:nest] = 1
-    return "+ emacs/\n+ vim/\n+ sublime/"
+    return "+ sublime\n+ vim\n+ emacs\n+ default"
   elsif task == ["edit", "vim"]
-    $el.suspend_emacs "clear\nvim '#{file}'"
-    return ""
+    return DiffLog.quit_and_run "vim #{file}"
   elsif task == ["edit", "sublime"]
     Shell.sync "subl '#{file}'"
     return "<! opened in Sublime"
