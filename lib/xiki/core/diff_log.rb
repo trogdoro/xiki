@@ -466,9 +466,38 @@ module Xiki
         return self.quit_and_run commands
       end
 
+
+
+
+      # If ls, grab dir and exit > hard-coded support for ls, for now > abstract out for other commands later
+
+
+      if last[0] == "$ ls"
+
+        dir = last[1..-1].map{|o| o.sub(/^: /, '')}.join()
+
+        if dir =~ /\/$/
+          commands = "cd #{Shell.quote_file_maybe dir}"
+        else
+          editor = ENV['EDITOR']
+
+          # Non-console editor, so don't quit
+          if ["subl"].member? editor
+            command = "#{ENV['EDITOR']} #{view_dir}/#{Shell.quote_file_maybe dir}"
+            Shell.command command
+            return
+          end
+
+          commands = "#{ENV['EDITOR']} #{Shell.quote_file_maybe dir}"
+        end
+
+        return self.quit_and_run commands
+      end
+
       # Not $..., so explain why we can't expand...
 
       if last[-1] !~ /^[$%] (.+)/
+
         # Just exit
         return View.flash("- Can only grab commands and dirs!")
       end
