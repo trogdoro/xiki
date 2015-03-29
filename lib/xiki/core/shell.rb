@@ -1087,8 +1087,16 @@ module Xiki
 
       path = wrapper + Path.join(args)
 
-      options = {:dir=>dir, :task=>task, :shell_command=>command}
-      Xiki.expand path, options
+      options_in = {:dir=>dir, :task=>task, :shell_command=>command}
+      result = Xiki.expand path, options_in
+
+      # Pass some options back if set
+      # Todo > extract this out to > __Menu|__Options.propagate_returned_options
+      # And add more options
+      # Propagate certain options returned, up the stack
+      [:nest, :no_task].each {|k| options[k] = options_in[k] if options_in[k] }
+
+      result
 
     end
 
@@ -1231,6 +1239,8 @@ module Xiki
     # Utility method, for wrapping quotes around a file only
     # when necessary, so we don't make things look busy by
     # using quotes when not necessary.
+    # Shell.quote_file_maybe "hi"
+    # Shell.quote_file_maybe "hi you"
     def self.quote_file_maybe path
 
       # Do nothing if it doesn't have spaces or weird chars
