@@ -22,7 +22,7 @@ module Xiki
     def self.file_contents whole_path
       user, server, port, path = self.split_root(whole_path)
       connection = self.connection whole_path
-      connection.sftp.download!(path)
+      connection.scp.download!(path)
     end
 
     def self.dir root, *path_append
@@ -60,7 +60,7 @@ module Xiki
           # Download if not open already
           unless was_open
             begin
-              connection.sftp.download!(path, local_path)
+              connection.scp.download!(path, local_path)
             rescue Exception=>e
               # If doesn't exist, we'll just create
             end
@@ -71,7 +71,7 @@ module Xiki
 
           # TODO: save root path as var in buffer
           $el.make_local_variable :remote_rb_server_root
-          server_root = "/#{user}@#{server}#{port ? ":#{port}" : ""}/"
+          server_root = "/#{user}@#{server}#{port ? ":#{port}" : ""}/"   # "
           $el.elvar.remote_rb_server_root = server_root
 
           # TODO save timestamp in buffer var
@@ -162,7 +162,8 @@ module Xiki
       remote_path = self.calculate_remote_path local_path
       begin   # Do save
         connection = self.connection $el.elvar.remote_rb_server_root
-        connection.sftp.upload!(local_path, remote_path)
+        # connection.sftp.upload!(local_path, remote_path)
+        connection.scp.upload!(local_path, remote_path)
         View.message "successfully saved remotely!"
       rescue Exception => e
         View.message "- error: #{e.message}"
@@ -200,10 +201,18 @@ module Xiki
 
       # Not $... or %..., so we don't handle it...
 
-      path = Path.split path
-      return if path[-1] !~ /^[$%] /
+      command = options[:command]
 
-      shell_prompt, command = /(.).(.+)/.match(path.pop)[1..2]
+      path = Path.split path
+
+      # Fall back to extracting from path for %... prompts for now
+      if path[-1] =~ /^[$%] /
+        command = path.pop
+      end
+
+      return if ! command
+
+      shell_prompt, command = /(.).(.+)/.match(command)[1..2]
 
       # Get rid of any other nested
       path.pop while(path.last =~ /^[$%] /)
@@ -233,6 +242,7 @@ module Xiki
       # $ foo, so run as a shell command...
 
       txt = self.expand_command path, options
+
       if txt
         return Tree.quote(txt) if txt.any?
         return ""   # Async returns blank string so don't quote
@@ -254,16 +264,8 @@ module Xiki
       dirs.collect!{|i| i.sub(/.*\/(.+)/, "#{indent}+ \\1/")}
       files.collect!{|i| i.sub(/.*\/(.+)/, "#{indent}+ \\1")}
 
-      Line.next
-      left = View.cursor
-
       both = dirs + files
-
-      View.insert(both.join("\n") + "\n")
-      right = View.cursor
-      View.cursor = left
-      Line.to_beginning
-      Tree.filter(:left=>left, :right=>right, :always_search=>true)
+      both.join("\n") + "\n"
 
     end
   end

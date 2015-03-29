@@ -110,7 +110,6 @@ module Xiki
       Xiki.def("open+as+root"){ Files.open_sudo }
       Xiki.def("open+as+shell"){ Shell.open }
       Xiki.def("open+as+tail"){ Files.open_tail }
-      Xiki.def("open+as+remote"){ Remote.save_file }
 
       Xiki.def("open+xiki+docs"){ Help.display_docs }
       # Y
@@ -259,6 +258,7 @@ module Xiki
       Xiki.def("run+as+quote"){ Notes.do_as_quote }
       Xiki.def("run+as+xul"){ Firefox.do_as_xul }
       Xiki.def("run+as+deck"){ Deck.enable_arrow_keys }
+      Xiki.def("run+as+remote"){ Remote.save_file }
 
       Xiki.def("run+delete+everything"){ Effects.blink :what=>:all; View.kill_all }   # kill all text in buffer
 
@@ -272,7 +272,6 @@ module Xiki
       Xiki.def("run+delete+matching"){ Search.kill_filter }
       Xiki.def("run+delete+nonmatching"){ Search.kill_filter }
 
-      Xiki.def("run+lines+browser"){ Browser.reload }
       Xiki.def("run+lines+command"){ Shell.do_last_command }
       Xiki.def("run+lines+having"){   # delete lines matching a regex
         unless $el.elvar.current_prefix_arg
@@ -300,6 +299,11 @@ module Xiki
       # Xiki.def("run+name+enter"){ Incrementer.enter }
       # Xiki.def("run+name+increment"){ Incrementer.increment }
       # Xiki.def("run+name+one"){ Incrementer.start }
+
+
+      # Put here temporarily
+      Xiki.def("run+output"){ View.layout_outlog }
+      Xiki.def("run+browser+reload"){ Browser.reload }
 
       Xiki.def("run+1"){ Launcher.do_last_launch :nth=>1 }
       Xiki.def("run+2"){ Launcher.do_last_launch :nth=>2 }
@@ -372,6 +376,7 @@ module Xiki
       Xiki.def("do+repeat"){ Line.duplicate }
 
       Xiki.def("do+quote"){ Launcher.open("views/", :task=>["quoted"]) }
+
     end
 
     def self.window_keys

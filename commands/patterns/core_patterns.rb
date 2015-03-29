@@ -9,7 +9,11 @@ module Xiki
 
   Xiki.def(/^([$%&])( |$| ?\/)/) do |path, options|
 
-    # There's a ~task in the ancestor above this prompt, so collapse up to it and run...
+    if options[:dir] =~ /^\/\w+@/
+      next Remote.expand options[:dir], options.merge(:command=>path)
+    end
+
+    # ~ task ancestor above this prompt, so collapse up to it and run...
 
     if (ancestors = options[:ancestors]) && (last = Path.split ancestors[-1]) && (last.find{|o| o =~ /^~ /})
 
@@ -41,6 +45,7 @@ module Xiki
 
     prompt = path[/^[$%&]/]
     command = path[/^..(.+)/, 1]
+
     if command
       command.sub! /^\//, ''
       command = Path.split command
@@ -324,8 +329,10 @@ module Xiki
     Xiki.expand "xiki://#{path}"
   end
 
+  # foo@bar.com remote path...
+
   Xiki.def(/^\/\w+@/) do |path, options|
-    Xiki::Remote.expand path, options
+    Remote.expand path, options
   end
 
   # ^ (by itself), so list all notes...
