@@ -2127,7 +2127,9 @@ module Xiki
     end
 
     def self.zoom
-      if Keys.prefix_u
+
+      # If something hidden, just show
+      if $el.point_min != 1 || $el.point_max != 1 + $el.buffer_size
         return Hide.reveal
       end
 

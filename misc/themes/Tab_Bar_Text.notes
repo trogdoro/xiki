@@ -79,7 +79,7 @@ $el.el4r_lisp_eval %`
                     (prompt (string-match "^[ =]*[$%&] ." line))
                     (left (if has-child "^X Collapse  " (if prompt " ^X Execute  " " ^X Expand   ")))
                     (left (if (equal line "") "             " left))
-                    (right (if (not prompt) "          " "   ^G Grab"))
+                    (right (if (equal line "") "          " "   ^G Grab"))
                     (esc (if (equal buffer-name "xsh") "" "   ESC Back"))
                     (txt (concat "  " left "^T Tasks   ^K Keys   ^Q Quit" esc right "   "))
                     )

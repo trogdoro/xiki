@@ -125,7 +125,10 @@ module Xiki
 
       # Non-word, so delegate to FileTree.tree, since it knows how to hilight the current file
 
-      return FileTree.tree :bm=>keys if keys =~ /^[.\/]+$/
+      if keys =~ /^[.\/]+$/
+        keys.sub! /^\./, ".."   # Add another dot, so it shows the dir, not the file
+        return FileTree.tree :bm=>keys
+      end
 
       path = keys =~ /^\w/ ?
         Bookmarks[":#{prefix_to_bm}#{keys}"] :
@@ -216,6 +219,7 @@ module Xiki
       "e"=>"~/xiki/misc/shell_examples/",
       "v"=>"~/xiki/misc/versions/",
       "lo"=>"~/xiki/misc/logs/",
+      "diff"=>"~/xiki/misc/logs/difflog.notes",
       "f"=>"~/xiki/misc/favorites/",
       "st"=>"~/xiki/misc/startup.rb",
       "cl"=>"~/xiki/misc/logs/xiki_commands_log.notes",

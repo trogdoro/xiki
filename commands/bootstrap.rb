@@ -306,8 +306,6 @@ module Xiki
       # Bootstrap.render "h1/foo"
       def self.render txt
 
-Ol.a txt
-
         txt.gsub! /^ *\|-.*\n/, ''   # Delete |-... "comments"
 
         bootstrap = Bootstrap.new txt
@@ -345,7 +343,6 @@ Ol.a txt
           txt = txt.unindent
 
           txt = self.render txt
-
           return Browser.html txt
         end
 

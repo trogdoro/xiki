@@ -194,6 +194,11 @@ module Xiki
       current =~ regex
     end
 
+    def << txt
+      @txt = @txt.join("\n") + txt
+      @txt = @txt.split("\n", -1)
+    end
+
     def at_bottom?
       @line == @txt.length && @column >= current.length
     end

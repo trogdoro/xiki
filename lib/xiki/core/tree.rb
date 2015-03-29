@@ -76,8 +76,8 @@ module Xiki
           "^Q Quit"
 
         $el.elvar.xiki_bar_special_text = options[:recent_history_external] ?
-          "   A-Z Filter   RETURN Execute in shell   ESC Quit   (or arrow keys)   " :
-          "   A-Z Filter     #{quit_key}     (or arrow keys)   "
+          "   A-Z Filter   RETURN Run in shell   ESC Quit   (or arrow keys)   " :
+          "   A-Z Filter   ^X Expand   #{quit_key}   ^G Grab   (or arrow keys)   "
       end
     end
 
