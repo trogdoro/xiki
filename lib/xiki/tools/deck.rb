@@ -108,7 +108,7 @@ module Xiki
 
       View.column = column
 
-      Effects.glow :delay=>0.023, :fade_in=>1, :what=>:block if result[2] && ! options[:dont_move] && ! options[:dont_fade]
+      Effects.glow :delay=>0.06, :fade_in=>1, :what=>:block if result[2] && ! options[:dont_move] && ! options[:dont_fade]
     end
 
     # Sets little bars at bottom of window (mode line)
@@ -152,7 +152,7 @@ module Xiki
       [top_bar, bottom_bar, first_in_block]
     end
 
-    def self.init
+    def self.init_in_client
       self.keys
       # Make deck mode happen for .deck files
       Mode.define(:deck, ".deck") do
@@ -167,5 +167,4 @@ module Xiki
     end
 
   end
-  Deck.init   # Define mode
 end
