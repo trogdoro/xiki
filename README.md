@@ -1,10 +1,16 @@
+## Xiki expands your command line
+
+Xiki makes the command line friendlier and more powerful. Xiki Shell (xsh) lets you use Xiki from command line, in a way that augments your current favorite shell (bash or zsh).
+
+    $ xsh
+
 ## Install
 
 ### One-line installer
 
-If you want a one-line installer, this should do the trick:
+If you want a one-line installer, this should do the trick. Copy and paste it into your shell console.
 
-      $ cd ~; wget https://github.com/trogdoro/xiki/archive/master.tar.gz; tar xzf master.tar.gz; xiki-master/bin/xsh
+     cd ~; wget https://github.com/trogdoro/xiki/archive/master.tar.gz; tar xzf master.tar.gz; xiki-master/bin/xsh
 
 It will walk you through a couple setup steps.
 
@@ -14,7 +20,7 @@ You can download Xiki from: https://github.com/trogdoro/xiki/archive/master.tar.
 
 Then, to run (and optionally install xsh) just execute the 'xsh' command, located in the 'bin' dir:
 
-      $ bin/xsh
+    $ bin/xsh
 
 ### Git Install
 
