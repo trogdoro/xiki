@@ -19,14 +19,6 @@ xiki loc/
   - navbar/
     | <a href="/"><img src="/images/bootstrap_icon.png"></a>
   - container/
-    - row/
-      - span12/
-        - h2 style="text-align:center; margin-top:20px"/
-          | The Xiki Kickstarter is happening now!
-    - row/
-      | <div class='span12' style='text-align:center; margin-top:15px; margin-bottom:55px;'>
-        | <iframe width="560" height="420" src="https://www.kickstarter.com/projects/xiki/xiki-the-command-revolution/widget/video.html" frameborder="0" scrolling="no"> </iframe>
-        | <iframe frameborder="0" height="420" scrolling="no" src="https://www.kickstarter.com/projects/xiki/xiki-the-command-revolution/widget/card.html?v=2" width="220"></iframe>
     - hero/
       | <div id="the_carousel" class="carousel slide" style="width:319px; float:left;">
         | <div class="carousel-inner">
@@ -38,25 +30,35 @@ xiki loc/
         | <a class="carousel-control right" href="#the_carousel" data-slide="next">&rsaquo;</a>
       | <div style="min-height:290px;">
         | <h1 style="margin-top:10px;">
-          | Xiki: The Command Revolution!
+          | Xiki: Expand your Command Line!
           |-Xiki: User Friendly Shell Commands
           |-Xiki: the Command Line Reimagined
         | <p style="font-size:35px; color:#8cf; padding-top:8px; line-height:47px;">
-          | The shell console reimagined Type notes, prototype, and program.
+          | Xiki makes the shell console more friendly and powerful
+          |-The shell console reimagined Type notes, prototype, and program.
           |-Shell commands are amazing! But they're hard to learn. Until now!
           |-A better way to run commands.
         | <p style="font-size:14px; text-align:top;">
           | Donate to Xiki: <iframe style="border:0; margin:0 0 0 10px; padding:0; vertical-align:middle;"
           |   src="https://www.gittip.com/xiki/widget.html"
-          |   width="48pt" height="22pt"></iframe>
+          |   width="68pt" height="22pt"></iframe>
+    - row/
+      - span12 style="text-align: center"/
+        |-- h2 style="text-align: center"/
+        |- div style="font-size:20px;"/
+        | <h3 style="text-align:center; margin:10px 0 4px;">
+          | One-line Installer:
+        - p style="margin-bottom:0px;"/
+          | <input type="text" value="cd ~; wget https://github.com/trogdoro/xiki/archive/master.tar.gz; tar xzf master.tar.gz; xiki-master/bin/xsh" style="font-size:25px; padding:10px; height:30px; width:55%; margin-top:0px; margin-bottom:5px;">
+        - p style="margin-bottom:25px;"/
+          | Copy and paste this into your shell console to install Xiki Shell (xsh)!
     - row/
       - span6/
         - h2/
           - icon/cog
-          Type and double-click
+          Expand commands
         - p/
-          | Type a word, any word. Then double click on it or type control-return (or command-return).
-          | For example type: git, bootstrap, mysql, mongo, rails, node, coffee, js, dom, jquery, svg, ruby code, file paths, url's, shell commands, etc. (The mouse optional, there are key shortcuts for everything!)
+          | Type Ctrl+X in your favorite shell (bash or zsh etc), and youll expand the command in xsh (Xiki Shell). Then you can type to filter down the output. No need to pipe to grep.
       - span6/
         - h2/
           - icon/align-left
@@ -149,7 +151,7 @@ xiki loc/
 :p/xiki.org/www/
 /projects/xiki.org/www/
   $ scp index.html xiki@xiki.org:/var/www/xiki.org/index.html
-  =http://xiki.org
+  =http://xiki.com
 
 
 
