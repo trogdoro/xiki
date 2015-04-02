@@ -3,7 +3,8 @@ module Menu
   class MakeXshAvailable
 
     def self.bash_conf_file
-      ["~/.bash_profile", "~/.bash_login", "~/.profile"].find{|o| File.exists? File.expand_path(o)}# || "fu"
+      file = ["~/.bash_profile", "~/.bash_login", "~/.profile"].find{|o| File.exists? File.expand_path(o)}
+      file || "~/.bash_profile"   # In case none exists, create this one
     end
 
     def self.zsh_conf_file
@@ -59,6 +60,8 @@ module Menu
         - .save these changes/
       "
 
+    files_to_update_preview = self.files_to_update_preview.gsub(/^/, '            ')
+
     MENU = %`
       | Explore these menu items to find the setup that's right for
       | you. Then enable one of them. (Use the arrow keys and type
@@ -81,7 +84,7 @@ module Menu
             |
             + save these changes
             |
-#{self.files_to_update_preview.gsub(/^/, '            ')}
+#{files_to_update_preview}
             |
         |
         | This is recommended if you (and any other people who use this
@@ -105,7 +108,7 @@ module Menu
             |
             + save these changes
             |
-#{self.files_to_update_preview.gsub(/^/, '            ')}
+#{files_to_update_preview}
             |
         |
         | (You can use the arrow keys and Ctrl+X to select the above item.)
@@ -120,7 +123,7 @@ module Menu
             |
             + save these changes
             |
-#{self.files_to_update_preview.gsub(/^/, '            ')}
+#{files_to_update_preview}
             |
         |
     `
