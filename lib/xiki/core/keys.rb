@@ -17,7 +17,6 @@ module Xiki
     #   },
     #   "quit"     => #<Proc>,
 
-
     # Default key menu order...
 
     def self.map_default
@@ -27,19 +26,13 @@ module Xiki
 
         "hop"=>nil,
         "jump"=>nil,
+        "do"=>nil,
 
         "as"=>nil,
         "enter"=>nil,
-
-        "do"=>nil,
         "run"=>nil,
-
         "search"=>nil,
         "custom"=>nil,
-
-        "tasks"=>nil,
-        "grab"=>nil,
-        "quit"=>nil,
       }
     end
 
@@ -47,13 +40,9 @@ module Xiki
       {
         "window"=>nil,
         "open"=>nil,
-
         "hop"=>nil,
-        "jump"=>nil,
 
-        "tasks"=>nil,
-        "grab"=>nil,
-        "quit"=>nil,
+        "jump"=>nil,
       }
     end
 
@@ -126,13 +115,33 @@ module Xiki
     def self.expand path
 
       prefix = Keys.prefix
+
+      # In noob mode, and ^A, ^E, ^R, or ^D, so just run simplified version...
+
+      if Keys.noob_mode
+        case path
+        when ["as"]
+          return Move.hop_left_key
+        when ["enter"]
+          return Move.hop_right_key
+        when ["run"]
+          return Shell.recent_history_external nil, :from_key_shortcut=>1
+        when ["do"]
+          return Deletes.forward
+        end
+      end
+
+      # See if user types anything right after
       key = Keys.input(:optional=>true, :chars=>1, :prompt=>"")
 
       # [] and key was "k", so do keys+kill...
-
       if path == [] and key == "k"
         Keys.remember_key_for_repeat(proc {Clipboard.kill})
         return Clipboard.kill
+      end
+      # [] and key was "m", so do keys+more...
+      if path == [] and key == "m"
+        return Launcher.open "keys/\n  + more/", :hotkey=>1
       end
 
       # Key pressed quickly, so recurse...
@@ -183,7 +192,7 @@ module Xiki
 
     def self.more args, options
 
-      txt = "
+      txt = %`
         + arrow keys/
           | You can type the arrow keys to move the cursor around.
           |
@@ -208,54 +217,59 @@ module Xiki
           | - click to reposition the cursor
           | - double-click to expand
           | - right-click to see a tasks menu
-
-      ".unindent
+      `.unindent
 
       txt << "\n"
       txt <<
         if Keys.noob_mode
           %`
-          + show advanced key shortcuts
+          + enable advanced key shortcuts mode
             ! Keys.noob_mode false
-            ! "<! Type Ctrl+K again to see the advanced key shortcuts."
+            ! options[:no_slash] = 1
+            ! "
+            ! | Advanced mode enabled. Many useful shortcuts are now set:
+            ! |
+            ! |   ^A  as+... shortcuts
+            ! |   ^E  enter+... shortcuts
+            ! |   ^R  run+... shortcuts
+            ! |   ^D  do+... shortcuts
+            ! |
+            ! | Type ^A, ^E, ^R and ^D twice to get the original behavior:
+            ! |
+            ! |   ^A ^A  beginning of line
+            ! |   ^E ^E  end of line
+            ! |   ^R ^R  recent commands
+            ! |   ^D ^D  delete character
+            ! |
+            ! | Type ^K to see the current shortcuts, or to switch back to noob mode.
+            ! "
           `.unindent
 
         else
           %`
-          + show noob key shortcuts only
+          + enable noob mode
             ! Keys.noob_mode true
-            ! "<! Type Ctrl+K again to see the noob key shortcuts."
+            ! options[:no_slash] = 1
+            ! "
+            ! | Noob mode enabled. These key shortcuts are now set:
+            ! |
+            ! |   ^A  beginning of line
+            ! |   ^E  end of line
+            ! |   ^R  recent commands
+            ! |   ^D  delete character
+            ! |
+            ! | These hide many advanced keys, but are simpler for new users.
+            ! |
+            ! | Type ^K to see the current shortcuts, or to switch back to advanced mode.
+            ! "
           `.unindent
         end
 
+      options_in = options.merge(:eval=>1)
+      txt = Xik.new(txt).expand args, options_in
 
-      # "file paths in bottom bar" conf setting. Commented, but leave here in case we want it again
-      #   - it's possble being able to toggle the bottom bar between shortcuts and files will seem desirable again at some point
-
-      # # Not yet left initial theme, so show option to show paths...
-      # if $el.boundp(:bottom_bar_shows_file_paths) && $el.elvar.bottom_bar_shows_file_paths # || ! $el.elvar.bottom_bar_shows_file_paths
-      #   txt << %`
-      #     + key shortcuts in bottom bar
-      #       ! $el.elvar.bottom_bar_shows_file_paths = nil
-      #       ! Keys.write_to_conf 'bottom bar', 'keys'
-      #       ! options[:no_slash] = 1
-      #       ! "<! Done"
-      #     `.unindent
-      # else
-      #   # Todo > make options (:no_slash) affect actual hash
-      #   txt << %`
-      #     + file paths in bottom bar
-      #       ! $el.elvar.bottom_bar_shows_file_paths = 1
-      #       ! Keys.write_to_conf 'bottom bar', 'paths'
-      #       ! options[:no_slash] = 1
-      #       ! "<! Done"
-      #     `.unindent
-      # end
-
-
-      txt << "\n<= help/"
-
-      txt = Xik.new(txt).expand args, options.merge(:eval=>1)
+      # Propagate some options back
+      Options.propagate_some options_in, options
 
       txt
 
@@ -269,8 +283,10 @@ module Xiki
 
       # keys/copying and pasting/, so do special handling of this item...
 
-      return self.kill if path[0] == "kill"
+      return self.kill if path[0] == "k"
       return self.more(path[1..-1], options) if path[0] == "more"
+
+      return Launcher.open("help") if path[0] == "help"
 
       # Special args of keys menu
 
@@ -285,7 +301,10 @@ module Xiki
         item = siblings.find{|k, v| k =~ /^#{path[-1]}/}[1]
       end
 
-      raise "key still not found: #{path}" if ! item
+      if ! item
+        options[:no_search] = 1
+        return "<! Key not defined"
+      end
 
       # More items, so show next keys...
 
@@ -341,8 +360,7 @@ module Xiki
 
       if self.noob_mode
         if path == []
-          txt.gsub!(/^\+ (quit)\n/, "")   # Remove quit and xpand
-          txt.gsub!(/\+ [ht]/, "\n\\0")
+          txt.gsub!(/^\+ (quit|jump|as|enter|do|run)\/?\n/, "")   # Remove quit and xpand
           return
         elsif path == ["open"]
           txt.gsub!(/\+ [fp]/, "\n\\0")
@@ -351,17 +369,23 @@ module Xiki
           txt.gsub!(/\+ [c]/, "\n\\0")
           return
         elsif path == ["hop"]
-          txt.gsub!(/\+ [o]/, "\n\\0")
+          txt.gsub!(/\+ [su]/, "\n\\0")
+          return
+        elsif path == ["as"]
+          txt.gsub!(/\+ [u]/, "\n\\0")
+          return
+        elsif path == ["enter"]
+          txt.gsub!(/\+ [t]/, "\n\\0")
           return
         end
       end
 
-      # All keys shown, so add spaces
+      # All keys shown, so add spaces...
 
       if path == []
-        txt.gsub!(/^\+ (xpand|quit)\n/, "")   # Remove quit and xpand
+        txt.gsub!(/^\+ (xpand|quit|grab|tasks)\n/, "")   # Remove quit and xpand
         txt.gsub!(/(^\+ (backward|forward|previous|next)\n)+/, "")   # Remove backward, forward, previous, next
-        txt.gsub!(/\+ [hrat]/, "\n\\0")
+        txt.gsub!(/\+ [hal]/, "\n\\0")
 
       elsif path == ["as"]
         txt.gsub!(/\+ [clut]/, "\n\\0")
@@ -383,6 +407,8 @@ module Xiki
         txt.gsub!(/\+ [rb]/, "\n\\0")
       elsif path == ["run", "delete"]
         txt.gsub!(/\+ [icm]/, "\n\\0")
+      elsif path == ["enter", "in"]
+        txt.gsub!(/\+ [rhl]/, "\n\\0")
       elsif path == ["do"]
         txt.gsub!(/\+ [ntq]/, "\n\\0")
 
@@ -398,10 +424,10 @@ module Xiki
       []=>"
         Keyboard shortcuts. Right now, and anywhere in xsh, you
         can type the first letter of one of the below words while
-        holding down Ctrl (example: Ctrl+O for open).
+        holding Ctrl (^W for window, ^O for open, or ^H for hop).
 
-        The arrow keys always move around.  ESC moves between views.
-        Try using the arrow keys then Ctrl+X to explore items below.
+        The arrow keys always move around. ESC moves between views.
+        Try using the arrow keys then Ctrl+X to explore these items:
         ".unindent+"\n",
       ["as"]=>"Saving and remembering",
       ["enter"]=>"Inserting stuff",
@@ -433,15 +459,28 @@ module Xiki
       # keys/ in advanced mode, so don't show the long decription
       description = nil if path == [] && ! self.noob_mode
 
-      txt = "#{Tree.pipe(description).strip}\n#{txt}" if description
+      if description
+        description = Tree.pipe(description).strip
+        description.sub! /\|\z/, ""   # Remove "|" from last blank line in description
+        txt = "#{description}\n#{txt}"
+      end
 
       # Special extra text for root "keys"...
 
-      txt << "
-        + kill
+      if path == []
+        if self.noob_mode
 
-        + more/
-        ".unindent if path == []
+          txt << "\n"+"
+            + more/
+            + help
+
+            | ^K ^K to kill line
+            | Also see bottom bar below (press an arrow key if it says to)
+            ".unindent
+        else
+          txt << "\n+ more/\n+ help" if path == []
+        end
+      end
 
       txt
     end
@@ -1369,6 +1408,8 @@ module Xiki
           kind = :movement
         when "as"
           return if ["save"].member? path[1]   # Don't remember
+        when "window"
+          return if ["middle"].member? path[1]   # Don't remember
         when "run"
           return if ["save"].member? path[1]   # Don't remember
         when "hop"

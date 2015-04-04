@@ -134,7 +134,7 @@ module Xiki
       Xiki.def("enter+command"){ Launcher.insert_menu }
       Xiki.def("enter+space"){ Code.enter_whitespace }
 
-      Xiki.def("enter+row"){ View.insert_line }
+      Xiki.def("enter+line"){ View.insert_line }
       Xiki.def("enter+junior"){ Notes.enter_junior }
       Xiki.def("enter+web"){ Search.enter_insert_search }
 
@@ -150,31 +150,31 @@ module Xiki
       Xiki.def("enter+quote"){ FileTree.enter_quote }
       Xiki.def("enter+pipe"){ FileTree.enter_quote nil, :char=>"|" }
       Xiki.def("enter+multi"){ $el.cua_set_rectangle_mark }
-      Xiki.def("enter+insert+replacement"){ Search.insert_before_and_after }
 
-      Xiki.def("enter+insert+time"){ Line.insert_time }
-      Xiki.def("enter+insert+date"){ Line.insert_date }
+      Xiki.def("enter+in+time"){ Line.insert_time }
+      Xiki.def("enter+in+date"){ Line.insert_date }
 
-      Xiki.def("enter+insert+http"){ View << "http://" }
-      Xiki.def("enter+insert+new"){ DiffLog.enter_new }           # Enter Old: enter newly-deleted from last save
-      Xiki.def("enter+insert+old"){ DiffLog.enter_old }   # Enter Old: enter newly-deleted from last save
-      Xiki.def("enter+insert+ruby"){ code = Keys.input(:prompt=>"Enter ruby code to eval and insert results: "); View.insert(eval(code).to_s)}
+      Xiki.def("enter+in+replacement"){ Search.insert_before_and_after }
+      Xiki.def("enter+in+new"){ DiffLog.enter_new }           # Enter Old: enter newly-deleted from last save
+      Xiki.def("enter+in+old"){ DiffLog.enter_old }   # Enter Old: enter newly-deleted from last save
 
-      Xiki.def("enter+log+javascript"){ Firefox.enter_log_javascript_line }   # Xiki.def("enter+log+javascript"){ Firefox.enter_log_javascript_line }
-      Xiki.def("enter+log+stack"){ Code.enter_log_stack }   # Xiki.def("enter+log+stack"){ Code.enter_log_stack }
-      Xiki.def("enter+log+line"){ Code.enter_log_line }   # Xiki.def("enter+log+line"){ Code.enter_log_line }
-      Xiki.def("enter+log+exclamation"){ Code.enter_log_line :exclamation=>1 }   # Xiki.def("enter+log+line"){ Code.enter_log_line }
+      Xiki.def("enter+in+http"){ View << "http://" }
+      Xiki.def("enter+in+ruby"){ code = Keys.input(:prompt=>"Enter ruby code to eval and insert results: "); View.insert(eval(code).to_s)}
+      Xiki.def("enter+in+javascript"){ Firefox.enter_log_javascript_line }   # Xiki.def("enter+log+javascript"){ Firefox.enter_log_javascript_line }
 
-      Xiki.def("enter+log+time"){ Code.enter_log_time }   # Xiki.def("enter+log+time"){ Code.enter_log_time }
+      Xiki.def("enter+in+log"){ Code.enter_log_line }   # Xiki.def("enter+log+line"){ Code.enter_log_line }
+      Xiki.def("enter+in+stack"){ Code.enter_log_stack }   # Xiki.def("enter+log+stack"){ Code.enter_log_stack }
+      Xiki.def("enter+in+exclamation"){ Code.enter_log_line :exclamation=>1 }   # Xiki.def("enter+log+line"){ Code.enter_log_line }
+      Xiki.def("enter+in+performance"){ Code.enter_log_time }   # Xiki.def("enter+log+time"){ Code.enter_log_time }
 
     end
 
 
     def self.jump_keys
 
-      Xiki.def("jump+ide"){ View.layout_todo_and_nav }
+      Xiki.def("jump+ide", :noob=>1){ View.layout_todo_and_nav }
       Xiki.def("jump+todo", :noob=>1){ View.layout_todo }
-      Xiki.def("jump+notes"){ View.layout_nav }   # jump+n
+      Xiki.def("jump+notes", :noob=>1){ View.layout_nav }   # jump+n
 
       Xiki.def("jump+output"){ View.layout_outlog }
       Xiki.def("jump+all"){ View.layout_outlog :all=>1 }
@@ -190,7 +190,7 @@ module Xiki
       # Xiki.def("jump+related+file"){ Code.open_related_file }
 
       Xiki.def("jump+move+file"){ Launcher.open("Todo > Find method that moves the current file...", :no_launch=>1) }
-      Xiki.def("jump+move+spot"){ FileTree.move_to }
+      Xiki.def("jump+move+remembered"){ FileTree.move_to }
       Xiki.def("jump+move+copy"){ FileTree.copy_to }
 
       Xiki.def("jump+yours"){ FileTree.copy_to }
@@ -319,10 +319,7 @@ module Xiki
     def self.hop_keys
       # Use H prefix for: moving cursor, jumping to specific points
 
-      Xiki.def("hop+hack", :noob=>1){ Deletes.backward }
-
-      Xiki.def("hop+start", :noob=>1){ Move.hop_left_key }   # to beginning of file
-      Xiki.def("hop+end", :noob=>1){ Move.hop_right_key }   # To end of line
+      Xiki.def("hop+hit", :noob=>1){ Deletes.backward }
 
       Xiki.def("hop+top"){ View.to_highest }
       Xiki.def("hop+bottom"){ View.to_bottom }   # move to end
@@ -594,7 +591,7 @@ module Xiki
 
     def self.misc
 
-      Xiki.def("grab+", :noob=>1){ DiffLog.grab }
+      Xiki.def("grab+"){ DiffLog.grab }
       $el.define_key(:global_map, $el.kbd("M-C-g")){ DiffLog.grab }
 
       Xiki.def("quit+", :noob=>1){ DiffLog.quit }
@@ -637,7 +634,7 @@ module Xiki
 
       View.sensible_defaults
 
-      Xiki.def("tasks+", :noob=>1){ Launcher.tasks }   # expand+
+      Xiki.def("tasks+"){ Launcher.tasks }   # expand+
       $el.define_key(:global_map, $el.kbd("M-C-t")){ Launcher.tasks }
 
       Xiki.def("backward+"){ Move.backward_key }
