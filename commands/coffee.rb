@@ -1,7 +1,8 @@
 return "
   | # Type some coffeescript here (to run in the browser)
   | alert 'hi'
-  - see/=cs/
+  > See
+  << cs/
   " if args.empty?
 
 return "=beg/quoted/" if args[0] !~ /\n/

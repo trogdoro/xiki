@@ -1280,6 +1280,7 @@ module Xiki
       "i"=>"implement!",
       "r"=>"rename!",
       "t"=>"todo!",
+      "tr"=>"try",
       "u"=>"update!",
     }
 

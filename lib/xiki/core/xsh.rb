@@ -86,9 +86,17 @@ module Xiki
       elsif args == "-d"
         options[:do_nothing] = 1
         Search.isearch_diffs
+
+      elsif args == "^"
+        options[:do_nothing] = 1
+        Launcher.open "notes/"
+      elsif args == ":"
+        options[:do_nothing] = 1
+        Launcher.open "bookmarks/"
       elsif args == "-b"
         options[:do_nothing] = 1
         Launcher.open "bookmarks/"
+
       elsif args =~ /^http:\/\//
         options[:not_shell] = 1
       elsif args =~ /\Aselect .+ from /

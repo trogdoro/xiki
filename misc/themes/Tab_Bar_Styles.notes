@@ -35,12 +35,12 @@ module Xiki
 
   Styles.mode_line_sides(
     :bg=>"unspecified",
-    :fg=>"#aaaaaa",
+    :fg=>"#aaa",
     :underline=>nil,
     )
   Styles.mode_line_sides_underline(
     :bg=>"unspecified",
-    :fg=>"#aaaaaa",
+    :fg=>"#aaa",
     :underline=>1,
     )
 

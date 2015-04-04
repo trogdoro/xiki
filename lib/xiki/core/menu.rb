@@ -1120,7 +1120,7 @@ module Xiki
     def self.root_sources_from_dir options
       found = self.source_glob options[:menufied]
 
-      raise "Couldn't find source for: #{options}" if ! found
+      raise "Command source file or dir probably doesn't exist. Couldn't find source for: #{options}" if ! found
 
       options[:sources] = [found, :incomplete]
     end

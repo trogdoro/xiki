@@ -137,7 +137,7 @@
         (set-face-attribute 'mode-line-transparent-activatable nil :background control-lock-color-transparent-old)
         (set-face-attribute 'mode-line-transparent-underline-activatable nil :background control-lock-color-transparent-old)
 
-        (set-face-attribute 'mode-line-transparent-activatable nil :foreground "#777")
+        (set-face-attribute 'mode-line-transparent-activatable nil :foreground "#aaa")
         (set-face-attribute 'mode-line-transparent-underline-activatable nil :foreground "#aaa")
         (set-face-attribute 'mode-line-transparent-underline-activatable nil :underline t)
       )

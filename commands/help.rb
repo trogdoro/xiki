@@ -3,11 +3,13 @@ module Menu
 
     def self.menu_after txt, *args
       options = yield
-      options[:hotkey] = 1
+      options[:hotkey] = nil
       txt
     end
 
     MENU = %`
+      | Welcome to xsh! Here are some places to look for help:
+      |
       | Type "xsh --help" back in your normal shell, or expand
       | it right here:
       = $ xsh --help
