@@ -49,7 +49,7 @@ xiki loc/
         | <h3 style="text-align:center; margin:10px 0 4px;">
           | One-line Installer:
         - p style="margin-bottom:0px;"/
-          | <input type="text" value="cd ~; wget https://github.com/trogdoro/xiki/archive/master.tar.gz; tar xzf master.tar.gz; xiki-master/bin/xsh" style="font-size:25px; padding:10px; height:30px; width:55%; margin-top:0px; margin-bottom:5px;">
+          | <input type="text" value="cd ~; curl -LO https://github.com/trogdoro/xiki/archive/master.tar.gz; tar xzf master.tar.gz; xiki-master/bin/xsh" style="font-size:25px; padding:10px; height:30px; width:55%; margin-top:0px; margin-bottom:5px;">
         - p style="margin-bottom:25px;"/
           | Copy and paste this into your shell console to install Xiki Shell (xsh)!
     - row/
@@ -150,9 +150,11 @@ xiki loc/
 > 2. Deploy
 :p/xiki.org/www/
 /projects/xiki.org/www/
+  - 1) Expand the above 'xiki loc' command
+  - 2) Copy to the server
   $ scp index.html xiki@xiki.org:/var/www/xiki.org/index.html
+  - 3) Verify
   =http://xiki.com
-
 
 
   + index.html
