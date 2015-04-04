@@ -806,9 +806,9 @@ Ol["oh, this path is an array: #{path}!"] if path.is_a?(Array)
       txt = self.expand_again_if_beg txt, options
       txt = txt.to_s if txt != nil && ! txt.is_a?(String)
 
-      # Pull out certain options set by implementation, meant to control how it's inserted...
+      # Propagate certain options set by implementation, meant to control how it's inserted...
 
-      options.each{|k, v| insert_options[k] = v if [:no_slash, :no_search, :line_found, :hotkey, :omit_slashes].include?(k)}
+      Options.propagate_some options, insert_options
 
       # Re-add task items and restore cursor if requested to put output under task...
 
