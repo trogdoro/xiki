@@ -1094,7 +1094,8 @@ module Xiki
       # Todo > extract this out to > __Menu|__Options.propagate_returned_options
       # And add more options
       # Propagate certain options returned, up the stack
-      [:nest, :no_task].each {|k| options[k] = options_in[k] if options_in[k] }
+
+      Options.propagate_some options_in, options
 
       result
 
@@ -1180,7 +1181,7 @@ module Xiki
       txt = ""
 
       txt.<< File.read(Bookmarks[":xh/misc/logs/shell_sticky_log.notes"]) rescue ""
-      txt.<< File.read(File.expand_path("~/xiki/misc/logs/shell_external_log.notes")).gsub(/^/, '$ ')
+      txt.<< File.read(File.expand_path("~/xiki/misc/logs/shell_external_log.notes")).gsub(/^/, '$ ') rescue nil
 
       if cache = self.session_cache
         txt.<< cache
@@ -1220,10 +1221,12 @@ module Xiki
         txt = txt.split("\n").select{|o| o =~ /#{args}/}.join("\n")
       end
 
+      # | See the key shortcuts at the bottom. ^G grabs
+      # | the command and runs it in your shell.
       # Add stuff at top
-      View.insert "
-        | Type Ctrl+G to grab a command back to your shell.
-        " .unindent+"\n"
+      View.insert %`
+        | See the key shortcuts at the bottom. (^G also runs in shell)
+        `.unindent+"\n"
 
       View.insert txt, :dont_move=>1
       left = View.cursor
