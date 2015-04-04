@@ -65,7 +65,11 @@ module Xiki
 
       if options[:hotkey]
         # Do initial extract to just highlight
-        self.filter_hotkey_extract_letters options.merge(:just_highlight=>1)
+        result = self.filter_hotkey_extract_letters options.merge(:just_highlight=>1)
+
+        # No keys, so don't do search
+        return $el.elvar.xiki_filter_options = nil if result.keys == []
+
         $el.elvar.xiki_filter_hotkey = true   # Enables local map that forces C-a to C-z to be single keys
         $el.elvar.xiki_bar_special_text = "   A-Z Select     ESC Back     (or arrow keys)   "
       else
@@ -123,25 +127,37 @@ module Xiki
         return self.search_finished
       end
 
+      # Found item via letter, so delete siblings and launch...
+
       if letters[letterized]
+
         self.search_finished
+        indent_of_first = Line.indent.length
+
         Line.next letters[letterized][0] - 1
-        View.delete Line.right+1, options[:right]
-        View.delete options[:left], Line.left
+
+        # Only delete siblings if selected item isn't indented lower than the 1st line
+        indent_of_selected = Line.indent.length
+        if indent_of_selected == indent_of_first
+          View.delete Line.right+1, options[:right]
+          View.delete options[:left], Line.left
+        end
 
         Launcher.launch :was_letter=>1
         return nil
       end
 
       # If was a valid letter but no match
-      if ch =~ /^[,a-z0-9]$/i
+
+      if letterized =~ /^[,a-z0-9]$/i
 
         # Optionally pass letter as menu item when not found
-        if options[:letter_when_not_found] && ch != ","
+        if options[:letter_when_not_found] && letterized != ","
           indent = Line.indent
           bounds = Tree.sibling_bounds :cross_blank_lines=>1
           View.delete bounds[0], bounds[3]
-          View << "#{indent}#{ch}"
+          View << "#{indent}#{letterized}/"
+
           Launcher.launch :was_letter=>1, :letter_when_not_found=>1
           return nil
         end
@@ -1320,7 +1336,6 @@ module Xiki
         orig = Location.new
         orig_left = View.cursor
       end
-      error_happened = nil
 
       # Might be an array or hash?
       return if !txt.respond_to?(:blank?) || txt.blank?
@@ -1379,7 +1394,7 @@ module Xiki
         Line.to_words
       end
 
-      if !error_happened && !$xiki_no_search && !options[:no_search] && !options[:launch] && !buffer_changed && !moved
+      if !options[:error] && !$xiki_no_search && !options[:no_search] && !options[:launch] && !buffer_changed && !moved
         self.filter_appropriately left, right, txt, options
       elsif ! options[:line_found]
         not_under ?
@@ -2035,6 +2050,10 @@ module Xiki
         View.insert "#{nth}\n"
         $el.previous_line
       end
+
+      # They just did ^R, so grab instead of expand
+      return DiffLog.grab if options[:recent_history_external]
+
       Launcher.launch
     end
 

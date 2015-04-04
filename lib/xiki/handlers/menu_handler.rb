@@ -62,6 +62,7 @@ module Xiki
 
       txt.replace(
         if exception
+          options[:error] = 1
           CodeTree.draw_exception exception, code
         else
           returned   # Otherwise, just return return value or stdout!"
