@@ -45,8 +45,8 @@ function xsh {
     else   # Assume bash or bash-compatible
       history -r $file
     fi
-    # Be sure to delete it
-    rm $file
+    # Be sure to delete it (-f in case user has weird settings for rm)
+    rm -f $file
   fi
 
 
@@ -77,8 +77,8 @@ function xsh {
 
     done <$HOME/xiki/misc/tmp/grabbed_commands.notes
 
-    # Delete it when we're done
-    rm $HOME/xiki/misc/tmp/grabbed_commands.notes
+    # Delete it when we're done (-f in case user has weird settings for rm)
+    rm -f $HOME/xiki/misc/tmp/grabbed_commands.notes
 
     SAVEIFS=$IFS   # Store original separator
     IFS=$'\n' y=($commandz)
