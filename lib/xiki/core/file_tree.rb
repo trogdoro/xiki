@@ -225,7 +225,7 @@ module Xiki
       path.sub!(/\/$/, '')
 
       entries = Dir.glob(["#{path}/*"], File::FNM_DOTMATCH).
-        select{|i| i !~ /\/\.(\.*|svn|git)$/}.entries.sort
+        select{|i| i !~ /\/\.(\.*|svn|git)$/}.entries.sort_by{|w| w.downcase}
 
       entries = entries.select{|o| o !~ /\/(vendor|log)$/}   # Exclude some dirs (why doing it here?
 
@@ -1198,7 +1198,7 @@ module Xiki
         "^\\s*(task|def|class) "
       elsif extension == "js"
         "(^ *(function)| = function\\()"
-      elsif extension =~ /^notes|deck$/
+      elsif extension =~ /^notes|deck|xiki$/
         # "^[\\|>]( |$)"
         "^>( |$)"
       else
@@ -1457,7 +1457,7 @@ module Xiki
       dir = FileTree.add_slash_maybe dir
       all = Dir.glob("#{dir}*", File::FNM_DOTMATCH).
         select {|i| i !~ /\/\.(\.*|svn|git|DS_Store)$/}.   # Exclude some dirs (exclude entensions here too?)
-        select {|i| i !~ /\/\.#/}.sort
+        select {|i| i !~ /\/\.#/}.sort_by{|w| w.downcase}
 
       if options[:date_sort]
         all = all.sort{|a,b| File.mtime(b) <=> File.mtime(a)}
@@ -1551,6 +1551,14 @@ module Xiki
     # Add slash to the variable
     def self.add_slash_maybe dir
       dir =~ /\/$/ ? dir : "#{dir}/"
+    end
+
+    # Add slash to the variable
+    def self.add_slash_maybe! dir
+      if dir !~ /\/$/
+        dir.replace "#{dir}/"
+      end
+      dir
     end
 
 
@@ -2039,23 +2047,29 @@ module Xiki
 
       if File.directory? file_path
 
+        FileTree.add_slash_maybe! file_path
+
         if task
 
           require "#{Xiki.dir}commands/sample_menus/sample_menus_index.rb" # if !defined?(SampleMenus)
 
+          if task == ["rake"]
+            options[:nest] = 1
+            options[:no_task] = 1
+            rake = Shell.command("rake -T -A", :dir=>file_path)
+            rake.gsub!(/ $/, '')
+            return options[:output] = Tree.quote(rake)
+          elsif task[0] == "rake"
+            rake_task = task[1][/rake (\w+)/, 1]
+            return DiffLog.quit_and_run "rake #{rake_task}"
+          end
+
           # Dir tasks menu...
 
-          menu = Xik.new '
-            ~ search
-              ! Tree.<< "- ##/", :no_search=>1
-              ! View.column = -1
-              ! ""
-            ~ all files
-              ! FileTree.expand_dir_recursively :file_path=>'+file_path.inspect+'
-
-            ~ example commands/
+          menu = Xik.new(%`
+            ~ examples/
               ! FileTree.example_commands options
-            ~ recent commands/
+            ~ recent/
               ! options[:nest] = 1
               ! options[:no_task] = 1
               ! txt = Shell.external_plus_sticky_history
@@ -2064,6 +2078,14 @@ module Xiki
               ! options[:no_task] = 1
               ! Shell.history options[:file_path]
 
+            ~ search
+              ! Tree.<< "- ##/", :no_search=>1
+              ! View.column = -1
+              ! ""
+            ~ all files
+              ! FileTree.expand_dir_recursively :file_path=>options[:file_path]
+            ~ bookmark
+              ! Bookmarks.save
             ~ dir/
               + rename
                 ! FileTree.rename_file
@@ -2081,33 +2103,6 @@ module Xiki
 
               + cd
                 ! FileTree.cd options[:file_path]
-              + exit and cd
-                ! Shell.exit_and_cd options[:file_path]
-              + create/
-                + txt
-                  ! "+ foo.txt\n#{Tree.quote SampleMenus.by_extension("txt"), :indent=>"  "}"
-                + rb
-                  ! "+ foo.rb\n#{Tree.quote SampleMenus.by_extension("rb"), :indent=>"  "}"
-                + py
-                  ! "+ foo.py\n#{Tree.quote SampleMenus.by_extension("py"), :indent=>"  "}"
-                + js
-                  ! "+ foo.js\n#{Tree.quote SampleMenus.by_extension("js"), :indent=>"  "}"
-                + dir
-                  ! "+ foo/"
-                + a few files
-                  ! options[:no_search] = 1
-                  ! File.write "'+file_path+'/a.txt", "aaa\naaa\n"
-                  ! File.write "'+file_path+'/b.txt", "bbb\nbbb\n"
-                  ! File.write "'+file_path+'/c.notes", "> heading\nccc\nccc\n\n> another\nc c c\n"
-                  ! "- a.txt\n- b.txt\n- c.notes"
-                + files and dir
-                  ! options[:no_search] = 1
-                  ! File.write "'+file_path+'/a.txt", "aaa\naaa\n"
-                  ! File.write "'+file_path+'/b.txt", "bbb\nbbb\n"
-                  ! File.write "'+file_path+'/c.notes", "> heading\nccc\nccc\n\n> another\nc c c\n"
-                  ! Dir.mkdir("'+file_path+'/d") rescue nil
-                  ! File.write "'+file_path+'/d/d.txt", "ddd\nddd\n"
-                  ! "- a.txt\n- b.txt\n- c.notes\n- d/\n  - d.txt"
             ~ more/
               + search filenames
                 ! ControlLock.disable
@@ -2115,21 +2110,124 @@ module Xiki
                 ! View.column = -1
                 ! ""
               + all contents
-                ! txt = FileTree.grep('+file_path.inspect+', "").join("\n")
-                ! txt.sub(/.+\n/, "")   # Delete 1st line > the redundant dir
-              + ordered by time
+                ! txt = FileTree.grep(options[:file_path], "").join("\\n")
+                ! txt.sub(/.+\\n/, "")   # Delete 1st line > the redundant dir
+              + modified date sort
                 ! FileTree.dir :date_sort=>true
                 ! ""
-            ~ bookmark
-              ! Bookmarks.save
-            ~ xiki command
-              ! Line << "/"
+
+              + expand
+                ! Launcher.launch
+              + grab
+                ! DiffLog.grab options
+
+              + exit and cd
+                ! Shell.exit_and_cd options[:file_path]
+              + create/
+                + txt
+                  ! "+ foo.txt\\n\#{Tree.quote SampleMenus.by_extension("txt"), :indent=>"  "}"
+                + rb
+                  ! "+ foo.rb\\n\#{Tree.quote SampleMenus.by_extension("rb"), :indent=>"  "}"
+                + py
+                  ! "+ foo.py\\n\#{Tree.quote SampleMenus.by_extension("py"), :indent=>"  "}"
+                + js
+                  ! "+ foo.js\\n\#{Tree.quote SampleMenus.by_extension("js"), :indent=>"  "}"
+                + dir
+                  ! "+ foo/"
+                + a few files
+                  ! options[:no_search] = 1
+                  ! File.write "\#{options[:file_path]}/a.txt", "aaa\\naaa\\n"
+                  ! File.write "\#{options[:file_path]}/b.txt", "bbb\\nbbb\\n"
+                  ! File.write "\#{options[:file_path]}/c.notes", "> heading\\nccc\\nccc\\n\\n> another\\nc c c\\n"
+                  ! "- a.txt\\n- b.txt\\n- c.notes"
+                + files and dir
+                  ! options[:no_search] = 1
+                  ! File.write "\#{options[:file_path]}/a.txt", "aaa\\naaa\\n"
+                  ! File.write "\#{options[:file_path]}/b.txt", "bbb\\nbbb\\n"
+                  ! File.write "\#{options[:file_path]}/c.notes", "> heading\\nccc\\nccc\\n\\n> another\\nc c c\\n"
+                  ! Dir.mkdir("\#{options[:file_path]}/d") rescue nil
+                  ! File.write "\#{options[:file_path]}/d/d.txt", "ddd\\nddd\\n"
+                  ! "- a.txt\\n- b.txt\\n- c.notes\\n- d/\\n  - d.txt"
+          `.unindent)
+
+          menu << "\n"
+
+          # Append dir tasks...
+
+          # Hard-coded for now. Restructure to move each dir task into separate files, with this structure:
+          # ~/xiki/
+          #   - misc/
+          #     - file_tasks/
+          #       - java.xiki
+          #         | pattern/   < pre-loaded
+          #         |   : *.java
+          #         | java/   < item that'll appear in tasks dropdown
+          #         |   - compile/
+          #     - dir_tasks/
+          #       - xiki.xiki
+          #         | pattern/   < pre-loaded
+          #         |   : menu.*
+          #       - vagrant.xiki
+          #         | pattern/   < pre-loaded
+          #         |   : Vagrantfile
+          #         | vagrant/   < item that'll appear in tasks dropdown
+          #         |   - start/
+          #         |   - stop/
+          #         |     ! code to stop?
+          #         |     $$ or > command to run in shell
+
+          if File.exists? "#{file_path}menu.xiki"
+            menu << "
+            ~ menu
+              ! Line << '/'
               ! Launcher.launch
-            ~ expand
-              ! Launcher.launch
-            ~ grab
-              ! DiffLog.grab options
-          '
+            ".unindent
+          end
+
+          if File.exists? "#{file_path}Rakefile"
+            menu << "
+              ~ rake/
+            ".unindent
+          end
+
+          if File.exists? "#{file_path}Vagrantfile"
+            menu << "
+              ~ vagrant/
+                + connect
+                + start
+                + restart
+                + stop
+            ".unindent
+          end
+
+          if Dir.exists? "#{file_path}.git"
+            menu << "
+              ~ git/
+                + connect
+                + start
+                + restart
+                + stop
+            ".unindent
+          end
+
+          if File.exists? "#{file_path}Gemfile"
+            menu << "
+              ~ gems/
+                : list of gems
+            ".unindent
+          end
+
+          if File.exists? "#{file_path}config/application.rb"
+            menu << "
+              ~ rails/
+                + start
+                  ! DiffLog.quit_and_run 'rails s'
+                + restart
+                + stop
+                + irb
+                + more/
+            ".unindent
+          end
 
           # / and :mouse, so return whole menu...
 
@@ -2138,7 +2236,6 @@ module Xiki
           # /something, so expand menu...
 
           task[0] = "~ #{task[0]}" if task[0]
-
           result = menu[task, :eval=>options]
 
           options[:nest] = 1 if [["~ dir"], ["~ more"]].member?(task)
