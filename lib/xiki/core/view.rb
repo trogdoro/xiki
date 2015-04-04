@@ -1266,11 +1266,11 @@ module Xiki
     end
 
     def self.char
-      $el.buffer_substring($el.point, $el.point+1)
+      $el.buffer_substring($el.point, $el.point+1) rescue nil
     end
 
     def self.char_before
-      $el.buffer_substring($el.point-1, $el.point)
+      $el.buffer_substring($el.point-1, $el.point) rescue nil
     end
 
 
@@ -1463,6 +1463,8 @@ module Xiki
 
     def self.insert_line
       orig_indent = Line.indent
+      cursor = View.cursor
+      char, char_before = View.char, View.char_before
       prefix = Keys.prefix :clear=>1   # Check for numeric prefix
 
       if prefix == 0
@@ -1476,10 +1478,8 @@ module Xiki
         if prefix == :u || prefix == :-   # Use prefix chars from previous line
           ""
         else
-          line[/^[ |#;:!%*+-]*/]
+          line[/^[ |#;:!%$*^+-]*/]
         end
-
-      Deletes.delete_whitespace if ! Line.at_left? && ! Line.at_right?
 
       # If C--, move to end of previous line, so it goes before
       if prefix == :-
@@ -1494,6 +1494,12 @@ module Xiki
 
       times = prefix.is_a?(Fixnum) ? prefix : 1
       times.times{ View.insert "\n#{indent_txt}" }
+
+      if char != "\n"
+        View.cursor = cursor
+      end
+      nil
+
     end
 
     def self.shift
