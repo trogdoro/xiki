@@ -10,9 +10,18 @@ end
 
 # tasks+, so show items
 
-return "~ exit and run" if task == []
+return "
+  ~ run as script
+  ~ run in bash
+  " if task == []
 
-return DiffLog.quit_and_run args[0] if task == ["exit and run"]
+return DiffLog.quit_and_run args[0] if task == ["run in bash"]
+
+if task == ["run as script"]
+  # Save to script and run
+  File.open("/tmp/tmp.bash", "w") { |f| f << args[0] }
+  DiffLog.quit_and_run "bash /tmp/tmp.bash"
+end
 
 # /code, so run it
 
