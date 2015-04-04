@@ -129,22 +129,26 @@ function xsh {
 
 if [ $xiki_open_key ]; then
 
-  # It's Ctrl+X in bash, so undefine it first...
+  # It's Ctrl+X in bash, so undefine it first
 
   if [ $BASH_VERSION ] && [ $xiki_open_key = "\C-x" ]; then
     bind "'\C-x' end-of-line"   # Causes C-x to be bindable
   fi
 
-  # Define it
+  # Make vim mode have C-a, since the below keys depend on it
+
+  if [ -n "$ZSH_VERSION" ]; then
+    bindkey -M viins '^a' beginning-of-line
+  else   # Assume bash or bash-compatible
+    bind -m vi-insert "\C-a":beginning-of-line
+  fi
+
+  # Define it...
 
   if [ -n "$ZSH_VERSION" ]; then
     bindkey -s $xiki_open_key '\C-axsh \n'
   else   # Assume bash or bash-compatible
-
-    #echo "heyyy"
-    # bind '"'$xiki_open_key'" "\C-axsh \n"'
     bind \"$xiki_open_key'" "\C-axsh \n"'
-
   fi
 fi
 
