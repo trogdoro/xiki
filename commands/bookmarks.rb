@@ -4,7 +4,7 @@ dir = File.expand_path '~/xiki/bookmarks'
 
 if args == []
 
-  names = Dir.entries(dir).select{|o| o !~ /^\./}.sort_by{ |x| File.stat("#{dir}/#{x}").mtime }.reverse
+  names = Dir.entries(dir).select{|o| o !~ /^\./}.sort_by{ |x| File.stat("#{dir}/#{x}").mtime }.reverse rescue []
 
   names.map! do |o|
     name = o.sub(/\..+/, '').gsub('_', ' ')
@@ -25,7 +25,7 @@ end
 file_path = args[1] ? args[1].sub(/^: /, '') : nil
 
 if options[:task] == []
-  txt = "~ navigate\n~ delete bookmark"
+  txt = "~ navigate\n~ delete bookmark\n~ move to top"
   txt << "\n~ exit and cd" if file_path && File.directory?(file_path)
   return txt
 end
@@ -55,6 +55,11 @@ elsif options[:task] == ["delete bookmark"]
   file = Bookmarks[":xh/bookmarks/#{args[0]}.notes"]
   FileUtils.rm file
   return "<! deleted"
+
+elsif options[:task] == ["move to top"]
+  file = Bookmarks[":xh/bookmarks/#{args[0]}.notes"]
+  FileUtils.touch file
+  return "<! will be at top"
 
 end
 
