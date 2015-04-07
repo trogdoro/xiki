@@ -1,4 +1,6 @@
-#!/bin/bash -f
+#!/usr/bin/env bash
+
+set -f
 
 export bin_dir=`dirname $0`
 
@@ -41,26 +43,27 @@ function check_dependencies {
   u=`tput smul`
   uu=`tput rmul`
 
-  ruby_is_installed=`which ruby 2>&1`
+  ruby_is_installed=$(type -P ruby)
 
   # No emacs or no ruby, so figure out how to install...
 
   if [[ ! "$ruby_is_installed" =~ ^/ ]] || [ "$emacs_version" = "" ]; then
 
-    yum_is_installed=`which yum 2>&1`
-    aptget_is_installed=`which apt-get 2>&1`
+    yum_is_installed=$(type -P yum)
+
+    aptget_is_installed=$(type -P apt-get)
 
     yum_install="sudo yum install -q -y"
     aptget_install="sudo apt-get install -qq -y"
 
     echo "It looks like you haven't yet installed the dependencies"
-    echo -e "xsh needs. Install them?\n"
+    echo -e "xsh needs. Install them? (You can optionally install the\ndependencies yourself first.)\n"
 
     echo -e "  ${u}i${uu}nstall the dependencies"
     echo -e "  ${u}c${uu}ancel"
     echo -e "  ${u}s${uu}how them first\n"
 
-    read -n1 -p "Type one of the underlined letters: " doit
+    read -n1 -p "Type one of the highlighted letters: " doit
 
     if [ "$doit" = "c" ]; then
       echo -e "\n\nXsh can't run without it's dependencies :(\n"
@@ -93,15 +96,15 @@ function check_dependencies {
 
     case "$doit" in
       i|I)
-        echo -e "\n\n"
+        echo -e "\n\nInstalling the dependencies...\n"
         if [[ ! "$ruby_is_installed" =~ ^/ ]]; then
-          if ! $install ruby || [[ ! "`which ruby 2>&1`" =~ ^/ ]]; then
+          if ! $install ruby || [[ ! $(type -P ruby) =~ ^/ ]]; then
             echo ruby install failed\!
             exit 1
           fi
         fi
         if [ "$emacs_version" = "" ]; then
-          if ! $install emacs || [[ ! "`which emacs 2>&1`" =~ ^/ ]]; then
+          if ! $install emacs || [[ ! $(type -P emacs) =~ ^/ ]]; then
             echo emacs install failed\!
             exit 1
           fi
@@ -118,7 +121,7 @@ function check_dependencies {
           echo "  $ $install emacs"
         fi
         echo -e "\nNote that xsh's dependencies are largely transparent\nto the user.  You don't need to have any expertise\nabout them to use xsh."
-        echo -e "\nRun the 'xsh' command again. (You can optionally install the\ndependencies yourself first.)\n"
+        echo -e "\nRun \"./xsh\" to see the options again. (You can optionally install the\ndependencies yourself first.)\n"
         exit
         ;;
       *)
@@ -131,7 +134,7 @@ function check_dependencies {
 
   # Mac and emacs22, so recommend "brew install emacs"...
 
-  if [[ "$emacs_version" =~ "Emacs 22" ]] && [ `uname` = "Darwin" ] && [[ `which brew 2>&1` =~ ^/ ]]; then
+  if [[ "$emacs_version" =~ "Emacs 22" ]] && [ `uname` = "Darwin" ] && [[ $(type -P brew) =~ ^/ ]]; then
 
     echo "Additional optional dependencies are recommended to"
     echo "make xsh run more smoothly. It should take less than"
@@ -141,7 +144,7 @@ function check_dependencies {
     echo -e "  ${u}p${uu}roceed without them"
     echo -e "  ${u}s${uu}how them first\n"
 
-    read -n1 -p "Type one of the underlined letters: " doit
+    read -n1 -p "Type one of the highlighted letters: " doit
 
     case "$doit" in
       i|I)
@@ -154,11 +157,11 @@ function check_dependencies {
       s|S)
         echo -e "\n\nThis will be run:\n"
         echo "  brew install emacs"
-        echo -e "\nRun the 'xsh' command again.\n"
+        echo -e "\nRun \"./xsh\" to see the options again.\n"
         exit
         ;;
       *)
-        echo -e "\n\nYour choice wasn't understood. Run xsh again.\n"
+        echo -e "\n\nYour choice wasn't understood. Run \"./xsh\" to see the options again.\n"
         exit 1
         ;;
     esac
@@ -168,7 +171,6 @@ function check_dependencies {
 }
 
 check_dependencies
-
 
 # Proceed to run the command...
 
