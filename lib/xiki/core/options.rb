@@ -11,6 +11,7 @@ module Xiki
         :no_slash,
         :no_search,
         :line_found,
+        :column_found,
         :hotkey,
         :omit_slashes,
         :error,

@@ -1000,10 +1000,10 @@ module Xiki
           FileTree.select_next_file if txt =~ /[^\n\/]$/
           options[:recursive] = 1
         end
-        Line.to_words
+        Line.to_words if ! options[:column_found]
         Tree.filter options
       else
-        Line.to_words
+        Line.to_words if ! options[:column_found]
         Tree.filter options
       end
     end
@@ -1026,7 +1026,10 @@ module Xiki
           last_indent = line_indent
           line_indent = tree[i+1]   # Use indent of following line
           line_indent = line_indent ? (line_indent[/^ */].length / 2) : 0
-          raise "Blank lines in trees between parents and children, or 2 consecutive blank lines, aren't allowed." if line_indent > 0 && line_indent > last_indent
+          if line_indent > 0 && line_indent > last_indent
+            Ol.a tree
+            raise "Blank lines in trees between parents and children, or 2 consecutive blank lines, aren't allowed. Tree printed to outlog."
+          end
         else
           line_indent = line[/^ */].length / 2
           line = line.sub /^ +/, ''
@@ -1392,6 +1395,11 @@ module Xiki
 
         Line.next(options[:line_found])
         Line.to_words
+      end
+
+      # Move to :column_found if any
+      if options[:column_found] && options[:column_found] > 0
+        Move.forward options[:column_found]
       end
 
       if !options[:error] && !$xiki_no_search && !options[:no_search] && !options[:launch] && !buffer_changed && !moved
