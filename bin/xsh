@@ -56,7 +56,7 @@ function check_dependencies {
     yum_install="sudo yum install -q -y"
     aptget_install="sudo apt-get install -qq -y"
 
-    echo "It looks like you haven't yet installed the dependencies"
+    echo -e "\nIt looks like you haven't yet installed the dependencies"
     echo -e "xsh needs. Install them? (You can optionally install the\ndependencies yourself first.)\n"
 
     echo -e "  ${u}i${uu}nstall the dependencies"
