@@ -63,48 +63,63 @@ module Menu
     files_to_update_preview = self.files_to_update_preview.gsub(/^/, '            ')
 
     MENU = %`
-      | Explore these menu items to find the setup that's right for
-      | you. Then enable one of them. (Use the arrow keys and type
-      | Ctrl+X to expand and collapse the items below).
+      - Step 1) Explore these options to find one that's right for you
       |
-      + the 'xsh' command, and some shell key shortcut remappings/
-        | Enables the 'xsh' shell command. Also remaps the following
-        | key shortcuts in your existing shell, to make them quickly
-        | switch to xsh:
+      | Use the arrow keys to move the cursor down to one of the below
+      | items. Then type Ctrl+X to expand or collapse them, to have a
+      | look around. The first one is recommended.
+      |
+      + The 'xsh' command, and some shell key shortcut remappings/
+        | This is the recommended, default xsh setup. It enables the
+        | 'xsh' shell command. And it remaps the below key shortcuts
+        | in your existing shell, to make them quickly switch to xsh.
         |
         |   Ctrl+X   Expand a shell command in xsh
         |   Ctrl+T   Menu of all tasks for a command or dir
-        |   Ctrl+G   Grab shell commands to and from Xiki
+        |   Ctrl+G   Grab shell commands to and from xsh
         |   Ctrl+R   Recent commands (like existing Ctrl+R)
-        |   Esc+Tab  Xiki command menu
+        |   Esc, then Tab   Xiki command menu
+        |
+        - Step 2) Enable this setup, or explore the other items
+        |
+        | To enable this setup, use the arrow keys to move down to this
+        | item and type Ctrl+X to expand it:
         |
         + enable this configuration
           =replace/siblings/
-            | Expand 'save these changes', to save the following changes.
+            - Step 3) Confirm
+            |
+            | Move down to this item and type ^X (which means the same thing
+            | as Ctrl+X) to confirm you want to save the following changes:
             |
             + save these changes
             |
 #{files_to_update_preview}
             |
         |
-        | This is recommended if you (and any other people who use this
-        | account) don't use Ctrl+X, Ctrl+T, and Ctrl+G in your shell.
+        | Note: It's important that anyone who uses this account knows that
+        | the behavior of Ctrl+R, Ctrl+X, Ctrl+T, and Ctrl+G has changed. If
+        | you're not confident about this, the next option is recommended
+        | intead of this one.
         |
-        | (You can use the arrow keys and Ctrl+X to select the above item.)
-        |
-      - the 'xsh' command, and safer key shortcuts/
+      - The 'xsh' command, and safer key shortcuts/
         | This is like the previous option, but creates key shortcuts
         | that don't conflict with your shells default shortcuts:
         |
-        |   Esc, Ctrl+X  Expand a shell command in xsh
-        |   Esc, Ctrl+T  Menu of possible tasks for a command or dir
-        |   Esc, Ctrl+G  Grab shell commands to and from Xiki
-        |   Esc, Ctrl+R  Recent commands (like existing Ctrl+R)
-        |   Esc+Tab     Auto-complete
+        |   Esc, Ctrl+X   Expand a shell command in xsh
+        |   Esc, Ctrl+T   Menu of possible tasks for a command or dir
+        |   Esc, Ctrl+G   Grab shell commands to and from xsh
+        |   Esc, Ctrl+R   Recent commands (like existing Ctrl+R)
+        |   Esc, Tab      Xiki command menu
+        |
+        - Step 2) Enable this setup, or explore the other items
         |
         + enable this configuration
           =replace/siblings/
-            | Expand 'save these changes', to save the following changes.
+            - Step 3) Confirm
+            |
+            | Move down to this item and type ^X (which means the same thing
+            | as Ctrl+X) to confirm you want to save the following changes:
             |
             + save these changes
             |
@@ -113,13 +128,18 @@ module Menu
         |
         | (You can use the arrow keys and Ctrl+X to select the above item.)
         |
-      + just the 'xsh' command/
+      + Just the 'xsh' command/
         | Just install the 'xsh' command, and don't add any key
         | shortcuts in your existing shell.
         |
+        - Step 2) Enable this setup, or explore the other items
+        |
         + enable this configuration
           =replace/siblings/
-            | Expand 'save these changes', to save the following changes.
+            - Step 3) Confirm
+            |
+            | Move down to this item and type ^X (which means the same thing
+            | as Ctrl+X) to confirm you want to save the following changes:
             |
             + save these changes
             |
@@ -193,9 +213,13 @@ module Menu
         =replace/siblings/2/
           |+Success!
           |
-          | Run ". ~/.bashrc" (or the appropriate command) in any
-          | currently open shell sessions to reload the conf, or start
-          | new sessions. You can now type 'xsh' from any directory.
+          - Step 4) Reload your shell config
+          |
+          | Type ^Q (meaning Ctrl+Q) to quit xsh. Then type "bash"
+          | or "zsh" in your shell to reload your shell config.
+          |
+          | You can now type 'xsh' from any directory! (And type ^X
+          | from any directory, if you chose the default setup.)
           |
           | Xsh is alpha at this point. Experiment, but be careful!
           |
