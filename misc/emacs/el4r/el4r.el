@@ -118,6 +118,34 @@
 
 (defun el4r-override-variables ())
 
+(defun el4r-ruby18-error ()
+  (global-set-key "\C-q" 'kill-emacs)
+
+  (run-with-idle-timer 0.2 nil (lambda ()
+    (switch-to-buffer "ruby 1.8 error")
+    (xterm-mouse-mode -1)
+    (delete-region (point-min) (point-max))
+    (insert "Your ruby version is 1.8, which is a really old version.
+
+Ruby 1.9 or newer is required. Please install it, so that
+when you run this, it shows ruby 1.9 or higher:
+
+  $ ruby --version
+
+1. Type Ctrl+Q to exit xsh.
+2. Then upgrade ruby.
+3. Then try running xsh again.
+
+You may need to do something like:
+
+  $ sudo apt-get install ruby1.9.3
+  $ sudo ln -sf /usr/bin/ruby1.9.3 /usr/bin/ruby
+
+")
+  ))
+  nil
+)
+
 (defun el4r-init ()
   ;; In many cases  (eq el4r-process (get-buffer-process el4r-process-bufname))
   ;; But this sexp is nil when el4r-instance is accidentally dead.
@@ -150,11 +178,19 @@
             (make-network-process :remote (expand-file-name "~/.xikisock") :name el4r-process-name :buffer buffer)
 
             (file-error
-             (let ((process-name (start-process "xiki-forker" (get-buffer-create "*xiki-forker*") el4r-ruby-program el4r-instance-program "forker")))
+              (let ((process-name (start-process "xiki-forker" (get-buffer-create "*xiki-forker*") el4r-ruby-program el4r-instance-program "forker")))
                 (accept-process-output process-name)
               )
 
-              (message "el4r > tried 2nd")
+              ; If the script returned (lisp code) while forking, it's probably an error about ruby 1.8, so eval it
+              (with-current-buffer "*xiki-forker*"
+                (when (and (> (point-max) 1) (string= (buffer-substring 1 2) "("))
+                  ;; (let ((txt (el4r-scan-expr-from-ruby-inner))) (eval (read txt)))
+                  (eval (read (el4r-scan-expr-from-ruby-inner)))
+                )
+              )
+
+              (message "el4r > tried 2nd time")
               (make-network-process :remote (expand-file-name "~/.xikisock") :name el4r-process-name :buffer buffer)
             )
             (error
@@ -179,23 +215,36 @@
   (or (eq (process-status el4r-process) 'run) (eq (process-status el4r-process) 'open)
       (error "el4r-instance is dead.")))
 
+; Grabs elisp code from the *el4r:process* buffer
 (defun el4r-scan-expr-from-ruby ()
   (with-current-buffer el4r-process-bufname
-    (goto-char (point-min))
-    (save-match-data
-      (let ((point-after-zero (search-forward "\0" nil t))
-            expr)
-        (if point-after-zero
-            (progn
-              (setq expr
-                    (buffer-substring (point-min) (- point-after-zero 1)))
-              (delete-region (point-min) point-after-zero)
-              expr
-              )))
-    )))
+    (el4r-scan-expr-from-ruby-inner)
+  )
+)
 
-;; Alternate method that loops and continually checks to see if el4r
-;; is still running. If we hit escape, it cancels out of it.
+; Pulls (ruby code) out of the current buffer, up until ^@.
+(defun el4r-scan-expr-from-ruby-inner ()
+  (goto-char (point-min))
+  (save-match-data
+    (let ((point-after-zero (search-forward "\0" nil t))
+          expr)
+      (if point-after-zero
+        (progn
+          (setq expr
+                (buffer-substring (point-min) (- point-after-zero 1)))
+          (delete-region (point-min) point-after-zero)
+          expr
+        )
+      )
+    )
+  )
+)
+
+
+; Alternate method that loops and continually checks to see if el4r is
+; still running. If we hit escape, it cancels out of it.
+; We're using this all the time now, because it allows user to interrupt
+; long-running operations by typing esc.
 
 (if t
 

@@ -2019,7 +2019,7 @@ module Xiki
 
           task[0] = "~ #{task[0]}" if task[0]
 
-          result = menu[task, :eval=>options]
+          result = menu.expand task, :eval=>options
           return options[:output] = result || ""
 
         end
@@ -2236,7 +2236,7 @@ module Xiki
           # /something, so expand menu...
 
           task[0] = "~ #{task[0]}" if task[0]
-          result = menu[task, :eval=>options]
+          result = menu.expand task, :eval=>options
 
           options[:nest] = 1 if [["~ dir"], ["~ more"]].member?(task)
 

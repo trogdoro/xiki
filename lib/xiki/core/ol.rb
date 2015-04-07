@@ -233,7 +233,8 @@ class Ol
   end
 
   def self.b *args
-    self.a *args, :truncate=>1
+    args << {:truncate=>1}
+    self.a *args#, :truncate=>1
   end
 
   def self.a *args

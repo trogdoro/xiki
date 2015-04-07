@@ -8,6 +8,13 @@ XIKI_DIR = xiki_dir
 
 require "#{XIKI_DIR}/lib/xiki/core/ol.rb"
 
+ruby_too_old = RUBY_VERSION =~ /^1\.[78]/
+if ruby_too_old
+  STDOUT.print('(el4r-ruby18-error)')
+  STDOUT.print("\0")
+  STDOUT.flush
+end
+
 require 'etc'
 
 require 'forwardable'
@@ -1009,7 +1016,7 @@ if __FILE__ == $0
 
     STDIN.close
     grandparent_pid = Process.pid
-    Signal.trap("TERM") { puts "the xiki process is listening or 8161 and ready to fork!"; exit }
+    Signal.trap("TERM") { puts "the xiki process is listening on 8161 and ready to fork!"; exit }
 
     parent_pid = Process.fork do
 
