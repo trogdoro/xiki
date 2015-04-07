@@ -96,7 +96,7 @@ function check_dependencies {
 
     case "$doit" in
       i|I)
-        echo -e "\n\nInstalling the dependencies...\n"
+        echo -e "\n\nInstalling the dependencies. Could take a few minutes...\n"
         if [[ ! "$ruby_is_installed" =~ ^/ ]]; then
           if ! $install ruby || [[ ! $(type -P ruby) =~ ^/ ]]; then
             echo ruby install failed\!

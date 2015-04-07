@@ -63,7 +63,7 @@ module Menu
     files_to_update_preview = self.files_to_update_preview.gsub(/^/, '            ')
 
     MENU = %`
-      - Step 1) Explore these options to find one that's right for you
+      - Step 1) Explore these 3 options to find one that's right for you
       |
       | Use the arrow keys to move the cursor down to one of the below
       | items. Then type Ctrl+X to expand or collapse them, to have a
@@ -97,10 +97,10 @@ module Menu
 #{files_to_update_preview}
             |
         |
-        | Note: It's important that anyone who uses this account knows that
-        | the behavior of Ctrl+R, Ctrl+X, Ctrl+T, and Ctrl+G has changed. If
-        | you're not confident about this, the next option is recommended
-        | intead of this one.
+        | Note: It's important that anyone who uses this account knows
+        | that the behavior of Ctrl+R, Ctrl+X, Ctrl+T, and Ctrl+G has been
+        | altered. If you're not confident about this, the next option is
+        | recommended intead of this one.
         |
       - The 'xsh' command, and safer key shortcuts/
         | This is like the previous option, but creates key shortcuts
@@ -218,8 +218,8 @@ module Menu
           | Type ^Q (meaning Ctrl+Q) to quit xsh. Then type "bash"
           | or "zsh" in your shell to reload your shell config.
           |
-          | You can now type 'xsh' from any directory! (And type ^X
-          | from any directory, if you chose the default setup.)
+          | You can now type 'xsh' from any directory! (And type ^X,
+          | etc. from any directory, if you chose the default setup.)
           |
           | Xsh is alpha at this point. Experiment, but be careful!
           |
