@@ -27,7 +27,6 @@ $el.el4r_lisp_eval %`
           (let (
               (multiple-p (> (length (window-list)) 1))
               (active-p (or (not (boundp 'actual-selected-window)) (eq (selected-window) actual-selected-window)))
-              (paths-p (and (boundp 'bottom-bar-shows-file-paths) bottom-bar-shows-file-paths))
               (buffer-name (buffer-name))
             )
             (concat

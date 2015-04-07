@@ -927,7 +927,7 @@ module Xiki
       elsif extension == "." || !only_one_source || sources[-1][0][/\..+/] != extension
         return options[:output] = "| Different file matches. Try using just a dot with no extension, like:\n|\n| #{options[:name]}." if extension != "."
 
-        txt = Xiki["source", :ancestors=>[options[:path]]]
+        txt = Xiki.expand "source", :ancestors=>[options[:path]]
       else
 
         if File.file? file

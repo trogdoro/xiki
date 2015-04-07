@@ -3,3 +3,4 @@
 - editor/
   ! Tree.pipe $el.emacs_version
 - =ruby/version/
+- =os/

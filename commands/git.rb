@@ -4,8 +4,8 @@ module Xiki::Menu
     @@git_diff_options = '-U2'
 
     MENU = "
-      - .status/
       - .diff/
+      - .status/
       - .log/
       - .graph/
       - .setup/

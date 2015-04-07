@@ -260,8 +260,6 @@ return "tmp"
 
       File.open("/tmp/tmp.sql", "w") { |f| f << sql }
       out = Shell.run "mysql -u root #{db} < /tmp/tmp.sql", :sync=>true
-#Ol.stack
-Ol "out", out
 
       raise "> Mysql doesn't appear to be installed.  Install it?\n=mysql/setup/install/" if out == "sh: 1: mysql: not found\n"
       raise "> Mysql doesn't appear to be running.  Start it?\n=mysql/setup/start/" if out =~ /^ERROR.+Can't connect/
@@ -304,12 +302,10 @@ Ol "out", out
 
       if ! row
         txt = self.run default_db, args[0]
-        #         return txt.gsub /^/, '| '
         return txt.gsub /^/, ': '
       end
 
       table = sql[/from (.+?)( |$)/i, 1]
-      Ol "table", table
 
       self.save default_db, table, row
 
@@ -325,16 +321,11 @@ Ol "out", out
     # end
 
     def self.def_patterns
-      # Xiki.def(/^select /) do |path, options|
-      # Xiki.def(/^(select |delete from |create table |insert into )/) do |path, options|
-#Ol["How to make sure menus can still start with 'selecte' etc?"]
       Xiki.def(/\A(select [^\/]+ from |delete from |update |show table |create table |describe table |insert into )/) do |path, options|
-Ol "options[:path]", options[:path]
         Xiki["mysql/#{options[:path]}"]
-#        Xiki["mysql/#{options[:path]}", options]
       end
+
       #       Xiki.def(/^delete from /) do |path, options|
-      # Ol()
       #         Xiki["mysql/#{options[:path]}"]
       #       end
     end

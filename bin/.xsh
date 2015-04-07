@@ -1,4 +1,6 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
+set -f
 
 #
 # This file should be included from your bash or zsh config. It

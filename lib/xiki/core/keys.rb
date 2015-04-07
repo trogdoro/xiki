@@ -807,7 +807,7 @@ module Xiki
 
         # Jump to source of method inside the proc...
 
-        if Keys.prefix != :u && line = Line.value[/{ ?(\w+\.\w+?) ?}/, 1]
+        if Keys.prefix != :u && line = Line.value[/\{ ?(\w+\.\w+?) ?\}/, 1]
           Search.open_file_and_method line
         end
 
@@ -848,7 +848,7 @@ module Xiki
 
       beginning = View.cursor
 
-      prompt = options[:prompt] || "insert text (pause to exit): "
+      prompt = options[:prompt] || "insert text (pause to end): "
 
       # Get first char and insert
       c = $el.read_char(prompt).chr
@@ -1410,6 +1410,8 @@ module Xiki
           return if ["save"].member? path[1]   # Don't remember
         when "window"
           return if ["middle"].member? path[1]   # Don't remember
+          return if path[1] =~ /^[0-9]+$/
+          kind = :movement
         when "run"
           return if ["save"].member? path[1]   # Don't remember
         when "hop"
