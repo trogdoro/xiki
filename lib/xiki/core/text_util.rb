@@ -30,6 +30,7 @@ module Xiki
         ['snake', lambda {|o| TextUtil.snake_case(o)}],
         ['plus', lambda {|o| TextUtil.plus_case(o)}],
         ['hyphen', lambda {|o| TextUtil.hyphen_case(o)}],
+        ['whitespace', lambda {|o| TextUtil.whitespace_case(o)}],
       ]
     end
 
@@ -53,7 +54,13 @@ module Xiki
       old_indent = Line.indent(txt)   # Get indent of first line
 
       txt.gsub!(/^#{old_indent}/, '')   # Delete current indent
-      "#{txt.strip}\n"
+
+      txt.sub! /\n +\z/, ''   # Delete spaces after final linebreak
+
+      txt.sub!(/\A\n+/, '')
+      txt.sub!(/\n+\z/, '')
+      "#{txt}\n"
+
     end
 
     # TextUtil.snake_case("hi there")   # -> hi_there
@@ -88,6 +95,14 @@ module Xiki
       s.gsub(/[ _]/, '-').
         gsub(/([a-z])([A-Z0-9])/) {"#{$1}-#{$2}"}.downcase.
         gsub(/--+/, "-")
+    end
+
+    # TextUtil.whitespace_case("hi-there")
+    #   hi there
+    def self.whitespace_case txt
+      txt.gsub(/[.-_]/, ' ')
+      # gsub(/([a-z])([A-Z0-9])/) {"#{$1}-#{$2}"}.downcase.
+      # gsub(/--+/, "-")
     end
 
     # TextUtil.camel_case("hi there")   # -> HiThere

@@ -83,6 +83,17 @@ describe TextUtil, "#unindent" do
   it "adds linebreak for consistency when any subsequent line not indented" do
     TextUtil.unindent("  a\nnot indented").should == "  a\nnot indented\n"
   end
+
+  it "Doesn't remove trailing spaces on last line" do
+    TextUtil.unindent(
+      "
+        hey 
+        you 
+      ".gsub(/^      /, '')).
+      should == "hey \nyou \n"
+  end
+
+
 end
 
 describe TextUtil, "#snake_case" do

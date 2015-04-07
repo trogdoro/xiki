@@ -83,6 +83,7 @@ module Xiki
       self.add_case_option 'lower', proc {|txt| txt.downcase}
       self.add_case_option 'camel', proc {|txt| TextUtil.camel_case(txt)}
       self.add_case_option 'snake', proc {|txt| TextUtil.snake_case(txt)}
+      self.add_case_option 'whitespace', proc {|txt| TextUtil.whitespace_case(txt)}
       @@case_options
     end
 
