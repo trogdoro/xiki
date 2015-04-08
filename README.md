@@ -10,7 +10,7 @@ Xiki makes the command line friendlier and more powerful. Xiki Shell (xsh) lets 
 
 If you want a one-line installer, this should do the trick. Copy and paste it into your shell console.
 
-     cd ~; curl -LO https://github.com/trogdoro/xiki/archive/master.tar.gz; tar xzf master.tar.gz; cd xiki-master/bin; ./clearxsh; ./xsh
+     cd ~; curl -LO https://github.com/trogdoro/xiki/archive/master.tar.gz ; tar xzf master.tar.gz; cd xiki-master/bin; ./clearxsh; ./xsh
 
 It will walk you through a couple setup steps.
 
