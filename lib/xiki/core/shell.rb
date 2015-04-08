@@ -1177,11 +1177,18 @@ module Xiki
     end
 
     def self.external_plus_sticky_history
-
       txt = ""
 
       txt.<< File.read(Bookmarks[":xh/misc/logs/shell_sticky_log.notes"]) rescue ""
-      txt.<< File.read(File.expand_path("~/xiki/misc/logs/shell_external_log.notes")).gsub(/^/, '$ ') rescue nil
+
+      txt = File.read File.expand_path("~/xiki/misc/logs/shell_external_log.notes"), *Xiki::Files.encoding_binary
+      # Avoids "invalid byte sequence in UTF-8" error
+      txt.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '')
+
+      # Removes date from lines like ": 1428454597:0;ls -l"
+      txt.gsub!(/^: \d{5,20}:\d;/, '')
+
+      txt.gsub!(/^/, '$ ')
 
       if cache = self.session_cache
         txt.<< cache
