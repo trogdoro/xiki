@@ -60,7 +60,10 @@ module Xiki
       # Otherwise, just enable the keymap so A-Z filters...
 
       options["filter"] = ""
-      # This forces the before filter to delegate to .filter_each
+
+      # This forces the before filter to delegate to .filter_each...
+      # - (defun xiki-filter-pre-command-handler
+      #   - .filter_each
       $el.elvar.xiki_filter_options = options.to_json
 
       if options[:hotkey]
@@ -123,6 +126,13 @@ module Xiki
         return self.search_finished
       end
 
+      # if ch_raw == 7 || ch == " "   # C-g or space
+      if ch == " "
+        self.search_finished
+        self.filter :left=>options[:left], :right=>options[:right]
+        return
+      end
+
       if ch_raw == 7   # C-g
         return self.search_finished
       end
@@ -149,10 +159,10 @@ module Xiki
 
       # If was a valid letter but no match
 
-      if letterized =~ /^[,a-z0-9]$/i
+      if letterized =~ /^[ a-z0-9]$/i
 
         # Optionally pass letter as menu item when not found
-        if options[:letter_when_not_found] && letterized != ","
+        if options[:letter_when_not_found] && letterized != " "
           indent = Line.indent
           bounds = Tree.sibling_bounds :cross_blank_lines=>1
           View.delete bounds[0], bounds[3]
@@ -2083,7 +2093,7 @@ module Xiki
 
       # C-g or C-m, etc, so end and maybe launch again...
 
-      if letter =~ /[ \C-g\r\t\/$=#*\x1F\C-\\]/
+      if letter =~ /[\C-g\r\t\/$=#*\x1F\C-\\]/
         $el.elvar.xiki_filter_options, $el.elvar.xiki_bar_special_text = nil, nil
         $el.xiki_filter_completed
 
@@ -2174,9 +2184,15 @@ module Xiki
 
       elsif letter == "\a"
 
-      elsif letter == ","
+      elsif letter == " "
 
         # Comma, so do "or"...
+
+        # No filter yet, so just end the search
+        if options[:filter] == ""
+          $el.elvar.xiki_filter_options, $el.elvar.xiki_bar_special_text = nil, nil
+          return $el.xiki_filter_completed
+        end
 
         options[:filter] = ""
         $el.elvar.xiki_filter_options = options.to_json
@@ -2186,6 +2202,8 @@ module Xiki
       if letter == ";"
         letter = $el.char_to_string($el.read_char)
       end
+
+      # Just a normal letter, so filter
 
       filter = options[:filter]
       filter << letter
@@ -2308,13 +2326,13 @@ module Xiki
 
                   ; A hotkey char to filter or exit, so pass control to ruby...
 
-                  ((and xiki-filter-hotkey (stringp char) (string-match "[a-z0-9,\C-a-\C-z]" char))   ; Keys that delegate through to Tree.filter
+                  ((and xiki-filter-hotkey (stringp char) (string-match "[a-z0-9, \C-a-\C-z]" char))   ; Keys that delegate through to Tree.filter
                     (setq this-command 'xiki-filter-each)   ; It'll do hotkey because options[:hotkey]
                   )
 
                   ; A char to filter or exit, so pass control to ruby...
 
-                  ((and (stringp char) (string-match "[a-z0-9.,;_$#*+=/ \C-g\C-m\t\C-_\C-\\-]" char))   ; Keys that delegate through to Tree.filter
+                  ((and (stringp char) (string-match "[a-z0-9, .;_$#*+=/\C-g\C-m\t\C-_\C-\\-]" char))   ; Keys that delegate through to Tree.filter
                     (setq this-command 'xiki-filter-each)   ; This makes it the next command that will be run
                   )
 
