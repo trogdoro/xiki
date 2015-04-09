@@ -471,7 +471,7 @@ module Xiki
       Styles.apply("^\\(>>>>\\)\\(.*\n\\)", nil, :notes_h4_pipe, :notes_h4)
 
       # foo: > style like dir
-      Styles.apply("^ *\\([\A-Za-z0-9 '_.>?-]*[\A-Za-z0-9.?]:\\)\\($\\| \\)", nil, :ls_dir)   # foo:
+      Styles.apply("\\(^[\A-Za-z0-9 ][\A-Za-z0-9 '_.,>?-]*[\A-Za-z0-9.?]:\\)\\($\\| \\)", nil, :ls_dir)   # foo:
 
       # - bullets with labels and comments
 

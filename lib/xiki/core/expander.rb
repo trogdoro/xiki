@@ -506,13 +506,13 @@ module Xiki
       if args.length == 2 && menu.is_a?(String)
         options.merge! :bar_is_fine=>1
         block =
-          if args[0] =~ /^text\+/
-            lambda{ Launcher.insert menu, options }
-          elsif menu =~ /^=/   # If menu is =foo..., prompt for bookmark to nest result under
+          if menu =~ /^=/   # If menu is =foo..., prompt for bookmark to nest result under
             lambda{
               file = Keys.bookmark_as_path :include_file=>1, :prompt=>"Enter a bookmark: "
               Launcher.open "#{file}\n  #{menu}", options
             }
+          # elsif args[0] =~ /^enter\+/
+          #   lambda{ Launcher.insert menu, options }
           elsif menu =~ /^\.=/   # If menu is .=foo..., nest under current file
 
             # For key shortcuts, if .=..., use current file, or view name
