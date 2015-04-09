@@ -44,10 +44,11 @@ function check_dependencies {
   uu=`tput rmul`
 
   ruby_is_installed=$(type -P ruby)
+  emacs_is_installed=$(type -P emacs)
 
   # No emacs or no ruby, so figure out how to install...
 
-  if [[ ! "$ruby_is_installed" =~ ^/ ]] || [ "$emacs_version" = "" ]; then
+  if [[ ! "$ruby_is_installed" =~ ^/ ]] || [[ ! "$emacs_is_installed" =~ ^/ ]]; then
 
     yum_is_installed=$(type -P yum)
 
@@ -103,7 +104,7 @@ function check_dependencies {
             exit 1
           fi
         fi
-        if [ "$emacs_version" = "" ]; then
+        if [[ ! "$emacs_is_installed" =~ ^/ ]]; then
           if ! $install emacs || [[ ! $(type -P emacs) =~ ^/ ]]; then
             echo emacs install failed\!
             exit 1
@@ -117,7 +118,7 @@ function check_dependencies {
         if [[ ! "$ruby_is_installed" =~ ^/ ]]; then
           echo "  $ $install ruby"
         fi
-        if [ "$emacs_version" = "" ]; then
+        if [[ ! "$emacs_is_installed" =~ ^/ ]]; then
           echo "  $ $install emacs"
         fi
         echo -e "\nNote that xsh's dependencies are largely transparent\nto the user.  You don't need to have any expertise\nabout them to use xsh."
@@ -245,7 +246,7 @@ case $1 in
 
   # Load normally, so save args and launch emacs...
 
-  if [[ $emacs_version =~ "Emacs 22" ]]; then
+  if [[ $emacs_version =~ "Emacs 2[21]" ]]; then
 
     # Emacs 22, so don't use --daemon (a little slower, but won't flicker in Emacs 22)...
 
