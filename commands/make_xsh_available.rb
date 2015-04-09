@@ -63,11 +63,11 @@ module Menu
     files_to_update_preview = self.files_to_update_preview.gsub(/^/, '            ')
 
     MENU = %`
-      - Step 1) Explore these 3 options to find one that's right for you
-      |
       | Use the arrow keys to move the cursor down to one of the below
       | items. Then type Ctrl+X to expand or collapse them, to have a
       | look around. The first one is recommended.
+      |
+      - Step 1) Explore these 3 options to find one that's right for you
       |
       + The 'xsh' command, and some shell key shortcut remappings/
         | This is the recommended, default xsh setup. It enables the
