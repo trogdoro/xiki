@@ -246,7 +246,8 @@ case $1 in
 
   # Load normally, so save args and launch emacs...
 
-  if [[ $emacs_version =~ "Emacs 2[21]" ]]; then
+  # if [[ $emacs_version =~ "Emacs 2[21]" ]]; then
+  if [[ $emacs_version =~ "Emacs 22" ]]; then
 
     # Emacs 22, so don't use --daemon (a little slower, but won't flicker in Emacs 22)...
 
