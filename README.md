@@ -1,5 +1,7 @@
 ## Xiki expands your command line
 
+[![Join the chat at https://gitter.im/trogdoro/xiki](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/trogdoro/xiki?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 Xiki makes the command line friendlier and more powerful. Xiki Shell (xsh) lets you use Xiki from command line, in a way that augments your current favorite shell (bash or zsh).
 
     $ xsh
