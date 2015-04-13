@@ -2,6 +2,8 @@ ancestors = options[:ancestors]
 menu_steps = ancestors && ancestors[-1] == "menu steps/"
 ancestors.pop if menu_steps
 
+options[:no_slash] = 1
+
 # / and no ancestors, so display message...
 
 if ! ancestors && args == []

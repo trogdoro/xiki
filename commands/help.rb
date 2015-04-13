@@ -27,8 +27,8 @@ module Menu
 
       | See
       << help topics/
-      << tutorial/
       << faq/
+      << tutorial/
       << keys/
       << conf/
     `

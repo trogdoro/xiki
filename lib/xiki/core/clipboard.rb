@@ -363,6 +363,10 @@ module Xiki
       prefix = Keys.prefix # :clear=>1
 
       if prefix == :u
+        return Line.delete
+      end
+
+      if prefix == 0
         # Delete the blank line, if nothing here
         return Line.delete if Line.blank?
         return Line.delete(:leave_linebreak)

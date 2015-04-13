@@ -74,7 +74,7 @@ module Menu
         | 'xsh' shell command. And it remaps the below key shortcuts
         | in your existing shell, to make them quickly switch to xsh.
         |
-        |   Ctrl+X   Expand a shell command in xsh
+        |   Ctrl+X   Expand (meaning execute) a shell command in xsh
         |   Ctrl+T   Menu of all tasks for a command or dir
         |   Ctrl+G   Grab shell commands to and from xsh
         |   Ctrl+R   Recent commands (like existing Ctrl+R)

@@ -47,7 +47,7 @@ module Xiki
         txt = Tree.quote txt, :char=>quote
         txt.gsub! /^/, indent
 
-        View << txt
+        View << txt+"\n"
         insert_right = bounds[0] + txt.length
         orig = insert_right-1 if orig > insert_right
         View.cursor = orig
