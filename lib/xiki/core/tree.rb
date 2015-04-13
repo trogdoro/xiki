@@ -44,7 +44,7 @@ module Xiki
 
     def self.filter options={}   # Tree.filter / tree filter / tree search
 
-      filter_count = $el.elvar.xiki_filter_count rescue 0
+      in_initial_filter = $el.elvar.xiki_in_initial_filter rescue nil
 
       $el.make_variable_buffer_local :xiki_filter_options
       $el.make_variable_buffer_local :xiki_filter_hotkey
@@ -78,7 +78,7 @@ module Xiki
       else
 
         # If in xsh view, and no filters yet, show "ESC" instead of quit
-        quit_key = filter_count == 0 && View.name == "xsh" && ! View.file ?
+        quit_key = in_initial_filter && View.name == "xsh" && ! View.file ?
           "ESC Quit" :
           "^Q Quit"
 
@@ -99,7 +99,6 @@ module Xiki
     def self.filter_hotkey letter, options={}
 
       $el.elvar.xiki_filter_options, $el.elvar.xiki_bar_special_text = nil, nil
-      $el.xiki_filter_completed
       $el.elvar.xiki_filter_hotkey = nil
 
       letters = self.filter_hotkey_extract_letters options
@@ -179,10 +178,6 @@ module Xiki
       $el.command_execute ch
 
       nil   # We handled it
-    end
-
-    def self.filter_hotkey_escape
-      View.kill if View.name =~ /\/$/
     end
 
     def self.delete_hotkey_underlines
@@ -1510,7 +1505,6 @@ module Xiki
 
             item = branch[-1]
             result << "#{item}\n"  # Output
-
             options[:exclamations_args] = Path.split(target)[branch.length-1..-1]
 
             options[:children_line] = i-1
@@ -2095,7 +2089,6 @@ module Xiki
 
       if letter =~ /[\C-g\r\t\/$=#*\x1F\C-\\]/
         $el.elvar.xiki_filter_options, $el.elvar.xiki_bar_special_text = nil, nil
-        $el.xiki_filter_completed
 
         if letter == "\r"
 
@@ -2178,7 +2171,6 @@ module Xiki
         # Number, so jump to nth...
 
         $el.elvar.xiki_filter_options, $el.elvar.xiki_bar_special_text = nil, nil
-        $el.xiki_filter_completed
         self.search_number letter, options
         return
 
@@ -2191,7 +2183,7 @@ module Xiki
         # No filter yet, so just end the search
         if options[:filter] == ""
           $el.elvar.xiki_filter_options, $el.elvar.xiki_bar_special_text = nil, nil
-          return $el.xiki_filter_completed
+          return
         end
 
         options[:filter] = ""
@@ -2282,7 +2274,9 @@ module Xiki
 
       # This was the 1st search done in this temporary view, so kill view
 
-      if $el.elvar.xiki_filter_count == 1
+      xiki_in_initial_filter = $el.boundp :xiki_in_initial_filter
+
+      if $el.boundp :xiki_in_initial_filter
         View.kill
         DiffLog.quit if views_open.length == 1
       end
@@ -2297,14 +2291,6 @@ module Xiki
           ; For Tree.filter (normal type to narrow down)
 
           (defun xiki-filter-each () (interactive) (el4r-ruby-eval "Xiki::Tree.filter_each"))
-
-          (defun xiki-filter-completed ()
-            (if (boundp 'xiki-filter-count)
-              (setq xiki-filter-count (+ 1 xiki-filter-count))
-              (make-local-variable 'xiki-filter-count)
-              (setq xiki-filter-count 1)
-            )
-          )
 
           (defun xiki-filter-pre-command-handler () (interactive)
 
@@ -2363,7 +2349,6 @@ module Xiki
           (defun xiki-filter-cancel ()
 
             (setq xiki-filter-options nil)
-            (xiki-filter-completed)
 
             ; Remember what we just did, for later
             (make-local-variable 'xiki-filter-just-finished)
@@ -2377,6 +2362,10 @@ module Xiki
           )
 
           (defun xiki-filter-post-command-handler () (interactive)
+            ; Unset that we're in the initial filter, unless filter options are set
+            (when (and (boundp 'xiki-in-initial-filter) (not (and (boundp 'xiki-filter-options) xiki-filter-options)))
+              (makunbound 'xiki-in-initial-filter)
+            )
             (when (boundp 'xiki-filter-just-finished)
               (makunbound 'xiki-filter-just-finished)
             )

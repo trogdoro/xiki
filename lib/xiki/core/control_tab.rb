@@ -39,7 +39,7 @@ module Xiki
         views_open = Buffers.list.map { |o| name = $el.buffer_name(o) }.select { |o| o !~ /^ ?\*/ && o != "views/" }
 
         # No other view open (aside from *... and views/), so just quit
-        return DiffLog.quit if views_open.length == 1
+        return if views_open.length == 1
 
       end
 

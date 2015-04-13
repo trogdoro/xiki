@@ -172,9 +172,9 @@ module Xiki
 
     def self.jump_keys
 
-      Xiki.def("jump+ide", :noob=>1){ View.layout_todo_and_nav }
       Xiki.def("jump+todo", :noob=>1){ View.layout_todo }
-      Xiki.def("jump+notes", :noob=>1){ View.layout_nav }   # jump+n
+      Xiki.def("jump+nav", :noob=>1){ View.layout_nav }   # jump+n
+      Xiki.def("jump+ide", :noob=>1){ View.layout_todo_and_nav }
 
       Xiki.def("jump+output"){ View.layout_outlog }
       Xiki.def("jump+all"){ View.layout_outlog :all=>1 }
@@ -182,11 +182,11 @@ module Xiki
       Xiki.def("jump+quick"){ View.layout_quick }
 
       Xiki.def("jump+line"){ Move.to_line }
-      Xiki.def("jump+file"){ FileTree.tree :recursive=>1 }
 
       Xiki.def("jump+unsaved"){ Launcher.open("unsaved/") }
       Xiki.def("jump+repository"){ Git.do_compare_repository }
-      # Xiki.def("jump+related+test"){ Code.open_related_rspec }
+
+      Xiki.def("jump+expose+test"){ Code.open_related_rspec }
       # Xiki.def("jump+related+file"){ Code.open_related_file }
 
       Xiki.def("jump+move+file"){ Launcher.open("Todo > Find method that moves the current file...", :no_launch=>1) }
@@ -197,7 +197,6 @@ module Xiki
 
       Xiki.def("jump+status"){ Git.do_status }
       Xiki.def("jump+diff"){ Git.do_push }   # Commit to repos, push, etc
-      Xiki.def("jump+edge"){ View.to_relative :line=>1 }   # go to nth line, relative to top of window (up+ for middle, up+up+ for bottom)
 
       Xiki.def("jump+command"){ Launcher.open_nested_command }
       Xiki.def("jump+prompt"){ Shell.prompt_for_bookmark }
@@ -223,8 +222,6 @@ module Xiki
       Xiki.def("run+macro"){ Macros.run }   # do last macro
       Xiki.def("run+todo"){ Launcher.do_task }
       Xiki.def("run+up"){ Launcher.do_last_launch :here=>1 }
-
-      Xiki.def("run+search"){ Search.outline_search }
 
       Xiki.def("run+indent"){ Code.indent_to }
       Xiki.def("run+comment"){ Code.comment }
@@ -331,6 +328,8 @@ module Xiki
       Xiki.def("hop+previous"){ Move.to_previous_paragraph :skip_if_top=>1 }   # to beginning of previous paragraph
 
       Xiki.def("hop+outline"){ FileTree.to_outline }   # OO - open line (O's emacs default)
+      Xiki.def("hop+search"){ Search.outline_search }
+      Xiki.def("hop+edge"){ View.to_relative :line=>1 }   # go to nth line, relative to top of window (up+ for middle, up+up+ for bottom)
       Xiki.def("hop+indent"){ Move.to_indent }
       Xiki.def("hop+junior"){ Move.to_junior }
 
@@ -480,7 +479,10 @@ module Xiki
       Xiki.def("search+have+wikipedia"){ Search.isearch_have_wikipedia }   # Grab everything except chars on edges
       Xiki.def("search+have+special"){ Search.isearch_just_special }
 
-     # I: leave unmapped - had issues using it (messes up position)
+      # Just so it's consistent with ^H^H when deleting selection
+      Xiki.def("search+have+hit"){ Search.isearch_clear }
+
+      # I: leave unmapped - had issues using it (messes up position)
       $el.define_key :isearch_mode_map, $el.kbd("C-j"), nil
       Xiki.def("search+just+after"){ Search.isearch_just_after }
       Xiki.def("search+just+case"){ Search.isearch_just_case }   # make match be camel case

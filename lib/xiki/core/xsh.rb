@@ -24,6 +24,8 @@ module Xiki
 
       Xiki.init_in_client   # Do client-specific init stuff (normal .init methods can run before the process is connected to a client)
 
+      $el.elvar.xiki_in_initial_filter = 1
+
       # Define keys and such...
 
       self.setup
