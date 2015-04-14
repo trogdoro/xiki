@@ -49,11 +49,12 @@ module Xiki
         returned = PythonHandler.eval code, options.merge(:file=>source_file)
       else   # If Ruby
 
+        options = options[:eval] if options && options[:eval].is_a?(Hash)   # So what we passed in :eval is avaliable as the 'options' param
+
         # This overrides the args and path of the root menu with one relative to this !... code.
         # They can still get the full paths via options.
-        code = "args = #{exclamations_args.inspect}\npath = #{Path.join(exclamations_args).inspect}\n#{code}"
+        options[:path_relative], options[:args_relative] = Path.join(exclamations_args), exclamations_args
 
-        options = options[:eval] if options && options[:eval].is_a?(Hash)   # So what we passed in :eval is avaliable as the 'options' param
         returned, out, exception = Code.eval code, source_file, line_number, {}, options
       end
 

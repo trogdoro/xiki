@@ -485,13 +485,6 @@ module Xiki
     nil
   end
 
-  # .foo > call command declared in same file...
-
-  # TODO > remove ".foo" convention, and look for local command if "foo" (make them have precedence over global commands)
-  Xiki.def(%r"^\.(\w+)(\/|$)") do |path, options|   # "
-    Launcher.launch_local path, options
-  end
-
   # :-... or :+..., so save as before and after...
 
   Xiki.def(%r"^:[?+-]") do |path, options|

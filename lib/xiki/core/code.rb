@@ -255,10 +255,10 @@ module Xiki
       stdout = nil
       exception = nil
 
-      begin   # Run code
+      # Run the code...
 
+      begin
         returned = self.eval_inner code, file, line, eval_options, options
-
       rescue Exception => e
         exception = e
       end
@@ -289,7 +289,7 @@ module Xiki
       target = eval_options[:target_module] || Object
 
       # Put here to be made available to code being eval'ed
-      args, path, dir, task = options[:args]||[], options[:path], options[:dir], options[:task]
+      args, path, dir, task = options[:args_relative]||options[:args]||[], options[:path_relative]||options[:path], options[:dir], options[:task]
 
       if code.is_a? Proc
         target.module_eval &code

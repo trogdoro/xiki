@@ -1,8 +1,9 @@
 $:.unshift "spec/"
 
 require './spec/spec_helper'
-
-Dir["./lib/xiki/*_handler.rb"].each{|o|
+require "xiki/core/launcher"
+require "xiki/core/xik"
+Dir["./lib/xiki/handlers/*_handler.rb"].each{|o|
   require o.sub("./lib/", "")
 }
 
@@ -247,6 +248,22 @@ describe Expander, "#parse" do
 
 end
 
+describe Expander, "#expand_literal_command method" do
+  before(:each) do
+    stub_menu_path_dirs   # Has to be before each for some reason
+  end
+
+  it "expands command text with path" do
+    txt = Expander.expand_literal_command "a/\n  b", :path=>"a"
+    txt.should == 'b'
+  end
+
+  it "expands when embedded code" do
+    txt = Expander.expand_literal_command "a/\n  ! 1 + 1", :path=>"a"
+    txt.should == '2'
+  end
+end
+
 describe Expander, "#expand method" do
   before(:each) do
     stub_menu_path_dirs   # Has to be before each for some reason
@@ -278,6 +295,14 @@ describe Expander, "#expand method" do
 
   it "expands menufied path" do
     Expander.expand("#{Xiki.dir}spec/fixtures/menu/dr//").should == "+ a/\n+ b/\n"
+  end
+
+  it "expands when literal text of command passed" do
+    Expander.expand(["a"], :command_text=>"a/\n  b").should == "b"
+  end
+
+  it "expands when literal text of command with path" do
+    Expander.expand(["a/b"], :command_text=>"a/\n  b/\n    c").should == "c"
   end
 
 end

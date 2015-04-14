@@ -147,7 +147,8 @@ module Xiki
       return current if ! path
 
       return nil if ! @txt
-      result = Tree.children @txt, path
+
+      result = Tree.children @txt, path, options
       if result
         result.strip!
       end

@@ -226,9 +226,12 @@ module Xiki
         self.expanders options
       end
 
-      # Task, so make future C-.'s expand with task...
+      # Task, so make future ^X's expand with task...
 
-      # If it's a class, just .invoke it directly
+      # Command source passed in as text, so .invoke it as the literal command text
+      return self.expand_literal_command(options[:command_text], options) if options[:command_text]
+
+      # It's a class, so just .invoke it directly
       return Invoker.invoke *args if options[:class]
 
       expanders = options[:expanders]
@@ -334,12 +337,21 @@ module Xiki
       options = args[0]   # Probably a single options hash
       options = self.parse(*args) if ! args[0].is_a?(Hash)   # If not just a hash, assume they want us to parse
 
+      return if options[:command_text]   # Expanders aren't relevant
+
       [PrePattern, Menu, FileTree, Pattern, MenuSuggester].each do |clazz|   # For each expander
         clazz.expands? options
         break if options[:halt]
       end
 
       options
+    end
+
+    # Just expands command body that was passed in (usually options[:command_text])
+
+    def self.expand_literal_command txt, options
+      xik = Xik.new txt
+      xik[options[:path], :eval=>options]
     end
 
     # Move ancestors into options if any

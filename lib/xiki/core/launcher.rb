@@ -244,7 +244,8 @@ module Xiki
           # Find "- foo) bar", "- ) foo", or "- )\nbar"
           label = Emacs.regexp_quote options[:label]
           Search.forward "^ *[+-] \\(#{label})\\|) #{label}/?$\\|)\n[^a-zA-Z_]*#{label}/?$\\)", :beginning=>1
-          Line.next if Line =~ /^ *[+-] [\w .+']*\)$/   # Next line if this is just a label > label regex
+
+          Notes.next_line_when_paren_label
         end
 
         return if options[:navigate]
@@ -796,6 +797,13 @@ Ol["oh, this path is an array: #{path}!"] if path.is_a?(Array)
         path[-1] << options[:path_append]
       end
 
+      # A local command maybe found in the above text in this file, so use it...
+
+      if path[0] =~ /\A[a-z0-9 ]+(\/|\z)/i
+        root = path[0][/[a-z0-9 ]+/i]
+        local_command = self.extract_command root
+        options[:command_text] = local_command
+      end
 
       # Expand command...
 
@@ -1302,60 +1310,26 @@ Ol["oh, this path is an array: #{path}!"] if path.is_a?(Array)
       Launcher.do_last_launch :nth=>1, :prefix=>:u
     end
 
-    def self.launch_local path, options
-      options.delete :no_slash
+    # Grabs +foo command out of current view, by searching upward for it.
+    def self.extract_command root
 
-      path = path.sub /^\./, '+'   # We want +foo, not .foo
-      root = path[/^[^\/]+/]
+      cursor = View.cursor
+      result = Search.backward "^\\+#{root}/?$"
 
-      "Todo > find in current file > use .file_or_temp_file"
+      return if ! result
 
-      file = View.file_or_temp_file
+      left = View.cursor
+      Tree.after_children
+      right = View.cursor
+      View.cursor = left
+      txt = View.txt left, right
 
-      # Grab +foo definition...
+      View.cursor = cursor
 
-      definition = Launcher.extract_command root, :file=>file
-
-      # Todo > if not found, look for it in :t if not there?
-      # Todo > what if not found at all?
-
-      Tree.children definition, path
-
-    end
-
-    # Launcher.extract_command :file=>"/tmp/foo.notes"
-    # Launcher.extract_command :txt=>"+foo\n  bar\n"
-    def self.extract_command command, options
-
-      file, txt = options[:file], options[:txt]
-
-      if txt
-        txt = txt.split("\n")
-        enumerator = txt.each
-
-        # Go through until found at left margin
-
-      elsif file
-        enumerator = IO.foreach(file, *Files.encoding_binary)
-      end
-
-      found, last_was_blank = "", nil
-      enumerator.each do |line|
-        line.sub! /\n/, ''   # When iterating file, includes linebreaks
-        # If not found yet, check for line
-        if found == ""
-          found << "#{line}\n" if line =~ /^#{Regexp.quote command}(\/|$)/
-        else   # Found, so append until line at margin or 2 blank lines
-          break if line =~ /^[^ \n]/
-          break if line == "" && last_was_blank
-          found << "#{line}\n"
-          last_was_blank = true if line == ""
-        end
-      end
-
-      found
+      txt.sub!(/^\+/, '')
 
     end
+
   end
 
 end
