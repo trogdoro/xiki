@@ -25,17 +25,9 @@ if [ "$xiki_dir" = "$HOME" ]; then
   exit
 fi
 
-# Maybe don't add this if it's already there, or if ruby and emacs are in the path already
-export PATH="$PATH":/usr/local/bin
-
-
 # Get emacs version, or blank if emacs not found...
 
 emacs_version=`$emacs --version 2>&1`
-if [[ $emacs_version =~ "command not found" ]]; then
-  emacs_version=""
-fi
-
 
 function check_dependencies {
 
@@ -51,11 +43,12 @@ function check_dependencies {
   if [[ ! "$ruby_is_installed" =~ ^/ ]] || [[ ! "$emacs_is_installed" =~ ^/ ]]; then
 
     yum_is_installed=$(type -P yum)
-
     aptget_is_installed=$(type -P apt-get)
+    pacman_is_installed=$(type -P pacman)
 
     yum_install="sudo yum install -q -y"
     aptget_install="sudo apt-get install -qq -y"
+    pacman_install="sudo pacman -S"
 
     echo -e "\nIt looks like you haven't yet installed the dependencies"
     echo -e "xsh needs. Install them? (You can optionally install the\ndependencies yourself first.)\n"
@@ -81,6 +74,8 @@ function check_dependencies {
         install="$aptget_install"
       elif [ "$choice" = "y" ]; then
         install="$yum_install"
+      elif [ "$choice" = "p" ]; then
+        install="$pacman_install"
       else
         echo "You didn't type 'a' or 'y'."
         exit 1
@@ -90,6 +85,8 @@ function check_dependencies {
       install="$aptget_install"
     elif [[ "$yum_is_installed" =~ ^/ ]]; then
       install="$yum_install"
+    elif [[ "$pacman_is_installed" =~ ^/ ]]; then
+      install="$pacman_install"
     else
       dir="$xiki_dir/misc/install"
       install="sudo bash $dir/install_source_dependency.sh"
@@ -246,8 +243,7 @@ case $1 in
 
   # Load normally, so save args and launch emacs...
 
-  # if [[ $emacs_version =~ "Emacs 2[21]" ]]; then
-  if [[ $emacs_version =~ "Emacs 22" ]]; then
+  if [[ $emacs_version =~ Emacs\ 2[21] ]]; then
 
     # Emacs 22, so don't use --daemon (a little slower, but won't flicker in Emacs 22)...
 
