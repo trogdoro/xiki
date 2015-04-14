@@ -87,6 +87,8 @@ module Xiki
       Xiki.def("open+key"){ Keys.jump_to_code }   # jump to ruby code of key definition
       Xiki.def("open+whereabouts"){ Code.do_list_ancestors }
 
+      Xiki.def("open+often"){ View.open ":o" }
+
       # G: leave unmapped for escape
 
       Xiki.def("open+list+faces"){ Styles.list_faces }   # list

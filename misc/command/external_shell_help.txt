@@ -25,7 +25,7 @@ Options:
   -g  Grab shell command into xsh
   -t  Menu of tasks for a shell command or dir
   -r  Recent shell history, like Ctrl+R (for external shell)
-  -t  Tab, to auto-complete (not quite finished)
+  -tab  Tab, to auto-complete (not quite finished)
   -s  Search in files
   -f  Search filenames
   -e  Examples
@@ -33,7 +33,7 @@ Options:
   -n  Notes
   -fa Favorites
   -l  List xsh sessions
-  -o  Opened files (in this session and in previous ones)
+  -o  Open specific file, or list recent files
   -i  Isolated - Better mode to debug startup problems
       Doesn't connect to the cached xsh process for faster startup
   -b  List file bookmarks

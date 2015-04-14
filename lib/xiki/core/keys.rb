@@ -1411,15 +1411,23 @@ module Xiki
         when "window"
           return if ["middle"].member? path[1]   # Don't remember
           return if path[1] =~ /^[0-9]+$/
-          kind = :movement
+
+          if ["kill", "delete"].member? path[1]   # Certain ones are actions
+            kind = :action
+          else
+            kind = :movement
+          end
         when "run"
           return if ["save"].member? path[1]   # Don't remember
         when "hop"
-          return kind = :action if ["hack"].member? path[1]   # Certain ones are actions
           return if ["start", "end"].member?(path[1]) && ! prefix   # Don't remember
           return if ["top", "bottom"].member?(path[1])   # Don't remember
           return if path[1] =~ /^[0-9]$/
-          kind = :movement
+          if ["hit"].member? path[1]   # Certain ones are actions
+            kind = :action
+          else
+            kind = :movement
+          end
         when "jump", "next", "previous"
           kind = :movement
         when "tile"

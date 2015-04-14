@@ -495,10 +495,6 @@ module Xiki
       # | >...! headings
       Styles.apply("^ *\\(|\\)\\( ?\\)\\(>\\)\\(.*!:?\n\\)", nil, :quote_heading_pipe, :ls_quote, :quote_heading_bracket, :quote_heading_h1_green)
 
-      #    >... headings (indented)
-      Styles.apply("^ +\\(> ?\\)\\(.*\n\\)", nil, :quote_heading_bracket, :quote_heading_h1)
-      Styles.apply("^ +\\(> ?\\)\\(.*!\n\\)", nil, :quote_heading_bracket, :quote_heading_h1_green)
-
       #    >>
       Styles.apply("^ +\\(>>\\)\\(.*\n\\)", nil, :quote_heading_bracket, :quote_heading_h2)
 
@@ -2069,7 +2065,7 @@ module Xiki
           menu = Xik.new(%`
             ~ examples/
               ! FileTree.example_commands options
-            ~ recent/
+            ~ recent commands/
               ! options[:nest] = 1
               ! options[:no_task] = 1
               ! txt = Shell.external_plus_sticky_history

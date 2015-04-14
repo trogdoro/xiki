@@ -473,6 +473,10 @@ module Xiki
       # foo: > style like dir
       Styles.apply("\\(^[\A-Za-z0-9 ][\A-Za-z0-9 '_.,>?-]*[\A-Za-z0-9.?]:\\)\\($\\| \\)", nil, :ls_dir)   # foo:
 
+      #    >... headings (indented)
+      Styles.apply("^ +\\(> ?\\)\\(.*\n\\)", nil, :quote_heading_bracket, :quote_heading_h1)
+      Styles.apply("^ +\\(> ?\\)\\(.*!\n\\)", nil, :quote_heading_bracket, :quote_heading_h1_green)
+
       # - bullets with labels and comments
 
       Styles.apply("^[ \t]*\\([<+-][<+=-]*\\) \\([^/:\n]+:\\) ", nil, :ls_bullet, :ls_dir)   # - foo: bar
@@ -1361,12 +1365,18 @@ module Xiki
     end
 
     def self.next_paren_label
+
       # Move forward if at beginning of line
       Move.forward if Line.at_left? && ! View.at_top?
-      found = Search.forward "^ *[+-] [a-zA-Z0-9 +'.]*)\\($\\| \\)", :beginning=>true
+      found = Search.forward "^ *[+-] [a-zA-Z0-9 +'.>]*)\\($\\| \\)", :beginning=>true
       return Move.backward if ! found
-      # label for the next line, so move to next line
-      Line.to_next if Line[/^ *[+-] [a-zA-Z0-9 +'.]*\)$/]   # '
+
+      # Label for the next line, so move to next line
+      self.next_line_when_paren_label
+    end
+
+    def self.next_line_when_paren_label
+      Line.to_next if Line[/^ *[+-] [a-zA-Z0-9 +'.>]*\)$/]   # '
     end
 
     def self.extract_paren_labels options={}
@@ -1375,7 +1385,7 @@ module Xiki
 
       file, limit, indent = options[:file], options[:limit], options[:indent]
 
-      path = View.file_or_temp_file(:file=>file)
+      path = View.as_file_or_temp_file(:file=>file)
       extract_from_next_line = nil
       label = nil
       IO.foreach(path, *Files.encoding_binary) do |line|

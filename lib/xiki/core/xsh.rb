@@ -140,7 +140,7 @@ module Xiki
           options[:do_nothing] = 1
           View.open "#{View.dir}/#{args.strip}"
         else
-          args = "opened/"
+          args = "recent/"
         end
 
       elsif args.slice! /^-x /
