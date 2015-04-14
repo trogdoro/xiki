@@ -943,9 +943,9 @@ module Xiki
     # Returns path to current file if saved.
     # If file not saved or file is a buffer, it writes it to a temp file and returns that path.
     #
-    # View.file_or_temp_file :buffer=>"todo.notes"
-    # View.file_or_temp_file :file=>":t"
-    def self.file_or_temp_file options={}
+    # View.as_file_or_temp_file :buffer=>"todo.notes"
+    # View.as_file_or_temp_file :file=>":t"
+    def self.as_file_or_temp_file options={}
 
       buffer = options[:buffer]
 

@@ -363,7 +363,7 @@ module Xiki
 
       # Xiki diff in one view...
 
-      DiffLog.diff_files View.file_or_temp_file, View.file_or_temp_file(:buffer=>dest_path), :display_in_view=>1
+      DiffLog.diff_files View.as_file_or_temp_file, View.as_file_or_temp_file(:buffer=>dest_path), :display_in_view=>1
 
     end
 
