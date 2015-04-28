@@ -1,17 +1,17 @@
 Examples when using key shortcuts:
-  ls <Ctrl+X>   List directory, then you can type to filter down
-                or expand to navigate files and dirs
-  . <Ctrl+X>     Shows the current dir,
-  -f <Ctrl+X>    Show tree of files, then you can type to filter
+  ls <^X>        List directory, then you can type to filter down
+                 or expand to navigate files and dirs
+  . <^X>         Shows the current dir,
+  -f <^X>        Show tree of files, then you can type to filter
   . <Ctrl+G>     Shows the current dir, with actions to perform on it
-  :d <Ctrl+X>    Navigates the desktop dir
-  -b . <Ctrl+X>  Creates a bookmark for your current dir
-  :foo <Ctrl+X>  Navigates a "foo" dir you've created
-  -ip <Ctrl+X>   Show your ip (runs the "ip" xiki command)
-  -tables <Ctrl+X>   Navigate and update your mysql db tables
-  cd <Ctrl+R> Shows the previous cd commands you've typed
-  git <Esc, Tab>   Shows the previous cd commands you've typed
-  ^html <Ctrl+X> Shows headings for your notes about "html"
+  :d <^X>        Navigates the desktop dir
+  -b . <^X>      Creates a bookmark for your current dir
+  :foo <^X>      Navigates a "foo" dir you've created
+  -ip <^X>       Show your ip (runs the "ip" xiki command)
+  -tables <^X>   Navigate and update your mysql db tables
+  cd <Ctrl+R>    Shows the previous cd commands you've typed
+  git <Esc, Tab> Shows the previous cd commands you've typed
+  ^html <^X>     Shows headings for your notes about "html"
 
 Examples:
   xsh

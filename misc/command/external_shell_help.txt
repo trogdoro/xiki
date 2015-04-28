@@ -35,7 +35,8 @@ Options:
   -l  List xsh sessions
   -o  Open specific file, or list recent files
   -i  Isolated - Better mode to debug startup problems
-      Doesn't connect to the cached xsh process for faster startup
+      Doesn't connect to the cached xsh process for faster
+      startup
   -b  List file bookmarks
   -a  List all commands
 
