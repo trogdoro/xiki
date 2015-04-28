@@ -87,7 +87,8 @@ module Xiki
     end
     url.gsub! '%', '%25'
     url.gsub! '"', '%22'
-    prefix == :u ? $el.browse_url(url) : Firefox.url(url)
+
+    Browser.url url
 
     "<!"
   end

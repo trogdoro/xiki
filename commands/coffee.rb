@@ -1,13 +1,25 @@
+# Handle tasks
+
+return "~ compile" if task == []
+if task == ["compile"]
+  return Tree.quote Shell.command "coffee -c --stdio", :stdin=>args[0]
+end
+
+# /, so show message...
+
 return "
-  | # Type some coffeescript here (to run in the browser)
-  | alert 'hi'
-  > See
-  << cs/
-  " if args.empty?
+  | # Type some coffeescript here
+  | console.log 'hi'
+  " if args == []
 
-return "=beg/quoted/" if args[0] !~ /\n/
+# /code, so execute it...
 
-txt = CoffeeScript.to_js args[0]
-Browser.js txt
+# If coffeescript not installed, give them "gem install" command...
 
-"<! ran in browser!"
+return "
+  > First install coffeescript
+  % gem install coffeescript
+  " if `which coffee` == ""
+
+Tree.quote CoffeeHandler.eval args[0]
+
