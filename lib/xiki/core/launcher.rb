@@ -797,12 +797,13 @@ Ol["oh, this path is an array: #{path}!"] if path.is_a?(Array)
         path[-1] << options[:path_append]
       end
 
-      # A local command maybe found in the above text in this file, so use it...
+      # A +foo local command maybe found in the above text in this file, so use it...
 
       if path[0] =~ /\A[a-z0-9 ]+(\/|\z)/i
         root = path[0][/[a-z0-9 ]+/i]
         local_command = self.extract_command root
-        options[:command_text] = local_command
+        # Don't delegate to local command if $...
+        options[:command_text] = local_command if path[-1] !~ /^\$/
       end
 
       # Expand command...
