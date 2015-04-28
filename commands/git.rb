@@ -658,7 +658,11 @@ module Xiki::Menu
     end
 
     def self.push_internal dest, dir
-      Shell.run "git push origin #{dest}", :dir=>dir
+
+      # Todo > only cd if necessary!
+
+      DiffLog.quit_and_run "cd \"#{dir}\"\ngit push origin #{dest}"
+
       nil
     end
 
@@ -685,7 +689,10 @@ module Xiki::Menu
       siblings = siblings.map{|o| "\"#{o}\""}.join("\\\n  ")
       siblings.gsub!(" -> ", "\" \"")   # In case any "a -> b" exist, from renames
 
-      Shell.run "git commit -m \"#{message}\" #{siblings}", :dir=>dir
+      # Todo > only cd if necessary!
+
+      DiffLog.quit_and_run "cd \"#{dir}\"\ngit commit -m \"#{message}\" #{siblings}"
+
     end
 
     def self.unadd
