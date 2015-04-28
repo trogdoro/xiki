@@ -54,12 +54,9 @@ module Xiki
     :bg=>"#333",
     )
 
-
   # Message area at bottom
   Styles.minibuffer_prompt :size=>110, :face=>"Monaco", :fg=>"#999"
   Styles.minibuffer :size=>110, :face=>"Monaco", :fg=>"#999"
   Styles.echo_area :size=>110, :face=>"Monaco", :fg=>"#999"
-
-  Styles.define :trailing_whitespace, :bg=>'444'
 
 end

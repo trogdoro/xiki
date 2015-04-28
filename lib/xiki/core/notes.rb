@@ -332,18 +332,18 @@ module Xiki
       h1_size = "+3"
 
       if Styles.dark_bg?
-        bg = "444"
+        bg = "555"
+        pipe = "666"
       else
         bg = "909090"
-        #"292929" : "909090"
+        pipe = "777"
       end
 
-      pipe = "555"
       label = "bbb"
 
-      Styles.define "notes_h1", :face=>'arial', :size=>h1_size, :fg=>'bbb', :bg=>bg, :bold=>nil
-      Styles.define "notes_h1_pipe", :face=>'arial', :size=>h1_size, :fg=>pipe, :bg=>bg, :bold=>true
-      Styles.define "notes_h1_label", :face=>'arial', :size=>h1_size, :fg=>label, :bg=>bg, :bold=>true
+      Styles.define :notes_h1, :face=>'arial', :size=>h1_size, :fg=>'ccc', :bg=>bg, :bold=>nil
+      Styles.define :notes_h1_pipe, :face=>'arial', :size=>h1_size, :fg=>pipe, :bg=>bg, :bold=>true
+      Styles.define :notes_h1_label, :face=>'arial', :size=>h1_size, :fg=>label, :bg=>bg, :bold=>true
 
       Styles.define :notes_h1_agenda_pipe, :face => 'arial', :size => h1_size, :fg => '88cc88', :bg => '336633', :bold =>  true
       Styles.define :notes_h1_agenda, :face => 'arial', :size => h1_size, :fg => 'ffffff', :bg => '336633', :bold => true
@@ -382,29 +382,37 @@ module Xiki
         :face => 'arial', :size => "-2",
         :fg => "ee7700", :bold => true
 
+      # Styles.define :hidden, :fg=>"777", :bg=>"777"
+      Styles.define :hidden, :fg=>"333", :bg=>"333"
+
       # Strikethrough
       Styles.define(:strike, :strike=>true)
 
       Styles.define :notes_g, :fg=>"6cf", :face=>'arial black', :size=>"0", :bold=>true
       Styles.define :notes_blue, :fg=>"69f", :face=>'arial black', :size=>"0", :bold=>true
       Styles.define :notes_red, :fg=>"c55", :face=>'arial black', :size=>"0", :bold=>true
-      Styles.define :notes_yellow, :fg=>"CC0", :face=>'arial black', :size=>"0", :bold=>true
+      Styles.define :notes_yellow, :fg=>"cb0", :face=>'arial black', :size=>"0", :bold=>true
       Styles.define :notes_green, :fg=>"3c3", :face=>'arial black', :size=>"0", :bold=>true
 
       bg_color = Styles.attribute(:default, :background)
 
+      # =commit/White bg > make faces more compatible with it
+
       if Styles.dark_bg?   # If black bg
         Styles.define :notes_h2, :face=>'arial', :size=>"-1", :fg=>'999'
-        Styles.define :notes_h2_pipe, :face=>'arial', :size=>"-1", :fg=>'555'
-        Styles.define :notes_h0_pipe, :face=>'arial', :size=>"+8", :fg=>'555', :bg=>"444", :bold=> true
-        Styles.define :notes_h0, :fg=>"fff", :bg=>"444", :face=>'arial', :size=>"+8", :bold=>true
-        Styles.define :notes_h0_green, :fg=>"8f4", :bg=>"444", :face=>'arial', :size=>"+8", :bold=>true
-        Styles.define :notes_h0_green_pipe, :fg=>"555", :bg=>"444", :face=>'arial', :size=>"+8", :bold=>true
-        Styles.define :notes_h1_green, :fg=>"8f4", :bg=>"444", :face=>'arial', :size=>"+3", :bold=>nil
-        Styles.define :notes_h1_green_pipe, :fg=>"555", :bg=>"444", :face=>'arial', :size=>"+3", :bold=>true
+        Styles.define :notes_h2_pipe, :face=>'arial', :size=>"-1", :fg=>pipe
+        Styles.define :notes_h0_pipe, :face=>'arial', :size=>"+8", :fg=>pipe, :bg=>bg, :bold=> true
+        Styles.define :notes_h0, :fg=>"fff", :bg=>bg, :face=>'arial', :size=>"+8", :bold=>true
+        Styles.define :notes_h0_green, :fg=>"8f4", :bg=>bg, :face=>'arial', :size=>"+8", :bold=>true
+        Styles.define :notes_h0_green_pipe, :fg=>pipe, :bg=>bg, :face=>'arial', :size=>"+8", :bold=>true
+        Styles.define :notes_h1_green, :fg=>"8f4", :bg=>bg, :face=>'arial', :size=>"+3", :bold=>nil
+        Styles.define :notes_h1_green_pipe, :fg=>pipe, :bg=>bg, :face=>'arial', :size=>"+3", :bold=>true
 
         Styles.define :escape_glyph, :fg=>"666"   # Red special char was too ugly
+        Styles.define :trailing_whitespace, :bg=>'555'
+
       else   # If white bg
+
         Styles.define :notes_h2, :face=>'arial', :size=>"-1", :fg=>'fff'
         Styles.define :notes_h2_pipe, :face=>'arial', :size=>"-1", :fg=>'b0b0b0'
         Styles.define :notes_h0_pipe, :face=>'arial', :size=>"+8", :fg=>'b0b0b0', :bg=>"909090", :bold=>true
@@ -415,6 +423,7 @@ module Xiki
         Styles.define :notes_h1_green_pipe, :fg=>"b0b0b0", :bg=>"909090", :face=>'arial', :size=>"+3", :bold=>true
 
         Styles.define :escape_glyph, :fg=>"999"   # Red special char was too ugly
+        Styles.define :trailing_whitespace, :bg=>'ccc'
       end
 
       Styles.define :quote_hidden, :fg=>bg_color
@@ -425,19 +434,20 @@ module Xiki
         Styles.dotted :bg=>'eee', :fg=>'ddd', :strike=>nil, :underline=>nil, :border=>['ddd', -1]
       end
 
-      notes_exclamation_color = Styles.dark_bg? ? "7c4" : "5a0"
+      notes_exclamation_color = Styles.dark_bg? ? "4c4" : "5a0"
 
       Styles.define :notes_exclamation,  # Green bold text
         :face=>'arial black', :size=>"0",
         :fg=>notes_exclamation_color, :bold=>true
 
-      Styles.notes_link :fg=>(Styles.dark_bg? ? "9ce" : "08f")
+      Styles.define :notes_link, :fg=>(Styles.dark_bg? ? "39b" : "08f"), :bold=>false
 
-      Styles.shell_prompt :fg=>'#888', :bold=>1
+      Styles.define :shell_prompt, :fg=>'#888', :bold=>1
 
     end
 
     def self.apply_styles
+
       # Don't format quotes (it overrides the following formatting)
       Styles.clear
 
@@ -472,16 +482,27 @@ module Xiki
 
       # foo: > style like dir
       Styles.apply("\\(^[\A-Za-z0-9 ][\A-Za-z0-9 '_.,>?-]*[\A-Za-z0-9.?]:\\)\\($\\| \\)", nil, :ls_dir)   # foo:
+      Styles.apply("\\(^[\A-Za-z0-9 ]:\\)\\($\\| \\)", nil, :ls_dir)   # f:   < just 1 letter
 
       #    >... headings (indented)
-      Styles.apply("^ +\\(> ?\\)\\(.*\n\\)", nil, :quote_heading_bracket, :quote_heading_h1)
+      Styles.apply("^ +\\(> ?\\)\\(.*\n\\)", nil, :quote_heading_bracket, nil)
       Styles.apply("^ +\\(> ?\\)\\(.*!\n\\)", nil, :quote_heading_bracket, :quote_heading_h1_green)
 
       # - bullets with labels and comments
 
+
+      # Todo > instead of having both here > make one syntax that catches them both
+      # - only match when: 1st char after space can't be [>|]
+      #   - probably > 1st char after space has to be alphanumeric
+
       Styles.apply("^[ \t]*\\([<+-][<+=-]*\\) \\([^/:\n]+:\\) ", nil, :ls_bullet, :ls_dir)   # - foo: bar
+
       Styles.apply("^[ \t]*\\([<+-][<+=-]*\\) \\([^(\n]*?)\\)\\( \\|$\\)", nil, :ls_bullet, :notes_label)   # - foo) bar
+
+      Styles.apply("^[ \t]*\\([a-z][^:|(\n]*)\\)\\( \\|$\\)", nil, :notes_label)   # - foo) bar
+
       Styles.apply("^[ \t]*\\([<+-][<+=-]*\\) \\(.*:\\)$", nil, :ls_bullet, :notes_label)   # - foo:
+
 
       Styles.apply("^\\([ \t]*\\)\\([<+-]\\) \\(.+?:\\) +\\(|.*\n\\)", nil, :default, :ls_bullet, :notes_label, :ls_quote)
       Styles.apply("^\\([ \t]*\\)\\([<+-]\\) \\([^(\n]+?)\\) +\\(|.*\n\\)", nil, :default, :ls_bullet, :notes_label, :ls_quote)
@@ -509,14 +530,18 @@ module Xiki
       # $$...
       Styles.apply "^[< ]*[@=]? ?\\(\\$\\$\\)", nil, :shell_prompt   # Colorize shell prompts after "@"
 
-
       # Make |~... lines be Dotsies
       Styles.apply("^ *\\(|~\\)\\([^\n~]+\\)\\(~?\\)", nil, :quote_heading_pipe, :dotsies, :quote_heading_pipe)
 
       # |#... invisible
-      Styles.apply("^ *\\(|[#*]\\)\\(.*\n\\)", nil, :quote_light, :quote_hidden)
+      Styles.apply("^ *\\(|[#*].*\n\\)", nil, :hidden)
 
       Styles.apply "^ *|\\^.*\n", :quote_medium
+
+      Styles.apply("^ *\\(<\\) \\(.*\n\\)", nil, :ls_bullet, :ls_quote)   # <...
+
+      # Experimental
+      Styles.apply("^ *\\(<[a-z]+\\) \\(.*\n\\)", nil, :ls_bullet, :ls_quote)   # <...
     end
 
     # Startup
@@ -544,12 +569,14 @@ module Xiki
         FileTree.apply_styles_at_end
         $el.use_local_map $el.elvar.notes_mode_map
         Xsh.chdir_when_xsh_session
+        View.tab_width 12
       }
       $el.el4r_lisp_eval %q<
         (progn
           (add-to-list 'auto-mode-alist '("\\\\.notes\\\\'" . notes-mode))
           (add-to-list 'auto-mode-alist '("\\\\.xik\\\\'" . notes-mode))
-          (add-to-list 'auto-mode-alist '("\\\\.wik\\\\'" . notes-mode)))
+          (add-to-list 'auto-mode-alist '("/conf/.*\\\\.conf\\\\'" . notes-mode))
+        )
         >
     end
 
@@ -1279,6 +1306,7 @@ module Xiki
       "b"=>"borrow!",
       "c"=>":",
       "d"=>"do!",
+      "de"=>"delete!",
       "e"=>"!",
       "er"=>"error!",
       "f"=>"fix!",
@@ -1287,6 +1315,7 @@ module Xiki
       "i"=>"implement!",
       "r"=>"rename!",
       "t"=>"todo!",
+      "te"=>"test",
       "tr"=>"try",
       "u"=>"update!",
     }
@@ -1483,7 +1512,7 @@ module Xiki
       # Var not bound yet, so sync with disk...
 
       if ! $el.boundp(:xiki_return_warning)
-        disk_value = Keys.read_from_conf 'return warning'
+        disk_value = Conf.get "xsh", "return warning"
         # Set to disk value or default (4)
         $el.elvar.xiki_return_warning = disk_value || "4"
       end
@@ -1501,7 +1530,7 @@ module Xiki
 
       # Write new value to disk
 
-      Keys.write_to_conf "return warning", value_new
+      Conf.put "xsh", "return warning", value_new
 
       # Flash that many times
 

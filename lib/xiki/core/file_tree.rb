@@ -319,19 +319,21 @@ module Xiki
       end
 
 
-      if Styles.dark_bg?
-        Styles.define :quote_heading_h0, :fg=>"fff", :size=>"+8", :face=>"arial", :bold=>true
-        Styles.define :quote_heading_h1, :fg=>"fff", :size=>"2", :face=>"arial", :bold=>true
-        Styles.define :quote_heading_h2, :fg=>"fff", :size=>"-2", :face=>"arial", :bold=>true
+      if Styles.dark_bg?   # Also > when light bg in xsh (since it's unaware)
+
+        Styles.define :quote_heading_h0, :size=>"+8", :face=>"arial", :bold=>true
+        Styles.define :quote_heading_h1, :size=>"2", :face=>"arial", :bold=>true
+        Styles.define :quote_heading_h2, :size=>"-2", :face=>"arial", :bold=>true
 
         Styles.define :quote_heading_pipe, :fg=>"555", :size=>"0", :face=>"xiki", :bold=>1 # , :bg=>"unspecified"
 
         Styles.define :quote_light, :fg=>"333", :size=>"0", :face=>"xiki", :bold=>true
 
-        Styles.define :quote_heading_h1_green, :fg=>"8f4", :size=>"2", :face=>"arial", :bold=>true
+        Styles.define :quote_heading_h1_green, :fg=>"7c3", :size=>"2", :face=>"arial", :bold=>true
 
-        Styles.define :quote_heading_bracket, :fg=>"4c4c4c", :size=>"-2", :face=>"arial black", :bold=>true
-        Styles.define :quote_heading_small, :fg=>"fff", :size=>"-2", :face=>"arial black", :bold=>true
+        Styles.define :quote_heading_bracket, :fg=>"888", :size=>"-2", :face=>"arial black", :bold=>1
+
+        Styles.define :quote_heading_small, :size=>"-2", :face=>"arial black", :bold=>true
 
         Styles.define :diff_line_number, :bold=>true, :size=>"-2", :fg=>"666"
         Styles.define :diff_red, :bg=>"400", :fg=>"ee3333", :size=>"-1"
@@ -363,7 +365,7 @@ module Xiki
         Styles.define :quote_heading_h1_green, :fg=>"8f4", :size=>"2", :face=>"arial", :bold=>true
 
         Styles.define :quote_heading_bracket, :fg=>"bbb", :size=>"-2", :face=>"arial black", :bold=>true
-        Styles.define :quote_heading_small, :fg=>"fff", :size=>"-2", :face => "arial black", :bold=>true
+        Styles.define :quote_heading_small, :size=>"-2", :face => "arial black", :bold=>true
 
         Styles.define :diff_line_number, :bold=>true, :size=>"-2", :fg=>"ccc"
         Styles.define :diff_red, :bg=>"ffdddd", :fg=>"cc4444", :size=>"-1"
@@ -396,7 +398,7 @@ module Xiki
         :bold=>true
 
       if Styles.dark_bg?   #   | Quoted text
-        Styles.define :ls_quote, :size=>"-1", :fg=>"aaa"
+        Styles.define :ls_quote, :size=>"-1", :fg=>"888"
         Styles.define :ls_quote_light, :size=>"-1", :fg=>"555", :bg=>"222"
       else
         Styles.define :ls_quote, :size=>"-1", :fg=>"777"
@@ -459,24 +461,16 @@ module Xiki
       Styles.apply("^[ \t]*[+-] [^(\n]+?) \\(.+/\\)$", nil, :ls_dir)   # - hey) /what/
       Styles.apply("^[ \t]*[+-] [a-zA-Z0-9_,? ().:;-]+?: \\(.+/\\)$", nil, :ls_dir)   # - hey: /what/
 
-      # Put this one back?
-      #     Styles.apply("^[ +-]*\\([^|\n]+/\\)$", nil, :ls_dir)   # Dirs with bullets
-
       Styles.apply('\\(https?\\|file\\|xiki\\|source\\):/[a-zA-Z0-9\/.~_:;,?%&=|+!-#-]+', :notes_link)   # Url
 
-      # Styles.apply("^ *\\(:\\)\\($\\| .*\n\\)", nil, :quote_heading_pipe, :ls_quote)   # :... lines (quotes)
       Styles.apply("^ *\\([\\\\:]\\)\\($\\| .*\n\\)", nil, :quote_heading_pipe, :ls_quote)   # :... lines (quotes)
 
 
       # |... lines (quotes)
 
-      # Is this one adding anything?
-      #     Styles.apply("^ *\\(|\\)\\( *\\)", nil, :quote_heading_pipe, :ls_quote)
-
       Styles.apply("^ *\\(|\\)\\(.*\n\\)", nil, :quote_heading_pipe, :ls_quote)   # |... lines (quotes)
 
       # | hey : you (makes colon big)
-      # Styles.apply("^ *\\(|\\)\\( .* \\)\\(:\\)\\( .*\n\\)", nil, :quote_heading_pipe, :ls_quote, :quote_heading_pipe_bold, :ls_quote)
       Styles.apply("^ *\\(|\\)\\( .* \\)\\(:\\)\\( .*\n\\)", nil, :quote_heading_pipe, :ls_quote, :quote_heading_pipe, :ls_quote)
 
       Styles.apply("^ *\\(|\\)\\(.+?\\)([+-].*[-+])", nil, :quote_heading_pipe, :ls_quote)   # quoted lines: beginnings of lines
@@ -484,11 +478,10 @@ module Xiki
       Styles.apply("[+-])\\(.*?\\)([+-]", nil, :ls_quote)   # quoted lines: between diffs
 
       Styles.apply("^ *\\([|:]\\)\\([()].*\n\\)", nil, :quote_heading_pipe, :ls_quote_light)   # |(... or :(... lines
-      Styles.apply("^ *\\(||\\|::\\)\\(.*\n\\)", nil, :quote_heading_pipe, :ls_quote_light)   # ||... or ::... lines
+      Styles.apply("^ *\\(||\\)\\(.*\n\\)", nil, :quote_heading_pipe, :ls_quote_light)   # ||... or ::... lines
 
       # | >... headings
-
-      Styles.apply("^ *\\(|\\|:\\)\\( ?\\)\\(>\\)\\(\n\\| .*\n\\)", nil, :quote_heading_pipe, :ls_quote, :quote_heading_bracket, :quote_heading_h1)
+      Styles.apply("^ *\\(|\\|:\\)\\( ?\\)\\(>\\)\\(\n\\| .*\n\\)", nil, :quote_heading_pipe, :ls_quote, :quote_heading_bracket, nil)
 
       # | >>
       Styles.apply("^ *\\(|\\)\\( \\)\\(>>\\)\\(\n\\| .*\n\\)", nil, :quote_heading_pipe, :ls_quote, :quote_heading_bracket, :quote_heading_small)
@@ -496,16 +489,19 @@ module Xiki
       Styles.apply("^ *\\(|\\)\\( ?\\)\\(>\\)\\(.*!:?\n\\)", nil, :quote_heading_pipe, :ls_quote, :quote_heading_bracket, :quote_heading_h1_green)
 
       #    >>
-      Styles.apply("^ +\\(>>\\)\\(.*\n\\)", nil, :quote_heading_bracket, :quote_heading_h2)
+      Styles.apply("^ +\\(>>\\)\\(.*\n\\)", nil, :quote_heading_bracket, nil)
 
       # (indented)  > large:
       # Styles.apply("^ +\\(> ?\\)\\(.*:\n\\)", nil, :quote_heading_bracket, :quote_heading_h0)
 
       # |+... diffs
       Styles.apply("^ +\\(:[0-9]+\\)$", nil, :ls_quote)
-      Styles.apply("^ *\\([|:]\\+\\)\\(.*\\)", nil, :diff_green_pipe, :diff_green, :face=>"xiki")   # whole lines
-      Styles.apply("^ *\\([|:]-\\)\\(.*\\)", nil, :diff_red_pipe, :diff_red)
+      Styles.apply("^ *\\([|:]\\+\\)\\(.*\\)", nil, :diff_green_pipe, :diff_green, :face=>"xiki")   # :+...
+      Styles.apply("^ *\\([|:]-\\)\\(.*\\)", nil, :diff_red_pipe, :diff_red)   # :-...
       Styles.apply("^ *\\([|:]\\?\\)\\(.*\\)", nil, :diff_yellow_pipe, :diff_yellow, :face=>"xiki")   # :?...
+
+      # ::... draw attention to lines with extra colon > in shell output, it means line's expandable
+      Styles.apply("^ *\\(::\\)\\(.*\n\\)", nil, :quote_heading_pipe, :ls_quote)   # ::...
 
       Styles.apply("^ *\\([|:]\\)\\(@@ .*\n\\)", nil, :quote_heading_pipe, :diff_line_number)
 
@@ -1986,7 +1982,7 @@ module Xiki
             ~ file/
               + rename
                 ! FileTree.rename_file
-              + command on it
+              + prompt here
                 ! Tree.<< "$ ", :no_search=>1, :no_slash=>1
                 ! Move.to_end
             ~ edit with/
@@ -2069,7 +2065,7 @@ module Xiki
               ! options[:nest] = 1
               ! options[:no_task] = 1
               ! txt = Shell.external_plus_sticky_history
-            ~ dir history/
+            ~ recent in dir/
               ! options[:nest] = 1
               ! options[:no_task] = 1
               ! Shell.history options[:file_path]
@@ -2080,14 +2076,15 @@ module Xiki
               ! ""
             ~ all files
               ! FileTree.expand_dir_recursively :file_path=>options[:file_path]
+            ~ delete
+              ! Keys.remember_key_for_repeat(proc {Launcher.launch :task=>["delete"], :no_prompt=>1})
+              ! FileTree.delete_file options[:file_path], options
             ~ bookmark
               ! Bookmarks.save
+
             ~ dir/
               + rename
                 ! FileTree.rename_file
-              + delete
-                ! Keys.remember_key_for_repeat(proc {Launcher.launch :task=>["delete"], :no_prompt=>1})
-                ! FileTree.delete_file options[:file_path], options
               + prompt here
                 ! Tree.<< "$ "
                 ! Line.to_right
@@ -2144,6 +2141,8 @@ module Xiki
                   ! Dir.mkdir("\#{options[:file_path]}/d") rescue nil
                   ! File.write "\#{options[:file_path]}/d/d.txt", "ddd\\nddd\\n"
                   ! "- a.txt\\n- b.txt\\n- c.notes\\n- d/\\n  - d.txt"
+            ~ expand
+              ! Launcher.launch
           `.unindent)
 
           menu << "\n"
@@ -2347,7 +2346,10 @@ module Xiki
       options[:no_slash] = 1
       task = options[:task]
 
-      extension = File.extname(options[:file_path])[/\w+/]
+      file_path = options[:file_path]
+
+      extension = File.extname(file_path)[/\w+/]
+
 
       if task == []
         # Special treatment for .rb > 2 options
@@ -2370,6 +2372,43 @@ module Xiki
             end
           end
           `)
+      end
+
+      # No extension, so look up by the full name...
+
+      if ! extension
+        file_name = File.basename file_path
+
+        # Todo > move this out into a file
+        # file format:
+        # Dockerfile/
+        #   | FROM ubuntu:latest
+        #   | RUN apt-get update
+        # Rakefile/
+        #   | require 'rake'
+        #   | ...
+        txt = {
+          "Dockerfile"=>%`
+            # Sample Dockerfile from xsh
+            FROM ubuntu:latest
+            RUN apt-get update
+            RUN apt-get install -y ruby
+            RUN apt-get install -y nodejs npm
+            RUN sudo gem install sinatra
+
+            # add application sources
+            COPY . /app
+            RUN cd /app; npm install
+
+            # Expose the default port
+            EXPOSE  5000
+
+            # Start command
+            CMD ["nodejs", "/app/web.js"]
+            `.unindent
+        }[file_name]
+
+        return options[:output] = Tree.quote(txt) if txt
       end
 
       require "#{Xiki.dir}commands/sample_menus/sample_menus_index.rb" # if !defined?(SampleMenus)
