@@ -53,12 +53,12 @@ module Xiki
     # Saves by into ~/xiki/commands/conf/ by replacing
     # the line (copying the default conf over first, if
     # it's not there yet.
-    # Keys.write_to_conf "return warning", " 4"
-    def self.write_to_conf key, value
+    # Keys.put "return warning", " 4"
+    def self.put key, value
 
       # Read in file...
 
-      user_conf = Bookmarks[":xh/commands/conf/xsh.conf"]
+      user_conf = Bookmarks[":xh/commands/conf/#{command}.conf"]
       FileUtils.mkdir_p File.dirname user_conf   # In case it doesn't exist yet
 
       txt = File.read(user_conf) rescue nil
@@ -66,7 +66,7 @@ module Xiki
       # If not there, read from default...
 
       if ! txt
-        txt = File.read(Bookmarks[":xiki/commands/xsh/default.conf"]) rescue nil
+        txt = File.read(Bookmarks[":xiki/commands/#{command}/default.conf"]) rescue nil
       end
 
       # Update file accordingly
@@ -84,15 +84,6 @@ module Xiki
       nil
     end
 
-
-    # Reads from ~/xiki/commands/conf/
-    # Keys.read_from_conf "return warning"
-    def self.read_from_conf key
-      txt = File.read Bookmarks[":xh/commands/conf/xsh.conf"] rescue nil
-      return nil if ! txt
-      txt[/^#{key}: (.*)/, 1]   # => noob
-    end
-
     def self.noob_mode value=nil
 
       # No value, so return the result
@@ -100,7 +91,7 @@ module Xiki
 
         # Memo-ize it, so we don't look it up every time
         if @@noob_mode == nil
-          value = self.read_from_conf "key shortcuts"
+          value = Conf.get "xsh", "key shortcuts"
           @@noob_mode = ! value || value == "noob"
         end
         return @@noob_mode
@@ -108,7 +99,7 @@ module Xiki
 
       # Value passed so set it in the cache and on the disk
       @@noob_mode = value
-      self.write_to_conf 'key shortcuts', (value ? 'noob' : 'advanced')
+      Conf.put "xsh", 'key shortcuts', (value ? 'noob' : 'advanced')
     end
 
     # Called when expanding key shortcuts are pressed.
@@ -128,6 +119,8 @@ module Xiki
           return Shell.recent_history_external nil, :from_key_shortcut=>1
         when ["do"]
           return Deletes.forward
+        when ["hop"]
+          return Deletes.backward
         end
       end
 
@@ -360,22 +353,16 @@ module Xiki
 
       if self.noob_mode
         if path == []
-          txt.gsub!(/^\+ (quit|jump|as|enter|do|run)\/?\n/, "")   # Remove quit and xpand
-          return
-        elsif path == ["open"]
-          txt.gsub!(/\+ [fp]/, "\n\\0")
+          txt.gsub!(/^\+ (quit|hop|as|enter|do|run)\/?\n/, "")   # Remove quit and xpand
           return
         elsif path == ["window"]
           txt.gsub!(/\+ [c]/, "\n\\0")
           return
-        elsif path == ["hop"]
-          txt.gsub!(/\+ [su]/, "\n\\0")
+        elsif path == ["open"]
+          txt.gsub!(/\+ [fp]/, "\n\\0")
           return
-        elsif path == ["as"]
-          txt.gsub!(/\+ [u]/, "\n\\0")
-          return
-        elsif path == ["enter"]
-          txt.gsub!(/\+ [t]/, "\n\\0")
+        elsif path == ["jump"]
+          txt.gsub!(/\+ [h]/, "\n\\0")
           return
         end
       end
@@ -395,7 +382,7 @@ module Xiki
       elsif path == ["hop"]
         txt.gsub!(/\+ [stuoc]/, "\n\\0")
       elsif path == ["jump"]
-        txt.gsub!(/\+ [oqlryc]/, "\n\\0")
+        txt.gsub!(/\+ [hoqryc]/, "\n\\0")
       elsif path == ["open"]
         txt.gsub!(/\+ [tpfuel]/, "\n\\0")
 
@@ -842,6 +829,9 @@ module Xiki
         View.insert Keys.input(:prompt => "Insert text to insert: ")
         return
       end
+
+      # Selection exists, so delete it first
+      View.delete *View.range if View.selection?
 
       Cursor.remember :before_q
       Cursor.box

@@ -53,10 +53,10 @@ module Xiki
       Xiki.def("as+open"){ Launcher.as_open }
       Xiki.def("as+everything"){ Clipboard.copy_everything }
 
+      Xiki.def("as+grab"){ $el.save_place_kill_emacs_hook; DiffLog.save_grab_location }   # as+bookmark+g is almost as good, but doesn't save the specific place in the file
+
       Xiki.def("as+you"){ Clipboard.as_thing }   # copy object / symbol at point
-
     end
-
 
     def self.open_keys
       # O: open...
@@ -93,15 +93,13 @@ module Xiki
 
       Xiki.def("open+list+faces"){ Styles.list_faces }   # list
 
-      # open+menu > __ open xiki.
-      Xiki.def("open+as+output"){ OlHelper.open_last_outlog }   # last
-
       Xiki.def("open+in+browser"){ Browser.open_in_browser }
       Xiki.def("open+in+left"){ View.open_in_bar }
       Xiki.def("open+in+os"){ Files.open_in_os }
       Xiki.def("open+in+window"){ Files.open_in_window }   # Expose file in OS folder
 
-
+      # open+menu > __ open xiki.
+      Xiki.def("open+as+output"){ OlHelper.open_last_outlog }   # last
       Xiki.def("open+as+calendar"){ $el.calendar }
       Xiki.def("open+as+file"){ Code.open_as_file }
       Xiki.def("open+as+elisp"){ $el.find_function_at_point }   # jump to definition of lisp function
@@ -178,18 +176,18 @@ module Xiki
       Xiki.def("jump+nav", :noob=>1){ View.layout_nav }   # jump+n
       Xiki.def("jump+ide", :noob=>1){ View.layout_todo_and_nav }
 
+      Xiki.def("jump+higher", :noob=>1){ View.page_up }
+      Xiki.def("jump+lower", :noob=>1){ View.page_down }
+
       Xiki.def("jump+output"){ View.layout_outlog }
       Xiki.def("jump+all"){ View.layout_outlog :all=>1 }
 
       Xiki.def("jump+quick"){ View.layout_quick }
 
-      Xiki.def("jump+line"){ Move.to_line }
-
       Xiki.def("jump+unsaved"){ Launcher.open("unsaved/") }
       Xiki.def("jump+repository"){ Git.do_compare_repository }
 
       Xiki.def("jump+expose+test"){ Code.open_related_rspec }
-      # Xiki.def("jump+related+file"){ Code.open_related_file }
 
       Xiki.def("jump+move+file"){ Launcher.open("Todo > Find method that moves the current file...", :no_launch=>1) }
       Xiki.def("jump+move+remembered"){ FileTree.move_to }
@@ -203,7 +201,8 @@ module Xiki
       Xiki.def("jump+command"){ Launcher.open_nested_command }
       Xiki.def("jump+prompt"){ Shell.prompt_for_bookmark }
 
-      Xiki.def("jump+history"){ Shell.history_for_bookmark }
+      # Doesn't seem to work any more?
+      #      Xiki.def("jump+history"){ Shell.history_for_bookmark }
 
       Xiki.def("jump+xiki+methods"){ Launcher.open("#{Xiki.dir}\n  - ##^ *def /") }
       Xiki.def("jump+xiki+directory"){ FileTree.tree :recursive=>1, :bm=>"xiki" }
@@ -323,11 +322,16 @@ module Xiki
       Xiki.def("hop+top"){ View.to_highest }
       Xiki.def("hop+bottom"){ View.to_bottom }   # move to end
 
+      # Todo > Change hop+ancestor to hop+up? or to hop+under (like hop+junior)?
+      # and change > enter+junior enter+under
+
+      # Todo > remove these two
       Xiki.def("hop+up", :noob=>1){ View.page_up }
       Xiki.def("hop+down", :noob=>1){ View.page_down }
 
       Xiki.def("hop+next"){ Move.to_next_paragraph }   # to next paragraph
       Xiki.def("hop+previous"){ Move.to_previous_paragraph :skip_if_top=>1 }   # to beginning of previous paragraph
+      Xiki.def("hop+line"){ Move.to_line }
 
       Xiki.def("hop+outline"){ FileTree.to_outline }   # OO - open line (O's emacs default)
       Xiki.def("hop+search"){ Search.outline_search }
@@ -338,7 +342,7 @@ module Xiki
       # hop+climb is a possible alternative
       Xiki.def("hop+ancestor"){ Tree.to_parent }   # to parent (last line indented less)
 
-      Xiki.def("hop+remembered"){ Location.to_spot }
+      Xiki.def("hop+remembered"){ Location.hop_remembered }
       Xiki.def("hop+command"){ Menu.to_menu }
       Xiki.def("hop+kind"){ Move.to_other_bracket }   # to matching bracket, etc
 
@@ -413,9 +417,6 @@ module Xiki
       Xiki.def("window+first"){ Move.to_window(1, :blink=>true) }
       Xiki.def("window+last"){ Move.to_last_window(:blink=>true) }
       Xiki.def("window+zoom"){ View.zoom }   # show selection only
-
-      # Redundant, so just here for convenience
-      Xiki.def("window+kill"){ View.kill }
 
       Xiki.def("window+quit", :noob=>1){ DiffLog.quit }
 
