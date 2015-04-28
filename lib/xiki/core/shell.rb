@@ -760,7 +760,7 @@ module Xiki
 
       # :... or ...\n arg, so delegate to the shell wrapper, if only to show appropriate error...
 
-      return self.shell_wrapper(options) if args && args[0] =~ /^[:]/ || args[0] =~ /\n/
+      return self.shell_wrapper(options) if args && (args[0] =~ /^[:]/ || args[0] =~ /\n/)
       return self.shell_notes(options) if (! args && task[0] == "notes") || args && args[0] =~ /^>/
 
       # If any other arg, delegate to the =foo menu...
@@ -1279,7 +1279,9 @@ module Xiki
       left = View.cursor
 
       filter_options = {:left=>left, :right=>(left+txt.length)}
-      filter_options.merge!(:recent_history_external=>1) if ! options[:from_key_shortcut]
+
+      # ^R from external shell, so make sure it quits when esc or return
+      filter_options.merge!(:recent_history_external=>1, :xiki_in_initial_filter=>1) if ! options[:from_key_shortcut]
 
       Tree.filter filter_options
 
