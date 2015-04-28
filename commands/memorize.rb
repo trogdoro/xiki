@@ -1,3 +1,5 @@
+require 'uri'
+
 class Memorize
 
   include Xiki   # To have View class, etc.
@@ -8,18 +10,18 @@ class Memorize
     | England : London
     | Japan : Tokyo
     | Germany : Berlin
-    - docs/
-      | Add some facts like the example, and launch one of the
-      | example lines to start an interactive memorize process.
-      | In addition to helping you memorize, this is a low-stress
-      | way to digest and review facts.
-      | Double-click on one of to lines to begin.
     "
+  # - docs/
+  #   | Add some facts like the example, and launch one of the
+  #   | example lines to start an interactive memorize process.
+  #   | In addition to helping you memorize, this is a low-stress
+  #   | way to digest and review facts.
+  #   | Double-click on one of to lines to begin.
 
   MENU_HIDDEN = %`
-    - .show answer
-    - .I was wrong
-    - .I was right
+    + .show answer
+    + .I was wrong
+    + .I was right
     `
 
   MENU_OBSCURED = %`
@@ -29,7 +31,7 @@ class Memorize
         : | Germany : Berlin
         : | China : Beijing
         : | Japana : ___
-        : - show answer
+        : + show answer
         : |*[[3,1,2],[]]
         : |*1 France : Paris
         : |*2 England : London
@@ -44,7 +46,7 @@ class Memorize
         :     "| China : Beijing"
         :   ],
         :   :choices   => [
-        :     "- show answer"
+        :     "+ show answer"
         :   ],
         :   :progress  => [[3,1,2],[]],
         :   :pending   => {
@@ -78,9 +80,6 @@ class Memorize
 
     txt = ""
 
-Ol "@pending", @pending   # => {1=>"France : Paris", 2=>"England : London", 3=>"Japan : Tokyo", 4=>"Germany : Berlin"}
-
-# pending = @pending.map{|k, v| "|##{k} #{v}"}
     pending = @pending.map{|k, v| "|*#{k} #{v}"}
 
     progress = @progress.any? ? ["|*#{JSON[@progress]}"] : []
@@ -91,35 +90,24 @@ Ol "@pending", @pending   # => {1=>"France : Paris", 2=>"England : London", 3=>"
   end
 
   def deserialize txt
-Ol.stack
     txt = txt.split "\n"
-Ol "txt", txt
-  # => ["| England : ___", "- show answer/", "|#[[2,4,3,1],[]]", "|#1 France : Paris", "|#2 England : London", "|#3 Japan : Tokyo", "|#4 Germany : Berlin"]
-  # => ["| England : ___", "- show answer", "|#[[2,4,3,1],[]]", "|#1 France : Paris", "|#2 England : London", "|#3 Japan : Tokyo", "|#4 Germany : Berlin"]
 
     @heading, @completed, @choices, @progress, @pending = [], [], [], nil, nil
 
-Ol "txt", txt   # => ["| England : ___", "- show answer/", "|#[[2,4,3,1],[]]", "|#1 France : Paris", "|#2 England : London", "|#3 Japan : Tokyo", "|#4 Germany : Berlin"]
     @heading << txt.shift while txt.any? && txt[0] !~ / : /
-Ol "@heading", @heading   # => []
     @completed << txt.shift while txt.any? && txt[0] =~ / : /
-Ol "@completed", @completed   # => ["| England : ___"]
-    @choices << txt.shift while txt.any? && txt[0] =~ /^-/
-Ol "@choices", @choices   # => ["- show answer"]
+    @choices << txt.shift while txt.any? && txt[0] =~ /^\+/
 
     @progress = txt.shift
-Ol "@progress", @progress   # => "|#[[2,4,3,1],[]]"
     @progress = @progress ? JSON[@progress[/\[.+/]] : []
 
     @pending = txt
-Ol "@pending", @pending   # => ["|#1 France : Paris", "|#2 England : London", "|#3 Japan : Tokyo", "|#4 Germany : Berlin"]
 
     @pending = @pending.reduce({}){|acc, o|
       match = o.match /(\d+) (.+)/
       acc[match[1].to_i] = match[2]
       acc
     }
-Ol "@pending", @pending   # => {1=>"France : Paris", 2=>"England : London", 3=>"Japan : Tokyo", 4=>"Germany : Berlin"}
 
   end
 
@@ -162,7 +150,7 @@ Ol["!"]
     propagate_edits
 
     @completed[-1] = "| #{@pending[@progress[0][0]]}"
-    @choices = ["- I was wrong", "- I was right"]
+    @choices = ["+ I was wrong", "+ I was right"]
 
     serialize
   end
@@ -190,7 +178,7 @@ Ol["!"]
     remove_runs
 
     @completed << "| #{@pending[@progress[0][0]].sub(/ : .+/, ' : ___')}"
-    @choices = ["- show answer"]
+    @choices = ["+ show answer"]
 
     serialize
   end
@@ -217,7 +205,7 @@ Ol["!"]
   def i_was_right
     propagate_edits
 
-    @choices = ["- show answer"]
+    @choices = ["+ show answer"]
 
     @completed.pop
 
@@ -248,42 +236,35 @@ Ol "previous", previous
     serialize
   end
 
-
   def finished
     result = []
-Ol "@completed", @completed   # => ["| Japan : Tokyo", "| England : London", "| Germany : Berlin", "| France : Paris"]
-Ol "@progress", @progress   # => [[], [3, 2, 4, 1]]
-# @progress[1].each_with_index{|i, j| result[i-1] @completed[i-1]}
     @completed.each_with_index{|item, i|
-Ol.>> item, i
       result[@progress[1][i]-1] = item
     }
-Ol "result", result
     @completed = result
-Ol "@completed", @completed   # => ["| Germany : Berlin", "| England : London", "| France : Paris", "| Japan : Tokyo"]
   end
-
 
   def self.menu_before *args
 
-Ol "args", args   # => ["France : Paris\nEngland : London\nJapan : Tokyo\nGermany : Berlin\n"]
+    # Dropdown and memorizing in place is disabled for now,
+    # until I re-write it (making text hidden doesn't work any more).
 
     # Only do something if right-click...
 
     task = yield[:task]
     return if ! task
 
-    Ol "task", task   # => ["save to Memorize.com"]
-
     # /, so show "start with an example"?...
-
 
     # /some content, so offer to save to memorize.com...
 
     if args[0] =~ /\n/ # || args[0] =~ /^\|/
-      return "~ memorize\n~ save to Memorize.com" if task == []
-      if task == ["save to Memorize.com"]
-Ol["populate!"]
+      return "
+        ~ memorize
+        ~ learn on Memorize.com
+        " if task == []
+
+      if task == ["learn on Memorize.com"]
         return self.browser args[0]
       end
 
@@ -291,23 +272,11 @@ Ol["populate!"]
 
     end
 
-
-Ol "args", args   # => ["London : Englandd\nPariss : France\nBerlinnn : Germany\nTokyoo : Japann\n"]
     nil
 
-
-    # Ol "args", args   # => ["show answer", "| Japan : ___\n- show answer/\n|*[[3,4,2,1],[]]\n|*1 France : Paris\n|*2 England : London\n|*3 Japan : Tokyo\n|*4 Germany : Berlin\n"]
-    # if args[0] == "show answer"
-    #   # return self.show_answer *args, &yield
-    #   return self.show_answer args[1], yield
-    # end
-
-    # nil
   end
 
   def self.menu_after output, *path
-
-    Ol "output", output
 
     # We only want to interject if they're starting out,
     # which means launching a quoted line that got turned into linebreaks
@@ -315,42 +284,30 @@ Ol "args", args   # => ["London : Englandd\nPariss : France\nBerlinnn : Germany\
 
     return if output   # Always return if there was output, because it was handled
 
-    # |#, so beg for all lines
-#    return "=beg/neighbors/" if path[0] =~ /\A[|>].+\z/
-
     txt = path[0]
-Ol "txt", txt   # => "France : Paris\nEngland : London\nJapan : Tokyo\nGermany : Berlin\n"
 
     o = self.new txt
     txt = o.start
     o.set_line_found yield
 
-    # "<:\n#{txt.gsub /^/, '  '}"
-Ol["!"]
     "<:\n#{txt.gsub /^/, '  '}"
   end
 
   def start
-Ol.stack
-    @choices = ["- show answer"]
-Ol "@completed", @completed   # => ["| England : ___"]
+    @choices = ["+ show answer"]
     @pending = @completed.reduce([{}, 1]) do |acc, o|
-      # acc[0][acc[1]] = o[/ (.+)/, 1]
       acc[0][acc[1]] = o#[/ (.+)/, 1]
       acc[1] += 1
       acc
     end[0]
 
-Ol "@pending", @pending   # => {1=>": Paris", 2=>": London", 3=>": Tokyo", 4=>": Berlin"}
     # Shuffle (try up to 3 times if 1st one still at top)...
 
     length = @pending.length
-Ol "length", length   # => 0
 
     @progress = (1..length).to_a
     6.times{ @progress = @progress.sort_by{ rand } if @progress[0] == 1 }
     @progress = [@progress, []]
-Ol "@progress", @progress   # => [[], []]
 
     @completed = ["| #{@pending[@progress[0][0]].sub(/ : .+/, ' : ___')}"]
 
@@ -381,7 +338,6 @@ Ol "@progress", @progress   # => [[], []]
     # Grab paragraph...
 
     txt = View.paragraph
-Ol.a txt
 
     # Open in browser...
 
@@ -396,7 +352,6 @@ Ol.a txt
     # Grab paragraph...
 
     txt = View.paragraph
-Ol.a txt
 
     txt = "memorize/\n#{txt.gsub(/^/, '  | ')}"
     View.open "memorize", :txt=>txt
@@ -405,12 +360,18 @@ Ol.a txt
 
     # TODO > Cut off except final a:b lines (in case heading next to it)
 
-Ol["!"]
     ""
   end
 
   def self.browser txt
     path = txt.gsub(" : ", ":").gsub("\n", "/").gsub(" ", "-")
+
+    # Memorize.com always interprets commas as delimiter, even
+    # when escaped, so just remove them for now
+    path.gsub! ",", ""
+
+    path = URI.encode path, "\","
+
     Browser.url "http://memorize.com/#{path}"
     "<! opened in browser"
   end

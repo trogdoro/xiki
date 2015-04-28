@@ -166,8 +166,17 @@ module Xiki
     # Creates a new window by splitting the current one
     def self.create_vertical
       $el.split_window_horizontally
-      View.next if ! Keys.prefix_u
+
+      if Keys.prefix_u
+        # Make hidden view appear at left
+        ControlTab.go
+        return View.next
+      end
+
+      # Make hidden view appear at right
+      View.next
       ControlTab.go
+
     end
 
     def self.create prefix=nil
@@ -2177,7 +2186,7 @@ module Xiki
     end
 
     def self.tab_width width
-      $el.elvar.tab_width width
+      $el.elvar.tab_width = width
     end
 
     def self.scan regex

@@ -1,5 +1,6 @@
 gem 'couchrest'
 require 'couchrest'
+require 'httparty'
 
 module Xiki
   class Couch

@@ -12,7 +12,7 @@ module Menu
       |
       | Type "xsh --help" back in your normal shell, or expand
       | it right here:
-      = $ xsh --help
+      $ xsh --help
 
       | Connecting with people
       - chat room/

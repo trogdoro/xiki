@@ -1385,7 +1385,12 @@ module Xiki
     def self.isearch_nav
       match = self.stop
 
-      if ! match   # Nothing searched for...
+      # Nothing searched for...
+
+      if ! match
+        # Already in nav.notes, so do nothing
+        return if View.name == "nav.notes"
+
         Location.as_spot
         Search.isearch_restart ":n", :restart=>true
       end
@@ -1394,7 +1399,6 @@ module Xiki
 
       $el.goto_char self.right
     end
-
 
     def self.was_reverse
       ! $el.elvar.isearch_forward

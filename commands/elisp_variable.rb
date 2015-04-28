@@ -9,7 +9,7 @@ if ! args[0]
     txt ||= $el.el4r_lisp_eval %`
     (let ((txt ""))
       (mapatoms (lambda (x)
-        (when (fboundp x)
+        (when (boundp x)
           (setq txt (concat txt (pp-to-string x) "\n"))
           )))
       txt)

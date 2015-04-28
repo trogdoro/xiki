@@ -133,7 +133,22 @@ module Xiki
 
     end
 
-    def self.to_spot key='0'
+    def self.hop_remembered
+
+      txt = View.selection
+      self.to_spot
+
+      # They'd selected nothing, so hopping is all we needed to do...
+
+      return if ! txt
+
+      # They'd selected something, so put it here...
+
+      View.insert txt, :dont_move=>1
+    end
+
+    def self.to_spot key='0', options={}
+
       loc = @@spots[key]
       return if ! loc
       loc.go

@@ -199,6 +199,7 @@ module Xiki
       "no"=>"~/xiki/notes/",
       "c"=>"~/xiki/commands/",
       "co"=>"~/xiki/commands/conf/",
+      "co2"=>"#{Xiki.dir}commands/conf/",
 
       "q"=>"~/xiki/notes/quick.notes",
       "qq"=>"~/xiki/notes/quick2.notes",

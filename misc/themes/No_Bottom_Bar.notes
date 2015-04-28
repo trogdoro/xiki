@@ -1,0 +1,72 @@
+module Xiki
+  Themes.use 'Dark Black BG'
+
+  Styles.mode_line(
+    :bg=>'unspecified',
+    :fg=>"111",
+    :bold=>true,
+    )
+  Styles.mode_line_inactive(
+    :bg=>'#aaa',
+    :fg=>"#444",
+    :bold=>true,
+    )
+
+  Styles.mode_line_transparent(
+    :bg=>"unspecified",
+    :fg=>"#aaa",
+    :underline=>nil,
+    )
+  Styles.mode_line_transparent_activatable(
+    :bg=>"unspecified",
+    :fg=>"#aaa",
+    :underline=>nil,
+    )
+  Styles.mode_line_transparent_underline(
+    :bg=>"unspecified",
+    :fg=>"#aaa",
+    :underline=>nil,
+    )
+  Styles.mode_line_transparent_underline_activatable(
+    :bg=>"unspecified",
+    :fg=>"#aaa",
+    :underline=>nil,
+    )
+
+  Styles.mode_line_sides(
+    :bg=>"unspecified",
+    :fg=>"#aaaaaa",
+    :underline=>nil,
+    )
+  Styles.mode_line_sides_underline(
+    :bg=>"unspecified",
+    :fg=>"#111",
+    :underline=>nil,
+    )
+
+  Styles.mode_line_file(
+    :fg=>"#111",
+    )
+
+  Styles.vertical_border :fg=>"#111", :bg=>'#111', :underline=>nil
+
+  Styles.region(
+    :bg=>"#333",
+    )
+
+
+  # Message area at bottom
+  Styles.minibuffer_prompt :size=>110, :face=>"Monaco", :fg=>"#999"
+  Styles.minibuffer :size=>110, :face=>"Monaco", :fg=>"#999"
+  Styles.echo_area :size=>110, :face=>"Monaco", :fg=>"#999"
+
+  Styles.define :trailing_whitespace, :bg=>'444'
+
+end
+
+$el.el4r_lisp_eval %`
+  (progn
+    (setq-default mode-line-format "")
+  )
+  `
+

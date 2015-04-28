@@ -125,7 +125,7 @@ module Xiki
         # Note: If you update this text, be sure update the code in @save menu/
         # that deletes it when saving.
         options[:output] = "
-          > Make this into a menu?
+          > Make this into a command?
           =save menu/
           | Creates a new '#{options[:name]}' menu with these items.
           "

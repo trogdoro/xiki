@@ -1,6 +1,8 @@
 module Xiki
   class Node
     MENU = %`
+      | txt = "Some node code"
+      | console.log(txt)
       - .controller/
       - docs/
         - headers/
@@ -34,7 +36,7 @@ module Xiki
       return self.block if args == ['block']
 
       txt = Tree.leaf args[0]
-      result = Tree.quote self.run(txt)
+      result = Tree.quote JavascriptHandler.eval(txt)
 
       result
     end
@@ -90,7 +92,7 @@ module Xiki
       file = "/tmp/nodejs.js"
       txt = "function puts (txt){ return console.log(txt) }\n\n#{txt}"
       File.open(file, "w") { |f| f << txt }
-      Console["node #{file}"]
+      Shell["node #{file}"]
     end
 
   end
