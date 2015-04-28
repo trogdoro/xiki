@@ -2,21 +2,20 @@
 
 set -f
 
-export bin_dir=`dirname $0`
+# Set gem_home, so xiki gems don't interfere with main ones...
 
-# Dir might be ., only if xsh not in $PATH yet
-if [ "$bin_dir" = "." ]; then
-  bin_dir=`pwd`
-fi
-# Sometimes relative path, so prepend where we are
-if [[ ! "$bin_dir" =~ ^/ ]]; then
-  bin_dir=`pwd`/$bin_dir
-fi
+mkdir -p ~/xiki/misc/gems/
+export GEM_HOME=~/xiki/misc/gems/
 
-export xiki_dir=`dirname $bin_dir`
+# Resolve the xiki dir even if there's a symlink somewhere in the path...
 
-emacs="emacs"
-emacsclient="emacsclient"
+SOURCE="$0"
+while [ -h "$SOURCE" ]; do
+  DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+  SOURCE="$(readlink "$SOURCE")"
+  [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
+done
+export xiki_dir=`dirname "$( cd -P "$( dirname "$SOURCE" )" && pwd )"`
 
 # Complain if project dir is ~/xiki/...
 
@@ -24,6 +23,9 @@ if [ "$xiki_dir" = "$HOME" ]; then
   cat "$xiki_dir/misc/command/shell_please_move.txt"
   exit
 fi
+
+emacs="emacs"
+emacsclient="emacsclient"
 
 # Get emacs version, or blank if emacs not found...
 
