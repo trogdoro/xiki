@@ -17,15 +17,21 @@ module Xiki
       options[:output] = self.txt name, item, item, options
     end
 
-    def self.txt name, content=nil, item=nil, options={}
 
+    def self.txt name, content=nil, item=nil, options={}
       prefix = options[:prefix]
 
       custom_conf = "#{Xiki.menu_path_custom_dir}/conf/#{name}.conf"
 
+      task = options[:task]
+
+      # /~, so show tasks...
+
+      return "~ navigate\n~ save" if task == []
+
       # as+open...
 
-      if prefix == "open"
+      if task == ["navigate"] || prefix == "open"
         item.sub! /^\| /, ''
 
         View.open custom_conf, :to=>"^#{$el.regexp_quote item}$"   # "

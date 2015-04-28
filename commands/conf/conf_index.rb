@@ -3,12 +3,6 @@ module Xiki::Menu
 
     include Xiki
 
-    MENU = "
-      > options
-      - docs/
-        > __
-      "
-
     # Can be called 2 ways, nested or not:
     # conf/
     #   - foo/
