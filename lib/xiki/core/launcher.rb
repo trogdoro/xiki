@@ -607,8 +607,8 @@ Ol["oh, this path is an array: #{path}!"] if path.is_a?(Array)
         return
       end
 
-      # Deprecated
-      return Launcher.go if options[:unified]
+      options.merge! :launcher_open=>1
+
       Launcher.launch options
     end
 
@@ -975,9 +975,9 @@ Ol["oh, this path is an array: #{path}!"] if path.is_a?(Array)
         return true
       end
 
-      # <+ : replace line...
+      # If padding at beginning, and one of these, do .unindent
 
-      # <: : replace siblings...
+      # <: and <+ replace siblings or line...
 
       if txt =~ /\A<([+:])\n/
         arg = $1
