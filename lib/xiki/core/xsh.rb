@@ -239,7 +239,7 @@ module Xiki
 
       elsif args == "f"
         View.<< "./"
-        Launcher.launch :task=>["tree"]
+        Launcher.launch :task=>["all files"]
         return
 
       elsif args =~ /\A\+(\w.*)/
