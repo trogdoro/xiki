@@ -1,5 +1,12 @@
 file = options[:dir] # || Shell.dir
 
+# $ ls, so make all lines have colons...
+
+if shell_output = options[:shell_output]
+  shell_output.gsub! /^\|/, ":"
+  return
+end
+
 command = options[:shell_command]
 
 command = "ls -p" if command == "ls"

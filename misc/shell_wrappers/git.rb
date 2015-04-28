@@ -1,11 +1,21 @@
+
 # /, so require "$ git" to be there (must be the raw "shell git" menu)...
 
 command = options[:shell_command]
 dir = options[:dir] # || Shell.dir
 
-if args.blank?
-  options[:no_slash] = 1
-  return Tree.quote Shell.sync(command, :dir=>dir)
+# /, so put colons before which lines are expandable?
+
+if shell_output = options[:shell_output]
+  # $ docker help, so colonize all commands...
+  return shell_output.gsub! /^\|(  +(log|branch|diff|status)  +)/, ":\\1" if command == "git"
+  return shell_output.gsub! /^\|(  +([a-z]+)  +)/, ":\\1" if command == "git help"
+end
+
+
+if command == "git help"
+  command = args[0][/[a-z]+/]
+  return Tree.pipe Shell.command("git help #{command}")
 end
 
 # /$ git/:    log (1st arg only), so run the command...
