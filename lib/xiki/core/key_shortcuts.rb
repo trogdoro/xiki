@@ -618,11 +618,11 @@ module Xiki
         $el.define_key(:osx_key_mode_map, $el.kbd("C-;")){ Bookmarks.go }
       end
 
-      if $el.locate_library "ruby-mode"
-        $el.el_require :ruby_mode
-        $el.message ""   # Keep it from showing junk at bottom
-        $el.define_key :ruby_mode_map, $el.kbd("C-j"), nil
-      end
+      # if $el.locate_library "ruby-mode"
+      #   $el.el_require :ruby_mode
+      #   $el.message ""   # Keep it from showing junk at bottom
+      #   #$el.define_key :ruby_mode_map, $el.kbd("C-j"), nil
+      # end
 
       $el.define_key :global_map, $el.kbd("C-z"), :undo
 

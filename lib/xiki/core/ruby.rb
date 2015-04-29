@@ -73,8 +73,8 @@ module Xiki
     end
 
     def self.keys
-      $el.define_key(:ruby_mode_map, $el.kbd("C-c C-n")){ Ruby.custom_next }   # custom+next
-      $el.define_key(:ruby_mode_map, $el.kbd("C-c C-p")){ Ruby.custom_previous }   # custom+previous
+      # $el.define_key(:ruby_mode_map, $el.kbd("C-c C-n")){ Ruby.custom_next }   # custom+next
+      # $el.define_key(:ruby_mode_map, $el.kbd("C-c C-p")){ Ruby.custom_previous }   # custom+previous
     end
 
     # Makes "Foo.bar" string from quoted method line.
