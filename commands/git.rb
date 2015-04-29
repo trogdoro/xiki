@@ -686,7 +686,7 @@ module Xiki::Menu
         return "<! Provide some files (on lines next to this menu, with no blank lines, and no untracked files)!"
       end
 
-      siblings = siblings.map{|o| "\"#{o}\""}.join("\\\n  ")
+      siblings = siblings.map{|o| "\"#{o}\""}.join(" ")
       siblings.gsub!(" -> ", "\" \"")   # In case any "a -> b" exist, from renames
 
       # Todo > only cd if necessary!
