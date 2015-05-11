@@ -29,14 +29,14 @@ class SampleMenus
 
   def self.by_extension extension
 
-    # return nil if extension == "." || ! extension
     return "Sample text\nfor a file." if extension == "." || ! extension
 
     txt = File.read __FILE__.sub(/\.rb$/, '.menu')
-    txt = #if txt   # If extension was found, pull it out
-        txt[/#{Regexp.quote extension}\n(^ +:.*\n)+/]
+    txt = txt[/#{Regexp.quote extension}\n(^ +:.*\n)+/]
 
-    return nil if ! txt
+    # If extension was found, pull it out
+    return self.by_extension("txt") if ! txt
+
     # Remove 1st line and pipes
     txt.sub! /.+\n/, ''
     txt.gsub! /^ +: ?/, ''

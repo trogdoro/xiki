@@ -115,21 +115,32 @@ module Xiki
       was_reverse = self.was_reverse
       match = self.stop
 
-      if match.nil?   # If nothing searched for yet, search for variable
-        loc = Keys.input(:chars=>1, :prompt=>"Enter variable name (one char) to search: ")
-        loc = loc.to_s
 
-        txt = Clipboard.hash[loc.to_s] || Clipboard.hash_by_first_letter[loc.to_s]
-        txt ||= self.searches.find{|o| o =~ /^#{loc}/i}
+      # Nothing searched for yet, so do search+value (search for what's in the clipboard)...
 
-        return View.message("Nothing to search for matching '#{loc}'.", :beep=>1) if txt.nil?
-        self.isearch txt, :reverse=>was_reverse
-
-        return
+      if match.nil?
+        return self.isearch Clipboard[0]
       end
 
+      # Old "search+variable" functionality
+      # if match.nil?   # If nothing searched for yet, search for variable
+      #   loc = Keys.input(:chars=>1, :prompt=>"Enter variable name (one char) to search: ")
+      #   loc = loc.to_s
+      #
+      #   txt = Clipboard.hash[loc.to_s] || Clipboard.hash_by_first_letter[loc.to_s]
+      #   txt ||= self.searches.find{|o| o =~ /^#{loc}/i}
+      #
+      #   return View.message("Nothing to search for matching '#{loc}'.", :beep=>1) if txt.nil?
+      #   self.isearch txt, :reverse=>was_reverse
+      #
+      #   return
+      # end
+
+
+      # Pull match back to search start...
+
+
       self.to_start  # Go back to start
-      #       View.insert match, :dont_move=>1
       View.insert match #, :dont_move=>1
       View.message ""
     end

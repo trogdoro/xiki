@@ -607,7 +607,13 @@ module Xiki
 
     end
 
-    def self.quit_and_run commands
+    def self.quit_and_run commands, options={}
+
+      if options[:dir]
+        dir = Shell.quote_file_maybe options[:dir]
+        commands = "cd #{dir}\n#{commands}"
+      end
+
       Xsh.save_grab_commands commands
       self.quit
     end

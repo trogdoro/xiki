@@ -506,7 +506,6 @@ module Xiki
 
     end
 
-
     def self.insert_date
       prefix = Keys.prefix :clear=>1
 
@@ -519,10 +518,14 @@ module Xiki
     def self.insert_time
       prefix = Keys.prefix :clear=>1
 
-      return View.<<(Time.now.strftime("%Y-%m-%d %I:%M:%S%p").sub(' 0', ' ').downcase) if prefix == :u
-      return View.<<(Time.now.strftime("%I:%M:%S%p").sub(/^0/, '').downcase) if prefix == :-
+      # up+, so insert time and date...
 
-      View.<<(Time.now.strftime("%Y-%m-%d"))
+      return View.<<(Time.now.strftime("%Y-%m-%d %I:%M:%S%p").sub(' 0', ' ').downcase) if prefix == :u
+
+      # No prefix, so insert just time...
+
+      View.<<(Time.now.strftime("%I:%M:%S%p").sub(/^0/, '').downcase)
+
     end
 
   end
