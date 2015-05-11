@@ -679,14 +679,14 @@ module Xiki
 
         # $ foo, so give shell_wrapper a chance to decorate the output...
 
-        # Todo Rename :shell_output to something else?
+        # Todo Rename :shell_root_output to something else?
         # - that makes it more clear it's only passed when no children!?
         #   - maybe > :shell_root_output"
 
         if ! options[:args]
-          options.merge! :shell_output=>txt
+          options.merge! :shell_root_output=>txt
           self.shell_wrapper(options)
-          txt = options[:shell_output]
+          txt = options[:shell_root_output]
         end
         txt = "<!" if txt == ":\n"
         return txt
@@ -767,8 +767,6 @@ module Xiki
 
       return self.shell_menu(options) if task == ["xiki command"] || args
 
-      return self.shell_edit(task[1], options) if task.length == 2 && task[0] == "edit"
-
       # ~ task, so show task list...
 
       menu = Xik.new "
@@ -792,14 +790,20 @@ module Xiki
           ! Launcher.launch
           ! return nil
         ~ edit/
-          - shell wrapper
-          - examples
-          - notes
+          + shell wrapper
+          + examples
+          + notes
+          + main/
+            + shell wrapper
+            + examples
       "
 
       task[0] = "~ #{task[0]}" if task[0]
       result = menu[task, :eval=>options]
-      result || ""
+
+      result = self.shell_edit(task[1..-1], options) if ! result && task[0] == "~ edit"
+
+      result
 
     end
 
@@ -812,8 +816,6 @@ module Xiki
       command_root = (command||"").sub(/ .*/, '')   # Cut off after the space
 
       # ~ history, so list history for this command and this dir...
-
-      options[:nest] = 1
 
       options[:no_task] = 1
       dir = Shell.dir if ! dir   # We're not nested under a dir, so grab dir from shell
@@ -940,8 +942,11 @@ module Xiki
         ".unindent) if ! View.txt.any?
     end
 
-    def self.shell_examples_edit command_root
-      home_example_file = Bookmarks[":xh/misc/shell_examples/#{command_root}.menu"]
+    def self.shell_examples_edit command_root, options={}
+
+      home_or_main = options[:main] ? ":xs" : ":xh"
+
+      home_example_file = Bookmarks["#{home_or_main}/misc/shell_examples/#{command_root}.menu"]
 
       View.open home_example_file
       View.<<("
@@ -1035,7 +1040,8 @@ module Xiki
     end
 
 
-    def self.shell_edit item, options
+    def self.shell_edit items, options
+
 
       dir, command, args, task = options[:dir], options[:command], options[:args], options[:task]
       command_root = command.sub(/ .*/, '')   # Cut off after the space
@@ -1046,41 +1052,28 @@ module Xiki
 
       # "shell wrapper", so show it
 
-      if item == "notes"
+      case items[0]
 
-        self.shell_notes_edit command_root
-        return ""
-
-      elsif item == "examples"
-
-        self.shell_examples_edit command_root
-        return ""
-
-      elsif item == "shell wrapper"
-
+      when "shell wrapper"
         # Use wrapper in home dir, unless one in source dir exists
 
-        wrapper = Bookmarks[":xh/misc/shell_wrappers/#{command_root}"]
-        source_dir_wrapper = Bookmarks[":xs/misc/shell_wrappers/#{command_root}"]
-        wrapper = source_dir_wrapper if Command.exists? source_dir_wrapper
+        Command.open_wrapper_source command_root
+        return ""
+      when "notes"
+        self.shell_notes_edit command_root
+        return ""
+      when "examples"
+        self.shell_examples_edit command_root
+        return ""
+      when "main"
 
-        source_options = Expander.expanders("#{wrapper}//") rescue nil
-
-        if source_options
-          wrapper = Tree.source(source_options)
-        else
-          # Not there, so make it .rb
-          wrapper << ".rb"
+        case items[1]
+        when "shell wrapper"
+          Command.open_wrapper_source command_root, :only_main=>1
+          return ""
+        when "examples"
+          self.shell_examples_edit command_root, :main=>1
         end
-
-        wrapper = wrapper[0] if wrapper.is_a?(Array) and wrapper.length == 1
-
-        # If array (multiple items), show tree
-
-        return View.open :txt=>wrapper.join("\n") if wrapper.is_a?(Array)
-
-        return View.open wrapper
-
       end
 
       ""
@@ -1127,7 +1120,7 @@ module Xiki
 
       wrapper << Path.join(args) if args
 
-      options_in = {:dir=>dir, :task=>task, :shell_command=>command, :shell_output=>options[:shell_output]}
+      options_in = {:dir=>dir, :task=>task, :shell_command=>command, :shell_root_output=>options[:shell_root_output]}
       result = Xiki.expand wrapper, options_in
 
       # Pass some options back if set
