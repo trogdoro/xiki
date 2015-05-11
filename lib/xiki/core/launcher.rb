@@ -938,10 +938,10 @@ Ol["oh, this path is an array: #{path}!"] if path.is_a?(Array)
 
       # <$$ foo, so exit and run the command (if in shell console)...
 
-      if txt.strip =~ /\A<\$\$ (.+)\z/
-        command = $1
+      if txt =~ /\A<\$\$ /
+        command = txt.sub /\A<\$\$ /, ''
         return View.<<("Don't know how to handle $$... when not run from shell.") if Environment.gui_emacs
-        $el.suspend_emacs command
+        DiffLog.quit_and_run command
         return true
       end
 
