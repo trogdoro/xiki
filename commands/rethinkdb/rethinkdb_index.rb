@@ -1,5 +1,5 @@
 module Xiki
-  class Rethink
+  class Rethinkdb
 
     MENU_HIDDEN = "
       - .start/
@@ -9,17 +9,15 @@ module Xiki
       - .options/
         - .dbs/
         - .start/
-      - notes/
       =conf/
-      "
-      # - examples/
-    #       =notes/
+    "
 
     def self.dbs # name=nil
       options = yield
       @@conf = Xik.new options[:conf]
 
-      # /, so list databases
+      # /, so list databases...
+
       txt = r.db_list().run.map{|o| "<<< ~#{o}/\n"}.join
       "#{txt}| Or, set the default db using =conf"
     end
@@ -29,8 +27,7 @@ module Xiki
       local = "/usr/local/var/rethinkdb/"
       dir = File.directory?(local) ? local : "/tmp/"
 
-      Shell.async "rethinkdb", :buffer=>"rethinkdb", :dir=>dir
-      ""
+      "<$$ cd #{dir}\nrethinkdb --daemon"
     end
 
     def self.r database=nil
@@ -46,22 +43,17 @@ module Xiki
 
       # Only do if there is a conf - fail silently if no conf!"]
 
-      connect_options = {host:"localhost", port:"28015", db:"test"}
+      connect_options = {
+        host: @@conf["host"],
+        port: @@conf["port"],
+        db: @@conf["default database"],
+      }
 
-      ["host", "port", "db", "auth_key"].each do |key|
-        val = @@conf[key]
-        if val
-          connect_options[key.to_sym] = val.sub(/\n.+/m, '')
-        end
+      if auth_key = @@conf["auth key"]
+        connect_options[:auth_key] = auth_key
       end
 
-      connect_options[:db] = database if database
-
-      # Should this be ||= ?  Will it make it faster?
       @@conn = @@r.connect connect_options
-
-      #     rescue Exception=>e
-      #       raise "> Server isn't running\n+ start/"
     end
 
     def self.run_code txt, options={}
@@ -78,7 +70,12 @@ module Xiki
 
     def self.menu_after output=nil, *args
 
-      database = nil
+      options = yield
+
+      # This is cached here, since options are passed in at this level
+      @@conf = Xik.new options[:conf]
+
+      database = @@conf['default database']
 
       # ~foo, so pull it off as database
       if args[0] =~ /^~(.+)/
@@ -87,9 +84,6 @@ module Xiki
       end
 
       table, key, content = args
-
-      options = yield
-      @@conf = Xik.new options[:conf]
 
       # /, so prepend all tables...
 
@@ -108,7 +102,7 @@ module Xiki
           return "#{tables}#{output}"
         rescue Exception=>e
 
-          return "> Database doesn't exist\n- create it/" if e.message =~ /\ADatabase `.+` does not exist.$/
+          return "> Database '#{database}' doesn't exist\n- create it/" if e.message =~ /\ADatabase `.+` does not exist.$/
 
           raise "> Server isn't running.  Start it?\n#{output.sub('options', 'start')}" if e.is_a?(Errno::ECONNREFUSED)
           raise e
@@ -140,12 +134,12 @@ module Xiki
           result = r(database).table(table).order_by("id").run.map{|o| "+ #{o["id"]}/\n"}.join
 
           # If no results, use sample id
-          result = "> Table is empty.  Create some docs?\n+ foo/\n+ bar/" if result.blank?
+          result = "| Table is empty.  Create some docs?\n+ foo/\n+ bar/" if result.blank?
 
           return result
         rescue Exception=>e
           # If table didn't exist, prompt them to create
-          return "> Table doesn't exist\n- create it/" if e.message =~ /\ATable `.+` does not exist.$/
+          return "| Table doesn't exist\n+ create it" if e.message =~ /\ATable `.+` does not exist.$/
           raise e
         end
       end
@@ -161,7 +155,8 @@ module Xiki
             " if task == []
         end
 
-        # If "create it", create table
+        # "create it", so create table...
+
         if key == "create it"
           r(database).table_create(table).run
           return "<! created!"
@@ -174,20 +169,32 @@ module Xiki
           return
         end
 
+        # Get doc and display it...
+
         doc = r(database).table(table).get(key).run
 
-        # If there was no doc, create sample one
+        # Document doesn't exist, so create sample...
+
         doc ||= {"name"=>"not there", "description"=>"This doc doesn't exist yet!  Modify and expand to create"}
 
         doc.delete "id"
-        return Tree.quote TextUtil.ap(doc), :char=>"|"
+
+        txt = JSON.pretty_generate doc
+        # Remove { and }
+        txt.sub! /\A{\n/, ''
+        txt.sub! /\n}\z/, ''
+
+        return Tree.pipe txt
       end
 
       # /table/key/content, so save...
 
-      doc = TextUtil[content]
+      content = "{\n#{content}}"   # Put { and } back on
+
+      doc = JSON[content]
       doc["id"] = key
-      result = r(database).table(table).insert(doc, :upsert=>true).run
+
+      result = r(database).table(table).insert(doc, conflict:"replace").run
 
       "<! saved!"
 
