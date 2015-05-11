@@ -323,82 +323,67 @@ module Xiki
 
     def self.define_styles
 
-      raise "maybe put this line back:" if ! $el
+      Code.cache(:notes_define_styles) do
 
-      # - foo (r): <here>
-      Styles.define :variable, :face => 'verdana'
+        # - foo (r): <here>
+        Styles.define :variable, :face => 'verdana'
 
-      # >...
-      h1_size = "+3"
-
-      if Styles.dark_bg?
+        # >...
+        h1_size = "+3"
         bg = "555"
         pipe = "666"
-      else
-        bg = "909090"
-        pipe = "777"
-      end
 
-      label = "bbb"
+        label = "bbb"
 
-      Styles.define :notes_h1, :face=>'arial', :size=>h1_size, :fg=>'ccc', :bg=>bg, :bold=>nil
-      Styles.define :notes_h1_pipe, :face=>'arial', :size=>h1_size, :fg=>pipe, :bg=>bg, :bold=>true
-      Styles.define :notes_h1_label, :face=>'arial', :size=>h1_size, :fg=>label, :bg=>bg, :bold=>true
+        Styles.define :notes_h1, :face=>'arial', :size=>h1_size, :fg=>'ccc', :bg=>bg, :bold=>nil
+        Styles.define :notes_h1_pipe, :face=>'arial', :size=>h1_size, :fg=>pipe, :bg=>bg, :bold=>true
+        Styles.define :notes_h1_label, :face=>'arial', :size=>h1_size, :fg=>label, :bg=>bg, :bold=>true
 
-      Styles.define :notes_h1_agenda_pipe, :face => 'arial', :size => h1_size, :fg => '88cc88', :bg => '336633', :bold =>  true
-      Styles.define :notes_h1_agenda, :face => 'arial', :size => h1_size, :fg => 'ffffff', :bg => '336633', :bold => true
+        Styles.define :notes_h1_agenda_pipe, :face => 'arial', :size => h1_size, :fg => '88cc88', :bg => '336633', :bold =>  true
+        Styles.define :notes_h1_agenda, :face => 'arial', :size => h1_size, :fg => 'ffffff', :bg => '336633', :bold => true
 
-      # >>>...
-      Styles.define :notes_h3,
-        :face => 'arial', :size => "-1",
-        :fg => '999',#, :bg => "9999cc",
-        :bold =>  true
-      Styles.define :notes_h3_pipe,
-        :face => 'arial', :size => "-1",
-        :fg => '333'
+        # >>>...
+        Styles.define :notes_h3,
+          :face => 'arial', :size => "-1",
+          :fg => '999',#, :bg => "9999cc",
+          :bold =>  true
+        Styles.define :notes_h3_pipe,
+          :face => 'arial', :size => "-1",
+          :fg => '333'
 
-      # >>>>...
-      Styles.define :notes_h4,
-        :face => 'arial', :size => "-3",
-        :fg => '55b',
-        :bold =>  true
-      Styles.define :notes_h4_pipe,
-        :face => 'arial', :size => "-3",
-        :fg => '224'
+        # >>>>...
+        Styles.define :notes_h4,
+          :face => 'arial', :size => "-3",
+          :fg => '55b',
+          :bold =>  true
+        Styles.define :notes_h4_pipe,
+          :face => 'arial', :size => "-3",
+          :fg => '224'
 
-
-      if Styles.dark_bg?   # If black and white
         label_color = "e70"
-      else
-        label_color = "f70"
-      end
 
-      # Labels, emphasis
-      Styles.define :notes_label,
-        :face=>'arial black', :size=>"0",  # Mac
-        :fg=>label_color, :bold=>true
 
-      Styles.define :notes_bullet_parens,
-        :face => 'arial', :size => "-2",
-        :fg => "ee7700", :bold => true
+        # Labels, emphasis
+        Styles.define :notes_label,
+          :face=>'arial black', :size=>"0",  # Mac
+          :fg=>label_color, :bold=>true
 
-      # Styles.define :hidden, :fg=>"777", :bg=>"777"
-      Styles.define :hidden, :fg=>"333", :bg=>"333"
+        Styles.define :notes_bullet_parens,
+          :face => 'arial', :size => "-2",
+          :fg => "ee7700", :bold => true
 
-      # Strikethrough
-      Styles.define(:strike, :strike=>true)
+        # Styles.define :hidden, :fg=>"777", :bg=>"777"
+        Styles.define :hidden, :fg=>"333", :bg=>"333"
 
-      Styles.define :notes_g, :fg=>"6cf", :face=>'arial black', :size=>"0", :bold=>true
-      Styles.define :notes_blue, :fg=>"69f", :face=>'arial black', :size=>"0", :bold=>true
-      Styles.define :notes_red, :fg=>"c55", :face=>'arial black', :size=>"0", :bold=>true
-      Styles.define :notes_yellow, :fg=>"cb0", :face=>'arial black', :size=>"0", :bold=>true
-      Styles.define :notes_green, :fg=>"3c3", :face=>'arial black', :size=>"0", :bold=>true
+        Styles.define :notes_g, :fg=>"6cf", :face=>'arial black', :size=>"0", :bold=>true
+        Styles.define :notes_blue, :fg=>"69f", :face=>'arial black', :size=>"0", :bold=>true
+        Styles.define :notes_red, :fg=>"c55", :face=>'arial black', :size=>"0", :bold=>true
+        Styles.define :notes_yellow, :fg=>"cb0", :face=>'arial black', :size=>"0", :bold=>true
+        Styles.define :notes_green, :fg=>"3c3", :face=>'arial black', :size=>"0", :bold=>true
 
-      bg_color = Styles.attribute(:default, :background)
+        bg_color = Styles.attribute(:default, :background)
 
-      # =commit/White bg > make faces more compatible with it
 
-      if Styles.dark_bg?   # If black bg
         Styles.define :notes_h2, :face=>'arial', :size=>"-1", :fg=>'999'
         Styles.define :notes_h2_pipe, :face=>'arial', :size=>"-1", :fg=>pipe
         Styles.define :notes_h0_pipe, :face=>'arial', :size=>"+8", :fg=>pipe, :bg=>bg, :bold=> true
@@ -411,137 +396,141 @@ module Xiki
         Styles.define :escape_glyph, :fg=>"666"   # Red special char was too ugly
         Styles.define :trailing_whitespace, :bg=>'555'
 
-      else   # If white bg
 
-        Styles.define :notes_h2, :face=>'arial', :size=>"-1", :fg=>'fff'
-        Styles.define :notes_h2_pipe, :face=>'arial', :size=>"-1", :fg=>'b0b0b0'
-        Styles.define :notes_h0_pipe, :face=>'arial', :size=>"+8", :fg=>'b0b0b0', :bg=>"909090", :bold=>true
-        Styles.define :notes_h0, :fg=>"fff", :bg=>"909090", :face=>'arial', :size=>"+8", :bold=>true
-        Styles.define :notes_h0_green, :fg=>"af0", :bg=>"909090", :face=>'arial', :size=>"+8", :bold=>true
-        Styles.define :notes_h0_green_pipe, :fg=>"b0b0b0", :bg=>"909090", :face=>'arial', :size=>"+8", :bold=>true
-        Styles.define :notes_h1_green, :fg=>"af0", :bg=>"909090", :face=>'arial', :size=>"+3", :bold=>1
-        Styles.define :notes_h1_green_pipe, :fg=>"b0b0b0", :bg=>"909090", :face=>'arial', :size=>"+3", :bold=>true
+        # else   # If white bg
+        #   Styles.define :notes_h2, :face=>'arial', :size=>"-1", :fg=>'fff'
+        #   Styles.define :notes_h2_pipe, :face=>'arial', :size=>"-1", :fg=>'b0b0b0'
+        #   Styles.define :notes_h0_pipe, :face=>'arial', :size=>"+8", :fg=>'b0b0b0', :bg=>"909090", :bold=>true
+        #   Styles.define :notes_h0, :fg=>"fff", :bg=>"909090", :face=>'arial', :size=>"+8", :bold=>true
+        #   Styles.define :notes_h0_green, :fg=>"af0", :bg=>"909090", :face=>'arial', :size=>"+8", :bold=>true
+        #   Styles.define :notes_h0_green_pipe, :fg=>"b0b0b0", :bg=>"909090", :face=>'arial', :size=>"+8", :bold=>true
+        #   Styles.define :notes_h1_green, :fg=>"af0", :bg=>"909090", :face=>'arial', :size=>"+3", :bold=>1
+        #   Styles.define :notes_h1_green_pipe, :fg=>"b0b0b0", :bg=>"909090", :face=>'arial', :size=>"+3", :bold=>true
+        #   Styles.define :escape_glyph, :fg=>"999"   # Red special char was too ugly
+        #   Styles.define :trailing_whitespace, :bg=>'ccc'
 
-        Styles.define :escape_glyph, :fg=>"999"   # Red special char was too ugly
-        Styles.define :trailing_whitespace, :bg=>'ccc'
-      end
+        Styles.define :quote_hidden, :fg=>bg_color
 
-      Styles.define :quote_hidden, :fg=>bg_color
-
-      if Styles.dark_bg?   # If black bg
         Styles.dotted :bg=>'080808', :fg=>'111', :strike=>nil, :underline=>nil, :border=>['111', -1]
-      else
-        Styles.dotted :bg=>'eee', :fg=>'ddd', :strike=>nil, :underline=>nil, :border=>['ddd', -1]
+
+        notes_exclamation_color = Styles.dark_bg? ? "4c4" : "5a0"
+
+        Styles.define :notes_exclamation,  # Green bold text
+          :face=>'arial black', :size=>"0",
+          :fg=>notes_exclamation_color, :bold=>true
+
+        Styles.define :notes_link, :fg=>(Styles.dark_bg? ? "39b" : "08f"), :bold=>false
+
+        Styles.define :shell_prompt, :fg=>'#888', :bold=>1
+
       end
-
-      notes_exclamation_color = Styles.dark_bg? ? "4c4" : "5a0"
-
-      Styles.define :notes_exclamation,  # Green bold text
-        :face=>'arial black', :size=>"0",
-        :fg=>notes_exclamation_color, :bold=>true
-
-      Styles.define :notes_link, :fg=>(Styles.dark_bg? ? "39b" : "08f"), :bold=>false
-
-      Styles.define :shell_prompt, :fg=>'#888', :bold=>1
 
     end
 
     def self.apply_styles
 
       # Don't format quotes (it overrides the following formatting)
-      Styles.clear
 
-      # >... lines (headings)
-      Styles.apply("^\\(>\\)\\(.*\n\\)", nil, :notes_h1_pipe, :notes_h1)
+      Code.cache(:notes_apply_styles) do
+        Styles.clear
 
-      Styles.apply("^\\(> \\)\\(.*\n\\)", nil, :notes_h1_pipe, :notes_h1)
-      Styles.apply("^\\(>> \\)\\(.*\n\\)", nil, :notes_h2_pipe, :notes_h2)
-
-      # > Green!
-      Styles.apply("^\\(> \\)\\(.*!\\)\\(\n\\)", nil, :notes_h1_green_pipe, :notes_h1_green, :notes_h1_green)
-
-      # > Large:
-      Styles.apply("^\\(> \\)\\(.*:\\)\\(\n\\)", nil, :notes_h0_pipe, :notes_h0, :notes_h0)
-
-      Styles.apply("^\\(> \\)\\(.*!:\\)\\(\n\\)", nil, :notes_h0_green_pipe, :notes_h0_green, :notes_h0_green)
-
-      Styles.apply("^\\(>\\)\\( .+?: \\)\\(.+\n\\)", nil, :notes_h1_pipe, :notes_h1_label, :notes_h1)
+        Styles.apply("^\\(>\\)\\(.*\n\\)", nil, :notes_h1_pipe, :notes_h1)
 
 
-      # >>... lines
-      Styles.apply("^\\(>>\\)\\(.*\n\\)", nil, :notes_h2_pipe, :notes_h2)
+        # >... lines (headings)
+        Styles.apply("^\\(>\\)\\(.*\n\\)", nil, :notes_h1_pipe, :notes_h1)
 
-      # Commented
-      Styles.apply("^\\(>> .+?: \\)\\(.+\n\\)", nil, :notes_h2_pipe, :notes_h2)
+        Styles.apply("^\\(> \\)\\(.*\n\\)", nil, :notes_h1_pipe, :notes_h1)
+        Styles.apply("^\\(>> \\)\\(.*\n\\)", nil, :notes_h2_pipe, :notes_h2)
 
-      # >>>... lines
-      Styles.apply("^\\(>>>\\)\\(.*\n\\)", nil, :notes_h3_pipe, :notes_h3)
+        # > Green!
+        Styles.apply("^\\(> \\)\\(.*!\\)\\(\n\\)", nil, :notes_h1_green_pipe, :notes_h1_green, :notes_h1_green)
 
-      # >>>... lines
-      Styles.apply("^\\(>>>>\\)\\(.*\n\\)", nil, :notes_h4_pipe, :notes_h4)
+        # > Large:
+        Styles.apply("^\\(> \\)\\(.*:\\)\\(\n\\)", nil, :notes_h0_pipe, :notes_h0, :notes_h0)
 
-      # foo: > style like dir
-      Styles.apply("\\(^[\A-Za-z0-9 ][\A-Za-z0-9 '_.,>?-]*[\A-Za-z0-9.?]:\\)\\($\\| \\)", nil, :ls_dir)   # foo:
-      Styles.apply("\\(^[\A-Za-z0-9 ]:\\)\\($\\| \\)", nil, :ls_dir)   # f:   < just 1 letter
+        Styles.apply("^\\(> \\)\\(.*!:\\)\\(\n\\)", nil, :notes_h0_green_pipe, :notes_h0_green, :notes_h0_green)
 
-      #    >... headings (indented)
-      Styles.apply("^ +\\(> ?\\)\\(.*\n\\)", nil, :quote_heading_bracket, nil)
-      Styles.apply("^ +\\(> ?\\)\\(.*!\n\\)", nil, :quote_heading_bracket, :quote_heading_h1_green)
-
-      # - bullets with labels and comments
+        Styles.apply("^\\(>\\)\\( .+?: \\)\\(.+\n\\)", nil, :notes_h1_pipe, :notes_h1_label, :notes_h1)
 
 
-      # Todo > instead of having both here > make one syntax that catches them both
-      # - only match when: 1st char after space can't be [>|]
-      #   - probably > 1st char after space has to be alphanumeric
+        # >>... lines
+        Styles.apply("^\\(>>\\)\\(.*\n\\)", nil, :notes_h2_pipe, :notes_h2)
 
-      Styles.apply("^[ \t]*\\([<+-][<+=-]*\\) \\([^/:\n]+:\\) ", nil, :ls_bullet, :ls_dir)   # - foo: bar
+        # Commented
+        Styles.apply("^\\(>> .+?: \\)\\(.+\n\\)", nil, :notes_h2_pipe, :notes_h2)
 
-      Styles.apply("^[ \t]*\\([<+-][<+=-]*\\) \\([^(\n]*?)\\)\\( \\|$\\)", nil, :ls_bullet, :notes_label)   # - foo) bar
+        # >>>... lines
+        Styles.apply("^\\(>>>\\)\\(.*\n\\)", nil, :notes_h3_pipe, :notes_h3)
 
-      Styles.apply("^[ \t]*\\([a-z][^:|(\n]*)\\)\\( \\|$\\)", nil, :notes_label)   # - foo) bar
+        # >>>... lines
+        Styles.apply("^\\(>>>>\\)\\(.*\n\\)", nil, :notes_h4_pipe, :notes_h4)
 
-      Styles.apply("^[ \t]*\\([<+-][<+=-]*\\) \\(.*:\\)$", nil, :ls_bullet, :notes_label)   # - foo:
+        # foo: > style like dir
+        Styles.apply("\\(^[\A-Za-z0-9 ][\A-Za-z0-9 '_.,>?-]*[\A-Za-z0-9.?]:\\)\\($\\| \\)", nil, :ls_dir)   # foo:
+        Styles.apply("\\(^[\A-Za-z0-9 ]:\\)\\($\\| \\)", nil, :ls_dir)   # f:   < just 1 letter
+
+        #    >... headings (indented)
+        Styles.apply("^ +\\(> ?\\)\\(.*\n\\)", nil, :quote_heading_bracket, nil)
+        Styles.apply("^ +\\(> ?\\)\\(.*!\n\\)", nil, :quote_heading_bracket, :quote_heading_h1_green)
+
+        # - bullets with labels and comments
 
 
-      Styles.apply("^\\([ \t]*\\)\\([<+-]\\) \\(.+?:\\) +\\(|.*\n\\)", nil, :default, :ls_bullet, :notes_label, :ls_quote)
-      Styles.apply("^\\([ \t]*\\)\\([<+-]\\) \\([^(\n]+?)\\) +\\(|.*\n\\)", nil, :default, :ls_bullet, :notes_label, :ls_quote)
+        # Todo > instead of having both here > make one syntax that catches them both
+        # - only match when: 1st char after space can't be [>|]
+        #   - probably > 1st char after space has to be alphanumeric
 
-      Styles.apply("^ *\\(!.*\n\\)", nil, :ls_quote)   # ^!... for code
+        Styles.apply("^[ \t]*\\([<+-][<+=-]*\\) \\([^/:\n]+:\\) ", nil, :ls_bullet, :ls_dir)   # - foo: bar
 
-      # exclamation! / todo
-      Styles.apply("^[ \t]*\\([<+-]\\) \\(.*!\\)$", nil, :ls_bullet, :notes_exclamation)
-      Styles.apply("^ +\\(!\\+.*\n\\)", nil, :diff_green)   # Whole lines
-      Styles.apply("^ +\\(!-.*\n\\)", nil, :diff_red)
+        Styles.apply("^[ \t]*\\([<+-][<+=-]*\\) \\([^(\n]*?)\\)\\( \\|$\\)", nil, :ls_bullet, :notes_label)   # - foo) bar
 
-      Styles.apply("\\(\(-\\)\\(.+?\\)\\(-\)\\)", nil, :diff_small, :diff_red, :diff_small)
-      Styles.apply("\\(\(\\+\\)\\(.+?\\)\\(\\+\)\\)", nil, :diff_small, :diff_green, :diff_small)
+        Styles.apply("^[ \t]*\\([a-z][^:|(\n]*)\\)\\( \\|$\\)", nil, :notes_label)   # - foo) bar
 
-      # google/
-      Styles.apply "^ *\\(-?\\) ?\\([@=]?\\)\\(g\\)\\(o\\)\\(o\\)\\(g\\)\\(l\\)\\(e\\)\\(/\\)", nil, :ls_bullet, :ls_dir,   # google
-        :notes_blue, :notes_red, :notes_yellow, :notes_blue, :notes_green, :notes_red,
-        :ls_dir
+        Styles.apply("^[ \t]*\\([<+-][<+=-]*\\) \\(.*:\\)$", nil, :ls_bullet, :notes_label)   # - foo:
 
-      Styles.apply "^hint/.+", :fade6
 
-      # $..., %..., etc.
-      Styles.apply "^[< ]*[@=]? ?\\([%$&!]\\)\\( \\|$\\)", nil, :shell_prompt   # Colorize shell prompts after "@"
+        Styles.apply("^\\([ \t]*\\)\\([<+-]\\) \\(.+?:\\) +\\(|.*\n\\)", nil, :default, :ls_bullet, :notes_label, :ls_quote)
+        Styles.apply("^\\([ \t]*\\)\\([<+-]\\) \\([^(\n]+?)\\) +\\(|.*\n\\)", nil, :default, :ls_bullet, :notes_label, :ls_quote)
 
-      # $$...
-      Styles.apply "^[< ]*[@=]? ?\\(\\$\\$\\)", nil, :shell_prompt   # Colorize shell prompts after "@"
+        Styles.apply("^ *\\(!.*\n\\)", nil, :ls_quote)   # ^!... for code
 
-      # Make |~... lines be Dotsies
-      Styles.apply("^ *\\(|~\\)\\([^\n~]+\\)\\(~?\\)", nil, :quote_heading_pipe, :dotsies, :quote_heading_pipe)
+        # exclamation! / todo
+        Styles.apply("^[ \t]*\\([<+-]\\) \\(.*!\\)$", nil, :ls_bullet, :notes_exclamation)
+        Styles.apply("^ +\\(!\\+.*\n\\)", nil, :diff_green)   # Whole lines
+        Styles.apply("^ +\\(!-.*\n\\)", nil, :diff_red)
 
-      # |#... invisible
-      Styles.apply("^ *\\(|[#*].*\n\\)", nil, :hidden)
+        Styles.apply("\\(\(-\\)\\(.+?\\)\\(-\)\\)", nil, :diff_small, :diff_red, :diff_small)
+        Styles.apply("\\(\(\\+\\)\\(.+?\\)\\(\\+\)\\)", nil, :diff_small, :diff_green, :diff_small)
 
-      Styles.apply "^ *|\\^.*\n", :quote_medium
+        # google/
+        Styles.apply "^ *\\(-?\\) ?\\([@=]?\\)\\(g\\)\\(o\\)\\(o\\)\\(g\\)\\(l\\)\\(e\\)\\(/\\)", nil, :ls_bullet, :ls_dir,   # google
+          :notes_blue, :notes_red, :notes_yellow, :notes_blue, :notes_green, :notes_red,
+          :ls_dir
 
-      Styles.apply("^ *\\(<\\) \\(.*\n\\)", nil, :ls_bullet, :ls_quote)   # <...
+        Styles.apply "^hint/.+", :fade6
 
-      # Experimental
-      Styles.apply("^ *\\(<[a-z]+\\) \\(.*\n\\)", nil, :ls_bullet, :ls_quote)   # <...
+        # $..., %..., etc.
+        Styles.apply "^[< ]*[@=]? ?\\([%$&!]\\)\\( \\|$\\)", nil, :shell_prompt   # Colorize shell prompts after "@"
+
+        # $$...
+        Styles.apply "^[< ]*[@=]? ?\\(\\$\\$\\)", nil, :shell_prompt   # Colorize shell prompts after "@"
+
+        # Make |~... lines be Dotsies
+        Styles.apply("^ *\\(|~\\)\\([^\n~]+\\)\\(~?\\)", nil, :quote_heading_pipe, :dotsies, :quote_heading_pipe)
+
+        # |#... invisible
+        Styles.apply("^ *\\(|[#*].*\n\\)", nil, :hidden)
+
+        Styles.apply "^ *|\\^.*\n", :quote_medium
+
+        Styles.apply("^ *\\(<\\) \\(.*\n\\)", nil, :ls_bullet, :ls_quote)   # <...
+
+        # Experimental
+        Styles.apply("^ *\\(<[a-z]+\\) \\(.*\n\\)", nil, :ls_bullet, :ls_quote)   # <...
+
+      end
+
     end
 
     # Startup
@@ -567,6 +556,7 @@ module Xiki
         FileTree.apply_styles
         Notes.apply_styles
         FileTree.apply_styles_at_end
+
         $el.use_local_map $el.elvar.notes_mode_map
         Xsh.chdir_when_xsh_session
         View.tab_width 12
@@ -1343,7 +1333,7 @@ module Xiki
       # Get user input...
 
       keys = Keys.input :optional=>1, :message=>"Which note? (Type a key or two): "
-      return open_or_insert.call "notes/" if ! keys
+      return open_or_insert.call "^" if ! keys
 
       # Get possible matches - files in ~/notes without extensions...
 
@@ -1355,7 +1345,8 @@ module Xiki
 
       return open_or_insert.call "notes/" if ! found
 
-      open_or_insert.call "notes/#{found}/"
+      open_or_insert.call "^"
+
       nil
     end
 
@@ -1397,7 +1388,7 @@ module Xiki
 
       # Move forward if at beginning of line
       Move.forward if Line.at_left? && ! View.at_top?
-      found = Search.forward "^ *[+-] [a-zA-Z0-9 +'.>]*)\\($\\| \\)", :beginning=>true
+      found = Search.forward "^ *[+-] [a-zA-Z0-9 +'.>_-]*)\\($\\| \\)", :beginning=>true
       return Move.backward if ! found
 
       # Label for the next line, so move to next line
@@ -1405,7 +1396,7 @@ module Xiki
     end
 
     def self.next_line_when_paren_label
-      Line.to_next if Line[/^ *[+-] [a-zA-Z0-9 +'.>]*\)$/]   # '
+      Line.to_next if Line[/^ *[+-] [a-zA-Z0-9 +'.>_-]*\)$/]   # '
     end
 
     def self.extract_paren_labels options={}
@@ -1432,7 +1423,7 @@ module Xiki
           next
         end
 
-        label = line[/^ *[+-] ([\w .+'>]*)\)( |$)/, 1]   # ' > label regex
+        label = line[/^ *[+-] ([\w .+'>_-]*)\)( |$)/, 1]   # ' > label regex
         next if ! label
 
         if label == ""

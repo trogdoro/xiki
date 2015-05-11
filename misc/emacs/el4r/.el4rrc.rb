@@ -8,7 +8,7 @@
 @unittest_lisp_object_gc_trigger_increment = 5000
 @unittest_ruby_gc_trigger_count = 5000
 @unittest_ruby_gc_trigger_increment = 5000
-@temp_file = "/var/folders/66/3h81t2y913vf344z6fb2cks00000gn/T/el4r-#{ENV['USER'] || ENV['USERNAME'] || 'me'}.tmp"
+@temp_file = "/var/folders/66/3h81t2y913vf344z6fb2cks00000gn/T/el4r-tmp.tmp"
 
 # This file is loaded once from lisp and once from ruby, so this var sometimes isn't set
 XIKI_DIR = ENV['XIKI_DIR'] if ! defined?(XIKI_DIR)
@@ -33,9 +33,3 @@ end
 
 at_exit { __elisp_init__  if __FILE__==$0 }
 
-### Customizable variables
-### You can override these variables in User-setting area.
-@init_script = "init.rb"
-
-# Emacs program name used by el4r / el4r-runtest.rb
-@emacs_program = "emacs"

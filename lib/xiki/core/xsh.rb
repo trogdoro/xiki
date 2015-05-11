@@ -198,7 +198,6 @@ module Xiki
       # Enable theme and styles...
 
       Themes.use 'Default'
-      Styles.reload_styles   # So it uses dark headings
 
       return if options[:do_nothing]
 

@@ -212,6 +212,8 @@ module Xiki
 
     Keys.map_reset
 
+    FileTree.define_styles
+    Color.define_styles
     Notes.define_styles
     Notes.init
     Notes.keys  # Define local keys
@@ -228,7 +230,6 @@ module Xiki
     # If we're reloading on top of a process after a fork, delegate to .reload...
 
     return self.reload if @@loaded_already
-
     @@loaded_already = true
 
     # Not loaded yet, so call .init methods of many classes...

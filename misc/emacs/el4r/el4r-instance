@@ -509,6 +509,45 @@ module El4r
               "Cannot treat as lisp expression: <#{expression.inspect}>")
       end
     end
+
+    # If no input stream was passed, we're just generating and caching elisp to run later
+    def caching
+      ! @emacs_in
+    end
+
+    $el4r_cached_lisp ||= {}
+
+    # Cache elisp as block is run. If we already cached it, just run the cached version.
+    def cache key, &block
+
+      # Normal running, with full $el, so use cache or run normally...
+      if ! caching
+        cached = $el4r_cached_lisp[key]
+
+        # Cache exists, so eval...
+        if cached
+          el4r_lisp_eval cached
+          return
+        end
+
+        # No cache, so just load as normal...
+
+        block.call
+
+      else
+
+        # Pre-loading with partial $el, so just cache it...
+
+        block.call
+
+        $el4r_cached_lisp[key] = "(progn #{@emacs_out.string})".freeze
+
+        @emacs_out.reopen
+      end
+
+      nil
+
+    end
   end
 
   # Pseudo $stdout object for el4r.
@@ -598,6 +637,12 @@ module El4r
       @call_level = 0
       @last_error = nil
       @el4r_is_debug = ENV["EL4R_DEBUG"]
+
+      @el_backtrace_reset_threshold = 1 # very nasty hack!
+      @el_backtrace = []
+
+      return if ! conf   # If caching
+
       @elvar = ELVariables.new(self)
       @el4r_rubyobj_stock = ELRubyObjectStock.new(self)
       @el4r_garbage_elobj_ids = []
@@ -605,9 +650,6 @@ module El4r
       @el4r_output = El4rOutput.new self
 
       initialize_log
-
-      @el_backtrace_reset_threshold = 1 # very nasty hack!
-      @el_backtrace = []
 
       _init_eval_after_load
 
@@ -626,9 +668,13 @@ module El4r
       el4r_interrupt if el4r_callback?
       el4r_with_call {
         el4r_send(lispexpr)
-        result=el4r_get
-        el4r_debug{"}"}
-        result
+
+        if ! caching
+          result = el4r_get
+          el4r_debug{"}"}
+          result
+        end
+
       }
     end
 
@@ -828,8 +874,14 @@ module El4r
 
     def el4r_send(lispexpr)
       el4r_debug { "Sending Lisp expression{ #{lispexpr}"; }
+
       @emacs_out.print(lispexpr)
-      @emacs_out.print("\0")
+
+      # Delimit with ascii 0 normally, or "\n" when caching
+      caching ?
+        @emacs_out.print("\n") :
+        @emacs_out.print("\0")
+
       @emacs_out.flush
     end
 
@@ -1027,7 +1079,7 @@ if __FILE__ == $0
 
       # Slow boot stuff...
 
-      el4r = El4r.create_instance #(options)
+      el4r = El4r.create_instance
       el4r.instance_eval_invoker "#{XIKI_DIR}/misc/emacs/el4r/init.rb"
 
       $el = el4r
@@ -1122,11 +1174,9 @@ if __FILE__ == $0
     require 'socket'
     server = UNIXServer.new "/tmp/xikisock"
     while true
-      Ol()
       socket = server.accept
       El4r.main :input=>socket, :output=>socket
     end
-
 
   elsif ARGV[0] == 'test_boot'
 
@@ -1137,6 +1187,7 @@ if __FILE__ == $0
     puts "Booted."
     $el = el4r
     El4r.main
+
   elsif ARGV[0] == nil
     # Scenario 4: Emacs started us as slave process (controlled via pipe)...
 

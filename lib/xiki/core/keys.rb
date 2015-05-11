@@ -9,6 +9,7 @@ module Xiki
 
     @@key_queue = []   # For defining menus (must be done in reverse)
     @@source ||= {}   # Stores source for new unified key defs
+    @@accumulate = nil
 
     # Stores definition of new expanding keys. Structure:
     #   "view"     => {
@@ -484,6 +485,7 @@ module Xiki
     end
 
     def self.map keys=nil, options={}
+
       return @@map if keys.blank?   # Just return map if no keys
 
       name = keys[0]
@@ -495,15 +497,17 @@ module Xiki
         map = options[:map] || :global_map
         $el.define_key map, "\\C-#{initial}", &keys[1]
 
+      elsif keys[1].is_a?(String) && keys.length == 2
+        map = options[:map] || :global_map
+        Keys.define_key_that_evals map, "\"\\C-#{initial}\"", "Xiki::#{keys[1]}".inspect
+
       elsif ! @@map[name]
 
         # Multiple key combo, so define root key as expander, only if not defined yet...
 
         if ! ["s", "c"].member? initial
           map = options[:map] || :global_map
-          $el.define_key map, "\\C-#{initial}" do
-            Keys.expand [name]
-          end
+          self.define_key_that_evals map, "\"\\C-#{initial}\"", "\"Xiki::Keys.expand ['#{name}']\""
         end
 
         # Define menu, that will optionally pop up if they're slow...
@@ -524,6 +528,13 @@ module Xiki
         Xi.hset @@map_noob, *keys
       end
 
+    end
+
+    def self.define_key_that_evals map, key, code
+      elisp = "(define-key #{TextUtil.hyphen_case map.to_s} #{key} (lambda () (interactive) (el4r-ruby-eval #{code})))"
+
+      $el.el4r_lisp_eval elisp
+      nil
     end
 
     # Have user type in key.  Returns...
@@ -1377,7 +1388,10 @@ module Xiki
 
       times = prefix.is_a?(Fixnum) ? prefix : 1
 
-      times.times{ prock.call }
+      times.times do
+        prock.is_a?(Proc) ?
+          prock.call : $el.el4r_ruby_eval("Xiki::#{prock}")
+      end
 
     end
 
@@ -1507,6 +1521,14 @@ module Xiki
       "
     end
 
+    def self.accumulate?
+      @@accumulate
+    end
+
+    def self.accumulated
+      @@accumulated
+    end
+
     def self.accumulate
 
       @@accumulate = true   # Make key definitions build up elisp instead of run it as it comes
@@ -1515,6 +1537,7 @@ module Xiki
       yield
 
       @@accumulate, @@accumulated = nil, nil
+      nil
 
     end
 

@@ -417,7 +417,11 @@ module Xiki
       # If symbol, just treat as string
       args[0] = args[0].to_s if args[0].is_a? Symbol
 
+      # If :eval, use as block
+      block = options[:eval] if options[:eval]
+
       if args[0].is_a? String
+
         kind = Menu
 
         # Menu if symbol or string...
@@ -431,7 +435,10 @@ module Xiki
           args[0].sub! /(\.\w+)?\/*$/, ''
           name = args[0][%r"([^\/]+)/*$"]   # "
         else   # Must be normal foo/... menu path
-          return self.def_key args, options, block if args[0] =~ /\+/   # If name has "+", delegate to key shortcut
+
+          # foo+bar name, so define normal key shortcut...
+
+          return self.def_key args, options, block if args[0] =~ /\+/
           name = args[0].scan(/\w+/)[-1]   # Might be a menufied path
         end
 
@@ -510,26 +517,26 @@ module Xiki
 
       keys = Keys.words_to_letters args[0]
 
-      menu = args[1]
+      command = args[1]
 
-      # 2nd arg is string, so treat it like a menu ...
+      # 2nd arg is string, so treat it like a command ...
 
       # Example: Xiki.def "view+dimensions", "dimensions/", :hotkey=>1
-      if args.length == 2 && menu.is_a?(String)
+      if args.length == 2 && command.is_a?(String)
         options.merge! :bar_is_fine=>1
         block =
-          if menu =~ /^=/   # If menu is =foo..., prompt for bookmark to nest result under
+          if command =~ /^=/   # If command is =foo..., prompt for bookmark to nest result under
             lambda{
               file = Keys.bookmark_as_path :include_file=>1, :prompt=>"Enter a bookmark: "
-              Launcher.open "#{file}\n  #{menu}", options
+              Launcher.open "#{file}\n  #{command}", options
             }
           # elsif args[0] =~ /^enter\+/
-          #   lambda{ Launcher.insert menu, options }
-          elsif menu =~ /^\.=/   # If menu is .=foo..., nest under current file
+          #   lambda{ Launcher.insert command, options }
+          elsif command =~ /^\.=/   # If command is .=foo..., nest under current file
 
-            # For key shortcuts, if .=..., use current file, or view name
+            # For key shortcuts, if .=..., use current file, or view name...
 
-            menu.sub! /^\./, ''
+            command.sub! /^\./, ''
             ->{
               bm = Keys.input :optional=>1, :prompt=>"Enter bookmark, or pause for current file."   # Terminated by pause
 
@@ -539,16 +546,13 @@ module Xiki
               ancestor ||= View.file || View.name
 
               file = bm ? Keys.bookmark_as_path(:bm=>bm, :include_file=>1) : ancestor
-              Launcher.open "#{file}\n  #{menu}", options
+              Launcher.open "#{file}\n  #{command}", options
             }
           else
 
-            # Todo > Make this store the menu name in
-            # Like this:
-            #   return menu
-            #   | What about options though?  Will probably have to store into a hash
+            # Make key just open the command...
 
-            lambda{ Launcher.open menu, options }
+            lambda{ Launcher.open command, options }
           end
       end
 
@@ -561,8 +565,7 @@ module Xiki
       # foo, so save to Keys.map...
 
       if args[0] =~ /^[a-z]/
-
-        # New way of defining (only when :noob for now), so store in nested hash...
+        # Define in nested map of keys...
         path = args[0].split("_")
         Keys.map((path + [block]), options)
 
@@ -583,6 +586,11 @@ module Xiki
       end
 
       key.gsub!(/./){|o| (o.downcase.sum - 96).chr }   # Convert to control chars
+
+      # If block is a string, make wrapper to eval
+      if block.is_a?(String)
+        return Keys.define_key_that_evals map, key.inspect, "Xiki::#{block}".inspect
+      end
 
       $el.define_key(map, key, &block)
 

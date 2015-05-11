@@ -1054,13 +1054,6 @@ module Xiki
       $el.elvar.truncate_lines = on_or_off.to_sym == :off
     end
 
-    # Call this at startup to set some sensible view-related default behavior
-    def self.sensible_defaults
-      $el.el4r_lisp_eval("(progn (setq truncate-partial-width-windows nil)
-        (set 'default-truncate-lines t)
-        )")
-    end
-
     def self.set_mark pos=nil
       pos ||= self.cursor
       $el.set_mark pos

@@ -259,20 +259,17 @@ case $1 in
 
     # Emacs 23+, so use --daemon (will make for immediate startup)...
 
-    # If emacs --daemon not running yet, start it up and make it load xiki...
+    # Always start emacs --daemon, and then connect to it. This avoids
+    # emacs flashing weird text and formatting on the screen.
 
     unique=$RANDOM
+    $emacs -Q --daemon=$unique -nw &>/dev/null
 
-    ERROR=$( { $emacsclient -s $unique -e "(select-frame (car (last (frame-list))))" >/dev/null; } 2>&1 )
-    if [[ $ERROR != "" ]]; then
-      $emacs -Q --daemon=$unique -nw &>/dev/null
+    # Now that emacs is invisible, tell it to load the xiki classes (and cache a few things).
 
-      $emacsclient -s $unique -e "(load \"$xiki_dir/misc/emacs/start_xiki_daemon.el\")" &>/dev/null
-    fi
+    $emacsclient -s $unique -e "(load \"$xiki_dir/misc/emacs/start_xiki_daemon.el\")" &>/dev/null
 
     # Now load the parameters into ~/xiki/misc/params/
-
-    # Keeps flashing of the previous active buffer/frame to a minimum
 
     save_args_to_files "$@"
 
