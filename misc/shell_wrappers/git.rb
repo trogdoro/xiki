@@ -6,7 +6,7 @@ dir = options[:dir] # || Shell.dir
 
 # /, so put colons before which lines are expandable?
 
-if shell_output = options[:shell_output]
+if shell_output = options[:shell_root_output]
   # $ docker help, so colonize all commands...
   return shell_output.gsub! /^\|(  +(log|branch|diff|status)  +)/, ":\\1" if command == "git"
   return shell_output.gsub! /^\|(  +([a-z]+)  +)/, ":\\1" if command == "git help"
