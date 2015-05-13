@@ -1,6 +1,4 @@
 module Xiki
-  Styles.define :trailing_whitespace, :bg=>'444'
-
   Cursor.white
 
   Styles.minibuffer_prompt :size=>"+0", :face=>"Monaco", :fg=>"#bbb"

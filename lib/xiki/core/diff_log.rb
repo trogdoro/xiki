@@ -508,6 +508,8 @@ module Xiki
         dir = ancestors[-1]
 
         dir = Bookmarks[dir]
+        dir.gsub! "//", "/"   # Under a file command, so change "/foo//" to "/foo/" before cd'ing
+
         dir = Shell.quote_file_maybe dir
 
         # Todo > Do this, when there are args?

@@ -1,5 +1,4 @@
 module Xiki
-  Themes.use 'Dark Black BG'
 
   Styles.mode_line :bg=>'#aaa', :fg=>"#444", :bold=>true
   Styles.mode_line_inactive :bg=>'#aaa', :fg=>"#444", :bold=>true

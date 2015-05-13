@@ -4,6 +4,10 @@ module Xiki
   # installed.
   class ControlLock
 
+    def self.toggle
+      $el.control_lock_enable
+    end
+
     def self.disable
       $el.control_lock_enable if self.enabled?
     end

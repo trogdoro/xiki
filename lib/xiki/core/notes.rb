@@ -1293,7 +1293,7 @@ module Xiki
     @@single_letter_abbrev = {
       " "=>"",
       "p"=>"",
-      "b"=>"borrow!",
+      "b"=>"borrow:",
       "c"=>":",
       "d"=>"do!",
       "de"=>"delete!",

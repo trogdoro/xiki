@@ -362,9 +362,8 @@ module Xiki
     def self.kill
       prefix = Keys.prefix # :clear=>1
 
-      if prefix == :u
-        return Line.delete
-      end
+      # up+, so delete current line
+      prefix = 1 if prefix == :u
 
       if prefix == 0
         # Delete the blank line, if nothing here
