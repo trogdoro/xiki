@@ -996,5 +996,11 @@ module Xiki
       self.eval File.read(path), path, 1
     end
 
+
+    def self.cache key, &block
+      $el.cache key, &block
+    end
+
+
   end
 end
