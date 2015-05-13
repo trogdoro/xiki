@@ -4,6 +4,7 @@ require 'xiki/core/styles'
 require 'xiki/core/line'
 require 'xiki/core/view'
 require 'xiki/core/cursor'
+require 'xiki/core/code'
 
 module Xiki
   # Draws a tree from a dir structure and lets you incrementally search in the tree.
@@ -1723,9 +1724,9 @@ module Xiki
     end
 
     # Just puts "=rename/" underneath item the cursor is on...
-    def self.rename_file
+    def self.command_on_filename command
 
-      # Duplicate line, putting =rename_to after indent...
+      # Duplicate line, putting =rename after indent...
 
       line = Line.value
 
@@ -1734,8 +1735,8 @@ module Xiki
 
       has_dot = line =~ /\./
       has_dot ?
-        line.sub!(/^( *)([+-] )?.+(\..+)/, "\\1=rename/\\3") :
-        line.sub!(/^( *)([+-] )?.+/, "\\1=rename/")
+        line.sub!(/^( *)([+-] )?.+(\..+)/, "\\1=#{command}/\\3") :
+        line.sub!(/^( *)([+-] )?.+/, "\\1=#{command}/")
 
       Tree.<< line, :no_slash=>1, :no_search=>1
       Move.to_end
@@ -1926,7 +1927,9 @@ module Xiki
               ! Bookmarks.save
             ~ file/
               + rename
-                ! FileTree.rename_file
+                ! FileTree.command_on_filename "rename"
+              + copy
+                ! FileTree.command_on_filename "copy"
               + prompt here
                 ! Tree.<< "$ ", :no_search=>1, :no_slash=>1
                 ! Move.to_end
@@ -2029,7 +2032,7 @@ module Xiki
 
             ~ dir/
               + rename
-                ! FileTree.rename_file
+                ! FileTree.command_on_filename "rename"
               + prompt here
                 ! Tree.<< "$ "
                 ! Line.to_right
