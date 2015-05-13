@@ -163,7 +163,9 @@ You may need to do something like:
     el4r-unittest-ruby-gc-trigger-count 5000
     el4r-unittest-ruby-gc-trigger-increment 5000
     el4r-temp-file "/var/folders/66/3h81t2y913vf344z6fb2cks00000gn/T/el4r-tmp.tmp"
-    el4r-instance-program "/Users/craig/Dropbox/xiki/misc/emacs/el4r/el4r-instance"
+
+    el4r-instance-program (concat (getenv "XIKI_DIR") "/misc/emacs/el4r/el4r-instance")
+
   )
 
   (el4r-override-variables)
