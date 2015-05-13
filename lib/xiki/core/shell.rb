@@ -1210,11 +1210,15 @@ module Xiki
     end
 
     def self.external_plus_sticky_history
+
       txt = ""
 
       txt.<< File.read(Bookmarks[":xh/misc/logs/shell_sticky_log.notes"]) rescue ""
+      txt.gsub! /^\$ /, ''   # Remove "$ " at beginning
 
-      txt = File.read File.expand_path("~/xiki/misc/logs/shell_external_log.notes"), *Xiki::Files.encoding_binary
+      # txt = File.read File.expand_path("~/xiki/misc/logs/shell_external_log.notes"), *Xiki::Files.encoding_binary
+      txt.<< File.read(File.expand_path("~/xiki/misc/logs/shell_external_log.notes"), *Xiki::Files.encoding_binary)
+
       # Avoids "invalid byte sequence in UTF-8" error
       txt.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '')
 
