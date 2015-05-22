@@ -1078,7 +1078,7 @@ module Xiki
       end
 
 
-      # up+, so start with blank
+      # Dash+, so start with blank... ??
 
       # Line has content, so indent under...
 
@@ -1104,13 +1104,13 @@ module Xiki
       txt = txt.sub /\n+\z/, ''   # Remove last \n
 
       quote = target_quote || existing_quote
-      quote ||= '|' if prefix == :- || options[:char]
-      quote ||= ':'
+      quote ||= ':' if options[:char] || prefix == :u || prefix == :-
+      quote ||= '|'
 
       txt = txt.gsub /^/, "#{indent}#{quote} "
       txt = txt.gsub /^( *[|:#]) $/, "\\1"   # Remove trailing spaces
 
-      if prefix == :u
+      if prefix == :-
         View.insert "#{indent}#{quote} \n"
         Move.backward
         return
@@ -2024,13 +2024,16 @@ module Xiki
               ! ""
             ~ all files
               ! FileTree.expand_dir_recursively :file_path=>options[:file_path]
+            ~ modified date sort
+              ! FileTree.dir :date_sort=>true
+              ! ""
             ~ delete
               ! Keys.remember_key_for_repeat(proc {Launcher.launch :task=>["delete"], :no_prompt=>1})
               ! FileTree.delete_file options[:file_path], options
             ~ bookmark
               ! Bookmarks.save
 
-            ~ dir/
+            ~ file/
               + rename
                 ! FileTree.command_on_filename "rename"
               + prompt here
@@ -2053,9 +2056,6 @@ module Xiki
               + all contents
                 ! txt = FileTree.grep(options[:file_path], "").join("\\n")
                 ! txt.sub(/.+\\n/, "")   # Delete 1st line > the redundant dir
-              + modified date sort
-                ! FileTree.dir :date_sort=>true
-                ! ""
 
               + expand
                 ! Launcher.launch

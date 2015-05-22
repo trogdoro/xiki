@@ -1399,9 +1399,6 @@ module Xiki
       # Nothing searched for...
 
       if ! match
-        # Already in nav.notes, so do nothing
-        return if View.name == "nav.notes"
-
         Location.as_spot
         Search.isearch_restart ":n", :restart=>true
       end
@@ -1503,7 +1500,7 @@ module Xiki
       return false if ! target_path.start_with?(path)
 
       cursor = Line.left 2
-      FileTree.enter_quote match, :leave_indent=>1
+      FileTree.enter_quote match, :leave_indent=>1, :char=>":"
       View.cursor = cursor
 
       return true   # If handled
