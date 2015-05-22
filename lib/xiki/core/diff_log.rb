@@ -627,10 +627,10 @@ module Xiki
 
     def self.save_xsh_sessions
 
-      return if View.file   # Return if it has a file - it means it's not the "xsh" session (it's just a file with that name)
-
       # Avoid saving certain buffers
       View.kill if ["unsaved/"].member?(View.name)
+
+      return if View.file   # Return if it has a file - it means it's not the "xsh" session (it's just a file with that name)
 
       # Save session to file...
 
