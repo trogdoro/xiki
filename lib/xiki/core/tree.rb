@@ -543,25 +543,25 @@ module Xiki
       path.unshift root
 
 
-      # Prepend command heading
-      # - if :all, put =... back on root if it was there
-
-      # Only add heading if :all or no "=" at root
-      if options[:all] || ! root_has_equals
-
-        cursor_on_heading = line_orig =~ /^>/
-
-        if command_heading = Notes.command_heading(:check_current_line=>(cursor_on_heading))
-          root.sub! /^/, "=" if root_has_equals   # Add "=" back on root if was there
-
-          # If blank path, replace, otherwise prepend to list
-          if path == [""] || cursor_on_heading
-            path[0].replace command_heading
-          else
-            path.unshift command_heading
-          end
-        end
-      end
+      # # Prepend command heading
+      # # - if :all, put =... back on root if it was there
+      #
+      # # Only add heading if :all or no "=" at root
+      # if options[:all] || ! root_has_equals
+      #
+      #   cursor_on_heading = line_orig =~ /^>/
+      #
+      #   if command_heading = Notes.command_heading(:check_current_line=>(cursor_on_heading))
+      #     root.sub! /^/, "=" if root_has_equals   # Add "=" back on root if was there
+      #
+      #     # If blank path, replace, otherwise prepend to list
+      #     if path == [""] || cursor_on_heading
+      #       path[0].replace command_heading
+      #     else
+      #       path.unshift command_heading
+      #     end
+      #   end
+      # end
 
       # At this point, items are broken up by line...
 
@@ -1627,10 +1627,11 @@ module Xiki
 
       # Go down and grab each line until indented less...
 
-      while(Line.indent(Line.value(i)).size >= indent)
-        child = Line.value(i)
-        children << child
+      line = Line.value i
+      while(Tree.indent_size(line)*2 >= indent)
+        children << line
         i += 1
+        line = Line.value i
       end
 
       if options[:string]
@@ -1777,9 +1778,9 @@ module Xiki
           item.replace Path.escape item
         end
       end
-
+      # raw example: ["/projects/git_sample2/", "rename.txt", "$ git status"]
       path = self.join_to_subpaths raw
-
+      # path example: ["/projects/git_sample2/rename.txt/", "$ git status"]
       path
 
     end
@@ -1791,12 +1792,12 @@ module Xiki
 
       # Temporary implementation...
 
-      # Step 1. Join to "a/@b/c"...
+      # Step 1. Join to "a/=b/c"...
       # Maybe be more indirect about this? - maybe go directly to list of subpaths, instead of these 2 steps.
-      # Do thing where we don't require slash before @ when file path? (probably not worth it)
+      # Do thing where we don't require slash before = when file path? (probably not worth it)
 
       path = self.join_path path, :leave_blanks=>1
-
+      # path example: "/file/path.txt/$ foo"
       # Step 2. Split to "a/", "b/c/"...
       path = Path.split path, :outer=>1
       path

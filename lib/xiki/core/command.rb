@@ -73,7 +73,8 @@ module Xiki
 
       # > command heading/, so handle separately...
 
-      return self.to_menu_command_heading(item) if item =~ /^>/
+      # Disabled command headings for now
+      # return self.to_menu_command_heading(item) if item =~ /^>/
 
       item = Path.split(item)[-1]   # Grab last item (in case multiple items on the same line separated by slashes)
 
@@ -131,16 +132,15 @@ module Xiki
 
 
     # Delegated to by .to_menu when it's a command heading
-    def self.to_menu_command_heading item
-
-      command = Xiki::Notes.command_heading :check_current_line=>1
-
-      if ! command
-        View.flash "- This heading contains no command!"
-        return
-      end
-
-    end
+    # def self.to_menu_command_heading item
+    #
+    #   command = Xiki::Notes.command_heading :check_current_line=>1
+    #
+    #   if ! command
+    #     View.flash "- This heading contains no command!"
+    #     return
+    #   end
+    # end
 
   end
 end
