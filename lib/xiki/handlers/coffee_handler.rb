@@ -23,7 +23,7 @@ module Xiki
         console.log JSON.stringify func()
         ".unindent
 
-      txt = Shell.command "coffee --stdio", :stdin=>txt #, :raise_when_error=>1
+      txt = Shell.command "coffee --stdio", :stdin=>txt #, :raise_error=>1
 
       return txt if txt =~ /\A\n?> error\n/
 

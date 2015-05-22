@@ -196,11 +196,12 @@ module Xiki
           session.execute("cd '#{dir_orig}'")
         end
 
-        # :raise_when_error flag, so just raise stderr...
-        raise stderr if stderr.any? && options[:raise_when_error]
+        # :raise_error flag, so just raise stderr...
+        raise stderr if stderr.any? && options[:raise_error]
 
         # :return_error flag, so return stderr separately...
-        return [stdout, stderr] if options[:return_error]
+
+        return [stdout, stderr == "" ? nil : stderr] if options[:return_error]
 
         stdout += "\n> error\n#{stderr}" if stderr.any?
         return stdout
@@ -541,15 +542,13 @@ module Xiki
     end
 
     def self.prompt_for_bookmark
-      dir = Keys.bookmark_as_path :prompt=>"Bookmark to show prompt for: "
+      dir = Keys.bookmark_as_path :prompt=>"Bookmark to make shell prompt in: "
 
       View.to_buffer View.unique_name("untitled.notes")
       Notes.mode
 
       View << "#{dir}\n  $ "
       View >> "\n\n\n"
-
-      ControlLock.disable
 
     end
 

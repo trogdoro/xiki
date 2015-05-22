@@ -26,7 +26,7 @@ module Xiki
         console.log(JSON.stringify(output))
         ".unindent
 
-      txt = Shell.command "node", :stdin=>txt, :dir=>options[:dir] #, :raise_when_error=>1
+      txt = Shell.command "node", :stdin=>txt, :dir=>options[:dir] #, :raise_error=>1
 
       # Raised error, so just show it
 
