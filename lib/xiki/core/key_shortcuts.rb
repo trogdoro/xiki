@@ -148,7 +148,7 @@ module Xiki
       Xiki.def("enter+outline"){ Launcher.enter_outline }   # in tree, enter methods or headings
 
       Xiki.def("enter+quote"){ FileTree.enter_quote }
-      Xiki.def("enter+pipe"){ FileTree.enter_quote nil, :char=>"|" }
+      Xiki.def("enter+prompt"){ View.insert_shell_prompt }
       Xiki.def("enter+multi"){ $el.cua_set_rectangle_mark }
 
       Xiki.def("enter+in+time"){ Line.insert_time }
@@ -343,6 +343,8 @@ module Xiki
       Xiki.def("hop+ancestor"){ Tree.to_parent }   # to parent (last line indented less)
 
       Xiki.def("hop+remembered"){ Location.hop_remembered }
+      Xiki.def("hop+file"){ Launcher.open("hop to file/") }
+
       Xiki.def("hop+command"){ Command.to_menu }
       Xiki.def("hop+kind"){ Move.to_other_bracket }   # to matching bracket, etc
 
@@ -625,7 +627,7 @@ module Xiki
       Keys.set("C-."){ Keys.repeat }   # Repeat last command typed (like vim "."), except for trivial ones
       Keys.set("C-,"){ Keys.repeat :movement=>1 }   # Repeat last command typed (like vim "."), except for trivial ones
       # $el.define_key(:global_map, $el.kbd("C-;")){ Bookmarks.go }
-      $el.define_key(:global_map, $el.kbd("C-;")){ Bookmarks.go }
+      $el.define_key(:global_map, $el.kbd("C-;")){ Launcher.open("hop to file/") }
 
       Keys.set("C-'") { Keys.timed_insert }
       Keys.set("C-\\"){ ControlTab.go }
