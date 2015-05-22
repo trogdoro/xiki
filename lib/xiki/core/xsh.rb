@@ -42,6 +42,10 @@ module Xiki
 
       args.gsub! /\A\\\^/, "^"   # Undo backslash escaping of some chars
 
+      # Command was "xsh xsh ...", so remove the redundant "xsh "...
+
+      args.sub! /^xsh /, ''
+
       # if -c, pull it off and set :xic...
 
       # Check for various flags...

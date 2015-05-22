@@ -18,17 +18,19 @@ dest_file = args.join("/")
 
 if dest_file =~ /^:/
   dest_file = Bookmarks[dest_file]
-  dest_file = File.directory?(dest_file) ?
-    # Use bookmark as dir (if it's a dir) > ":bookmark/filepart of source"
-    "#{dest_file}/#{File.basename source_file}" :
-    # Use bookmark as full dest (if it's a file) > ":bookmark"
-    dest_file
 
-  options[:copy] ?
-    FileUtils.copy_file(source_file, dest_file) :
+  if File.directory?(dest_file)
+    dest_file.sub! /\/$/, ''
+    dest_file = "#{dest_file}/#{File.basename source_file}"
+  end
+
+  if options[:copy]
+    FileUtils.copy_file(source_file, dest_file)
+    return "| Copied #{source_file} to:\n= #{dest_file}"
+  else
     File.rename(source_file, dest_file)
-
-  return "<! #{options[:copy]} to: #{dest_file}"
+    return "| Renamed #{source_file} to:\n= #{dest_file}"
+  end
 end
 
 # If dest dir is /... and is dir, put stem of source on end of dest

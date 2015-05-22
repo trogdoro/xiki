@@ -290,15 +290,19 @@ module Xiki
       menu =  "
         ~ tutorial/
         ~ all commands/
-        ~ recent commands/
-        ~ create command/
-          - inline command/
-          - script/
-          - shell command/
-          - pattern/
-          - more/
+        ~ log/
+        ~ recent/
         ~ quit/
         "
+
+      # Old task items, maybe restore later:
+      # ~ recent commands/
+      # ~ create command/
+      #   - inline command/
+      #   - script/
+      #   - shell command/
+      #   - pattern/
+      #   - more/
 
       # Task root, so show items...
 
@@ -454,10 +458,12 @@ module Xiki
           patterns = Pattern.defs
         end
 
+        # Turn any remaining options keys into nesting that limits it. Example:
+        # options: :target_extension=>".rb"
+        # resulting keys: [:target_extension, ".rb"]
+
         keys = []
-        options.each do |k, v|
-          keys += [k, v]
-        end
+        options.each{|k, v| keys += [k, v]}
 
         keys.<< :global if keys.empty?
         keys += [args[0], implementation]

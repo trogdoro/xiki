@@ -6,6 +6,7 @@ set -f
 
 mkdir -p ~/xiki/misc/gems/
 export GEM_HOME=~/xiki/misc/gems/
+export PATH=~/xiki/misc/gems/bin/:$PATH
 
 # Resolve the xiki dir even if there's a symlink somewhere in the path...
 

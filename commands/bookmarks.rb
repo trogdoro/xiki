@@ -25,12 +25,12 @@ end
 file_path = args[1] ? args[1].sub(/^: /, '') : nil
 
 if options[:task] == []
-  txt = "~ navigate\n~ delete bookmark\n~ move to top"
+  txt = "~ source\n~ delete bookmark\n~ move to top"
   txt << "\n~ exit and cd" if file_path && File.directory?(file_path)
   return txt
 end
 
-if options[:task] == ["navigate"]
+if options[:task] == ["source"]
   file = Bookmarks[":xh/bookmarks/#{args[0]}.notes"]
 
   if ! File.exists? file

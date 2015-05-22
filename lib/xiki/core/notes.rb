@@ -1494,7 +1494,10 @@ module Xiki
       # Add a linebreak
 
       line = Line.value
-      View << "\n"
+
+      Keys.prefix_times do
+        View << "\n"
+      end
 
       # Weren't at end of a "$ foo", so do nothing else...
 
