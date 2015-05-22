@@ -1063,6 +1063,10 @@ module Xiki
       self.set_mark pos
     end
 
+    def self.select
+      self.set_mark
+    end
+
     def self.insert txt, options={}
       if options[:utf8]
         File.open("/tmp/tmp.txt", "w") {|f| f << txt}
@@ -2189,6 +2193,21 @@ module Xiki
     def self.close
       self.kill
       self.hide
+    end
+
+    def self.insert_shell_prompt
+
+      # up+, so prompt for bookmark...
+
+      if Keys.prefix_u
+        dir = Keys.bookmark_as_path :prompt=>"Bookmark to make shell prompt in: "
+        View.<< Bookmarks[dir], :dont_move=>1
+      end
+
+      # Insert "$ " under this dir...
+
+      Tree.<< "$ ", :no_search=>1, :no_slash=>1
+      Line.to_right
     end
 
   end
