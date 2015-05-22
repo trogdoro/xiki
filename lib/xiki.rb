@@ -535,6 +535,7 @@ module Xiki
     Themes.init_in_client
     History.init_in_client
     Deck.init_in_client
+    Ruby.init_in_client
   end
 
   class << self

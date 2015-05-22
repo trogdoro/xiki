@@ -60,12 +60,6 @@ end
 
 elvar.javascript_mode_map = make_sparse_keymap unless $el.boundp :javascript_mode_map
 
-if $el.boundp(:ruby_mode_map)
-  define_key :ruby_mode_map, kbd("C-c C-e") do
-    Xiki::View.insert "end"
-    $el.ruby_indent_line
-  end
-end
 
 module ::Xiki
 
@@ -85,7 +79,6 @@ end
 elvar.sort_fold_case = true   # To avoid stupid bug
 
 module ::Xiki
-  Ruby.keys   # Ruby mode shortcuts custom+next and custom+previous
 
   # Try loading user's startup.rb if it exists
   startup_rb = File.expand_path "~/xiki/misc/startup.rb"
