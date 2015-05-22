@@ -189,14 +189,16 @@ module Xiki
       prefix = Keys.prefix
 
       if prefix == :u or options[:rest]   # If U prefix, get rest of paragraph
-        left, right = View.paragraph(:bounds => true, :start_here => true)
+        left, right = View.paragraph(:bounds=>true, :start_here=>true)
       else
         if prefix   # If numeric prefix
-          self.as_line
+          Line.next 0
+          View.select
+          Line.next prefix
           return
         end
         # If no prefix, get whole paragraph
-        left, right = View.paragraph(:bounds => true)
+        left, right = View.paragraph(:bounds=>true)
       end
 
       if options[:just_return]
@@ -385,11 +387,27 @@ module Xiki
     end
 
     def self.select
-      if $el.elvar.mark_active
-        $el.exchange_point_and_mark
-      else   # Mark already set, so just jump to other side
-        $el.cua_set_mark
+
+      # up+, so just re-select what was selected last...
+
+      if Keys.prefix_u
+        right = View.cursor
+        View.cursor = $el.mark
+        left = View.cursor
+        View.selection = [right, left]
+        return
       end
+
+      # Text already selected, so just just jump to other side...
+
+      if $el.elvar.mark_active
+        return $el.exchange_point_and_mark
+      end
+
+      # Nothing selected yet, so just select
+
+      $el.cua_set_mark
+
     end
 
     def self.init_in_client
@@ -406,7 +424,7 @@ module Xiki
       if Environment.xsh? && Environment.os == "linux"
         txt, error = Shell.sync("xclip -o -selection clipboard", :return_error=>1)
         # Only use xclip if it exists and it's not returning an error
-        if error == ""
+        if ! error
           from_os_code = '"xclip -o -selection clipboard"'
           to_os_code = '"xclip" "*Messages*" "xclip" "-selection" "clipboard"'
         end
