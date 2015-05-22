@@ -797,13 +797,14 @@ Ol["oh, this path is an array: #{path}!"] if path.is_a?(Array)
         path[-1] << options[:path_append]
       end
 
-      # A +foo local command maybe found in the above text in this file, so use it...
+      # A +foo inline command maybe found in the above text in this file, so use it...
 
-      if path[0] =~ /\A[a-z0-9 ]+(\/|\z)/i
-        root = path[0][/[a-z0-9 ]+/i]
-        local_command = self.extract_command root
-        # Don't delegate to local command if $...
-        options[:command_text] = local_command if path[-1] !~ /^\$/
+      if path[-1] =~ /\A[a-z0-9 ]+(\/|\z)/i
+        root = path[-1][/[a-z0-9 ]+/i]
+        inline_command = self.extract_command root
+        options[:command_text] = inline_command
+        # Don't delegate to inline command if $...
+        # options[:command_text] = inline_command if path[-1] !~ /^\$/
       end
 
       # Expand command...
@@ -1098,7 +1099,14 @@ Ol["oh, this path is an array: #{path}!"] if path.is_a?(Array)
 
       open_options = options[:prefix] == 0 ? {:same_view=>1} : {}   # 0+ means use same view
 
+
       View.open txt, open_options
+
+
+
+      # Check file prefs > if default editor set
+
+
 
       if line_number
         View.line = line_number
@@ -1155,6 +1163,23 @@ Ol["oh, this path is an array: #{path}!"] if path.is_a?(Array)
     end
 
     def self.insert_menu
+
+      # Text selected, so nest selected text under the command...
+
+      if View.selection?
+
+        # Get bookmark from user
+
+        command = Keys.input "Command to nest this text under: "
+
+        left, right = View.range
+        txt = View.delete left, right
+
+        View.<< "#{command}/\n#{txt.gsub(/^/, "  | ")}", :dont_move=>1
+
+        return
+      end
+
       line = Line.value
       indent = Line.indent line
       blank = Line.blank?
@@ -1237,7 +1262,6 @@ Ol["oh, this path is an array: #{path}!"] if path.is_a?(Array)
       View << "#{prompt}"
       View >> "\n\n\n"
 
-      ControlLock.disable
     end
 
     # Mapped to jump+command.
@@ -1319,11 +1343,7 @@ Ol["oh, this path is an array: #{path}!"] if path.is_a?(Array)
 
       return if ! result
 
-      left = View.cursor
-      Tree.after_children
-      right = View.cursor
-      View.cursor = left
-      txt = View.txt left, right
+      txt = "#{Line.value}\n#{Tree.children_at_cursor(:string=>1)}"
 
       View.cursor = cursor
 
