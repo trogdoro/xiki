@@ -1,5 +1,45 @@
-require 'test/unit'
-$:.unshift "../"
+$:.unshift "spec/"
+require './spec/spec_helper'
+
+require 'xiki/core/git'
+
+describe Git, "#status_to_hash_new" do
+  it "Populates untracked key" do
+    txt = "
+      ?? a.txt
+      ?? b.txt
+    ".unindent
+    Git.status_to_hash(txt).should == {:untracked=>[["untracked", "a.txt"], ["untracked", "b.txt"]], :unadded=>[], :added=>[]}
+  end
+
+  it "Populates unadded key" do
+    txt = "
+      AM a.txt
+       M committed.txt
+       D deleteme.txt
+    ".unindent
+    Git.status_to_hash(txt).should == {:unadded=>[["modified", "a.txt"], ["modified", "committed.txt"], ["deleted", "deleteme.txt"]], :untracked=>[], :added=>[["new file", "a.txt"]]}
+  end
+
+  it "Populates added keys" do
+    txt = "
+      AM a.txt
+      A  d/d.txt
+      R  rename.txt -> renamed.txt
+    ".unindent
+    Git.status_to_hash(txt)[:added].should == [["new file", "a.txt"], ["new file", "d/d.txt"], ["renamed", "rename.txt -> renamed.txt"]]
+  end
+
+end
+
+
+
+__END__
+
+# Old test before moving to rspec:
+
+#require 'test/unit'
+#$:.unshift "../"
 require 'ol'
 require 'core_ext'
 require 'yaml'
