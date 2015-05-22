@@ -60,7 +60,7 @@ $el.el4r_lisp_eval %`
                   ; If special text, just show it
 
                   ; Face should be underline only if split
-                  (let ((face (if multiple-p 'mode-line-sides-underline 'mode-line-sides)))
+                  (let ((face (if multiple-p 'mode-line-transparent-underline-activatable 'mode-line-sides)))
                     (propertize (xiki-bar-add-padding xiki-bar-special-text) 'face face)
                   )
 
@@ -86,6 +86,7 @@ $el.el4r_lisp_eval %`
                     ; Face should be underline only if split
                     (if multiple-p
                       (xiki-bar-add-padding txt 'mode-line-transparent-underline (if active-p 'mode-line-transparent-underline-activatable 'mode-line-transparent-underline))
+
                       (xiki-bar-add-padding txt 'mode-line-transparent (if active-p 'mode-line-transparent-activatable 'mode-line-transparent))
                     )
                   )

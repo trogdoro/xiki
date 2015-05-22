@@ -6,4 +6,15 @@ module Xiki
   Styles.minibuffer_prompt :size=>"+0", :face=>"Monaco", :fg=>"#333"
   Styles.define :default, :bg=>'f8f8f8', :fg=>'000'
   Styles.define :fringe, :bg=>'f8f8f8', :fg=>'f8f8f8'
+
+
+  Styles.define :mode_line_sides, :bg=>'f8f8f8' #, :fg=>'f8f8f8'
+  Styles.define :mode_line_sides_underline, :bg=>'f8f8f8'
+
+  Styles.define :mode_line_transparent, :bg=>'f8f8f8'
+  Styles.define :mode_line_transparent_activatable, :bg=>'f8f8f8'
+  Styles.define :mode_line_transparent_underline, :bg=>'f8f8f8'
+  Styles.define :mode_line_transparent_underline_activatable, :bg=>'f8f8f8'
+
+
 end
