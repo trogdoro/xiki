@@ -1082,6 +1082,7 @@ module Xiki
     def self.source_glob dir
 
       name = File.basename dir
+      containing_dir_length = dir[/.*\//].length
 
       dir = dir.gsub ' ', '[ -_]'   # For spaces in menus, match source files with underscores or dashes, etc
       name.gsub! ' ', '[ -_]'
@@ -1090,7 +1091,6 @@ module Xiki
         ]
       return nil if list.empty?
 
-      containing_dir_length = dir[/.*\//].length
       list.each{|o| o.slice! 0..containing_dir_length-1}   # Chop off paths
       list
     end
