@@ -94,7 +94,7 @@
   (el4r-init)
   (el4r-ruby-eval
     (if noinit "el4r_boot__noinit" "el4r_boot"))
-  )
+)
 
 (defun el4r-shutdown ()
   "Shutdown el4r."
@@ -151,12 +151,28 @@ You may need to do something like:
   ;; But this sexp is nil when el4r-instance is accidentally dead.
   (and (get-buffer-process el4r-process-bufname) (el4r-shutdown))
 
-  (call-process-and-eval el4r-ruby-program (concat (getenv "XIKI_DIR") "/misc/emacs/el4r/.el4rrc.rb"))
+  (setq
+    el4r-lisp-object-gc-trigger-count 100
+    el4r-lisp-object-gc-trigger-increment 100
+    el4r-ruby-gc-trigger-count 100
+    el4r-ruby-gc-trigger-increment 100
+    el4r-log-buffer "*el4r:log*"
+    el4r-output-buffer "*el4r:output*"
+    el4r-unittest-lisp-object-gc-trigger-count 5000
+    el4r-unittest-lisp-object-gc-trigger-increment 5000
+    el4r-unittest-ruby-gc-trigger-count 5000
+    el4r-unittest-ruby-gc-trigger-increment 5000
+    el4r-temp-file "/var/folders/66/3h81t2y913vf344z6fb2cks00000gn/T/el4r-tmp.tmp"
+
+    el4r-instance-program (concat (getenv "XIKI_DIR") "/misc/emacs/el4r/el4r-instance")
+
+  )
 
   (el4r-override-variables)
   (setq el4r-lisp-object-hash (make-hash-table :test 'eq))
   (setq el4r-ruby-object-weakhash (make-hash-table :test 'eq :weakness 'value))
   (setq el4r-defun-lambdas nil)
+
   (let ((buffer el4r-process-bufname)
         (process-connection-type nil))  ; Use a pipe.
     (and (get-buffer buffer) (kill-buffer buffer))
@@ -615,11 +631,15 @@ You may need to do something like:
 
 (defun el4r-kill-and-restart () (interactive)
   "Load .emacs (reloading EmacsRuby)"
+
   (let ((lock (control-lock-enabled)))
 
     ; Only kill if xiki running
     (when (or (eq (process-status el4r-process) 'run) (eq (process-status el4r-process) 'open))
-      (el4r-ruby-eval "Xiki.kill"))
+      (el4r-ruby-eval "Xiki.kill")
+      ; Give it time to die, so we don't error when trying to use ~/.xikisock again
+      (sleep-for 0.1)
+    )
 
     (when (get-buffer "*el4r:process*")
       (let (kill-buffer-query-functions)   ; So it doesn't prompt us to delete the buffer

@@ -87,11 +87,16 @@ module Xiki::Menu
       "<! started!"
     end
 
+    def self.conf options
+      Xi.new options[:conf]
+    end
+
     def self.default_db options
-      conf = Xi.new options[:conf]
+      conf = self.conf options
       if(! conf || ! conf["default db"])
         raise "
-          > No default db defined.  Define it?
+          > You haven't set up your db config yet
+          | Expand this:
           =conf/mysql/
           "
       end
@@ -100,11 +105,20 @@ module Xiki::Menu
     end
 
     def self.tables *args
+      options = yield
       db = self.default_db yield
-      self.dbs db, *args
+      self.dbs_internal options, db, *args
     end
 
     def self.dbs db=nil, table=nil, *row
+
+      options = yield
+      self.dbs_internal options, db, table, *row
+
+    end
+
+    def self.dbs_internal options=nil, db=nil, table=nil, *row
+
       key, row = row[0] =~ /^\d+$/ ?
         row : [nil, row[0]]
 
@@ -115,14 +129,14 @@ module Xiki::Menu
       # /, so list db's...
 
       if db.nil?
-        txt = self.run('', 'show databases')
+        txt = self.run(options, '', 'show databases')
         return txt.split[1..-1].map{|o| "#{o}/"}
       end
 
       # /db/..., so just list the tables...
 
       if table.nil?
-        txt = self.run(db, 'show tables')
+        txt = self.run(options, db, 'show tables')
         if txt.blank?
           return "> No tables exist.  Create one?\n=mysql/setup/table/create/#{db}/"
         end
@@ -138,7 +152,7 @@ module Xiki::Menu
       if row.nil?
 
         sql = "select * from #{table} limit 400"
-        out = self.run(db, sql)
+        out = self.run(options, db, sql)
 
         out = "No records, create one?\n#{self.dummy_row(db, table)}" if out.blank?
         return Tree.quote out #.gsub(/^/, '| ')
@@ -146,7 +160,7 @@ module Xiki::Menu
 
       # /db/table/row, so save...
 
-      self.save db, table, row
+      self.save options, db, table, row
       "<! saved record!"
 
     end
@@ -158,7 +172,7 @@ module Xiki::Menu
       if ! row
         # /db/table/row, so save...
         sql = "select * from #{table} where id = #{key}"
-        row = self.run(db, sql)
+        row = self.run(db, sql, options)
         row = self.record_hash row
 
         # =commit/colons
@@ -194,8 +208,8 @@ module Xiki::Menu
       fields.join("\t")
     end
 
-    def self.fields db, table=nil
-      txt = self.run db, "desc #{table}"
+    def self.fields options, db, table=nil
+      txt = self.run options, db, "desc #{table}"
       txt.sub(/^.+\n/, '').split("\n").map{|o|
         l = o.split("\t")
         [l[0], l[1].sub(/\(.+/, '')] }
@@ -255,23 +269,32 @@ return "tmp"
     #     "<! dropped table!"
     #   end
 
-    def self.run db, sql
-      db ||= self.default_db
+    def self.run options, db, sql
+
+      db ||= self.default_db options
+
+      conf = self.conf options
+      user, password, host = conf["user"], conf["password"], conf["host"]
+
+      user = user ? "-u #{user}" : "-u root"
+      password = password ? "-p #{password}" : ""
+      host = host ? "-h #{host}" : ""
 
       File.open("/tmp/tmp.sql", "w") { |f| f << sql }
-      out = Shell.run "mysql -u root #{db} < /tmp/tmp.sql", :sync=>true
+      command = "mysql #{user} #{db} #{password} #{host} < /tmp/tmp.sql"
+      out = Shell.command command
 
       raise "> Mysql doesn't appear to be installed.  Install it?\n=mysql/setup/install/" if out == "sh: 1: mysql: not found\n"
       raise "> Mysql doesn't appear to be running.  Start it?\n=mysql/setup/start/" if out =~ /^ERROR.+Can't connect/
       raise "| Database '#{db}' doesn't exist.  Create it?\n=mysql/setup/db/create/#{$1}/" if out =~ /^ERROR.+Unknown database '(.+)'/
-        raise "| Table doesn't exist.  Create it?\n=mysql/setup/table/create/#{db}/#{$1}/" if out =~ /^ERROR.+Table '.+\.(.+)' doesn't exist/
+      raise "| Table doesn't exist.  Create it?\n=mysql/setup/table/create/#{db}/#{$1}/" if out =~ /^ERROR.+Table '.+\.(.+)' doesn't exist/
       raise Tree.quote(out) if out =~ /^ERROR/
 
       out
     end
 
 
-    def self.save db, table, row
+    def self.save options, db, table, row
       if row =~ /\n/
 
         # Inspect row (k=>v\n...)...
@@ -279,7 +302,7 @@ return "tmp"
         hash = YAML::load row
         txt = hash.map{|k, v| "#{k}=\"#{v}\"" }.join(", ")
       else
-        fields = self.fields db, table
+        fields = self.fields options, db, table
 
         # Normal row (tabs and no linebreaks)...
 
@@ -289,14 +312,14 @@ return "tmp"
       end
 
       sql = "INSERT INTO #{table} SET #{txt} ON DUPLICATE KEY UPDATE #{txt}"
-      self.run db, sql
+      self.run options, db, sql
     end
 
     def self.select options, args
       sql, row = args
 
       options[:no_slash] = 1
-      default_db = self.default_db(options)
+      default_db = self.default_db options
 
       # select..., so run and return results
 
@@ -328,15 +351,6 @@ return "tmp"
       #       Xiki.def(/^delete from /) do |path, options|
       #         Xiki["mysql/#{options[:path]}"]
       #       end
-    end
-
-    # Maybe make the "default_conf" menu item be where it gets the
-    # default conf
-    def self.default_conf
-      "
-      > The db to use when none is specifed
-      - default db: ?
-      "
     end
 
 end; end

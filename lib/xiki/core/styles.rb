@@ -95,40 +95,41 @@ module Xiki
       self.exand_colors options, [:bg, :fg]
 
       frame = "nil" # if options[:all]
+      # Probably doesn't matter > only 1 frame in xsh
       frame = "(selected-frame)" if @@frame_only
 
       # How 'frame' param works:
       #   - nil > all frames and new frames
       #   - t > new frames
 
-      code = "(set-face-attribute (make-face '#{name.to_s.gsub("_", "-")}) #{frame}\n"
-      code << "  :background \"##{options[:bg]}\"\n" if options[:bg]
-      code << "  :foreground \"##{options[:fg]}\"\n" if options[:fg]
-      code << "  :family \"#{options[:face]}\"\n" if options[:face]
+      code = "(set-face-attribute (make-face '#{name.to_s.gsub("_", "-")}) #{frame}"
+      code << "  :background \"##{options[:bg]}\"" if options[:bg]
+      code << "  :foreground \"##{options[:fg]}\"" if options[:fg]
+      code << "  :family \"#{options[:face]}\"" if options[:face]
 
       if options[:size]
         size = options[:size]
         size = self.size(size.to_i) if size.is_a? String   # If a string, convert to relative size
         size = [size, 1].max
-        code << "  :height #{size}\n"
+        code << "  :height #{size}"
       end
 
-      code += options[:strike] ? "  :strike-through t\n" : "  :strike-through nil\n" if options.has_key?(:strike)
+      code.<< options[:strike] ? "  :strike-through t" : "  :strike-through nil" if options.has_key?(:strike)
 
-      code += options[:underline] ? "  :underline t\n" : "  :underline nil\n" if options.has_key?(:underline)
-      code += options[:overline] ? "  :overline t\n" : "  :overline nil\n" if options.has_key?(:overline)
+      code.<< options[:underline] ? "  :underline t" : "  :underline nil" if options.has_key?(:underline)
+      code.<< options[:overline] ? "  :overline t" : "  :overline nil" if options.has_key?(:overline)
 
-      code += options[:bold] ? "  :weight 'bold\n" : "  :weight 'normal\n" if options.has_key?(:bold)
+      code.<< options[:bold] ? "  :weight 'bold" : "  :weight 'normal" if options.has_key?(:bold)
 
       if options[:border]
         border = options[:border]
         code <<
           if border.class == Symbol
-            ":box nil\n"
+            " :box nil"
           elsif border.class == String
-            ":box '(:line-width 1 :color \"##{border}\")\n"
+            " :box '(:line-width 1 :color \"##{border}\")"
           elsif border.class == Array
-            ":box '(:line-width #{border[1]} :color \"##{border[0]}\" :style #{border[2] || 'nil'})\n"
+            " :box '(:line-width #{border[1]} :color \"##{border[0]}\" :style #{border[2] || 'nil'})"
           end
       end
       code << "  )"

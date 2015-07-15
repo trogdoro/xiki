@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-set -f
-
 #
 # This file should be included from your bash or zsh config. It
 # defines key shortcuts (by default Ctrl+X and Ctrl+G) that let

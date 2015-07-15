@@ -87,7 +87,8 @@ module Xiki
     end
     url.gsub! '%', '%25'
     url.gsub! '"', '%22'
-    prefix == :u ? $el.browse_url(url) : Firefox.url(url)
+
+    Browser.url url
 
     "<!"
   end
@@ -381,41 +382,6 @@ module Xiki
     Launcher.append_log path
 
     Xiki.expand "twilio/#{path}", options.select{|k, v| [:task].include?(k) }
-  end
-
-  # @foo, so treat as tweet...
-
-  Xiki.def(/\A@\w.*/) do |path, options|
-
-    # @foo message, so send message as tweet...
-
-    if path =~ / .+/
-      path.gsub!(/([^a-z0-9_-])/i){ "\\#{$1}" }
-      txt = "t update #{path}"
-      result = Shell.sync txt
-      next result if result =~ /^> error/
-
-      next "<! Tweet sent!"
-    end
-
-    "
-      - email/
-        > Subject
-        | Here's an email address
-      - text message/
-      - call/
-      - tweets/
-        - twitter/
-          - tweet to/
-          - dm/
-          - profile/
-            ! t whois keithtom
-      | Misc notes can go here.
-      | Expanding just saves them.
-      | user@example.com
-      | @twittername
-      | 523-288-2013
-    "
   end
 
   # email@address.com, so delegate to =mail...

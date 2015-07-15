@@ -2,28 +2,23 @@ module Command
   class Docker
 
     MENU = "
-      - add image/
-        ubuntu
-
-        | Change the image name and expand, or search for one:
-        + search/
+      + .images/
+      + .containers/
     "
 
-    def self.menu_after output, *args
+    def self.images image=nil, command=nil
+
+      options=yield
 
       # Root, so prepend images...
 
-      if args == []
+      if ! image
         txt = Shell.command "docker images"
         txt.sub! /.+\n/, ''
         txt.gsub!(/ +/, ':')
         txt.gsub!(/([^:]+:[^:]+).*/, "\\1")
-        return Tree.quote(txt) + output
+        return Tree.quote txt
       end
-
-      # MENU handled it, so don't interject...
-
-      return if output
 
       # /image, so say to run command...
 
@@ -32,26 +27,26 @@ module Command
       options = yield
       task = options[:task]
 
-      image = args[0].sub /^: /, ''
-      command = args[1] && args[1].sub(/^% /, '')
+      image = image.sub /^: /, ''
+      command = command && command.sub(/^% /, '')
 
-      return "~ bash session" if task == [] && ! command
+      return "~ bash session\n~ run in background" if task == [] && ! command
       return "~ grab to shell" if task == []
 
       # ~ foo, so run task...
 
       if task == ["bash session"]
-        return DiffLog.quit_and_run "docker run -t -i #{image} bash"
+        return DiffLog.quit_and_run "docker run -it #{image} bash"
+      elsif task == ["run in background"]
+        Shell.command "docker run -itd #{image} bash"
+        return "<! started container in background"
+      elsif task == ["grab to shell"]
+        return DiffLog.quit_and_run "docker run -it #{image} #{command}"
       end
-
-      if task == ["grab to shell"]
-        return DiffLog.quit_and_run "docker run -t -i #{image} #{command}"
-      end
-
 
       # /image, so say to pass it a command...
 
-      if args.length == 1
+      if ! command
         options[:line_found], options[:column_found], options[:no_search] = 2, 2, true
         return "
           | Enter a shell command to run (example: whoami):
@@ -65,6 +60,60 @@ module Command
 
       options[:no_slash] = 1
       Tree.quote Shell.command("docker run -t #{image} #{command}")
+
+    end
+
+
+    def self.containers container=nil #, command=nil
+
+      options = yield
+      task = options[:task]
+
+      # /...
+
+      if ! container
+
+        # /~, so show tasks...
+
+        return "~ all" if task == []
+
+        flags = task == ["all"] ? "-a" : ""
+        return Tree.quote(Shell.command("docker ps #{flags}").gsub(/ +$/, ''))
+      end
+
+      container = container.split(/ +/)
+      container, tag = container[1], container[2]
+
+      # /container/~ or /container, so show tasks...
+
+      return "~ attach\n~ stop\n~ remove\n~ remove each" if task == [] || ! task
+
+      # /
+
+      if task == ["stop"]
+        Shell["docker stop #{container}"]
+        return "<! stopped"
+      elsif task == ["remove"]
+        Shell["docker rm #{container}"]
+        return "<! removed"
+      elsif task == ["remove each"]
+
+        # 1. Get siblings
+
+        siblings = Tree.siblings
+
+        # 2. pull out ones with same name
+        siblings = siblings.select{|o| o.split(/ +/)[2] == tag}
+        ids = siblings.map{|o| o.split(/ +/)[1]}.join(" ")
+
+        # 3. delete each, using a single command
+
+        Shell["docker rm #{ids}"]
+
+        return "<! removed each!"
+      elsif task == ["attach"]
+        return DiffLog.quit_and_run "docker attach #{container}"
+      end
 
     end
 

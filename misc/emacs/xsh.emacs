@@ -26,10 +26,6 @@
 ; Allow treating escape like cancel
 (require 'normal-escape)
 
-; Ruby mode...
-
-(add-to-list 'auto-mode-alist '("\\.\\(?:gemspec\\|irbrc\\|gemrc\\|rake\\|rb\\|ru\\|thor\\)\\'" . ruby-mode))
-
 ; Isearch > Move cursor to beginning of match after search
 (add-hook 'isearch-mode-end-hook 'isearch-goto-beginning-after-finished)
 (defun isearch-goto-beginning-after-finished ()
@@ -41,9 +37,11 @@
 (setq backup-inhibited t)   ; Disable backup
 (setq auto-save-default nil)   ; Disable auto save
 
-(require 'mouse)
-(xterm-mouse-mode t)
-(defun track-mouse (e))
+(when (string-match "Emacs 2[34]" (emacs-version))
+  (require 'mouse)
+  (xterm-mouse-mode t)
+  (defun track-mouse (e))
+)
 
 ; Make mouse wheel work (though only works on current view)...
 
@@ -150,4 +148,28 @@
 ; Enable and disable control lock (move these definitions to control-lock.el__?)
 (global-set-key (kbd "M-C-L") 'control-lock-enable)
 (global-set-key (kbd "M-L") 'control-lock-enable)
+
+
+; Selection is active, so show "^C Copy" etc...
+
+(setq xiki-selection-text-in-bar-text "Arrows keys to select   ^C Copy   ^X Cut   ^V Paste")
+
+; Todo > Find better place to put this?
+(defun xiki-selection-text-in-bar () (interactive)
+  (if (and (region-active-p) (not xiki-bar-special-text))
+    (setq xiki-bar-special-text
+      xiki-selection-text-in-bar-text
+    )
+    (if (and
+      (or deactivate-mark (not mark-active))
+      (string= xiki-bar-special-text xiki-selection-text-in-bar-text)
+      )
+
+      (setq xiki-bar-special-text
+        nil
+      )
+    )
+  )
+)
+(add-hook 'post-command-hook 'xiki-selection-text-in-bar)
 

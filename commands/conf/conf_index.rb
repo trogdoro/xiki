@@ -3,12 +3,6 @@ module Xiki::Menu
 
     include Xiki
 
-    MENU = "
-      > options
-      - docs/
-        > __
-      "
-
     # Can be called 2 ways, nested or not:
     # conf/
     #   - foo/
@@ -59,12 +53,12 @@ module Xiki::Menu
           conf_path = "#{menu_dir}/default.conf"
           next unless File.exists? conf_path
 
-          menus << "- #{File.basename menu_dir}/"
+          menus << "+ #{File.basename menu_dir}/"
         end
       end
 
       Dir["#{Xiki.menu_path_custom_dir}/conf/*.conf"].each do |conf_file|
-        menus << "- #{File.basename(conf_file, ".*")}/"
+        menus << "+ #{File.basename(conf_file, ".*")}/"
       end
 
       menus.sort!

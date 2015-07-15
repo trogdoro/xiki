@@ -29,6 +29,7 @@
     ; not defined and true
     (not (and (boundp 'xiki-filter-options) xiki-filter-options))
 
+    (not cursor-in-echo-area)
     (not isearch-mode)
     (not (string-match "\\*Minibuf" (buffer-name)))))
 

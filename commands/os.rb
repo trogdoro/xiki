@@ -10,7 +10,7 @@ end
 
 # sw_vers command exists, so use it (probably mac)...
 
-if txt = Shell.command("sw_vers", :raise_when_error=>1) rescue nil
+if txt = Shell.command("sw_vers", :raise_error=>1) rescue nil
   return Tree.pipe txt[/.+\n.+\n/]   # Show the 1st 2 lines
 end
 

@@ -862,7 +862,7 @@ module Xiki
     def self.enter_whitespace
 
       prefix = Keys.prefix :clear=>1
-      prefix = 0 if prefix == :u
+      prefix = 1 if prefix == :u
 
       # Selection, so surround with space...
       if View.selection?
@@ -995,6 +995,12 @@ module Xiki
       path = Bookmarks[path]
       self.eval File.read(path), path, 1
     end
+
+
+    def self.cache key, &block
+      $el.cache key, &block
+    end
+
 
   end
 end

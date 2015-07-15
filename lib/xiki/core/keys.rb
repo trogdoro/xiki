@@ -9,6 +9,7 @@ module Xiki
 
     @@key_queue = []   # For defining menus (must be done in reverse)
     @@source ||= {}   # Stores source for new unified key defs
+    @@accumulate = nil
 
     # Stores definition of new expanding keys. Structure:
     #   "view"     => {
@@ -53,12 +54,12 @@ module Xiki
     # Saves by into ~/xiki/commands/conf/ by replacing
     # the line (copying the default conf over first, if
     # it's not there yet.
-    # Keys.write_to_conf "return warning", " 4"
-    def self.write_to_conf key, value
+    # Keys.put "return warning", " 4"
+    def self.put key, value
 
       # Read in file...
 
-      user_conf = Bookmarks[":xh/commands/conf/xsh.conf"]
+      user_conf = Bookmarks[":xh/commands/conf/#{command}.conf"]
       FileUtils.mkdir_p File.dirname user_conf   # In case it doesn't exist yet
 
       txt = File.read(user_conf) rescue nil
@@ -66,7 +67,7 @@ module Xiki
       # If not there, read from default...
 
       if ! txt
-        txt = File.read(Bookmarks[":xiki/commands/xsh/default.conf"]) rescue nil
+        txt = File.read(Bookmarks[":xiki/commands/#{command}/default.conf"]) rescue nil
       end
 
       # Update file accordingly
@@ -84,15 +85,6 @@ module Xiki
       nil
     end
 
-
-    # Reads from ~/xiki/commands/conf/
-    # Keys.read_from_conf "return warning"
-    def self.read_from_conf key
-      txt = File.read Bookmarks[":xh/commands/conf/xsh.conf"] rescue nil
-      return nil if ! txt
-      txt[/^#{key}: (.*)/, 1]   # => noob
-    end
-
     def self.noob_mode value=nil
 
       # No value, so return the result
@@ -100,7 +92,7 @@ module Xiki
 
         # Memo-ize it, so we don't look it up every time
         if @@noob_mode == nil
-          value = self.read_from_conf "key shortcuts"
+          value = Conf.get "xsh", "key shortcuts"
           @@noob_mode = ! value || value == "noob"
         end
         return @@noob_mode
@@ -108,7 +100,7 @@ module Xiki
 
       # Value passed so set it in the cache and on the disk
       @@noob_mode = value
-      self.write_to_conf 'key shortcuts', (value ? 'noob' : 'advanced')
+      Conf.put "xsh", 'key shortcuts', (value ? 'noob' : 'advanced')
     end
 
     # Called when expanding key shortcuts are pressed.
@@ -128,6 +120,8 @@ module Xiki
           return Shell.recent_history_external nil, :from_key_shortcut=>1
         when ["do"]
           return Deletes.forward
+        when ["hop"]
+          return Deletes.backward
         end
       end
 
@@ -360,22 +354,16 @@ module Xiki
 
       if self.noob_mode
         if path == []
-          txt.gsub!(/^\+ (quit|jump|as|enter|do|run)\/?\n/, "")   # Remove quit and xpand
-          return
-        elsif path == ["open"]
-          txt.gsub!(/\+ [fp]/, "\n\\0")
+          txt.gsub!(/^\+ (quit|hop|as|enter|do|run)\/?\n/, "")   # Remove quit and xpand
           return
         elsif path == ["window"]
           txt.gsub!(/\+ [c]/, "\n\\0")
           return
-        elsif path == ["hop"]
-          txt.gsub!(/\+ [su]/, "\n\\0")
+        elsif path == ["open"]
+          txt.gsub!(/\+ [fp]/, "\n\\0")
           return
-        elsif path == ["as"]
-          txt.gsub!(/\+ [u]/, "\n\\0")
-          return
-        elsif path == ["enter"]
-          txt.gsub!(/\+ [t]/, "\n\\0")
+        elsif path == ["jump"]
+          txt.gsub!(/\+ [h]/, "\n\\0")
           return
         end
       end
@@ -395,7 +383,7 @@ module Xiki
       elsif path == ["hop"]
         txt.gsub!(/\+ [stuoc]/, "\n\\0")
       elsif path == ["jump"]
-        txt.gsub!(/\+ [oqlryc]/, "\n\\0")
+        txt.gsub!(/\+ [hoqryc]/, "\n\\0")
       elsif path == ["open"]
         txt.gsub!(/\+ [tpfuel]/, "\n\\0")
 
@@ -497,6 +485,7 @@ module Xiki
     end
 
     def self.map keys=nil, options={}
+
       return @@map if keys.blank?   # Just return map if no keys
 
       name = keys[0]
@@ -508,15 +497,17 @@ module Xiki
         map = options[:map] || :global_map
         $el.define_key map, "\\C-#{initial}", &keys[1]
 
+      elsif keys[1].is_a?(String) && keys.length == 2
+        map = options[:map] || :global_map
+        Keys.define_key_that_evals map, "\"\\C-#{initial}\"", "Xiki::#{keys[1]}".inspect
+
       elsif ! @@map[name]
 
         # Multiple key combo, so define root key as expander, only if not defined yet...
 
         if ! ["s", "c"].member? initial
           map = options[:map] || :global_map
-          $el.define_key map, "\\C-#{initial}" do
-            Keys.expand [name]
-          end
+          self.define_key_that_evals map, "\"\\C-#{initial}\"", "\"Xiki::Keys.expand ['#{name}']\""
         end
 
         # Define menu, that will optionally pop up if they're slow...
@@ -537,6 +528,13 @@ module Xiki
         Xi.hset @@map_noob, *keys
       end
 
+    end
+
+    def self.define_key_that_evals map, key, code
+      elisp = "(define-key #{TextUtil.hyphen_case map.to_s} #{key} (lambda () (interactive) (el4r-ruby-eval #{code})))"
+
+      $el.el4r_lisp_eval elisp
+      nil
     end
 
     # Have user type in key.  Returns...
@@ -842,6 +840,9 @@ module Xiki
         View.insert Keys.input(:prompt => "Insert text to insert: ")
         return
       end
+
+      # Selection exists, so delete it first
+      View.delete *View.range if View.selection?
 
       Cursor.remember :before_q
       Cursor.box
@@ -1387,7 +1388,10 @@ module Xiki
 
       times = prefix.is_a?(Fixnum) ? prefix : 1
 
-      times.times{ prock.call }
+      times.times do
+        prock.is_a?(Proc) ?
+          prock.call : $el.el4r_ruby_eval("Xiki::#{prock}")
+      end
 
     end
 
@@ -1517,6 +1521,14 @@ module Xiki
       "
     end
 
+    def self.accumulate?
+      @@accumulate
+    end
+
+    def self.accumulated
+      @@accumulated
+    end
+
     def self.accumulate
 
       @@accumulate = true   # Make key definitions build up elisp instead of run it as it comes
@@ -1525,6 +1537,7 @@ module Xiki
       yield
 
       @@accumulate, @@accumulated = nil, nil
+      nil
 
     end
 

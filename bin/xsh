@@ -2,21 +2,21 @@
 
 set -f
 
-export bin_dir=`dirname $0`
+# Set gem_home, so xiki gems don't interfere with main ones...
 
-# Dir might be ., only if xsh not in $PATH yet
-if [ "$bin_dir" = "." ]; then
-  bin_dir=`pwd`
-fi
-# Sometimes relative path, so prepend where we are
-if [[ ! "$bin_dir" =~ ^/ ]]; then
-  bin_dir=`pwd`/$bin_dir
-fi
+mkdir -p ~/xiki/misc/gems/
+export GEM_HOME=~/xiki/misc/gems/
+export PATH=~/xiki/misc/gems/bin/:$PATH
 
-export xiki_dir=`dirname $bin_dir`
+# Resolve the xiki dir even if there's a symlink somewhere in the path...
 
-emacs="emacs"
-emacsclient="emacsclient"
+SOURCE="$0"
+while [ -h "$SOURCE" ]; do
+  DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+  SOURCE="$(readlink "$SOURCE")"
+  [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
+done
+export xiki_dir=`dirname "$( cd -P "$( dirname "$SOURCE" )" && pwd )"`
 
 # Complain if project dir is ~/xiki/...
 
@@ -24,6 +24,9 @@ if [ "$xiki_dir" = "$HOME" ]; then
   cat "$xiki_dir/misc/command/shell_please_move.txt"
   exit
 fi
+
+emacs="emacs"
+emacsclient="emacsclient"
 
 # Get emacs version, or blank if emacs not found...
 
@@ -257,20 +260,17 @@ case $1 in
 
     # Emacs 23+, so use --daemon (will make for immediate startup)...
 
-    # If emacs --daemon not running yet, start it up and make it load xiki...
+    # Always start emacs --daemon, and then connect to it. This avoids
+    # emacs flashing weird text and formatting on the screen.
 
     unique=$RANDOM
+    $emacs -Q --daemon=$unique -nw &>/dev/null
 
-    ERROR=$( { $emacsclient -s $unique -e "(select-frame (car (last (frame-list))))" >/dev/null; } 2>&1 )
-    if [[ $ERROR != "" ]]; then
-      $emacs -Q --daemon=$unique -nw &>/dev/null
+    # Now that emacs is invisible, tell it to load the xiki classes (and cache a few things).
 
-      $emacsclient -s $unique -e "(load \"$xiki_dir/misc/emacs/start_xiki_daemon.el\")" &>/dev/null
-    fi
+    $emacsclient -s $unique -e "(load \"$xiki_dir/misc/emacs/start_xiki_daemon.el\")" &>/dev/null
 
     # Now load the parameters into ~/xiki/misc/params/
-
-    # Keeps flashing of the previous active buffer/frame to a minimum
 
     save_args_to_files "$@"
 

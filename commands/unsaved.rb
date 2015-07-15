@@ -31,28 +31,32 @@ if args == []
     end
   end
 
-  at_top = "+ quit anyway\n+ save all"
+  at_top = "+ save and quit\n+ just quit"
   txt = "#{at_top}\n#{txt}\n"
 
   return txt
 end
 
-# /quit anyway, so just exit...
+# /just quit, so just exit...
 
-if args == ["quit anyway"]
+if args == ["just quit"]
   $el.kill_emacs
   return ""
 end
 
-# /save all, so save all...
+# /save and quit, so save all unsaved and quit...
 
-Buffers.list.map do |b|
-  next if ! $el.buffer_file_name(b) || ! $el.buffer_modified_p(b)
-  $el.with(:save_excursion) do
-    $el.set_buffer b
-    DiffLog.save
+if args == ["save and quit"]
+
+  Buffers.list.map do |b|
+    next if ! $el.buffer_file_name(b) || ! $el.buffer_modified_p(b)
+    $el.with(:save_excursion) do
+      $el.set_buffer b
+      DiffLog.save
+    end
   end
+
+  DiffLog.quit
+
+  return ""
 end
-
-"<! saved"
-

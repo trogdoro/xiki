@@ -4,6 +4,7 @@ require 'xiki/core/styles'
 require 'xiki/core/line'
 require 'xiki/core/view'
 require 'xiki/core/cursor'
+require 'xiki/core/code'
 
 module Xiki
   # Draws a tree from a dir structure and lets you incrementally search in the tree.
@@ -295,227 +296,168 @@ module Xiki
 
       return if ! $el
 
-      if Styles.dark_bg?   # Bullets
+      Code.cache(:file_tree_define_styles) do
+        Styles.define :ls_bullet, :face=>'menlo', :size=>"+2", :fg=>"d70", :bold=>1
 
-        Styles.define :ls_bullet,
-          :face => 'menlo', :size => "+2",  # Mac
-          :fg => "d70", :bold=>1
-                      # :face => 'courier', :size => "+2",  # Mac
-                      # :face => 'monaco', :size => "+2",  # Mac
+        Styles.define :ls_bullet_darker, :face=>'menlo', :size=>"+2", :fg=>"555", :bold=>nil
 
-        Styles.define :ls_bullet_darker,
-          :face => 'menlo', :size => "+2",  # Mac
-          :fg => "555", :bold=>nil
-
-      else
-        Styles.define :ls_bullet_darker,
-          :face=>'menlo', :size=>"+2",  # Mac
-          :fg=>"aaa", :bold=>nil
-        Styles.define :ls_bullet,
-          :face=>'menlo', :size=>"+2",  # Mac
-          :fg=>"f70", :bold=>true
-                      # :face=>'monaco', :size=>"+2",  # Mac
-                      # :face=>'courier', :size=>"+2",  # Mac
-      end
-
-
-      if Styles.dark_bg?
-        Styles.define :quote_heading_h0, :fg=>"fff", :size=>"+8", :face=>"arial", :bold=>true
-        Styles.define :quote_heading_h1, :fg=>"fff", :size=>"2", :face=>"arial", :bold=>true
-        Styles.define :quote_heading_h2, :fg=>"fff", :size=>"-2", :face=>"arial", :bold=>true
+        Styles.define :quote_heading_h0, :size=>"+8", :face=>"arial", :bold=>true
+        Styles.define :quote_heading_h1, :size=>"2", :face=>"arial", :bold=>true
+        Styles.define :quote_heading_h2, :size=>"-2", :face=>"arial", :bold=>true
 
         Styles.define :quote_heading_pipe, :fg=>"555", :size=>"0", :face=>"xiki", :bold=>1 # , :bg=>"unspecified"
 
         Styles.define :quote_light, :fg=>"333", :size=>"0", :face=>"xiki", :bold=>true
 
-        Styles.define :quote_heading_h1_green, :fg=>"8f4", :size=>"2", :face=>"arial", :bold=>true
+        Styles.define :quote_heading_h1_green, :fg=>"7c3", :size=>"2", :face=>"arial", :bold=>true
 
-        Styles.define :quote_heading_bracket, :fg=>"4c4c4c", :size=>"-2", :face=>"arial black", :bold=>true
-        Styles.define :quote_heading_small, :fg=>"fff", :size=>"-2", :face=>"arial black", :bold=>true
+        Styles.define :quote_heading_bracket, :fg=>"888", :size=>"-2", :face=>"arial black", :bold=>1
+
+        Styles.define :quote_heading_small, :size=>"-2", :face=>"arial black", :bold=>true
 
         Styles.define :diff_line_number, :bold=>true, :size=>"-2", :fg=>"666"
         Styles.define :diff_red, :bg=>"400", :fg=>"ee3333", :size=>"-1"
         Styles.define :diff_red_pipe, :bg=>"400", :fg=>"711", :size=>"0", :face=>"xiki", :bold=>true
-
         Styles.define :diff_green, :bg=>"130", :fg=>"4d3", :size=>"-1"
+
         Styles.define :diff_green_pipe, :bg=>"130", :fg=>"228822", :size=>"0", :face=>"xiki", :bold=>true
+        Styles.define :diff_small, :fg=>"222", :size=>"-11"
 
         Styles.define :diff_yellow, :bg=>"330", :fg=>"ec0", :size=>"-1"
         Styles.define :diff_yellow_pipe, :bg=>"330", :fg=>"770", :size=>"0", :face=>"xiki", :bold=>true
 
-        Styles.define :diff_small, :fg=>"222", :size=>"-11"
-
-
         Styles.tree_letters :underline=>1
         Styles.tree_letters2 :underline=>1
 
-        # dir/
-        Styles.define :ls_dir, :fg => "888", :face => "verdana", :size => "-1", :bold => true
-        Styles.define :task_bullet_slash, :fg => "777", :face => "verdana", :size => "-1", :bold => true
-        Styles.define :task_bullet, :fg => "888"
+        Styles.define :ls_dir, :fg=>"888", :face=>"verdana", :size=>"-1", :bold=>true
+        Styles.define :task_bullet_slash, :fg=>"777", :face=>"verdana", :size=>"-1", :bold=>true
+        Styles.define :task_bullet, :fg=>"888"
 
-      else   # if white bg
-        Styles.define :quote_heading_h0, :fg=>"444", :size=>"+8", :face=>"arial", :bold=>true
-        Styles.define :quote_heading_h1, :fg=>"444", :size=>"2", :face=>"arial", :bold=>true
-        Styles.define :quote_heading_h2, :fg=>"aaa", :size=>"-2", :face=>"arial", :bold=>true
-        Styles.define :quote_heading_pipe, :fg=>"bbb", :size=>"0", :face => "xiki", :bold=>true
-        Styles.define :quote_light, :fg=>"ddd", :size=>"0", :face => "xiki", :bold=>true
-        Styles.define :quote_heading_h1_green, :fg=>"8f4", :size=>"2", :face=>"arial", :bold=>true
+        Styles.define :quote_medium, :size=>140, :fg=>"666", :bold=>1
 
-        Styles.define :quote_heading_bracket, :fg=>"bbb", :size=>"-2", :face=>"arial black", :bold=>true
-        Styles.define :quote_heading_small, :fg=>"fff", :size=>"-2", :face => "arial black", :bold=>true
+        # ##search/
+        Styles.define :ls_search, :fg=>"ff7700", :face=>"verdana", :size=>"-2", :bold=>true
 
-        Styles.define :diff_line_number, :bold=>true, :size=>"-2", :fg=>"ccc"
-        Styles.define :diff_red, :bg=>"ffdddd", :fg=>"cc4444", :size=>"-1"
-        Styles.define :diff_red_pipe, :bg=>"ffdddd", :fg=>"cc4444", :size=>"0", :face=>"xiki", :bold=>true
-        Styles.define :diff_green, :bg=>"ddffcc", :fg=>"337744", :size=>"-1"
-
-        Styles.define :diff_green_pipe, :bg=>"ddffcc", :fg=>"337744", :size=>"0", :face=>"xiki", :bold=>true
-        Styles.define :diff_small, :fg=>"ddd", :size=>"-11"
-
-        Styles.define :diff_yellow, :bg=>"ff9", :fg=>"773", :size=>"-1"
-        Styles.define :diff_yellow_pipe, :bg=>"ff9", :fg=>"cc0", :size=>"0", :face=>"xiki", :bold=>true
-
-        Styles.tree_letters :underline=>1
-        Styles.tree_letters2 :underline=>1
-
-        # dir/
-        Styles.define :ls_dir, :fg => "777", :face => "verdana", :size => "-1", :bold => true
-        Styles.define :task_bullet_slash, :fg => "aaa", :face => "verdana", :size => "-1", :bold => true
-        Styles.define :task_bullet, :fg => "999"
-
-      end
-
-      Styles.define :quote_medium, :size=>140, :fg=>"666", :bold=>1
-
-      # ##search/
-      Styles.define :ls_search,
-        :fg=>"ff7700",
-        :face=>"verdana",
-        :size=>"-2",
-        :bold=>true
-
-      if Styles.dark_bg?   #   | Quoted text
-        Styles.define :ls_quote, :size=>"-1", :fg=>"aaa"
+        Styles.define :ls_quote, :size=>"-1", :fg=>"888"
         Styles.define :ls_quote_light, :size=>"-1", :fg=>"555", :bg=>"222"
-      else
-        Styles.define :ls_quote, :size=>"-1", :fg=>"777"
-        Styles.define :ls_quote_light, :size=>"-1", :fg=>"aaa"
+
+        # if ! Styles.dark_bg?
+        #   Styles.define :ls_quote, :size=>"-1", :fg=>"777"
+        #   Styles.define :ls_quote_light, :size=>"-1", :fg=>"aaa"
+
+        # 001| Quoted text lines
+        Styles.define :ls_quote_line_number, :size=>"-4", :fg=>"eee"
+
+        # Highlight in search
+        Styles.define :ls_quote_highlight, :size=>"-1", :bg=>"ffff44", :fg=>"666666"
+
+        # Because default color is too dark for some backgrounds
+        Styles.define :comint_highlight_prompt, :fg=>"#06c"
+
       end
 
-      #   001| Quoted text lines
-      Styles.define :ls_quote_line_number,
-        :size=>"-4",
-        :fg=>"eee"
-
-      # Highlight in search
-      Styles.define :ls_quote_highlight,
-        :size=>"-1",
-        :bg=>"ffff44",
-        :fg=>"666666"
-
-      # Because default color is too dark for some backgrounds
-      Styles.define :comint_highlight_prompt, :fg=>"#06c"
+      return if $el.caching
 
     end
 
     def self.apply_styles
-      $el.el4r_lisp_eval "(setq font-lock-defaults '(nil t))"
 
-      # Must go before quotes - if it goes after, it supercedes them
-      Styles.apply("\\(~\\)\\(.+?\\)\\(~\\)", nil, :quote_heading_bracket, :notes_label, :quote_heading_bracket)
+      Code.cache(:file_tree_apply_styles) do
 
-      # - bullets...
+        Styles.clear
 
-      Styles.apply("^[ \t]*\\([*+-]\\)\\( \\)", nil, :ls_bullet, :variable)   # - fooo, + foo
+        # Must go before quotes - if it goes after, it supercedes them
+        Styles.apply("\\(~\\)\\(.+?\\)\\(~\\)", nil, :quote_heading_bracket, :notes_label, :quote_heading_bracket)
 
-      # ~ foo
-      # ~ foo/ > exists at end of this method, because it has to override the following ones
+        # return if $el.caching
 
-      Styles.apply("^[ \t-]*\\(\\*\\)", nil, :ls_bullet)   # * (by itself)
-      Styles.apply("^ +\\(:[0-9]+\\)\\(|.*\n\\)", nil, :ls_quote_line_number, :ls_quote)   # :NN|foo... used any more?
+        # - bullets...
 
-      # Path-like lines and parts of lines (make gray)
+        Styles.apply("^[ \t]*\\([*+-]\\)\\( \\)", nil, :ls_bullet, :variable)   # - fooo, + foo
 
-      # Single "@" or bullets at beginning
-      Styles.apply("^[ <+=@-]*\\(=\\)", nil, :ls_dir)   # @, <= @, etc.
+        # ~ foo
+        # ~ foo/ > exists at end of this method, because it has to override the following ones
 
-      Styles.apply("^[ \t]*\\(<+[=|@:*+~>-]?\\)", nil, :ls_bullet)   # <<, <=, etc bullets
+        Styles.apply("^[ \t-]*\\(\\*\\)", nil, :ls_bullet)   # * (by itself)
+        Styles.apply("^ +\\(:[0-9]+\\)\\(|.*\n\\)", nil, :ls_quote_line_number, :ls_quote)   # :NN|foo... used any more?
 
-      # Slash after almost anything
+        # Path-like lines and parts of lines (make gray)
 
-      Styles.apply("^ *\\([ <=|@:*+~-]+ \\)?=?\\([+~!$%^&#a-zA-Z0-9_,?* ().:;@='<>-]*[^ \n]\/\\)", nil, nil, :ls_dir)   # foo/ or <=foo/, etc.
+        # Single "@" or bullets at beginning
+        Styles.apply("^[ <+=@-]*\\(=\\)", nil, :ls_dir)   # @, <= @, etc.
 
-      Styles.apply("^ *\\([ <=+-]+ \\)?=?\\(\/\\)", nil, nil, :ls_dir)   # - /
+        Styles.apply("^[ \t]*\\(<+[=|@:*+~>-]?\\)", nil, :ls_bullet)   # <<, <=, etc bullets
 
-      # Covers paths in files by themselves
-      Styles.apply("^ *\\([ <=+-]+ \\)?=?\\([@=~$&a-zA-Z0-9_,*+? ().:;<>-]*\/[@=\#'$a-zA-Z0-9_,*? ().:;\/<>-]+\/\\)", nil, nil, :ls_dir)   # Paths with multiple slashes
+        # Slash after almost anything
 
-      # < next) menus/
-      Styles.apply("^[ \t]*[<+-][<+=-]* [a-zA-Z0-9_,? ().:;+-]+?[:)] \\(\[.@=a-zA-Z0-9 ]+\/\\)", nil, :ls_dir)   # - label) oneword/slash
-      Styles.apply("^[ \t]*[<+-][<+=-]* [a-zA-Z0-9_,? ().:;+-]+?[:)] \\([.@=a-zA-Z0-9 ]+\/[.@=a-zA-Z0-9 \/]+\/\\)", nil, :ls_dir)   # - label) oneword/path/slash
+        Styles.apply("^ *\\([ <=|@:*+~-]+ \\)?=?\\([+~!$%^&#a-zA-Z0-9_,?* ().:;@='<>-]*[^ \n]\/\\)", nil, nil, :ls_dir)   # foo/ or <=foo/, etc.
 
-      # Bullets
-      Styles.apply("^[ \t]*[+-] [^(\n]+?) \\(.+/\\)$", nil, :ls_dir)   # - hey) /what/
-      Styles.apply("^[ \t]*[+-] [a-zA-Z0-9_,? ().:;-]+?: \\(.+/\\)$", nil, :ls_dir)   # - hey: /what/
+        Styles.apply("^ *\\([ <=+-]+ \\)?=?\\(\/\\)", nil, nil, :ls_dir)   # - /
 
-      # Put this one back?
-      #     Styles.apply("^[ +-]*\\([^|\n]+/\\)$", nil, :ls_dir)   # Dirs with bullets
+        # Covers paths in files by themselves
+        Styles.apply("^ *\\([ <=+-]+ \\)?=?\\([@=~$&a-zA-Z0-9_,*+? ().:;<>-]*\/[@=\#'$a-zA-Z0-9_,*? ().:;\/<>-]+\/\\)", nil, nil, :ls_dir)   # Paths with multiple slashes
 
-      Styles.apply('\\(https?\\|file\\|xiki\\|source\\):/[a-zA-Z0-9\/.~_:;,?%&=|+!-#-]+', :notes_link)   # Url
+        # < next) menus/
+        Styles.apply("^[ \t]*[<+-][<+=-]* [a-zA-Z0-9_,? ().:;+-]+?[:)] \\(\[.@=a-zA-Z0-9 ]+\/\\)", nil, :ls_dir)   # - label) oneword/slash
+        Styles.apply("^[ \t]*[<+-][<+=-]* [a-zA-Z0-9_,? ().:;+-]+?[:)] \\([.@=a-zA-Z0-9 ]+\/[.@=a-zA-Z0-9 \/]+\/\\)", nil, :ls_dir)   # - label) oneword/path/slash
 
-      # Styles.apply("^ *\\(:\\)\\($\\| .*\n\\)", nil, :quote_heading_pipe, :ls_quote)   # :... lines (quotes)
-      Styles.apply("^ *\\([\\\\:]\\)\\($\\| .*\n\\)", nil, :quote_heading_pipe, :ls_quote)   # :... lines (quotes)
+        # Bullets
+        Styles.apply("^[ \t]*[+-] [^(\n]+?) \\(.+/\\)$", nil, :ls_dir)   # - hey) /what/
+        Styles.apply("^[ \t]*[+-] [a-zA-Z0-9_,? ().:;-]+?: \\(.+/\\)$", nil, :ls_dir)   # - hey: /what/
+
+        Styles.apply('\\(https?\\|file\\|xiki\\|source\\):/[a-zA-Z0-9\/.~_:;,?%&=|+!-#-]+', :notes_link)   # Url
+
+        Styles.apply("^ *\\([\\\\:]\\)\\($\\| .*\n\\)", nil, :quote_heading_pipe, :ls_quote)   # :... lines (quotes)
 
 
-      # |... lines (quotes)
+        # |... lines (quotes)
 
-      # Is this one adding anything?
-      #     Styles.apply("^ *\\(|\\)\\( *\\)", nil, :quote_heading_pipe, :ls_quote)
+        Styles.apply("^ *\\(|\\)\\(.*\n\\)", nil, :quote_heading_pipe, :ls_quote)   # |... lines (quotes)
 
-      Styles.apply("^ *\\(|\\)\\(.*\n\\)", nil, :quote_heading_pipe, :ls_quote)   # |... lines (quotes)
+        # | hey : you (makes colon big)
+        Styles.apply("^ *\\(|\\)\\( .* \\)\\(:\\)\\( .*\n\\)", nil, :quote_heading_pipe, :ls_quote, :quote_heading_pipe, :ls_quote)
 
-      # | hey : you (makes colon big)
-      # Styles.apply("^ *\\(|\\)\\( .* \\)\\(:\\)\\( .*\n\\)", nil, :quote_heading_pipe, :ls_quote, :quote_heading_pipe_bold, :ls_quote)
-      Styles.apply("^ *\\(|\\)\\( .* \\)\\(:\\)\\( .*\n\\)", nil, :quote_heading_pipe, :ls_quote, :quote_heading_pipe, :ls_quote)
+        Styles.apply("^ *\\(|\\)\\(.+?\\)([+-].*[-+])", nil, :quote_heading_pipe, :ls_quote)   # quoted lines: beginnings of lines
+        Styles.apply("^ *|.*([-+].*[+-])\\(.+\\)$", nil, :ls_quote)   # quoted lines: ends of lines
+        Styles.apply("[+-])\\(.*?\\)([+-]", nil, :ls_quote)   # quoted lines: between diffs
 
-      Styles.apply("^ *\\(|\\)\\(.+?\\)([+-].*[-+])", nil, :quote_heading_pipe, :ls_quote)   # quoted lines: beginnings of lines
-      Styles.apply("^ *|.*([-+].*[+-])\\(.+\\)$", nil, :ls_quote)   # quoted lines: ends of lines
-      Styles.apply("[+-])\\(.*?\\)([+-]", nil, :ls_quote)   # quoted lines: between diffs
+        Styles.apply("^ *\\([|:]\\)\\([()].*\n\\)", nil, :quote_heading_pipe, :ls_quote_light)   # |(... or :(... lines
+        Styles.apply("^ *\\(||\\)\\(.*\n\\)", nil, :quote_heading_pipe, :ls_quote_light)   # ||... or ::... lines
 
-      Styles.apply("^ *\\([|:]\\)\\([()].*\n\\)", nil, :quote_heading_pipe, :ls_quote_light)   # |(... or :(... lines
-      Styles.apply("^ *\\(||\\|::\\)\\(.*\n\\)", nil, :quote_heading_pipe, :ls_quote_light)   # ||... or ::... lines
+        # | >... headings
+        Styles.apply("^ *\\(|\\|:\\)\\( ?\\)\\(>\\)\\(\n\\| .*\n\\)", nil, :quote_heading_pipe, :ls_quote, :quote_heading_bracket, nil)
 
-      # | >... headings
+        # | >>
+        Styles.apply("^ *\\(|\\)\\( \\)\\(>>\\)\\(\n\\| .*\n\\)", nil, :quote_heading_pipe, :ls_quote, :quote_heading_bracket, :quote_heading_small)
+        # | >...! headings
+        Styles.apply("^ *\\(|\\)\\( ?\\)\\(>\\)\\(.*!:?\n\\)", nil, :quote_heading_pipe, :ls_quote, :quote_heading_bracket, :quote_heading_h1_green)
 
-      Styles.apply("^ *\\(|\\|:\\)\\( ?\\)\\(>\\)\\(\n\\| .*\n\\)", nil, :quote_heading_pipe, :ls_quote, :quote_heading_bracket, :quote_heading_h1)
+        #    >>
+        Styles.apply("^ +\\(>>\\)\\(.*\n\\)", nil, :quote_heading_bracket, nil)
 
-      # | >>
-      Styles.apply("^ *\\(|\\)\\( \\)\\(>>\\)\\(\n\\| .*\n\\)", nil, :quote_heading_pipe, :ls_quote, :quote_heading_bracket, :quote_heading_small)
-      # | >...! headings
-      Styles.apply("^ *\\(|\\)\\( ?\\)\\(>\\)\\(.*!:?\n\\)", nil, :quote_heading_pipe, :ls_quote, :quote_heading_bracket, :quote_heading_h1_green)
+        # (indented)  > large:
+        # Styles.apply("^ +\\(> ?\\)\\(.*:\n\\)", nil, :quote_heading_bracket, :quote_heading_h0)
 
-      #    >>
-      Styles.apply("^ +\\(>>\\)\\(.*\n\\)", nil, :quote_heading_bracket, :quote_heading_h2)
+        # |+... diffs
+        Styles.apply("^ +\\(:[0-9]+\\)$", nil, :ls_quote)
+        Styles.apply("^ *\\([|:]\\+\\)\\(.*\\)", nil, :diff_green_pipe, :diff_green, :face=>"xiki")   # :+...
+        Styles.apply("^ *\\([|:]-\\)\\(.*\\)", nil, :diff_red_pipe, :diff_red)   # :-...
+        Styles.apply("^ *\\([|:]\\?\\)\\(.*\\)", nil, :diff_yellow_pipe, :diff_yellow, :face=>"xiki")   # :?...
 
-      # (indented)  > large:
-      # Styles.apply("^ +\\(> ?\\)\\(.*:\n\\)", nil, :quote_heading_bracket, :quote_heading_h0)
+        # ::... draw attention to lines with extra colon > in shell output, it means line's expandable
+        Styles.apply("^ *\\(::\\)\\(.*\n\\)", nil, :quote_heading_pipe, :ls_quote)   # ::...
 
-      # |+... diffs
-      Styles.apply("^ +\\(:[0-9]+\\)$", nil, :ls_quote)
-      Styles.apply("^ *\\([|:]\\+\\)\\(.*\\)", nil, :diff_green_pipe, :diff_green, :face=>"xiki")   # whole lines
-      Styles.apply("^ *\\([|:]-\\)\\(.*\\)", nil, :diff_red_pipe, :diff_red)
-      Styles.apply("^ *\\([|:]\\?\\)\\(.*\\)", nil, :diff_yellow_pipe, :diff_yellow, :face=>"xiki")   # :?...
+        Styles.apply("^ *\\([|:]\\)\\(@@ .*\n\\)", nil, :quote_heading_pipe, :diff_line_number)
 
-      Styles.apply("^ *\\([|:]\\)\\(@@ .*\n\\)", nil, :quote_heading_pipe, :diff_line_number)
+        Styles.apply('^ *\\(//?\\)$', nil, :ls_dir)  # /
+        Styles.apply('^ *\\(\./\\)$', nil, :ls_dir)  # ./
 
-      Styles.apply('^ *\\(//?\\)$', nil, :ls_dir)  # /
-      Styles.apply('^ *\\(\./\\)$', nil, :ls_dir)  # ./
+        # Has to be at bottom, to override other styles...
 
-      # Has to be at bottom, to override other styles...
+        Styles.apply("^[ \t]*\\([*~]\\)\\( \\)\\(.*\\)", nil, :ls_bullet_darker, :variable, :task_bullet)   # ~ fooo
+        Styles.apply("^[ \t]*\\([*~]\\)\\( \\)\\(.*\/$\\)", nil, :ls_bullet_darker, :variable, :task_bullet_slash)   # ~ foo/
 
-      Styles.apply("^[ \t]*\\([*~]\\)\\( \\)\\(.*\\)", nil, :ls_bullet_darker, :variable, :task_bullet)   # ~ fooo
-      Styles.apply("^[ \t]*\\([*~]\\)\\( \\)\\(.*\/$\\)", nil, :ls_bullet_darker, :variable, :task_bullet_slash)   # ~ foo/
+      end
 
     end
 
@@ -1136,7 +1078,7 @@ module Xiki
       end
 
 
-      # up+, so start with blank
+      # Dash+, so start with blank... ??
 
       # Line has content, so indent under...
 
@@ -1162,13 +1104,13 @@ module Xiki
       txt = txt.sub /\n+\z/, ''   # Remove last \n
 
       quote = target_quote || existing_quote
-      quote ||= '|' if prefix == :- || options[:char]
-      quote ||= ':'
+      quote ||= ':' if options[:char] || prefix == :u || prefix == :-
+      quote ||= '|'
 
       txt = txt.gsub /^/, "#{indent}#{quote} "
       txt = txt.gsub /^( *[|:#]) $/, "\\1"   # Remove trailing spaces
 
-      if prefix == :u
+      if prefix == :-
         View.insert "#{indent}#{quote} \n"
         Move.backward
         return
@@ -1782,9 +1724,9 @@ module Xiki
     end
 
     # Just puts "=rename/" underneath item the cursor is on...
-    def self.rename_file
+    def self.command_on_filename command
 
-      # Duplicate line, putting =rename_to after indent...
+      # Duplicate line, putting =rename after indent...
 
       line = Line.value
 
@@ -1793,8 +1735,8 @@ module Xiki
 
       has_dot = line =~ /\./
       has_dot ?
-        line.sub!(/^( *)([+-] )?.+(\..+)/, "\\1=rename/\\3") :
-        line.sub!(/^( *)([+-] )?.+/, "\\1=rename/")
+        line.sub!(/^( *)([+-] )?.+(\..+)/, "\\1=#{command}/\\3") :
+        line.sub!(/^( *)([+-] )?.+/, "\\1=#{command}/")
 
       Tree.<< line, :no_slash=>1, :no_search=>1
       Move.to_end
@@ -1985,8 +1927,10 @@ module Xiki
               ! Bookmarks.save
             ~ file/
               + rename
-                ! FileTree.rename_file
-              + command on it
+                ! FileTree.command_on_filename "rename"
+              + copy
+                ! FileTree.command_on_filename "copy"
+              + prompt here
                 ! Tree.<< "$ ", :no_search=>1, :no_slash=>1
                 ! Move.to_end
             ~ edit with/
@@ -2069,7 +2013,7 @@ module Xiki
               ! options[:nest] = 1
               ! options[:no_task] = 1
               ! txt = Shell.external_plus_sticky_history
-            ~ dir history/
+            ~ recent in dir/
               ! options[:nest] = 1
               ! options[:no_task] = 1
               ! Shell.history options[:file_path]
@@ -2080,14 +2024,18 @@ module Xiki
               ! ""
             ~ all files
               ! FileTree.expand_dir_recursively :file_path=>options[:file_path]
+            ~ modified date sort
+              ! FileTree.dir :date_sort=>true
+              ! ""
+            ~ delete
+              ! Keys.remember_key_for_repeat(proc {Launcher.launch :task=>["delete"], :no_prompt=>1})
+              ! FileTree.delete_file options[:file_path], options
             ~ bookmark
               ! Bookmarks.save
-            ~ dir/
+
+            ~ file/
               + rename
-                ! FileTree.rename_file
-              + delete
-                ! Keys.remember_key_for_repeat(proc {Launcher.launch :task=>["delete"], :no_prompt=>1})
-                ! FileTree.delete_file options[:file_path], options
+                ! FileTree.command_on_filename "rename"
               + prompt here
                 ! Tree.<< "$ "
                 ! Line.to_right
@@ -2108,9 +2056,6 @@ module Xiki
               + all contents
                 ! txt = FileTree.grep(options[:file_path], "").join("\\n")
                 ! txt.sub(/.+\\n/, "")   # Delete 1st line > the redundant dir
-              + modified date sort
-                ! FileTree.dir :date_sort=>true
-                ! ""
 
               + expand
                 ! Launcher.launch
@@ -2144,6 +2089,8 @@ module Xiki
                   ! Dir.mkdir("\#{options[:file_path]}/d") rescue nil
                   ! File.write "\#{options[:file_path]}/d/d.txt", "ddd\\nddd\\n"
                   ! "- a.txt\\n- b.txt\\n- c.notes\\n- d/\\n  - d.txt"
+            ~ expand
+              ! Launcher.launch
           `.unindent)
 
           menu << "\n"
@@ -2347,7 +2294,10 @@ module Xiki
       options[:no_slash] = 1
       task = options[:task]
 
-      extension = File.extname(options[:file_path])[/\w+/]
+      file_path = options[:file_path]
+
+      extension = File.extname(file_path)[/\w+/]
+
 
       if task == []
         # Special treatment for .rb > 2 options
@@ -2370,6 +2320,43 @@ module Xiki
             end
           end
           `)
+      end
+
+      # No extension, so look up by the full name...
+
+      if ! extension
+        file_name = File.basename file_path
+
+        # Todo > move this out into a file
+        # file format:
+        # Dockerfile/
+        #   | FROM ubuntu:latest
+        #   | RUN apt-get update
+        # Rakefile/
+        #   | require 'rake'
+        #   | ...
+        txt = {
+          "Dockerfile"=>%`
+            # Sample Dockerfile from xsh
+            FROM ubuntu:latest
+            RUN apt-get update
+            RUN apt-get install -y ruby
+            RUN apt-get install -y nodejs npm
+            RUN sudo gem install sinatra
+
+            # add application sources
+            COPY . /app
+            RUN cd /app; npm install
+
+            # Expose the default port
+            EXPOSE  5000
+
+            # Start command
+            CMD ["nodejs", "/app/web.js"]
+            `.unindent
+        }[file_name]
+
+        return options[:output] = Tree.quote(txt) if txt
       end
 
       require "#{Xiki.dir}commands/sample_menus/sample_menus_index.rb" # if !defined?(SampleMenus)

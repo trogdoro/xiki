@@ -61,6 +61,14 @@ module Xiki
     end
 
     def self.backward
+
+
+      # Selection exists, so just delete it...
+
+      return View.delete *View.range if View.selection
+
+      # No selection...
+
       prefix = Keys.prefix
       case prefix
       when :u

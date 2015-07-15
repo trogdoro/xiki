@@ -72,9 +72,33 @@ module Xiki
       Keys.remember_key_for_repeat(proc {Ruby.custom_previous}, :movement=>1)
     end
 
+    def self.init_in_client
+
+      # Call it when ruby-mode-map
+
+      $el.el4r_lisp_eval %`(progn
+        (defun xiki-ruby-mode-keys ()
+          (el4r-ruby-eval "Xiki::Ruby.keys")
+        )
+        (add-hook 'ruby-mode-hook 'xiki-ruby-mode-keys)
+      )`
+
+      self.keys   # Call it now, in case ruby-mode-map already loaded (it probably is if reloading after a .rb file was visited)
+
+    end
+
     def self.keys
-      $el.define_key(:ruby_mode_map, $el.kbd("C-c C-n")){ Ruby.custom_next }   # custom+next
-      $el.define_key(:ruby_mode_map, $el.kbd("C-c C-p")){ Ruby.custom_previous }   # custom+previous
+      if $el.boundp :ruby_mode_map
+
+        $el.define_key(:ruby_mode_map, $el.kbd("C-c C-n")){ Ruby.custom_next }   # custom+next
+        $el.define_key(:ruby_mode_map, $el.kbd("C-c C-p")){ Ruby.custom_previous }   # custom+previous
+
+        $el.define_key :ruby_mode_map, $el.kbd("C-c C-e") do
+          Xiki::View.insert "end"
+          $el.ruby_indent_line
+        end
+
+      end
     end
 
     # Makes "Foo.bar" string from quoted method line.

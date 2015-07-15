@@ -1,1 +1,18 @@
-<<< homebrew/
+- before each use/
+  =% brew update
+  - refetch if problems/
+    =/usr/local/
+      % git fetch origin
+      % git reset --hard origin/master
+  - doctor, to detect problems/
+    =% brew doctor
+- install/
+  =% brew install coffeescript
+- list/
+  ! Tree.quote Shell.sync "brew list"
+- setup/
+  - make sure things are ok/
+    =% brew doctor
+- files/
+  =/usr/local/Cellar/
+=notes/

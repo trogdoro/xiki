@@ -154,7 +154,7 @@ module Xiki
       end
 
       # MenuHandler.eval_exclamations result, options if options
-      if eval_options = options[:eval]
+      if result && eval_options = options[:eval]
 
         # :eval means to eval the exclamations.
         # We're setting :nest=>1 (in the main options, which is the expected value) in case it's this Xiki is used for a tasks menu
@@ -164,6 +164,7 @@ module Xiki
         eval_options[:nest] = 1 if eval_options.is_a?(Hash) && result !~ /^ *! /
 
         MenuHandler.eval_exclamations result, options
+        # Todo > clear out :nest option if eval returned nil?
       end
 
       result

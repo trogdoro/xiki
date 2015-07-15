@@ -16,9 +16,8 @@
   + undo adds/
     $ git reset
     $ git reset foo.txt
-  + whipe out modifications to files/
-    $ git checkout .
   + make local file be like repo version/
+    $ git checkout .
     $ git checkout foo.txt
   + undo last commit, leaving your changes/
     $ git reset HEAD^

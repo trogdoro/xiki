@@ -15,7 +15,7 @@ module Xiki
     # def self.run *args #, options={}
     def self.run options={}
 
-      options_in = {}
+      options_in = {:xiki_in_initial_filter=>1}
 
       # Todo > don't call these lines each time, probably > only once when :args_via_daemon
       # though when :args_via_env, .run is only called once
@@ -23,8 +23,6 @@ module Xiki
       Environment.xsh = true
 
       Xiki.init_in_client   # Do client-specific init stuff (normal .init methods can run before the process is connected to a client)
-
-      $el.elvar.xiki_in_initial_filter = 1
 
       # Define keys and such...
 
@@ -43,6 +41,10 @@ module Xiki
       end
 
       args.gsub! /\A\\\^/, "^"   # Undo backslash escaping of some chars
+
+      # Command was "xsh xsh ...", so remove the redundant "xsh "...
+
+      args.sub! /^xsh /, ''
 
       # if -c, pull it off and set :xic...
 
@@ -66,17 +68,10 @@ module Xiki
         options[:dont_expand] = 1
         args = "$ #{args}"
 
-      elsif args.slice! /^-g\b/
+      elsif args == "-g"
 
-        tmp_dir = File.expand_path "~/xiki/misc/tmp"
-        FileUtils.mkdir_p tmp_dir   # Make sure dir exists
-        file = "#{tmp_dir}/last_quit_location.notes"
+        self.to_grab_location
 
-        location = File.read(file) rescue nil
-        location ||= "/tmp/"
-
-        location.strip!
-        View.open location
         options[:do_nothing] = 1
 
       elsif args.slice! /^-s /
@@ -172,6 +167,12 @@ module Xiki
           args = Bookmarks[args]
         end
 
+      elsif args == "-ide"
+        options[:do_nothing] = 1
+        View.layout_todo_and_nav
+        View.to_upper
+        View.open ":g"
+
       elsif args.slice! /^-slashify /
         args.sub! ' ', '/'
       elsif args == "$"
@@ -201,7 +202,6 @@ module Xiki
       # Enable theme and styles...
 
       Themes.use 'Default'
-      Styles.reload_styles   # So it uses dark headings
 
       return if options[:do_nothing]
 
@@ -218,9 +218,11 @@ module Xiki
       View.<< "\n\n\n", :dont_move=>1
       View.tab_width 12
 
-      exists_in_path = Shell.sync('which xsh') =~ /\A\//
+      exists_in_path = Shell.sync('type -P xsh') =~ /\A\//
 
-      if ! exists_in_path
+      # The 'xsh' command not in $PATH, or no ~/.xsh, so prompt them to configure...
+
+      if ! exists_in_path || ! File.exists?(File.expand_path "~/.xsh")
         welcome = Xiki["welcome"]
         View << "\nwelcome/\n#{welcome.gsub /^/, '  '}\n\n"
       end
@@ -240,7 +242,7 @@ module Xiki
 
       elsif args == "f"
         View.<< "./"
-        Launcher.launch :task=>["tree"]
+        Launcher.launch :task=>["all files"]
         return
 
       elsif args =~ /\A\+(\w.*)/
@@ -391,6 +393,16 @@ module Xiki
       tmp_dir = File.expand_path "~/xiki/misc/tmp"
       FileUtils.mkdir_p tmp_dir   # Make sure dir exists
       File.open("#{tmp_dir}/grabbed_commands.notes", "w") { |f| f << "#{commands.strip}\n" }
+    end
+
+    def self.to_grab_location
+      file = File.expand_path "~/xiki/bookmarks/g.notes"
+
+      location = File.read(file) rescue nil
+      return if ! location
+
+      location.strip!
+      View.open location
     end
 
   end

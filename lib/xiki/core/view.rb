@@ -166,8 +166,17 @@ module Xiki
     # Creates a new window by splitting the current one
     def self.create_vertical
       $el.split_window_horizontally
-      View.next if ! Keys.prefix_u
+
+      if Keys.prefix_u
+        # Make hidden view appear at left
+        ControlTab.go
+        return View.next
+      end
+
+      # Make hidden view appear at right
+      View.next
       ControlTab.go
+
     end
 
     def self.create prefix=nil
@@ -1045,13 +1054,6 @@ module Xiki
       $el.elvar.truncate_lines = on_or_off.to_sym == :off
     end
 
-    # Call this at startup to set some sensible view-related default behavior
-    def self.sensible_defaults
-      $el.el4r_lisp_eval("(progn (setq truncate-partial-width-windows nil)
-        (set 'default-truncate-lines t)
-        )")
-    end
-
     def self.set_mark pos=nil
       pos ||= self.cursor
       $el.set_mark pos
@@ -1059,6 +1061,10 @@ module Xiki
 
     def self.mark= pos=nil
       self.set_mark pos
+    end
+
+    def self.select
+      self.set_mark
     end
 
     def self.insert txt, options={}
@@ -2177,7 +2183,7 @@ module Xiki
     end
 
     def self.tab_width width
-      $el.elvar.tab_width width
+      $el.elvar.tab_width = width
     end
 
     def self.scan regex
@@ -2187,6 +2193,21 @@ module Xiki
     def self.close
       self.kill
       self.hide
+    end
+
+    def self.insert_shell_prompt
+
+      # up+, so prompt for bookmark...
+
+      if Keys.prefix_u
+        dir = Keys.bookmark_as_path :prompt=>"Bookmark to make shell prompt in: "
+        View.<< Bookmarks[dir], :dont_move=>1
+      end
+
+      # Insert "$ " under this dir...
+
+      Tree.<< "$ ", :no_search=>1, :no_slash=>1
+      Line.to_right
     end
 
   end

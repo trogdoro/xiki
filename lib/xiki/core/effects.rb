@@ -131,21 +131,25 @@ module Xiki
       $el.delete_overlay over2
     end
 
-    # Define font
     def self.define_styles
-      Styles.define :color_rb_glow1, :bg => "fec"
-      Styles.define :color_rb_glow2, :bg => "f90"
 
-      Styles.define :red, :fg => "f00"
-      Styles.define :orange, :fg => "f80"
-      Styles.define :yellow, :fg => "ff0"
-      Styles.define :green, :fg => "0f0"
-      Styles.define :blue, :fg => "00f"
-      Styles.define :indigo, :fg => "408"
-      Styles.define :violet, :fg => "82e"
+      Code.cache(:effects_define_styles) do
 
-      Styles.define :purple, :fg => "808"
-      Styles.define :cyan, :fg => "f0f"
+        Styles.define :color_rb_glow1, :bg=>"fec"
+        Styles.define :color_rb_glow2, :bg=>"f90"
+
+        Styles.define :red, :fg=>"f00"
+        Styles.define :orange, :fg=>"f80"
+        Styles.define :yellow, :fg=>"ff0"
+        Styles.define :green, :fg=>"0f0"
+        Styles.define :blue, :fg=>"00f"
+        Styles.define :indigo, :fg=>"408"
+        Styles.define :violet, :fg=>"82e"
+
+        Styles.define :purple, :fg=>"808"
+        Styles.define :cyan, :fg=>"f0f"
+      end
+
     end
 
   end

@@ -451,9 +451,8 @@ module Xiki
 
         # Could be /tmp, "/tmp/$ pwd", or "/tmp/$ pwd/item"
 
-        dir = path[-1]
+        dir = Bookmarks[path[-1]]
         command = nil
-
 
         dir.sub!(/\/$/, '')
 
@@ -466,11 +465,7 @@ module Xiki
         return self.quit_and_run commands
       end
 
-
-
-
       # If ls, grab dir and exit > hard-coded support for ls, for now > abstract out for other commands later
-
 
       if last[0] == "$ ls"
 
@@ -511,6 +506,10 @@ module Xiki
       if ancestors && FileTree.handles?(ancestors[-1])
 
         dir = ancestors[-1]
+
+        dir = Bookmarks[dir]
+        dir.gsub! "//", "/"   # Under a file command, so change "/foo//" to "/foo/" before cd'ing
+
         dir = Shell.quote_file_maybe dir
 
         # Todo > Do this, when there are args?
@@ -610,7 +609,13 @@ module Xiki
 
     end
 
-    def self.quit_and_run commands
+    def self.quit_and_run commands, options={}
+
+      if options[:dir]
+        dir = Shell.quote_file_maybe options[:dir]
+        commands = "cd #{dir}\n#{commands}"
+      end
+
       Xsh.save_grab_commands commands
       self.quit
     end
@@ -622,10 +627,10 @@ module Xiki
 
     def self.save_xsh_sessions
 
-      return if View.file   # Return if it has a file - it means it's not the "xsh" session (it's just a file with that name)
-
       # Avoid saving certain buffers
       View.kill if ["unsaved/"].member?(View.name)
+
+      return if View.file   # Return if it has a file - it means it's not the "xsh" session (it's just a file with that name)
 
       # Save session to file...
 
@@ -659,9 +664,9 @@ module Xiki
       # .save_xsh_sessions didn't deem to save this view, so we should ignore it too
       return if ! file
 
-      tmp_dir = File.expand_path "~/xiki/misc/tmp"
-      FileUtils.mkdir_p tmp_dir   # Make sure dir exists
-      File.open("#{tmp_dir}/last_quit_location.notes", "w") { |f| f << "#{file}\n" }
+      dir = File.expand_path "~/xiki/bookmarks"
+      FileUtils.mkdir_p dir   # Make sure dir exists
+      File.open("#{dir}/g.notes", "w") { |f| f << "#{file}\n" }
 
     end
 

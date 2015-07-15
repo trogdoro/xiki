@@ -44,8 +44,6 @@ module Xiki
 
     def self.filter options={}   # Tree.filter / tree filter / tree search
 
-      in_initial_filter = $el.elvar.xiki_in_initial_filter rescue nil
-
       $el.make_variable_buffer_local :xiki_filter_options
       $el.make_variable_buffer_local :xiki_filter_hotkey
       $el.make_variable_buffer_local :xiki_bar_special_text
@@ -78,7 +76,7 @@ module Xiki
       else
 
         # If in xsh view, and no filters yet, show "ESC" instead of quit
-        quit_key = in_initial_filter && View.name == "xsh" && ! View.file ?
+        quit_key = options[:xiki_in_initial_filter] && View.name == "xsh" && ! View.file ?
           "ESC Quit" :
           "^Q Quit"
 
@@ -486,6 +484,8 @@ module Xiki
     #         => "a/=b/c/p Tree.construct_path :all=>1"
 
 
+    # Todo > rename to > .climb
+
     def self.construct_path options={}
       # 2013-03-20 TODO: rewrite this to separate out
       # - 1) Raw retrieval of each line into list
@@ -543,25 +543,25 @@ module Xiki
       path.unshift root
 
 
-      # Prepend command heading
-      # - if :all, put =... back on root if it was there
-
-      # Only add heading if :all or no "=" at root
-      if options[:all] || ! root_has_equals
-
-        cursor_on_heading = line_orig =~ /^>/
-
-        if command_heading = Notes.command_heading(:check_current_line=>(cursor_on_heading))
-          root.sub! /^/, "=" if root_has_equals   # Add "=" back on root if was there
-
-          # If blank path, replace, otherwise prepend to list
-          if path == [""] || cursor_on_heading
-            path[0].replace command_heading
-          else
-            path.unshift command_heading
-          end
-        end
-      end
+      # # Prepend command heading
+      # # - if :all, put =... back on root if it was there
+      #
+      # # Only add heading if :all or no "=" at root
+      # if options[:all] || ! root_has_equals
+      #
+      #   cursor_on_heading = line_orig =~ /^>/
+      #
+      #   if command_heading = Notes.command_heading(:check_current_line=>(cursor_on_heading))
+      #     root.sub! /^/, "=" if root_has_equals   # Add "=" back on root if was there
+      #
+      #     # If blank path, replace, otherwise prepend to list
+      #     if path == [""] || cursor_on_heading
+      #       path[0].replace command_heading
+      #     else
+      #       path.unshift command_heading
+      #     end
+      #   end
+      # end
 
       # At this point, items are broken up by line...
 
@@ -986,7 +986,6 @@ module Xiki
     # Call Tree.filter with arguments appropriate to whether "output" string
     # has nested children and/or quated children.
     def self.filter_appropriately left, right, txt, options={}
-      txt
 
       View.cursor = left unless options[:line_found]
 
@@ -1006,10 +1005,10 @@ module Xiki
           options[:recursive] = 1
         end
         Line.to_words if ! options[:column_found]
-        Tree.filter options
+        self.filter options
       else
         Line.to_words if ! options[:column_found]
-        Tree.filter options
+        self.filter options
       end
     end
 
@@ -1628,10 +1627,11 @@ module Xiki
 
       # Go down and grab each line until indented less...
 
-      while(Line.indent(Line.value(i)).size >= indent)
-        child = Line.value(i)
-        children << child
+      line = Line.value i
+      while(Tree.indent_size(line)*2 >= indent)
+        children << line
         i += 1
+        line = Line.value i
       end
 
       if options[:string]
@@ -1778,9 +1778,9 @@ module Xiki
           item.replace Path.escape item
         end
       end
-
+      # raw example: ["/projects/git_sample2/", "rename.txt", "$ git status"]
       path = self.join_to_subpaths raw
-
+      # path example: ["/projects/git_sample2/rename.txt/", "$ git status"]
       path
 
     end
@@ -1792,12 +1792,12 @@ module Xiki
 
       # Temporary implementation...
 
-      # Step 1. Join to "a/@b/c"...
+      # Step 1. Join to "a/=b/c"...
       # Maybe be more indirect about this? - maybe go directly to list of subpaths, instead of these 2 steps.
-      # Do thing where we don't require slash before @ when file path? (probably not worth it)
+      # Do thing where we don't require slash before = when file path? (probably not worth it)
 
       path = self.join_path path, :leave_blanks=>1
-
+      # path example: "/file/path.txt/$ foo"
       # Step 2. Split to "a/", "b/c/"...
       path = Path.split path, :outer=>1
       path
@@ -2195,6 +2195,8 @@ module Xiki
         letter = $el.char_to_string($el.read_char)
       end
 
+      # ":" was the 1st char typed, so only math ":" at the beginning...
+
       # Just a normal letter, so filter
 
       filter = options[:filter]
@@ -2215,10 +2217,25 @@ module Xiki
         lines = search_dir_names(lines, /#{Regexp.quote filter}/i)
       else
         regexp = Regexp.quote filter
+
+        if filter == ":"
+          regexp = /^ *:/
+
+          lines_orig = lines
+          lines = lines.grep(regexp)
+
+          regexp = nil   # Indicate we shouldn't filter again
+          if lines.blank?   # If none found, try searching for ":" anywhere in string...
+            lines = lines_orig
+            regexp = ":"
+          end
+        end
+
         regexp = "\\/$|#{regexp}" if recursive
         regexp = "^ *=|^ *:\\d|^ *[+-] [a-zA-Z0-9=:.\/]|#{regexp}" if recursive_quotes
         regexp = /#{regexp}/i
-        lines = lines.grep(regexp)
+
+        lines = lines.grep(/#{regexp}/i) if regexp
       end
 
       # Remove dirs with nothing under them
@@ -2270,16 +2287,19 @@ module Xiki
       # Return (gracefully stop search) if it's a permanent-named view, and it's not xsh with only one other view
       # If xsh and just one other view, it should continue.
 
-      return if View.name !~ /\/$/ && ! (View.name == "xsh" && views_open.length == 1)
+      # Commented out > probably not needed > any time we're in the initial filter, it's fine to quit
+      # return if View.name !~ /\/$/ && ! (View.name == "xsh" && views_open.length == 1)
 
-      # This was the 1st search done in this temporary view, so kill view
+      options = JSON[$el.elvar.xiki_filter_options_just_finished]
+      options = TextUtil.symbolize_hash_keys options
 
-      xiki_in_initial_filter = $el.boundp :xiki_in_initial_filter
+      # Filter was started via Xsh.run, so quit...
 
-      if $el.boundp :xiki_in_initial_filter
-        View.kill
-        DiffLog.quit if views_open.length == 1
-      end
+      return DiffLog.quit if options[:xiki_in_initial_filter]
+
+      # Filter was started via Launcher.open, so kill the view...
+
+      View.kill if options[:launcher_open]
 
     end
 
@@ -2316,9 +2336,9 @@ module Xiki
                     (setq this-command 'xiki-filter-each)   ; It'll do hotkey because options[:hotkey]
                   )
 
-                  ; A char to filter or exit, so pass control to ruby...
+                  ; A filter char to filter or exit, so pass control to ruby...
 
-                  ((and (stringp char) (string-match "[a-z0-9, .;_$#*+=/\C-g\C-m\t\C-_\C-\\-]" char))   ; Keys that delegate through to Tree.filter
+                  ((and (stringp char) (string-match "[a-z0-9, .:;_$#*+=/\C-g\C-m\t\C-_\C-\\-]" char))   ; Keys that delegate through to Tree.filter
                     (setq this-command 'xiki-filter-each)   ; This makes it the next command that will be run
                   )
 
@@ -2348,13 +2368,14 @@ module Xiki
 
           (defun xiki-filter-cancel ()
 
-            (setq xiki-filter-options nil)
-
             ; Remember what we just did, for later
-            (make-local-variable 'xiki-filter-just-finished)
-            (setq xiki-filter-just-finished
-              (if xiki-filter-hotkey 'hotkey 'filter)
+            (make-local-variable 'xiki-filter-options-just-finished)
+
+            (setq xiki-filter-options-just-finished
+              xiki-filter-options
             )
+
+            (setq xiki-filter-options nil)
 
             (setq xiki-filter-hotkey nil)
             (setq xiki-bar-special-text nil)
@@ -2363,11 +2384,8 @@ module Xiki
 
           (defun xiki-filter-post-command-handler () (interactive)
             ; Unset that we're in the initial filter, unless filter options are set
-            (when (and (boundp 'xiki-in-initial-filter) (not (and (boundp 'xiki-filter-options) xiki-filter-options)))
-              (makunbound 'xiki-in-initial-filter)
-            )
-            (when (boundp 'xiki-filter-just-finished)
-              (makunbound 'xiki-filter-just-finished)
+            (when (boundp 'xiki-filter-options-just-finished)
+              (makunbound 'xiki-filter-options-just-finished)
             )
           )
 

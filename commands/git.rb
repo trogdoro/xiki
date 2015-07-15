@@ -132,7 +132,7 @@ module Xiki::Menu
 
         # "modified:", so show diff
         if label == "modified: "
-          txt = self.diff_internal("git diff --patience --relative #{self.git_diff_options} #{file}", dir)
+          txt, error = self.diff_internal("git diff --patience --relative #{self.git_diff_options} #{file}", dir)
           txt = "-no changes" if txt == ""
 
           txt.gsub!(/^/, ':')
@@ -142,7 +142,7 @@ module Xiki::Menu
 
         if label == "renamed: "
           file.sub! /.+ -> /, ''   # Remove the first file
-          txt = self.diff_internal("git diff --patience --relative #{self.git_diff_options} #{file}", dir)
+          txt, error = self.diff_internal("git diff --patience --relative #{self.git_diff_options} #{file}", dir)
           txt = "-no changes" if txt == ""
           txt.gsub!(/^/, ':')
           txt.gsub!(/^:(---|\+\+\+|diff|index) .+\n/, '')
@@ -232,10 +232,14 @@ module Xiki::Menu
       Dir.mkdir "#{dir}d" rescue nil
 
       txt = "hello\nhi again\n"
-      ["a.txt", "b.txt", "d/aa.txt"].each { |path| File.open("#{dir}#{path}", "w") { |f| f << txt } }
+      filenames = ["a.txt", "b.txt", "d/aa.txt"]
+
+      filenames.each { |path| File.open("#{dir}#{path}", "w") { |f| f << txt } }
+
+      Shell.command "git add #{filenames.join ' '}", :dir=>dir
 
       "
-      | Created these files:
+      | Created and added these files:
       | - a.txt
       | - b.txt
       | - d/
@@ -312,7 +316,15 @@ module Xiki::Menu
 
 
     def self.diff_internal command, dir, options={}
-      txt = options[:txt] || Shell.sync(command, :dir=>dir)
+
+      txt, error = nil, nil
+      if options[:txt]
+        txt = options[:txt]
+      else
+        txt, error = Shell.command command, :dir=>dir, :return_error=>1
+      end
+
+      return ["", error] if error
 
       # Show intra-line diffs > not used any more
       if Keys.prefix_u
@@ -330,60 +342,13 @@ module Xiki::Menu
         txt.gsub! /\([+-][+-]\)/, ''
       else
         txt.gsub! /^ $/, ''
+        # Delete redundant lines and format some as gray
+        txt.gsub! /^new file mode .+\n/, ""
         txt.gsub! /^deleted file mode /, "@@ \\0"
       end
 
-      txt
+      [txt, error]
     end
-
-    def self.status_internal txt
-      txt.gsub!(/^#\t(.+?): +/, "- \\1: ")
-      txt.gsub!(/^#\t/, "- ")
-      txt.gsub!(/^#\n/, '')
-      txt.gsub!(/^#/, '|')
-      txt.gsub! /.+ \.\..+\n/, ""
-      txt
-    end
-
-    # Takes as input the output of .status_internal.
-    def self.status_to_hash txt
-      result = {}
-
-      # Pull out unadded
-      unadded = txt[/^\| Changes not staged for commit:.+/m]
-      result[:unadded] =
-        if unadded
-          unadded.sub! /\A(^\|[^\n]+\n)+/m, ''   # Remove first few headings
-          unadded.sub! /^\|.+/m, ''   # Remove future sections
-          unadded.scan(/^- (.+?): (.+)/)
-        else
-          []
-        end
-
-      # Pull out added
-      added = txt[/^\| Changes to be committed:.+/m]
-      result[:added] =
-        if added
-          added.sub! /\A(^\|[^\n]+\n)+/m, ''   # Remove first few headings
-          added.sub! /^\|.+/m, ''   # Remove future sections
-          added.scan(/^- (.+?): (.+)/)
-        else
-          []
-        end
-
-      # Pull out untracked
-      untracked = txt[/^\| Untracked files:.+/m]
-      result[:untracked] =
-        if untracked
-          files = untracked.scan(/^- (.+)/)
-          files.map!{|i| ['untracked', i[0]]}
-        else
-          []
-        end
-
-      result
-    end
-
 
     def self.graph *args
       options = yield
@@ -443,7 +408,7 @@ module Xiki::Menu
         command = "git diff --pretty=oneline --name-status #{relative_flag} #{rev}~ #{rev}"
 
         # Rev passed, so show all diffs
-        txt = self.diff_internal command, toplevel
+        txt, error = self.diff_internal command, toplevel
 
         txt.gsub! /^([A-Z]+)\t/, "\\1) "
         txt.gsub! /^M\) /, ''
@@ -473,7 +438,7 @@ module Xiki::Menu
 
         command = "git show #{@@git_diff_options} --pretty=oneline #{rev} -- #{file}"
 
-        txt = self.diff_internal command, toplevel
+        txt, error = self.diff_internal command, toplevel
         txt.sub!(/.+?@@/m, '@@')
         txt.gsub! /^/, '|'
 
@@ -529,19 +494,21 @@ module Xiki::Menu
       # /, so show diff of files...
 
       if file.nil?
-        txt = Shell.run "git status", :dir=>dir, :sync=>true
-        hash = self.status_to_hash(self.status_internal(txt))
-        untracked = hash[:untracked].map{|i| i[1]}
-        untracked.map!{|i| "+ untracked) #{i}\n"}
+        txt = Shell.command "git status --porcelain", :dir=>dir
+        hash = Xiki::Git.status_to_hash txt
+
+        untracked = hash[:untracked]
+
+        untracked.map!{|i| "+ untracked) #{i[1]}\n"}
 
         option = is_unadded ? "- add\n" : "- commit/\n"
         command = "git diff -b --patience --relative #{self.git_diff_options} #{is_unadded ? '' : ' HEAD'}"
 
         is_file = File.file? dir
 
-        txt = self.diff_internal command, dir
+        txt, error = self.diff_internal command, dir
 
-        if txt =~ /^fatal: ambiguous argument 'HEAD': unknown revision/
+        if error =~ /^fatal: ambiguous argument 'HEAD': unknown revision/
           txt = self.status_hash_to_bullets hash, is_unadded
         else
           unless txt.empty?
@@ -569,13 +536,24 @@ module Xiki::Menu
           end
         end
 
-        txt << untracked.join("")
+        # No files in project, so suggest they create some...
+
+        if Dir["#{dir}*"] == []
+          return "
+            | No files exist. Try creating some and adding them to the repo.
+            |
+            | This creates and adds a few sample files automatically:
+            =git/setup/make sample files/
+          ".unindent
+        end
+
+        txt << untracked.join("") if untracked
 
         return "
-          | There were no differences. Try modifying a file first.
-          | Or create a few sample files:
-          =git/setup/make sample files/
+          | There were no differences to added files. Try modifying some files first,
+          | or adding some unadded files.
           ".unindent if ! txt.any?
+
         return option + txt + "
           - add/
           - delete/
@@ -584,14 +562,21 @@ module Xiki::Menu
           ".unindent
       end
 
-
       # /file, so show diff...
 
       if line.nil?   # If no line passed, re-do diff for 1 file
 
-        txt = is_unadded ?
+        txt, error = is_unadded ?
           self.diff_internal("git diff --patience --relative #{self.git_diff_options} #{file}", dir) :
           self.diff_internal("git diff --patience -b --relative #{self.git_diff_options} HEAD #{file}", dir)
+
+        # File doesn't exist in repo, so just show its contents...
+
+        if error =~ /^fatal: ambiguous argument 'HEAD'/
+          txt = File.read "#{dir}#{file}"
+          txt.gsub! /^/, ' '
+        end
+
         self.clean! txt
 
         if txt.blank?
@@ -599,7 +584,7 @@ module Xiki::Menu
 
           # If not in repository, just show the contents
           if ! file_in_repository
-            return "| untracked file...\n|@@ +1\n" + File.read(Bookmarks.expand("#{dir}/#{file}")).gsub(/^/, '|+').gsub("\c@", '.')
+            return "| untracked file:\n|@@ +1\n" + File.read(Bookmarks.expand("#{dir}/#{file}")).gsub(/^/, '|+').gsub("\c@", '.')
           end
           return "| No diffs"
         end
@@ -658,15 +643,20 @@ module Xiki::Menu
     end
 
     def self.push_internal dest, dir
-      Shell.run "git push origin #{dest}", :dir=>dir
+
+      # Todo > only cd if necessary!
+
+      DiffLog.quit_and_run "cd \"#{dir}\"\ngit push origin #{dest}"
+
       nil
     end
 
     def self.remove_options siblings
       siblings = siblings.map{|l| l.sub /^[+-] /, ""}
-      siblings = siblings.map{|l| l.sub /^[a-z ]+: /, ""}
-      siblings = siblings.select{|o| o !~ /^(commit|delete|revert|add|unadd|remove)\// && o =~ /^\w/ }
-      siblings = siblings.map{|o| o.sub(/^(modified|deleted|renamed): /, '')}
+      siblings.map!{|l| l.sub /^[a-z ]+: /, ""}
+      siblings = siblings.select{|o| o !~ /^(commit|delete|revert|add|unadd|remove)\// && o =~ /^\w/}
+      siblings.map!{|o| o.sub(/^(modified|deleted|renamed): /, '')}
+      siblings.map!{|o| o.sub(/^new file\) /, '')}
       siblings
     end
 
@@ -682,10 +672,13 @@ module Xiki::Menu
         return "<! Provide some files (on lines next to this menu, with no blank lines, and no untracked files)!"
       end
 
-      siblings = siblings.map{|o| "\"#{o}\""}.join("\\\n  ")
+      siblings = siblings.map{|o| "\"#{o}\""}.join(" ")
       siblings.gsub!(" -> ", "\" \"")   # In case any "a -> b" exist, from renames
 
-      Shell.run "git commit -m \"#{message}\" #{siblings}", :dir=>dir
+      # Todo > only cd if necessary!
+
+      DiffLog.quit_and_run "cd \"#{dir}\"\ngit commit -m \"#{message}\" #{siblings}"
+
     end
 
     def self.unadd
@@ -730,7 +723,7 @@ module Xiki::Menu
 
       return "- No files to unadd (they should be siblings of delete)!" if siblings.empty?   # Error if no siblings
 
-      command = "git rm #{siblings.map{|o| "\"#{o}\""}.join(' ')}"
+      command = "git rm #{siblings.map{|o| "\"#{o}\""}.join(' ')}"   # "
       txt = Shell.sync command, :dir=>dir
       return Tree.quote txt if txt.any?
       "<! deleted!"
@@ -762,6 +755,8 @@ module Xiki::Menu
       result = Shell.sync 'git init', :dir=>dir
       "
       | #{result.strip}
+      |
+      | Now re-expand the \"git\" command.
       "
     end
 

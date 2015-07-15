@@ -86,11 +86,15 @@ module Xiki
 
       backtrace = exception.backtrace[0..@stacktrace_length].join("\n").gsub(/^/, '  =') + "\n"
 
+      kind = exception.class
+
       # If path in message, move it to the stack trace
       if message =~ /(.+\d:in `.+'): (.+)/m
         path, message = $1, $2
         backtrace = "  #{path}\n#{backtrace}"
       end
+
+      message += "\n  #{kind}"
 
       message = self.format_exception_message_for_tree message
 

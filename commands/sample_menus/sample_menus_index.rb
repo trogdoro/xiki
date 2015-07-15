@@ -17,13 +17,9 @@ class SampleMenus
 
   # Just filter out examples - for ajax calls from web create.
   def self.ajax *items
-Ol["!"]
 
     txt = File.read __FILE__.sub(/\.rb$/, '.menu')
-Ol "items", items   # => ["items"]
-Ol.a txt
     txt = Xiki::Tree.children txt, items
-Ol.a txt
 
     extension = txt[/.\w+$/]
     txt = txt.grep(/^ *\:/).join("").gsub(/^ *\: ?/, "")
@@ -33,18 +29,14 @@ Ol.a txt
 
   def self.by_extension extension
 
-    # return nil if extension == "." || ! extension
     return "Sample text\nfor a file." if extension == "." || ! extension
 
     txt = File.read __FILE__.sub(/\.rb$/, '.menu')
-#Ol.a txt
-    txt = #if txt   # If extension was found, pull it out
-        txt[/#{Regexp.quote extension}\n(^ +:.*\n)+/]
-        # else   # Otherwise, return "Sample text..."
-        #   "Sample text\nfor a file"
-        # end
+    txt = txt[/#{Regexp.quote extension}\n(^ +:.*\n)+/]
 
-    return nil if ! txt
+    # If extension was found, pull it out
+    return self.by_extension("txt") if ! txt
+
     # Remove 1st line and pipes
     txt.sub! /.+\n/, ''
     txt.gsub! /^ +: ?/, ''

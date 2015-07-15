@@ -143,55 +143,40 @@ module Xiki
 
     end
 
-    #   def self.alternating
-    #     orig = View.cursor
-    #     # Get region to cover
-    #     txt, left, right = View.txt_per_prefix
-    #     View.cursor = left
-    #     while(View.cursor < right)
-    #       Color.colorize_line :color_rb_light
-    #       Line.next 2
-    #     end
-    #     View.cursor = orig
-    #   end
-
     def self.define_styles   # For Keys.layout_kolor_light, etc.
 
       return if ! $el
 
-      if Styles.dark_bg?
+      Code.cache(:color_define_styles) do
+        Styles.define :color_rb_red, :bg=>"500"
+        Styles.define :color_rb_orange, :bg=>"630"
+        Styles.define :color_rb_yellow, :bg=>"550"
+        Styles.define :color_rb_green, :bg=>"141"
+        Styles.define :color_rb_white, :fg=>'222', :bg=>'fff' #, :border=>['fff', -1]
+        Styles.define :color_rb_light, :bg=>"333"
 
-        Styles.define :color_rb_red, :bg => "500"
-        Styles.define :color_rb_orange, :bg => "630"
-        Styles.define :color_rb_yellow, :bg => "550"
-        Styles.define :color_rb_green, :bg => "141"
-        Styles.define :color_rb_white, :fg=>'222', :bg=>'fff', :border=>['fff', -1]
-        Styles.define :color_rb_light, :bg => "333"
+        Styles.define :color_rb_blue, :bg=>"135"
+        Styles.define :color_rb_purple, :bg=>"315"
 
-        Styles.define :color_rb_blue, :bg => "135"
-        Styles.define :color_rb_purple, :bg => "315"
+        # if ! Styles.dark_bg?
+        # Styles.define :color_rb_red, :bg=>"ffd5d5"
+        # Styles.define :color_rb_orange, :bg=>"ffe5bb"
+        # Styles.define :color_rb_yellow, :bg=>"f9f9aa"
+        # Styles.define :color_rb_green, :bg=>"e0ffcc"
+        # Styles.define :color_rb_white, :fg=>'222', :bg=>'666', :border=>['666', -1]
+        # Styles.define :color_rb_light, :bg=>"ddd"
+        # Styles.define :color_rb_blue, :bg=>"dde5ff"
+        # Styles.define :color_rb_purple, :bg=>"f2ddff"
 
-      else
-
-        Styles.define :color_rb_red, :bg => "ffd5d5"
-        Styles.define :color_rb_orange, :bg => "ffe5bb"
-        Styles.define :color_rb_yellow, :bg => "f9f9aa"
-        Styles.define :color_rb_green, :bg => "e0ffcc"
-        Styles.define :color_rb_white, :fg=>'222', :bg=>'666', :border=>['666', -1]
-        Styles.define :color_rb_light, :bg => "ddd"
-
-        Styles.define :color_rb_blue, :bg => "dde5ff"
-        Styles.define :color_rb_purple, :bg => "f2ddff"
+        Styles.define :fade7, :fg=>"333"
+        Styles.define :fade6, :fg=>"555"
+        Styles.define :fade5, :fg=>"777"
+        Styles.define :fade4, :fg=>"999"
+        Styles.define :fade3, :fg=>"bbb"
+        Styles.define :fade2, :fg=>"ddd"
+        Styles.define :fade1, :fg=>"fff"
 
       end
-
-      Styles.define :fade7, :fg => "333"
-      Styles.define :fade6, :fg => "555"
-      Styles.define :fade5, :fg => "777"
-      Styles.define :fade4, :fg => "999"
-      Styles.define :fade3, :fg => "bbb"
-      Styles.define :fade2, :fg => "ddd"
-      Styles.define :fade1, :fg => "fff"
 
     end
 

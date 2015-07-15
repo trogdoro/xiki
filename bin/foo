@@ -1,8 +1,0 @@
-#!/usr/bin/env bash
-
-set -f
-
-# Sample Shell Command
-
-echo 'bar'
-echo 'bah'

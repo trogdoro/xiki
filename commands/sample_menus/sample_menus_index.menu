@@ -20,6 +20,13 @@
       : - an item/
       :   > Heading under the item
       :   =http://google.com/
+  - items or notes/
+    =~/xiki/commands/<name>.xiki
+      : - sample item/
+      :   - foo/
+      : - pets/
+      :   - dogs/
+      :   - cats/
   - .directions/
   - creating inline/
     : As a shortcut for creating or updating a menu, you can just

@@ -21,37 +21,40 @@ module Menu
     MENU = %`
       | <h1>Sample</h1>
       | <p>Type some html here</p>
-      - examples/
-        - forms/
-          - text input/
-            | <input type="text" name="foo">
-          - textarea/
-            | <textarea name="foo">This is the text</textarea>
-          - select/
-            | <select name="foo">
-            |   <option value="volvo">Volvo</option>
-            |   <option value="saab">Saab</option>
-            | </select>
-            - with groups/
-              | <select>
-              |   <optgroup label="German Cars">
-              |     <option value="mercedes">Mercedes</option>
-              |     <option value="audi">Audi</option>
-              |   </optgroup>
-              |   <optgroup label="Japanese Cars">
-              |     <option value="toyota">Toyota</option>
-              |     <option value="nissan">Nissan</option>
-              |   </optgroup>
-              | </select>
-      - docs/
-        - summary/
-          | Put some html under this menu, and open it to render
-          | it in the browser
-        - outline/
-          | You can use the hidden 'outline' item to quickly
-          | build basic html outlines:
-          <= html/outline/
       `
+
+    # Disabled for now
+    # - examples/
+    #   - forms/
+    #     - text input/
+    #       | <input type="text" name="foo">
+    #     - textarea/
+    #       | <textarea name="foo">This is the text</textarea>
+    #     - select/
+    #       | <select name="foo">
+    #       |   <option value="volvo">Volvo</option>
+    #       |   <option value="saab">Saab</option>
+    #       | </select>
+    #       - with groups/
+    #         | <select>
+    #         |   <optgroup label="German Cars">
+    #         |     <option value="mercedes">Mercedes</option>
+    #         |     <option value="audi">Audi</option>
+    #         |   </optgroup>
+    #         |   <optgroup label="Japanese Cars">
+    #         |     <option value="toyota">Toyota</option>
+    #         |     <option value="nissan">Nissan</option>
+    #         |   </optgroup>
+    #         | </select>
+    # - docs/
+    #   - summary/
+    #     | Put some html under this menu, and open it to render
+    #     | it in the browser
+    #   - outline/
+    #     | You can use the hidden 'outline' item to quickly
+    #     | build basic html outlines:
+    #     <= html/outline/
+
 
     # TODO: put this back, but under docs?
     #     <= outline/

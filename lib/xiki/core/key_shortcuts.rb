@@ -6,7 +6,6 @@ module Xiki
 
       Menu.init
 
-      # Keys.accumulate do
       self.window_keys
       self.open_keys
 
@@ -18,6 +17,7 @@ module Xiki
 
       self.do_keys
       self.run_keys
+
       self.search_keys   # time > (0.073769)
       self.misc   # time > (0.0451)
 
@@ -53,10 +53,10 @@ module Xiki
       Xiki.def("as+open"){ Launcher.as_open }
       Xiki.def("as+everything"){ Clipboard.copy_everything }
 
+      Xiki.def("as+grab"){ $el.save_place_kill_emacs_hook; DiffLog.save_grab_location }   # as+bookmark+g is almost as good, but doesn't save the specific place in the file
+
       Xiki.def("as+you"){ Clipboard.as_thing }   # copy object / symbol at point
-
     end
-
 
     def self.open_keys
       # O: open...
@@ -93,15 +93,13 @@ module Xiki
 
       Xiki.def("open+list+faces"){ Styles.list_faces }   # list
 
-      # open+menu > __ open xiki.
-      Xiki.def("open+as+output"){ OlHelper.open_last_outlog }   # last
-
       Xiki.def("open+in+browser"){ Browser.open_in_browser }
       Xiki.def("open+in+left"){ View.open_in_bar }
       Xiki.def("open+in+os"){ Files.open_in_os }
       Xiki.def("open+in+window"){ Files.open_in_window }   # Expose file in OS folder
 
-
+      # open+menu > __ open xiki.
+      Xiki.def("open+as+output"){ OlHelper.open_last_outlog }   # last
       Xiki.def("open+as+calendar"){ $el.calendar }
       Xiki.def("open+as+file"){ Code.open_as_file }
       Xiki.def("open+as+elisp"){ $el.find_function_at_point }   # jump to definition of lisp function
@@ -150,7 +148,7 @@ module Xiki
       Xiki.def("enter+outline"){ Launcher.enter_outline }   # in tree, enter methods or headings
 
       Xiki.def("enter+quote"){ FileTree.enter_quote }
-      Xiki.def("enter+pipe"){ FileTree.enter_quote nil, :char=>"|" }
+      Xiki.def("enter+prompt"){ View.insert_shell_prompt }
       Xiki.def("enter+multi"){ $el.cua_set_rectangle_mark }
 
       Xiki.def("enter+in+time"){ Line.insert_time }
@@ -178,18 +176,18 @@ module Xiki
       Xiki.def("jump+nav", :noob=>1){ View.layout_nav }   # jump+n
       Xiki.def("jump+ide", :noob=>1){ View.layout_todo_and_nav }
 
+      Xiki.def("jump+higher", :noob=>1){ View.page_up }
+      Xiki.def("jump+lower", :noob=>1){ View.page_down }
+
       Xiki.def("jump+output"){ View.layout_outlog }
       Xiki.def("jump+all"){ View.layout_outlog :all=>1 }
 
       Xiki.def("jump+quick"){ View.layout_quick }
 
-      Xiki.def("jump+line"){ Move.to_line }
-
       Xiki.def("jump+unsaved"){ Launcher.open("unsaved/") }
       Xiki.def("jump+repository"){ Git.do_compare_repository }
 
       Xiki.def("jump+expose+test"){ Code.open_related_rspec }
-      # Xiki.def("jump+related+file"){ Code.open_related_file }
 
       Xiki.def("jump+move+file"){ Launcher.open("Todo > Find method that moves the current file...", :no_launch=>1) }
       Xiki.def("jump+move+remembered"){ FileTree.move_to }
@@ -203,7 +201,8 @@ module Xiki
       Xiki.def("jump+command"){ Launcher.open_nested_command }
       Xiki.def("jump+prompt"){ Shell.prompt_for_bookmark }
 
-      Xiki.def("jump+history"){ Shell.history_for_bookmark }
+      # Doesn't seem to work any more?
+      #      Xiki.def("jump+history"){ Shell.history_for_bookmark }
 
       Xiki.def("jump+xiki+methods"){ Launcher.open("#{Xiki.dir}\n  - ##^ *def /") }
       Xiki.def("jump+xiki+directory"){ FileTree.tree :recursive=>1, :bm=>"xiki" }
@@ -323,11 +322,16 @@ module Xiki
       Xiki.def("hop+top"){ View.to_highest }
       Xiki.def("hop+bottom"){ View.to_bottom }   # move to end
 
+      # Todo > Change hop+ancestor to hop+up? or to hop+under (like hop+junior)?
+      # and change > enter+junior enter+under
+
+      # Todo > remove these two
       Xiki.def("hop+up", :noob=>1){ View.page_up }
       Xiki.def("hop+down", :noob=>1){ View.page_down }
 
       Xiki.def("hop+next"){ Move.to_next_paragraph }   # to next paragraph
       Xiki.def("hop+previous"){ Move.to_previous_paragraph :skip_if_top=>1 }   # to beginning of previous paragraph
+      Xiki.def("hop+line"){ Move.to_line }
 
       Xiki.def("hop+outline"){ FileTree.to_outline }   # OO - open line (O's emacs default)
       Xiki.def("hop+search"){ Search.outline_search }
@@ -338,8 +342,10 @@ module Xiki
       # hop+climb is a possible alternative
       Xiki.def("hop+ancestor"){ Tree.to_parent }   # to parent (last line indented less)
 
-      Xiki.def("hop+remembered"){ Location.to_spot }
-      Xiki.def("hop+command"){ Menu.to_menu }
+      Xiki.def("hop+remembered"){ Location.hop_remembered }
+      Xiki.def("hop+file"){ Launcher.open("hop to file/") }
+
+      Xiki.def("hop+command"){ Command.to_menu }
       Xiki.def("hop+kind"){ Move.to_other_bracket }   # to matching bracket, etc
 
       Xiki.def("hop+quote"){ Move.to_quote }   # move to next ...|... quote
@@ -414,9 +420,6 @@ module Xiki
       Xiki.def("window+last"){ Move.to_last_window(:blink=>true) }
       Xiki.def("window+zoom"){ View.zoom }   # show selection only
 
-      # Redundant, so just here for convenience
-      Xiki.def("window+kill"){ View.kill }
-
       Xiki.def("window+quit", :noob=>1){ DiffLog.quit }
 
       Xiki.def("window+1"){ Move.to_window(1, :blink=>true) }
@@ -428,124 +431,142 @@ module Xiki
 
     end
 
-
     def self.search_keys
 
-      Xiki.def("search+copy"){ Search.isearch_copy }   # Clipboard (copy) (or search+commands if no search)
+      Code.cache(:search_keys) do
 
-      Xiki.def("search+xpand"){ Search.xiki }   # search+xiki+__ mapped inside this method
+        $el.define_key :isearch_mode_map, "\\C-h", nil
+        $el.define_key :isearch_mode_map, "\\C-j", nil
+        $el.define_key :isearch_mode_map, "\\C-l", nil
 
-      Xiki.def("search+kill"){ Search.isearch_clear }   # cut (or search at point of last cut, if no search)
+        Xiki.def("search+copy", :eval=>"Search.isearch_copy")
+        Xiki.def("search+xpand", :eval=>"Search.xiki")
 
-      Xiki.def("search+value"){ Search.insert_at_search_start }   # Value: copy value back to search start
-      Xiki.def("search+pull"){ Search.isearch_pull }   # Pull back to search start (or search+push if nothing searched for yet)
-      Xiki.def("search+zap"){ Search.zap }   # zap - delete up until search start
+        Xiki.def("search+copy", :eval=>"Search.isearch_copy")   # Clipboard (copy) (or search+commands if no search)
 
-      Xiki.def("search+todo"){ Search.isearch_todo }   # To: open file / jump to method
-      Xiki.def("search+files"){ Search.bookmark }   # when no search, prompt for input
-      Xiki.def("search+outline"){ Search.isearch_outline }   # Outline (or search+outlog if nothing searched for yet)
+        Xiki.def("search+xpand", :eval=>"Search.xiki")   # search+xiki+__ mapped inside this method
 
-      Xiki.def("search+exchange"){ Search.isearch_query_replace }   # Outline (or search+outlog if nothing searched for yet)
-      # Search+i > available
+        Xiki.def("search+kill", :eval=>"Search.isearch_clear")   # cut (or search at point of last cut, if no search)
 
-      Xiki.def("search+nav"){ Search.isearch_nav }   # isearch for this string in :n
-      Xiki.def("search+usurp"){ Search.isearch_pull_in_sexp }   # usurp: pull sexp into search string
+        Xiki.def("search+value", :eval=>"Search.insert_at_search_start")   # Value: copy value back to search start
+        Xiki.def("search+pull", :eval=>"Search.isearch_pull")   # Pull back to search start (or search+push if nothing searched for yet)
+        Xiki.def("search+zap", :eval=>"Search.zap")   # zap - delete up until search start
 
-      Xiki.def("search+before"){ Search.isearch_or_copy("1") }
-      Xiki.def("search+after"){ Search.isearch_or_copy("2") }
+        Xiki.def("search+todo", :eval=>"Search.isearch_todo")   # To: open file / jump to method
+        Xiki.def("search+files", :eval=>"Search.bookmark")   # when no search, prompt for input
+        Xiki.def("search+outline", :eval=>"Search.isearch_outline")   # Outline (or search+outlog if nothing searched for yet)
 
-      Xiki.def("search+diffs"){ Search.isearch_diffs }   # Delete (or search+difflog if no search)
-      Xiki.def("search+good"){ Search.cancel }   # Stop searching
-      $el.define_key(:isearch_mode_map, "\e"){ Search.cancel }
+        Xiki.def("search+exchange", :eval=>"Search.isearch_query_replace")   # Outline (or search+outlog if nothing searched for yet)
+        # Search+i > available
 
-      $el.define_key :isearch_mode_map, $el.kbd("C-h"), nil
+        Xiki.def("search+nav", :eval=>"Search.isearch_nav")   # isearch for this string in :n
+        Xiki.def("search+usurp", :eval=>"Search.isearch_pull_in_sexp")   # usurp: pull sexp into search string
 
-      Xiki.def("search+have+bullet"){ Search.have_label }
-      Xiki.def("search+have+case"){ Search.isearch_have_case }
-      Xiki.def("search+have+edges"){ Search.just_edges }   # Delete everything but chars at edges of match
+        Xiki.def("search+before", :eval=>"Search.isearch_or_copy('1')")
+        Xiki.def("search+after", :eval=>"Search.isearch_or_copy('2')")
 
-      Xiki.def("search+have+nav"){ Search.isearch_move_to ":n" }
-
-      Xiki.def("search+have+remembered"){ Search.insert_at_spot }
-
-      Xiki.def("search+have+javascript"){ Search.isearch_have_outlog_javascript }
-      Xiki.def("search+have+line"){ Search.have_line }   # copy line back to search start
-      Xiki.def("search+have+move"){ Search.isearch_move_line }   # Move line to where search started
-
-      Xiki.def("search+have+output"){ Search.isearch_have_outlog }
-      Xiki.def("search+have+push"){ Git.search_just_push }   # When search match
-
-      Xiki.def("search+have+todo"){ Search.isearch_move_to ":t" }
-      Xiki.def("search+have+variable"){ Search.insert_var_at_search_start }
-
-      Xiki.def("search+have+wikipedia"){ Search.isearch_have_wikipedia }   # Grab everything except chars on edges
-      Xiki.def("search+have+special"){ Search.isearch_just_special }
-
-      # Just so it's consistent with ^H^H when deleting selection
-      Xiki.def("search+have+hit"){ Search.isearch_clear }
-
-      # I: leave unmapped - had issues using it (messes up position)
-      $el.define_key :isearch_mode_map, $el.kbd("C-j"), nil
-      Xiki.def("search+just+after"){ Search.isearch_just_after }
-      Xiki.def("search+just+case"){ Search.isearch_just_case }   # make match be camel case
-      Xiki.def("search+just+delete"){ Search.like_delete }   # Delete all lines that contain the match
-      Xiki.def("search+just+edited"){ Search.just_edits }   # Search in diff of edits to this file
-
-      Xiki.def("search+just+thesaurus"){ Search.search_thesaurus }
-
-      Xiki.def("search+just+have"){ Search.just_select }   # select match
-
-      Xiki.def("search+just+kill"){ Search.just_kill }
-
-      Xiki.def("search+just+integer"){ Search.stop; Search.isearch "[0-9][0-9.]*", :regex=>1 }
-      Xiki.def("search+just+line"){ $el.toggle_truncate_lines }   # Line wrap without exiting isearch
-
-      Xiki.def("search+just+menu"){ Search.just_menu }
-      Xiki.def("search+just+swap"){ Search.search_just_swap }   # Swap the match with what's in the clipboard (put the match where the search started)
-      Xiki.def("search+just+restart"){ Search.isearch_restart :top }
-
-      Xiki.def("search+just+order"){ Search.isearch_just_adjust }   # Swap/toggle the two characters in match
-      Xiki.def("search+just+variable"){ Search.isearch_just_surround_with_char '#{', '}' }
-      Xiki.def("search+just+parens"){ Search.isearch_just_surround_with_char '(', ')' }
-      Xiki.def("search+just+brackets"){ Search.isearch_just_surround_with_char '[', ']' }
-      Xiki.def("search+just+quotes"){ Search.isearch_just_surround_with_char '"' }
-      Xiki.def("search+just+wrap+apostrophe"){ Search.isearch_just_surround_with_char "'" }
-
-      Xiki.def("search+just+yellow"){ Search.just_orange }
+        Xiki.def("search+diffs", :eval=>"Search.isearch_diffs")   # Delete (or search+difflog if no search)
+        Xiki.def("search+good", :eval=>"Search.cancel")   # Stop searching
 
 
-      $el.define_key :isearch_mode_map, $el.kbd("C-l"), nil   # Just do normal layout+ shortcut
-      Xiki.def("search+like+after"){ Search.query_replace_with_2 }
-      Xiki.def("search+like+command"){ Launcher.search_like_menu }
-      Xiki.def("search+like+difflog"){ Search.jump_to_difflog }   # find last string in difflog
-      Xiki.def("search+like+filename"){ Search.isearch_open }   # Open match as filename
+        Xiki.def("search+have+bullet", :eval=>"Search.have_label")
+        Xiki.def("search+have+case", :eval=>"Search.isearch_have_case")
+        Xiki.def("search+have+edges", :eval=>"Search.just_edges")   # Delete everything but chars at edges of match
 
-      Xiki.def("search+like+nav"){ Search.isearch_restart ":n", :as_here=>1 }
-      Xiki.def("search+like+previous"){ Search.isearch_restart :previous }
-      Xiki.def("search+like+right"){ Search.isearch_restart :right }   # Search in top-right view
+        Xiki.def("search+have+nav", :eval=>"Search.isearch_move_to ':n'")
 
-      Xiki.def("search+like+spot"){ Search.isearch_just_search }   # Add "##search" line in tree for match
+        Xiki.def("search+have+remembered", :eval=>"Search.insert_at_spot")
 
-      Xiki.def("search+like+layout"){ $el.recenter 1 }
-      Xiki.def("search+like+middle"){ $el.recenter 20
-        Ol["Get this to use the actual middle > borrow: window+middle!"]
-      }
+        Xiki.def("search+have+javascript", :eval=>"Search.isearch_have_outlog_javascript")
+        Xiki.def("search+have+line", :eval=>"Search.have_line")   # copy line back to search start
+        Xiki.def("search+have+move", :eval=>"Search.isearch_move_line")   # Move line to where search started
 
-      Xiki.def("search+like+output"){ Search.isearch_restart ":o" }
-      Xiki.def("search+like+quote"){ Search.isearch_google :quote=>true }
+        Xiki.def("search+have+output", :eval=>"Search.isearch_have_outlog")
+        Xiki.def("search+have+push", :eval=>"Git.search_just_push")   # When search match
 
-      Xiki.def("search+like+expanded"){ Search.like_expanded }
-      Xiki.def("search+like+todo"){ Search.isearch_restart ":t", :as_here=>1 }
-      Xiki.def("search+like+variable"){ Search.just_name }
-      Xiki.def("search+like+web"){ Search.isearch_google }   # make match be snake case
-      Xiki.def("search+like+xiki"){ View.open ":xiki/#{Search.stop.strip}" }
+        Xiki.def("search+have+todo", :eval=>"Search.isearch_move_to ':t'")
+        Xiki.def("search+have+variable", :eval=>"Search.insert_var_at_search_start")
+
+        Xiki.def("search+have+wikipedia", :eval=>"Search.isearch_have_wikipedia")   # Grab everything except chars on edges
+        Xiki.def("search+have+special", :eval=>"Search.isearch_just_special")
+
+        # Just so it's consistent with ^H^H when deleting selection
+        Xiki.def("search+have+hit", :eval=>"Search.isearch_clear")
+
+        # I: leave unmapped - had issues using it (messes up position)
+        Xiki.def("search+just+after", :eval=>"Search.isearch_just_after")
+        Xiki.def("search+just+case", :eval=>"Search.isearch_just_case")   # make match be camel case
+        Xiki.def("search+just+delete", :eval=>"Search.like_delete")   # Delete all lines that contain the match
+        Xiki.def("search+just+edited", :eval=>"Search.just_edits")   # Search in diff of edits to this file
+
+        Xiki.def("search+just+thesaurus", :eval=>"Search.search_thesaurus")
+
+        Xiki.def("search+just+have", :eval=>"Search.just_select")   # select match
+
+        Xiki.def("search+just+kill", :eval=>"Search.just_kill")
+
+        Xiki.def("search+just+integer", :eval=>"Search.stop; Search.isearch '[0-9][0-9.]*', :regex=>1")
+        Xiki.def("search+just+line", :eval=>"$el.toggle_truncate_lines")   # Line wrap without exiting isearch
+
+        Xiki.def("search+just+menu", :eval=>"Search.just_menu")
+        Xiki.def("search+just+swap", :eval=>"Search.search_just_swap")   # Swap the match with what's in the clipboard (put the match where the search started)
+        Xiki.def("search+just+restart", :eval=>"Search.isearch_restart :top")
+
+        Xiki.def("search+just+order", :eval=>"Search.isearch_just_adjust")   # Swap/toggle the two characters in match
+        Xiki.def("search+just+variable", :eval=>"Search.isearch_just_surround_with_char '\#{', '}'")
+        Xiki.def("search+just+parens", :eval=>"Search.isearch_just_surround_with_char '(', ')'")
+        Xiki.def("search+just+brackets", :eval=>"Search.isearch_just_surround_with_char '[', ']'")
+        Xiki.def("search+just+quotes", :eval=>"Search.isearch_just_surround_with_char '\"'")
+        Xiki.def("search+just+wrap+apostrophe", :eval=>"Search.isearch_just_surround_with_char \"'\"")
+
+        Xiki.def("search+just+yellow", :eval=>"Search.just_orange")
+
+
+        Xiki.def("search+like+after", :eval=>"Search.query_replace_with_2")
+        Xiki.def("search+like+command", :eval=>"Launcher.search_like_menu")
+        Xiki.def("search+like+difflog", :eval=>"Search.jump_to_difflog")   # find last string in difflog
+        Xiki.def("search+like+filename", :eval=>"Search.isearch_open")   # Open match as filename
+
+        Xiki.def("search+like+nav", :eval=>"Search.isearch_restart ':n', :as_here=>1")
+        Xiki.def("search+like+previous", :eval=>"Search.isearch_restart :previous")
+        Xiki.def("search+like+right", :eval=>"Search.isearch_restart :right")   # Search in top-right view
+
+        Xiki.def("search+like+spot", :eval=>"Search.isearch_just_search")   # Add "##search" line in tree for match
+
+        Xiki.def("search+like+layout", :eval=>"$el.recenter 1")
+
+
+
+        # Xiki.def("search+like+middle"){ $el.recenter 20
+        #   Ol["Get this to use the actual middle > borrow: window+middle!"]
+        # }
+
+        Xiki.def("search+like+output", :eval=>"Search.isearch_restart ':o'")
+        Xiki.def("search+like+quote", :eval=>"Search.isearch_google :quote=>true")
+
+        Xiki.def("search+like+expanded", :eval=>"Search.like_expanded")
+        Xiki.def("search+like+todo", :eval=>"Search.isearch_restart ':t', :as_here=>1")
+        Xiki.def("search+like+variable", :eval=>"Search.just_name")
+        Xiki.def("search+like+web", :eval=>"Search.isearch_google")   # make match be snake case
+        Xiki.def("search+like+xiki", :eval=>"View.open \":xiki/\#{Search.stop.strip}\"")
+
+      end
+
+      # Pre-loading for caching done, don't do full-on el4r stuff...
+
+      return if $el.caching
 
       $el.define_key(:isearch_mode_map, $el.kbd("C-j C-]")) { Search.just_increment }   # search+just+Plus > alternative for terminal
-
       $el.define_key(:isearch_mode_map, $el.kbd("C-j C-_")) { Search.just_increment(:decrement=>true) }   # search+just+Minus > alternative for terminal
+      $el.define_key(:isearch_mode_map, $el.kbd("C-_")) { Search.subtract }   # Remove one char from isearch > alternative for terminal
+      $el.define_key(:isearch_mode_map, $el.kbd("C-]")) { $el.isearch_yank_char }     # alternative for terminal
+      $el.define_key(:isearch_mode_map, $el.kbd("C-\\"), :isearch_abort_really)
+
+      $el.define_key(:isearch_mode_map, "\e"){ Search.cancel }
 
       $el.el4r_lisp_eval %`
         (progn
+
           ; Has to be defined in lisp, since passing C-@ fails (it's null, and that's what we use as a delimiter)
           ; Definition for search+Space
           (define-key isearch-mode-map (kbd "C-@") (lambda () (interactive)
@@ -558,21 +579,12 @@ module Xiki
             (setq isearch-success nil)
             (isearch-cancel)
           )
+
         )
       `
 
-      $el.define_key(:isearch_mode_map, $el.kbd("C-_")) { Search.subtract }   # Remove one char from isearch > alternative for terminal
-      $el.define_key(:isearch_mode_map, $el.kbd("C-]")) { $el.isearch_yank_char }     # alternative for terminal
-      $el.define_key(:isearch_mode_map, $el.kbd("C-\\"), :isearch_abort_really)
-
-
-      # Safe mapping of C-m to Search.isearch_m (works when el4r is down)
-      $el.el4r_lisp_eval(%`(defun isearch-m () (interactive)
-        (if (eq (process-status el4r-process) 'open) (el4r-ruby-eval "::Xiki::Search.isearch_m") (isearch-exit)))
-        `.unindent)
-
-      $el.define_key :isearch_mode_map, $el.kbd("C-m"), :isearch_m   # search+menu (done in a really safe way, so Return in isearch doesn't break when el4r goes down)
     end
+
 
     def self.map_control_return
 
@@ -595,84 +607,67 @@ module Xiki
 
     def self.misc
 
-      Xiki.def("grab+"){ DiffLog.grab }
-      $el.define_key(:global_map, $el.kbd("M-C-g")){ DiffLog.grab }
+      Xiki.def("grab+", :eval=>"DiffLog.grab")
+      Xiki.def("quit+", :noob=>1, :eval=>"DiffLog.quit")
+      Xiki.def("yours+", :eval=>"Launcher.open('yours/')")
+      Xiki.def("lock+", :eval=>"ControlLock.toggle")
+      Xiki.def("tasks+", :eval=>"Launcher.tasks")   # expand+
+      Xiki.def("backward+", :eval=>"Move.backward_key")
+      Xiki.def("forward+", :eval=>"Move.forward_key")
+      Xiki.def("previous+", :eval=>"Move.previous")
+      Xiki.def("next+", :eval=>"Move.next")
+      Xiki.def("xpand+", :eval=>"Launcher.go")   # expand+
 
-      Xiki.def("quit+", :noob=>1){ DiffLog.quit }
-
-      Keys.set("\e\e"){ ControlTab.go; ControlTab.go }   # Make two quick escapes switch to the last view
+      # Pre-loading for caching done, don't do full-on el4r stuff...
 
       $el.define_key :isearch_mode_map, "\C-q", :isearch_quote_char   # This is necessary so "C-s C-q" won't quit
       $el.define_key :minibuffer_local_map, "\C-q", :quoted_insert   # So C-q still quotes control chars in the minibuffer
-      Xiki.def("lock+"){ $el.control_lock_enable }
-      Xiki.def("yours+"){ Launcher.open("yours/") }
-
-      $el.define_key(:global_map, "\\C-k"){ Keys.expand [] }
-
+      Keys.set("\e\e"){ ControlTab.go; ControlTab.go }   # Make two quick escapes switch to the last view
+      Keys.set("C-k"){ Keys.expand [] }
       Keys.set("C-."){ Keys.repeat }   # Repeat last command typed (like vim "."), except for trivial ones
       Keys.set("C-,"){ Keys.repeat :movement=>1 }   # Repeat last command typed (like vim "."), except for trivial ones
-
-      $el.define_key(:global_map, $el.kbd("C-;")){ Bookmarks.go }
-      if $el.boundp(:osx_key_mode_map)
-        $el.define_key(:osx_key_mode_map, $el.kbd("C-;")){ Bookmarks.go }
-      end
-
-      if $el.locate_library "ruby-mode"
-        $el.el_require :ruby_mode
-        $el.message ""   # Keep it from showing junk at bottom
-        $el.define_key :ruby_mode_map, $el.kbd("C-j"), nil
-      end
-
-      $el.define_key :global_map, $el.kbd("C-z"), :undo
-
-      # Unmap keys in modes that interfere
-      $el.el4r_lisp_eval("(require 'shell)")
-      $el.define_key :shell_mode_map, $el.kbd("C-j"), nil   # shell-mode etc. special C-j shortcuts over-ride xiki
-
-      # In case C-j in scratch buffer
-      $el.define_key :lisp_interaction_mode_map, $el.kbd("C-j"), nil
-
-      # C-l in ediff mode
-      $el.defun(:ediff_disable_C_l) { $el.define_key(:ediff_mode_map, $el.kbd("C-l"), nil) }
-      $el.add_hook :ediff_keymap_setup_hook, :ediff_disable_C_l
-
-      View.sensible_defaults
-
-      Xiki.def("tasks+"){ Launcher.tasks }   # expand+
-      $el.define_key(:global_map, $el.kbd("M-C-t")){ Launcher.tasks }
-
-      Xiki.def("backward+"){ Move.backward_key }
-      Xiki.def("forward+"){ Move.forward_key }
-      Xiki.def("previous+"){ Move.previous }
-      Xiki.def("next+"){ Move.next }
+      # $el.define_key(:global_map, $el.kbd("C-;")){ Bookmarks.go }
+      $el.define_key(:global_map, $el.kbd("C-;")){ Launcher.open("hop to file/") }
 
       Keys.set("C-'") { Keys.timed_insert }
       Keys.set("C-\\"){ ControlTab.go }
 
       $el.define_key :global_map, $el.kbd("C-_"), :negative_argument   # For terminals
+      $el.define_key :global_map, $el.kbd("C-z"), :undo
 
+      $el.define_key :lisp_interaction_mode_map, $el.kbd("C-;"), nil
 
+      # if $el.locate_library "ruby-mode"
+      #   $el.el_require :ruby_mode
+      #   $el.message ""   # Keep it from showing junk at bottom
+      #   #$el.define_key :ruby_mode_map, $el.kbd("C-j"), nil
+      # end
+
+      # Not using shell mode much any more
+      # $el.el4r_lisp_eval("(require 'shell)")   # Unmap keys in modes that interfere
+      # $el.define_key :shell_mode_map, $el.kbd("C-j"), nil   # shell-mode etc. special C-j shortcuts over-ride xiki
+
+      # C-l in ediff mode
+      $el.defun(:ediff_disable_C_l) { $el.define_key(:ediff_mode_map, $el.kbd("C-l"), nil) }
+      $el.add_hook :ediff_keymap_setup_hook, :ediff_disable_C_l
 
       # Find alternative, since C-x is now expand+
-
       # xiki+1, xiki+2, etc (meaning C-x C-2)
-
       #       (1..9).each do |n|
       #         $el.define_key(:global_map, $el.kbd("C-x C-#{n}")){ Launcher.do_last_launch :nth=>n, :here=>1 }
       #       end
 
-
-
       # Make Ctrl+X be expand, and make cua-mode play nicely with it
       # $el.define_key(:global_map, $el.kbd("C-x C-@")){ Launcher.go }   # expand+
       # C+X, C+Space > do what C-x C-x used to do
-
 
       # Add a fallback keymap with "Ctrl+X <timeout>" mapped to kill-region.
       #   added where? : emulation-mode-map-alists
 
       $el.el4r_lisp_eval %`
         (progn
+          (setq truncate-partial-width-windows nil)
+          (set 'default-truncate-lines t)
 
           ; Add a keymap with "Ctrl+X" mapped to kill-region, that pre-empts cua--keymap-alist when there's a selection.
           (defvar xiki-cua--keymap-alist
@@ -690,11 +685,10 @@ module Xiki
 
       $el.define_key(:cua__cua_keys_keymap, "\C-x", :xiki_launch)   # expand+
 
-      Xiki.def("xpand+") { Launcher.go }   # expand+
-      $el.define_key(:global_map, $el.kbd("M-C-x")){ Launcher.go }
+      # $el.define_key(:global_map, $el.kbd("M-C-x")){ Launcher.go }
 
       # Meta+T for todo.notes
-      $el.define_key(:global_map, $el.kbd("M-t")){ View.open ":t" }
+      # $el.define_key(:global_map, $el.kbd("M-t")){ View.open ":t" }
 
     end
 

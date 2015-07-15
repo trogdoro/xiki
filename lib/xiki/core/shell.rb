@@ -64,7 +64,7 @@ module Xiki
 
     # Delegates to .run :sync=>1
     # Shell.sync "pwd"
-    # Shell.sync "pwd", :clear=>1   # Clean up stupid ^H sequences
+    # Shell.sync "pwd", :clean=>1   # Clean up stupid ^H sequences
     def self.command command, options={}
       self.sync command, options
     end
@@ -196,11 +196,12 @@ module Xiki
           session.execute("cd '#{dir_orig}'")
         end
 
-        # :raise_when_error flag, so just raise stderr...
-        raise stderr if stderr.any? && options[:raise_when_error]
+        # :raise_error flag, so just raise stderr...
+        raise stderr if stderr.any? && options[:raise_error]
 
         # :return_error flag, so return stderr separately...
-        return [stdout, stderr] if options[:return_error]
+
+        return [stdout, stderr == "" ? nil : stderr] if options[:return_error]
 
         stdout += "\n> error\n#{stderr}" if stderr.any?
         return stdout
@@ -541,15 +542,13 @@ module Xiki
     end
 
     def self.prompt_for_bookmark
-      dir = Keys.bookmark_as_path :prompt=>"Bookmark to show prompt for: "
+      dir = Keys.bookmark_as_path :prompt=>"Bookmark to make shell prompt in: "
 
       View.to_buffer View.unique_name("untitled.notes")
       Notes.mode
 
       View << "#{dir}\n  $ "
       View >> "\n\n\n"
-
-      ControlLock.disable
 
     end
 
@@ -657,6 +656,7 @@ module Xiki
         # Takes control if items underneath (task or normal)...
 
         if result = self.shell_items(options)   # if options[:task] || options[:args]
+          result.gsub!(/.\cH/, "")
           return result
         end
 
@@ -673,10 +673,20 @@ module Xiki
         command = "ls -p" if command == "ls"
 
         # Shouldn't run this?
-        txt = Tree.quote self.sync command, :dir=>dir, :session_key=>View.name
-        txt.gsub!(/^\| /, "|") if options[:prefix] == 0
-        txt.gsub!(/.\cH/, "")   # Add linebreak if blank
+        txt = Tree.pipe self.sync(command, :dir=>dir, :session_key=>View.name)
+        txt.gsub!(/.\cH/, "")   # Clean up stupid ^H sequences
 
+        # $ foo, so give shell_wrapper a chance to decorate the output...
+
+        # Todo Rename :shell_root_output to something else?
+        # - that makes it more clear it's only passed when no children!?
+        #   - maybe > :shell_root_output"
+
+        if ! options[:args]
+          options.merge! :shell_root_output=>txt
+          self.shell_wrapper(options)
+          txt = options[:shell_root_output]
+        end
         txt = "<!" if txt == ":\n"
         return txt
       when "%"
@@ -723,7 +733,7 @@ module Xiki
           ! options[:nest] = 1
           ! options[:no_task] = 1
           ! txt = Shell.external_plus_sticky_history
-        ~ dir history/
+        ~ recent in dir/
           ! options[:nest] = 1
           ! options[:no_task] = 1
           ! Shell.history options[:dir]
@@ -744,19 +754,17 @@ module Xiki
 
       # No args or :task items, so do nothing...
 
+      # No longer return > give wrapper a chance to process it
       return nil if ! task && ! args
 
-      # :... arg, so delegate to the shell wrapper...
+      # :... or ...\n arg, so delegate to the shell wrapper, if only to show appropriate error...
 
-      return self.shell_wrapper(options) if args && args[0] =~ /^:/
-
+      return self.shell_wrapper(options) if args && (args[0] =~ /^[:]/ || args[0] =~ /\n/)
       return self.shell_notes(options) if (! args && task[0] == "notes") || args && args[0] =~ /^>/
 
       # If any other arg, delegate to the =foo menu...
 
       return self.shell_menu(options) if task == ["xiki command"] || args
-
-      return self.shell_edit(task[1], options) if task.length == 2 && task[0] == "edit"
 
       # ~ task, so show task list...
 
@@ -768,7 +776,7 @@ module Xiki
 
         ~ recent/
           ! Shell.shell_recent options
-        ~ dir history/
+        ~ recent in dir/
           ! Shell.shell_in_dir options
 
         ~ grab
@@ -781,15 +789,20 @@ module Xiki
           ! Launcher.launch
           ! return nil
         ~ edit/
-          - shell wrapper
-          - examples
-          - notes
+          + shell wrapper
+          + examples
+          + notes
+          + main/
+            + shell wrapper
+            + examples
       "
 
       task[0] = "~ #{task[0]}" if task[0]
       result = menu[task, :eval=>options]
 
-      result || ""
+      result = self.shell_edit(task[1..-1], options) if ! result && task[0] == "~ edit"
+
+      result
 
     end
 
@@ -803,12 +816,18 @@ module Xiki
 
       # ~ history, so list history for this command and this dir...
 
-      options[:nest] = 1
-
       options[:no_task] = 1
       dir = Shell.dir if ! dir   # We're not nested under a dir, so grab dir from shell
 
-      return self.history dir, :command=>command_root
+      result = self.history dir, :command=>command
+
+      # Look for matches to whole command...
+
+      return result if result !~ /\A\| There's no history/
+
+      # None found, so look for just command...
+
+      self.history dir, :command=>command_root
 
     end
 
@@ -821,8 +840,19 @@ module Xiki
       # Filter down
 
       command = options[:command]
+
       command_root = (command||"").sub(/ .*/, '')   # Cut off after the space
-      txt.split("\n").grep(/^\$ #{command_root} /).join("\n")
+
+
+
+      # Look for matches to whole command...
+
+      result = txt.split("\n").grep(/^\$ #{Regexp.escape command}/).join("\n")
+      return result if ! result.blank?
+
+      # None found, so look for just command...
+
+      result = txt.split("\n").grep(/^\$ #{Regexp.escape command_root}/).join("\n")
 
     end
 
@@ -911,8 +941,11 @@ module Xiki
         ".unindent) if ! View.txt.any?
     end
 
-    def self.shell_examples_edit command_root
-      home_example_file = Bookmarks[":xh/misc/shell_examples/#{command_root}.menu"]
+    def self.shell_examples_edit command_root, options={}
+
+      home_or_main = options[:main] ? ":xs" : ":xh"
+
+      home_example_file = Bookmarks["#{home_or_main}/misc/shell_examples/#{command_root}.menu"]
 
       View.open home_example_file
       View.<<("
@@ -959,7 +992,7 @@ module Xiki
         | There aren't any examples for '#{command_root}' yet. Expand
         | the 'save' task to save some examples. Or, edit the
         | text file directly, that the examples are stored in:
-        - edit
+        + edit
         " if ! file2 && ! file1
 
       # Last item is $..., so just run
@@ -975,7 +1008,7 @@ module Xiki
       result = Tree.children txt, task
 
       result = "#{result.strip}\n"
-      result = "#{result}- edit\n" if task == []
+      result = "#{result}+ edit\n" if task == []
 
       result
 
@@ -1006,7 +1039,8 @@ module Xiki
     end
 
 
-    def self.shell_edit item, options
+    def self.shell_edit items, options
+
 
       dir, command, args, task = options[:dir], options[:command], options[:args], options[:task]
       command_root = command.sub(/ .*/, '')   # Cut off after the space
@@ -1017,41 +1051,28 @@ module Xiki
 
       # "shell wrapper", so show it
 
-      if item == "notes"
+      case items[0]
 
-        self.shell_notes_edit command_root
-        return ""
-
-      elsif item == "examples"
-
-        self.shell_examples_edit command_root
-        return ""
-
-      elsif item == "shell wrapper"
-
+      when "shell wrapper"
         # Use wrapper in home dir, unless one in source dir exists
 
-        wrapper = Bookmarks[":xh/misc/shell_wrappers/#{command_root}"]
-        source_dir_wrapper = Bookmarks[":xs/misc/shell_wrappers/#{command_root}"]
-        wrapper = source_dir_wrapper if Command.exists? source_dir_wrapper
+        Command.open_wrapper_source command_root
+        return ""
+      when "notes"
+        self.shell_notes_edit command_root
+        return ""
+      when "examples"
+        self.shell_examples_edit command_root
+        return ""
+      when "main"
 
-        source_options = Expander.expanders("#{wrapper}//") rescue nil
-
-        if source_options
-          wrapper = Tree.source(source_options)
-        else
-          # Not there, so make it .rb
-          wrapper << ".rb"
+        case items[1]
+        when "shell wrapper"
+          Command.open_wrapper_source command_root, :only_main=>1
+          return ""
+        when "examples"
+          self.shell_examples_edit command_root, :main=>1
         end
-
-        wrapper = wrapper[0] if wrapper.is_a?(Array) and wrapper.length == 1
-
-        # If array (multiple items), show tree
-
-        return View.open :txt=>wrapper.join("\n") if wrapper.is_a?(Array)
-
-        return View.open wrapper
-
       end
 
       ""
@@ -1081,14 +1102,25 @@ module Xiki
           =#{Files.tilda_for_home wrapper}.rb\n" + File.read(Bookmarks[":source/misc/shell_wrappers/foo.rb"]).gsub(/^/, '            : ').gsub(/ $/, '').gsub(/\bfoo\b/, command)
       end
 
+
+      # Has \n, so was |... line and should do nothing
+
+      if args && args[0] =~ /\n/
+        return %<
+          | Lines beginning with "|" in shell command output
+          | aren't expandable. Expandable lines in shell output
+          | begin with ":", to indicate they're expandable.
+          >
+      end
+
       wrapper << "//"
 
       # Prepend command to the wrapper, because wrapper has to know what the command was
 
-      path = wrapper + Path.join(args)
+      wrapper << Path.join(args) if args
 
-      options_in = {:dir=>dir, :task=>task, :shell_command=>command}
-      result = Xiki.expand path, options_in
+      options_in = {:dir=>dir, :task=>task, :shell_command=>command, :shell_root_output=>options[:shell_root_output]}
+      result = Xiki.expand wrapper, options_in
 
       # Pass some options back if set
       # Todo > extract this out to > __Menu|__Options.propagate_returned_options
@@ -1177,11 +1209,15 @@ module Xiki
     end
 
     def self.external_plus_sticky_history
+
       txt = ""
 
       txt.<< File.read(Bookmarks[":xh/misc/logs/shell_sticky_log.notes"]) rescue ""
+      txt.gsub! /^\$ /, ''   # Remove "$ " at beginning
 
-      txt = File.read File.expand_path("~/xiki/misc/logs/shell_external_log.notes"), *Xiki::Files.encoding_binary
+      # txt = File.read File.expand_path("~/xiki/misc/logs/shell_external_log.notes"), *Xiki::Files.encoding_binary
+      txt.<< File.read(File.expand_path("~/xiki/misc/logs/shell_external_log.notes"), *Xiki::Files.encoding_binary)
+
       # Avoids "invalid byte sequence in UTF-8" error
       txt.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '')
 
@@ -1239,7 +1275,9 @@ module Xiki
       left = View.cursor
 
       filter_options = {:left=>left, :right=>(left+txt.length)}
-      filter_options.merge!(:recent_history_external=>1) if ! options[:from_key_shortcut]
+
+      # ^R from external shell, so make sure it quits when esc or return
+      filter_options.merge!(:recent_history_external=>1, :xiki_in_initial_filter=>1) if ! options[:from_key_shortcut]
 
       Tree.filter filter_options
 

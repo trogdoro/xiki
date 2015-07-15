@@ -100,7 +100,7 @@ module Xiki
     # TextUtil.whitespace_case("hi-there")
     #   hi there
     def self.whitespace_case txt
-      txt.gsub(/[.-_]/, ' ')
+      txt.gsub(/[._-]/, ' ')
       # gsub(/([a-z])([A-Z0-9])/) {"#{$1}-#{$2}"}.downcase.
       # gsub(/--+/, "-")
     end
