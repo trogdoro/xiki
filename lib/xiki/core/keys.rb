@@ -413,6 +413,7 @@ module Xiki
         Keyboard shortcuts. Right now, and anywhere in xsh, you
         can type the first letter of one of the below words while
         holding Ctrl (^W for window, ^O for open, or ^H for hop).
+	(although ^M doesn't jump to more; it puts a newline)
 
         The arrow keys always move around. ESC moves between views.
         Try using the arrow keys then Ctrl+X to explore these items:

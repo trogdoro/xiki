@@ -20,6 +20,20 @@
   | Edit <xiki source dir>/commands/faq.menu, commit, and send a pull
   | request.
   |
+: How to read the screen (What are the various line-leader and trailer symbols?)
+  | << indicates something that can be jumped too in a new screen
+  | + indicates something that can be expanded in the existing screen
+  | (nothing) indicates a pure xiki command, no special syntax needed
+  | $ indicates a shell command
+  | = indicates ???
+  | ! executes as ruby code
+  | p executes as ruby code, printing the output
+  | > indicates markup to highlight a heading
+  | >> indicates markup to highlight a subheading
+  | : indicates the output of a previous command or expansion
+  | /directory/ indicates a directory
+  | http://url.com  < a URL gets recognized as a URL
+  | ^ indicates a note
 : What are the next steps for this readme file, to make it more accessible?
   | 1. Mirror to a markdown file
   | 2. Link to it from the README, so it'll be more visible
