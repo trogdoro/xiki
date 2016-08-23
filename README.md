@@ -10,7 +10,7 @@ Xiki makes the command line friendlier and more powerful. Xiki Shell (xsh) lets 
 
 If you want a one-line installer, this should do the trick. Copy and paste it into your shell console.
 
-     cd ~; curl -LO https://github.com/trogdoro/xiki/archive/master.tar.gz ; tar xzf master.tar.gz; cd xiki-master/bin; ./clearxsh; ./xsh
+     cd ~; curl -LO https://github.com/trogdoro/xiki/archive/master.tar.gz ; tar xzf master.tar.gz; cd xiki-master/bin; ./reloadxsh; ./xsh
 
 It will walk you through a couple setup steps.
 
@@ -20,41 +20,35 @@ You can download Xiki from: https://github.com/trogdoro/xiki/archive/master.tar.
 
 Then, to run (and optionally install xsh) just execute the 'xsh' command, located in the 'bin' dir:
 
-    $ bin/xsh
+    $ ./install
 
 ### Git Install
 
-Or, if you have git, you can get Xiki from github via "git clone https://github.com/trogdoro/xiki.git".  Then run "bin/xsh" from inside the dir.
+Or, if you have git, you can get Xiki from github via "git clone https://github.com/trogdoro/xiki.git".  Then run "./install" from inside the dir.
 
-### Troubleshooting
+## Tutorial
 
-If you run into trouble, try running "bin/xsh -i", which may give better error messages. Also, not that there's a cached "xsh forker" process that stays alive to speed up execution. Try "ps aux|grep forker" to find it. During trouble-shooting you may need to kill it.
+Try typing "xsh --tutorial", or "xsh --help" on the command line.  Or, get help from a human:
 
-### Supported platforms
+## Getting in touch
 
-Supported platforms: MacOS and Linux.  Pair with me if you want to see Windows support, support for your text editor, or just to hack on Xiki! (find me at twitter.com/xiki).
+Tweet to @xiki:
 
-## Getting help
-
-Try typing "xsh --examples", "xsh --help", or "xsh -help" on the command line.  Or, get help from a human:
-
-Jump into the xiki chat room to chat about Xiki! I usually try to be in there during the day to answer questions. Use this link to jump right in, or use your own irc client to join.:
-
-* http://webchat.freenode.net/?channels=xiki
+* http://twitter.com/xiki
 
 Join the google group for help with installing:
 
 * http://groups.google.com/group/xiki
 
-Or tweet to @xiki:
+Or, jump into the xiki chat room to chat about Xiki! Use this link to jump right in, or use your own irc client to join:
 
-* http://twitter.com/xiki
+* http://webchat.freenode.net/?channels=xiki
 
-## Things to try
+## Troubleshooting
 
-* Try from your normal shell
-  * Type a command in your normal shell, and then Ctrl+X to filter down the output, instead of piping to grep.
-  * Type Ctrl+R to explore you bash history in a more dynamic way.
-  * Type "xsh ~" in your normal shell (or ~ and then Ctrl+X) to explore your home directory.
+If you run into trouble, try running "bin/xsh --d", which may give better error messages. Also, not that there's a cached "xsh forker" process that stays alive to speed up execution. Try "ps aux|grep forker" to find it. During trouble-shooting you may need to kill it.
 
-* Make a text file with some shell commands you often run (start them with "$ "). Then open the file in xsh ("xsh -o foo.txt") and use Ctrl+G to grab the commands and run them back in your shell, one at a time.
+## Supported platforms
+
+Supported platforms: MacOS and Linux.  Pair with me if you want to see Windows support, support for your text editor, or just to hack on Xiki! (find me at twitter.com/xiki).
+
