@@ -25,14 +25,12 @@ module Xiki
     @@use_pipe_delimiter = "set Applescript's text item delimiters to \"|\""
 
     def self.menu_after output, *args
-Ol["!"]
       return if output   # MENU handled it, so don't interfere
 
       # /:song..., so play it
 
       if args[0] =~ /: (.+)/
         song = $1
-Ol "song", song
         self.songs song
       end
 
@@ -56,7 +54,7 @@ Ol "song", song
       name.sub!(/^: /, '')
 
       Applescript.run "iTunes", "play track \"#{name}\""
-      "<!"
+      "<*"
     end
 
     def self.current
@@ -77,12 +75,10 @@ Ol "song", song
 
       # /name, so play it...
 
-Ol "name", name
       name.sub! /^: /, ''
-Ol "name", name
 
       Applescript.run "iTunes", "play playlist \"#{name}\""
-      "<!"
+      "<*"
     end
 
     def self.play
@@ -94,7 +90,7 @@ Ol "name", name
 
     def self.next
       Applescript.run "iTunes", "next track"
-      "<! #{self.current.gsub('\"', '')}"
+      "<* #{self.current.gsub('\"', '')}"
     end
     def self.previous
       Applescript.run "iTunes", "previous track"
@@ -118,7 +114,7 @@ Ol "name", name
       end
 
       self.songs track
-      "<! Playing!"
+      "<* Playing!"
     end
   end
 end

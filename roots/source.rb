@@ -14,7 +14,7 @@ class Source
     options = Expander.expanders path
     return "- no sources found!" if !options[:sources]
 
-    Menu.climb_sources options
+    Command.climb_sources options
     sources = options[:sources]
 
     result = "=#{options[:menufied].sub /(.+\/).+/, "\\1"}\n"

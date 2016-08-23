@@ -1,10 +1,11 @@
 # Require 'rails' menu if not yet loaded
-load "#{Xiki.dir}commands/rails.rb" if ! defined?(Xiki::Rails)
+load "#{Xiki.dir}roots/rails.rb" if ! defined?(Xiki::Rails)
 
 module Xiki
 
   # Runs code in a rails app.  Implants xikidev_controller.rb into the
-  # app, so it can pass messages to it to eval.
+  # app? > actually currently suggests installing xiki plugin
+  # ...so it can pass messages to it to eval.
   #
   # For security it only works in dev mode, only accepts local requests,
   # and reads input from a file on disk.

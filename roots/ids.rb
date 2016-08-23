@@ -1,6 +1,9 @@
 class Ids
   def self.menu *args
 
+
+    options = yield
+
 Ol()
 
     # If just "ids/", list all...
@@ -12,11 +15,11 @@ Ol()
           var id = $(e).attr('id');
           result += "+ #"+id+"/\\n";
         })
-        result;
+        return result;
         `.unindent
 
 Ol.a js
-      result = Firefox.exec js
+      result = Browser.js js
       return "
         > No id attributes found in page!
         | Maybe try listing by classes:
@@ -31,7 +34,7 @@ Ol "args", args   # => ["#hi", "new text\n"]
   # => ["#hi"]
 
     # return "todo"
-    Xiki["dom", args]
+    Xiki["dom/", args, options]
 
   end
 end

@@ -1,4 +1,4 @@
-load "#{Xiki.dir}commands/rails.rb" if ! defined?(Xiki::Rails)
+load "#{Xiki.dir}roots/rails.rb" if ! defined?(Xiki::Rails)
 
 module Xiki
   class Models
@@ -27,7 +27,7 @@ module Xiki
       `
 
     def self.delete_records name
-      "- foo!"
+      "- Unfinished!"
     end
 
     def self.delete name, kind

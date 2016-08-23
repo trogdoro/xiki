@@ -1,4 +1,4 @@
-require "#{Xiki.dir}commands/tweets"
+require "#{Xiki.dir}roots/tweets"
 
 module Menu
   class Tweet
@@ -11,7 +11,7 @@ module Menu
 
       # Task...
 
-      return "~ show in browser" if options[:task] == []
+      return "* show in browser" if options[:task] == []
 
       if (options[:task] == ["show in browser"] || options[:prefix] == "open") && (!txt || txt =~ /\n/ || txt =~ /^\|/)   # as+open, so just open my profile
         Browser.url "https://twitter.com/#{Tweets.active_account}", :activate=>1
@@ -67,7 +67,7 @@ module Menu
 
       return "> Error\n#{Tree.quote result, :char=>'|'}" if result =~ /[\s>]*error/i
 
-      "<! tweeted!"
+      "<* tweeted!"
 
     end
 

@@ -1,15 +1,9 @@
-Xiki::Requirer.require_gem 'unimidi', :optional=>1
-
 require 'xiki/core/mode'
-
 
 module Xiki
   class Piano
 
-    include MIDIator::Notes rescue nil
-    include MIDIator::Drums rescue nil
-
-    @@unimidi = nil
+    @@fluidsynth = nil
 
     @@held_down = []
 
@@ -43,7 +37,7 @@ module Xiki
 
     # > Pass in notes (start GarageBand first)
     MENU = %`
-      | g cdefg c c
+      | g cdefg c c 
       - .setup/
         - .tempo/
           - 60
@@ -113,68 +107,68 @@ module Xiki
       - examples/
         - basics/
           - chords/
-            =piano/
+            = piano
               | A A A B A
               | C C D D C
               | E F F F E
           - two parts/
-            =piano/
+            = piano
               | CGcCGc C GaCGa  CGcCGc C GaCGa
               | cde edc d  c   c de e
           - three parts/
-            =piano/
+            = piano
               | ABCDEFGabcdefghijklmnopqrstuv
               |   B C D E F G a b c d e f g h
               |     B   C   D   E   F   G   a
           - sharps/
-            =piano/
+            = piano
               |             #    # # # #
               | ce ecbca    Gb baGbG G G a
               |                    #
               |  C E C A C L B E B N B L H
           - drums/
-            =piano/
+            = piano
               | ' ' ' ' ' '*  '
               | =@@= @@@=@@= @@@
           - unofficial xiki theme song/
-            =piano/
+            = piano
               |                 xiki is so great
               | P Q P Q P Q P Q P Q P Q P Q P Q
               | < < < < < < < < < < < < < < < <
               | @ = @@= @ = @@= @ = @@= @ = @@=
         - generation/
           - variation/
-            =piano/
+            = piano
               | reset()
               | variation()
               | aaaaaaaa
           - probability/
-            =piano/
+            = piano
               | reset()
               | variation()
               | probability(50)
               | aaaaaaaaaaaa
           - melodic/
-            =piano/
+            = piano
               | reset()
               | variation(1)
               | melodic()
               | aaaaaaaaaaaa
           - climb/
-            =piano/
+            = piano
               | reset()
               | variation(1)
               | melodic()
               | climb()
               | aaaaaaaaaaaa
           - consistency/
-            =piano/
+            = piano
               | reset()
               | variation()
               | consistency(80)
               | aaaaaaaaaaaa
           - solo/
-            =piano/
+            = piano
               | reset()
               | repeat(8)
               | tempo(55)
@@ -185,7 +179,7 @@ module Xiki
               | probability(80)
               | abcdefgh
           - duet/
-            =piano/
+            = piano
               | reset()
               | repeat(8)
               | tempo(35)
@@ -196,7 +190,7 @@ module Xiki
               | A A A A
               |  h h h h
           - all together/
-            =piano/
+            = piano
               | reset()
               | repeat(8)
               | tempo(45)
@@ -209,10 +203,10 @@ module Xiki
               | AAAAAAAA
               | H   H
           - everything random/
-            =piano/
+            = piano
               | reset()
               | repeat(16)
-              | tempo(rand(60) + 40)
+              | tempo(rand(80) + 70)
               | mode(rand 200)
               | variation(rand(6) + 1)
               | consistency(rand(50))
@@ -223,10 +217,10 @@ module Xiki
               | AAAAAAAAAAAAAAAA
               | H   H   H   H
           - cool instruments/
-            =piano/
+            = piano
               | reset()
               | repeat(32)
-              | tempo(rand(60) + 40)
+              | tempo(rand(80) + 70)
               | mode(rand 200)
               | variation(rand(6) + 1)
               | instrument([112, 108, 107, 102, 101, 100, 98, 97, 96, 95, 89, 88, 87, 86, 80, 54, 50, 49, 46, 45, 34, 12, 11, 10, 9, 8, 4][rand 27])
@@ -242,12 +236,12 @@ module Xiki
         =Piano.song "abc"
       - .docs/
         > Single notes
-        - =piano/a/
-        - =piano/55/
+        = piano/a
+        = piano/55
 
         > Multiple notes
-        - =piano/cde edc d  c   c de e
-        - =piano/some words for fun
+        = piano/cde edc d  c   c de e
+        = piano/some words for fun
 
         > Modes
         modes/
@@ -269,8 +263,6 @@ module Xiki
 
 
     def self.menu_after menu_output, *args
-Ol["!"]
-      Ol "args[0]", args[0]   # => "abc c cde\n"
 
       # Don't interfere if menu did something
       return menu_output if menu_output
@@ -282,7 +274,7 @@ Ol["!"]
 
       if task = options[:task]
         menu = Xik.new(Tree.children(MENU, "setup", :include_subitems=>1))
-        # return menu.txt_without_code if task == [] && options[:mouse]   # Show all if mouse
+
         return menu.txt if task == [] && options[:mouse]   # Show all if mouse
 
         return Xiki.expand "piano/setup/#{Path.join task}"
@@ -298,11 +290,6 @@ Ol["!"]
       end
 
       if $el
-      #         if Line =~ /piano\//
-      #           Move.to_axis
-      #           Search.forward("piano/")
-      #           return
-      # Ol["!"]
         if Line =~ /\(/
           Tree.to_parent
           Move.to_end
@@ -339,19 +326,12 @@ Ol["!"]
     def self.song txt, options={}
 
       txt.gsub!(/\/(.*)/, "(\\1)")   # Change foo/1 to foo(1)
-      Ol "txt", txt   # => "reset()\naaaaaaaa\nsustain(\"on\")\nrepeat(4)\ntempo(80)\nseed(craig)\n"
       txt.gsub!(/\(([a-z].*[a-z])\)/i, "(\"\\1\")")   # Change foo/bar to foo("bar")
-
-Ol.a txt
 
       @@lines = txt.split("\n")#.reverse
 
       self.extract_functions
 
-      # If only config, just run first ones
-      #     if @@lines.empty?
-      #       return self.run_functions @@functions_by_index[0], :include_all
-      #     end
       self.run_functions @@functions_by_index[0], :include_all
 
       repeat = (@@functions_by_index[0]||[]).find{|o| o =~ /^rep(eat)?\(/}
@@ -364,39 +344,33 @@ Ol.a txt
           # Start at where cursor is
           if $el
             # Comment out for demo?
-  #Ol Line.value
             View.column = (Line.value[/^ +(\| )?/] || "").length+1 if options[:move]
             if Line =~ /piano\//
               Move.to_axis
               Search.forward("piano/")
             end
-  # View.column = Line.value[/.+(\/|\| ?)/].length+1 if options[:move]
           end
 
           longest = @@lines.inject(0){|acc, e| e.length > acc ? e.length : acc}
 
           longest.times do |j|
-            #         self.run_functions @@functions_by_index[j] # unless j == 0
             self.run_functions @@functions_by_index[j] unless i == 0
 
             sharp = false
-            @@lines.each_with_index do |line, track|
+            @@lines.each_with_index do |line, track|   #> |
               char = line[j] ? line[j].chr : nil
-  #Ol "char", char
-              self.note char, :no_sit=>1, :sharp=>sharp, :track=>track
+              self.note char, :no_sit=>1, :sharp=>sharp, :track=>track   #> in song:386) ||
               sharp = char == "#"
             end
             if $el
               # Comment out for demo?
-              # Move.forward if options[:move] && View.cursor != Line.right
               Move.forward if options[:move] && View.cursor != Line.right
             end
-            self.pause
+            self.pause   #> in song:394) |
           end
         end
 
       rescue RuntimeError=>e
-Ol["!"]
 
         raise e if ! options[:dont_raise]   # Unless alternate flag passed in, always raise
 
@@ -414,7 +388,6 @@ Ol["!"]
       @@in_run_functions = true
       (list||[]).each do |item|
         next if !include_all && item =~ /^rep(eat)?\(/
-Ol "item", item   # => "seed(craig)"
         eval("Piano.#{item}")
       end
       @@in_run_functions = false
@@ -527,10 +500,7 @@ Ol "item", item   # => "seed(craig)"
       number += 1 if options[:sharp]
       number += (@@octave * 12)
 
-      # channel = 1
-      # channel = 143 + channel
-      # channel = 144
-      channel = 144
+      channel = 1
 
       @@held_down << number
 
@@ -541,8 +511,7 @@ Ol "item", item   # => "seed(craig)"
       # 128 : note off message
 
 
-Ol.>> channel, number, velocity   # => [144, 69, 100]
-      self.unimidi.puts(channel, number, velocity) # note on message
+      self.noteon(channel, number, velocity) # note on message   #> |||
 
       return if options[:no_sit]   # Don't sit if other tracks have same beat
 
@@ -550,43 +519,53 @@ Ol.>> channel, number, velocity   # => [144, 69, 100]
       nil
     end
 
-    def self.unimidi
-      @@unimidi ||= UniMIDI::Output.open(0).open
-      # @@unimidi ||= UniMIDI::Output.open(1).open
+    def self.fluidsynth_process
+
+      # Best
+      Open3.popen3('fluidsynth ~/projects/soundfonts/acoustic_grand_piano_ydp_20080910.sf2')
+
+      # Decent
+      # Open3.popen3 'fluidsynth ~/projects/soundfonts/25-piano-sf/Giga-Piano.sf2'
+      # Open3.popen3 'fluidsynth ~/projects/soundfonts/25-piano-sf/Fazioli-Grand-Piano-.SF2'
+      # Open3.popen3 'fluidsynth ~/projects/soundfonts/25-piano-sf/Grand-Piano.sf2'
+      # Open3.popen3 'fluidsynth ~/projects/soundfonts/25-piano-sf/Motif-ES6-Concert-Piano.SF2'
+      # Open3.popen3 'fluidsynth ~/projects/soundfonts/25-piano-sf/Fantasy-Piano.sf2'
+
     end
 
-    def self.send channel, number, value
-
-      # output = UniMIDI::Output.open(0)
-      output = UniMIDI::Output.open(1)
-
-      output.open do |output|
-        output.puts(channel, number, 90) # note on message
+    def self.noteoff channel, number, velocity
+      if ! @@fluidsynth
+        sleep 0.25
+        @@fluidsynth = self.fluidsynth_process
       end
+      @@fluidsynth[0].puts("noteoff #{channel} #{number} #{velocity}\n")
+    end
+
+
+    def self.noteon channel, number, velocity
+      if ! @@fluidsynth
+        @@fluidsynth = self.fluidsynth_process
+        sleep 0.25
+      end
+      @@fluidsynth[0].puts("noteon #{channel} #{number} #{velocity}\n")
     end
 
     def self.pause
-      # Ol "@@tempo", @@tempo
       pause = @@tempo * 4
       pause = pause / 60.0
       pause = 1 / pause
-#Ol "pause", pause
-# $el ? $el.sit_for(pause) : sleep(pause)
+      $el ? $el.sit_for(pause) : sleep(pause)
 
 
-      # input = $el.read_char "", nil, pause
       input = $el.read_char_exclusive "", nil, pause
-Ol "input", input
-# $el ? $el.sleep_for(pause) : sleep(pause)
-      Piano.clear
+      self.clear   #> ||
       raise "stopped" if input
     end
 
     def self.clear chan=1
-      chan = (chan + 143) - 16
 
       while number = @@held_down.shift do
-        self.unimidi.puts(chan, number, 90) # note on message
+        self.noteoff(chan, number, 90) # note on message   #> |||
       end
     end
 
@@ -597,7 +576,7 @@ Ol "input", input
     end
 
     def self.midi
-raise "not used?"
+      raise "not used?"
       @@midi || self.connect
     end
 
@@ -708,7 +687,7 @@ raise "not used?"
     end
 
     def self.reset
-Ol["!"]
+
       @@velocity = 126
       @@tempo = 120
       @@probability = 100
@@ -723,9 +702,8 @@ Ol["!"]
       @@octave = 0
       @@program = 1
       @@repeat = 1
-      # @@seed = nil
 
-      "<!"
+      "<*"
     end
 
     #
@@ -736,7 +714,7 @@ Ol["!"]
     end
 
     def self.connect
-raise "not used?"
+      raise "not used?"
       @@midi = MIDIator::Interface.new
       @@midi.use :dls_synth
       # This doesn't work in Lion :(
@@ -745,52 +723,44 @@ raise "not used?"
       @@midi
     end
 
-    def self.velocity txt="126";  @@velocity = txt.to_i;  "<!";  end
+    def self.velocity txt="126";  @@velocity = txt.to_i;  "<*";  end
     def self.tempo txt="120"
-Ol "txt", txt
       @@tempo = txt.to_i
-      "<!"
+      "<*"
     end
     def self.probable txt="50";  self.probability txt;  end
-    def self.probability txt="50";  @@probability = txt.to_s.sub('%', '').to_i;  "<!";  end
+    def self.probability txt="50";  @@probability = txt.to_s.sub('%', '').to_i;  "<*";  end
     def self.sustain txt="on"
       if txt == "on"   # Sustain petal on
-        self.unimidi.puts(0xB0, 0x40, 1)
+        self.noteon(0xB0, 0x40, 1)
         return ""
       end
-      self.unimidi.puts(0xB0, 0x40, 0)   # Sustain petal off
-      "<!"
+      self.noteon(0xB0, 0x40, 0)   # Sustain petal off
+      "<*"
     end
     def self.vary txt="2"
       self.variation txt
     end
     def self.variation txt="2"
       @@variation = txt.to_i
-      # if @@seed   # If seed set manually, just use it
-      #   seed = @@seed
-      # else   # Else auto-generate seed
-      #   seed = rand 999_999_999_999_999_999_999
-      # end
 
       # srand seed
 
-      "<!"
+      "<*"
     end
-    def self.melodic txt="1";  @@melodic = txt.to_i;  "<!";  end
-    def self.climb txt="1";  @@climb = txt.to_i;  "<!";  end
-    def self.pentatonic txt="1";  Ol.<<(txt); @@pentatonic = [true, "on", 1].member?(txt);  "<!";  end
-    def self.consistency txt="50";  @@consistency = txt.to_s.sub('%', '').to_i;  "<!";  end
-    def self.octave txt="0";  @@octave = txt.to_i;  "<!";  end
-    def self.repeat txt="4"; @@repeat = txt.to_i;  "<!";  end
-    # def self.seed txt; @@seed = txt.to_i;  "<!";  end
+    def self.melodic txt="1";  @@melodic = txt.to_i;  "<*";  end
+    def self.climb txt="1";  @@climb = txt.to_i;  "<*";  end
+    def self.pentatonic txt="1";  Ol.<<(txt); @@pentatonic = [true, "on", 1].member?(txt);  "<*";  end
+    def self.consistency txt="50";  @@consistency = txt.to_s.sub('%', '').to_i;  "<*";  end
+    def self.octave txt="0";  @@octave = txt.to_i;  "<*";  end
+    def self.repeat txt="4"; @@repeat = txt.to_i;  "<*";  end
+    # def self.seed txt; @@seed = txt.to_i;  "<*";  end
 
     def self.seed i
       i = i.to_i if i =~ /\A\d+\z/
-      Ol["# Set it to instance!"]
       i = i.hash if ! i.is_a? Fixnum
-Ol "i", i
       @@seed = Random.new i
-      "<!"
+      "<*"
     end
 
     def self.mode txt=nil
@@ -799,11 +769,11 @@ Ol "i", i
       if txt.to_s == "random"
         random = (-2..9).to_a[@@seed.rand 7]
         @@mode = random
-        return "<! updated to #{random}!"
+        return "<* updated to #{random}!"
       end
 
       @@mode = txt.to_i
-      "<!"
+      "<*"
     end
 
     class << self
@@ -823,7 +793,7 @@ Ol "i", i
     end
 
     def self.driver
-raise "not used?"
+      raise "not used?"
       @@midi ||= self.connect
     end
 
@@ -850,7 +820,7 @@ raise "not used?"
         return "| #{txt}"
       end
 
-Ol["Do this the right way!"]
+      # Todo > Do this the right way
       self.song ENV['txt']
       nil
     end
@@ -858,5 +828,5 @@ Ol["Do this the right way!"]
   end
 
   Piano.init   # Define mode
-#  Menu.drums :menu=>'piano'
+
 end

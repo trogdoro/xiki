@@ -61,7 +61,7 @@ Ol()
 
       txt = self.run command   # .gsub(/^/, '| ')
 
-      "<! saved!"
+      "<* - saved!"
 
     end
 

@@ -4,99 +4,212 @@ class Memorize
 
   include Xiki   # To have View class, etc.
 
-  MENU = "
-    > Example
-    | France : Paris
-    | England : London
-    | Japan : Tokyo
-    | Germany : Berlin
-    "
-  # - docs/
-  #   | Add some facts like the example, and launch one of the
-  #   | example lines to start an interactive memorize process.
-  #   | In addition to helping you memorize, this is a low-stress
-  #   | way to digest and review facts.
-  #   | Double-click on one of to lines to begin.
+  attr :completed, :choices, :progress, :pending, :indent
 
-  MENU_HIDDEN = %`
-    + .show answer
-    + .I was wrong
-    + .I was right
-    `
+  def self.menu *args
 
-  MENU_OBSCURED = %`
-    - .test/
-      - deserialize/
-        : > Example
-        : | Germany : Berlin
-        : | China : Beijing
-        : | Japana : ___
-        : + show answer
-        : |*[[3,1,2],[]]
-        : |*1 France : Paris
-        : |*2 England : London
-        : |*3 Japan : Tokyo
-      - serialize/
-        : {
-        :   :heading   => [
-        :     "> Example"
-        :   ],
-        :   :completed => [
-        :     "| Germany : Berlin",
-        :     "| China : Beijing"
-        :   ],
-        :   :choices   => [
-        :     "+ show answer"
-        :   ],
-        :   :progress  => [[3,1,2],[]],
-        :   :pending   => {
-        :     1 => "France : Paris",
-        :     2 => "England : London",
-        :     3 => "Japan : Tokyo"
-        :   }
-        : }
-    `
+    options = yield
+    task = options[:task]
 
-  attr :heading, :completed, :choices, :progress, :pending
+    # /, so show example...
 
-  def self.test kind, txt
-    {
-      'deserialize'=> -> {
-        o = self.new
-        o.deserialize(txt)
-        Tree.quote o.inspect
-      },
-      'serialize'=> -> {
-        o = self.new
-        hash = eval txt
-        hash.each{ |key, val| o.instance_variable_set "@#{key}", val }
-        Tree.quote o.serialize
-      },
-    }[kind][]
+    return "
+      > Expand this example to start memorizing
+      | France : Paris
+      | England : London
+      | Japan : Tokyo
+      | Germany : Berlin
+      " if args == []
+
+    raise "memorize command > didn't expect more than one item" if args.length != 1
+
+    # /text\n, so start memorizing...
+    if args[0] =~ /\n/ || args[0] =~ /\A>/
+
+      # /~, so offer to save to memorize.com...
+
+      return "
+        * learn on Memorize.com
+        * open progress
+        * merge in
+        " if task == []
+
+      if task == ["learn on Memorize.com"]
+        return self.browser args[0]
+      elsif task == ["open progress"]
+        View.open Memorize.filename
+        return ""
+      elsif task == ["merge in"]
+        # View.open Memorize.filename
+        # 1. Delete paragraph
+        bounds = Tree.sibling_bounds
+        new_lines = View.delete bounds[0], bounds[3]
+
+        txt = File.read Memorize.filename
+
+        # Iterate through each new line > and run this code
+        new_lines.split("\n").each do |line|
+
+          # Add number to index
+
+          line1 = txt[/.+/]   # => "| [[2,4,1,4],[3]]"
+          biggest = line1.scan(/\d+/).map{|o| o.to_i}.max + 1
+          txt.sub!("],", ",#{biggest}],")   # => "| [[2,3,1,3,5],[4]]"
+          line.sub!(/^  \|/, "| #{biggest}")
+          txt << "#{line}\n"
+        end
+        File.open(Memorize.filename, "w") { |f| f << txt }
+
+        # 2. Merge it into the file
+          # | [[2,3,1,3],[4]]
+          # Top line > get biggest number
+          # Add it before > "],"
+        return ""
+      end
+
+      # If task is "~memorize", it'll just continue on as normal expand, and start
+
+
+
+      return self.start
+    end
+
+    # '+ show answer', so show it...
+    if args[0] == "show answer"
+      o = self.new(self.extract_view_txt)
+      o.show_answer
+      o.display
+      return ""
+    end
+
+    # '+ I was wrong', so move to next step...
+    if args[0] == "I was wrong"
+      o = self.new(self.extract_view_txt)
+      if task == []   # ^O, so do "right" instead of "wrong"
+        o.i_was_right
+      else   # ^X, so do "wrong"
+        o.i_was_wrong
+      end
+      o.display
+      return ""
+    end
+
+    # 'I was right', so move to next step...
+    if args[0] == "I was right"
+      o = self.new(self.extract_view_txt)
+      o.i_was_right
+      o.display
+      return ""
+    end
+  end
+
+  def self.filename
+    name = View.file || View.name
+
+    dir = File.expand_path "~/.xiki/misc/tmp/"
+
+    FileUtils.mkdir_p dir
+    "#{dir}/round1"+name.gsub(/[^a-z.]/i, '-')
+  end
+
+  def self.start
+
+    # Clear out file state of any previous runs
+    File.open(self.filename, "w") { |f| f << "" }
+
+    # Extract text > contiguous |... lines...
+
+    bounds = Tree.sibling_bounds(:must_match=>"[|+]")
+    txt = View.txt bounds[0], bounds[3]
+
+    return "
+      - Error > every line must be in this format:
+      | question : answer
+    " if txt.split("\n").find{|o| o !~ / : /}
+
+    View.delete bounds[0], bounds[3]
+    o = self.new(txt)
+    o.start
+
+    View << "#{o.indent}- memorizing:\n"
+    o.display
+
+    ""
+
+  end
+
+  def start
+    @choices = ["+ show answer"]
+
+    @pending = @completed.reduce([{}, 1]) do |acc, o|
+      acc[0][acc[1]] = o#[/ (.+)/, 1]
+      acc[1] += 1
+      acc
+    end[0]
+
+    # Shuffle (try up to 6 times if 1st one still at top)...
+
+    length = @pending.length
+
+    @progress = (1..length).to_a
+    6.times{ @progress = @progress.sort_by{ rand } if @progress[0] == 1 }
+    @progress = [@progress, []]
+
+    @completed = ["#{@pending[@progress[0][0]].sub(/ : .*/, ' : ?')}"]
+
+  end
+
+  def self.extract_view_txt
+    bounds = Tree.sibling_bounds(:must_match=>"[|+]")
+    txt = View.delete bounds[0], bounds[3]
+    txt
   end
 
   def serialize
+
+    # Write hidden part to the file
+    txt = serialize_hidden
+    File.open(self.class.filename, "w") { |f| f << txt }
+
+    # Return visible part
+    return serialize_visible
+  end
+
+  def serialize_visible
+    txt = ""
+    txt = @completed.map{|o| "| #{o}"} + @choices
+    txt = txt.map{|o| "#{o}\n"}.join("")
+
+    # Prepend with "memorizing" if just starting
+
+    txt
+  end
+  def serialize_hidden
     require 'json'
 
     txt = ""
 
-    pending = @pending.map{|k, v| "|*#{k} #{v}"}
+    # pending = @pending.map{|k, v| "|*#{k} #{v}"}
+    pending = @pending.map{|k, v| "| #{k} #{v}"}
 
-    progress = @progress.any? ? ["|*#{JSON[@progress]}"] : []
+    progress = @progress.any? ? ["| #{JSON[@progress]}"] : []
 
-    txt = @heading + @completed + @choices + progress + pending
+    txt = progress + pending
     txt = txt.map{|o| "#{o}\n"}.join("")
     txt
   end
 
   def deserialize txt
+    txt_hidden = File.read self.class.filename
+    txt << txt_hidden
     txt = txt.split "\n"
 
-    @heading, @completed, @choices, @progress, @pending = [], [], [], nil, nil
+    # raise "- Every line must be of the format 'question : answer'"
 
-    @heading << txt.shift while txt.any? && txt[0] !~ / : /
+    @completed, @choices, @progress, @pending = [], [], [], nil, nil
+
     @completed << txt.shift while txt.any? && txt[0] =~ / : /
-    @choices << txt.shift while txt.any? && txt[0] =~ /^\+/
+    @choices << txt.shift while txt.any? && txt[0] =~ /^[+-]/
 
     @progress = txt.shift
     @progress = @progress ? JSON[@progress[/\[.+/]] : []
@@ -111,9 +224,18 @@ class Memorize
 
   end
 
+  def initialize txt=nil
+
+    @indent = txt[/ +/]
+    txt = txt.unindent
+    txt = Tree.unquote txt
+
+    return if ! txt
+    deserialize txt
+  end
+
   def inspect
     {
-      :heading=>@heading,
       :completed=>@completed,
       :choices=>@choices,
       :progress=>JSON[@progress],
@@ -121,50 +243,47 @@ class Memorize
     }.ai
   end
 
-  def initialize txt=nil
-    deserialize txt if txt
+  def propagate_edits
+
+    active = @completed[-1]
+
+    # If ends with ": ?", just replace with what's before it
+
+    update_this = @pending[@progress[0][0]]
+
+    if active =~ /(.+) : \?$/
+      txt = $1
+      update_this.sub! /.+? : /, "#{txt} : "
+    else
+      update_this.replace active #[/\| (.+)/, 1]
+    end
   end
 
-  def set_line_found options
-Ol["is this working?!"]
-#Ol "options", options
-    options[:no_search] = 1
-    return if @progress[0].empty?
-    options[:line_found] = @heading.length + @completed.length + 1
+  def display
+    txt = serialize
+    txt.gsub! /^/, "#{@indent}"
+
+    # No +... means the finished, so leave cursor at the top
+    if txt !~ /^ *\+/
+      View.<< txt, :dont_move=>1
+      return Line.to_words
+    end
+
+    View << txt
+    Move.up
+    Move.up if Line =~ / *\+ I was right/
+    Line.to_words
   end
 
-  def self.show_answer txt=nil #, options={}
-    return "=beg/neighbors/" if ! txt   # Beg for consecutive lines if not passed yet
-
-    o = self.new txt
-Ol "txt", txt   # => "show answer"
-    txt = o.show_answer
-    o.set_line_found yield
-    # o.set_line_found options
-
-    "<:\n#{txt.gsub /^/, '  '}"
-  end
 
   def show_answer
-Ol["!"]
     propagate_edits
 
-    @completed[-1] = "| #{@pending[@progress[0][0]]}"
+    @completed[-1] = "#{@pending[@progress[0][0]]}"
     @choices = ["+ I was wrong", "+ I was right"]
 
-    serialize
   end
 
-
-  def self.i_was_wrong txt=nil
-    return "=beg/neighbors/" if ! txt   # Beg for consecutive lines if not passed yet
-
-    o = self.new txt
-    txt = o.i_was_wrong
-    o.set_line_found yield
-
-    "<:\n#{txt.gsub /^/, '  '}"
-  end
 
   def i_was_wrong
     propagate_edits
@@ -177,7 +296,7 @@ Ol["!"]
 
     remove_runs
 
-    @completed << "| #{@pending[@progress[0][0]].sub(/ : .+/, ' : ___')}"
+    @completed << "#{@pending[@progress[0][0]].sub(/ : .*/, ' : ?')}"
     @choices = ["+ show answer"]
 
     serialize
@@ -191,17 +310,6 @@ Ol["!"]
     end[0]
   end
 
-
-  def self.i_was_right txt=nil
-    return "=beg/neighbors/" if ! txt   # Beg for consecutive lines if not passed yet
-
-    o = self.new txt
-    txt = o.i_was_right
-    o.set_line_found yield
-
-    "<:\n#{txt.gsub /^/, '  '}"
-  end
-
   def i_was_right
     propagate_edits
 
@@ -210,11 +318,10 @@ Ol["!"]
     @completed.pop
 
     previous = @progress[0].shift
-Ol "previous", previous
 
     # If that was the last one, show at top, and remember order
     if ! @progress[0].member? previous
-      @completed << "| #{@pending[previous]}"
+      @completed << "#{@pending[previous]}"
       # Remember its order, and remove its redundant value from @pending
       @progress[1] << previous
       @pending.delete previous
@@ -223,115 +330,36 @@ Ol "previous", previous
     # If that was the last one, they're finished!...
 
     if @progress[0].empty?
+
       finished
       @choices = []
       @progress = []
-      return serialize
+      txt = serialize
+      # Clear out file state of any previous runs
+      File.open(self.class.filename, "w") { |f| f << "" }
+      return txt
     end
 
     # Show next question...
 
-    @completed << "| #{@pending[@progress[0][0]].sub(/ : .+/, ' : ___')}"
+    @completed << "#{@pending[@progress[0][0]].sub(/ : .*/, ' : ?')}"
 
     serialize
   end
 
   def finished
+
+    # memorizing on line before, so delete it
+    if Line.value(0) =~ /^ *- memorizing:/
+      View.delete(Line.left(0), Line.left)
+    end
+
     result = []
     @completed.each_with_index{|item, i|
       result[@progress[1][i]-1] = item
     }
     @completed = result
   end
-
-  def self.menu_before *args
-
-    # Dropdown and memorizing in place is disabled for now,
-    # until I re-write it (making text hidden doesn't work any more).
-
-    # Only do something if right-click...
-
-    task = yield[:task]
-    return if ! task
-
-    # /, so show "start with an example"?...
-
-    # /some content, so offer to save to memorize.com...
-
-    if args[0] =~ /\n/ # || args[0] =~ /^\|/
-      return "
-        ~ memorize
-        ~ learn on Memorize.com
-        " if task == []
-
-      if task == ["learn on Memorize.com"]
-        return self.browser args[0]
-      end
-
-      # If task is "~memorize", it'll just continue on as normal expand, and start
-
-    end
-
-    nil
-
-  end
-
-  def self.menu_after output, *path
-
-    # We only want to interject if they're starting out,
-    # which means launching a quoted line that got turned into linebreaks
-    return if path.length != 1
-
-    return if output   # Always return if there was output, because it was handled
-
-    txt = path[0]
-
-    o = self.new txt
-    txt = o.start
-    o.set_line_found yield
-
-    "<:\n#{txt.gsub /^/, '  '}"
-  end
-
-  def start
-    @choices = ["+ show answer"]
-    @pending = @completed.reduce([{}, 1]) do |acc, o|
-      acc[0][acc[1]] = o#[/ (.+)/, 1]
-      acc[1] += 1
-      acc
-    end[0]
-
-    # Shuffle (try up to 3 times if 1st one still at top)...
-
-    length = @pending.length
-
-    @progress = (1..length).to_a
-    6.times{ @progress = @progress.sort_by{ rand } if @progress[0] == 1 }
-    @progress = [@progress, []]
-
-    @completed = ["| #{@pending[@progress[0][0]].sub(/ : .+/, ' : ___')}"]
-
-    serialize
-  end
-
-  # Propagates any changes to current line to the hidden original below.
-  # Smart enough to handle "foo : bar" or "foo : ?".
-  def propagate_edits
-
-    active = @completed[-1]
-
-    # If ends with ": ___", just replace with what's before it
-
-    update_this = @pending[@progress[0][0]]
-    if active =~ /\| (.+) : ___$/
-      txt = $1
-      update_this.sub! /.+? : /, "#{txt} : "
-    else
-      update_this.replace active[/\| (.+)/, 1]
-    end
-  end
-
-  # They right-clicked on a "a : b" table at the left margin
 
   def self.tasks_save_to_memorize
 
@@ -373,7 +401,7 @@ Ol "previous", previous
     path = URI.encode path, "\","
 
     Browser.url "http://memorize.com/#{path}"
-    "<! opened in browser"
+    "<* opened in browser"
   end
 
 end

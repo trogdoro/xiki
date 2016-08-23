@@ -6,7 +6,7 @@
     | presentation.  The left and right arrow keys will go back and forth
     | between the "slides".
     |
-    | Make .deck files just like you make .notes files, with sections divided
+    | Make .deck files just like you make .xiki files, with sections divided
     | by headings ("> foo" lines).  The sections behave like slides.  Only one
     | section is shown at a time.
   - keys/
@@ -20,6 +20,6 @@
     | ">>" instead of ">"
     |
     | Then, type custom+reminder to jump back and forth.
-  - to enable the deck keys in a .notes file/
+  - to enable the deck keys in a .xiki file/
     - type: do+keys+deck
     - or use) @deck/enable arrow keys/

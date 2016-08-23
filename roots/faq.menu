@@ -17,7 +17,7 @@
   | It's a work in progress. More will be added later!
   |
 : How can I contribute to this faq?
-  | Edit <xiki source dir>/commands/faq.menu, commit, and send a pull
+  | Edit <xiki source dir>/roots/faq.menu, commit, and send a pull
   | request.
   |
 : What are the next steps for this readme file, to make it more accessible?

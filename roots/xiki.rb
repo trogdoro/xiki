@@ -1,84 +1,65 @@
+# /, so return all topics...
+
+if args == []
+  files = Topic.list.map{|o| "#{o}\n"}
+
+  ["notes", "links"].each do |move_down|
+    found = files.delete("#{move_down}\n")
+    files << found if found
+  end
+
+  return files.join('')
+end
 
 
+# /topic, so replace parent and expand...
 
-# Currently not used
+return "
+  * to top
+  * just this
+" if task == []
+
+if task == ["just this"]
+
+  Tree.to_parent
+  Tree.collapse
+  Line.sub! /.*/, args[0]
+  return ""
+
+elsif task == ["to top"]
+  xiki_file = Topic.topic_to_filename args[0]
+
+  FileUtils.touch xiki_file
+
+  # Move it to the top
+  line = Line.delete
+  Tree.to_parent
+  Move.down
+  View >> "#{line}\n"
+
+  return ""
+end
 
 
+# Opened with list+xiki or "$ xsh -", so open in new view
+view = View.name
+if view == "xiki/" || view == "xsh"
 
-module Xiki
+  # New behavior > open in new view
 
-  MENU = %`
-    - .tests/
-    - .github/
-      > files
-      @http://github.com/trogdoro/xiki
-      > commits
-      @https://github.com/trogdoro/xiki/commits/master
-    - .setup/
-      - install command/
-        | Double-click on these lines to add the executable 'xiki' command to
-        | your path:
-        |
-        @#{self.dir}/
-          $ ruby misc/command/copy_xiki_command_to.rb /usr/local/bin/xiki
-        |
-        | Then you can type 'xiki' on a command line outside of emacs as a
-        | shortcut to opening xiki and opening menus, like so:
-        |
-        |   $ xiki computer
-        |
-      - install icon/
-        =install xiki icon/
-      - install global shortcut/
-        =install global shortcut/
-      - .process/
-        - status/
-        - start/
-        - stop/
-        - restart/
-        - log/
-      - el4r/
-        > Configure
-        @#{self.dir}
-          % sudo bash misc/install/el4r_setup.sh
+  Launcher.open arg1   #> |
+  ""
 
-        - docs/
-          | This will create/update files in your home directory, which make el4r
-          | point to the version of ruby currently active.
-          |
-          | You can run this multiple times.
-      - .misc/
-        - .dont show welcome/
-      - key shortcuts/
-        - enable all/
-          | Add this line to enable all xiki keys:
-          ~/.el4r/init.rb
-            | KeyShortcuts.keys   # Use default key shortcuts
+else
+  # Inserted in existing view, so replace parent
 
-            > Todo: show options for more limited key mappings as well?
-            | # Only enable Control-return in all files.
-            | KeyShortcuts.map_control_return
-            | # Only enable Control-return in .notes files.
-            | @define_key(:notes_mode_map, kbd("<C-return>"))  { Launcher.go }
-        - minimal/
-          | Add this line to enable all xiki keys:
-          ~/.el4r/init.rb
-            | KeyShortcuts.minimal__
-      @web/
-    - api/
-      > Summary
-      Here are some functions that will always be available to menu classes,
-      even external ones.
-      |
-      | Put pipes at beginning of lines (except bullets etc)
-      |   p Xiki.quote "hey\\nyou"
-      |
-      | Return path to tree's root including current line, will be a list with 1
-      | path unless nested.
-      |   p Tree.path
-      |
-    - .server/
-      - .kill
-    `
+  "<<< #{args[0]}"
 
 end
+
+# Maybe todo > Only open in new view when > We are in the only view, and it's "xiki/" > Otherwise replace parent
+
+
+
+# Old behavior > Replace parents
+

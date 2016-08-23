@@ -50,20 +50,31 @@ Ol()
 
     # right click, so show options...
 
-    return "~ kill\n~ sudo kill\n~ force kill" if options[:task] == []
+    return "
+      * kill
+      * sudo kill
+      * force kill
+      * kill listed
+      " if options[:task] == []
 
     # Should just continue on
-    # return "<! killed" if options[:task] == ["kill"]
+    # return "<* killed" if options[:task] == ["kill"]
 
     pid = process.split(/ +/)[2]
     command = "kill #{pid}"
     command = "kill -9 #{pid}" if options[:prefix] == :u || options[:task] == ["force kill"]
 
+    if options[:task] == ["kill listed"]
+      siblings = Tree.siblings
+      ids = siblings.map{|o| o.scan(/[\d.]+/)[1]}
+      command = "kill #{ids.join(' ')}"
+    end
+
     # Dash+, so do sudo...
 
     # if options[:task] == ["sudo kill"]
     #   Console
-    #   return "<! fu"
+    #   return "<* fu"
     # end
 
     if options[:task] == ["sudo kill"] || options[:prefix] == :-
@@ -80,6 +91,13 @@ Ol()
 
     output = `#{command}`
     View.flash "- sent kill!", :times=>1
+
+    if options[:task] == ["kill listed"]
+      Line.previous
+      Tree.delete_siblings
+      return ""
+    end
+
     column = View.column
     Line.delete
     View.column = column

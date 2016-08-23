@@ -31,8 +31,8 @@ module Xiki::Menu
       end
 
 
-      txt = File.read(File.expand_path("~/xiki/commands/dimensions_config.menu")) rescue nil
-      txt ||= File.read(File.expand_path("#{Xiki.dir}commands/dimensions_config.menu"))
+      txt = File.read(File.expand_path("~/.xiki/roots/dimensions_config.menu")) rescue nil
+      txt ||= File.read(File.expand_path("#{Xiki.dir}roots/dimensions_config.menu"))
 
       txt.sub! /\n\n.+/m, "\n"
 
@@ -142,7 +142,7 @@ Ol["!"]
 
     def self.dotsies
       Styles.font_size 120
-      Xiki["dotsies/apply/all views/"]
+      Xiki["`dotsies/apply/all views/"]
     end
 
 end; end

@@ -1,1 +1,1 @@
-Xiki['mysql/dbs', args]
+Xiki['.mysql/dbs', args]

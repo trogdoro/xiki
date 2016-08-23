@@ -20,7 +20,7 @@ class Substitute
 
     Clipboard[1], Clipboard[2] = a, b
 
-    "<! Now do do+1 to search and substitute!"
+    "<* Now do do+1 to search and substitute!"
 
   rescue
     "

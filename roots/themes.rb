@@ -13,10 +13,10 @@ module Xiki::Menu
       # /list/name, so use or navigate to theme...
 
       options = yield
-      return "~ activate\n~ source" if options[:task] == []
+      return "* activate\n* source" if options[:task] == []
 
       if options[:task] == ["source"] || Keys.open?   # If as+open, just navigate to it
-        path = "#{Xiki.dir}misc/themes/#{TextUtil.title_case name, :underscores=>1}.notes"
+        path = "#{Xiki.dir}misc/themes/#{TextUtil.title_case name, :underscores=>1}.xiki"
         View.open path
         return
       end
@@ -24,7 +24,7 @@ module Xiki::Menu
       ::Xiki::Themes.use name
       Styles.reload_styles
 
-      "<! activated!"
+      "<* activated!"
     end
 
   end

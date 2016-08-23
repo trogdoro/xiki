@@ -3,7 +3,7 @@ class Xiki::Menu::Notes
   MENU = %`
     - docs/
       - summary/
-        | This menu lists out the notes in ~/xiki/notes/.  It lets you drill
+        | This menu lists out the notes in ~/xiki/.  It lets you drill
         | into them and navigate to individual notes and update.
         |
         | It can be used two different ways, by using @notes by itself,
@@ -11,14 +11,14 @@ class Xiki::Menu::Notes
       - nesting/
         - intro/
           | You can nest @notes under other menus, like so:
-          =foo/
-            =notes/
+          = foo/
+            = notes/
 
-          | It will use ~/notes/foo.notes. This is a convenience mechanism
+          | It will use ~/xiki/foo.xiki. This is a convenience mechanism
           | for you to create notes that are associated with menus.
         - example/
           > 1. if you have a file like this
-          =~/notes/foo.notes
+          =~/xiki/foo.xiki
             | > Bar
             | Some notes about bar.
             |
@@ -26,15 +26,15 @@ class Xiki::Menu::Notes
             | Some notes about baz.
 
           > 2. When you expand, it will look like this
-          =foo/
-            =notes/
+          = foo/
+            = notes/
               > Bar
               > Baz
 
           | Then you can expand the headings and edit inline.
       - keys/
         > open+menu
-        | Prompts for a key or two, and opens the matching note from ~/xiki/notes/
+        | Prompts for a key or two, and opens the matching note from ~/xiki/
         > as+update
         | Save the note instead of navigating to it
     - api/
@@ -71,80 +71,43 @@ class Xiki::Menu::Notes
 
     end
 
-
     # /, so list notes at top...
 
     if ! items
-      # Or navigate there if open+
       if task == ["source"]
-        Launcher.open "~/xiki/notes/"
+        Launcher.open "~/xiki/\n  + **\.xiki$/"
         return ""
       end
-      return Xiki["~/xiki/notes//"]
+
+      # In future, should probably look in all XIKI_PATH dirs > borrow from > =all
+
+
+      # List .xiki files in ~/xiki/ sorted by date...
+
+      files = FileTree.files_in_dir(File.expand_path("~/xiki/"), :date_sort=>1)[1]
+
+      files.each{|o| o.sub! /.+\//, ''}
+
+      return files.select{|o| o =~ /^\w.*\.xiki$/}.map{|o| "+ #{o.sub(/\.xiki$/, '').gsub(/_/, ' ')}/\n"}.join('')
+
     end
 
     # /foo and output output from MENU, so just show it...
 
     return output if output
 
-    # /foo, so delegate to ~/notes dir...
+    # /foo, so delegate to ~/commands dir...
 
-    # Just pass prefix
-    txt = Xiki["~/xiki/notes//", items, options.select{|key, value| [:prefix, :task].include?(key)}]
+    name = items.slice!(0)
+    path = name.gsub(' ', '_')
+
+    # Call .drill directly
+
+    txt = Notes.drill path, *items, options
+
+    Ol "items", items   # => []
 
     return txt if txt
-
-    # Nothing returned, so show default text...
-
-    # items
-    #   When show initial => ["test2"]
-    #   When create file => ["test2", "> Sample heading", ": These notes don't exist yet."]
-
-    if items.length == 1
-      return "
-        > Sample heading
-          | These notes don't exist yet.
-          | Edit this text and type Ctrl+T to create
-          | (or type Ctrl+T and select 'clear').
-          |
-        "
-    end
-
-    # ~, so show option
-
-    return "~ create\n~ clear" if !task || task == []
-
-    if items.length > 1
-
-      # ~ create, so create the file for the first time!
-
-      if task == ["create"]
-
-        name, heading, content = items
-        return "=beg/siblings/" if content !~ /\n/
-
-        name.gsub!(/ /, '_')
-        file = File.expand_path "~/xiki/notes/#{name}.notes"
-        content = Tree.unquote content
-        File.open(file, "w") { |f| f << "#{heading}\n#{content}" }
-
-        return "<! created!"
-      end
-
-      if task == ["clear"]
-        # return the code that clears
-        return "=replace/siblings/\n  | hi\n  |"
-      end
-
-    end
-
-    # File doesn't exist, so allow creating via task...
-
-    #     "
-    #     - Note doesn't exist yet!
-    #     | Type something here and do as+update
-    #     | to create it.
-    #     "
 
   end
 

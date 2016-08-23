@@ -29,6 +29,6 @@ module Xiki::Menu
         Firefox.reload :
         $el.browse_url("file:///tmp/tmp.html")
 
-      "<! Loaded in browser!"
+      "<* Loaded in browser!"
     end
 end; end

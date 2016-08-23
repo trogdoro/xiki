@@ -9,8 +9,8 @@ module Xiki::Menu
           - .uninstall/
       - .environment/
       - upgrade rubygems/
-        =% gem update --system
-        =% gem update --system 1.8.24
+        = % gem update --system
+        = % gem update --system 1.8.24
       "
 
     def self.menu_after output, *args
@@ -56,11 +56,11 @@ module Xiki::Menu
       entries = Dir.new(dir).entries
       file = entries.find{|o| o =~ /^readme/i}
 
-      return "| No readme file found in\n=#{dir}" if ! file
+      return "| No readme file found in\n= #{dir}" if ! file
 
       path = "#{dir}#{file}"
 
-      Tree << "=#{path}"
+      Tree << "= #{path}"
 
       Launcher.enter_all
       ""
@@ -69,7 +69,7 @@ module Xiki::Menu
     def self.source name, version
       dir = Gem.gem_dir name
 
-      "=#{dir}"
+      "= #{dir}"
     end
 
     def self.uninstall name, version

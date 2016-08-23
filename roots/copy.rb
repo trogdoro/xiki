@@ -1,1 +1,1 @@
-Xiki["rename", options.merge(:copy=>1)]
+Xiki["`rename/", options.merge(:copy=>1)]

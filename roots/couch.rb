@@ -4,7 +4,7 @@ require 'httparty'
 
 module Xiki
   class Couch
-    @@server = 'http://localhost:5984'
+    @@server = 'http://memorize.loc:5984'
 
     MENU = "
       - .start/
@@ -17,7 +17,7 @@ module Xiki
 
     def self.start
       buffer = '*couchdb'
-      return "<! *couchdb already open!" if View.buffer_open? buffer
+      return "<* *couchdb already open!" if View.buffer_open? buffer
 
       Shell.run('sudo couchdb', :buffer=>buffer)
     end
@@ -157,7 +157,7 @@ module Xiki
       doc = doc.to_json
       # Update it
       res = HTTParty.put "#{@@server}/#{db}/#{key}", :body=>doc
-      "<! updated!"
+      "<* updated!"
     end
 
     def self.views db
@@ -178,7 +178,7 @@ module Xiki
 
     def self.create db
       RestTree.request 'PUT', "#{@@server}/#{db}", nil
-      "<! created!"
+      "<* created!"
     end
 
     def self.crud db

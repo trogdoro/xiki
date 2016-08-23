@@ -1,41 +1,28 @@
 module Xiki
   class Dom
 
-    MENU = "
-      - .styles/
-      - docs/
-        - Summary/
-          | Navigate and update the web page currently displayed in your
-          | web browser.
-        - Browse/
-          =dom/
-        - Search text/
-          =dom/##Some text/
-        - Id's and styles/
-          =dom/#my_id/
-          =dom/.my_style/
-        - Show all id's/
-          =dom/ids/
-        - Show all styles/
-          =dom/styles/
-      "
+    def self.menu *args
 
-    def self.menu_before *args
+      # MENU string couldn't handle it, so delegate to dom path...
 
-      return nil if args.any?   # Return if there are args
+      task = yield[:task]
+      return "* html\n* tidy\n* element\n* attributes\n* all divs" if task == []
 
-      # If no args, delegate to dom path
+      options = {}
 
-      result = self.dom *args
-      result + "\n- docs/"
-    end
+      options[:tidy_html] = 1 if task && task == ["tidy"]
+      options[:element_html] = 1 if task && task == ["element"]
+      options[:attributes] = 1 if task && task == ["attributes"]
 
-    def self.menu_after output, *args
-      return nil if output
+      options[:html] = 1 if task && ["html", "all divs"].member?(task[0])
 
-      # If menu couldn't handle it, delegate to dom path
+      txt = self.dom *args, options
 
-      self.dom *args
+      if task == ["all divs"]
+        txt = txt.split("\n").grep(/<div/).join("\n")
+      end
+
+      txt
     end
 
     def self.dom *args
@@ -52,7 +39,6 @@ module Xiki
       raw_args = args.to_s.sub /\/$/, ''
 
       save = args.pop if args.last =~ /\n/
-Ol "save", save
 
       args.each do |o|
         o.sub! /\/$/, ''
@@ -79,15 +65,31 @@ Ol "save", save
         var kids = [];
         `.unindent
 
-Ol()
       # dom/foo/, so blink and show children...
+
+      if options[:html]
+        result = Tree.pipe Browser.js("return $(\"#{args}\").html()")
+        return result
+      elsif options[:tidy_html]
+        result = Browser.js("return $(\"#{args}\").html()")
+        result = Html.tidy result
+        return Tree.pipe result
+      elsif options[:element_html]
+        result = Browser.js("return $(\"#{args}\")[0].outerHTML")
+        result = Html.tidy result
+        return Tree.pipe result
+      elsif options[:attributes]
+        result = Browser.js("return $(\"#{args}\")[0].outerHTML")
+        result = Html.tidy result, :wrap_attributes=>1
+        return Tree.pipe result
+      end
 
       if ! save
 
         # Otherwise, just blink and show children...
-Ol()
+
         if prefix == :-
-          Firefox.exec "$(\"#{args}\").blink()"
+          Browser.js "$(\"#{args}\").blink()"
           return
         end
         if prefix != "all" && prefix != "outline"
@@ -102,20 +104,23 @@ Ol()
         end
 
         js << %`
-          if(kids.length)
-            String(kids);
-          else
-            "html::"+$("#{args}").html();
+          if(kids.length){
+            // return "yes";
+            return String(kids);
+          }else{
+            // return "no";
+            return "html::"+$("#{args}").html();
+          }
           `.unindent
 
-        kids = Firefox.exec js  #, :jquery=>1
+        kids = Browser.js js  #, :jquery=>1
 
         kids = kids.sub(/\A"/, '').sub(/"\z/, '') if kids =~ /\A"/
         if kids =~ /\Ahtml::/
           kids = kids.sub(/\Ahtml::/, '').strip
           return prefix == "all" ?
             Tree.quote(kids) :
-            self.tidy(kids, raw_args)
+            Html.tidy(kids, :tag=>raw_args).snippet
         end
 
         kids = kids.split ','
@@ -137,17 +142,8 @@ Ol()
 
       # dom/foo/| quoted, so save to page...
 
-    #       if save
-Ol["save > get from normal menu!"]
-#Ol "save", save
-
-Ol.a save
-
-      #       save = Tree.siblings.map{|i| "#{i.gsub(/^\| /, '')}\n"}.join('')
       save.gsub! "\n", "\\n"
       save.gsub! '"', '\\"'
-
-Ol.a save
 
       js << %`
         var e = $(\"#{args}\");
@@ -163,23 +159,16 @@ Ol.a save
           `.unindent
       end
 
-
-
-Ol["Re-enable!"]
-# Ol.a js
-      Firefox.exec js
+      Browser.js js
       Effects.glow :fade_in=>1
-      #       Effects.glow :fade_out=>1
+
       ""
-      #       return
-
-    #       end
-
 
     end
 
 
     def self.search txt=nil
+
       if txt.nil?
         return View.prompt "Enter a string to search for on the page"
       end
@@ -197,48 +186,12 @@ Ol["Re-enable!"]
           if(prev_count > 0) result += ':'+(prev_count+1);
           result += '/';
         })
-        result;
+        return result;
         `.unindent
 
-      result = Firefox.exec js  #, :jquery=>1
+      result = Browser.js js  #, :jquery=>1
 
-      result.sub "html/", "- @dom/"
-    end
-
-
-    def self.tidy html, tag=nil
-
-      File.open("/tmp/tidy.html", "w") { |f| f << html }
-
-      errors = `tidy --indent-spaces 2 --tidy-mark 0 --force-output 1 -i -wrap 0 -o /tmp/tidy.html.out /tmp/tidy.html`
-      html = IO.read("/tmp/tidy.html.out")
-
-      html.gsub! /\n\n+/, "\n"
-
-      if tag == ""   # It's the whole thing, do nothing
-      elsif tag == "head"
-        html.sub! /.+?<head>\n/m, ''
-        html.sub! /^<\/head>\n.+/m, ''
-      else
-        html.sub! /.+?<body>\n/m, ''
-        html.sub! /^<\/body>\n.+/m, ''
-      end
-
-      html.gsub!(/ +$/, '')
-      html.gsub! /^  /, '' unless html =~ /^</
-      html.gsub! /^/, '| '
-      html
-
-        # Try Nokogiri and xsl - Fucking dies part-way through
-        #       return Nokogiri::XML(kids).human.sub(/\A<\?.+\n\n/, '').gsub(/^/, '| ')
-        #       return Nokogiri::XML("<foo>#{kids}</foo>").human.gsub(/^/, '| ')
-        #       return Nokogiri::XML(kids).human.gsub(/^/, '| ')
-
-        # Try REXML (gives errors)
-        #       doc = REXML::Document.new("<foo>#{kids}</foo>")
-        #       out = StringIO.new; doc.write( out, 2 )
-        #       return out.string
-
+      result.sub "html/", "= dom/"
     end
 
   end

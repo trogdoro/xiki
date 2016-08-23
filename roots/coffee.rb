@@ -1,6 +1,6 @@
 # Handle tasks
 
-return "~ compile" if task == []
+return "* compile" if task == []
 if task == ["compile"]
   return Tree.quote Shell.command "coffee -c --stdio", :stdin=>args[0]
 end

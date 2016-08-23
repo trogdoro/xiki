@@ -14,7 +14,7 @@ class Web
 
     if i = path.index("http:")
       url = path[i..-1].join('/')
-      return Xiki["http/#{url}"]
+      return Xiki["`http/#{url}"]
     end
 
     nil
@@ -22,15 +22,11 @@ class Web
 
   def self.start *url
 
-Ol["!"]
     return if url.any?   # .menu_after will take care of going to url
 
     #     status = Shell.sync "ruby -rubygems sinatra_control.rb start", :dir=>"#{Xiki.dir}misc/www/xiki_web_server.rb"
-Ol "#{Xiki.dir}misc/www/"   # => "/projects/xiki/misc/www/"
-Ol Shell.sync "which ruby"   # => "/Users/craig/.rbenv/shims/ruby\n"
-Ol Shell.sync "ruby -v"   # => "ruby 1.9.3p327 (2012-11-10 revision 37606) [x86_64-darwin12.5.0]\n"
+
     status = Shell.sync "ruby -rubygems sinatra_control.rb start", :dir=>"#{Xiki.dir}misc/www/"
-Ol "status", status
 
     # If not one of the 2 statuses we expect, error out...
 
@@ -79,7 +75,7 @@ Ol "status", status
   def self.reload
     HTTParty.get("http://localhost:8163/_reload") rescue :exception
     Browser.reload
-    "<! reloaded!"
+    "<* reloaded!"
   end
 
 end

@@ -1,14 +1,23 @@
 class Calendar
+
   def self.menu month=nil
-    Xiki.dont_search
-    return "- jan/\n- feb/\n- mar/\n- apr/\n- may/\n- jun/\n- jul/\n- aug/\n- sep/\n- oct/\n- nov/\n- dec/" if month == "year"
+    options = yield
+    task = options[:task]
+
+    # Handle tasks...
+
+    return "* year" if options[:task] == []
+
+    if options[:task] == ["year"]
+      return "- jan/\n- feb/\n- mar/\n- apr/\n- may/\n- jun/\n- jul/\n- aug/\n- sep/\n- oct/\n- nov/\n- dec/"
+    end
 
     now = Time.now
     no_month = month.nil?   # Remember whether there was no month
     month ||= now.month   # If no month, assume current
 
     txt = self.month month, now.year
-    txt = "- #{now.strftime("%b").downcase}/\n#{txt.gsub /^/, '  '}\n<= year/" if no_month   # Add more options
+    txt = "^ options\n- #{now.strftime("%b").downcase}/\n#{txt.gsub /^/, '  '}" if no_month   # Add more options
     txt
   end
 

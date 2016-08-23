@@ -109,7 +109,7 @@ Ol["!"]
 
       Shell.sync "t set active #{name}"
 
-      "<! made it active!"
+      "<* made it active!"
 
     end
 

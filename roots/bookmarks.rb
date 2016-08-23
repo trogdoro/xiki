@@ -1,4 +1,4 @@
-dir = File.expand_path '~/xiki/bookmarks'
+dir = File.expand_path '~/.xiki/bookmarks'
 
 # /, so read in dir, but order by date...
 
@@ -25,19 +25,19 @@ end
 file_path = args[1] ? args[1].sub(/^: /, '') : nil
 
 if options[:task] == []
-  txt = "~ source\n~ delete bookmark\n~ move to top"
-  txt << "\n~ exit and cd" if file_path && File.directory?(file_path)
+  txt = "* source\n* delete bookmark\n* to top"
+  txt << "\n* exit and cd" if file_path && File.directory?(file_path)
   return txt
 end
 
 if options[:task] == ["source"]
-  file = Bookmarks[":xh/bookmarks/#{args[0]}.notes"]
+  file = File.expand_path("~/.xiki/bookmarks/#{args[0]}.xiki")
 
   if ! File.exists? file
     options[:no_slash] = 1
     return "
       | This bookmark is defined in bookmarks.rb
-      =:xiki/lib/xiki/core/bookmarks.rb
+      =^xiki/lib/xiki/core/bookmarks.rb
         : @@bookmarks_required = {
         : @@bookmarks_optional = {
       "
@@ -52,19 +52,28 @@ elsif options[:task] == ["exit and cd"]
   return nil
 
 elsif options[:task] == ["delete bookmark"]
-  file = Bookmarks[":xh/bookmarks/#{args[0]}.notes"]
+  file = File.expand_path("~/.xiki/bookmarks/#{args[0]}.xiki")
   FileUtils.rm file
-  return "<! deleted"
+  return "<* - deleted"
 
-elsif options[:task] == ["move to top"]
-  file = Bookmarks[":xh/bookmarks/#{args[0]}.notes"]
-  FileUtils.touch file
-  return "<! will be at top"
+elsif options[:task] == ["to top"]
+  file = File.expand_path("~/.xiki/bookmarks/#{args[0]}.xiki")
+
+  if File.exists? file
+    FileUtils.touch file
+  else
+    # File doesn't exist > must be defined in code, so get path
+    path = Bookmarks["^#{args[0]}"]
+    # Make new bookmark
+    Bookmarks.set args[0], :file=>path
+  end
+
+  return "<* - will be at top next time"
 
 end
 
 # /foo, so jump to bookmark...
 
-View.open ":#{args[0]}"
+View.open "^#{args[0]}"
 
 ""

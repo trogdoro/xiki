@@ -44,9 +44,9 @@ module Xiki
       # Only do if there is a conf - fail silently if no conf!"]
 
       connect_options = {
-        host: @@conf["host"],
-        port: @@conf["port"],
-        db: @@conf["default database"],
+        host: @@conf["host"].strip,
+        port: @@conf["port"].strip,
+        db: @@conf["default database"].strip,
       }
 
       if auth_key = @@conf["auth key"]
@@ -126,7 +126,7 @@ module Xiki
         # If "create it", create table
         if table == "create it"
           r.db_create(database || @@conf["db"]).run
-          return "<! created mate!"
+          return "<* created mate!"
         end
 
 
@@ -150,8 +150,8 @@ module Xiki
 
         if task = options[:task]
           return "
-            ~ delete
-            ~ duplicate
+            * delete
+            * duplicate
             " if task == []
         end
 
@@ -159,7 +159,7 @@ module Xiki
 
         if key == "create it"
           r(database).table_create(table).run
-          return "<! created!"
+          return "<* created!"
         end
 
         if task == ["delete"] || options[:prefix] == "delete"   # If delete, kill it
@@ -196,7 +196,7 @@ module Xiki
 
       result = r(database).table(table).insert(doc, conflict:"replace").run
 
-      "<! saved!"
+      "<* - saved!"
 
     end
 

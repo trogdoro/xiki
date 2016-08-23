@@ -8,38 +8,30 @@ module Xiki::Menu
         return "<? Type a search string"
       end
 
-      # Words not quoted, so grab siblings (if it's not on the same line)...
+      # If multiple args, they were slash-delimited
 
-      txt = args.join("/").strip
+      txt = args.length > 1 ?
+        args.join("/") : args[0]
 
-      if txt !~ /\n/ && txt !~ /^:/ && Line !~ /google\//
+      if txt =~ /\n/
+
+        # Multi-line, so convert to single line...
+
+        txt.gsub!("\n", " ")
+
+      elsif txt =~ /^:/
+        txt.sub! /^: /, ''
+
+      elsif Line !~ /google\//
+
+        # Words not quoted (and not single "google/foo" line) so grab siblings...
+
         txt = Tree.siblings.join(" ")
-Ol "txt", txt
+
       end
 
+      Xiki::Google.search txt, :via_os=>(Keys.prefix_u ? nil : 1)
 
-
-      txt.sub! /^: /, ''
-      txt.gsub! "\n", ' '
-      txt = CGI.escape txt
-
-      url = "http://www.google.com/search?q=#{txt}"
-
-      Keys.prefix_u ?
-        Browser.url(url):
-        $el.browse_url(url)
-      nil
-    end
-
-    def self.search txt
-      txt = CGI.escape txt
-      Browser.url "http://www.google.com/search?q=#{txt}"
-      nil
-    end
-
-    def self.maps txt
-      txt = CGI.escape txt
-      Browser.url "http://maps.google.com/maps?q=#{txt}"
       nil
     end
 

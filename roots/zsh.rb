@@ -10,7 +10,7 @@ end
 
 # tasks+, so show items
 
-return "~ exit and run" if task == []
+return "* exit and run" if task == []
 
 return DiffLog.quit_and_run args[0] if task == ["exit and run"]
 

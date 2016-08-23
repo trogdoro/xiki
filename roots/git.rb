@@ -32,6 +32,7 @@ module Xiki::Menu
       "
 
     def self.menu_before *args
+
       return if ['docs', 'do push'].member?(args[0])
 
       options = yield
@@ -47,10 +48,9 @@ module Xiki::Menu
         return FileTree.suggest_mkdir dir
       end
 
-      branch = Xiki::Git.branch_name dir
+      branch = Xiki::Git.branch_name dir   #> |||
 
       # If not a repo, suggest creating one...
-
       if args[0] != "setup" && branch.nil?
         return "| Not a git repository.  Create a new one here?\n- setup/create/"
       end
@@ -127,7 +127,7 @@ module Xiki::Menu
 
         task = options[:task]
 
-        return "~ add\n~ add multiple\n~ remove\n~ unadd\n~ revert" if task == []
+        return "* add\n* add multiple\n* remove\n* unadd\n* revert" if task == []
         return self.tasks_item task, file, dir if task
 
         # "modified:", so show diff
@@ -187,7 +187,7 @@ module Xiki::Menu
         command = "git add \"#{file}\""
         txt = Shell.sync command, :dir=>dir
         return Tree.quote(txt) if txt.any?
-        return "<! added!"
+        return "<* added!"
       end
 
       if task == ["add multiple"]
@@ -200,19 +200,19 @@ module Xiki::Menu
       if task == ["remove"]
         command = "git rm -r \"#{file}\""
         txt = Shell.sync command, :dir=>dir
-        return "<! removed!"
+        return "<* removed!"
       end
 
       if task == ["unadd"]
         command = "git reset \"#{file}\""
         txt = Shell.sync command, :dir=>dir
-        return "<! it was reset!"
+        return "<* it was reset!"
       end
 
       if task == ["revert"]
         command = "git checkout \"#{file}\""
         txt = Shell.sync command, :dir=>dir
-        return "<! file reverted!"
+        return "<* file reverted!"
       end
 
     end
@@ -287,7 +287,7 @@ module Xiki::Menu
 
       txt = Shell.sync command, :dir=>dir
       return Tree.quote(txt) if txt.any?
-      "<! added!"
+      "<* added!"
     end
 
     def self.commit message=nil
@@ -376,7 +376,7 @@ module Xiki::Menu
 
       if rev.nil?
 
-        command = "git log -1000 --oneline"
+        command = "git log --follow -1000 --oneline"
         command << " '#{relative}'" if relative
         txt = Shell.command command, :dir=>toplevel
 
@@ -669,7 +669,7 @@ module Xiki::Menu
       siblings = self.remove_options siblings
 
       unless siblings.any?   # Error if no siblings
-        return "<! Provide some files (on lines next to this menu, with no blank lines, and no untracked files)!"
+        return "<* Provide some files (on lines next to this menu, with no blank lines, and no untracked files)!"
       end
 
       siblings = siblings.map{|o| "\"#{o}\""}.join(" ")
@@ -694,7 +694,7 @@ module Xiki::Menu
       command = "git reset #{siblings.join(' ')}"
       txt = Shell.sync command, :dir=>dir
       return Tree.quote txt if txt.any?
-      "<! unadded!"
+      "<* unadded!"
     end
 
     def self.revert
@@ -710,7 +710,7 @@ module Xiki::Menu
       command = "git checkout #{siblings.join(' ')}"
       txt = Shell.sync command, :dir=>dir
       return Tree.quote txt if txt.any?
-      "<! reverted!"
+      "<* reverted!"
     end
 
     def self.remove
@@ -726,7 +726,7 @@ module Xiki::Menu
       command = "git rm #{siblings.map{|o| "\"#{o}\""}.join(' ')}"   # "
       txt = Shell.sync command, :dir=>dir
       return Tree.quote txt if txt.any?
-      "<! deleted!"
+      "<* deleted!"
     end
 
     def self.git_diff_options

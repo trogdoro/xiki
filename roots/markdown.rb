@@ -5,7 +5,7 @@ class Markdown
   # include Xiki
 
   def self.render txt
-    require "#{Xiki.dir}commands/html"
+    require "#{Xiki.dir}roots/html"
 
     markdown = Redcarpet::Markdown.new(Redcarpet::Render::HTML, :autolink=>true, :space_after_headers=>true)
     html = markdown.render txt

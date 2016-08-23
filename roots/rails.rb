@@ -55,19 +55,13 @@ module Xiki
 
       dir = Tree.closest_dir yield[:ancestors]
 
+
+      return self.eval_in_app(path[0]) if path.length == 1 && path[0] =~ /\n/
+
       # Don't intercede if already rails app or trying to generate
-      # return nil if ["generate", "general"].member?(path[0]) || File.exists?("#{dir}/app")
       return nil if ["generate", "nest"].member?(path[0]) || File.exists?("#{dir}/app")
 
       # Not nested, so offer to nest...
-
-      dir = Shell.sync('pwd').strip if ! dir
-
-      # return "
-      #   > The 'rails' menu must be nested under a dir?
-      #   | Do it for you?
-      #   - nest/
-      # " if ! dir
 
       # Not a rails dir, so offer to nest under a dir...
 
@@ -76,6 +70,17 @@ module Xiki
         - generate/app/
         "
     end
+
+
+    def self.eval_in_app code
+
+      Ol "continue here!!"
+      # Call localhost:3000/xikidev > to eval the code in the app
+
+      txt = Rails.run_in_app code
+
+    end
+
 
     def self.rails_version
       "| #{`rails --version`}"
@@ -103,12 +108,12 @@ module Xiki
 
     def self.sqlite_console
       Shell.run "sqlite3 db/development.sqlite3", :dir=>self.dir(yield), :buffer=>"sqlite console", :dont_move=>1
-      "<! opened console in other view!"
+      "<* opened console in other view!"
     end
 
     def self.rails_console
       Shell.run "rails c", :dir=>self.dir(yield), :buffer=>"rails console", :dont_move=>1
-      "<! opened console in other view!"
+      "<* opened console in other view!"
     end
 
     def self.generate what, name=nil, detail=nil
@@ -144,7 +149,6 @@ module Xiki
         return examples if ! detail
         fields = Tree.txt.gsub("\n", ' ').strip
         Shell.run "rails g #{what} #{name} #{fields}", :dir=>dir, :dont_move=>1
-        Ol.a options
         dir = options[:ancestors][-1]
         return "
           | Generating #{what} in other view.  Now run the migrations:
@@ -185,14 +189,13 @@ module Xiki
       # If 'browse', just bring up in browser
       if args == ['browse']
         Firefox.url "http://localhost:#{port || 3000}/"
-        return "<! opened in browser!"
+        return "<* opened in browser!"
       end
 
       command = "rails s"
       command << " -p #{port}" if port
 
       Shell.run command, :dir=>self.dir(yield), :buffer=>"rails server", :dont_move=>1
-      #       Shell.run command, :dir=>self.dir(yield), :buffer=>"rails server"
 
       # Check whether it's already running
       "| Rails app was already running\n- browse/"
@@ -254,34 +257,36 @@ module Xiki
           `
       end
 
-Ol.a txt
+      # Tmp > Hard-coded
+      file = File.expand_path "/Users/craig/Dropbox/xikihub_rails/tmp/rails_run_tmp.txt"
 
-      File.open("/tmp/rails_run_tmp.txt", "w") { |f| f << txt }
-      response = HTTParty.get("http://localhost:3000/xikidev") rescue :exception
+      FileUtils.mkdir_p File.dirname(file)   # Create dir if it doesn't exist
+      File.open(file, "w") { |f| f << txt }
+
+      # Temp > Hard-coded > !!!!!!!
+      uri = URI("http://docker.loc/_xikidev")
+
+
+
+      response = Net::HTTP.get_response(uri)
 
       return "| The rails server doesn't appear to be running.  Start default server?\n=rails/start/" if response == :exception
 
       if response.response.is_a?(Net::HTTPNotFound)
 
-        #         # If migrations error, suggest running it
-        #         if txt =~ /<h2>Migrations are pending/
-        #           return "
-        #             > Migrations need to be run...
-        #             @#{self.running_dir}/
-        #               @rails/
-        #             "
-        #         end
+        return self.suggest_installing_dev_controller if response.body =~ /<h2>No route matches .+\/_xikidev/
 
-        return self.suggest_installing_plugin(options) if response.body =~ /<h2>No route matches .+\/xikidev/
+        # Todo > probably restore suggesting directly implanting the controller
+        # return self.suggest_installing_plugin(options) if response.body =~ /<h2>No route matches .+\/xikidev/
 
-        #         return response.body[/<h2>(.+)<\/h2>/]
+
         return response.body[/<h2>(.+)/, 1].sub(/<\/h2>.*/, '').gsub("&#39;", "'")
       end
 
       # Yaml data launched, so just pretend like it was saved?...
       # What about displaying errors?
 
-      return "<! saved!" if options[:yaml]
+      return "<* - saved!" if options[:yaml]
 
 
 
@@ -305,6 +310,7 @@ Ol.a txt
     end
 
     def self.running_dir
+      raise "Todo > port HTTParty call to built-in ruby call"
       HTTParty.get("http://localhost:3000/xikidev/dir").body rescue :exception
     end
 
@@ -323,6 +329,53 @@ Ol.a txt
         % bundle install
       `
     end
+
+
+    def self.jump_to_last_error app_root
+      app_root = Bookmarks[app_root]
+
+      txt = File.read("#{app_root}log/development.log")
+
+      errors = txt.split(/^[A-Za-z:]+(Error|MissingTemplate) /)
+      last_error = errors[-1]
+      file, line = last_error.match(/^  (\w.+?):(\d+)/)[1..2]
+
+      View.open "#{app_root}#{file}"
+      View.line = line
+      nil
+
+    end
+
+    def self.suggest_installing_dev_controller
+      %`
+        > You don't have the xiki dev controller installed
+        = ~/projects/your_rails_app/
+          - 1. Create the controller:
+          - app/controllers/
+            - xikidev_controller.rb
+              : class XikidevController < ApplicationController
+              :   def index
+              :
+              :     file = File.expand_path "~/.xiki/misc/tmp/rails_run_tmp.txt"
+              :
+              :     ip = request.remote_ip
+              :     return render(:text=>"Disabled unless development and called locally.") if ! Rails.env.development? || (ip != "127.0.0.1" && ip != "::1")
+              :     return render(:text=>"The file where the caller should have put the code to eval doesn't exist: "+file) if ! File.exists? file
+              :
+              :     code = File.read file
+              :     txt = instance_eval code, "/tmp/eval", 1
+              :
+              :     File.open(file, "w") { |f| f << "" }   # Remove code from temp location
+              :     render plain: txt
+              :
+              :   end
+              : end
+          - 2. Add a route:
+          - config/routes.rb
+            : get '/_xikidev' => 'xikidev#index'
+      `.unindent
+    end
+
 
   end
 end

@@ -50,7 +50,7 @@ class Rbenv
     # If ancestor dir set locally, if no parent dir set globally
 
     Shell.sync "rbenv #{global_or_local} #{version}", :dir=>(dir||"/tmp/")
-    global_or_local == "local" ? "<! created .ruby-version file!" : "<! updated ~/.rbenv/version!"
+    global_or_local == "local" ? "<* created .ruby-version file!" : "<* updated ~/.rbenv/version!"
 
   end
 

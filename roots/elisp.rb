@@ -1,6 +1,6 @@
 # ~ or ~ manual, so handle
 
-return "~ manual" if task == []
+return "* manual" if task == []
 if task == ["manual"]
   $el.info "elisp"
   return ""

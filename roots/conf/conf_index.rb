@@ -47,7 +47,7 @@ module Xiki::Menu
 
       menus = []
 
-      Xiki.menu_path_dirs.each do |path_dir|
+      Xiki.xiki_path_dirs.each do |path_dir|
 
         Dir["#{path_dir}/*"].each do |menu_dir|
           conf_path = "#{menu_dir}/default.conf"
@@ -57,7 +57,7 @@ module Xiki::Menu
         end
       end
 
-      Dir["#{Xiki.menu_path_custom_dir}/conf/*.conf"].each do |conf_file|
+      Dir["#{Xiki.xiki_path_custom_dir}/conf/*.conf"].each do |conf_file|
         menus << "+ #{File.basename(conf_file, ".*")}/"
       end
 

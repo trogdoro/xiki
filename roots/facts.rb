@@ -1,1 +1,1 @@
-Xiki[:memorize, args, options]
+Xiki["memorize", args, options]

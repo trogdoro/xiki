@@ -19,7 +19,7 @@ module Xiki
       options_result = Expander.expanders path
 
       if options_result[:menufied]
-        Menu.climb_sources options_result
+        Command.climb_sources options_result
       end
 
       options_propigate = options.dup
@@ -29,8 +29,6 @@ module Xiki
 
       txt = TextUtil.ap options_result
       txt = Tree.quote txt, :char=>"|"
-
-      txt << "\n<= menu steps/" if ! menu_steps   # if options_result[:menufied]   # Sources menu helps for menus
 
       txt
 

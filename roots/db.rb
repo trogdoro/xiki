@@ -1,4 +1,4 @@
-require "#{Xiki.dir}commands/couch.rb"
+require "#{Xiki.dir}roots/couch.rb"
 
 class Db
   def self.create db

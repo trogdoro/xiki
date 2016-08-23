@@ -7,7 +7,7 @@ module Menu
       end
 
       extension = View.extension
-      file = "#{Xiki.dir}misc/snippets/#{extension}.notes"
+      file = "#{Xiki.dir}misc/snippets/#{extension}.xiki"
 
       prefix = Keys.prefix
 

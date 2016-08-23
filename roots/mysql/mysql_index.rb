@@ -60,7 +60,7 @@ module Xiki::Menu
 
     def self.install
 
-      if Environment.os == :unix
+      if Environment.os == "linix"
         "
         > Installing Mysql
         =% sudo apt-get install mysql-server
@@ -84,7 +84,7 @@ module Xiki::Menu
 
     def self.start
       Shell.sync "mysql.server start", :dir=>"/tmp/"
-      "<! started!"
+      "<* started!"
     end
 
     def self.conf options
@@ -154,14 +154,14 @@ module Xiki::Menu
         sql = "select * from #{table} limit 400"
         out = self.run(options, db, sql)
 
-        out = "No records, create one?\n#{self.dummy_row(db, table)}" if out.blank?
+        out = "No records, create one?\n#{self.dummy_row(options, db, table)}" if out.blank?
         return Tree.quote out #.gsub(/^/, '| ')
       end
 
       # /db/table/row, so save...
 
       self.save options, db, table, row
-      "<! saved record!"
+      "<* saved record!"
 
     end
 
@@ -184,7 +184,7 @@ module Xiki::Menu
 
       self.save db, table, row
 
-      "<! save!"
+      "<* save!"
     end
 
     # Returns key:value string to show record to the user
@@ -195,8 +195,8 @@ module Xiki::Menu
       hash
     end
 
-    def self.dummy_row db=nil, table=nil
-      fields = self.fields db, table
+    def self.dummy_row options, db=nil, table=nil
+      fields = self.fields options, db, table
       examples = {
         "int"=>"1",
         "varchar"=>"foo",
@@ -223,7 +223,7 @@ module Xiki::Menu
 
       if what == "db"
         txt = Shell.run "mysqladmin -u root create #{db}", :sync=>true
-        return "<! created db!"
+        return "<* created db!"
       end
 
       if name.nil?
@@ -247,27 +247,12 @@ module Xiki::Menu
           );
           "
 
+      options = yield
+      out = self.run(options, db, txt)
 
-return "tmp"
-      out = self.run(db, txt)
-
-      "<! created table!"
+      "<* created table!"
     end
 
-    #   def self.drop what, name=nil
-    #     if name.nil?
-    #       return what == "db" ? self.dbs : self.tables
-    #     end
-
-    #     if what == "db"
-    #       txt = Shell.run "mysqladmin -u root drop #{name}" #, :sync=>true
-    #       return
-    #     end
-
-    #     out = self.run(@default_db, "drop table #{name}")
-
-    #     "<! dropped table!"
-    #   end
 
     def self.run options, db, sql
 
@@ -284,10 +269,10 @@ return "tmp"
       command = "mysql #{user} #{db} #{password} #{host} < /tmp/tmp.sql"
       out = Shell.command command
 
-      raise "> Mysql doesn't appear to be installed.  Install it?\n=mysql/setup/install/" if out == "sh: 1: mysql: not found\n"
-      raise "> Mysql doesn't appear to be running.  Start it?\n=mysql/setup/start/" if out =~ /^ERROR.+Can't connect/
-      raise "| Database '#{db}' doesn't exist.  Create it?\n=mysql/setup/db/create/#{$1}/" if out =~ /^ERROR.+Unknown database '(.+)'/
-      raise "| Table doesn't exist.  Create it?\n=mysql/setup/table/create/#{db}/#{$1}/" if out =~ /^ERROR.+Table '.+\.(.+)' doesn't exist/
+      raise "> Mysql doesn't appear to be installed.  Install it?\n= mysql/setup/install/" if out == "sh: 1: mysql: not found\n"
+      raise "> Mysql doesn't appear to be running.  Start it?\n= mysql/setup/start/" if out =~ /^ERROR.+Can't connect/
+      raise "| Database '#{db}' doesn't exist.  Create it?\n= mysql/setup/db/create/#{$1}/" if out =~ /^ERROR.+Unknown database '(.+)'/
+      raise "| Table doesn't exist.  Create it?\n= mysql/setup/table/create/#{db}/#{$1}/" if out =~ /^ERROR.+Table '.+\.(.+)' doesn't exist/
       raise Tree.quote(out) if out =~ /^ERROR/
 
       out
@@ -332,7 +317,7 @@ return "tmp"
 
       self.save default_db, table, row
 
-      "<! saved!"
+      "<* - saved!"
     end
 
     # Launcher.add "columns" do |path|
@@ -344,13 +329,15 @@ return "tmp"
     # end
 
     def self.def_patterns
-      Xiki.def(/\A(select [^\/]+ from |delete from |update |show table |create table |describe table |insert into )/) do |path, options|
+
+      Xiki.def(/\A(select [^\/]+ from |delete from |show table |create table |describe table |insert into )/) do |path, options|
+
+        # Removed for now > was interjecting when
+        #   - command named "update xikihub/"
+
         Xiki["mysql/#{options[:path]}"]
       end
 
-      #       Xiki.def(/^delete from /) do |path, options|
-      #         Xiki["mysql/#{options[:path]}"]
-      #       end
     end
 
 end; end

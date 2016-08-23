@@ -1,1 +1,0 @@
-Xiki['mysql/tables', args]

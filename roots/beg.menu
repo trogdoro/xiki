@@ -58,7 +58,7 @@
       | expand one of
       | these lines
   - example/
-    =~/xiki/commands/beggar.rb
+    =~/.xiki/roots/beggar.rb
       | # Beg for multiple lines when only 1 given (check for a linebreak)
       | return "=beg/quoted/" if args[0] !~ /\n/
       |
@@ -72,7 +72,7 @@
   | invoked again with siblings passed, except for those separated
   | by blank lines.
   - example/
-    =~/xiki/commands/beggar.rb
+    =~/.xiki/roots/beggar.rb
       | # Beg for multiple lines when only 1 given (check for a linebreak)
       | return "=beg/neighbors/" if args[0] !~ /\n/
       |
@@ -87,7 +87,7 @@
   | invoked again, with all the siblings passed in as the last
   | argument, including ones separated by single blank lines.
   - example/
-    =~/xiki/commands/beggar.rb
+    =~/.xiki/roots/beggar.rb
       | # Beg for multiple lines when only 1 given (check for a linebreak)
       | return "=beg/siblings/" if args[0] !~ /\n/
       |

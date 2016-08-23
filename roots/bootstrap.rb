@@ -22,24 +22,24 @@ module Xiki
         - examples/
           - layouts/
             - hello world/
-              - =bootstrap/
+              = bootstrap/
                 > A heading
                 You can just use a greater than sign for a heading.
             - columns/
-              - =bootstrap/
+              = bootstrap/
                 > Hi
                 Since these two sections are right next to each other, they'll show up side by side (as columns).
                 > Snails
                 Cool swirly shell but creepy antennae things.
             - hero unit/
-              - =bootstrap/
+              = bootstrap/
                 - hero/
                   h1/Sharks
                   p/They have fins and other cool stuff.
                 > Colors?
                 Each time you generate the page, it uses a different background color for the hero, just to give you ideas.  Under "more control" there's an example of using a style to set it to a fixed color or gradient.
             - rows/
-              - =bootstrap/
+              = bootstrap/
                 > Snails
                 Cool swirly shell but creepy antennae things.
                 > random
@@ -48,20 +48,20 @@ module Xiki
                 > Another
                 This div is a underneath because of the blank line separating it.  If you removed the blank line, it would be a third column.
             - icons/
-              - =bootstrap/
+              = bootstrap/
                 > $ Snails
                 The "$" is replaced with a random icon.
                 When you have "Lorem..." or "Ipsum Dolor..." or something like that, it uses sample text.
                 > $ Sample text
                 Lorem...
             - html/
-              - =bootstrap/
+              = bootstrap/
                 > You can put html pretty much anywhere
                 <pre>Here's me using <b>some</b> html.</pre>
                 <ul><li>aww</li><li>yea-uh</li></ul>
             - more control/
               - 2 columns/
-                - =bootstrap/
+                = bootstrap/
                   - project name/Sharks
                   - row/
                     - span5/
@@ -71,7 +71,7 @@ module Xiki
                       > random
                       ipsum dolor...
               - 3 columns/
-                - =bootstrap/
+                = bootstrap/
                   - project name/Sharks
                   - row/
                     - span3/
@@ -84,7 +84,7 @@ module Xiki
                       > random
                       dolor sit...
               - hero and icons/
-                - =bootstrap/
+                = bootstrap/
                   - project name/Sharks
                   - hero/
                     h1/Sharks
@@ -107,7 +107,7 @@ module Xiki
                       h2 icon/random
                       sit lorem...
               - with styled hero/
-                - =bootstrap/
+                = bootstrap/
                   - hero/
                     h1/Sharks
                     p/lorem...
@@ -121,7 +121,7 @@ module Xiki
                     |   border-radius: 20px;
                     | }
               - modified navbar/
-                - =bootstrap/
+                = bootstrap/
                   navbar/
                     | <img src="http://xiki.org/images/bootstrap_icon.png">
                     | <style>.navbar .container { padding: 1px 30px 0px; }</style>
@@ -129,7 +129,7 @@ module Xiki
                   p/sit lorem ipsum dolor...
           - components/
             - buttons/
-              - =bootstrap/
+              = bootstrap/
                 - h2/Buttons
                 - p/
                   <a class="btn" href="">Hi</a>
@@ -147,7 +147,7 @@ module Xiki
                   <a class="btn disabled" href="">Hi</a>
             - icons/
               - with headings/
-                - =bootstrap/
+                = bootstrap/
                   p/
                     - h3/random
                     - h2 icon/Info
@@ -181,7 +181,7 @@ module Xiki
                   <a class="btn btn-danger" href=""><i class="icon-music"></i> Music</a>
             - forms/
               - basics/
-                - =bootstrap/
+                = bootstrap/
                   | <form class="well">
                   |   <label>Label name</label>
                   |   <input type="text" class="span3" placeholder="Type something?">
@@ -192,13 +192,13 @@ module Xiki
                   |   <button type="submit" class="btn">Submit</button>
                   | </form>
               - search/
-                - =bootstrap/
+                = bootstrap/
                   | <form class="well form-search">
                   |   <input type="text" class="input-medium search-query">
                   |   <button type="submit" class="btn">Search</button>
                   | </form>
               - inline/
-                - =bootstrap/
+                = bootstrap/
                   | <form class="well form-inline">
                   |   <input type="text" class="input-small" placeholder="Email">
                   |   <input type="password" class="input-small" placeholder="Password">
@@ -208,7 +208,7 @@ module Xiki
                   |   <button type="submit" class="btn">Sign in</button>
                   | </form>
               - horizontal/
-                - =bootstrap/
+                = bootstrap/
                   | <form class="form-horizontal">
                   |   <fieldset>
                   |     <legend>Legend text</legend>
@@ -222,7 +222,7 @@ module Xiki
                   |   </fieldset>
                   | </form>
             - code/
-              - =bootstrap/
+              = bootstrap/
                 - pre/
                   | class Clam
                   |   def hi
@@ -231,7 +231,7 @@ module Xiki
                   | end
                 - p/Hey <code>you</code> there.
             - carousel/
-              - =bootstrap/
+              = bootstrap/
                 - <div id="myCarousel" class="carousel slide">
                   - <div class="carousel-inner">
                     <div class="active item">
@@ -309,7 +309,7 @@ module Xiki
         txt.gsub! /^ *\|-.*\n/, ''   # Delete |-... "comments"
 
         bootstrap = Bootstrap.new txt
-        bootstrap.to_html
+        bootstrap.to_html   #> |||
         bootstrap.wrap_html_page
       end
 
@@ -328,21 +328,107 @@ module Xiki
         "
       end
 
+      def self.simplified_render txt
+
+        snippet = txt.unindent
+
+        html = %`
+          <!DOCTYPE html>
+          <html lang="en">
+            <head>
+              <meta charset="utf-8">
+              <meta http-equiv="X-UA-Compatible" content="IE=edge">
+              <meta name="viewport" content="width=device-width, initial-scale=1">
+              <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+              <meta name="description" content="">
+              <meta name="author" content="">
+              <link rel="icon" href="../../favicon.ico">
+
+              <title>Bootstrap</title>
+
+              <!-- Bootstrap core CSS -->
+              <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+              <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+              <link href="../../assets/css/ie10-viewport-bug-workaround.css" rel="stylesheet">
+
+              <!-- Custom styles for this template -->
+              <link href="jumbotron.css" rel="stylesheet">
+
+              <!-- Just for debugging purposes. Don't actually copy these 2 lines! -->
+              <!--[if lt IE 9]><script src="../../assets/js/ie8-responsive-file-warning.js"></script><![endif]-->
+              <script src="../../assets/js/ie-emulation-modes-warning.js"></script>
+
+              <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+              <!--[if lt IE 9]>
+                <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
+                <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+              <![endif]-->
+
+
+              <style>
+                /* Move down content because we have a fixed navbar that is 50px tall */
+                body {
+                  padding-top: 50px;
+                  padding-bottom: 20px;
+                }
+              </style>
+
+            </head>
+
+            <body>
+
+              <nav class="navbar navbar-inverse navbar-fixed-top">
+                <div class="container">
+                  <div class="navbar-header">
+                    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                      <span class="sr-only">Toggle navigation</span>
+                      <span class="icon-bar"></span>
+                      <span class="icon-bar"></span>
+                      <span class="icon-bar"></span>
+                    </button>
+                    <a class="navbar-brand" href="#">Project name</a>
+                  </div>
+                </div>
+              </nav>
+
+#{snippet}
+
+              <!-- Bootstrap core JavaScript
+              ================================================== -->
+              <!-- Placed at the end of the document so the pages load faster -->
+              <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+              <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+              <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+              <script src="../../assets/js/ie10-viewport-bug-workaround.js"></script>
+            </body>
+          </html>
+
+        `
+
+
+        return Browser.html html
+
+
+
+      end
+
+
       def self.content *args
         prefix = Keys.prefix :clear=>1
 
         # If not expandable or open+, render in browser
 
         if prefix == "open" || Line !~ /\/$/ || Line =~ /^ *\|/
-          orig = Location.new
+          return self.simplified_render args[0]
 
-          Tree.to_root
+          Ol "Todo > clean up unused stuff below here!"
 
-          txt = Tree.children :cross_blank_lines=>1
-          orig.go
+          txt = args[0]
           txt = txt.unindent
+          txt = "<div class='container'>#{txt}</div>"
 
-          txt = self.render txt
+          txt = self.render txt   #> ||
           return Browser.html txt
         end
 
@@ -457,8 +543,6 @@ module Xiki
         # Remove |#... comments
         @txt.gsub! /^ *\|# .+\n/, ''
 
-        Bootstrap.expand_wiki_headings @txt
-
         # Wrap "- container/" around all, unless already a container
         if @txt !~ /^ *([+-] )?container\// && @txt !~ /^ *([+-] )?<div.+class=.container\b/
           @txt.gsub!(/^/, '  ')
@@ -467,7 +551,7 @@ module Xiki
 
         @project_name = project_name ? project_name[/\/(.+)/, 1] : "Welcome"
 
-        @html = Html.to_html_tags @txt   # Convert to html
+        @html = @txt   # Convert to html
 
         # Expand out tags into actual html...
 

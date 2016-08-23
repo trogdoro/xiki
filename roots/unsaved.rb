@@ -25,7 +25,7 @@ if args == []
       end
       diffs = diffs.sub(/^.+\n.+\n/, '').gsub /^  /, ''
 
-      txt << "=#{path}\n"
+      txt << "= #{path}\n"
       txt << diffs
 
     end

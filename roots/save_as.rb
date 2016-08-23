@@ -5,7 +5,7 @@ if args == []
   name = options[:save_as_name] || ""
   txt = "
     | #{name}
-    - session
+    - interaction
     - in current directory
     - more/
     "
@@ -23,7 +23,7 @@ end
 
 name = Tree.siblings[0].sub(/^\| /, '')
 
-dir = {"session"=>"~/xiki/sessions/", "more/note"=>"~/xiki/notes/", "more/command"=>"~/xiki/commands/"}[args.join('/')]
+dir = {"interaction"=>"~/.xiki/interactions/", "more/note"=>"~/xiki/", "more/command"=>"~/.xiki/roots/"}[args.join('/')]
 dir = File.expand_path dir
 
 FileUtils.mkdir_p dir   # Make sure it exists

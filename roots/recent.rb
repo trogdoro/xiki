@@ -1,6 +1,6 @@
 # Read list from the file
 
-file = File.expand_path "~/xiki/misc/logs/opened_files_log.notes"
+file = File.expand_path "~/.xiki/misc/logs/opened_files_log.xiki"
 txt = File.read file
 
 txt = txt.split("\n").reverse
@@ -12,7 +12,7 @@ txt = txt.split("\n").reverse
 #   - maybe use that instead?
 
 txt = txt.uniq.join("\n")
-txt.gsub!(/(.+)\/(.+)/, "=\\1/\n  - \\2")
+txt.gsub!(/(.+)\/(.+)/, "= \\1/\n  - \\2")
 
 txt
 

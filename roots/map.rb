@@ -14,14 +14,15 @@ url = "http://maps.google.com/maps?q=#{txt.gsub "\n", ", "}"
 # Task to just show the url
 
 if task = options[:task]
-  return "~ url" if task == []
+  return "* url" if task == []
   options[:no_slash] = 1
-  return "=#{url}"
+  return "= #{url}"
 end
 
 
 # /open (as+open), so just show url (google fucks it up in the browser)...
-return "=#{url}" if options[:prefix] == "open"
+return "= #{url}" if options[:prefix] == "open"
 
-Firefox.url url
+Browser.url url, :os_open=>1
+
 nil

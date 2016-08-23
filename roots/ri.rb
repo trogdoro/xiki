@@ -1,11 +1,11 @@
 class Ri
   MENU = %`
       > Type class or method here.  Examples...
-      | String
-      | File.new
-      | zip
-      | Array.[]
-      | compact!
+      : String
+      : File.new
+      : zip
+      : Array.[]
+      : compact!
       - .list/
       - docs/
         - summary/

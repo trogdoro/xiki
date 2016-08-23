@@ -1,4 +1,4 @@
-require "#{Xiki.dir}commands/dom"
+require "#{Xiki.dir}roots/dom"
 
 module Xiki
   class Css
@@ -32,7 +32,7 @@ module Xiki
           result;
           `.unindent
 
-        result = Firefox.exec js
+        result = Browser.js js
 
         # When dups, make foo,foo be foo,foo:2, etc.
         result = self.add_nth_to_dups result
@@ -60,8 +60,6 @@ module Xiki
           |   background-color: #eee;
           |   margin: 30px;
           | }
-          - list/
-          =notes/
           "
       end
 
@@ -76,11 +74,11 @@ module Xiki
     end
 
     def self.send_to_browser txt
-Ol["!!"]
       txt.gsub!("\n", '\n')
       txt.gsub!('"', '\"')
       code = "$('head').append(\"<style>#{txt}</style>\")"
-      Firefox.exec code
+      # Firefox.exec code
+      Browser.js code
       nil
     end
 

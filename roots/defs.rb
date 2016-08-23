@@ -67,13 +67,13 @@ class Defs
     # /, so list menus...
 
     if ! key
-      keys = Menu.defs.keys.sort.map{|o| "+ #{o}/"}
+      keys = Command.defs.keys.sort.map{|o| "+ #{o}/"}
       return keys.join "\n"
     end
 
     # /key/, so show def...
 
-    implementation = Menu.defs[key]
+    implementation = Command.defs[key]
 
     self.defs implementation, source
   end
@@ -128,8 +128,8 @@ class Defs
 
   def self.clear
     Pattern.defs.clear
-    Menu.defs.clear
-    "<! cleared!"
+    Command.defs.clear
+    "<* cleared!"
   end
 
 end

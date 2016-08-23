@@ -19,7 +19,7 @@ if ! item
   name = CGI.escape name
 
   Menu::Wikipedia.wp name
-  return "<!"
+  return "<*"
 end
 
 # /name/source/, so show source...

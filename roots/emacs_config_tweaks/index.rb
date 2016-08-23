@@ -31,6 +31,6 @@ class EmacsConfigTweaks
     #       FileUtils.cp "#{Xiki.dir}menu/emacs_config_tweaks/control-lock.el", emacs_d
     #     end
 
-    "<! added this to your .emacs!"
+    "<* added this to your .emacs!"
   end
 end

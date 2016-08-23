@@ -1,3 +1,12 @@
+
+return "
+  - Old > use instead:
+  = js
+    | return 1 + 2
+"
+
+
+
 Applescript.exec("Firefox", "activate") if Keys.prefix_u
 
 return "

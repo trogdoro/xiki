@@ -6,7 +6,7 @@ module Menu
       # /, so show list contacts in =email addresses...
 
       if args == []
-        txt = Xiki["email addresses"].gsub(/^> (.+)/, "- \\1/")
+        txt = Xiki["`email addresses"].gsub(/^> (.+)/, "- \\1/")
         txt << "\n=email addresses/\n=conf/\n"
         txt << "| Make this use =contacts instead\n=contacts/"
         return txt
@@ -25,7 +25,7 @@ module Menu
       email = args[0]
 
       if email !~ /@.+\./   # if not @, get the email address
-        email = Xiki["email addresses/> #{email}"]
+        email = Xiki["`email addresses/> #{email}"]
         email = Tree.unquote(email).strip
       end
 
@@ -88,13 +88,13 @@ module Menu
           View.flash "- generating new token from refresh_token!"
 
           txt = Shell.sync "python oauth2.py --client_id=#{conf['client id']} --client_secret=#{conf['client secret']} --refresh_token=#{refresh_token}",
-            :dir=>"#{Xiki.dir}commands/mail/"
+            :dir=>"#{Xiki.dir}roots/mail/"
 
           Ol.a txt
           access_token = txt[/Access Token: (.+)/, 1]
 
 
-          conf_file = File.expand_path "~/xiki/commands/conf/mail.conf"
+          conf_file = File.expand_path "~/.xiki/roots/conf/mail.conf"
           conf_txt = File.read conf_file
           conf_txt.sub! /^(- access token\/\n  ).+/, "\\1#{access_token}"
           File.open(conf_file, "w") { |f| f << conf_txt }
@@ -111,7 +111,7 @@ module Menu
         return "
           > Oauth access token needs to be updated
           | 1. Run this command:
-          =#{Xiki.dir}commands/mail/
+          =#{Xiki.dir}roots/mail/
             % python oauth2.py --generate_oauth2_token --client_id=#{conf['client id']} --client_secret=#{conf['client secret']}
           | 2. Save it in the conf:
           =conf/mail/
@@ -119,7 +119,7 @@ module Menu
 
       end
 
-      # "<! sent!"
+      # "<* sent!"
       "- sent"
 
     end

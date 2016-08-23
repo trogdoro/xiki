@@ -18,7 +18,7 @@ module Xiki
       txt.gsub! /^  /, ""
       txt.sub! "[\n  [", "[["
       txt = Tree.quote txt, :char=>"|"
-      txt << "\n<= menu steps/" if ! menu_steps   # if options_result[:menufied]   # Sources menu helps for menus
+
       txt
     end
 

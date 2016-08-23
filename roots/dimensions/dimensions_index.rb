@@ -5,7 +5,7 @@ class Dimensions
     options = yield
     prefix = options[:prefix]
 
-    conf_file = File.expand_path "~/xiki/commands/conf/dimensions.conf"
+    conf_file = File.expand_path "~/.xiki/roots/conf/dimensions.conf"
 
     options[:no_search] = 1 if args[0] == "current"
 

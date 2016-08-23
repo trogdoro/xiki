@@ -1,4 +1,4 @@
-module MENU
+module Menu
   class Applescript
 
     MENU = %`
@@ -42,7 +42,7 @@ module MENU
 
       result = Xiki::Applescript.run command, :app=>app
 
-      "<!"
+      "<*"
     end
 
   end

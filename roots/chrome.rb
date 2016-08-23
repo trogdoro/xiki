@@ -57,7 +57,7 @@ Ol()
 
     if txt =~ /\A</
       self.html txt
-      return "<! Opened in chrome!"
+      return "<* Opened in chrome!"
     end
 
     # /url, so render url...

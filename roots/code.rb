@@ -1,1 +1,1 @@
-Xiki["ruby", options]
+Xiki["ruby/", options]

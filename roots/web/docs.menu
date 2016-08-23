@@ -20,7 +20,7 @@
 - unfinished/
   - content to use soon/
     | By default (for convenience and security), most menus are disabled.
-    | This url displays xiki menus, which come from simple files found in ~/xiki/commands/.
+    | This url displays xiki menus, which come from simple files found in ~/.xiki/roots/.
     | > Which menus are enabled
     | - || web/
     | - || web/enable/

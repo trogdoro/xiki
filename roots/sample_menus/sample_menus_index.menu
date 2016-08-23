@@ -1,32 +1,34 @@
 > Xiki command doesn't exist yet
 : Create it?  Make your command by creating one of these...
 - text file/
-  =~/xiki/commands/<name>.txt
+  =~/.xiki/roots/<name>.txt
     : Change this text to something useful.
     : It will be the content of your menu.
 - menu items/
   : You can type out items literally.
   - just items/
-    =~/xiki/commands/<name>.menu
+    =~/.xiki/roots/<name>.menu
       : - sample item/
       :   - foo/
       : - pets/
       :   - dogs/
       :   - cats/
   - with wiki elements/
-    =~/xiki/commands/<name>.menu
+    =~/.xiki/roots/<name>.menu
       : > Heading
       : A Sentence.
       : - an item/
       :   > Heading under the item
       :   =http://google.com/
   - items or notes/
-    =~/xiki/commands/<name>.xiki
-      : - sample item/
-      :   - foo/
-      : - pets/
-      :   - dogs/
-      :   - cats/
+    =~/.xiki/roots/<name>.xiki
+    : > A heading
+    : Stuff under headings appears
+    : after you expand.
+    :
+    : > Another heading
+    : Expand here to save.
+    :
   - .directions/
   - creating inline/
     : As a shortcut for creating or updating a menu, you can just
@@ -42,7 +44,7 @@
     : prompted to save.  Or, with your cursor on the menu or one of
     : the items, type as+menu (meaning Control+A, Control+M).
 - notes/
-  =~/xiki/commands/<name>.notes
+  =~/.xiki/roots/<name>.notes
     : > A heading
     : Stuff under headings appears
     : after you expand.
@@ -52,12 +54,12 @@
     :
 - code/
   - script/
-    =~/xiki/commands/<name>.rb
+    =~/.xiki/roots/<name>.rb
       : # Change this code to something useful
       : a = "la"
       : a * 3
   - class/
-    =~/xiki/commands/<name>.rb
+    =~/.xiki/roots/<name>.rb
       : class <Name>
       :   def self.menu *args
       :     "
@@ -68,29 +70,29 @@
     - .directions/
   - other languages/
     - js/
-      =~/xiki/commands/<name>.js
+      =~/.xiki/roots/<name>.js
         : // Change this code to something useful
         : a = "la"
         : return a + a
     - coffeescript/
-      =~/xiki/commands/<name>.coffee
+      =~/.xiki/roots/<name>.coffee
         : # Change this code to something useful
         : a = "la"
         : a + a
     - python/
-      =~/xiki/commands/<name>.py
+      =~/.xiki/roots/<name>.py
         : # Change this code to something useful
         : a = "hi"
         : return a + a
     - sh/
-      =~/xiki/commands/<name>.sh
+      =~/.xiki/roots/<name>.sh
         : # Change this code to something useful
         : echo "- hello/"
         : echo "First item: ${ARGS[0]}"
         : echo "Second item: ${ARGS[1]}"
   - combinations/
     - ruby class with embedded menu/
-      =~/xiki/commands/<name>.rb
+      =~/.xiki/roots/<name>.rb
         : class <Name>
         :   MENU = "
         :     - cats/
@@ -102,7 +104,7 @@
         :   end
         : end
     - ruby script and menu file/
-      =~/xiki/commands/
+      =~/.xiki/roots/
         - <name>/
           - index.menu
             : - cats/
@@ -110,7 +112,7 @@
           - index.rb
             : args[0] * 2
     - ruby class and menu file/
-      =~/xiki/commands/
+      =~/.xiki/roots/
         : todo
   - plain ruby object/
     : Will use class or instance methods.
@@ -120,7 +122,7 @@
     - load from disk/
     - menu with other stuff/
   - items with nested code/
-    =~/xiki/commands/<name>.menu
+    =~/.xiki/roots/<name>.menu
       : - add/
       :   ! a = 1
       :   ! 2 + a
@@ -128,7 +130,7 @@
       :   ! return ": Pass something in, like:\n- hi/" if ! args[0]
       :   ! args[0] * 3
     - other languages/
-      =~/xiki/commands/<name>.menu
+      =~/.xiki/roots/<name>.menu
         : - using javascript/
         :   ! a = 1   // .js
         :   ! return 2 + a
@@ -141,7 +143,7 @@
   - .directions/
 - more/
   - bootstrap/
-    =~/xiki/commands/<name>.bootstrap
+    =~/.xiki/roots/<name>.bootstrap
       : hero/
       :   > Mumbo Jumbo.
       :   Convinced? We. Thought. So.
@@ -157,26 +159,26 @@
       : > Three
       : Dolor...
   - html/
-    =~/xiki/commands/<name>.html
+    =~/.xiki/roots/<name>.html
       : <h1>Hello</h1>
       : <p>How are you</p>
   - haml/
-    =~/xiki/commands/<name>.haml
+    =~/.xiki/roots/<name>.haml
       : %h1 Change this text
-      :   %p To something useful
+      : %p To something useful
   - wrap/
     : Wrap another menu.
     - path/
-      =~/xiki/commands/<name>.rb
-        : Xiki["tables/foo/", args]
+      =~/.xiki/roots/<name>.rb
+        : Xiki["`tables/foo/", args]
     - filename/
-      =~/xiki/commands/<name>.rb
-        : Xiki["/tmp/foo/", args]
+      =~/.xiki/roots/<name>.rb
+        : Xiki["./tmp/foo/", args]
     - bookmark/
-      =~/xiki/commands/<name>.rb
-        : Xiki[":tm//", args]
+      =~/.xiki/roots/<name>.rb
+        : Xiki["^tm//", args]
   - tasks/
-    =~/xiki/commands/<name>.tasks
+    =~/.xiki/roots/<name>.tasks
       : - sample item/
       :   - foo/
       : - pets/
@@ -185,12 +187,12 @@
   - redirect/
     : Makes one menu redirect to another.  Useful for creating menus
     : that just serve as shortcuts.
-    =~/xiki/commands/<name>.menu
-      : <<< foo/
+    =~/.xiki/roots/<name>.menu
+      : << foo/
   - directory/
     : You can make menus backed by directories.  Files or dirs within
     : the dir become items!
-    =~/xiki/commands/<name>/
+    =~/.xiki/roots/<name>/
       - a.txt
         : This is the 'a' item.
       - b.rb

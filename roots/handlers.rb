@@ -19,13 +19,13 @@ module Xiki
       options_result = Expander.expanders path
 
       if options_result[:menufied]
-        Menu.climb_sources options_result
+        Command.climb_sources options_result
       end
 
 
       options_result_orig = options_result.dup
 
-      Menu.determine_handlers options_result
+      Command.determine_handlers options_result
 
       options_result_orig.keys.each{|k| options_result.delete k}
 
@@ -34,7 +34,6 @@ module Xiki
       txt.sub! "[\n  [", "[["
       txt = Tree.quote txt, :char=>"|"
 
-      txt << "<= menu steps/\n" if ! menu_steps   # if options_result[:menufied]   # Sources menu helps for menus
       txt << "<< all handlers/\n"
 
       txt

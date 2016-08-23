@@ -35,4 +35,4 @@ Applescript.run %`
   tell application "System Events" to set picture of every desktop to "#{png}"
 `.strip
 
-"<! set desktop"
+"<* set desktop"

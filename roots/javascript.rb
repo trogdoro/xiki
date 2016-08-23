@@ -3,20 +3,14 @@
 if args == []
   return "
     | // Type some javascript here (to evaluate)
-    | 1 + 2
+    | return 1 + 2
     "
 end
 
 # /code, so eval it...
 
 txt = args[0]
-txt.gsub!('"', '\"')
-txt.gsub!("\n", '\n')
 
-txt = "p = print; print(eval(\"#{txt}\"))"
+txt = "print = p = console.log;\n#{txt}"
 
-txt = Tree.quote Shell.run "js -", :sync=>true, :stdin=>txt
-
-txt.sub! /: undefined\n\z/, ''
-
-txt
+Tree.quote JavascriptHandler.eval(txt)

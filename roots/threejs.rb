@@ -2,7 +2,7 @@ class Threejs
   STANDALONE = %`
         | <style>canvas{ width: 100%; height: 100% } body{margin:0px}</style>
         | <body>
-        |   <script src="https://raw.github.com/mrdoob/three.js/master/build/three.js"></script>
+        |   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r71/three.js"></script>
         |   <script>
         |     // Standard setup
         |     var scene = new THREE.Scene();

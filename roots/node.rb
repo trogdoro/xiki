@@ -1,4 +1,4 @@
-module Xiki
+module Command
   class Node
     MENU = %`
       | txt = "Some node code"
@@ -34,11 +34,8 @@ module Xiki
       end
 
       return self.block if args == ['block']
+      Tree.quote JavascriptHandler.eval(args[0])
 
-      txt = Tree.leaf args[0]
-      result = Tree.quote JavascriptHandler.eval(txt)
-
-      result
     end
 
     def self.wrap_controller code
@@ -51,7 +48,6 @@ module Xiki
       #{code}
       }).listen(1338, '127.0.0.1');
       console.log('Server running at http://127.0.0.1:1338/');
-      `#.unindent
 
     end
 
@@ -74,25 +70,19 @@ module Xiki
 
       Shell.run "node controller.js", :dir=>"/tmp/", :buffer=>"node", :dont_move=>1
       $el.sit_for 0.2
-      Firefox.url "http://localhost:1338"
-      "<! showing in browser!"
+      Browser.url "http://localhost:1338"
+
+      "<* showing in browser!"
     end
 
     def self.block
       left = Line.right + 1
       ignore, ignore, right = View.block_positions "^>"
 
-      txt = self.run View.txt(right, left)
+      txt = Xiki::Node.run View.txt(right, left)
       Block >> txt
 
       nil
-    end
-
-    def self.run txt
-      file = "/tmp/nodejs.js"
-      txt = "function puts (txt){ return console.log(txt) }\n\n#{txt}"
-      File.open(file, "w") { |f| f << txt }
-      Shell["node #{file}"]
     end
 
   end

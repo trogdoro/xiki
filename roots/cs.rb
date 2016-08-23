@@ -11,4 +11,4 @@ return "=beg/quoted/" if args[0] !~ /\n/
 txt = CoffeeScript.to_js args[0]
 Browser.js txt
 
-"<! ran in browser!"
+"<* ran in browser!"

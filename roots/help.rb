@@ -8,12 +8,16 @@ module Menu
     end
 
     MENU = %`
-      | Welcome to xsh! Here are some places to look for help:
+      | Welcome to xsh (Xiki Shell)!
       |
-      | Type "xsh --help" back in your normal shell, or expand
-      | it right here:
+      | For the tutorial, type Ctrl+Q then "xsh --tutorial".
+      |
+      | For help with command line args, type Ctrl+Q to quit, then type
+      | "xsh --help" back in your normal shell. Or expand it right here
+      | (move your arrow keys to the following line and press Ctrl+O):
+      |
       $ xsh --help
-
+      |
       | Connecting with people
       - chat room/
         | Jump into the Xiki chat room to get help, chat about,
@@ -25,12 +29,6 @@ module Menu
         |
         = http://groups.google.com/group/xiki/
 
-      | See
-      << help topics/
-      << faq/
-      << tutorial/
-      << keys/
-      << conf/
     `
   end
 end

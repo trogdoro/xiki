@@ -10,7 +10,7 @@ module Xiki
 
       if args == ['toggle']
         $el.customize_set_variable :tabbar_mode, ! $el.elvar.tabbar_mode
-        return "<! toggled"
+        return "<* toggled"
       end
 
       # Option was passed in, so do it...

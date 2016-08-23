@@ -1,4 +1,7 @@
 > Things menus can return with output, to control where it goes
+- source/
+  =^xiki/lib/xiki/core/launcher.rb
+    + ##if\ arg =/
 - docs/
   - summary/
     | Menus can return "=replace/siblings/" and similar things.  This
@@ -20,9 +23,6 @@
       :   ! remote clients could send back remote code they want you to run locally
       :   could be shell commands to - maybe any xiki path?
       :   /tmp/$ df
-  - source/
-    =:xiki/lib/xiki/core/launcher.rb
-      + ##if\ arg =/
 - words/
   - siblings/
     =/tmp/
@@ -44,8 +44,6 @@
           :       - d/
         - foo//
   - quoted/
-    - todo > add example
-  - neighbors/
     - todo > add example
   - line/
     - todo > add example

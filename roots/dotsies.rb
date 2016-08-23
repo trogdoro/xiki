@@ -83,7 +83,7 @@ module Xiki
     end
 
     def self.browse txt=nil
-      return "<! Type some text" if txt.nil?
+      return "<* Type some text" if txt.nil?
       "do"
     end
 
