@@ -4,9 +4,9 @@ set -f
 
 # Set gem_home, so xiki gems don't interfere with main ones...
 
-mkdir -p ~/xiki/misc/gems/
-export GEM_HOME=~/xiki/misc/gems/
-export PATH=~/xiki/misc/gems/bin/:$PATH
+mkdir -p ~/.xiki/misc/gems/
+export GEM_HOME=~/.xiki/misc/gems/
+export PATH=~/.xiki/misc/gems/bin/:$PATH
 
 # Resolve the xiki dir even if there's a symlink somewhere in the path...
 
@@ -30,7 +30,8 @@ emacsclient="emacsclient"
 
 # Get emacs version, or blank if emacs not found...
 
-emacs_version=`$emacs --version 2>&1`
+emacs_version=`$emacs -version 2>&1`
+emacsclient_version=`emacsclient -version 2>&1`
 
 function check_dependencies {
 
@@ -92,7 +93,7 @@ function check_dependencies {
       install="$pacman_install"
     else
       dir="$xiki_dir/misc/install"
-      install="sudo bash $dir/install_source_dependency.sh"
+      install="bash $dir/install_source_dependency.sh"
     fi
 
     case "$doit" in
@@ -122,7 +123,7 @@ function check_dependencies {
           echo "  $ $install emacs"
         fi
         echo -e "\nNote that xsh's dependencies are largely transparent\nto the user.  You don't need to have any expertise\nabout them to use xsh."
-        echo -e "\nRun \"./xsh\" to see the options again. (You can optionally install the\ndependencies yourself first.)\n"
+        echo -e "\nRun xsh to see the options again. (You can optionally install the\ndependencies yourself first.)\n"
         exit
         ;;
       *)
@@ -133,40 +134,72 @@ function check_dependencies {
 
   fi
 
-  # Mac and emacs22, so recommend "brew install emacs"...
+  # New
 
-  if [[ "$emacs_version" =~ "Emacs 22" ]] && [ `uname` = "Darwin" ] && [[ $(type -P brew) =~ ^/ ]]; then
 
-    echo "Additional optional dependencies are recommended to"
-    echo "make xsh run more smoothly. It should take less than"
-    echo -e "a minute over a fast internet connection.\n"
+  # Mac and emacs22...
 
-    echo -e "  ${u}i${uu}nstall the dependencies"
-    echo -e "  ${u}p${uu}roceed without them"
-    echo -e "  ${u}s${uu}how them first\n"
+  if [[ "$emacs_version" =~ "Emacs 22" ]] && [ `uname` = "Darwin" ]; then
 
-    read -n1 -p "Type one of the highlighted letters: " doit
+    # Mac and emacs22 and no homebrew, so require installing homebrew...
 
-    case "$doit" in
-      i|I)
-        echo -e "\n\n"
-        brew install emacs
-        ;;
-      p|P)
-        echo
-        ;;
-      s|S)
-        echo -e "\n\nThis will be run:\n"
-        echo "  brew install emacs"
-        echo -e "\nRun \"./xsh\" to see the options again.\n"
-        exit
-        ;;
-      *)
-        echo -e "\n\nYour choice wasn't understood. Run \"./xsh\" to see the options again.\n"
+    if [[ ! $(type -P brew) =~ ^/ ]]; then
+      echo -e "Please install Homebrew, and then run xsh again.\n\nThe homebrew installer can be found here:\n\n  http://brew.sh/\n"
+      exit 1
+
+    else
+
+      # Mac and emacs22 (and homebrew installed), so require "brew install emacs"...
+
+      # Tell them to fix homebrew if directories aren't writable
+      if [[ ! -w /usr/local/ ]] || [[ ! -w /usr/local/bin/ ]]; then
+        echo "Your Homebrew permissions seem strange. Try running"
+        echo "'brew install emacs' and then run xsh again. If that"
+        echo "doesn't work, try 'brew doctor'."
+        echo ""
         exit 1
-        ;;
-    esac
+      fi
 
+      echo "Xsh needs a couple dependencies. Installing them should take"
+      echo -e "less than a minute over a fast internet connection.\n"
+
+      echo -e "  ${u}i${uu}nstall the dependencies"
+      echo -e "  ${u}s${uu}how them first\n"
+
+      read -n1 -p "Type one of the highlighted letters: " doit
+
+      case "$doit" in
+        i|I)
+          echo -e "\n\n"
+          brew install emacs
+          ;;
+        s|S)
+          echo -e "\n\nThis will be run:\n"
+          echo "  brew install emacs"
+          echo -e "\nRun xsh to see the options again.\n"
+          exit
+          ;;
+        *)
+          echo -e "\n\nYour choice wasn't understood. Run xsh to see the options again.\n"
+          exit 1
+          ;;
+      esac
+
+    fi
+
+
+  # Older than Emacs23 on any platform...
+
+  elif [[ "$emacs_version" =~ Emacs\ 2[012] ]]; then
+    echo -e "Please upgrade to Emacs 24 and then run xsh again.\n"
+    exit 1
+  fi
+
+  if [[ "$emacsclient_version" =~ emacsclient\ 2[012] ]]; then
+    echo -e "Your emacsclient version is:\n$emacsclient_version\n"
+    echo -e "But your emacs version is:\n$emacs_version\n"
+    echo -e "Please fix this and then run xsh again.\n"
+    exit 1
   fi
 
 }
@@ -196,7 +229,7 @@ function save_args_to_files {
   let i=1
 
   # New
-  dir=~/xiki/misc/tmp
+  dir=~/.xiki/misc/tmp
   mkdir -p $dir
 
   storeargs "$@" > $dir/params.txt
@@ -221,21 +254,39 @@ case $1 in
   exit
   ;;
 
---examples)
+--tutorial)
+
+  uname=`uname -a`
+  if [[ $uname =~ ^Darwin ]]; then
+    open "http://xiki.com/@xiki/tutorial"
+  fi
+
+  cat "$xiki_dir/misc/command/external_shell_tutorial.txt"
+
+  exit
+  ;;
+
+--samples)
   cat "$xiki_dir/misc/command/external_shell_examples.txt"
 
   exit
   ;;
 
--i)
+--install)
+  ruby "$xiki_dir/misc/install/install_when_flag.rb"
 
-  # -i, for "isolated", so just run with no deamon...
+  exit
+  ;;
+
+--d)
+
+  # -d, for "isolated", so just run with no deamon...
 
   # Alternatives considered: unique, unconnected, separate, alone, peerless
 
   # Load with xiki-no-socket flag, so pull of 1st arg...
 
-  shift   # The 1st argument was "-i"
+  shift   # The 1st argument was "--d"
   save_args_to_envs "$@"
 
   exec $emacs -nw -Q \
@@ -244,42 +295,49 @@ case $1 in
 
 *)
 
-  # Load normally, so save args and launch emacs...
 
-  if [[ $emacs_version =~ Emacs\ 2[21] ]]; then
 
-    # Emacs 22, so don't use --daemon (a little slower, but won't flicker in Emacs 22)...
+  # Emacs 23+, so use --daemon (will make for immediate startup)...
 
-    save_args_to_envs "$@"
+  # Always start emacs --daemon, and then connect to it. This avoids
+  # emacs flashing weird text and formatting on the screen.
 
-    # Run emacs command
+  unique=$RANDOM
+  # Start up an emacs daemon to load and then connect to
+  $emacs -Q --daemon=$unique -nw &>/dev/null
 
-    exec $emacs --no-splash -nw -Q -l "$xiki_dir/misc/emacs/start_xiki.el"
+  # Now that emacs is invisible, tell it to load the xiki classes (and cache a few things).
 
-  else
 
-    # Emacs 23+, so use --daemon (will make for immediate startup)...
+  $emacsclient -s $unique -e "(load \"$xiki_dir/misc/emacs/start_xiki_daemon.el\")" &>/dev/null
 
-    # Always start emacs --daemon, and then connect to it. This avoids
-    # emacs flashing weird text and formatting on the screen.
+  # Now load the parameters into ~/.xiki/misc/params/
 
-    unique=$RANDOM
-    $emacs -Q --daemon=$unique -nw &>/dev/null
+  save_args_to_files "$@"
 
-    # Now that emacs is invisible, tell it to load the xiki classes (and cache a few things).
+  # Now run it.  The hook will run when it opens and load the params
 
-    $emacsclient -s $unique -e "(load \"$xiki_dir/misc/emacs/start_xiki_daemon.el\")" &>/dev/null
+  # Maybe this will hide errors
+  $emacsclient -s $unique -t 2>/dev/null
+  # Maybe this will help with the error
 
-    # Now load the parameters into ~/xiki/misc/params/
-
-    save_args_to_files "$@"
-
-    # Now run it.  The hook will run when it opens and load the params
-
-    $emacsclient -s $unique -t
-
+  # If we probably showed the set up message, but ~/.xsh exists now, assume they set it up, and show steps to reload
+  if ( [[ $# -eq 0 ]] || [[ "$*" == "-xsh/setup" ]] ) && [[ ! $(type -P xsh) =~ ^/ ]] && [[ ! $XIKI_SUPPRESS_WELCOME ]] && [[ -f ~/.xsh ]]; then
+    echo '#'
+    echo '# 1. Type "bash" to reload (or "zsh" if you use it)'
+    echo '# 2. Type "xsh --tutorial"'
+    echo '#'
   fi
 
+  exit
+
+  #  fi
+
   ;;
+
+  # Commented double-semicolon line here > will make this error go away?
+  # "line 313: syntax error near unexpected token `fi'"
+  # if not, maybe do 'exit' here
+
 
 esac
