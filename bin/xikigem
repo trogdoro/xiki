@@ -1,33 +1,33 @@
 #!/usr/bin/env bash
 
-mkdir -p ~/xiki/misc/gems/
-export GEM_HOME=~/xiki/misc/gems/
+mkdir -p ~/.xiki/misc/gems/
+export GEM_HOME=~/.xiki/misc/gems/
 export GEM_PATH=
 
 # xikigem install foo, so delegate to gem install...
 
 if [ "$1" = "install" ]; then
-  echo Temporarily setting \$GEM_HOME to \~/xiki/misc/gems/...
+  echo Temporarily setting \$GEM_HOME to \~/.xiki/misc/gems/...
   echo
   gem install "$2"
-  clearxsh
+  reloadxsh
   exit
 fi
 
 # xikigem uninstall foo, so delegate to gem install...
 
 if [ "$1" = "uninstall" ]; then
-  echo Temporarily setting \$GEM_HOME to \~/xiki/misc/gems/...
+  echo Temporarily setting \$GEM_HOME to \~/.xiki/misc/gems/...
   echo
   gem uninstall "$2"
-  clearxsh
+  reloadxsh
   exit
 fi
 
 # xikigem list, so delegate to gem list...
 
 if [ "$1" = "list" ]; then
-  echo Gems installed in \~/xiki/misc/gems/:
+  echo Gems installed in \~/.xiki/misc/gems/:
   gem list
   echo
   echo Xiki also has access to the global gems you have installed.
