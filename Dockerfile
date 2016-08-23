@@ -1,12 +1,19 @@
-FROM ubuntu:14.04
+FROM ubuntu:16.04
 
 RUN apt-get update
-RUN apt-get install -y curl
-WORKDIR /root
-RUN curl -LO https://github.com/trogdoro/xiki/archive/master.tar.gz
-RUN tar xzf master.tar.gz
+RUN apt-get install -y build-essential
+RUN apt-get install -y emacs
 
-RUN echo "Run these commands:" >> README
-RUN echo "$ cd xiki-master/bin" >> README
-RUN echo "$ ./xsh" >> README
+# Ruby
+RUN apt-get install -y ruby
+
+# Git
+RUN apt-get install -y git
+
+COPY . /xiki/
+RUN /xiki/bin/xsh --install
+
+WORKDIR /root
+
+CMD ["bash", "/xiki/bin/xsh"]
 
