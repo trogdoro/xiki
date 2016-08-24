@@ -1,7 +1,0 @@
-module Xiki
-  Cursor.white
-
-  Styles.minibuffer_prompt :size=>"+0", :face=>"Monaco", :fg=>"#bbb"
-  Styles.minibuffer :size=>"+0", :face=>"Monaco"
-  Styles.echo_area :size=>"+0", :face=>"Monaco"
-end
