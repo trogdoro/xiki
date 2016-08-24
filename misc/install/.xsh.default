@@ -1,11 +1,8 @@
 # Define some key shortcuts for quickly switching from your shell to xsh
-xiki_open_key="\C-x"        # Ctrl+X to expand in xsh
-xiki_tasks_key="\C-t"    # Ctrl+T to show a menu of tasks
-xiki_grab_key="\C-g"        # Ctrl+G to grab commands to and from xsh
-xiki_reverse_key="\C-r"     # Ctrl+R to search shell history
-xiki_tab_key="\e\C-i"       # Esc, Tab to do autocomplete
-
-# Some examples, in case you want to update this file:
-# xiki_open_key="\C-x"      # Ctrl+X
-# xiki_open_key="\e\C-X"    # Esc, Ctrl+X
+xiki_open_key="\C-o"        # Ctrl+O to open in xsh
+xiki_search_key="\C-s"      # Ctrl+S to search shared commands on XikiHub
+xiki_key="\C-x"             # Ctrl+X to show a xiki files
+xiki_options_key="\C-t"     # Ctrl+T to show the tasks dropdown
+xiki_go_key="\C-g"          # Ctrl+G to grab commands between xsh and your shell
+xiki_reverse_key="\er"      # Alt+R to search shell history
 
