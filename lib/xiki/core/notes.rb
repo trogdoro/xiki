@@ -8,10 +8,11 @@ require 'xiki/core/clipboard'
 module Xiki
   class Notes
 
-    LABEL_REGEX = /(?:[a-zA-Z0-9 _-]+\) )?/
+    # Marker regex
+    MARKER_REGEX = /(?:[a-zA-Z0-9 '"!?*_-]+\) )?/
 
     def self.list *args
-      Notes.drill "~/xiki/notes/", *args
+      self.drill "~/xiki/", *args
     end
 
     # Returns contents block where cursor is.
@@ -40,22 +41,22 @@ module Xiki
     end
 
     def self.archive
-      block = self.current_section
+      block = self.current_section_object
       block.archive
     end
 
     def self.show_text
-      block = self.current_section
+      block = self.current_section_object
       block.show_text
     end
 
     def self.hide_text
-      block = self.current_section
+      block = self.current_section_object
       block.hide_text
     end
 
     def self.to_block options={}
-      prefix = Keys.prefix :clear=>1
+      prefix = options[:prefix] || Keys.prefix #:clear=>1
 
       kind = :h1
       kind = :h0 if prefix == :u
@@ -64,11 +65,17 @@ module Xiki
       times = prefix.is_a?(Fixnum) ? prefix : 1
 
       if options[:up]
+
+        return Ruby.custom_previous if View.mode == :ruby_mode
+
         times.times do
           Line.to_left
           Search.backward regex
         end
       else
+
+        return Ruby.custom_next if View.mode == :ruby_mode
+
         times.times do
           Line.next if $el.string_match regex, Line.value   # Use elisp matcher
           Search.forward regex
@@ -108,20 +115,20 @@ module Xiki
       kind = self.heading_kind kind
       if kind == :h1
         options[:match_only_self] ?
-          "^[>=]\\( .*[^\n:]$\\| ?$\\)" :
-          "^[>=]\\( \\|$\\)"
+          "^>\\( .*[^\n:]$\\| ?$\\)" :
+          "^>\\( \\|$\\)"
       elsif kind == :h2
-        "^[>=]\\{1,2\\}\\( \\|$\\)"
+        "^>\\{1,2\\}\\( \\|$\\)"
       elsif kind == :h0
         "^> .*:$"
       end
     end
 
-    def self.move_block up=false
+    def self.move_block options={}
 
-      Keys.remember_key_for_repeat(proc {Notes.move_block up})
+      Keys.remember_key_for_repeat(proc {Notes.move_block options})
 
-      prefix = Keys.prefix :clear=>1
+      prefix = options[:prefix] || Keys.prefix(:clear=>1)
       kind = self.heading_kind
       times = Keys.prefix_times prefix
       regex = self.heading_regex kind #, :match_only_self=>1
@@ -133,17 +140,16 @@ module Xiki
 
       orig = Location.new
 
-      section = self.current_section prefix
-      section.blink if kind == :h0 || kind == :h2
+      section = self.current_section_object prefix
 
       section.delete
 
-      if up
+      if options[:up]
         times.times do
           Search.backward regex, :go_anyway=>true
         end
 
-        $el.insert section.content
+        View.insert section.content
         Search.backward regex
       else
 
@@ -158,8 +164,9 @@ module Xiki
         View.insert section.content
         Search.backward move_regex
       end
+
       times == 1 ?
-        self.current_section(regex).fade_in :
+        self.current_section_object(regex).fade_in :
         orig.go
 
     end
@@ -182,7 +189,7 @@ module Xiki
       linebreaks = 4
       linebreaks = 1 if orig.any? && orig !~ /^>/   # If on non-blank line, and not heading, don't put space after heading
 
-      if prefix == :u
+      if prefix == :u || prefix == :-
         View << ":"#, :dont_move=>1
 
         linebreaks = 1 if orig =~ /^>(.*[^:\n]|)$/   # If on ">..." line, don't add space after this ">...:" heading
@@ -231,9 +238,9 @@ module Xiki
 
       Keys.remember_key_for_repeat(proc {Xiki::Notes.cut_block})
 
-      block = self.current_section Keys.prefix
+      block = self.current_section_object Keys.prefix
 
-      block.blink
+      # block.blink
 
       unless no_clipboard
         Clipboard.set("0", block.content)
@@ -243,15 +250,15 @@ module Xiki
 
     def self.copy_block
       prefix = Keys.prefix
-      block = self.current_section prefix == :u ? 2 : 1
-      block.blink
+      block = self.current_section_object prefix == :u ? 2 : 1
       Clipboard.set("0", Keys.prefix_u ? block.text : block.content)
     end
 
-    def self.move_block_to_top no_clipboard=false
+    # def self.move_block_to_top no_clipboard=false
+    def self.move_block_to_top options={}
 
       prefix_u = Keys.prefix_u :clear=>true
-      block = self.current_section
+      block = self.current_section_object
 
       if prefix_u
         line = View.line_number
@@ -259,7 +266,9 @@ module Xiki
         orig_right = block.right
       end
 
-      block.fade_out unless prefix_u
+      # Do fade while moving if > no hyphen prefix and no :no_fade option
+
+      do_fade = ! prefix_u && ! options[:no_fade]
 
       block.delete
 
@@ -275,29 +284,15 @@ module Xiki
         View.to_line 1
       end
 
-      moved_section = self.current_section
+      moved_section = self.current_section_object
 
-      moved_section.fade_in unless prefix_u
+      moved_section.fade_in if do_fade
     end
 
     def self.keys
 
       # Get reference to map if already there (don't mess with existing buffers)
       $el.elvar.notes_mode_map = $el.make_sparse_keymap unless $el.boundp :notes_mode_map
-
-      Xiki.def("custom+next", :map=>:notes_mode_map){ Notes.to_block :key=>1 }
-      Xiki.def("custom+previous", :map=>:notes_mode_map){ Notes.to_block :up=>1, :key=>1 }
-
-      Xiki.def("custom+copy", :map=>:notes_mode_map){ Notes.copy_block }
-      Xiki.def("custom+xut", :map=>:notes_mode_map){ Notes.cut_block }
-      Xiki.def("custom+delete", :map=>:notes_mode_map){ Notes.cut_block :no_clipboard }
-      Xiki.def("custom+zoom", :map=>:notes_mode_map){ Notes.zoom }
-
-      Xiki.def("custom+back", :map=>:notes_mode_map){ Notes.move_block :backwards }
-      Xiki.def("custom+forward", :map=>:notes_mode_map){ Notes.move_block }
-      Xiki.def("custom+top", :map=>:notes_mode_map){ Notes.move_block_to_top }
-
-      Xiki.def("custom+heading", :map=>:notes_mode_map){ Notes.insert_heading }
 
       $el.define_key(:notes_mode_map, $el.kbd("<double-mouse-1>"), :notes_mouse_double_click)
       $el.define_key(:notes_mode_map, $el.kbd("<mouse-1>"), :notes_mouse_toggle)
@@ -312,12 +307,13 @@ module Xiki
         $el.define_key(:notes_mode_map, $el.kbd("C-c C-#{n}")){ Launcher.do_last_launch :nth=>n, :here=>1, :dont_launch=>1 }
       end
 
+      $el.define_key(:notes_mode_map, $el.kbd("C-i")) { Notes.tab_key :flashing_ok=>1 }
+      $el.define_key(:notes_mode_map, $el.kbd("<backtab>")) { Notes.tab_key :prefix=>:u, :flashing_ok=>1 }
+
+      $el.define_key(:notes_mode_map, $el.kbd("C-m")) { Notes.return_wrapper }   # Return key
+
       # For now, don't over-ride return > it's messing up pasting in the terminal
       #       $el.define_key(:notes_mode_map, $el.kbd("C-m")) { View.insert_line }
-
-      $el.define_key(:notes_mode_map, $el.kbd("C-i")) { Notes.tab_key }
-
-      $el.define_key(:notes_mode_map, $el.kbd("C-m")) { Notes.return_wrapper }
 
     end
 
@@ -329,15 +325,15 @@ module Xiki
         Styles.define :variable, :face => 'verdana'
 
         # >...
+
         h1_size = "+3"
         bg = "555"
-        pipe = "666"
 
+        pipe = "777"
         label = "bbb"
 
         Styles.define :notes_h1, :face=>'arial', :size=>h1_size, :fg=>'ccc', :bg=>bg, :bold=>nil
         Styles.define :notes_h1_pipe, :face=>'arial', :size=>h1_size, :fg=>pipe, :bg=>bg, :bold=>true
-        Styles.define :notes_h1_label, :face=>'arial', :size=>h1_size, :fg=>label, :bg=>bg, :bold=>true
 
         Styles.define :notes_h1_agenda_pipe, :face => 'arial', :size => h1_size, :fg => '88cc88', :bg => '336633', :bold =>  true
         Styles.define :notes_h1_agenda, :face => 'arial', :size => h1_size, :fg => 'ffffff', :bg => '336633', :bold => true
@@ -372,8 +368,7 @@ module Xiki
           :face => 'arial', :size => "-2",
           :fg => "ee7700", :bold => true
 
-        # Styles.define :hidden, :fg=>"777", :bg=>"777"
-        Styles.define :hidden, :fg=>"333", :bg=>"333"
+        Styles.define :hidden, :fg=>"000", :bg=>"000"
 
         Styles.define :notes_g, :fg=>"6cf", :face=>'arial black', :size=>"0", :bold=>true
         Styles.define :notes_blue, :fg=>"69f", :face=>'arial black', :size=>"0", :bold=>true
@@ -389,35 +384,33 @@ module Xiki
         Styles.define :notes_h0_pipe, :face=>'arial', :size=>"+8", :fg=>pipe, :bg=>bg, :bold=> true
         Styles.define :notes_h0, :fg=>"fff", :bg=>bg, :face=>'arial', :size=>"+8", :bold=>true
         Styles.define :notes_h0_green, :fg=>"8f4", :bg=>bg, :face=>'arial', :size=>"+8", :bold=>true
-        Styles.define :notes_h0_green_pipe, :fg=>pipe, :bg=>bg, :face=>'arial', :size=>"+8", :bold=>true
-        Styles.define :notes_h1_green, :fg=>"8f4", :bg=>bg, :face=>'arial', :size=>"+3", :bold=>nil
-        Styles.define :notes_h1_green_pipe, :fg=>pipe, :bg=>bg, :face=>'arial', :size=>"+3", :bold=>true
+        Styles.define :notes_h1_green, :fg=>"9d4", :bg=>bg, :face=>'arial', :size=>"+3"
+
+        Styles.define :notes_h0_yellow, :fg=>"ff0", :bg=>bg, :face=>'arial', :size=>"+8", :bold=>true
+        Styles.define :notes_h1_yellow, :fg=>"dd0", :bg=>bg, :face=>'arial', :size=>"+3"
+        Styles.define :notes_h0_red, :fg=>"d00", :bg=>bg, :face=>'arial', :size=>"+8", :bold=>true
+        Styles.define :notes_h1_red, :fg=>"d00", :bg=>bg, :face=>'arial', :size=>"+3"
 
         Styles.define :escape_glyph, :fg=>"666"   # Red special char was too ugly
         Styles.define :trailing_whitespace, :bg=>'555'
-
-
-        # else   # If white bg
-        #   Styles.define :notes_h2, :face=>'arial', :size=>"-1", :fg=>'fff'
-        #   Styles.define :notes_h2_pipe, :face=>'arial', :size=>"-1", :fg=>'b0b0b0'
-        #   Styles.define :notes_h0_pipe, :face=>'arial', :size=>"+8", :fg=>'b0b0b0', :bg=>"909090", :bold=>true
-        #   Styles.define :notes_h0, :fg=>"fff", :bg=>"909090", :face=>'arial', :size=>"+8", :bold=>true
-        #   Styles.define :notes_h0_green, :fg=>"af0", :bg=>"909090", :face=>'arial', :size=>"+8", :bold=>true
-        #   Styles.define :notes_h0_green_pipe, :fg=>"b0b0b0", :bg=>"909090", :face=>'arial', :size=>"+8", :bold=>true
-        #   Styles.define :notes_h1_green, :fg=>"af0", :bg=>"909090", :face=>'arial', :size=>"+3", :bold=>1
-        #   Styles.define :notes_h1_green_pipe, :fg=>"b0b0b0", :bg=>"909090", :face=>'arial', :size=>"+3", :bold=>true
-        #   Styles.define :escape_glyph, :fg=>"999"   # Red special char was too ugly
-        #   Styles.define :trailing_whitespace, :bg=>'ccc'
 
         Styles.define :quote_hidden, :fg=>bg_color
 
         Styles.dotted :bg=>'080808', :fg=>'111', :strike=>nil, :underline=>nil, :border=>['111', -1]
 
-        notes_exclamation_color = Styles.dark_bg? ? "4c4" : "5a0"
+        exclamation_color = Styles.dark_bg? ? "4c4" : "5a0"
 
         Styles.define :notes_exclamation,  # Green bold text
           :face=>'arial black', :size=>"0",
-          :fg=>notes_exclamation_color, :bold=>true
+          :fg=>exclamation_color, :bold=>true
+
+        Styles.define :notes_double_exclamation,  # Purple bold text
+          :face=>'arial black', :size=>"0",
+          :fg=>"aa0", :bold=>true
+
+        Styles.define :notes_triple_exclamation,  # Purple bold text
+          :face=>'arial black', :size=>"0",
+          :fg=>"d22", :bold=>true
 
         Styles.define :notes_link, :fg=>(Styles.dark_bg? ? "39b" : "08f"), :bold=>false
 
@@ -434,9 +427,6 @@ module Xiki
       Code.cache(:notes_apply_styles) do
         Styles.clear
 
-        Styles.apply("^\\(>\\)\\(.*\n\\)", nil, :notes_h1_pipe, :notes_h1)
-
-
         # >... lines (headings)
         Styles.apply("^\\(>\\)\\(.*\n\\)", nil, :notes_h1_pipe, :notes_h1)
 
@@ -444,15 +434,15 @@ module Xiki
         Styles.apply("^\\(>> \\)\\(.*\n\\)", nil, :notes_h2_pipe, :notes_h2)
 
         # > Green!
-        Styles.apply("^\\(> \\)\\(.*!\\)\\(\n\\)", nil, :notes_h1_green_pipe, :notes_h1_green, :notes_h1_green)
+        Styles.apply("^\\(> \\)\\(.*!\\)\\(\n\\)", nil, :notes_h1_pipe, :notes_h1_green, :notes_h1_green)
+        Styles.apply("^\\(> \\)\\(.*!!\\)\\(\n\\)", nil, :notes_h1_pipe, :notes_h1_yellow, :notes_h1_yellow)
 
-        # > Large:
+        # > Large heading:
         Styles.apply("^\\(> \\)\\(.*:\\)\\(\n\\)", nil, :notes_h0_pipe, :notes_h0, :notes_h0)
 
-        Styles.apply("^\\(> \\)\\(.*!:\\)\\(\n\\)", nil, :notes_h0_green_pipe, :notes_h0_green, :notes_h0_green)
-
-        Styles.apply("^\\(>\\)\\( .+?: \\)\\(.+\n\\)", nil, :notes_h1_pipe, :notes_h1_label, :notes_h1)
-
+        Styles.apply("^\\(> \\)\\(.*!:\\)\\(\n\\)", nil, :notes_h0_pipe, :notes_h0_green, :notes_h0_green)
+        Styles.apply("^\\(> \\)\\(.*!!:\\)\\(\n\\)", nil, :notes_h0_pipe, :notes_h0_yellow, :notes_h0_yellow)
+        Styles.apply("^\\(> \\)\\(.*!!!:\\)\\(\n\\)", nil, :notes_h0_pipe, :notes_h0_red, :notes_h0_red)
 
         # >>... lines
         Styles.apply("^\\(>>\\)\\(.*\n\\)", nil, :notes_h2_pipe, :notes_h2)
@@ -467,12 +457,15 @@ module Xiki
         Styles.apply("^\\(>>>>\\)\\(.*\n\\)", nil, :notes_h4_pipe, :notes_h4)
 
         # foo: > style like dir
-        Styles.apply("\\(^[\A-Za-z0-9 ][\A-Za-z0-9 '_.,>?-]*[\A-Za-z0-9.?]:\\)\\($\\| \\)", nil, :ls_dir)   # foo:
+        Styles.apply("\\(^[A-Za-z0-9 ][A-Za-z0-9 !-$'_.,>+?+-]*[\A-Za-z0-9.?]:\\)\\($\\| \\)", nil, :ls_dir)   # foo:
         Styles.apply("\\(^[\A-Za-z0-9 ]:\\)\\($\\| \\)", nil, :ls_dir)   # f:   < just 1 letter
 
         #    >... headings (indented)
-        Styles.apply("^ +\\(> ?\\)\\(.*\n\\)", nil, :quote_heading_bracket, nil)
-        Styles.apply("^ +\\(> ?\\)\\(.*!\n\\)", nil, :quote_heading_bracket, :quote_heading_h1_green)
+        Styles.apply("^ +\\(> ?\\)\\(.*\n\\)", nil, :quote_heading_bracket, :quote_heading_h1)
+        Styles.apply("^ +\\(> ?\\)\\(.*!:?\n\\)", nil, :quote_heading_bracket, :quote_heading_h1_green)
+
+        Styles.apply("^ +\\(>>\\)\\(.*\n\\)", nil, :quote_heading_bracket, nil)
+
 
         # - bullets with labels and comments
 
@@ -481,37 +474,42 @@ module Xiki
         # - only match when: 1st char after space can't be [>|]
         #   - probably > 1st char after space has to be alphanumeric
 
-        Styles.apply("^[ \t]*\\([<+-][<+=-]*\\) \\([^/:\n]+:\\) ", nil, :ls_bullet, :ls_dir)   # - foo: bar
+        # Orange now, not gray
+        Styles.apply("^[ \t]*\\([<+-][<+=-]*\\) \\([^/:\n]+:\\) ", nil, :ls_bullet, :notes_label)   # - foo: bar
+
+        Styles.apply("^[ \t]*\\([0-9]+\\.\\)\\( \\|$\\)", nil, :ls_bullet, :notes_label)   # 1. foo
+        Styles.apply("^[ \t]*\\([<+-]\\) \\([0-9]+\\.\\)\\( \\|$\\)", nil, :ls_bullet, :notes_label)   # - 1. foo
 
         Styles.apply("^[ \t]*\\([<+-][<+=-]*\\) \\([^(\n]*?)\\)\\( \\|$\\)", nil, :ls_bullet, :notes_label)   # - foo) bar
-
-        Styles.apply("^[ \t]*\\([a-z][^:|(\n]*)\\)\\( \\|$\\)", nil, :notes_label)   # - foo) bar
-
-        Styles.apply("^[ \t]*\\([<+-][<+=-]*\\) \\(.*:\\)$", nil, :ls_bullet, :notes_label)   # - foo:
+        Styles.apply("^[ \t]*\\([<+-][<+=]*\\) \\(.*:\\)$", nil, :ls_bullet, :notes_label)   # - foo:
 
 
         Styles.apply("^\\([ \t]*\\)\\([<+-]\\) \\(.+?:\\) +\\(|.*\n\\)", nil, :default, :ls_bullet, :notes_label, :ls_quote)
         Styles.apply("^\\([ \t]*\\)\\([<+-]\\) \\([^(\n]+?)\\) +\\(|.*\n\\)", nil, :default, :ls_bullet, :notes_label, :ls_quote)
 
-        Styles.apply("^ *\\(!.*\n\\)", nil, :ls_quote)   # ^!... for code
-
         # exclamation! / todo
-        Styles.apply("^[ \t]*\\([<+-]\\) \\(.*!\\)$", nil, :ls_bullet, :notes_exclamation)
-        Styles.apply("^ +\\(!\\+.*\n\\)", nil, :diff_green)   # Whole lines
-        Styles.apply("^ +\\(!-.*\n\\)", nil, :diff_red)
+        Styles.apply("^[ \t]*\\([<+-]\\) \\(.*!\\)$", nil, :ls_bullet, :notes_exclamation)   # - foo!
+        Styles.apply("^[ \t]*\\([<+-]\\) \\(.*!!\\)$", nil, :ls_bullet, :notes_double_exclamation)   # - foo!!
+        Styles.apply("^[ \t]*\\([<+-]\\) \\(.*!!!\\)$", nil, :ls_bullet, :notes_triple_exclamation)   # - foo!!
+
+
+        Styles.apply("^[ \t]*\\([0-9]+\\.\\) .+!$", :notes_exclamation)   # 1. foo!
+        # Leave number orange > looks wierd
+
+        Styles.apply("^ +\\(!\\+.*\n\\)", nil, :diff_green)   # !-Foo
+        Styles.apply("^ +\\(!-.*\n\\)", nil, :diff_red)   # !+Foo
 
         Styles.apply("\\(\(-\\)\\(.+?\\)\\(-\)\\)", nil, :diff_small, :diff_red, :diff_small)
         Styles.apply("\\(\(\\+\\)\\(.+?\\)\\(\\+\)\\)", nil, :diff_small, :diff_green, :diff_small)
 
-        # google/
-        Styles.apply "^ *\\(-?\\) ?\\([@=]?\\)\\(g\\)\\(o\\)\\(o\\)\\(g\\)\\(l\\)\\(e\\)\\(/\\)", nil, :ls_bullet, :ls_dir,   # google
+        Styles.apply "^ *\\(-?\\) ?\\([@=]? ?\\)\\(g\\)\\(o\\)\\(o\\)\\(g\\)\\(l\\)\\(e\\)\\(/\\|\n\\)", nil, :ls_bullet, :ls_dir,   # google
           :notes_blue, :notes_red, :notes_yellow, :notes_blue, :notes_green, :notes_red,
           :ls_dir
 
         Styles.apply "^hint/.+", :fade6
 
         # $..., %..., etc.
-        Styles.apply "^[< ]*[@=]? ?\\([%$&!]\\)\\( \\|$\\)", nil, :shell_prompt   # Colorize shell prompts after "@"
+        Styles.apply "^[< ]*[@=]? ?\\([%$&#]\\)\\( \\|$\\)", nil, :shell_prompt   # "$ foo", "% foo", "& foo", and "# foo"
 
         # $$...
         Styles.apply "^[< ]*[@=]? ?\\(\\$\\$\\)", nil, :shell_prompt   # Colorize shell prompts after "@"
@@ -528,6 +526,11 @@ module Xiki
 
         # Experimental
         Styles.apply("^ *\\(<[a-z]+\\) \\(.*\n\\)", nil, :ls_bullet, :ls_quote)   # <...
+
+
+        Styles.apply "^\\(Upvote\\) \\(for @[a-z]+\\.\\)$", nil, :notes_green, :ls_quote
+        Styles.apply "^\\(Upvote\\) \\(and comment for @[a-z]+:\\)$", nil, :notes_green, :ls_quote
+        Styles.apply "^Comment for @[a-z]+:$", :ls_quote
 
       end
 
@@ -548,6 +551,8 @@ module Xiki
       $el.defun(:notes_mouse_toggle, :interactive => "e") do |e|
         $el.mouse_set_point(e)
         Notes.mouse_click
+
+        false
       end
 
       $el.defun(:notes_mode, :interactive => "", :docstring => "Apply notes styles, etc") {# |point|
@@ -570,8 +575,11 @@ module Xiki
         >
     end
 
-    def self.mode
+    def self.mode options={}
       $el.notes_mode
+
+      View.wrap(:off) if options[:wrap] == false
+      nil
     end
 
     def self.enter_label_bullet
@@ -599,7 +607,7 @@ module Xiki
         Deletes.delete_whitespace
       end
 
-      if prepend =~ /^[|:] /
+      if prepend =~ /^[!|:] /
         prefix = prefix == :u ? nil : :u
       end
 
@@ -688,28 +696,22 @@ module Xiki
 
     def self.mouse_click
 
-      # Clicked "+" or "-" on a "+ foo..." line, so expand or collapse
+      # Clicked "+" or "-" on a "+ foo" line, so expand or collapse...
 
-      # If next line is indented more, kill children
-      # If starts with plus or minus, and on plus or minus, launch
       if Line.matches(/^\s*[+-]/) and View.char =~ /[+-]/
-        # Temp > disable plus bullet
-        plus_or_minus = Tree.toggle_plus_and_minus
-        if ! Tree.children?
 
-          $el.deactivate_mark   # So aquamacs doesn't highlight something after double-click
+        children = Tree.children?
 
-          if FileTree.dir? or ! FileTree.handles?   # If on a dir or code_tree
-            Launcher.launch
-          else   # If on a file in a FileTree
-            FileTree.enter_lines
-          end
+        # No childen and on file, so do "* outline"...
 
-        else   # If -, kill under
-          Tree.collapse
-          Line.to_beginning
+        if FileTree.handles? && !FileTree.dir?
+          return FileTree.enter_lines
         end
-        return
+
+        # Childen, so handle just like double-click...
+
+        return Launcher.launch_or_collapse # if Tree.children?
+
       end
 
       # Clicked at same point as last click, so treat as double-click...
@@ -728,12 +730,9 @@ module Xiki
 
     end
 
-    #
-    # Returns an instance of Section representing the block the point
-    # is currently in.
-    #
-    #   def self.current_section regex="^[|>]\\( \\|$\\)"
-    def self.current_section regex=nil
+    # Remove this > useless creation of objects.
+    # Use View.block_positions instead, and just pass array of the 3 positions.
+    def self.current_section_object regex=nil
       regex = self.heading_regex if ! regex || ! regex.is_a?(String)
 
       left, after_header, right = View.block_positions regex
@@ -741,42 +740,35 @@ module Xiki
     end
 
     def self.to_html txt
+      raise "Todo > use Html.to_html instead?!"
       txt = txt.
         gsub(/^> (.+)/, "<h1>\\1</h1>").
         gsub(/(^|[^\n>])$/, "\\0<br>")
     end
 
-    def self.as_file
+    def self.as_file options={}
 
       prefix = Keys.prefix :clear=>true
-      txt = ""
-
-      if prefix == :u || prefix == :uu
-        txt = Code.grab_containing_method
-      end
 
       label = nil
 
       Effects.blink(:what=>:line)
 
-      was_visible = View.file_visible? Bookmarks[':n']
+      was_visible = View.file_visible? Bookmarks['^links']
 
-      if prefix == :u
+      if prefix == :u || options[:prompt_for_label]
         label = Keys.input :prompt=>"label: "
         label = "do" if label.blank?
         label = Notes.expand_if_action_abbrev(label) || label
+        label.strip!
 
-        # Only add ")" at end of label if not "!" at end
-        label = "#{label})" if label !~ /!$/
+        # Only add ":" at end of label if not "!" at end
+        label = "#{label}:" if label !~ /[:!)]$/
 
         prefix = nil
       end
 
-      if prefix == :uu   # up+up means add function and line
-        txt << "\n#{Line.value}"
-      elsif prefix != :u
-        txt = View.txt_per_prefix prefix, :selection=>1, :default_is_line=>1, :just_txt=>1
-      end
+      txt = View.txt_per_prefix prefix, :selection=>1, :default_is_line=>1, :just_txt=>1
 
       orig = Location.new
 
@@ -788,12 +780,12 @@ module Xiki
       if ! prefix && FileTree.handles?   # Grab tree
 
         txt = Tree.construct_path :raw=>1
+
         # Remove ##... if there
-        txt.delete_if{|o| o =~ /^##/}
+        txt.delete_if{|o| o =~ /^[#*]/}
 
         options[:path] = txt[0..-2].join
-        if Search.fit_in_snippet(txt[-1], :path=>txt[0..-2].join)   # Insert it in existing tree if there
-          View << "    - #{label}\n" if label
+        if Search.try_merging_link(txt[-1], :path=>txt[0..-2].join, :label=>label)
           return orig.go
         end
 
@@ -803,8 +795,7 @@ module Xiki
 
       file = View.file
 
-      if Search.fit_in_snippet(txt)   # Insert it in existing tree if there
-        View << "    - #{label}\n" if label
+      if Search.try_merging_link(txt, :label=>label)   # Insert it in existing tree if there
 
         orig.go if was_visible   # Go to original place, if :n was already visible
         return
@@ -833,14 +824,20 @@ module Xiki
         result = ">\n#{txt}\n"
       end
 
+      modified = View.modified?
+
       View.<< result, :dont_move=>1
       Line.next 3
+
+      # If wasn't modified, save > since we may do ^; or other key that looks at :n on disk
+
+      DiffLog.save :no_diffs=>1 if ! modified
 
       orig.go if was_visible   # Go to original place, if :n was already visible
     end
 
 
-    def self.as_todo
+    def self.as_task options={}
 
       prefix = Keys.prefix :clear=>1
 
@@ -855,27 +852,91 @@ module Xiki
       # If method, make it Foo.bar method call
       line = Line.value
 
-      Effects.blink(:what=>:line)
-
       if ! selection && View.file =~ /_spec.rb/ && line =~ /^ *(it|describe) /
         return Specs.enter_as_rspec
       end
 
       buffer_name = $el.buffer_name
-      file_name = View.file_name
+      file, file_name = View.file, View.file_name
       path = Tree.path rescue nil
 
-      if prefix == :u   # up+, so add as quoted, with "- todo!"
 
-        txt = FileTree.snippet :txt=>Line.value, :file=>View.file
+      if options[:link]   # || prefix == :u   # up+, so add as quoted, with "- todo!"
+
+        # N+as+path, so just navigate...
+
+        if prefix.is_a?(Fixnum)
+
+          # Go to ^n
+          View.open "^n"
+          # Jump to nth quote
+          View.to_top
+          prefix.times do
+            Search.forward "^ +:"
+          end
+
+          # Expand
+          Effects.blink(:what=>:line)
+          Launcher.launch
+
+          return ""
+        end
+
+
+        # No prefix, so prompt for label and add to ^n...
+
+        txt = FileTree.snippet :txt=>Line.value, :file=>file
         txt.sub! /^/, ">\n"
-        txt.sub! /:/, "- todo!\n    :"
 
-      elsif ! selection && prefix.nil?   # So 1+ or numeric prefix just grab normally
-        if buffer_name == "*ol"   # Make it into "foo = bar" format
+
+        label = Keys.input :prompt=>"Enter label: "
+        label = Notes.expand_if_action_abbrev(label) || label
+        label = "#{label}:" if label =~ /\w$/
+
+        # Only add ":" at end of label if not "!" at end
+        txt.sub!(/:/, "- #{label}\n    :") if label.any?
+
+      elsif ! selection && prefix.nil?   # No 1+ or numeric prefix just grab normally
+
+        if buffer_name == "ol"   # Make it into "foo = bar" format
           txt = line[/\) (.+)/, 1]
           txt.sub!(": ", " = ") if txt
           txt ||= line[/ *- (.+?) /, 1]
+
+        elsif file =~ /\.xiki$/
+
+          # File is in notes, or is linked to from notes, so use 'topic > Heading' syntax"
+
+          if File.dirname(file) == File.expand_path("~/xiki") || Notes.link_file?(file)
+
+            # On note "> Heading", so add as "foo > bar"
+
+            # Only do something if > no ancestors
+            if path.length == 1
+
+              path = Path.split path[0]
+
+              if path.length == 1 && path[0] =~ /^>/
+
+                # "> Foo", so add "filename > Foo"
+                topic = File.basename(file, ".*").gsub("_", " ")
+                heading = line
+
+                # "> .Foo" > so convert to path
+                if heading =~ /^> \./
+                  heading = Notes.heading_to_path heading
+                  txt = "#{topic}/#{heading}"
+                else
+                  txt = "#{topic} #{heading}"
+                end
+
+              elsif path.length == 2 && path[1] =~ /^>/
+                txt = "#{path[0].sub(/^-/, "")} #{path[1]}"
+              end
+
+            end
+          end
+
 
         elsif path && path.last =~ /(\w+)\.rb\/: *def ([\w\.?]+)/
           clazz = $1
@@ -896,11 +957,21 @@ module Xiki
           txt = Tree.dir
         elsif line =~ /(^ *[+-] |\/$)/   # Make it into Foo.bar format
           txt = Tree.path.last
-        elsif line =~ /^ *Ol.>> (.+?)   # => (.+)/   # Make it into Foo.bar format
+        elsif line =~ /^ *Ol.>> (.+?)   #> (.+)/   # Make it into Foo = bar format
           txt = "#{$1} = #{$2}"
-        elsif line =~ /^ *Ol.+, (.+?)   # => (.+)/   # Make it into Foo.bar format
+        elsif line =~ /^ *Ol.+, (.+?)   #> (.+)/   # Make it into foo = bar format
           txt = "#{$1} = #{$2}"
         end
+
+
+      elsif selection && prefix == 1
+        # 1+as+task, so make lines ":- ..."
+        txt = selection.gsub(/^/, ":-")
+
+      elsif selection && prefix == 2
+        # 2+as+task, so make lines ":+ ..."
+        txt = selection.gsub(/^/, ":+")
+
       end
 
       # No text yet, so maybe there's a selection, or a numeric prefix...
@@ -910,8 +981,7 @@ module Xiki
 
       txt.strip! if txt =~ /\A.+\n\z/   # Strip when only 1 linebreak
 
-      options = prefix == :uu ? {:append=>1} : {}
-      Search.move_to ":t", txt, options
+      Search.move_to "^n", txt, options
     end
 
 
@@ -972,8 +1042,8 @@ module Xiki
         @body_overlay.invisible = true
       end
 
-      # cuts the block, and stores it in archive.file.notes
-      # example: ruby.notes -> archive.ruby.notes
+      # cuts the block, and stores it in archive.file.xiki
+      # example: ruby.xiki -> archive.ruby.xiki
       def archive
         delete
         filename = 'archive.' + $el.file_name_nondirectory(buffer_file_name)
@@ -984,12 +1054,6 @@ module Xiki
     end
 
     def self.enter_note options={}
-
-      if Line.blank? && Keys.prefix != :u
-        return self.open_note :insert=>1
-      end
-
-      # :u prefix...
 
       # If on blank line, just insert it
       indent = ""
@@ -1005,19 +1069,20 @@ module Xiki
       Move.backward
 
       txt = options[:txt] || Keys.input(:prompt=>'Your note (or a letter as a shortcut): ')
+      txt.strip!
 
       expanded = self.expand_if_action_abbrev txt
 
-      # If ends in exclamation, remove paren
+      # If ends in colon, remove ")"
 
-      if expanded =~ /[:!]$/
+      if expanded =~ /[!:]$/
         View.delete :char
       end
 
       View << (expanded || txt)
 
-      if expanded =~ /^[!:]$/
-        Move.left
+      if txt =~ /^[0-9]$/
+        Line << " "
       end
 
       if expanded
@@ -1031,283 +1096,708 @@ module Xiki
       nil
     end
 
-    def self.drill_split args
+    # Split into sections
+    def self.split txt
 
-      items = [[], [], []]   # file, heading, content
+      # Replace in special char to be marker
+      # Might cause problem with utf strings, if this character is found? > Maybe mak sure they're utf encoded?
+      txt = txt.gsub(/^>($| )/, "\c4\\0")
+      sections = txt.split("\c4")
 
-      items_index = 0   # Increase it as we move through
-      args.each do |arg|
-        # If content, they'll always be content
-        next items[2] << arg if items_index == 2
+      # Remove blank string at beginning
+      sections.shift
+      sections
 
-        items_index = 1 if arg =~ /^> /   # If >..., bump up to headings
-        items_index = 2 if arg =~ /^:|\n/   # If |..., bump up to content
-
-        items[items_index] << arg
-      end
-
-      items
     end
 
 
-    #
-    # Makes .notes file navigable as tree.
-    #
-    # Example usage:
-    #
-    # - /projects/xiki/menu/
-    #   - accounts.rb
-    #     | class Accounts
-    #     |   def self.menu *args
-    #     |     Notes.drill ':accounts', *args
-    #     |   end
-    #     | end
-    #
+    # 2015-07-12 > Todo > probably rename this to .expand?!
+
     def self.drill file, *args
 
-      prefix = Keys.prefix :clear=>true
-
-      file = Bookmarks[file]
-
       # Pull off options, to get prefix
-
       options = args[-1].is_a?(Hash) ? args.pop : {}
-      task = options[:task]
 
-      # Divide up path.  Could look like this:
-        # dir/dir/> heading/| contents
+      prefix = Keys.prefix :clear=>true
+      option_item = options[:task]
 
-      # Pull off contents if any (quoted lines)
+      username = XikihubClient.username
 
-      # This file_items stuff might not be necessary after the unified refactor.  Delegating to the expander should take care of dirs.
+      line_orig = $el ? Line.value : nil
 
-      file_items, heading, content = Notes.drill_split args
+      # Text passed instead of the filename, so set the name
+      if ! file
+        file_exists = nil
 
-      heading = heading.any? ? heading.join("/") : nil
-      content = content.any? ? content.join("/") : nil
-      line_orig = Line.value
-      file << file_items.join("/")+"/" if file_items.any?
+      elsif file =~ /\n/
+        file_exists = true
+        txt = file
+        name = options[:name]
 
-      # Check for whether foo.notes or foo/foo.notes exists for this path...
+      else
 
-      if file =~ /\/$/ && File.exists?(found = file.sub(/\/$/, ".notes"))
-        file = found
+
+        # File is a word, so add default path for them
+        if file =~ /^[a-z]/i
+          # "* share", so use xikihub path
+          file = option_item == ["share"] ?
+            "~/xiki/hub/#{username}/#{file}.xiki" :
+            "~/xiki/#{file}.xiki"
+        end
+
+        name = file[/(\w+)\.xiki$/, 1]
+
+        file = Bookmarks[file]
+        file = File.expand_path file
+
+        # .link file, so follow link (use path inside it)
+        file = Notes.expand_if_link file
+
+        if file =~ /\/$/ && File.exists?(found = file.sub(/\/$/, ".xiki"))
+          file = found
+        end
+
+        if file =~ /\/$/ && File.exists?(found = file.sub(/\/$/, "/menu.xiki"))
+          file = found
+        end
+
+
+
+        # Somewhere in here, make it look for menu.html files as well
+
+        # If it's a dir, show dirs inside...
+
+        if File.directory? file
+
+          # If no topic, just show all dirs
+
+          entries = Dir.new(file).entries
+          entries = entries.select{|o| o =~ /^\w/}
+          entries.each{|o| o.sub! /\..+/, ''}
+          return entries.map{|o| "#{o}/"}
+        end
+
+
+        # If a file...
+
+        if file =~ /^\$(\w+)/   # If bookmark that wasn't found, complain
+          bm = $1
+          return "| Set the following bookmark first. Then you'll be able to use this menu to\n| browse the file. The file should have '> ...' headings.\n\n@ :#{bm}\n"
+        end
+
+        file_exists = File.exists? file
+
+        txt = file_exists ? File.open(file, 'rb') {|f| f.read} : nil
       end
-
-      if file =~ /\/$/ && File.exists?(found = file.sub(/\/$/, "/index.notes"))
-        file = found
-      end
-
-      # Somewhere in here, make it look for index.html files as well
-
-      if file_items.any? && File.exists?(found = "#{file}#{file_items[-1]}.notes")
-        file = found
-      end
-
-      # If it's a dir, show dirs inside...
-
-      if File.directory? file
-
-        # If no topic, just show all dirs
-
-        entries = Dir.new(file).entries
-        entries = entries.select{|o| o =~ /^\w/}
-        entries.each{|o| o.sub! /\..+/, ''}
-        return entries.map{|o| "#{o}/"}
-      end
-
-
-      # If a file...
-
-      if file =~ /^\$(\w+)/   # If bookmark that wasn't found, complain
-        bm = $1
-        return "| Set the following bookmark first. Then you'll be able to use this menu to\n| browse the file. The file should have '> ...' headings.\n\n@ :#{bm}\n"
-      end
-
-      if ! File.exists? file
-        return "
-          : File doesn't exist yet.  Type Ctrl+T to create it:
-          =#{file}
-            : > Heading
-            : Stuff
-          "
-      end
-
-      txt = File.open(file, 'rb') {|f| f.read}
 
       # /, so show just headings...
+      # if ! heading && ! content
+      if args.length == 0
 
-      if ! heading
+        # Todo later > deal with this: these could be called multiple times for topic
 
-        return "~ headings\n~ navigate" if task == []
+        # ^O on foo, and notes exist, so show option items
+        return "
+          * add note
+          * view source
+          * web search
+        " if option_item == []
 
-        if task == ["navigate"]   # If as+open, just jump there
+        # /~ or / (and no notes exist), so show 1 option item
+
+        if option_item == ["add note"]
+          return self.add_note_task options
+        end
+
+        if option_item == ["view source"] #|| options[:go]   # ~ navigate
           View.open file
           return ""
         end
 
-        txt = txt.split("\n")
-        txt = txt.grep /^\>( .+)/
-        return ": This file has no '>...' headings:\n=#{file}" if txt.empty?
-        return txt.join("\n")  #.gsub /^> /, '| '
-      end
 
-      heading.sub!(/^\: /, '> ')
-      escaped_heading = Regexp.escape heading
-
-      # /> Heading, so nav to it, or show text under heading...
-
-      if ! content
-
-        return "~ navigate\n~ expand" if task == []
-
-        # No '~ navigate' task, so always expand...
-
-        if task != ['navigate']
-          txt = self.extract_block txt, heading
-          txt.sub! /\n\z/, ''
-
-          # If blank, assume it wasn't there, and show default message...
-
-          txt = "Create this new section by typing\nsome stuff here and expanding.\n" if txt.blank?
-
-          # Don't do this for now, since it'll probably look ugly/confusing to new xsh users, and headings for ~/xiki/notes files navigate instead of expanding now anyway
-          # Change "| foo/" to "=foo/" > add equals char for certain patterns
-          #           txt = Tree.quote txt, :unquote_menus=>1, :char=>"|"
-
-          txt = Tree.pipe "#{txt}\n"
-
-          return txt
+        if option_item == ["web search"]   # ~ navigate
+          txt = "#{name}".gsub(" > ", " ")
+          Xiki::Google.search txt, :via_os=>1
+          return ""
         end
 
-        # No comment, so just navigate...
+        # Render actions as paths
+
+        headings = self.extract_headings_and_actions txt
+
+        # No headings, so show all content
+        return Tree.quote txt if headings.empty?
+              # return ": This file has no '>...' headings:\n=#{file}" if lines.empty?
+
+        return headings
+      end
+
+      # Commented out > Don't know when heading would have been ": foo"
+
+      # Figure out whether args has "> Heading", "content...", etc
+
+      raise "Notes.drill doesn't know how to deal with being passed content without a heading first" if args.length == 1 && args[0] =~ /\n/   #> "load"
+      heading = args[0]   # Heading might also be just a path
+      content = args[-1] if args[-1] =~ /\n/   #> nil
+
+      if options[:change_to_heading] || options[:change_to_heading_and_launch]   #> continue here!!
+        # Just change line and return
+        heading = self.find_heading_from_path txt, args[0]   #> |||
+
+        Ol "heading", heading   #> "> @boo .brown background"
+
+        # Remove username if any
+        heading.sub!(/^> \@\w* /, "> ")
+
+        Line.sub!(/.+/, Line.value.gsub(/( *)[+-] (.+)/){"#{$1}#{heading}"})
+        Launcher.launch if options[:change_to_heading_and_launch]
+
+        return ""
+      end
+
+
+      # /> Heading (or path and possible other paths), so show note content (or navigate to it)...
+
+      # Todo > Hmm > If option_item passed, just delegate on to the action
+
+      is_heading = args[0] =~ /^> /
+
+      if args.length == 1 || ! is_heading
+
+        # Heading might be "> Foo" or "foo"
+        option_item = ["view source"] if options[:go]
+
+        # ^O on "> Foo", so show options
+
+        if is_heading
+          return "
+            * top
+            * view source
+            * web search
+          ".unindent if option_item == []
+
+          if option_item == ["make action"]
+            # Passed programatically by ^G > change but don't run
+            Line.sub!(/.+/, Line.value.gsub(/( *)> \.?(.+)/){"#{$1}+ #{Notes.heading_to_path $2}"})
+            return ""
+          elsif option_item == ["as action"]
+            Line.sub!(/.+/, Line.value.gsub(/( *)> \.?(.+)/){"#{$1}+ #{Notes.heading_to_path $2}"})
+            Launcher.launch
+            return ""
+          elsif option_item == ["top"]
+            return "- todo > move to top!"
+          elsif option_item == ['web search']
+            txt = "#{name} #{heading}".gsub(" >", "").downcase
+            Xiki::Google.search txt, :via_os=>1
+            return ""
+          end
+        end
+
+        # No '~ view source' option_item, so always expand
+
+        # No option item, or option item on "+ action", so expand...
+
+        if (option_item == ["view source"] || options[:go]) && heading =~ /^(@\w* )?[a-z]/
+
+          heading = self.find_heading_from_path txt, heading
+
+        elsif ! option_item || heading =~ /^(@\w* )?[a-z]/
+
+          # "> Heading" without option, or "+ action", so extract section
+
+          return if txt.blank?   # File doesn't exist, return nil so it'll tell them to type ^O
+
+          txt = self.extract_section txt, heading, options
+
+          return nil if ! txt
+
+          txt.sub! /\n\z/, ''
+
+          # No text for this heading, so assume it wasn't there, so prompt them to enter it...
+
+          # There was some output, so clean it up and return
+
+          if txt.any?
+
+            txt = Tree.pipe "#{txt}\n"
+
+            # Todo > make $ at margins be unquoted
+            # Expose dollar prompts > and percent > unquote shell prompts
+            self.expose_some_prompts txt
+
+            return txt
+          end
+
+          # No output, so continue on and navigate
+
+        end
+
+        # No content, so just navigate...
 
         View.open file
         View.to_highest
+
+        if heading !~ /^>/
+          # It's an action, so turn path into a heading
+          heading = self.find_heading_from_path txt, heading
+        end
+
         Search.forward "^#{$el.regexp_quote heading}$", :beginning=>1
         View.recenter_top
         return ""
 
       end
 
-      # /> Heading/| content, so navigate or save...
-
-      return "~ save\n~ navigate" if task == []
-
-
-      # Save, so replace or add...
-
-      if task == ["save"]
-
-        # Extract parts from the file that won't change
-        index = txt.index /^#{escaped_heading}$/
-
-        if index
-
-          index += heading.length
-
-          before = txt[0..index]
-
-          after = txt[index..-1]   # Part we're replacing and everything afterward
-          heading_after = after =~ /^> /
-          after = heading_after ? after[heading_after..-1] : ""   # If no heading, we replace all
-
-          # Find heading, if there is one
-
-          content = Tree.siblings :children=>1   # Content we're saving
-          content.gsub! /^[|:] ?|^=/, ''
-          txt = "#{before}#{content}#{after}"
-
-          DiffLog.save_diffs :patha=>file, :textb=>txt
-
-        else   # If no index, it's not there, so append to the end
-
-          # =commit/Notes > create notes and headings if don't exist yet, and save by default.
-
-          content = Tree.siblings :children=>1   # Content we're saving
-          content.gsub! /^[|:] ?|^=/, ''
-          txt = "#{heading}\n#{content.strip}\n\n#{txt.strip}\n\n"
-
+      heading_exists =
+        if ! txt
+          false   # Contents would have existed if file existed
+        else
+          section = self.extract_section txt, heading   #> |||
+          section.any?
         end
 
-        File.open(file, "w") { |f| f << txt }
+      # /> Heading/content, so navigate or save...
 
-        return "<! saved!"
+      # ~, so show options...
+      if option_item
+
+        # If more than one item, error out!
+
+        items = options[:items]
+        return "<* - Collapse this first!" if items && items.length > 2   # They expanded the 'notes don't exist' message
+
+        menu = self.option_items(options.merge(
+          :context=>:expanded,
+          :heading_exists=>heading_exists,
+          :name=>name,
+          :heading=>heading,
+        ))
+
+        xik = Xik.new(menu)
+
+        option_item = OptionItems.prepend_asterisk option_item
+
+
+        # These'll be needed in case it's "* save"
+        options[:save_args] = {
+          :txt=>txt,
+          :file=>file,
+          :heading=>heading,
+          :content=>content,
+        }
+
+        return xik[option_item, :eval=>options]
+      end
+
+      # File doesn't exist, so suggest ^n to save
+
+      options[:line_found], options[:no_search] = 9, 1
+      return "
+        - Did you mean Ctrl+T?:
+        |
+        | These notes don't exist yet.
+        |
+        | You can't navigate to notes that don't exist.
+        | If you are trying to create a note, you should type
+        | Ctrl+T and select 'save' instead of expanding.
+        |
+        = ok/
+      " if ! file_exists
+
+
+      # No tasks, so navigate to heading (and move cursor to it)...
+
+
+      # In xikihub, so send them contents or checksum...
+
+      orig = View.file
+
+      View.open file   #> ||||
+
+      View.to_highest
+
+      found = self.jump_to_heading heading
+
+      # Not found, so show message...
+
+      if heading && ! found
+
+        if options[:inline_warning_messages]
+          View.open orig
+          options[:line_found], options[:no_search] = 9, 1
+          return "
+            - Did you mean Ctrl+T?:
+            |
+            | This heading doesn't exist yet.
+            |
+            | You can't navigate to a heading that doesn't exist.
+            | If you are trying to create a note, you should type
+            | Ctrl+T and select 'save' instead of expanding.
+            |
+            = ok/
+          "
+        end
+        return "<*- Heading doesn't exist yet!"
 
       end
 
-      # No task (or ~navigate), so navigate to heading and put cursor on line...
+      # Jump to text underneath heading...
 
-      View.open file
-      View.to_highest
-      Search.forward "^#{$el.regexp_quote heading}$"
-      View.recenter_top
-
-      line_orig.sub!(/^ *[|:]./, '')
-      Search.forward "^#{$el.regexp_quote line_orig}"
-      Move.to_axis
+      self.jump_to_text_under_heading line_orig
 
       return ""
 
     end
 
+    def self.expose_some_prompts txt
 
-    def self.extract_block txt, heading
-      txt = txt.sub /.*^#{Regexp.escape heading}\n/m, ''   # Delete before block
+      txt.gsub! /^\| ([$%&] )/, "\\1"
+      txt.gsub! /^\| (<+=? )/, "\\1"
+
+    end
+
+
+    def self.jump_to_heading heading
+      return if ! heading
+      View.to_highest
+      found = Search.forward "^#{$el.regexp_quote heading}$" if heading
+    end
+
+    def self.jump_to_text_under_heading line
+      View.recenter_top
+      if line
+        line.sub!(/^ *[|:].?/, '')
+        found = Search.forward "^#{$el.regexp_quote line}" if line.any?
+        Move.to_axis
+      end
+    end
+
+    def self.add_note_task options
+
+      self.add_note_prompt #:single_word_topic=>1
+      return ""
+
+    end
+
+
+    def self.find_heading_from_path txt, target, options={}
+
+      # Extract all "> .foo" headings
+
+      lines = txt.scan(/^> .+/)
+
+      # Find one who's path version matches the target
+
+      found = []
+
+      target = target.downcase
+      lines.each do |heading|
+
+        # Ignore "(file option)" at beginning of heading   #> "> .test"
+        path = heading
+
+
+        path = self.remove_ignorable_heading_parens(path)#.downcase
+
+        if options[:find_all_usernames]
+          path = self.heading_to_path path, :remove_username=>1
+
+          if path == target
+            found << heading
+          end
+        else
+          path = self.heading_to_path path
+          if path == target
+            return heading
+          end
+
+          # Find one, so check return single exact match   #> "load"
+
+        end
+
+      end
+
+      return nil if found == []
+
+      found
+
+    end
+
+
+    def self.remove_ignorable_heading_parens path
+      return nil if ! path
+      path.sub(/^> \(file option\) /, '> ')   #> "set desktop image"
+    end
+
+    def self.extract_section txt, target, options={}
+
+      # Heading isn't "> ...", so get heading that corresponds to this path   #> "@ private and shared"
+      if target !~ /^> /   #> ||||-
+        target = self.find_heading_from_path txt, target   #> |||
+      end
+
+      # Delete everything before and after the target section   #> nil
+
+      txt = txt.dup
+      before = txt.slice!(/.*^#{Regexp.escape target}\n/m)   # Delete before block
+
+      # Section doesn't exist > so return nil to indicate that
+      return nil if ! before
+
+      # Todo > set :heading_line_number
+      # Pass in options, so we can set it there?
+      options[:heading_line_number] = before.scan(/\n/).length   #> 4
+
+      options[:heading_found] = target
+
       txt.sub! /^>( |$).*/m, ''   # Delete after block
       txt
     end
 
     def self.read_block file, heading
-      self.extract_block File.read(file), heading
+      self.extract_section File.read(file), heading
     end
 
-    def self.tab_key
+    def self.tab_key options={}
+
+      Keys.remember_key_for_repeat(proc {Notes.tab_key})
+
+      # Selection is active, so just indent it...
+
+      return Code.indent_to(options) if View.selection?
 
       path = Tree.path
+      first = Path.split path[0]
+      last = Path.split path[-1]
+      line = Line.value
 
-      # $... path, so run Xiki command for the shell command
+      # Blank line or just whitespace, so just make indent like previous line
 
-      if path[-1] =~ /^\$( |$)/ &&   # A $... line,
-        Line.at_right?   # and the cursor is at the right
+      if line =~ /^ *$/
 
-        return Shell.tab
+        indent = Line.indent
+        indent_prev = Line.indent(Line.value 0)
+
+        # Indented lower, so clear indent
+        if indent.length > indent_prev.length
+          Line.sub! /.*/, ''
+
+        # Indented the same, so indent 2 lower
+        elsif indent.length == indent_prev.length
+          Line.sub! /^/, '  '
+
+        # Indented less, indent same
+        else
+          Line.sub! /.*/, indent_prev
+        end
+
+        Line.to_right
+
+        return
       end
 
-      # /file/path, so just expand
 
-      if Line.at_right? && FileTree.handles?
-        return Launcher.launch
+
+
+      # $... path, so run Xiki command if cursor at right, otherwise collapse and run...
+
+      if path[-1] =~ /^ *\$( |$)/
+
+        # The cursor is at the right, so run Xiki command for the shell command...
+        return Shell.tab if Line.at_right?
+
+        line = Line.value
+
+        Launcher.collapse_items_up_to_dollar line.sub(/^ */, '')#, :or_root=>1
+
+        return
+
       end
 
-      indent = Line.indent(Line.value 0)
-      Line.sub! /^ */, indent
-      Line.to_beginning
+      # |... quote under topic, so make quote replace topic
+
+      if last[-1] =~ /\n/
+        quote = last[-1]
+        return self.zoom_to_quote #quote
+      end
+
+      # item under "f..." (auto-complete), so collapse upward and replace parent...
+
+      if last.length == 2 && last[0] =~ /\A[a-z0-9][a-z0-9 ]*\.\.\.\z/
+        # foo..., so collapse to parent
+        bounds = Tree.sibling_bounds(:must_match=>"[a-z]")
+        View.delete bounds[0], bounds[-1]
+        Move.up
+        Line.gsub! /.+/, last[-1]
+        return
+      end
+
+      # Topic, so show completions or collapse in correct way...
+
+      if Topic.matches_topic_syntax?(last[0])
+
+        # Tab on "  = foo", so remove equals and replace parent
+        if line =~ /^ +=/
+          Tree.collapse_upward :replace_root=>1
+          return Launcher.launch
+        end
+
+        # A single topic, so do tab completion
+        return Topic.tab_key(:flashing_ok=>1) if last.length == 1
+
+        # Tab on "topic\n  > heading", so collapse into parent adding space
+        if last.length == 2 && last[-1] =~ /^>/
+          Tree.collapse_upward :add_between=>" "
+          return Launcher.launch
+        end
+
+        # commands/foo, so just collapse and don't launch...
+
+        if last[0] == "xiki"
+          Tree.collapse_upward :replace_root=>1
+          return
+        end
+
+        # foo/bar, so collapse up to parent and run...
+
+        if last.length > 1 && Topic.matches_topic_word?(last[1])
+
+          # Add tab at end if not one there
+
+          Tree.collapse_upward :slash_separator=>1
+
+          return Launcher.launch
+        end
+
+
+        # Probably a topic under a topic, so just launch it to do what tab completion does
+
+        return Launcher.launch(:tab=>1)   #> |
+
+      end
+
+      # "$ command" nested under topic...
+
+      if path.length == 2 && Topic.matches_topic_syntax?(first[0]) && last[0] =~ /^\$ /
+
+        # Tab on "topic\n  $ command", so collapse into parent...
+
+        if first.length == 1
+          Tree.collapse_upward :replace_parent=>1
+          return Launcher.launch
+        end
+
+        # Tab on "topic\n  > Heading\n    $ command", so collapse into parent...
+
+        if first.length == 2 && first[1] =~ /^> /
+          Tree.collapse_upward :replace_parent=>1
+          Line.to_left
+          Tree.collapse_upward :replace_parent=>1
+          return Launcher.launch
+        end
+
+      end
+
+      # Something on the line besides whitespace...
+
+      at_right = Line.at_right?
+
+      # Cursor at right, so just expand...
+
+      return Launcher.launch(:tab=>1) if at_right
+
+      indent = Line.indent line
+
+      # No indent, so do normal expand...
+
+      return Launcher.launch if ! indent.any?
+
+
+      # Cursor not at right and line indented, so collapse into parent and expand...
+
+      Tree.collapse_upward
+
+      # Original line was "=...", so replace parent
+
+      if line =~ /^ *=/
+        line.sub!(/^  /, '')   # Indent one line less
+        line.sub!(/^= ?/, '')   # Remove "= " if at left margin
+        Line.sub!(/.*/, line)
+      end
+
+      Launcher.launch
+
+      # It's a =... line, so delete parent
+
     end
 
+
     # If the string is "t" or "i", or a few others, return "todo" or "imprement" etc. respectively.
+    def self.zoom_to_quote #quote=nil
+
+      quote = Tree.siblings
+      quote = quote.join("\n")
+
+      quote.gsub!(/^\| ?/, '')   # Remove quotes
+
+      # grab_target_view var set, so jump back to where ^n was done and insert...
+
+      return if Grab.to_grab_target_view quote
+
+      # Collapse up to left margin or "="...
+      Tree.to_root
+
+      Tree.collapse
+      Line.sub! /.*/, quote
+      ""
+    end
+
     def self.expand_if_action_abbrev txt
       @@single_letter_abbrev[txt] || txt
     end
 
     @@single_letter_abbrev = {
       " "=>"",
-      "p"=>"",
+      "p"=>")",
       "b"=>"borrow:",
-      "c"=>":",
+      "o"=>"original:",
+      "m"=>"mock:",
+      "g"=>"given:",
+      "re"=>"reshuffle:",
+      "w"=>"works:",
+
+      "t"=>"try",
+      "tt"=>"try > ",
+      "ss"=>"should > ",
+
+      "s"=>"save!",
+      "e"=>"!",
+      "a"=>"add!",
+      "ch"=>"check!",
+      "cr"=>"create!",
       "d"=>"do!",
       "de"=>"delete!",
-      "e"=>"!",
       "er"=>"error!",
       "f"=>"fix!",
       "fa"=>"favorite!",
       "fi"=>"finish!",
       "i"=>"implement!",
       "r"=>"rename!",
-      "t"=>"todo!",
-      "te"=>"test",
-      "tr"=>"try",
+      "to"=>"todo!",
+      "te"=>"test!",
+      "tem"=>"temp!!!!!!!!!!!!!",
+
+      "pr"=>"problem here!!!",
+
+      "c"=>"continue here",
+      "c!"=>"continue here!",
+      "cc"=>"continue here > ",
       "u"=>"update!",
+      "1"=>"1",
+      "2"=>"2",
+      "3"=>"3",
+      "4"=>"4",
+      "5"=>"5",
     }
 
     def self.do_as_quote
@@ -1325,7 +1815,7 @@ module Xiki
 
     # Mapped to open+note.
     # Prompts for some chars, and opens "@notes/foo" where "foo"
-    # matches your chars.  Matches are determined by Keys.filter().
+    # matches your chars.  Matches are determined by Keys.fuzzy_filter().
     def self.open_note options={}
 
       open_or_insert = options[:insert] ? Launcher.method(:insert) : Launcher.method(:open)
@@ -1333,19 +1823,25 @@ module Xiki
       # Get user input...
 
       keys = Keys.input :optional=>1, :message=>"Which note? (Type a key or two): "
-      return open_or_insert.call "^" if ! keys
+      return open_or_insert.call "notes/" if ! keys
 
       # Get possible matches - files in ~/notes without extensions...
 
-      files = Dir.new(File.expand_path("~/xiki/notes/")).entries.grep /\A[^.]/
+      files = Dir.new(File.expand_path("~/xiki/")).entries.grep /\A[^.]/
       files.map!{|o| o.sub /\..+/, ''}
 
+      # First do a couple hard-coded mappings
+      if shortcuts = {"r"=>"ruby", "e"=>"elisp", "j"=>"javascript"}[keys]
+        found = shortcuts if files.member?(shortcuts)   # Only use if it's in the list of notes we actually have
+      end
+
       # Narrow down by input
-      found = Keys.filter files, keys
+
+      found ||= Keys.fuzzy_filter files, keys
 
       return open_or_insert.call "notes/" if ! found
 
-      open_or_insert.call "^"
+      open_or_insert.call ":#{found}"
 
       nil
     end
@@ -1354,7 +1850,7 @@ module Xiki
 
       prefix = Keys.prefix :clear=>1
 
-      file = Bookmarks[options[:bookmark] || ":t"]
+      file = Bookmarks[options[:bookmark] || "^n"]
 
       FileUtils.mkdir_p File.dirname(file)
 
@@ -1384,22 +1880,37 @@ module Xiki
       View.block_positions *args
     end
 
-    def self.next_paren_label
+    def self.next_marker options={}
 
-      # Move forward if at beginning of line
-      Move.forward if Line.at_left? && ! View.at_top?
-      found = Search.forward "^ *[+-] [a-zA-Z0-9 +'.>_-]*)\\($\\| \\)", :beginning=>true
+      times = options[:nth] || Keys.prefix_n(:clear=>1)
+
+      # Numeric prefix, so go to top, then run that many times
+
+      View.to_top if times
+      times ||= 1
+
+      found = nil
+      times.times do
+        # Move forward if at beginning of line, so we don't find the one on the current line
+        Move.forward if Line.at_left? && ! View.at_top?
+        # found = Search.forward "^ *[+-] [a-zA-Z0-9 +'.>_-]*)\\($\\| \\)", :beginning=>true
+        # New behavior > only go to ones on line by themselves
+        # Marker regex
+        found = Search.forward "^ *[+-] [a-zA-Z0-9 +'\"!?*~^.,>_-]*)$", :beginning=>true
+      end
+
       return Move.backward if ! found
 
       # Label for the next line, so move to next line
-      self.next_line_when_paren_label
+      self.next_line_when_marker
     end
 
-    def self.next_line_when_paren_label
-      Line.to_next if Line[/^ *[+-] [a-zA-Z0-9 +'.>_-]*\)$/]   # '
+    def self.next_line_when_marker
+      # Marker regex
+      Line.to_next if Line[/^ *[+-] [a-zA-Z0-9 +'"!?*~^.,>_-]*\)$/]   # '
     end
 
-    def self.extract_paren_labels options={}
+    def self.extract_markers options={}
 
       txt = ""
 
@@ -1408,6 +1919,7 @@ module Xiki
       path = View.as_file_or_temp_file(:file=>file)
       extract_from_next_line = nil
       label = nil
+
       IO.foreach(path, *Files.encoding_binary) do |line|
         break if limit <= 0
 
@@ -1423,7 +1935,8 @@ module Xiki
           next
         end
 
-        label = line[/^ *[+-] ([\w .+'>_-]*)\)( |$)/, 1]   # ' > label regex
+        # Marker regex > Label regex
+        label = line[/^ *[+-] ([a-zA-Z0-9 +'"!?*~^.,>_-]*)\)$/, 1]
         next if ! label
 
         if label == ""
@@ -1487,52 +2000,963 @@ module Xiki
     end
 
 
+    # Usually just inserts linebreak, but does extra stuff when return on shell prompt
+    # line for the first time, or when typing on quotes with a quoted line following
     def self.return_wrapper
+
+
+      # Text selected, so delete it and insert return...
+
+      if selection = View.selection
+        View.delete *View.range
+        View << "\n"
+        return
+      end
+
+
+      line = Line.value
+
+      # Cursor on shell prompt line, after the prompt, so maybe show message
+      if line =~ /^ *\$ / && View.column > line.index("$")
+        # Show tip about Ctrl+X vs Ctrl+G for shell prompt, unless already shown
+        return if Shell.shell_prompt_keys_tip
+      end
 
       Keys.remember_key_for_repeat(proc {Notes.return_wrapper})
 
       # Add a linebreak
 
-      line = Line.value
+      # Remove trailing space if any after pipe
+      Line.sub!(/ $/, '') if line =~ /^ *\| +/
+
+
+      next_line = Line.value 2
+      indent = Line.indent next_line
 
       Keys.prefix_times do
         View << "\n"
       end
 
-      # Weren't at end of a "$ foo", so do nothing else...
 
-      return if line !~ /^\$ ./ || ! Line.at_right?
-
-      # Var not bound yet, so sync with disk...
-
-      if ! $el.boundp(:xiki_return_warning)
-        disk_value = Conf.get "xsh", "return warning"
-        # Set to disk value or default (4)
-        $el.elvar.xiki_return_warning = disk_value || "4"
-      end
-
-      # Just because reading from the elisp var is slightly slower than the ruby var
-      value_orig = $el.elvar.xiki_return_warning
-
-      # 0, so just return...
-
-      return if value_orig == "0"
-
-      # Decrement it
-      value_new = (value_orig.to_i - 1).to_s
-      $el.elvar.xiki_return_warning = value_new
-
-      # Write new value to disk
-
-      Conf.put "xsh", "return warning", value_new
-
-      # Flash that many times
-
-      View.flash "- Typing return just adds a linebreak!", :times=>value_orig.to_i
-      View.pause 0.6
-      View.flash "- Use Ctrl+X to execute a command!", :times=>value_orig.to_i
+      # Current and next line are "  | ...", so add quote to this line
+      return View << "#{indent}| " if Line.at_right? && line =~ /^*\|/ && next_line =~ /^*\|/
 
     end
+
+
+    # Adds section to .xiki file on disk.
+    # Default is at the top
+    def self.add_section filename, section
+
+      # File exists, so prepend...
+
+      txt = File.open(filename, 'rb') {|f| f.read} rescue ""
+      txt = "#{section.strip}\n\n#{txt.strip}\n\n"
+      File.open(filename, "w") { |f| f << txt }
+    end
+
+    def self.extract_links options={}
+
+      source_file = options[:file] || Bookmarks["^links"]
+
+      # limit = 45
+      # limit = 200
+      # limit = options[:limit] || 1000
+      limit = options[:limit] || 2000
+
+      # limit = 5
+      result, dir, filename, filename_indent = [], [], nil, nil
+      heading = nil
+
+      txt = options[:txt] ||  File.read(source_file)
+
+      txt.split("\n").each do |line|
+
+        indent = Tree.indent_size line
+
+        next if line.blank?
+        line.sub! "\n", ''
+
+        # .../, so append as dir...
+        if line =~ /^[^:|#]*\/$/
+          dir = dir[0..indent]
+          next dir[indent] = line
+        end
+
+        # Filename found, so add to path if it's ours...
+
+        if like_filename = line[/^ *[+-] (.+\w)$/, 1]
+
+          # Construct full path
+          full = dir.compact
+          full.map!{|o| Line.without_label :line=>o.strip}
+          full = full[0..indent]
+          full[indent] = like_filename
+          full = full.join
+          full = Bookmarks[full]
+
+          # Not target file, so clear out filename and skip
+
+          filename = full
+          filename_indent = line[/^ */]
+
+
+          # Heading existed, so add it before file path
+          if heading && ! options[:filter]
+            result << [heading]
+            heading = nil
+          end
+
+          next
+
+        end
+
+        # Heading, so remember it
+        if line =~ /^>/
+          heading = line
+          heading = nil if heading =~ /^> ?:?$/
+          next
+        end
+
+        next if ! filename   # Can't do anything if no filename yet
+
+        next if options[:filter] && line !~ options[:filter]   # Ignore stuff that doesn't match :filter, if passed
+
+
+        next if line !~ /^ /   # Ignore stuff at beginning of line that isn't a dir
+
+        # It's a quote or bullet, so add it to result...
+
+        # Subtract off of indenting the amount the file was indented
+        line.sub!(/^#{filename_indent}  /, '')
+
+        result << [filename, line]
+
+        limit -= 1   # Todo > when finished > move down to where > we find quotes
+        break if limit < 1
+      end
+      result
+
+    end
+
+    def self.jump_to_label name
+      label = Emacs.regexp_quote name
+      Search.forward "^ *[+-] \\(#{label})\\|)\n[^a-zA-Z_]*#{label}/?$\\)", :beginning=>1
+    end
+
+    # Notes.heading_to_path "> Foo bar > bah"
+    #   "foo bar bah"
+    def self.heading_to_path heading, options={}
+
+      path = heading.sub(/^> /, '')
+      path.downcase!
+
+      # Remove username
+
+      user = path.slice! /^\@\w* /
+
+      path.gsub!(/['"()]/i, '')   # Remove apostrophes and certain other characters
+      path.gsub!(/[^a-z0-9]/i, ' ')   # Turn other characters into space
+      path.gsub!(/  +/, ' ')   # Collapse subsequent punctuation into one space
+      path.sub!(/ +$/, '')   # Remove spaces from end
+
+      path.strip!
+
+      # :url, so use dashes instead of spaces
+      path.gsub!(" ", "-") if options[:url]
+
+      # Put @user back on if was there
+      if user && ! options[:remove_username]
+        path = "#{user}#{path}"
+      end
+
+      path
+    end
+
+
+    def self.add_note_prompt options={}
+
+      txt = %`
+        > My note
+          | Type Ctrl+T after typing or pasting your note here.
+          | (Optionally change "My note" first)
+          |
+      `.unindent
+
+      # Add "+ save" and "+ share" if in noob mode
+
+      # :shell, command passed, so use it in note...
+
+      top_lines = ""
+      top_lines_length = (top_lines.scan(/\n/) || "").length + 1
+
+      insert_options = {:no_search=>1}
+      insert_options[:following] = 1 if options[:no_indent]
+
+      Tree.<< txt, insert_options
+
+      Line.next; Line.to_beginning
+      # Make green background for hints > "Note heading" and "note text"
+      cursor = View.cursor
+      Overlay.face :diff_green, :left=>View.cursor, :right=>Line.right
+      Line.next; Line.to_beginning
+      Overlay.face :diff_green, :left=>View.cursor, :right=>Line.right
+      View.cursor = cursor
+
+      # Pause until they type any key
+      key = Keys.press_any_key :message=>"Type any key...."
+
+      # Delete green stuff and add spaces
+
+      View.delete View.cursor, Line.right
+      Line.next; Line.to_beginning; Move.left
+      View.delete View.cursor, Line.right
+      View.cursor = cursor
+      View.<<(key[0].chr) if key.length == 1 && key[0] >= 32 && key[0] <= 126
+
+    end
+
+
+    def self.add_note_prompt_shell command #options
+
+      # :single_word_topic passed, so don't require heading..
+
+      txt = %`
+        | Optional description
+        |
+      `.unindent
+      # Add "+ save" and "+ share" if in noob mode
+      txt.<< "^ save\n^ share\n" #if Keys.noob_mode
+      # + save note
+
+      # :shell, command passed, so use it in note...
+
+      top_lines = "$ #{command}\n\n"
+      top_lines = Tree.pipe top_lines#, :indent=>"  "
+      txt.sub!(/^/, "\n#{top_lines}")
+
+      top_lines_length = (top_lines.scan(/\n/) || "").length + 1
+
+      # insert_options = {:no_search=>1}
+      # insert_options[:following] = 1 if options[:no_indent]
+      Tree.<< txt, :no_search=>1
+
+      Line.next(2)
+      Line.to_beginning
+
+      # Make green background for hints > "Note heading" and "note text"
+
+      Overlay.face :diff_green, :left=>View.cursor, :right=>Line.right
+
+      # Pause until they type any key
+      key = Keys.press_any_key :message=>"Type any key....."
+
+      # Delete green stuff and add spaces
+
+      View.delete View.cursor, Line.right
+      View.<<(key[0].chr) if key.length == 1 && key[0] >= 32 && key[0] <= 126
+
+    end
+
+
+    def self.save_on_blank options
+
+      task = options[:task]
+
+
+      # "* save" and was saved already, so just resave
+
+      if task == ["save"] && View.file
+        return DiffLog.save
+      end
+
+      # "* share" and was saved already, so just __
+
+      if task == ["share"] && View.file
+        return View.flash "Already shared"
+      end
+
+
+      # No username, so say they need to create a username...
+
+      user = XikihubClient.username
+      if ! user && task == ["share"]
+        options[:dont_nest] = 1
+        View.<< "* share\n  :-You need to set up a username before you can share!\n  = ok/\n\n", :dont_move=>1
+        Line.next 2
+        View.column = 3
+
+        return ""
+      end
+
+
+      # ~ share/command name, so add to file, save, and show message...
+
+      if task.length == 2
+
+        topic = task[1].sub(/^: /, '').downcase
+
+        # Weird characters in topic name, so remove and show validation messages
+
+        if topic !~ /^[a-z][a-z0-9 ]*$/
+          topic.gsub! /[^a-z0-9 ]/, ""
+          View.<< "* share\n  |-Topics can only contain letters and numbers. Type Ctrl+O when finished.\n  : #{topic}\n\n", :dont_move=>1
+          Line.next 2
+          Line.to_right
+
+          return ""
+        end
+
+        topic.gsub!(" ", "_")
+
+        if topic == ""
+          options[:nest] = 1
+          # Fix this > it moves down > use buffer local variable to remember blank lines to put back in
+          return "<* You must provide a name"
+        end
+
+        txt = View.txt
+        txt = "#{txt.strip}\n\n\n"
+        orig = View.name
+        topic_file = "#{Dirs.commands}/#{topic}.xiki"
+
+        view_orig, file_orig = View.name, View.file
+        View.open topic_file
+
+        # Error out if view has unsaved changes...
+
+        if View.modified?
+          View.open(:txt=> "
+            > Couldn't share, because #{topic}.xiki has unsaved changes
+            views/
+              - 1. Save your unsaved changes first:
+              #{topic}.xiki
+
+              - 2. Then go back and try to share again:
+              #{orig}
+
+          ".unindent, :line_found=>2)
+          return ""
+        end
+
+
+
+        # Prepend generic heading > if none exists
+        txt = "> My note\n#{txt}" if txt !~ /\A> ./
+
+
+        # ~ share, so add "@" to headings > so it'll be shared
+        txt.gsub! /^> (?!@)/, "> @ " if task[0] == "share"
+
+
+
+        # Prepend to actual file, and revert to show new addition
+        View.to_top
+        all_txt = File.read(topic_file) rescue ""
+        File.open(topic_file, "w") { |f| f << "#{txt}#{all_txt}" }
+        Files.revert
+        View.message " "
+
+
+        # Delete original view if it was temporary
+        $el.kill_buffer(view_orig) if ! file_orig
+
+
+
+        # Save to xikihub (if were editing shared)
+        if task[0] == "share"
+          XikihubClient.delegate_to_save_async(topic_file)
+        end
+
+
+        # ~ share when first shared heading in topic, so show green box at top with message and url...
+
+        if task[0] == "share" && all_txt !~ /^> @ /
+
+          # http://xiki.com/@#{user}/#{topic.gsub("_", "-")}
+          # Shared tasks ("> @ ...") can be viewed on the web:
+          key = Hint.top_box %`
+            Sharing...  Notes starting with "> @ " are viewable on the web:
+
+              #{XikihubClient.url}/@#{user}/#{topic.gsub("_", "-")}
+
+            To see web version or save further changes, type Ctrl+C at any time.
+          `.unindent
+
+          # They typed Ctrl+C, so delay and then simulate ^C
+          if key == [3]
+            View.pause n=0.3
+            Keys.expand ["content"]
+          end
+
+        end
+
+        return ""
+      end
+
+
+      # ~ share, so prompt them to enter command name...
+
+      options[:dont_nest] = 1
+
+      message = self.share_or_save_prompt_text
+
+      # Add linebreak before if non-blank line above
+
+      txt = "* #{task[0]}\n  | #{message}\n  : \n\n"
+
+      # Not at top line, and line before is non-blank so add \n before
+      if View.line > 1 && ! Line.value(0).blank?
+        View.<< "\n"
+        Launcher.added_option_item_padding_above = 1   # So it deletes it again
+      end
+
+
+      View.<< txt, :dont_move=>1
+      Line.next 2
+      View.column = 5
+
+      View.message " "
+
+      ""
+
+    end
+
+    def self.share_or_save_prompt_text
+      "Type a topic name, then type Ctrl+O"
+    end
+
+    def self.save_note_or_share_items options, key=:args
+      save_note = options[key][-1] == "save"
+      save_note ? View.delete(Line.left, Line.left(3)) : View.delete(Line.left(0), Line.left(2))
+      Move.previous
+      options[:task] = save_note ? ["save"] : ["share"]
+      txt = Tree.siblings :string=>1
+      options[key][-1] = txt
+    end
+
+    def self.option_items options
+
+      topic_vs_search = ! options[:delegated_from_search]   #> false
+
+      heading = options[:heading]
+      Ol "heading", heading   #> nil
+      your_username = XikihubClient.username
+
+      # Context is expanded note
+
+      if options[:context] == :expanded
+
+        save_or_create = "save"
+        name = options[:name]
+        name_hyphens = name.gsub('_', '-')
+
+        txt = %`
+          * #{save_or_create}
+            ! Notes.save options
+          * share_placeholder
+          * web
+            ! url = "#{XikihubClient.url}/@#{your_username}/#{name_hyphens}/#{Notes.heading_to_path heading, :url=>1, :remove_username=>1}"
+            ! Ol "!!!"
+            ! Browser.url url, :os_open=>1
+            ! ""
+        `.unindent
+
+        # Show '~ share' if > new > or not '> @ ...' heading...
+        # Show '* share' when > My note > or existing and your private or shared...
+
+        if ! options[:heading_exists] || options[:heading] !~ /^> @\w/   #> add 'share' option!!!
+          txt.sub! "* share_placeholder\n", "
+              * share
+                ! Notes.save options
+                ! ""
+            ".unindent
+        else
+          txt.sub! "* share_placeholder\n", ""
+        end
+
+
+        return txt
+
+      end
+
+      if options[:context] == :blank_line
+
+        txt = %`
+          * save
+            ! #DiffLog.save
+            ! Notes.save_on_blank options
+            ! ""
+          * share
+            ! Notes.save_on_blank options
+          * as xiki topic
+            ! # "- Todo > Implement > maybe add '* save' at top? > like content+save in untitled view?!"
+            ! # Notes.as_xiki_file options
+            ! DiffLog.save_newly_created
+            ! #"* share\\n  | #{Notes.share_or_save_prompt_text}\\n  : "
+            ! #""
+          * close
+            ! View.kill
+            ! ""
+        `.unindent
+
+        # We're not in a non-topic file, so suppress "* as topic"
+        txt.sub!(/^\* as xiki topic\n.+\n/, '') if ! View.file || View.topic_file?
+
+        # We're not in an untitled view, so suppress share
+        txt.sub!(/^\* share\n.+\n/, '') if View.file
+
+        txt
+
+      end
+
+    end
+
+
+    def self.save options={}
+
+      save_args = options[:save_args]
+      content, txt, heading, file, name = save_args[:content], save_args[:txt], save_args[:heading], save_args[:file], save_args[:name]
+
+      items, task = options[:items], options[:task]
+
+      # Add @ to heading if > '> ~ share' > and > not already there
+
+      if task == ["share"] && heading !~ /^> @/
+        heading.sub! /^> /, '> @ '
+      end
+
+      # "* save", so replace or add...
+
+      txt_old = (txt||"").dup
+
+      # Replace existing or prepend to top...
+
+      content = Tree.siblings :children=>1
+      content.gsub! /^:.*\n/, ''   # Don't save :... lines   #> "| + Animalzz\n|\n: Your shared version\n"
+      content.gsub! /^[=|:] ?/, ''
+
+      txt ||= ""   # In case new
+
+      self.replace_section txt, heading, content
+
+      diffs = DiffLog.save_diffs :patha=>file, :textb=>txt
+
+      # Save to xikihub (if were editing shared)
+      if items[0] =~ /^> @ /
+        XikihubClient.delegate_to_save_async(file)
+      end
+
+      # Create dir if it doesn't exist
+      FileUtils.mkdir_p File.dirname(file)
+
+      # Save the actual file
+      File.open(file, "w") { |f| f << txt }
+
+      return task == ["share"] ? "<* - shared!" : "<* - saved!"
+
+    end
+
+
+    # If there's a ~/xiki/foo.link for this file, update its timestamp
+    # as well (so it appears at the top of list+topics).
+    def self.update_link_timestamp_if_any filename
+
+      # In the ~/xiki dir, so do nothing
+      return if filename.start_with? File.expand_path("~/xiki")+"/"
+
+      # Not a .xiki or .xiki file, so do nothing
+      extension = filename.slice(/\.(notes|xiki)$/)
+      return if ! extension
+
+      link_filename = Notes.link_file? filename
+      return if ! link_filename
+
+      # Update timestamp of the .link file
+      FileUtils.touch link_filename
+      nil
+
+    end
+
+
+
+    # Returns path to ^n/foo.link file that links to filename, if there is one.
+    def self.link_file? filename
+
+      # Look for corresponding .link file (assume it has the same name)
+      link_filename = File.basename filename, ".*"
+
+      # link_filename = Bookmarks["^n/#{link_filename}.link"]
+      link_filename = File.expand_path "~/xiki/#{link_filename}.link"
+
+      link_filename_without_menu = link_filename.sub(/_menu\.link$/, '.link')
+
+      # Link exists, so continue
+      if File.exists? link_filename
+        # Just continue
+      elsif link_filename_without_menu != link_filename && File.exists?(link_filename_without_menu)
+        # Link exists without .link, so continue
+        link_filename = link_filename_without_menu
+      else
+        # No link exists, so do nothing
+        return
+      end
+
+      # No .link file exists, so do nothing
+      return if ! File.exists? link_filename
+
+      # .link file doesn't link back to our file, so do nothing
+      txt = File.expand_path File.read(link_filename).strip
+      return if filename != txt
+
+      link_filename
+
+    end
+
+
+
+
+    def self.expand_if_link file
+      # Ol.stack 15
+
+      if file =~ /\.link$/
+        file = File.read(file).strip
+        file = File.expand_path file
+      end
+      file
+    end
+
+
+    # Looks at quoted lines where cursor is, and shows green "| > Add heading here" prompt,
+    # if the first line isn't "| > ...".
+    def self.prompt_for_heading_if_missing
+
+      indent = Line.indent
+
+      orig = View.cursor   # Remember where we started, so we can just come back here if > it's already there
+      # Don't need > ## Line.previous while Line =~ /^ *\|/   # Move back until |... line
+      Line.previous while Line.value(0) =~ /^ *\|/   # Move back until above line isn't |... line
+
+      # It's already ">...", so jump back and do nothing
+      if Line =~ /^ *\| > ./
+        View.cursor = orig
+        return
+      end
+
+      # Add "^ save\n^ share" back
+      top = View.cursor
+      View.cursor = orig
+      Line << "\n#{indent}^ save\n#{indent}^ share"
+
+
+      View.cursor = top
+      Line.to_left
+      View.<< "#{indent}| > Type a task name\n", :dont_move=>1
+      Line.to_beginning
+      Move.right 2
+
+      Overlay.face :diff_green, :left=>View.cursor, :right=>Line.right
+
+      # Pause until they type any key
+      key = Keys.press_any_key :message=>"Type any key......."
+
+      # Delete green stuff and add spaces
+      View.delete View.cursor, Line.right
+      View.<<(key[0].chr) if key.length == 1 && key[0] >= 32 && key[0] <= 126
+
+      # Indicate that we prompted them (caller will do nothing, so they can type the heading)
+      return true
+
+    end
+
+    def self.indent_note_under_heading
+
+      # Fake heading
+      indent = Line.indent
+      orig = View.line   # Remember where we started, so we can just come back here if > it's already there
+
+      # Move up to 1st quoted line
+      Line.previous while Line.value(0) =~ /^ *\|/
+      # Delete quote before heading
+      Line.to_beginning
+      $el.delete_backward_char 2
+
+      # Indent the rest of the lines
+      Line.next
+      left = View.cursor
+      Line.next while Line.value =~ /^ *\|/
+      txt = View.delete(left, View.cursor)
+      View << txt.gsub(/^/, "  ")
+
+      View.to_line orig
+
+    end
+
+
+    def self.enter_task
+      path = Clipboard.get("=")
+
+      # Extract topic
+      topic = path[/^  [+-] ([\w]+)/, 1]
+      topic.gsub! /_/, ' '
+      # Extract task
+      task = path[/^    : (> .*)/, 1]
+      Line << "<- #{topic} #{task}"
+
+    end
+
+    # For now, only extracts non-blank ones
+    def self.extract_headings txt, options={}
+
+      if options[:exclude_just_upvotes]
+        # Have to read whole file into hash, and look at each body
+
+        hash = Notes.wiki_headings_to_hash(txt)
+
+        # Remove ones that are just upvotes...
+
+        label_regex = XikihubClient.comment_or_upvote_label_regex "\\w+"
+        hash.delete_if do |k, v|
+          v =~ /\A\n*#{label_regex}\n*\z/   #> nil
+        end
+
+        return hash.keys.map{|o| o.sub(/^> /, '')}
+      end
+
+      result = txt.scan(/^> (.+)/).flatten
+
+      # :paren, so filter out only items with text in parens   #> "> Private and shared\nThe shared one\n\n\n> One shared\n+ Animalzz\n\n> Shared and installed\nShared\n\n\n> Private, shared, installed\nShared\n\n\n"
+      if paren = options[:paren]   #> "> Private and shared\nThe shared one\n\n\n> One shared\n+ Animalzz\n\n> Shared and installed\nShared\n\n\n> Private, shared, installed\nShared\n\n\n"
+        result = result.select{|o| o =~ /^\(#{paren}\) /}
+      end
+
+      result
+    end
+
+    def self.diff_headings before, after
+
+      before = Notes.extract_headings before, :exclude_just_upvotes=>1
+      after = Notes.extract_headings after, :exclude_just_upvotes=>1
+
+      create = after - before
+      delete = before - after
+
+      [create, delete]
+    end
+
+
+
+    def self.in_home_xiki_dir? filename
+      filename.start_with? File.expand_path("~/xiki")+"/"
+    end
+
+    def self.replace_section txt, heading, section_txt
+
+      # Add linebreaks to end if not enough
+      section_txt = "#{section_txt.sub(/\n+\z/, '')}\n\n\n" if section_txt[/(\n*)\z/].length < 3
+
+      # Look for heading
+      index = txt ? txt.index(/^#{Regexp.escape heading}$/) : nil
+
+      # If doesn't exist yet, add to top
+      if ! index
+        return txt.replace "#{heading}\n#{section_txt}#{txt}"
+      end
+
+
+      index += heading.length
+
+      before = txt[0..index]
+      after = txt[index..-1]   # Part we're replacing and everything afterward
+      heading_after = after =~ /^> /
+      # Text to grab after section begins at next heading (if there is one)   #> "New\nsection added!"
+      after = heading_after ? after[heading_after..-1] : ""   # If no heading, we replace all   #> 0
+
+      txt.replace "#{before}#{section_txt}#{after}"
+    end
+
+
+    def self.prepend_section txt, section
+      # Add linebreaks to end if not enough
+      section = "#{section.sub(/\n+\z/, '')}\n\n\n" if section[/(\n*)\z/].length < 3
+      txt.replace "#{section}#{txt}"
+    end
+
+
+    def self.delete_section txt, heading
+
+      # Look for heading
+      index = txt ? txt.index(/^#{Regexp.escape heading}$/) : nil
+
+      # If doesn't exist, do nothing
+      return nil if ! index
+
+      before = txt[0..index]
+      # Intentionally include 1st char of match (for weirdness when [0..0]) then chop off
+      before.sub! /.\z/, ''   #> ""
+
+      after = txt[index+1..-1]   # Part we're replacing and everything afterward   #> " One\nHey.\n\n> Two\nHey hey.\n"
+      heading_after = after =~ /^>($| )/
+
+      # Text to grab after section begins at next heading (if there is one)   #> "New\nsection added!"
+      after = heading_after ? after[heading_after..-1] : ""   # If no heading, we replace all   #> 0
+
+      txt.replace "#{before}#{after}"
+
+    end
+
+
+    def self.fix_numbers
+      section = View.block_positions
+      txt = View.txt section[1], section[2]
+      i = 0
+      txt.gsub!(/^( *)[0-9]+\.( |\n)/) do |match|
+        i += 1
+        "#{$1}#{i}.#{$2}"
+      end
+
+      orig = Location.new
+      View.delete section[1], section[2]
+      View << txt
+      orig.go
+      Move.to_end
+
+    end
+
+
+    def self.wiki_headings_to_hash txt, options={}
+
+      filter = options[:filter]
+
+      # Reading the file and extract headings and txt's
+
+      chunks = txt.split(/(^>(?:| .*)\n)/)[1..-1]
+
+      # None found (maybe blank file)
+      return {} if ! chunks
+
+      hash, previous_heading = {}, nil
+      # Store last heading
+
+      chunks.each do |chunk|
+        # Heading, so remember and go next
+        if chunk =~ /\A>(| .*)\n\z/
+          previous_heading = chunk.strip
+          next
+        end
+
+        # It's a section body > so add to hash using last heading
+
+        # Ignore if blank
+        next if previous_heading !~ /\w/
+
+        # Only add if matches the filter
+
+        if filter
+          next if previous_heading !~ filter
+        end
+
+        # Ad to hash if doesn't exist yet
+        hash[previous_heading] ||= chunk
+
+      end
+
+      hash
+    end
+
+
+    def self.blank_out_wrapper_patterns txt
+      # |:... under shell commands
+      # |:... by itself
+
+      # txt.gsub!(/t/, "--")
+      # txt.gsub!(/^[^ \n].*\n  \|:.+\n+/, "")
+      txt.gsub!(/^[^ \n].*\n  \|:.+\n/, "\n\n")
+
+      txt.gsub!(/^ *\|:.+\n/, "\n")
+
+      # txt.sub!(/(^[$%&] .+\n  \|:.+\n+)+/, '')
+
+    end
+
+
+    def self.extract_upvotes command, txt
+
+      headings = Notes.wiki_headings_to_hash txt, :filter=>/\A> [^@\n]/
+
+      label_regex = XikihubClient.comment_or_upvote_label_regex "\\w+"
+
+      upvotes = []
+      headings.each do |heading, txt|
+
+        matches = txt.scan(/#{label_regex}/)
+        matches.flatten.each do |match|
+          user = match[/@(\w+)/, 1]
+          path = Notes.heading_to_path heading.sub(/@ /, ''), :url=>1
+          key = "@#{user}/#{command.gsub(" ", "_")}/#{path}"
+          upvotes << key
+        end
+
+      end
+
+      upvotes
+    end
+
+
+    # def self.extract_upvoted_headings txt
+    def self.extract_upvoted_headings section_hash
+
+      label_regex = XikihubClient.comment_or_upvote_label_regex "\\w+"
+
+      headings = []
+      section_hash.each do |heading, txt|
+        next if heading !~ /^> @ /
+        next if txt !~ /#{label_regex}/
+
+        headings << heading
+      end
+
+      headings
+    end
+
+
+
+    def self.extract_headings_and_actions txt
+
+      hash = Notes.wiki_headings_to_hash(txt)
+      headings = hash.map do |heading, txt|
+
+        match = heading.match(/> (@\w* )?(\..+)/)
+
+        next heading if ! match
+        user, words = match[1..2]
+
+        # Catch case where just upvotes
+        next heading if Notes.blank_out_upvotes_and_comments(txt) !~ /./
+
+
+        "+ #{user}#{Notes.heading_to_path(words).downcase}"
+      end
+
+      headings.delete_if{|o| o =~ /^> - /}
+
+      headings.join("\n")
+
+    end
+
+    def self.blank_out_upvotes_and_comments txt
+
+      upvote_regex = XikihubClient.comment_or_upvote_label_regex "\\w+", :upvotes=>1
+      comment_regex = XikihubClient.comment_or_upvote_label_regex "\\w+", :comments=>1
+
+      txt = txt.gsub /#{upvote_regex}/, ""
+      txt = txt.gsub(/#{comment_regex}\n.*?(\n\n\n|\z)/m) do
+        "\n" * $&.scan("\n").size
+      end
+
+      txt
+    end
+
 
   end
 
@@ -1551,3 +2975,4 @@ module Xiki
   # require 'deck'
   # Deck.keys :notes_mode_map   # Temporary - only when doing presentations
 end
+
