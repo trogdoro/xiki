@@ -91,13 +91,14 @@ module Xiki
       key = key.to_s
       val =
         if key == '0'
-          $el.current_kill 0
+          $el.current_kill(0) rescue nil
         else
           @@hash[key]
         end
       if options[:add_linebreak]
         val = "#{val}\n" unless val[/\n$/]
       end
+
       val
     end
 
@@ -185,16 +186,29 @@ module Xiki
     end
 
     # Mapped to as+paragraph and as+rest
+    def self.copy_rest_of_line
+      left, right = View.cursor, Line.right
+      Clipboard[0] = View.txt(left, right)
+      Effects.blink :what=>[left, right]
+    end
+
     def self.copy_paragraph options={}
       prefix = Keys.prefix
 
       if prefix == :u or options[:rest]   # If U prefix, get rest of paragraph
-        left, right = View.paragraph(:bounds=>true, :start_here=>true)
+        left, right = View.paragraph(:bounds=>true, :start_here=>1)
+
+      elsif prefix == :u or options[:before]   # If U prefix, get rest of paragraph
+        right, left = View.paragraph(:bounds=>true, :end_here=>1)
+
+      elsif prefix == :u or options[:rest_of_line]
+        left, right = View.cursor, Line.right
       else
         if prefix   # If numeric prefix
-          Line.next 0
-          View.select
+          Line.to_left
+          top = View.cursor
           Line.next prefix
+          View.selection = top, View.cursor
           return
         end
         # If no prefix, get whole paragraph
@@ -204,8 +218,12 @@ module Xiki
       if options[:just_return]
         return [View.txt(left, right), left, right]
       end
-      $el.goto_char right
-      $el.set_mark left
+
+      if options[:just_copy]
+        return Clipboard[0] = View.txt(left, right)
+      end
+
+      View.selection = left, right
       Effects.blink(:left=>left, :right=>right)
     end
 
@@ -273,15 +291,13 @@ module Xiki
     end
 
     def self.copy_everything
-      Effects.blink :what=>:all
 
-      # up+, so just select everything...
-
-      if Keys.prefix_u
-        View.to_highest
-        $el.set_mark($el.point_min)   # For now, don't select anything
-        return
+      # No prefix, so make selection of everything...
+      if ! Keys.prefix_u
+        return View.selection = [View.top, View.bottom]
       end
+
+      # Dash+, so don't select...
 
       Clipboard.set("0", $el.buffer_string)
     end
@@ -388,25 +404,27 @@ module Xiki
 
     def self.select
 
-      # up+, so just re-select what was selected last...
+      # Text already selected, so just just jump to other side...
 
-      if Keys.prefix_u
-        right = View.cursor
-        View.cursor = $el.mark
-        left = View.cursor
-        View.selection = [right, left]
+      $el.exchange_point_and_mark
+
+      if $el.elvar.mark_active
         return
       end
 
-      # Text already selected, so just just jump to other side...
+      # up+, so just re-select what was selected last...
 
-      if $el.elvar.mark_active
+      if Keys.prefix_u
         return $el.exchange_point_and_mark
       end
 
-      # Nothing selected yet, so just select
+      right = View.cursor
+      View.cursor = $el.mark
+      left = View.cursor
+      View.selection = [right, left]
+      return
 
-      $el.cua_set_mark
+      # Nothing selected yet, so just select
 
     end
 
@@ -470,6 +488,80 @@ module Xiki
 
       $el.set_register key, value
       nil
+
+    end
+
+
+    def self.cua_rectangle_advice
+
+      left, right = View.range
+
+      txt = View.delete left, right
+
+      final_spaces = txt[/ +\z/]   # Grab spaces on last line
+      txt.gsub!(/ +$/, '')   # Remove all trailing
+      txt << final_spaces if final_spaces   # Put last ones back
+
+      View << txt
+
+    end
+
+
+    def self.cua_paste_advice
+
+      # Not .notes file, so do nothing
+      return if View.extension != "xiki"
+
+      # Remember where pasted
+      left, right = View.range
+
+      # Cursor not at end of line (which means we pasted in the middle of a line), so do nothing
+      return if right != Line.right
+
+      line = View.line
+
+      View.cursor = left   # Move to beginning of paste
+
+      # Text we're pasting doesn't have at least one linebreak, so do nothing
+      return View.cursor = right if line == View.line
+
+      # No indent or "|..." before the cursor, so go back and do nothing
+      before_cursor = Line.before_cursor
+      indent = Line.indent before_cursor
+
+      quoted_indent = before_cursor[/^ *[|:] /]
+
+      after_bullet = before_cursor =~ /^ *[+-] /
+
+      return View.cursor = right if indent == "" && ! quoted_indent && ! after_bullet
+
+      # Pull out pasted, quote it (or just indent), and put it back
+      txt = View.delete left, right
+
+      # Unquote if quoted, or just unindent
+      txt =~ /^ *[|:] / ?
+        Tree.unquote!(txt) :
+        txt.unindent!
+
+      # txt_indent = Line.indent txt
+      quoted_indent ?
+        txt.gsub!(/^/, quoted_indent) :
+        txt.gsub!(/^/, indent)
+
+      # Line is just a blank quote, so remove indenting or quote from 1st line
+      if before_cursor =~ /^ *([|:] )?$/
+        txt.sub! /^ *([|:] )?/, ""
+
+      else   # Line already has stuff after the quote, so add linebreak
+
+        View << "\n"
+        txt.sub!(/\n\z/, '')   # And > remove last linebreak
+      end
+
+      # "- foo" bullet, so indent one level lower
+      txt.gsub!(/^/, "  ") if after_bullet
+
+      View << txt
 
     end
 
