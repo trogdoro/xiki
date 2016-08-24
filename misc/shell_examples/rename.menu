@@ -1,6 +1,0 @@
-+ add to filename/
-  $ rename -X --append foo *
-+ delete part of filename/
-  $ rename --delete foo *
-+ change extension/
-  $ rename -x --append .foo *

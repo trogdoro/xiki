@@ -1,2 +1,0 @@
-- don't load init files/
-  $ emacs -Q

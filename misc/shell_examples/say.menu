@@ -1,5 +1,0 @@
-+ save to file/
-  $ say -o /tmp/hi.m4a A sentence
-+ list voices/
-  $ say -v ?
-+ female voice/

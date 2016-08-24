@@ -1,3 +1,0 @@
-- generate/
-  - model/
-    $ rails generate model foo name:string details:text quantity:integer price:decimal delivery:boolean purchased_at:datetime

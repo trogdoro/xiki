@@ -1,6 +1,0 @@
-- go to a dir in the current dir/
-  $ cd somedir
-- go to the root/
-  $ cd /
-- go up one directory/
-  $ cd ..

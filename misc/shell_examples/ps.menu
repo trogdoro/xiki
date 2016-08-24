@@ -1,4 +1,0 @@
-+ show all/
-  $ ps aux
-+ show parent ids/
-  $ ps -xf
