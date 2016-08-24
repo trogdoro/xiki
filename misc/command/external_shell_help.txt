@@ -1,42 +1,43 @@
-Xikishell: Expanding shell commands!
+Xiki Shell!
 
 Usage:
   xsh
   xsh <shell command>
-  xsh [<options>] <shell command>
-  xsh -<xiki command>
+  xsh -
+  xsh -<topic>
 
-Examples:
-  $ xsh --examples
+Tutorial:
+  xsh --tutorial
 
-Interactive help:
-  $ xsh -help
+Sample calls:
+  $ xsh --samples
 
 Key shortcuts for your external shell (the default):
-  Ctrl+X    Just open xsh, when empty shell prompt.
-            If you type a shell command first, run it in xsh.
-  Ctrl+G    Grab shell command into xsh, but don't run it.
-  Ctrl+T    Menu of tasks for a shell command or dir.
-            (examples, favorites, etc.)
-  Ctrl+R    External shell history (like Ctrl+R)
-  Esc+Tab   Xiki command items
+  Ctrl+O   Opens xsh (when blank prompt). Or type a shell command
+           and Ctrl+O runs it in xsh.
+  Ctrl+X   Lists your Xiki files (when blank prompt). Or type a shell
+           command or topic and Ctrl+X lists its xiki notes and actions.
+  Ctrl+G   Go to previous spot in xsh (when blank prompt). Or type a
+           topic and ^G runs its go action.
+  Ctrl+T   Shows tasks for the current dir. Or type a shell command
+           and Ctrl+T shows tasks for it.
+  Ctrl+S   Search notes and actions shared by others to xikihub (xiki.com).
+  Alt+R    External shell history, like Ctrl+R (type Option+R on the mac)
 
 Options:
-  -g  Grab shell command into xsh
-  -t  Menu of tasks for a shell command or dir
-  -r  Recent shell history, like Ctrl+R (for external shell)
-  -tab  Tab, to auto-complete (not quite finished)
-  -s  Search in files
-  -f  Search filenames
-  -e  Examples
-  -h  History (internal shell commands)
-  -n  Notes
-  -fa Favorites
-  -l  List xsh sessions
-  -o  Open specific file, or list recent files
-  -i  Isolated - Better mode to debug startup problems
-      Doesn't connect to the cached xsh process for faster
-      startup
-  -b  List file bookmarks
-  -a  List all commands
+  -g   Grab shell command into xsh
+  -t   Tasks for a shell command or dir
+  -r   Recent shell history, like Ctrl+R (for external shell)
+  -f   Search filenames
+  -c   Search file contents
+  -e   Edited recently
+  -h   History (internal shell commands)
+  -n   Notes
+  -l   List xsh sessions
+  -o   Open specific file, or list recent files
+  -b   Bookmarks
+  -i   Recent shell interactions with xsh
+  -d   Diffs
+  --d  debug - Use this to debug xsh startup problems. Doesn't connect
+       to the cached xsh process for faster startup
 
