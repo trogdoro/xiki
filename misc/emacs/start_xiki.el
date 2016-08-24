@@ -28,20 +28,25 @@
   (replace-regexp-in-string "/misc/emacs/start_xiki.\\w+$" "" load-file-name)
 )
 
-; Remove annoying messages during startup...
+; Remove annoying messages during startup > suppress...
 
 (setq message--old (symbol-function 'message))
 (defun message (fmt &rest args)
   "Ignore useless messages."
   (cond
+    ((string-equal "Mark saved where search started" fmt))
     ((string-equal "Mark set" fmt))
     ((string-equal "Mark activated" fmt))
+    ((string-equal "Mark cleared" fmt))
     ((string-match "^Loading places from " fmt))
+
+    ((string-match "^Beginning of buffer" fmt))
 
     ((and
       args
       (or
         (string-match "^When done with this frame, type " (car args))
+        (string-match "^Beginning of buffer" (car args))
       )
     ))
 
@@ -49,9 +54,28 @@
   )
 )
 
+; Suppress "Beginning of Buffer" message.
+
+(defadvice previous-line (around silencer activate)
+  (condition-case nil
+    ad-do-it
+    ((beginning-of-buffer))))
+(defadvice next-line (around silencer activate)
+  (condition-case nil
+      ad-do-it
+    ((end-of-buffer))))
+
+(defadvice scroll-down (around silencer activate)
+  (condition-case nil
+    ad-do-it
+    ((beginning-of-buffer))))
+(defadvice scroll-up (around silencer activate)
+  (condition-case nil
+      ad-do-it
+    ((end-of-buffer))))
+
 (setq-default mode-line-format "")   ; Clear out modeline so it doesn't flash during startup
 (set-face-attribute 'mode-line nil :background 'unspecified)
-
 
 ; Starts up el4r...
 
@@ -73,7 +97,7 @@
 
 (populate-xsh-command-line-args)
 
-
 (if (not (and (boundp 'xiki-emacs-daemon) xiki-emacs-daemon))
   (el4r-ruby-eval "Xiki::Xsh.run :args_via_env=>1")
 )
+
