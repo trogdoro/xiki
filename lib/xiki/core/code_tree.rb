@@ -51,24 +51,15 @@ module Xiki
     self.stacktrace_length = 8
 
     def self.draw_exception exception, code=nil
-      message = exception.message
 
-      # TODO: pay attention to this option?
-      #     Ol << "options[:suggest_args]: #{options[:suggest_args].inspect}"
+      if exception.is_a?(String)
+        return View.open(:txt=>exception)
+      end
 
-      # TODO
-      # For now, don't do it!
-      # - How to not show "arg1" etc
-      #   - when ArgumentError is code deeper than the immediate one
-      #     if exception.is_a? ArgumentError
-      #       count, required = message.match(/\((\d+) for (\d+)\)/)[1..2]
-      #       if count < required   # We can't add sample args if too many were supplied
-      #         return (count.to_i+1..required.to_i).to_a.map{|o| "arg#{o}"}.join('/')+"/"
-      #       end
-      #     end
-
+      message ||= exception.message
 
       if exception.is_a? RuntimeError
+
         # If it was in the format of tree output, just show it
 
         message = message.unindent if message =~ /^\s/
@@ -77,21 +68,27 @@ module Xiki
 
         message.sub!(/.+?: /, '') if message =~ /in `/
 
+        return "" if message == ""   # If the raised an empty string, do nothing (they probably handled it)
         return message if message =~ /\A[>|:+-] /   # If :... etc, just show it as an error
+        return View.open(:txt=>$1) if(message =~ /\A\.open (.+)/m)
         return View.prompt($1) if(message =~ /\A\.prompt (.+)/)
         return View.flash($1) if(message =~ /\A\.flash (.+)/)
       end
 
-      # =commit/=stack > added 'long' item to show more in the stack.
-
-      backtrace = exception.backtrace[0..@stacktrace_length].join("\n").gsub(/^/, '  =') + "\n"
+      backtrace = exception.backtrace[0..@stacktrace_length].join("\n").gsub(/^/, '    ') + "\n"
 
       kind = exception.class
 
       # If path in message, move it to the stack trace
+
+      if message =~ /^(\/.+)/
+        path = $1
+        backtrace = "    #{path}\n#{backtrace}"
+      end
+
       if message =~ /(.+\d:in `.+'): (.+)/m
         path, message = $1, $2
-        backtrace = "  #{path}\n#{backtrace}"
+        backtrace = "    #{path}\n#{backtrace}"
       end
 
       message += "\n  #{kind}"
@@ -100,6 +97,7 @@ module Xiki
 
       txt = ""
 
+      txt << "- error:#{message}\n- backtrace:\n  =\n#{backtrace}\n"
       if code.is_a? Proc
         txt << "- tried to run:#{code.to_s}\n"
       elsif code.is_a? String
@@ -111,7 +109,6 @@ module Xiki
         end
         txt << "- tried to run:#{code}\n"
       end
-      txt << "- error:#{message}\n- backtrace:\n#{backtrace}"
       txt
     end
 
@@ -399,6 +396,8 @@ module Xiki
     def self.kill_siblings options={}
       prefix = Keys.prefix :clear=>true
 
+      left, right = View.range
+
       bounds = Tree.sibling_bounds options
 
       # If number, adjust
@@ -406,9 +405,13 @@ module Xiki
       if prefix.is_a?(Fixnum)
         bounds[2] = Line.left prefix + 1
       elsif prefix == :u
-        bounds[3] = bounds[2]   # Collapse lower window to nothing
+        bounds[3] = bounds[2]   # Collapse lower range to nothing
       elsif prefix == :uu || prefix == :-
-        bounds[0] = bounds[1]   # Collapse upper window to nothing
+        bounds[0] = bounds[1]   # Collapse upper range to nothing
+      elsif View.selection?
+        left, right = View.range
+        # Make whole in middle be where the selection was, instead of just the line
+        bounds[1], bounds[2] = left, right
       end
 
       View.delete bounds[2], bounds[3]
