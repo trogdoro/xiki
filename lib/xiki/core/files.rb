@@ -57,7 +57,7 @@ module Xiki
       'm' => '/app/models/',
       'v' => '/app/views/',
       'c' => '/app/controllers/',
-      'n' => '.notes',
+      'n' => '.xiki',
       }
 
     # Lets user open a file
@@ -152,7 +152,7 @@ module Xiki
         file = (bm == ".") ? View.file : Bookmarks[":#{bm}"]
       end
 
-      Shell.run "tail -f #{file}", :buffer => "*tail of #{file}"
+      Shell.run "tail -f #{file}", :buffer=>"tail of #{file}"
     end
 
     def self.edited_array
@@ -197,15 +197,6 @@ module Xiki
       end
     end
 
-    def self.open_history
-      case Keys.prefix
-      when nil;  Keys.prefix = nil; Launcher.open("- Files.history/")
-      when 0;  Launcher.open("- Files.history_tree/")
-      when :u;  Launcher.open("- Files.history_tree 7/")
-      else  Launcher.open("- Files.history_tree #{Keys.prefix}/")
-      end
-    end
-
     def self.open? name
       $el.buffer_list.find{|b| $el.buffer_file_name(b) == name}
     end
@@ -228,9 +219,9 @@ module Xiki
       `open \"#{path}\"`
     end
 
-    def self.do_load_file
+    def self.revert options={}
 
-      if View.name == "diff with saved/"   # If viewing diff, close it and save the actual file...
+      if View.name == "diff with saved"   # If viewing diff, close it and save the actual file...
         file = View.txt[/.+\n.+/].sub("\n  - ", "")
         View.kill
 
@@ -238,10 +229,20 @@ module Xiki
         $el.set_buffer $el.get_file_buffer(file)
       end
 
-      $el.revert_buffer(true, true, true) rescue nil
+      # Revert in a way they can roll back to
+      $el.insert_file_contents View.file, true, nil, nil, true
 
       View.message "Reverted file"
-      return if ! Keys.prefix_u
+
+      prefix_u = Keys.prefix_u
+
+      # Called via key shortcut but no prefix, so disable auto-revert
+      if ! prefix_u && options[:from_key_shortcut]
+        $el.auto_revert_mode 0
+        return
+      end
+
+      return if ! prefix_u
 
       View.flash $el.auto_revert_mode ? "- Enabled Auto-revert!" : "- Disabled Auto-revert!"
     end
@@ -252,28 +253,38 @@ module Xiki
       end
     end
 
-    def self.enter_file
-      message = "File to insert: "
+    def self.enter_file options={}
 
+      message = "File to insert: "
       View.flash message
-      path = Keys.input "#{message}: ", :timed=>1
+      path = Keys.input "#{message}", :timed=>1
 
       # They typed a word, so expand it as a bookmark
-      path = Bookmarks[":#{path}"] if path =~/^\w/
-      path = File.expand_path path
+      path = Bookmarks["^#{path}", :raw_path=>1] if path =~/^\w/
 
       is_dir = File.directory? path
       path = FileTree.add_slash_maybe path if is_dir
 
+
+      # :double_slash, so make it end in 2 slashes
+      path.sub!(/\/*$/, "//") if options[:double_slash]
+
+
       View.insert path
+
+      # enter+modified, so expand
+
+      if options[:expand]
+        Launcher.launch :date_sort=>true
+      end
 
     end
 
     # This is currently mac-specific
     def self.open_last_screenshot
 
-      dirs = `ls -t #{Bookmarks[":dt"]}`
-      screenshot = Bookmarks[":dt"]+dirs[/.+/]
+      dirs = `ls -t #{Bookmarks["^dt"]}`
+      screenshot = Bookmarks["^dt"]+dirs[/.+/]
 
       self.open_as screenshot, "Adobe Illustrator"
 
@@ -309,7 +320,7 @@ module Xiki
 
     def self.append path, txt
 
-      return if View.name =~ /_log.notes$/
+      return if View.name =~ /_log.xiki$/
       path = File.expand_path path
       txt = "#{txt.strip}\n"
       File.open(path, "a") { |f| f << txt }
@@ -320,16 +331,21 @@ module Xiki
       Dir.entries(path).select{|o| o !~ /^\.+$/}
     end
 
-    def self.open_nth nth
+    def self.open_nth nth, options={}
       prefix = Keys.prefix  # :clear=>1
 
-      prefix == :u ?
-        View.open(":t") :
-        View.open(":n")
+      if prefix == :u
+        Bookmarks.go ","
+        return
+      end
+
+      prefix == :u || options[:bm] == "t" ?
+        View.open("^n") :
+        View.open("^links")
 
       if nth != 0
         View.to_highest
-        nth.times { Move.to_quote }
+        nth.times { Move.to_quote :colons=>1 }
       end
 
       Effects.blink if View.list.length > 1
@@ -383,13 +399,12 @@ module Xiki
       "#{path}#{i}#{extension}"
     end
 
-    # Replaces home with tilda
-    # Files.tilda_for_home "/Users/craig/projects/"
+    # Replaces home with tilde
+    # Files.tilde_for_home "/Users/craig/projects/"
+    #   ~/projects/
 
-    # Todo > fix spelling mistake > "tilda" -> "tilde"
-
-    def self.tilda_for_home path, options={}
-
+    def self.tilde_for_home path, options={}
+      return path if ! path.is_a?(String)
       home = ENV['HOME']
       return path if ! home
 
