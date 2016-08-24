@@ -22,16 +22,16 @@ module Xiki
 
     def self.map_default
       {
+        "content"=>nil,
         "window"=>nil,
-        "open"=>nil,
+        "list"=>nil,
+
+        "do"=>nil,
+        "run"=>nil,
 
         "hop"=>nil,
-        "jump"=>nil,
-        "do"=>nil,
-
         "as"=>nil,
         "enter"=>nil,
-        "run"=>nil,
         "search"=>nil,
         "custom"=>nil,
       }
@@ -39,9 +39,9 @@ module Xiki
 
     def self.map_default_noob
       {
+        "content"=>nil,
         "window"=>nil,
-        "open"=>nil,
-        "hop"=>nil,
+        "list"=>nil,
 
         "jump"=>nil,
       }
@@ -51,15 +51,15 @@ module Xiki
     @@map_noob ||= Keys.map_default_noob
     @@noob_mode = nil
 
-    # Saves by into ~/xiki/commands/conf/ by replacing
+    # Saves by into ~/xiki/roots/conf/ by replacing
     # the line (copying the default conf over first, if
     # it's not there yet.
-    # Keys.put "return warning", " 4"
-    def self.put key, value
+    def self.set key, value
 
       # Read in file...
 
-      user_conf = Bookmarks[":xh/commands/conf/#{command}.conf"]
+      # user_conf = Bookmarks["^x/roots/conf/#{command}.conf"]
+      user_conf = File.expand_path("~/.xiki/roots/conf/#{command}.conf")
       FileUtils.mkdir_p File.dirname user_conf   # In case it doesn't exist yet
 
       txt = File.read(user_conf) rescue nil
@@ -67,7 +67,7 @@ module Xiki
       # If not there, read from default...
 
       if ! txt
-        txt = File.read(Bookmarks[":xiki/commands/#{command}/default.conf"]) rescue nil
+        txt = File.read(File.expand_path("~/.xiki/roots/#{command}/default.conf")) rescue nil
       end
 
       # Update file accordingly
@@ -87,20 +87,25 @@ module Xiki
 
     def self.noob_mode value=nil
 
-      # No value, so return the result
-      if value == nil
+      # No value, so return the result...
 
+      if value == nil
         # Memo-ize it, so we don't look it up every time
         if @@noob_mode == nil
           value = Conf.get "xsh", "key shortcuts"
           @@noob_mode = ! value || value == "noob"
         end
+
+        $el.elvar.xiki_noob_mode = @@noob_mode   # Cache in elisp var, so bar can get it
+
         return @@noob_mode
       end
 
-      # Value passed so set it in the cache and on the disk
+      # Value passed so set it in the cache and on the disk...
+
       @@noob_mode = value
-      Conf.put "xsh", 'key shortcuts', (value ? 'noob' : 'advanced')
+      $el.elvar.xiki_noob_mode = @@noob_mode   # Cache in elisp var, so bar can get it
+      Conf.set "xsh", 'key shortcuts', (value ? 'noob' : 'advanced')
     end
 
     # Called when expanding key shortcuts are pressed.
@@ -126,13 +131,20 @@ module Xiki
       end
 
       # See if user types anything right after
-      key = Keys.input(:optional=>true, :chars=>1, :prompt=>"")
+      key = Keys.input(:optional=>true, :chars=>1, :prompt=>"")   #> |||
+
+      if key =~ /\A.\w\z/
+        # Chop off second and put it back on queue
+        second = key.slice!(/.$/)
+        $el.elvar.unread_command_events = [second.sum]
+      end
 
       # [] and key was "k", so do keys+kill...
       if path == [] and key == "k"
         Keys.remember_key_for_repeat(proc {Clipboard.kill})
         return Clipboard.kill
       end
+
       # [] and key was "m", so do keys+more...
       if path == [] and key == "m"
         return Launcher.open "keys/\n  + more/", :hotkey=>1
@@ -159,7 +171,7 @@ module Xiki
 
         # Else, recurse...
 
-        return self.expand path
+        return self.expand path   #> ||
       end
 
       # No shortcut in time, so display menu...
@@ -187,7 +199,7 @@ module Xiki
     def self.more args, options
 
       txt = %`
-        + arrow keys/
+        + moving around/
           | You can type the arrow keys to move the cursor around.
           |
           | Often much of what you'll do in Xiki is use the arrow keys and
@@ -197,10 +209,17 @@ module Xiki
           | like when you start typing a key shortcut and become confused.
           | (Note that the escape key doesn't escape out of things, due to
           | the limitations of shell consoles.)
-        + copying and pasting, etc/
-          | You can use these keys to copy, paste, cut, and undo:
+        + copying and pasting/
+          | You can use these keys to copy, paste, cut:
           |
-          |   Ctrl+C, Ctrl+V, Ctrl+X, Ctrl+Z
+          |   Ctrl+C, Ctrl+V, Ctrl+X
+          |
+          | To select some text before copying or cutting, type Ctrl+Space
+          | and then move the arrow keys to select.
+        + undoing/
+          | You can type Ctrl+Z to undo.
+          |
+          | To redo
           |
           | To select some text before copying or cutting, type Ctrl+Space
           | and then move the arrow keys to select.
@@ -217,8 +236,10 @@ module Xiki
       txt <<
         if Keys.noob_mode
           %`
-          + enable advanced key shortcuts mode
+          + advanced key shortcuts mode
             ! Keys.noob_mode false
+            ! options[:line_found] = 17
+            ! options[:no_search] = 1
             ! options[:no_slash] = 1
             ! "
             ! | Advanced mode enabled. Many useful shortcuts are now set:
@@ -236,13 +257,18 @@ module Xiki
             ! |   ^D ^D  delete character
             ! |
             ! | Type ^K to see the current shortcuts, or to switch back to noob mode.
+            !
+            ! = close/
             ! "
           `.unindent
 
         else
           %`
-          + enable noob mode
+          + noob key shortcuts mode
             ! Keys.noob_mode true
+            ! options[:line_found] = 12
+            ! options[:no_search] = 1
+            ! options[:no_slash] = 1
             ! options[:no_slash] = 1
             ! "
             ! | Noob mode enabled. These key shortcuts are now set:
@@ -255,6 +281,8 @@ module Xiki
             ! | These hide many advanced keys, but are simpler for new users.
             ! |
             ! | Type ^K to see the current shortcuts, or to switch back to advanced mode.
+            !
+            ! = close/
             ! "
           `.unindent
         end
@@ -263,7 +291,7 @@ module Xiki
       txt = Xik.new(txt).expand args, options_in
 
       # Propagate some options back
-      Options.propagate_some options_in, options
+      Options.propagate_some_outward options_in, options
 
       txt
 
@@ -272,7 +300,15 @@ module Xiki
     # Implements menu for each key, (=view, =open, etc).
     def self.menu_expander path, options={}
 
-      in_own_view = View.name =~ /\/$/
+      # Downcase if capital from noob mode
+
+      path[0].sub!(/^([A-Z])/){$1.downcase} if path[0]
+
+      view = View.name
+
+      # Remember whether in "command/" view, because we'll close it later
+      in_own_view = options[:name].sub(/^\`/, '')+"/" == view.sub(/\+\w+/, '')
+
       options[:hotkey] = 1 if options[:was_letter]
 
       # keys/copying and pasting/, so do special handling of this item...
@@ -280,12 +316,11 @@ module Xiki
       return self.kill if path[0] == "k"
       return self.more(path[1..-1], options) if path[0] == "more"
 
-      return Launcher.open("help") if path[0] == "help"
+      return Launcher.open("help/") if path[0] == "help"
 
       # Special args of keys menu
 
       map = self.noob_mode ? @@map_noob : @@map
-
       item = Xi.hget(map, *path)
 
       # Key combo wasn't initially found in noob map, so look in full map via the single letter...
@@ -297,7 +332,7 @@ module Xiki
 
       if ! item
         options[:no_search] = 1
-        return "<! Key not defined"
+        return "<* Key not defined"
       end
 
       # More items, so show next keys...
@@ -326,7 +361,7 @@ module Xiki
       # Task, so show options or navigate...
 
       if task = options[:task]
-        return "~ source\n~ run" if task == []
+        return "* source\n* run" if task == []
         if task == ["source"]
           file, line = item.source_location   # => ["/projects/xiki/lib/xiki/core/key_shortcuts.rb", 755]
           View.open file
@@ -335,8 +370,7 @@ module Xiki
         end
       end
 
-      # Kill view if name is =...
-
+      # Kill view if topic/
       View.kill if in_own_view
 
       # Remember key pressed > so C-. can repeat it...
@@ -350,90 +384,103 @@ module Xiki
 
     def self.decorate_with_spacing path, txt
 
-      # Noob user, so add spacing to simplified item subset...
+      # Advanced mode, so add spaces...
 
-      if self.noob_mode
+      if ! self.noob_mode
+
         if path == []
-          txt.gsub!(/^\+ (quit|hop|as|enter|do|run)\/?\n/, "")   # Remove quit and xpand
-          return
+          txt.gsub!(/^\+ (xiki|open|quit|go|tasks|search)\n/, "")   # Remove quit and xpand
+          txt.gsub!(/(^\+ (shared|options|topic|backward|forward|previous|next)\n)+/, "")   # Remove backward, forward, previous, next
+          txt.gsub!(/\+ [dh]/, "\n\\0")
+
+        elsif path == ["content"]
+          txt.gsub!(/\+ [unhftye]/, "\n\\0")
         elsif path == ["window"]
-          txt.gsub!(/\+ [c]/, "\n\\0")
-          return
-        elsif path == ["open"]
-          txt.gsub!(/\+ [fp]/, "\n\\0")
-          return
+          txt.gsub!(/\+ [lhtnoefc]/, "\n\\0")
+        elsif path == ["list"]
+          txt.gsub!(/\+ [sdngwop]/, "\n\\0")
+
+        elsif path == ["hop"]
+          txt.gsub!(/\+ [ftlsaim]/, "\n\\0")
+        elsif path == ["run"]
+          txt.gsub!(/\+ [miehv]/, "\n\\0")
+        elsif path == ["hop", "version"]   # run+version
+          txt.gsub!(/\+ [bn]/, "\n\\0")
+        elsif path == ["run", "delete"]   # run+delete
+          txt.gsub!(/\+ [ifm]/, "\n\\0")
+        elsif path == ["run", "highlight"]   # run+highlight
+          txt.gsub!(/\+ [nsd]/, "\n\\0")
+        elsif path == ["enter", "item"]   # enter+item
+          txt.gsub!(/\+ [rlc]/, "\n\\0")
+
+        elsif path == ["do"]
+          txt.gsub!(/\+ [ltqnk]/, "\n\\0")
+        elsif path == ["do", "selection"]   # do+selection
+          txt.gsub!(/\+ [ct]/, "\n\\0")
+
+        elsif path == ["as"]
+          txt.gsub!(/\+ [cbdr]/, "\n\\0")
+        elsif path == ["enter"]
+          txt.gsub!(/\+ [bjhqi]/, "\n\\0")
+
         elsif path == ["jump"]
-          txt.gsub!(/\+ [h]/, "\n\\0")
-          return
+          txt.gsub!(/\+ [vtbeh]/, "\n\\0")
         end
+
+        return
       end
 
-      # All keys shown, so add spaces...
+
+      # Noob mode, so add spacing to simplified item subset...
 
       if path == []
-        txt.gsub!(/^\+ (xpand|quit|grab|tasks)\n/, "")   # Remove quit and xpand
-        txt.gsub!(/(^\+ (backward|forward|previous|next)\n)+/, "")   # Remove backward, forward, previous, next
-        txt.gsub!(/\+ [hal]/, "\n\\0")
-
-      elsif path == ["as"]
-        txt.gsub!(/\+ [clut]/, "\n\\0")
-      elsif path == ["enter"]
-        txt.gsub!(/\+ [bjhqi]/, "\n\\0")
-
-      elsif path == ["hop"]
-        txt.gsub!(/\+ [stuoc]/, "\n\\0")
-      elsif path == ["jump"]
-        txt.gsub!(/\+ [hoqryc]/, "\n\\0")
-      elsif path == ["open"]
-        txt.gsub!(/\+ [tpfuel]/, "\n\\0")
-
+        txt.gsub!(/^\+ (quit|hop|as|enter|do|run)\/?\n/, "")   # Remove quit and xpand
+        txt.gsub!(/\+ (content|window|list)/){ "+ #{$1.capitalize}" }
       elsif path == ["window"]
-        txt.gsub!(/\+ [hndeatwq]/, "\n\\0")
-      elsif path == ["run"]
-        txt.gsub!(/\+ [miehv]/, "\n\\0")
-      elsif path == ["run", "version"]
-        txt.gsub!(/\+ [rb]/, "\n\\0")
-      elsif path == ["run", "delete"]
-        txt.gsub!(/\+ [icm]/, "\n\\0")
-      elsif path == ["enter", "in"]
-        txt.gsub!(/\+ [rhl]/, "\n\\0")
-      elsif path == ["do"]
-        txt.gsub!(/\+ [ntq]/, "\n\\0")
-
-      elsif path == ["search"]
-        txt.gsub!(/\+ [vtbeh]/, "\n\\0")
-      elsif path == ["custom"]
-        txt.gsub!(/\+ [bch]/, "\n\\0")
+        txt.gsub!(/\+ [ulq]/, "\n\\0")
+      elsif path == ["list"]
+        txt.gsub!(/\+ [lsvm]/, "\n\\0")
+      elsif path == ["content"]
+        txt.gsub!(/\+ [unb]/, "\n\\0")
       end
 
     end
 
     @@descriptions = {
-      []=>"
-        Keyboard shortcuts. Right now, and anywhere in xsh, you
-        can type the first letter of one of the below words while
-        holding Ctrl (^W for window, ^O for open, or ^H for hop).
+      []=>%`
+        Typing ESC usually cancels or takes you back to the last screen.
+        Hold Ctrl and type the first letter of one of the items below.
+        (Example: Ctrl+C for "Content"). You can type these shortcuts
+        at any time - it's not necessary to type Ctrl+K first.
+      `.unindent+"\n",
+      # Hold Ctrl and type the first letter of one of the items below.
+      # (Example: Ctrl+C for "Content"). You can type these shortcuts
+      # at any time - it's not necessary to type Ctrl+K first.
 
-        The arrow keys always move around. ESC moves between views.
-        Try using the arrow keys then Ctrl+X to explore these items:
-        ".unindent+"\n",
-      ["as"]=>"Saving and remembering",
-      ["enter"]=>"Inserting stuff",
+      # Keyboard shortcuts. Right now, and anywhere in xsh, you can
+      # type the first letter of one of the below words while holding
+      # Ctrl (^W for window, ^C for content, or ^L for list).
 
-      ["hop"]=>"Cursor movement",
+      # The arrow keys always move around. Try using the arrow keys
+      # then Ctrl+X to expand and collapse these items:
 
-      ["jump"]=>"Going to specific places",
+      ["list"]=>"Lists of recent files and other stuff.",
 
-      ["open"]=>"Opening files, views, and lists",
+      ["as"]=>"Saving and remembering.",
+      ["enter"]=>"Inserting stuff.",
 
-      ["window"]=>"Splitting and navigating",
-      ["do"]=>"Various actions",
+      ["hop"]=>"Moving around within views and between views.",
 
-      ["run"]=>"Running and processing things",
-      ["search"]=>"Shortcuts you can use during a Ctrl+S search",
-      ["custom"]=>"Related to the kind of file you're viewing",
+      ["jump"]=>"Going to specific places.",
 
-      ["run", "version"]=>"Diffing and listing versions",
+      ["window"]=>"Basic window handling.",
+      ["do"]=>"Various actions.",
+
+      ["run"]=>"Running and processing things.",
+      ["jump"]=>"Shortcuts you can use during a Ctrl+S search.",
+      ["custom"]=>"Related to the kind of file you're viewing.",
+
+      ["run", "version"]=>"Diffing and listing versions.",
 
     }
 
@@ -447,7 +494,8 @@ module Xiki
       # keys/ in advanced mode, so don't show the long decription
       description = nil if path == [] && ! self.noob_mode
 
-      if description
+      # Only show descriptions when in noob mode
+      if description && self.noob_mode
         description = Tree.pipe(description).strip
         description.sub! /\|\z/, ""   # Remove "|" from last blank line in description
         txt = "#{description}\n#{txt}"
@@ -458,13 +506,20 @@ module Xiki
       if path == []
         if self.noob_mode
 
+          # | ESC usually takes you back to where you were last.
           txt << "\n"+"
-            + more/
-            + help
+            + More/
+            + Help
 
-            | ^K ^K to kill line
-            | Also see bottom bar below (press an arrow key if it says to)
+            | The arrow keys always move around.
+            | Typing Ctrl+K twice kills the line.
+            | Notice the shortcuts in the bottom bar as well.
             ".unindent
+            # | See bottom bar for more (press an arrow key if it says to).
+            # | ^K ^K kills a line.
+            # | ESC goes back to where you were last.
+            # Don't need > it's under "more/"
+            # | ^Space starts selecting text.
         else
           txt << "\n+ more/\n+ help" if path == []
         end
@@ -489,6 +544,7 @@ module Xiki
       return @@map if keys.blank?   # Just return map if no keys
 
       name = keys[0]
+
       initial = name[0]
       if keys[1].is_a? Proc
 
@@ -498,6 +554,9 @@ module Xiki
         $el.define_key map, "\\C-#{initial}", &keys[1]
 
       elsif keys[1].is_a?(String) && keys.length == 2
+
+        # Single key combination (a string, so define it directly...
+
         map = options[:map] || :global_map
         Keys.define_key_that_evals map, "\"\\C-#{initial}\"", "Xiki::#{keys[1]}".inspect
 
@@ -554,7 +613,7 @@ module Xiki
         # Hash, so ask for another key and narrow down...
 
         if val.is_a? Hash
-          key = Keys.input :chars=>1
+          key = Keys.input :chars=>1, :prompt=>"Key shortcut: "
           word = val.keys.find{|o| o =~ /^#{key}/}
           if ! word
             View.flash "- Key not defined: #{combo+[key]}!"
@@ -654,6 +713,7 @@ module Xiki
     # Keys.input :chars=>1   # Just one char
     # Keys.input :timed=>1   # Terminated by pause (and convert control to alpha)
     # Keys.input :optional=>1   # Terminated by pause
+    # Keys.input :optional=>1, :chars=>1, :seconds=>1, :prompt=>""   # Wait 1 second, seeing if anything was typed
     #   - A pause at the beginning will result in no input (nil)
     def self.input *args
 
@@ -668,8 +728,10 @@ module Xiki
       prompt ||= options[:prompt] || "Input: "
 
       if options[:chars] && ! options[:optional]
-        char = $el.char_to_string(
-          self.remove_control($el.read_char(prompt))).to_s
+        char = $el.char_to_string(self.remove_control($el.read_char(prompt))).to_s
+        subsequent = self.read_subsequent_chars
+        char += subsequent.inject(""){|acc, o| acc+o.chr}
+
         return char
       end
 
@@ -682,26 +744,35 @@ module Xiki
 
       # :timed or :optional option...
 
-      keys = ""
+      keys = options[:raw] ? [] : ""
 
-      # $el.elvar.inhibit_quit = true
       c = nil
 
       # If not optional, wait for input initially
       unless options[:optional]
         c = $el.el4r_lisp_eval("(let ((inhibit-quit t)) (read-char #{prompt.inspect}))")#.to_s
-        keys = self.to_letter(c)
-      end
-
-      if c == 7 || c == 27
-        $el.keyboard_quit
+        c = self.to_letter(c) if ! options[:raw]
+        keys << c
       end
 
       # No, leave it alone, since it's timed (mouse won't interfere)
-      while(c = $el.el4r_lisp_eval("(let ((inhibit-quit t)) (read-char \"#{prompt}#{keys}\" nil 0.35))"))
-        keys += self.to_letter(c)
+      seconds = options[:seconds] || 0.35
+      while(c = $el.el4r_lisp_eval("(let ((inhibit-quit t)) (read-char \"#{prompt}#{keys}\" nil #{seconds.to_f}))"))
+
+        c = self.to_letter(c) if ! options[:raw]
+        keys << c
+
         break if options[:optional] && options[:chars] == 1
       end
+
+      # Read subsequent chars returned right after
+      subsequent = self.read_subsequent_chars
+      if options[:raw]
+        keys += subsequent
+      else
+        keys += subsequent.inject(""){|acc, o| acc+o.chr}
+      end
+
 
       $el.message ""
       # If nothing, return nil
@@ -849,7 +920,7 @@ module Xiki
 
       beginning = View.cursor
 
-      prompt = options[:prompt] || "insert text (pause to end): "
+      prompt = options[:prompt] || "insert text (pause when finished): "
 
       # Get first char and insert
       c = $el.read_char(prompt).chr
@@ -862,7 +933,7 @@ module Xiki
       self.timed_insert_handle_char c
 
       # While no pause, insert more chars
-      while(c = $el.read_char(prompt, nil, 0.36))
+      while(c = $el.read_char(prompt, nil, 0.28))
         inserted += c.chr
         self.timed_insert_handle_char c.chr
       end
@@ -1009,8 +1080,7 @@ module Xiki
     #   /projects/xiki/lib/xiki/core/
     def self.bookmark_as_path options={}
 
-      bm = options[:bm] || Keys.input(:timed=>true, :prompt=>options[:prompt]||"Enter a bookmark: ")
-
+      bm = options[:bm] || Keys.input(:timed=>1, :prompt=>options[:prompt]||"Enter a bookmark: ")
       return if bm == "\e"
 
       if bm == " "   # If space, return special token
@@ -1018,7 +1088,9 @@ module Xiki
       elsif bm == "/"   # If slash, return special token
         return :slash
       elsif bm == "."   # Dash means the current file
-        return View.file
+        dir = View.file
+        dir = Bookmarks.dir_only(dir, :with_slash=>1) unless options[:include_file]
+        return dir
       elsif bm =~ /^\.+$/   # If .+ do tree in current dir
         dir = View.dir :force_slash=>1
         (bm.size - 2).times do
@@ -1029,17 +1101,16 @@ module Xiki
         return dir
       end
 
-      dir = Bookmarks.expand ":#{bm}"
-
+      dir = Bookmarks.expand "^#{bm}"
       if dir.nil?   # If no dir, return nil
         View.beep "- Bookmark '#{bm}' doesn't exist."
         return :bookmark_doesnt_exist
       end
 
       unless options[:include_file]
-        dir = Bookmarks.dir_only dir
-        dir << "/" unless dir =~ /\/$/
+        dir = Bookmarks.dir_only dir, :with_slash=>1
       end
+
       dir
 
     end
@@ -1053,14 +1124,6 @@ module Xiki
         end
       result.times{ block.call } if block
       result
-    end
-
-    def self.add_menubar_items
-      @@key_queue.reverse.each do |i|
-        next if ! i[0]   # Just get this to continue on
-        Menu.add_menubar_item [Menu::ROOT_MENU, i[0]], i[1], "#{i[0].downcase}-#{i[1].downcase.gsub(' ', '-')}"
-      end
-      @@key_queue = []
     end
 
     def self.char
@@ -1208,7 +1271,7 @@ module Xiki
     # To match, it finds the note file starting
     # with the first char, and containing the second.  So, "r" or
     # "rb" would match "ruby".
-    def self.filter list, keys
+    def self.fuzzy_filter list, keys
 
       regex = Regexp.new "^#{keys}"   # First, try exact match, starting at the beginning
       keys = keys.split(//)
@@ -1312,7 +1375,7 @@ module Xiki
 
           self.load_keys_dir   # Reload in case it's new
 
-          return "<! saved!"
+          return "<* - saved!"
 
         end
       end
@@ -1409,37 +1472,43 @@ module Xiki
         case path[0]
         when "next", "previous", "forward", "backward"
           return if ! prefix   # No point remembering if no prefix
-          kind = :movement
+        when "enter"
+          return if ["end"].member? path[1]   # Don't remember
         when "as"
-          return if ["save"].member? path[1]   # Don't remember
+          if ["select"].member? path[1]   # Certain ones are actions
+            kind = :movement
+          end
+          return if ["save", "axis"].member? path[1]   # Don't remember
         when "window"
-          return if ["middle"].member? path[1]   # Don't remember
+          return if ["middle", "edge"].member? path[1]   # Don't remember
           return if path[1] =~ /^[0-9]+$/
 
-          if ["kill", "delete"].member? path[1]   # Certain ones are actions
+          if ["kill", "close"].member? path[1]   # Certain ones are actions
             kind = :action
           else
             kind = :movement
           end
+        when "list"
+          return if ["unsaved", "zoom"].member? path[1]   # Don't remember
         when "run"
+
           return if ["save"].member? path[1]   # Don't remember
         when "hop"
-          return if ["start", "end"].member?(path[1]) && ! prefix   # Don't remember
           return if ["top", "bottom"].member?(path[1])   # Don't remember
           return if path[1] =~ /^[0-9]$/
-          if ["hit"].member? path[1]   # Certain ones are actions
+          if ["hack"].member? path[1]   # Certain ones are actions
             kind = :action
           else
             kind = :movement
           end
-        when "jump", "next", "previous"
-          kind = :movement
-        when "tile"
-          return if ["upper", "todo", "files"].member? path[1]   # Don't remember
-          kind = :movement if ! ["delete", "hide", "create"].member? path[1]   # Certain ones are actions
-          # The rest are movements
-        when "custom"
-          kind = :movement if ["previous", "next"].member?(path[1])
+        when "content"
+          return if ["zap", "start", "end"].member? path[1]   # Don't remember
+
+          if ["close"].member? path[1]   # Certain ones are actions
+            kind = :action
+          else
+            kind = :movement
+          end
         end
       end
 
@@ -1452,8 +1521,6 @@ module Xiki
         @@last_prefix_movement = prefix == :uu ? 16 : prefix
         return
       end
-
-      # kind == :action...
 
       @@last_key = path
       @@last_prefix = prefix
@@ -1541,23 +1608,127 @@ module Xiki
 
     end
 
-    def self.open_project_menu
+    # Mapped to jump+menu and do+menu. Prompts for a bookmark for a
+    # dir, then opens or jumps to the menu.xiki in it.
+    def self.open_or_run_project_menu options={:action=>"open"}
 
-      # Move up until no dirs left
+      # Prompt for bookmark...
 
-      dir = "#{View.dir}/tmp"   # Add on 'tmp' so first pass checks the actual dir
+      bm = Keys.input :timed=>1, :prompt=>"Enter a bookmark: "
 
-      found = nil
+      if bm == "."
 
-      while dir != "/"
-        dir = File.dirname dir
-        file = "#{dir.sub(/\/$/, '')}/menu.xiki"
-        break found = file if File.exists? file
+        # "." bookmark, so look for it in current dir and upwards...
+
+        # Climb up until no dirs left
+        dir = "#{View.dir}/tmp"   # Add on 'tmp' so first pass checks the actual dir
+
+        found = nil
+
+        while dir != "/"
+          dir = File.dirname dir
+          file = "#{dir.sub(/\/$/, '')}/menu.xiki"
+          break found = file if File.exists? file
+        end
+
+        return View.flash("- No 'menu.xiki' file found in this dir or any ancestor dirs!", :times=>3) if ! found
       end
 
-      return View.flash("- No 'menu.xiki' file found in this dir or any ancestor dirs!", :times=>3) if ! found
+      # Expand bookmark
+      file = Bookmarks["^#{bm}"]
+      file.sub! /\/$/, ''
 
-      View.open file
+      # do+menu, so just by adding double slashes...
+
+      if options[:action] == "run"
+
+        if File.directory?(file)
+          # Dir, so just add "//" at end...
+          file = "#{file}//"
+        else
+          file.sub! /\.\w+$/, "//"
+        end
+
+        return Launcher.open file
+
+      end
+
+      # jump+menu, so find file and open it...
+
+      # It's a file, so just open the file?
+      return View.open(file) if File.file? file
+
+      # It's a dir, so open menu.notes, or menu.xiki
+      ["menu.xiki", "menu.notes"].each do |name|
+        menu_file = "#{file}/#{name}"
+        return View.open(menu_file) if File.exists?(menu_file)
+      end
+
+      View.open :txt=>%`> Not found\nNo "menu.xiki" or "menu.notes" file found in:\n\n#{file}`
+
+    end
+
+
+    def self.read_subsequent_chars
+      result = []
+      # Read other chars typed right after
+      while(char = $el.read_char("", nil, 0.005)) do
+        result << char
+      end
+      result
+    end
+
+    def self.press_any_key options={}
+
+      # Read next key, escape sequence, or mouse click and just throw them away
+
+      # Read 1st char
+
+      View.message options[:message]||" "   # Keeps "a-" etc from showing up in the bottom
+      result = [$el.read_char]
+
+      result += self.read_subsequent_chars
+
+      result
+
+    end
+
+    def self.docs options={}
+
+      key = options[:key]
+
+      # View.to_view View.unique_name("bar")
+      View.to_view "bar", :clear=>1
+      Notes.mode
+      View.keys_bar_mode
+
+      View >> "bar\n\n"
+
+      txt = "
+        > Open
+        > Go
+        > Tasks
+
+        > Xiki
+        > Search
+
+        > Content
+        > Keys
+        > Quit
+      ".unindent
+
+
+      if ! key
+        Tree.<< txt
+        return
+      end
+
+
+      Tree.<< txt, :no_search=>1
+
+      Search.forward key
+      Launcher.launch :no_search=>1
+
 
     end
 
