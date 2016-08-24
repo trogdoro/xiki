@@ -15,13 +15,13 @@ describe Xik, ".expand" do
 
   it "doesn't mess up when two times in a row" do
     menu = Xik.new "
-      ~ a/
-      ~ b/
+      * a/
+      * b/
         - c/
         - d/
       "
-    menu[''].should == "~ a/\n~ b/"
-    menu[''].should == "~ a/\n~ b/"
+    menu[''].should == "* a/\n* b/"
+    menu[''].should == "* a/\n* b/"
   end
 
   it "doesn't mess up pluses" do

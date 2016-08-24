@@ -1,6 +1,8 @@
 require 'rr'
 require 'awesome_print'
 
+XIKI_SERVER_MODE = false if ! defined?(XIKI_SERVER_MODE)
+
 %w"xiki/core/core_ext xiki/core/ol".each {|o| require o}
 
 # RSpec::Runner.configure do |config|
@@ -19,7 +21,7 @@ def stub_menu_path_dirs
   xiki_dir = Xiki.dir
 
   list = ["#{xiki_dir}spec/fixtures/menu", "#{xiki_dir}commands"]
-  stub(Xiki).menu_path_dirs {list}
+  stub(Xiki).xiki_path_dirs {list}
 end
 
 

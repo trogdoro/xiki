@@ -102,13 +102,33 @@ describe Path, "#split" do
   #     #Path.split("aa/|b/b/|c/c").should == ["aa", "|b/b", "|c/c"]
   #   end
 
+  it "turns ;l into linebreaks" do
+    Path.split("a;lb").should == ["a\nb"]
+  end
+
+  # Todo > remove this > ;o is the new way
   it "turns ;0 into linebreaks" do
     Path.split("a;0b").should == ["a\nb"]
   end
 
+
   it "splits ancestors when spaces" do
     Path.split("a/b/= c/d/", :outer=>1).should == ["a/b/", "c/d/"]
   end
+
+
+
+
+  it "splits on colon space" do
+    Path.split("aa/bb: cc").should == ["aa", "bb", "cc"]
+  end
+
+  it "only escapes unescaped colons" do
+    Path.split("aa/bb;: cc").should == ["aa", "bb: cc"]
+  end
+
+
+
 
 #   it "handles :return_path with pipes" do
 #     Path.split("dom/| </div>", :return_path=>1).should == ["| </div>"]

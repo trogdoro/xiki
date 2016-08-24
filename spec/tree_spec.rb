@@ -363,7 +363,7 @@ describe Tree, "#dotify" do
     Tree.dotify(tree, path).should == [true]
   end
 
-  it "works when a underscore and space in reverse" do
+  it "works when in reverse and a underscore and space" do
     tree = "
       - .delete it/
       ".unindent
@@ -378,6 +378,15 @@ describe Tree, "#dotify" do
       ".unindent
 
     path = ["delete_it"]
+    Tree.dotify(tree, path).should == [true]
+  end
+
+  it "works when a hyphen and space" do
+    tree = "
+      - hey-you there/
+      ".unindent
+
+    path = ["hey-you-there"]
     Tree.dotify(tree, path).should == [true]
   end
 
@@ -693,7 +702,7 @@ end
 
 describe Tree, "#children" do
 
-  it "shows 2nd-level items when blank path" do
+  it "shows top items when blank path" do
     Tree.children("
       - a/
       - .b/
@@ -1018,6 +1027,13 @@ describe Tree, "#children" do
         ", [": a"]).should == ": aa\n"
   end
 
+  it "finds child when hyphens" do
+  - what about when > file paths?"
+      Tree.children("
+        - foo-bar bah/
+          - ram/
+        ", "foo-bar-bah").should == "+ ram/\n"
+    end
 
 end
 
@@ -1221,7 +1237,7 @@ describe Tree, "#construct_path" do
   it "stops when stop sign" do
     # Simulates:
     # a/
-    #   @b/
+    #   =b/
 
     mock(Line).value.times(1) {"  =b/"}
     mock($el).goto_char(100)
@@ -1244,40 +1260,40 @@ describe Tree, "#construct_path" do
   it "returns a list when stop" do
     # Simulates:
     # a/
-    #   @b/
+    #   =b/
 
-    mock(Line).value.times(1) {"  @b/"}
+    mock(Line).value.times(1) {"  =b/"}
     mock($el).search_backward_regexp(anything)
     mock(Line).value.times(1) {"a/"}
     mock($el).goto_char(100)
 
-    Tree.construct_path(:all=>1, :list=>1).should == ["a/", "@b/"]
+    Tree.construct_path(:all=>1, :list=>1).should == ["a/", "=b/"]
   end
 
   it "handles when stop, slashes and list" do
     # Simulates:
     # a/
-    #   @b/
+    #   =b/
 
-    mock(Line).value.times(1) {"  @b/"}
+    mock(Line).value.times(1) {"  =b/"}
     mock($el).search_backward_regexp(anything)
     mock(Line).value.times(1) {"a/"}
     mock($el).goto_char(100)
 
-    Tree.construct_path(:all=>1, :slashes=>1).should == "a/@b/"
+    Tree.construct_path(:all=>1, :slashes=>1).should == "a/=b/"
   end
 
   it "leaves double slashes" do
     # What should it return when this?...
     # a//
-    #   @b/
+    #   =b/
 
-    mock(Line).value.times(1) {"  @b/"}
+    mock(Line).value.times(1) {"  =b/"}
     mock($el).search_backward_regexp(anything)
     mock(Line).value.times(1) {"a//"}
     mock($el).goto_char(100)
 
-    Tree.construct_path(:all=>1, :slashes=>1).should == "a//@b/"
+    Tree.construct_path(:all=>1, :slashes=>1).should == "a//=b/"
 
   end
 
@@ -1291,6 +1307,40 @@ describe Tree, "#construct_path" do
     #   b/@c/
     #     d/
   end
+
+
+
+
+
+
+
+
+  it "appends hyphen to root when no slash" do
+    # Simulates:
+    # a
+
+    mock(Line).value.times(1) {"a"}
+    mock($el).goto_char(100)
+
+    Tree.construct_path.should == "a-"
+  end
+
+  it "appends hyphen to multiple roots when no slash" do
+    # Simulates:
+    # a
+    #   = b
+
+    mock(Line).value.times(1) {"  =b"}
+    mock($el).search_backward_regexp(anything)
+    mock(Line).value.times(1) {"a"}
+    mock($el).goto_char(100)
+
+    Tree.construct_path(:all=>1, :list=>1).should == ["a-", "=b-"]
+  end
+
+
+
+
 end
 
 describe Tree, "#join_to_subpaths" do
@@ -1311,12 +1361,9 @@ describe Tree, "#join_to_subpaths" do
     Tree.join_to_subpaths(["a/", "b;/=ip/"]).should == ["a/b;/=ip/"]
   end
 
-
   it "handles file path quotes" do
     Tree.join_to_subpaths(["/foo/", "path.rb", "| def bar"]).should == ["/foo/path.rb/| def bar"]
   end
-
-
 
   it "doesn't turn blank items into slashes" do
     Tree.join_to_subpaths(["", "ip/"]).should == ["ip/"]
@@ -1326,6 +1373,9 @@ describe Tree, "#join_to_subpaths" do
     Tree.join_to_subpaths(["=", "ip/"]).should == ["ip/"]
   end
 
+  it "splits when shell prompt" do
+    Tree.join_to_subpaths(["/dir/path/", "$ foo"]).should == ["/dir/path/", "$ foo"]
+  end
 
   #   it "tests a bunch of other stuff, once we're comfortable with making this the official way of delimiting @'s and dealing with trailing slashes"
 
@@ -1436,31 +1486,31 @@ end
 describe Tree, "#matching_siblings_start_index" do
   it "finds start" do
     txt = "
-      ~ c/
+      * c/
       a/
         - b/
-      ~ c/
+      * c/
         - b/
       ".unindent.gsub(/^/, "  ")
-    Tree.matching_siblings_start_index(txt, "~ ").should == 21
+    Tree.matching_siblings_start_index(txt, "* ").should == 21
   end
 
   it "finds when no indent" do
     txt = "
       a/
         - b/
-      ~ c/
+      * c/
       ".unindent
-    Tree.matching_siblings_start_index(txt, "~ ").should == 10
+    Tree.matching_siblings_start_index(txt, "* ").should == 10
   end
 
   it "returns 0 when not all match" do
     txt = "
-      ~ a/
+      * a/
         - b/
-      ~ c/
+      * c/
       ".unindent
-    Tree.matching_siblings_start_index(txt, "~ ").should == 0
+    Tree.matching_siblings_start_index(txt, "* ").should == 0
   end
 
   it "returns length of all when no match" do
@@ -1469,12 +1519,12 @@ describe Tree, "#matching_siblings_start_index" do
         - b/
       c/
       ".unindent
-    Tree.matching_siblings_start_index(txt, "~ ").should == 13
+    Tree.matching_siblings_start_index(txt, "* ").should == 13
   end
 
   it "returns length of all when no match" do
-    txt = "  - hi\n  ~ bbb\n  - hi\n  ~ you\n  ~ you\n"
-    Tree.matching_siblings_start_index(txt, "~ ").should == 22
+    txt = "  - hi\n  * bbb\n  - hi\n  * you\n  * you\n"
+    Tree.matching_siblings_start_index(txt, "* ").should == 22
   end
 
 end
@@ -1482,29 +1532,29 @@ end
 describe Tree, "#matching_siblings_end_index" do
   it "finds nonmatching" do
     txt = "
-      ~ a/
+      * a/
         - b/
       c/
       ".unindent.gsub(/^/, "  ")
-    Tree.matching_siblings_end_index(txt, "~ ").should == 16
+    Tree.matching_siblings_end_index(txt, "* ").should == 16
   end
 
   it "finds when no indent" do
     txt = "
-      ~ a/
+      * a/
         - b/
       c/
       ".unindent
-    Tree.matching_siblings_end_index(txt, "~ ").should == 12
+    Tree.matching_siblings_end_index(txt, "* ").should == 12
   end
 
   it "returns nil when not all match" do
     txt = "
-      ~ a/
+      * a/
         - b/
-      ~ c/
+      * c/
       ".unindent
-    Tree.matching_siblings_end_index(txt, "~ ").should == nil
+    Tree.matching_siblings_end_index(txt, "* ").should == nil
   end
 
   it "returns 0 when none match" do
@@ -1513,6 +1563,6 @@ describe Tree, "#matching_siblings_end_index" do
         - b/
       c/
       ".unindent
-    Tree.matching_siblings_end_index(txt, "~ ").should == 0
+    Tree.matching_siblings_end_index(txt, "* ").should == 0
   end
 end
