@@ -13,7 +13,19 @@ module Xiki
 
       return if options[:args].any?
 
-      items = Dir.new("#{options[:enclosing_source_dir]}#{source}").entries.grep /^[^.]/
+      # Get dir contents, sorted by date
+      items = Dir.glob("#{options[:enclosing_source_dir]}#{source}/*", File::FNM_DOTMATCH).
+        select {|i| i !~ /\/\.(\.*|svn|git)$/}#.   # Exclude some dirs (exclude entensions here too?)
+
+      # Sort, handling error when certain type of file
+      items = items.sort{|a, b|
+        a_time = File.mtime(a) rescue nil
+        b_time = File.mtime(b) rescue nil
+        next 0 if ! a_time || ! b_time
+        b_time <=> a_time
+      }
+
+
 
       items.delete "default.conf"   # ignore default conf
 
