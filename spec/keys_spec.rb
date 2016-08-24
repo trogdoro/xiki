@@ -4,15 +4,15 @@ require 'xiki/core/keys'
 
 describe Keys, "#filter" do
   it "matches when one letter" do
-    Keys.filter(["javascript", "ruby"], "r").should == "ruby"
+    Keys.fuzzy_filter(["javascript", "ruby"], "r").should == "ruby"
   end
 
   it "matches when two letters" do
-    Keys.filter(["javascript", "ruby"], "rb").should == "ruby"
+    Keys.fuzzy_filter(["javascript", "ruby"], "rb").should == "ruby"
   end
 
   it "matching first few letters takes prescedence" do
-    Keys.filter(["rebuild", "ruby"], "ru").should == "ruby"
+    Keys.fuzzy_filter(["rebuild", "ruby"], "ru").should == "ruby"
   end
 
 end

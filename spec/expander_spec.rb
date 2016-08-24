@@ -6,8 +6,7 @@ require "xiki/core/xik"
 Dir["./lib/xiki/handlers/*_handler.rb"].each{|o|
   require o.sub("./lib/", "")
 }
-
-%w"path code tree menu menu_suggester pre_pattern pattern file_tree bookmarks".each {|o| require "xiki/core/#{o}"}
+%w"path code tree menu command_suggester pre_pattern pattern file_tree bookmarks".each {|o| require "xiki/core/#{o}"}
 
 require 'xiki/core/expander'
 require 'xiki/core/pattern'
@@ -45,10 +44,10 @@ describe Expander, "#expand_file_path" do
   end
 
   it "expands bookmarks" do
-    stub(Bookmarks).[](":d") {"/tmp/dir/"}
-    Expander.expand_file_path(":d/a//b").should == "/tmp/dir/a//b"
-    Expander.expand_file_path(":d").should == "/tmp/dir"
-    Expander.expand_file_path(":d/").should == "/tmp/dir/"
+    stub(Bookmarks).[]("^d") {"/tmp/dir/"}
+    Expander.expand_file_path("^d/a//b").should == "/tmp/dir/a//b"
+    Expander.expand_file_path("^d").should == "/tmp/dir"
+    Expander.expand_file_path("^d/").should == "/tmp/dir/"
   end
 
   it "doesn't remove double slashes for home and current dir" do
@@ -57,8 +56,8 @@ describe Expander, "#expand_file_path" do
   end
 
   it "doesn't remove double slashes for bookmarks" do
-    stub(Bookmarks).[](":n") {"/tmp/file.txt"}
-    Expander.expand_file_path(":n//").should == "/tmp/file.txt//"
+    stub(Bookmarks).[]("^links") {"/tmp/file.txt"}
+    Expander.expand_file_path("^links//").should == "/tmp/file.txt//"
   end
 end
 
@@ -285,7 +284,7 @@ describe Expander, "#expand method" do
     Expander.expand("echo", ["a", "b"]).should == '["a", "b"]'
   end
 
-  it "expands menu in MENU_PATH" do
+  it "expands menu in XIKI_PATH" do
     Expander.expand("dd").should == "+ a/\n+ b/\n+ cccc/\n+ craig/\n+ keith/\n"
   end
 
@@ -297,13 +296,13 @@ describe Expander, "#expand method" do
     Expander.expand("#{Xiki.dir}spec/fixtures/menu/dr//").should == "+ a/\n+ b/\n"
   end
 
-  it "expands when literal text of command passed" do
-    Expander.expand(["a"], :command_text=>"a/\n  b").should == "b"
-  end
+  # it "expands when literal text of command passed" do
+  #   Expander.expand(["a"], :command_text=>"a/\n  b").should == "b"
+  # end
 
-  it "expands when literal text of command with path" do
-    Expander.expand(["a/b"], :command_text=>"a/\n  b/\n    c").should == "c"
-  end
+  # it "expands when literal text of command with path" do
+  #   Expander.expand(["a/b"], :command_text=>"a/\n  b/\n    c").should == "c"
+  # end
 
 end
 
