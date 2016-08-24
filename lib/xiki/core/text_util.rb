@@ -4,23 +4,6 @@ require 'xiki/core/ol'
 module Xiki
   class TextUtil
 
-    def self.menu
-      %`
-      > Change case
-      @ TextUtil.camel_case "hey you"
-      @ TextUtil.hyphen_case "hey you"
-      @ TextUtil.snake_case "hey you"
-      @ TextUtil.title_case "hey you"
-
-      > Modify vars in-place
-      You can also use bang versions, like:
-      @ s = "hey you";  TextUtil.camel_case! s;  p s
-
-      > Unindent
-      @ TextUtil.unindent "hey you"
-      `
-    end
-
     def self.case_choices
       [
         ['upper', lambda {|o| o.upcase}],
@@ -30,6 +13,7 @@ module Xiki
         ['snake', lambda {|o| TextUtil.snake_case(o)}],
         ['plus', lambda {|o| TextUtil.plus_case(o)}],
         ['hyphen', lambda {|o| TextUtil.hyphen_case(o)}],
+        ['regex', lambda {|o| TextUtil.regex_case(o)}],
         ['whitespace', lambda {|o| TextUtil.whitespace_case(o)}],
       ]
     end
@@ -97,12 +81,17 @@ module Xiki
         gsub(/--+/, "-")
     end
 
+    # TextUtil.regex_case("hi there")   # -> hi-there
+    def self.regex_case s
+      s.gsub(/[^a-z0-9]/i, '.').
+        gsub(/([a-z])([A-Z0-9])/) {"#{$1}.#{$2}"}.downcase.
+        gsub(/\.\.+/, ".")
+    end
+
     # TextUtil.whitespace_case("hi-there")
     #   hi there
     def self.whitespace_case txt
       txt.gsub(/[._-]/, ' ')
-      # gsub(/([a-z])([A-Z0-9])/) {"#{$1}-#{$2}"}.downcase.
-      # gsub(/--+/, "-")
     end
 
     # TextUtil.camel_case("hi there")   # -> HiThere
@@ -174,6 +163,7 @@ module Xiki
       eval txt
     end
 
+    # TextUtil.symbolize_hash_keys({"hi"=>"you"}).inspect
     def self.symbolize_hash_keys hash
       hash.keys.inject({}) {|new_hash, key|
         new_hash[key.to_sym] = hash[key]
@@ -183,6 +173,28 @@ module Xiki
 
     def self.parse_time txt
       txt.sub(/ .*/, '').sub(/^:/, '0:').sub(/^\d+$/, "\\0:00")
+    end
+
+
+    def self.regexp_escape txt
+      txt = Regexp.escape txt   # Do standard escape
+      # Then, remove backslashes before spaces...
+      result, slash_escaped = "", false
+      txt.split(//).each do |c|
+
+        # Last was slash
+        if slash_escaped
+          slash_escaped = false   # Stop remembering escape
+          next result.<< " " if c == " "   # Current is space, so just do space
+          # Current is something else, so add it with slash
+          next result.<< "\\#{c}"
+        end
+        # Current is slash, so just remember and do nothing
+        next slash_escaped = true if c == "\\"
+        # Normal unescaped char, so just append
+        result.<< c
+      end
+      result
     end
 
   end

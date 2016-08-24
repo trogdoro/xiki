@@ -4,6 +4,10 @@ class Array
   def blank?
     self.empty?
   end
+
+  def snippet
+    Xiki::Tree.pipe to_s
+  end
 end
 
 class NilClass
@@ -38,5 +42,46 @@ class String
   end
   def unindent!
     self.replace Xiki::TextUtil.unindent(to_s)
+  end
+
+  def snippet
+    Xiki::Tree.pipe to_s
+  end
+
+  def quoted
+    Xiki::Tree.quote to_s
+  end
+
+  def no_trailing
+    to_s.gsub(/ +$/, '')
+  end
+
+
+
+  def camel_case
+    Xiki::TextUtil.camel_case(to_s)
+  end
+  def snake_case
+    Xiki::TextUtil.snake_case(to_s)
+  end
+  def hyphen_case
+    Xiki::TextUtil.hyphen_case(to_s)
+  end
+  def word_case
+    Xiki::TextUtil.word_case(to_s)
+  end
+
+
+end
+
+class Hash
+  def snippet
+    Xiki::Tree.pipe to_s
+  end
+end
+
+class NilClass
+  def snippet
+    "nil"
   end
 end
