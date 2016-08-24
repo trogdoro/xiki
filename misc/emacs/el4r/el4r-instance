@@ -822,9 +822,40 @@ module El4r
 
       # Start loop again if there was an error...
       if result == :child_kicked_exception
+
+        # Kill all child threads...
+
+        # current = Thread.current
+        current = Thread.main
+
+        Thread.list.each do |thread|
+          # thread.raise("Gotcha")
+
+          # Temporarily removed!
+          thread.kill if thread != current
+        end
+
+        # Kill all grandchildren of "bash" children (they should die when command stops)...
+
+        mypid = Process.pid
+
+        children = `ps -eo ppid,pid,args`.split("\n").grep(/^ *#{mypid} /)
+        # Only kill children of bash processes
+        children = children.grep(/ bash$| \(bash\)$/)
+        children.map!{|o| o[/ (\d+) /, 1].to_i}
+        children.each do |child|
+          # Get grandchildren
+          grands = `ps -eo ppid,pid,args`.split("\n").grep(/^ *#{child} /)
+          grands.map!{|o| o[/ (\d+) /, 1].to_i}
+
+          # Temporarily removed!
+          grands.each{|grand| Process.kill(9, grand)}
+        end
+
+        # Go back into el4r run loop...
+
         el4r_wait_expr_loop
       end
-
 
     rescue Exception => e
       el4r_log El4r::ErrorUtils.stacktrace_message(e)
@@ -1068,7 +1099,7 @@ if __FILE__ == $0
 
     STDIN.close
     grandparent_pid = Process.pid
-    Signal.trap("TERM") { puts "the xiki process is listening on 8161 and ready to fork!"; exit }
+    Signal.trap("TERM") { puts "the xiki process is listening on ~/.xikisock and ready to fork!"; exit }
 
     parent_pid = Process.fork do
 
@@ -1090,9 +1121,8 @@ if __FILE__ == $0
 
       File.delete socket_file if File.exists? socket_file
 
-      orig = File.umask 077   # Create /tmp/xikisock with tighter security
-      server = UNIXServer.new socket_file
-
+      orig = File.umask 077   # Create xikisock with tighter security
+      $server = UNIXServer.new socket_file
       File.umask orig
 
       Process.kill("TERM", grandparent_pid)   # The initial process just waits around until the server started. Tell it to die so el4r will continue on.
@@ -1101,14 +1131,14 @@ if __FILE__ == $0
 
       while true
 
-        socket = server.accept
+        $socket = $server.accept
 
         # Comment this to do single process
         child_pid = Process.fork do
 
           $0 = "xsh fork"
 
-          server.close
+          $server.close
           # ...notifying parent via socket when done
 
           # Enable verbose el4r logging during startup (slows down startup time a lot)
@@ -1119,10 +1149,10 @@ if __FILE__ == $0
 
           # Fast boot stuff (emacs will call el4r_boot again after we return)...
 
-          El4r.main :input=>socket, :output=>socket # , :boot_first=>1
+          El4r.main :input=>$socket, :output=>$socket # , :boot_first=>1
         end
         Process.detach child_pid   # Release pid into pool, so we don't hog them
-        socket.close
+        $socket.close
       end
 
     end
@@ -1134,7 +1164,7 @@ if __FILE__ == $0
 
     # Scenario 2: Started manually in shell (a single emacs will connect to us)...
 
-    puts "starting ecaleb4craigr (no pre-load)..."
+    puts "starting el4r (no pre-load)..."
     require 'socket'
     server = TCPServer.new "127.0.0.1", 8161
     while true
