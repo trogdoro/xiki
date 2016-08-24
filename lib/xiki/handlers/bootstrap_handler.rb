@@ -9,7 +9,7 @@ module Xiki
       txt = File.read "#{options[:enclosing_source_dir]}#{source}"
 
       if options[:client] == "web"
-        require "#{Xiki.dir}commands/bootstrap.rb" if ! defined? Xiki::Menu::Bootstrap
+        require "#{Xiki.dir}roots/bootstrap.rb" if ! defined? Xiki::Menu::Bootstrap
         txt = Xiki::Menu::Bootstrap.render txt
       end
       options[:output] = txt
