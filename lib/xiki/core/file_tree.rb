@@ -1,5 +1,18 @@
 # -*- coding: utf-8 -*-
 
+#
+# > Summary
+# For handling file system paths
+# and the like.
+#
+# > .add
+# ! 1 + 1
+#
+# > .subtract
+# ! 10 + 1
+#
+
+
 require 'xiki/core/styles'
 require 'xiki/core/line'
 require 'xiki/core/view'
@@ -73,8 +86,15 @@ module Xiki
     def traverse path
 
       entries = Dir.glob("#{View.expand_path(path)}/*", File::FNM_DOTMATCH).
-        select {|i| i !~ /\/\.(\.*|svn|git)$/}.   # Exclude some dirs (exclude entensions here too?)
-        sort
+        select {|i| i !~ /\/\.(\.*|svn|git)$/}#.   # Exclude some dirs (exclude entensions here too?)
+
+      # Sort, handling error when certain type of file
+      entries = entries.sort{|a, b|
+        a_time = File.mtime(a) rescue nil
+        b_time = File.mtime(b) rescue nil
+        next 0 if ! a_time || ! b_time
+        b_time <=> a_time
+      }
 
       # Process dirs
       entries.each{ |f|
@@ -95,11 +115,8 @@ module Xiki
 
     # Returns tree of files and their contents matching the
     # regex (as an array of lines).
-    # FileTree.grep "/projects/xiki/spec/fixtures/commands/dd/", ""
+    # FileTree.grep "/projects/xiki/spec/fixtures/roots/dd/", ""
     def self.grep dir, regex, options={}
-
-      # args when ## => ["/projects/foo/", "hey", {}]
-      # args when ** => ["/projects/foo/", nil, {:files=>"index"}]
 
       # Expand out bookmark (if there is one)
       dir = Bookmarks.expand(dir)
@@ -126,22 +143,23 @@ module Xiki
       Tree.clear_empty_dirs! list
 
       list
-
     end
 
     def self.grep_with_hashes path, regex, prepend='##'
 
-      Search.append_log path, "- #{prepend}#{regex}/"
+      Search.append_log path, "- #{prepend}#{regex}"
 
-      View.to_buffer "tree filter/"
+      View.to_buffer "tree filter"
       View.dir = Files.dir_of(path)
-      View.clear; Notes.mode
+      View.clear
+      Notes.mode :wrap=>false
 
-      if File.directory?(path)
-        View << "#{File.expand_path path}/\n  - #{prepend}#{regex}/\n"
+      if File.directory?(File.expand_path path)
+        View << "#{Files.tilde_for_home path}\n  - #{prepend}#{regex}\n"
       else
-        dir, name = path.match(/(.+\/)(.+)/)[1..2]
-        View << "#{File.expand_path dir}/\n  - #{name}\n    - #{prepend}#{regex}/\n"
+
+        dir, name = path.match(/(.+)\/(.+)/)[1..2]
+        View << "#{dir}/\n  - #{name}\n    - #{prepend}#{regex}\n"
       end
 
       View.to_bottom; Line.previous
@@ -190,7 +208,12 @@ module Xiki
       line_found, matches_count, i = nil, 0, 0
       IO.foreach(file, *Files.encoding_binary) do |line|
         i+=1
+
+        # Should fix utf error
+        line.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '')
+
         line.gsub!(/[\r\n\c@]+/, '')
+
 
         if current_line && line_found.nil?
           line_found = matches_count if i == current_line
@@ -212,7 +235,7 @@ module Xiki
         options[:line_found] = line_found
       end
 
-      return ["<!"] if result.empty?
+      return ["<*"] if result.empty?
 
       result
     end
@@ -226,7 +249,15 @@ module Xiki
       path.sub!(/\/$/, '')
 
       entries = Dir.glob(["#{path}/*"], File::FNM_DOTMATCH).
-        select{|i| i !~ /\/\.(\.*|svn|git)$/}.entries.sort_by{|w| w.downcase}
+        select{|i| i !~ /\/\.(\.*|svn|git)$/}.entries#.sort_by{|w| w.downcase}
+
+      # Sort, handling error when certain type of file
+      entries = entries.sort{|a, b|
+        a_time = File.mtime(a) rescue nil
+        b_time = File.mtime(b) rescue nil
+        next 0 if ! a_time || ! b_time
+        b_time <=> a_time
+      }
 
       entries = entries.select{|o| o !~ /\/(vendor|log)$/}   # Exclude some dirs (why doing it here?
 
@@ -301,9 +332,9 @@ module Xiki
 
         Styles.define :ls_bullet_darker, :face=>'menlo', :size=>"+2", :fg=>"555", :bold=>nil
 
-        Styles.define :quote_heading_h0, :size=>"+8", :face=>"arial", :bold=>true
-        Styles.define :quote_heading_h1, :size=>"2", :face=>"arial", :bold=>true
-        Styles.define :quote_heading_h2, :size=>"-2", :face=>"arial", :bold=>true
+        Styles.define :quote_heading_h0, :size=>"+8", :face=>"arial"#, :bold=>true
+        Styles.define :quote_heading_h1, :size=>"2", :face=>"arial"#, :bold=>true
+        Styles.define :quote_heading_h2, :size=>"-2", :face=>"arial"#, :bold=>true
 
         Styles.define :quote_heading_pipe, :fg=>"555", :size=>"0", :face=>"xiki", :bold=>1 # , :bg=>"unspecified"
 
@@ -311,25 +342,34 @@ module Xiki
 
         Styles.define :quote_heading_h1_green, :fg=>"7c3", :size=>"2", :face=>"arial", :bold=>true
 
-        Styles.define :quote_heading_bracket, :fg=>"888", :size=>"-2", :face=>"arial black", :bold=>1
+        Styles.define :quote_heading_bracket, :fg=>"555", :size=>"-2", :face=>"arial black", :bold=>1
 
-        Styles.define :quote_heading_small, :size=>"-2", :face=>"arial black", :bold=>true
+
+        Styles.define :quote_heading_small, :size=>"-2", :face=>"arial black"#, :bold=>true
+
 
         Styles.define :diff_line_number, :bold=>true, :size=>"-2", :fg=>"666"
         Styles.define :diff_red, :bg=>"400", :fg=>"ee3333", :size=>"-1"
         Styles.define :diff_red_pipe, :bg=>"400", :fg=>"711", :size=>"0", :face=>"xiki", :bold=>true
-        Styles.define :diff_green, :bg=>"130", :fg=>"4d3", :size=>"-1"
 
+        Styles.define :diff_green, :bg=>"130", :fg=>"4d3", :size=>"-1"
         Styles.define :diff_green_pipe, :bg=>"130", :fg=>"228822", :size=>"0", :face=>"xiki", :bold=>true
+
+
+
+        Styles.define :wrapper_pattern, :bg=>"330", :fg=>"ec0", :size=>"-1"
+        Styles.define :wrapper_pattern_pipe, :bg=>"330", :fg=>"770", :size=>"0", :face=>"xiki", :bold=>true
+
         Styles.define :diff_small, :fg=>"222", :size=>"-11"
 
-        Styles.define :diff_yellow, :bg=>"330", :fg=>"ec0", :size=>"-1"
-        Styles.define :diff_yellow_pipe, :bg=>"330", :fg=>"770", :size=>"0", :face=>"xiki", :bold=>true
+
+        Styles.define :diff_yellow, :bg=>"950", :fg=>"fa0", :size=>"-1"
+        Styles.define :diff_yellow_pipe, :bg=>"950", :fg=>"b80", :size=>"0", :face=>"xiki", :bold=>true
 
         Styles.tree_letters :underline=>1
         Styles.tree_letters2 :underline=>1
 
-        Styles.define :ls_dir, :fg=>"888", :face=>"verdana", :size=>"-1", :bold=>true
+        Styles.define :ls_dir, :fg=>"999", :face=>"verdana", :size=>"-1", :bold=>true
         Styles.define :task_bullet_slash, :fg=>"777", :face=>"verdana", :size=>"-1", :bold=>true
         Styles.define :task_bullet, :fg=>"888"
 
@@ -338,12 +378,8 @@ module Xiki
         # ##search/
         Styles.define :ls_search, :fg=>"ff7700", :face=>"verdana", :size=>"-2", :bold=>true
 
-        Styles.define :ls_quote, :size=>"-1", :fg=>"888"
+        Styles.define :ls_quote, :size=>"-1", :fg=>"999"
         Styles.define :ls_quote_light, :size=>"-1", :fg=>"555", :bg=>"222"
-
-        # if ! Styles.dark_bg?
-        #   Styles.define :ls_quote, :size=>"-1", :fg=>"777"
-        #   Styles.define :ls_quote_light, :size=>"-1", :fg=>"aaa"
 
         # 001| Quoted text lines
         Styles.define :ls_quote_line_number, :size=>"-4", :fg=>"eee"
@@ -366,27 +402,28 @@ module Xiki
 
         Styles.clear
 
-        # Must go before quotes - if it goes after, it supercedes them
-        Styles.apply("\\(~\\)\\(.+?\\)\\(~\\)", nil, :quote_heading_bracket, :notes_label, :quote_heading_bracket)
-
         # return if $el.caching
 
         # - bullets...
 
-        Styles.apply("^[ \t]*\\([*+-]\\)\\( \\)", nil, :ls_bullet, :variable)   # - fooo, + foo
+        # Make "* foo" bullets have gray asterix
+        Styles.apply("^[ \t]*\\([*+-]\\)\\( \\)", nil, :ls_bullet_darker, :variable)   # - fooo, + foo
+
+        Styles.apply("^[ \t]*\\([+-]\\)\\( \\)", nil, :ls_bullet, :variable)   # - fooo, + foo
 
         # ~ foo
         # ~ foo/ > exists at end of this method, because it has to override the following ones
 
-        Styles.apply("^[ \t-]*\\(\\*\\)", nil, :ls_bullet)   # * (by itself)
         Styles.apply("^ +\\(:[0-9]+\\)\\(|.*\n\\)", nil, :ls_quote_line_number, :ls_quote)   # :NN|foo... used any more?
 
         # Path-like lines and parts of lines (make gray)
 
         # Single "@" or bullets at beginning
-        Styles.apply("^[ <+=@-]*\\(=\\)", nil, :ls_dir)   # @, <= @, etc.
+        Styles.apply("^[ <+@-]*\\(=\\)", nil, :ls_dir)   # @, <= @, etc.
 
         Styles.apply("^[ \t]*\\(<+[=|@:*+~>-]?\\)", nil, :ls_bullet)   # <<, <=, etc bullets
+
+        Styles.apply("^ *@[a-z]+", :ls_dir)   # @foo   < Username
 
         # Slash after almost anything
 
@@ -394,8 +431,9 @@ module Xiki
 
         Styles.apply("^ *\\([ <=+-]+ \\)?=?\\(\/\\)", nil, nil, :ls_dir)   # - /
 
+
         # Covers paths in files by themselves
-        Styles.apply("^ *\\([ <=+-]+ \\)?=?\\([@=~$&a-zA-Z0-9_,*+? ().:;<>-]*\/[@=\#'$a-zA-Z0-9_,*? ().:;\/<>-]+\/\\)", nil, nil, :ls_dir)   # Paths with multiple slashes
+        Styles.apply("^ *\\([ <=+-]+ \\)?=?\\([@=~$&a-zA-Z0-9_,*+? ().^;<>-]*\/[@=\#'$a-zA-Z0-9_,*? ().:;\/<>-]+\/\\)", nil, nil, :ls_dir)   # Paths with multiple slashes
 
         # < next) menus/
         Styles.apply("^[ \t]*[<+-][<+=-]* [a-zA-Z0-9_,? ().:;+-]+?[:)] \\(\[.@=a-zA-Z0-9 ]+\/\\)", nil, :ls_dir)   # - label) oneword/slash
@@ -405,9 +443,10 @@ module Xiki
         Styles.apply("^[ \t]*[+-] [^(\n]+?) \\(.+/\\)$", nil, :ls_dir)   # - hey) /what/
         Styles.apply("^[ \t]*[+-] [a-zA-Z0-9_,? ().:;-]+?: \\(.+/\\)$", nil, :ls_dir)   # - hey: /what/
 
-        Styles.apply('\\(https?\\|file\\|xiki\\|source\\):/[a-zA-Z0-9\/.~_:;,?%&=|+!-#-]+', :notes_link)   # Url
+        Styles.apply('\\(https?\\|file\\|xiki\\|source\\):/[a-zA-Z0-9\/.~_:;,?%&*=|+!@#()-]+', :notes_link)   # Url
 
-        Styles.apply("^ *\\([\\\\:]\\)\\($\\| .*\n\\)", nil, :quote_heading_pipe, :ls_quote)   # :... lines (quotes)
+        Styles.apply("^ *\\([`!:]\\)\\($\\| .*\n\\)", nil, :quote_heading_pipe, :ls_quote)   # :... lines (quotes)
+        Styles.apply("^ *\\([\\\\]\\)\\($\\| .*\n\\)", nil, :quote_heading_pipe, :default)   # :... lines (quotes)
 
 
         # |... lines (quotes)
@@ -415,34 +454,31 @@ module Xiki
         Styles.apply("^ *\\(|\\)\\(.*\n\\)", nil, :quote_heading_pipe, :ls_quote)   # |... lines (quotes)
 
         # | hey : you (makes colon big)
-        Styles.apply("^ *\\(|\\)\\( .* \\)\\(:\\)\\( .*\n\\)", nil, :quote_heading_pipe, :ls_quote, :quote_heading_pipe, :ls_quote)
+        Styles.apply("^ *\\(|\\)\\( .* \\)\\(:\\)\\( .*\n\\|$\\)", nil, :quote_heading_pipe, :ls_quote, :quote_heading_pipe, :ls_quote)
 
         Styles.apply("^ *\\(|\\)\\(.+?\\)([+-].*[-+])", nil, :quote_heading_pipe, :ls_quote)   # quoted lines: beginnings of lines
         Styles.apply("^ *|.*([-+].*[+-])\\(.+\\)$", nil, :ls_quote)   # quoted lines: ends of lines
         Styles.apply("[+-])\\(.*?\\)([+-]", nil, :ls_quote)   # quoted lines: between diffs
 
         Styles.apply("^ *\\([|:]\\)\\([()].*\n\\)", nil, :quote_heading_pipe, :ls_quote_light)   # |(... or :(... lines
-        Styles.apply("^ *\\(||\\)\\(.*\n\\)", nil, :quote_heading_pipe, :ls_quote_light)   # ||... or ::... lines
+        Styles.apply("^ *\\(||\\)\\(.*\n\\)", nil, :quote_heading_pipe, :ls_quote)   # ||... or ::... lines
 
         # | >... headings
-        Styles.apply("^ *\\(|\\|:\\)\\( ?\\)\\(>\\)\\(\n\\| .*\n\\)", nil, :quote_heading_pipe, :ls_quote, :quote_heading_bracket, nil)
+        Styles.apply("^ *\\([=|:]\\)\\( ?\\)\\(>\\)\\(\n\\| .*\n\\)", nil, :quote_heading_pipe, :ls_quote, :quote_heading_bracket, :quote_heading_h1)
 
         # | >>
         Styles.apply("^ *\\(|\\)\\( \\)\\(>>\\)\\(\n\\| .*\n\\)", nil, :quote_heading_pipe, :ls_quote, :quote_heading_bracket, :quote_heading_small)
         # | >...! headings
         Styles.apply("^ *\\(|\\)\\( ?\\)\\(>\\)\\(.*!:?\n\\)", nil, :quote_heading_pipe, :ls_quote, :quote_heading_bracket, :quote_heading_h1_green)
 
-        #    >>
-        Styles.apply("^ +\\(>>\\)\\(.*\n\\)", nil, :quote_heading_bracket, nil)
-
-        # (indented)  > large:
-        # Styles.apply("^ +\\(> ?\\)\\(.*:\n\\)", nil, :quote_heading_bracket, :quote_heading_h0)
-
         # |+... diffs
         Styles.apply("^ +\\(:[0-9]+\\)$", nil, :ls_quote)
         Styles.apply("^ *\\([|:]\\+\\)\\(.*\\)", nil, :diff_green_pipe, :diff_green, :face=>"xiki")   # :+...
         Styles.apply("^ *\\([|:]-\\)\\(.*\\)", nil, :diff_red_pipe, :diff_red)   # :-...
         Styles.apply("^ *\\([|:]\\?\\)\\(.*\\)", nil, :diff_yellow_pipe, :diff_yellow, :face=>"xiki")   # :?...
+
+        Styles.apply("^ *\\(|:\\)\\(.*\\)", nil, :wrapper_pattern_pipe, :wrapper_pattern, :face=>"xiki")   # |:...
+
 
         # ::... draw attention to lines with extra colon > in shell output, it means line's expandable
         Styles.apply("^ *\\(::\\)\\(.*\n\\)", nil, :quote_heading_pipe, :ls_quote)   # ::...
@@ -454,24 +490,38 @@ module Xiki
 
         # Has to be at bottom, to override other styles...
 
-        Styles.apply("^[ \t]*\\([*~]\\)\\( \\)\\(.*\\)", nil, :ls_bullet_darker, :variable, :task_bullet)   # ~ fooo
-        Styles.apply("^[ \t]*\\([*~]\\)\\( \\)\\(.*\/$\\)", nil, :ls_bullet_darker, :variable, :task_bullet_slash)   # ~ foo/
+
+        # Styles for option bullets
+        Styles.apply("^[ \t]*\\([~^]\\)\\( \\)\\(.*\\)", nil, :ls_bullet_darker, :variable, nil)   # "~ foo" or "^ foo"
+        Styles.apply("^[ \t]*\\([~*^]\\)\\( \\)\\(.*\/$\\)", nil, :ls_bullet_darker, :variable, :task_bullet_slash)   # ~ foo/ (similar but bold)
+
+
+        Styles.apply("^[ \t]*\\(<-\\|->\\) ", nil, :ls_bullet_darker)   # "<- foo" or "-> foo"
 
       end
 
     end
 
     def self.apply_styles_at_end
-      Styles.apply('^ *\\([+-] \\)?\\(=%.*/\\)$', nil, nil, :ls_search)   # =%...
+      Styles.apply('^ *\\([+-] \\)?\\(= ?%.*/?\\)$', nil, nil, :ls_search)   # =%...
 
-      Styles.apply('^ *\\([+-] \\)?\\(##.*/\\)$', nil, nil, :ls_search)  # ##_/
+      Styles.apply('^[ =]*\\([+-] \\)?\\(##.*/?\\)$', nil, nil, :ls_search)  # ##_/
+      Styles.apply('^[ =]*\\([+-] \\)?\\(\\*\\*.*/?\\)$', nil, nil, :ls_search)  # **_/
 
-      Styles.apply('^ *\\([+-] \\)?\\(@f/.*/\\)$', nil, nil, :ls_search)  # ##_/
+      Styles.apply('^#:.*', :ls_search)   # #:foo
+
+      Styles.apply('^ *\\([+-] \\)?\\(@f/.*/\\)$', nil, nil, :ls_search)
       Styles.apply('^ *[+-] \\(\*\*.*/\\)$', nil, :ls_search)  # **_/
-      Styles.apply('^ *\\([+-] \\)?\\(@n/.*/\\)$', nil, nil, :ls_search)  # ##_/
+      Styles.apply('^ *\\([+-] \\)?\\(@n/.*/\\)$', nil, nil, :ls_search)
     end
 
+    # FileTree.handles? "^foo"
+    # FileTree.handles? "/a"
+    # FileTree.handles? "~/a"
+    # FileTree.handles? "./a"
+    # FileTree.handles? "foo"
     def self.handles? list=nil
+
       if list.nil?
         list ||= Tree.construct_path(:list=>true) rescue nil   # Use current line by default
       end
@@ -484,15 +534,10 @@ module Xiki
 
     def self.matches_root_pattern? item
 
-      # Just leave in for a bit, to catch deprecated $foo... paths
-      if item =~ /^\$[._a-zA-Z0-9-]+(\/|$)/   # Path starts with $xxx, so pull it out and look it up...
-        raise "Don't use $..., use :... > #{path}!"
-      end
-
       item == "." ||   # just ~ or .
       item == "~" ||   # just ~ or .
       item =~ /^\/(\w|$)/ ||   # /... or /
-      item =~ /^:\w/ ||
+      item =~ /^\^\w/ ||   # :bookmark
 
       item =~ %r"^(~/|\.\.?/)"
 
@@ -551,7 +596,7 @@ module Xiki
 
       # If no prefix, prompt to save (file must not exist since we were called)
       if options[:prefix] != "update" && options[:task] != ["save"] && options[:task] != ["create"]
-        return "~ create/"
+        return "* create"
       end
 
       txt = Tree.siblings(:quotes=>1, :string=>1)
@@ -580,7 +625,7 @@ module Xiki
       DiffLog.save_diffs :patha=>path, :textb=>txt
       File.open(path, "w") { |f| f << txt }
 
-      "<! saved!"
+      "<* - saved!"
 
       # - Possible long-term better solution > do later
       #   - if ! options[:prompt_response]
@@ -744,7 +789,10 @@ module Xiki
           View.insert "\n\n";  backward_char 2
         end
       end
-      dir = View.expand_path(dir)   # Expand out ~
+
+
+      # Removed this > might cause problems
+
       # If file, back up to dir
       dir = Bookmarks.dir_only dir unless File.directory?(dir)
       # If dir or recursive
@@ -771,8 +819,7 @@ module Xiki
         $el.goto_char left
         self.select_next_file
         # Start incremental search
-        Tree.filter(:recursive => true, :left => left, :right => right)
-        #self.draw(dir)
+        Tree.filter(:recursive=>true, :left=>left, :right=>right)
       else
         # Insert with linebreak if file
         if File.file?(dir)
@@ -799,22 +846,6 @@ module Xiki
       # If numeric prefix, open nth thing in tree
       if prefix and prefix != :u and !(options[:ignore_prefix])
         View.flash "- Don't know what this was supposed to do!"
-
-        # Remember original view
-        #       start = $el.selected_window
-        # Open tree (ignoring prefix)
-        #       self.open_in_bar# :ignore_prefix=>true
-        # Find nth file in tree
-        #       View.to_highest
-
-        #       prefix.times do
-        #         re_search_forward "^  +[a-zA-Z0-9_.-]+$"
-        #       end
-        # Go to next line if comment
-
-        #       Line.next if Line.next_matches(/^ *\|/)
-        #       Line.to_beginning
-        #       self.open :ignore_prefix=>true
         return
       end
 
@@ -822,25 +853,23 @@ module Xiki
         View.bar
       end
       View.to_nth 0
-      $el.find_file Bookmarks.expand(":t")
+      $el.find_file Bookmarks.expand("^n")
 
       only_one_view_in_bar = prefix == :u
       only_one_view_in_bar = ! only_one_view_in_bar if @@one_view_in_bar_by_default
-
       unless only_one_view_in_bar  # Unless u prefix, open $tl as well (under bar)
 
         # If 2nd view isn't at left margin, open 2nd view
         if View.left_edge(View.list[1]) != 0
-          View.create
+          View.create_horizontal
         end
 
         View.to_nth 1
 
         # If 2nd view isn't :n, open it
-        if $el.buffer_file_name( $el.window_buffer( View.list[1] ) ) != Bookmarks[":n"]
-          $el.find_file Bookmarks[":n"]
+        if $el.buffer_file_name( $el.window_buffer( View.list[1] ) ) != Bookmarks["^links"]
+          $el.find_file Bookmarks["^links"]
         end
-
         View.to_nth 0
 
       end
@@ -856,7 +885,7 @@ module Xiki
       txt = txt.sub(/\n\z/, "")
       if file
         dir = File.dirname file
-        dir = Files.tilda_for_home dir
+        dir = Files.tilde_for_home dir
 
         txt = "#{dir}/\n  - #{File.basename(file)}\n" +
           txt.gsub(/^/, "    : ").
@@ -869,6 +898,7 @@ module Xiki
 
     # Recursively display dir in tree   # Insert dir contents at point (usually in existing tree)
     def self.dir options={}
+
       return Files.open_in_os(Tree.construct_path) if Keys.prefix == 0
 
       Tree.plus_to_minus_maybe
@@ -953,7 +983,7 @@ module Xiki
 
       if files.empty? && dirs.empty?
         if ! File.exists? dir   # If doesn't exist, show message
-          return Tree << "~ create dir/"
+          return Tree << "* create dir/"
           # - =mkdir/
           # | ...dir '#{dir}' doesn't exist.  Create it?
         end
@@ -993,23 +1023,25 @@ module Xiki
     # New Unified way to show one dir.
     def self.expand_one_dir options
       dir = options[:file_path]
-
       dirs, files = self.files_in_dir dir, options   # Get dirs and files in it
 
       if files.empty? && dirs.empty?
         if ! File.exists? dir   # If doesn't exist, show message
-          return "~ create dir/"
+          return "* create dir/"
         end
 
-        return "<! Directory is empty"
+        return "<* Directory is empty"
       end
 
       # For now, try bullets for both
       dirs.collect!{|i| i.sub(/.*\/(.+)/, "+ \\1/")}
       files.collect!{|i| i.sub(/.*\/(.+)/, "+ \\1")}
 
-      both = options[:date_sort] || options[:size_sort] ?
-        files + dirs : dirs + files
+      # Figure out > why no :date_sort when normal dir expand
+
+      # Temporarily always do dirs first > see how it feels
+      both = files + dirs
+
       result = both.join("\n") + "\n"
 
       # TODO How to deal with focus? - return option telling them line to put cursor on - or, maybe, make that happen somehow on the other side of the call?
@@ -1042,7 +1074,6 @@ module Xiki
       dir = Tree.construct_path rescue nil
 
       # Current line is dir path...
-
       if self.dir? && self.handles?
         Tree.plus_to_minus_maybe
         indent = Line.indent
@@ -1061,7 +1092,8 @@ module Xiki
       # Empty line, so just enter tree...
 
       if Line.blank?
-        if prefix == :u || txt =~ /\A  +[-+]?[:|][-+ ]/   # If C-u or whole thing is quoted already, unquote
+
+        if prefix == :u || txt =~ /\A *[-+]?[:|][-+ ]/   # If C-u or whole thing is quoted already, unquote
           txt = txt.split("\n").grep(/:|/).join("\n")
           return View.insert(txt.gsub(/^ *[:|]([-+ ]|$)/, ""))   # Remove | ..., |+...., |<blank>, etc
         end
@@ -1069,6 +1101,7 @@ module Xiki
         start = View.cursor
         txt = Clipboard.get("=")
         indent = prefix || 0   # Indent prefix spaces, or 2
+
         txt = txt.gsub(/^/, " " * indent)
 
         View.insert txt
@@ -1076,7 +1109,6 @@ module Xiki
         $el.goto_char start
         return
       end
-
 
       # Dash+, so start with blank... ??
 
@@ -1091,7 +1123,7 @@ module Xiki
 
       Line.next
 
-      if existing_quote
+      if existing_quote && ! options[:leave_quote_chars]
         txt.gsub!(/^ *[|:!] ?/, '')
       end
 
@@ -1106,6 +1138,8 @@ module Xiki
       quote = target_quote || existing_quote
       quote ||= ':' if options[:char] || prefix == :u || prefix == :-
       quote ||= '|'
+
+      quote = options[:char] if options[:leave_quote_chars]
 
       txt = txt.gsub /^/, "#{indent}#{quote} "
       txt = txt.gsub /^( *[|:#]) $/, "\\1"   # Remove trailing spaces
@@ -1149,11 +1183,9 @@ module Xiki
     #
     # ...and @outline________
     #
-    # > Don't insert, just return
+    # Don't insert, just return
     # p FileTree.enter_lines /foo/, :just_return=>1, :path=>View.file
     def self.enter_lines pattern=nil, options={}
-
-      $xiki_no_search = false
 
       # If prefix is 6, delegate to Git to enter methods by date
       if options[:prefix] == 6
@@ -1242,6 +1274,19 @@ module Xiki
           line_found = matches_count if i == current_line
         end
 
+        # .rb or .js file, so extract embedded xiki notes > To show in outline > "> ...."
+
+        if ["rb", "js"].member?(extension) && line =~ /^ *(#|\/\/) > ./
+          matches_count += 1
+          if line =~ /^ *(#|\/\/) > \./
+            heading = line[/\.(.+)/, 1]
+            path = Notes.heading_to_path heading
+            next matches << "    + #{path}\n"
+          end
+          heading = line[/>.+/]
+          next matches << "    #{heading}\n"
+        end
+
         next unless line =~ pattern
 
         line = line == "" ? "" : " #{line}"
@@ -1288,9 +1333,9 @@ module Xiki
 
     def self.file_not_found_from_template path
 
-      # If .../commands/foo.rb
+      # If .../roots/foo.rb
 
-      if path =~ /.*\/commands\/(.+)\.rb$/   # "
+      if path =~ /.*\/roots\/(.+)\.rb$/   # "
         name = $1
         txt = File.read "#{Xiki.dir}/misc/templates/menu_template.rb"
       elsif path =~ /.*\/(.+)_spec\.rb$/   # "
@@ -1301,7 +1346,7 @@ module Xiki
         name, extension = path.match(/([^\/]+)\.(.+)$/)[1..2] rescue [nil, nil]
         extension = path.match(/[^\/]+\.(.+)$/)[1] rescue nil
 
-        [File.expand_path("~/xiki_stuff/templates/"), Bookmarks[":xiki/misc/templates"]].each do |dir|
+        [File.expand_path("~/xiki_stuff/templates/"), File.expand_path("~/.xiki/misc/templates")].each do |dir|
           file = "#{dir}/template.#{extension}"
           next unless File.exists? file
           txt = File.read file
@@ -1312,7 +1357,7 @@ module Xiki
       if txt
         View.flash "- File doesn't exist, start with this...", :times=>4
         txt.gsub!(/\{\{(.+?)\}\}/) { eval $1 }   # Expand {{these}}
-        Xiki.dont_search
+        raise "- Commenting this could cause problems!!!"
         return Tree.<< txt, :escape=>": ", :no_slash=>1
       end
 
@@ -1332,23 +1377,21 @@ module Xiki
       options.merge!(:recursive=>1) if prefix == :u   # If up+, expand dir recursively
 
       if prefix == :-   # If up+up+, insert /the/path//
-        Line << "#{Bookmarks[":#{Keys.input(:timed=>1)}"]}/"   # "
-
-
-        Launcher.go
+        Line << "#{Bookmarks["^#{Keys.input(:timed=>1)}"]}/"   # "
+        Launcher.launch_or_collapse
         return
       end
-
-      $xiki_no_search = false
 
       dir =
         if options[:dir]
           options[:dir]
         else
+
           bm = options[:bm] || Keys.input(:timed=>true, :prompt=>"Enter bookmark to show tree of: ")
 
           options.merge!(:focus=>View.file_name) if bm == "."
-          Keys.bookmark_as_path :bm=>bm, :include_file=>1
+          bm = Keys.bookmark_as_path :bm=>bm, :include_file=>1   # Change . to current dir, etc
+          Files.tilde_for_home bm
         end
 
       # If file, delegate to FileTree.enter_lines...
@@ -1356,21 +1399,18 @@ module Xiki
       # commit: open+bookmark+slash
       dir = "/" if dir == :slash
 
-      if File.file? dir
+      if File.file? File.expand_path(dir)
         # Commenth this out because of with+file > Might cause problem when inserting all?
-        History.open_current :file=>dir, :all=>1
+
+        History.open_current :file=>dir, :outline=>1
+
         return
       end
 
       # If dir, delegate to .ls...
 
-      # Put back slash if was dir
-      dir = Bookmarks.dir_only dir
-      dir << "/" unless dir =~ /\/$/
-
       return if dir == :bookmark_doesnt_exist
 
-      dir = Bookmarks.dir_only(dir) if options[:recursive]
       options.merge!(:dir=>dir)
 
       self.ls options
@@ -1393,20 +1433,24 @@ module Xiki
     # FileTree.files_in_dir "/tmp/d", :date_sort=>1
     def self.files_in_dir dir, options={}
       dir = FileTree.add_slash_maybe dir
+
       all = Dir.glob("#{dir}*", File::FNM_DOTMATCH).
         select {|i| i !~ /\/\.(\.*|svn|git|DS_Store)$/}.   # Exclude some dirs (exclude entensions here too?)
-        select {|i| i !~ /\/\.#/}.sort_by{|w| w.downcase}
+        select {|i| i !~ /\/\.#/}
 
-      if options[:date_sort]
-        all = all.sort{|a,b| File.mtime(b) <=> File.mtime(a)}
-      elsif options[:size_sort]
-        all = all.sort{|a,b| File.size(b) <=> File.size(a)}
-      end
+      # Sort by date, size, or alphabetical...
+
+      all = all.sort{|a, b|
+        a_time = File.mtime(a) rescue nil
+        b_time = File.mtime(b) rescue nil
+        next 0 if ! a_time || ! b_time
+        b_time <=> a_time
+      }
 
       return all if options[:merged]
 
-      dirs = all.select{|i| File.directory?(i)}#.sort
-      files = all.select{|i| File.file?(i)}#.sort
+      dirs, files = all.partition{|f| File.directory?(f)}
+
       [dirs, files]
 
     end
@@ -1442,7 +1486,8 @@ module Xiki
         Tree.construct_path :
         View.file
 
-      #     path = Files.just_dir(path) if dir_only
+      path = Bookmarks[path]
+
       if dir_only
         path = path =~ /\/$/ ? path : File.dirname(path)+"/"
       end
@@ -1463,9 +1508,9 @@ module Xiki
     end
 
     def self.copy_path options={}
-      Effects.blink :what=>:line
+
       # Return dir of view's file if at left margin, U, or not ^[|@-]
-      if Line !~ /^ +[|=+-]/  # || Keys.prefix_u# It will never be :u, because the prefix is cleared before this is called
+      if Line !~ /^ *[~\/|=+-]/
         path = View.file
       else
         path = Tree.path.last   # Grab from wiki tree
@@ -1473,8 +1518,11 @@ module Xiki
         path.sub! /\/$/, '' if Line.value !~ /\/$/   # If current line doesn't have trailing slash, remove it
       end
 
+      FileTree.extract_filters! path
+
       View.flash "- copied: #{path}", :times=>2
-      return Clipboard["0"] = path
+      Clipboard["0"] = path
+      nil
     end
 
     # Adds extra line if we're at the end of the file.
@@ -1585,7 +1633,7 @@ module Xiki
     end
 
     def self.move_latest_screenshot_to dest_path, dest_dir
-      desktop = Bookmarks[':dt']
+      desktop = Bookmarks['^dt']
 
       latest_screenshot = `ls -t #{desktop} "Screen shot*"`[/Screen shot .*/]
 
@@ -1726,12 +1774,16 @@ module Xiki
     # Just puts "=rename/" underneath item the cursor is on...
     def self.command_on_filename command
 
+      Tree.<< "#{Line.indent}= #{command}/", :no_slash=>1, :no_search=>1
+      Move.to_end
+
+      return ""
+
+      # Old implementation > it gave just the extension as a starting point
+
       # Duplicate line, putting =rename after indent...
 
       line = Line.value
-
-      column_from_right = line.length - (View.column-1)
-      column_from_right = [column_from_right, line[/^[ +-]*(.+)/, 1].length].min   # Make max of movement be length of filename
 
       has_dot = line =~ /\./
       has_dot ?
@@ -1774,7 +1826,63 @@ module Xiki
 
     def self.to_outline options={}
       prefix = options[:prefix] || Keys.prefix(:clear=>true)
-      extension = View.extension
+
+
+      # @x/x/x view, so use "@u/..." to show outline...
+
+      name = View.name
+
+      if xikihub_view = name[/^xiki\.\w+\/(@.+)/, 1]
+        Launcher.open xikihub_view
+        return
+      end
+
+      path = View.file
+
+      if path
+        dir, file = path.match(/(.+\/)(.+)/)[1..2]
+        extension = File.extname(path).sub(".", "")
+      end
+
+      link_filename = Notes.link_file?(path)
+
+      if ! options[:not_topic_outline]
+
+        # In a ~/xiki/foo.xiki file, so expand topic instead of showing file outline...
+
+        if extension == "xiki" && dir == File.expand_path("~/xiki")+"/" || link_filename
+          file = link_filename if link_filename   # Use link > if it exists
+          topic = File.basename(file, ".*").gsub("_", " ")
+          Line.value
+          View.name
+
+          # Jump up to heading and grab it, so we can move the cursor to it
+
+          cursor = View.cursor
+          Line.to_right
+          Search.backward "^> "
+          original_heading = Line.value
+
+          # Remove @ or @foo
+          TopicExpander.delete_username_from_heading original_heading
+
+          View.cursor = cursor
+
+          Launcher.open topic, :bar_is_fine=>1, :original_heading=>original_heading   #> ||||||
+          return
+
+        elsif extension == "xiki"
+
+          # .xiki file in other dir, so use "/dir/foo//" for outline
+
+          path = Files.tilde_for_home path
+
+          path = path.sub(/\.xiki$/, "//")
+
+          Launcher.open path, :bar_is_fine=>1
+          return
+        end
+      end
 
       if (prefix == :u || prefix == :-) && ! Notes.enabled?
         args = [View.txt, View.line]
@@ -1782,12 +1890,13 @@ module Xiki
       current_line = Line.number
       mode = View.mode
 
-      path = View.file
       View.to_buffer("outline/")
-      View.clear;  Notes.mode
+      View.clear
+      Notes.mode
+
+      View.wrap :off
 
       if path
-        dir, file = path.match(/(.+\/)(.+)/)[1..2]
         txt = "#{dir}\n  - #{file}\n"
         View.insert txt
         View.to_top
@@ -1823,10 +1932,14 @@ module Xiki
 
       when 0
         # Just show path if 0+...
-      when :-   # Just show # foo... comments...
+      when :u   # Just show # foo... comments...
+        if mode == :notes
+          self.enter_lines /^> .*:$/, options.merge(:current_line=>current_line)
+          return
+        end
              # when :uu   # Just show # foo... comments...
         self.enter_lines(/(^ *(def|function) |(^| )(#|>|"|\/\/) .+\.\.\.$)/, :current_line=>current_line)
-      when :u
+      when :-   # Show outline down to current line
         if mode == :notes
           self.enter_lines /^> .*:$/, options.merge(:current_line=>current_line)
           return
@@ -1845,24 +1958,37 @@ module Xiki
       (@skip ||= {})[dir] = skip_these
     end
 
-    def self.expands? options
+    def self.expands? options   #> nil
       return unless options[:file_path]
       (options[:expanders] ||= []).push self
     end
 
     def self.expand options
 
-      prefix, task = options[:prefix], options[:task]
+      # Ol.a options
 
+      #> Might cause problems > added items to file path!
+
+      prefix, task = options[:prefix], options[:task]
       file_path = options[:file_path]
+
+      #> Might cause problems > added items to file path!
+
+      if items = options[:items]
+        file_path << items.join("/")
+      end
 
       # If ##foo/ or **foo/ filter at end (removing all as we check)...
 
-      filters_at_end = self.extract_filters! file_path   # Removes ## and ** filters, returning any that were at the end
+      # Removes ## and ** filters, returning any that were at the end   #> ["##dir, name"]
+      filters_at_end = self.extract_filters! file_path
 
       # If right-click, set prefix to item...
 
-      return options[:output] = self.expand_filter(filters_at_end, options) if filters_at_end
+      if filters_at_end
+        txt = self.expand_filter(filters_at_end, options)   #> {:client=>"editor/emacs", :target_view=>"tree filter", :dir=>"/Users/craig/Dropbox/xiki/", :file_path=>"/Users/craig/Dropbox/xiki/", :expanders=>[Xiki::FileTree], :expanders_index=>0, :no_slash=>1}
+        return options[:output] = txt
+      end
 
       # If quoted line, pull it off into :quote...
 
@@ -1871,24 +1997,34 @@ module Xiki
 
       # If a linebreak (means pipes?), tell them to use colons...
 
+      # > Todo > Don't complain if linebreaks are nested under heading!
+
       if options[:client] =~ /^editor/ && Path.unescape(file_path) =~ /\n/
-        return options[:output] = "
-          > Use colons, not pipes
-          : You must now use colons at the beginnings of lines to navigate
-          : to those lines in files, not pipes.  (Colon-quoted lines under
-          : files now mean to navigate.)  In a future Xiki version,
-          : pipe-quoted lines under files will mean to over-write the file
-          : contents with the pipe lines.
-          "
+
+        # Multi line items underneath embedded xiki commands are allowed
+        file_with_embedded, args = self.extract_prepended_file_path file_path
+
+        if ! args || Path.split(args[0]) =~ /\n/
+          return options[:output] = "
+            > Use colons, not pipes
+            : Use colons at the beginnings of lines to navigate
+            : to those lines in files, not pipes.  (Colon-quoted lines under
+            : files now mean to navigate.)  In a future Xiki version,
+            : pipe-quoted lines under files will mean to over-write the file
+            : contents with the pipe lines.
+            "
+        end
       end
 
       # Maybe only do if client is editor
         # And maybe check actual line?
 
-      # if quote = Path.extract_quote(file_path_unescaped)
+      # Where path coming from > why not escaped the second time
+
       if quote = Path.extract_quote(file_path)
         ControlTab.dash_prefix_buffer = View.name
-        options[:quote] = Path.unescape(quote)
+        # options[:quote] = Path.unescape(quote)
+        options[:quote] = quote
       end
 
       if line_number = Path.extract_line_number(file_path)
@@ -1898,42 +2034,54 @@ module Xiki
       # If it's an existing file...
 
       if File.file? file_path
-
         options[:no_slash] = 1
+        extension = File.extname file_path
 
         # Task, so return or process the task...
 
         if task
-
           if options[:quote]
             # : foo/~ save, so do save
             return options[:output] = self.save(file_path, options) if task == ["save"]
             # : foo, so show "~ save/"
-            return options[:output] = "~ save/"
+            return options[:output] = "* save"
           end
 
-          menu = Xik.new %`
-            ~ search
+          # File tasks menu...
+
+          menu = %`
+            * search
               ! Search.enter_search
-            ~ contents
-              ! Tree.quote(File.read(options[:file_path], *Files.encoding_binary))
-            ~ outline
+            * contents
+              ! txt = File.read options[:file_path]
+              ! txt.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '')
+              ! Tree.quote txt
+            * outline
               ! FileTree.filter_one_file(options[:file_path]).join("\\n")
 
-            ~ delete
-              ! Keys.remember_key_for_repeat(proc {Launcher.launch :task=>["delete"], :no_prompt=>1})
-              ! FileTree.delete_file options[:file_path], options
-            ~ bookmark
-              ! Bookmarks.save
-            ~ file/
+            * file/
               + rename
                 ! FileTree.command_on_filename "rename"
               + copy
                 ! FileTree.command_on_filename "copy"
+              + copy group
+                ! siblings = Tree.siblings
+                ! Clipboard["0"] = "{\#{siblings.join(",")}}"
+                ! ""
               + prompt here
                 ! Tree.<< "$ ", :no_search=>1, :no_slash=>1
                 ! Move.to_end
-            ~ edit with/
+
+              + touch
+                ! #options[:file_path]
+                ! FileUtils.touch options[:file_path]
+                ! "<* - touched file"
+              + bookmark
+                ! Bookmarks.save
+              + restore version
+                ! latest_file = History.latest_file File.basename(options[:file_path])
+                ! "todo > implement this > replace latest file to it if exists > probably confirm first"
+            * edit with/
               + sublime
                 ! Shell.command "subl \#{options[:file_path]}"
                 ! Ol "options[:file_path]", options[:file_path]
@@ -1945,19 +2093,36 @@ module Xiki
                 ! # Probably delete -Q?
                 ! DiffLog.quit_and_run "emacs -nw \#{options[:file_path]}"
               + default editor
-                ! DiffLog.quit_and_run "\#{ENV['EDITOR']} \#{options[:file_path]}"
+                ! DiffLog.quit_and_run "\#{FileTree.default_external_editor} \#{options[:file_path]}"
+                ! # DiffLog.quit_and_run "\#{ENV['EDITOR']} \#{options[:file_path]}"
               + xsh
                 ! Ol.a options
                 ! "- todoz!"
                 ! View.open options[:file_path]
+            * delete
+              ! Keys.remember_key_for_repeat(proc {Launcher.launch :task=>["delete"], :no_prompt=>1})
+              ! FileTree.delete_file options[:file_path], options
+            * path to clipboard
+              ! FileTree.copy_path
+            * with path/
+          `.unindent
 
-            ~ expand
-              ! Launcher.launch
-            ~ grab
-              ! DiffLog.grab options
-          `
+          clipboard_menu = self.clipboard_menu
 
-          task[0] = "~ #{task[0]}" if task[0]
+          menu.sub!("* with path/\n", clipboard_menu)
+
+          # Add "file options" to dropdown for certain extensions
+          # Todo > look at [extension].xiki for "> (file extension) command" headings
+
+          # png.xiki
+          #   > (file extension) imagemagick
+          #   | = imagemagick
+
+          self.append_file_extension_options menu, extension   #> !!!
+
+          menu = Xik.new menu
+
+          task[0] = "* #{task[0]}" if task[0]
 
           result = menu.expand task, :eval=>options
           return options[:output] = result || ""
@@ -1972,8 +2137,8 @@ module Xiki
           txt << "/:#{options[:line_number]}" if options[:line_number]   # If a quote, pass line number after a colon!
 
           # Should be this!
+          txt << "/|#{Path.escape options[:quote]}" if options[:quote]   # If a quote, pass line number after a colon!
 
-          txt << "/|#{options[:quote]}" if options[:quote]   # If a quote, pass line number after a colon!
           return options[:output] = txt
         end
 
@@ -1986,12 +2151,11 @@ module Xiki
       # If an existing dir...
 
       if File.directory? file_path
-
         FileTree.add_slash_maybe! file_path
 
         if task
 
-          require "#{Xiki.dir}commands/sample_menus/sample_menus_index.rb" # if !defined?(SampleMenus)
+          require "#{Xiki.dir}roots/sample_menus/sample_menus_index.rb" # if !defined?(SampleMenus)
 
           if task == ["rake"]
             options[:nest] = 1
@@ -2006,49 +2170,49 @@ module Xiki
 
           # Dir tasks menu...
 
-          menu = Xik.new(%`
-            ~ examples/
-              ! FileTree.example_commands options
-            ~ recent commands/
+          # ~ examples/
+          #   ! FileTree.example_commands options
+          # menu = Xik.new menu
+          # ~ modified date sort
+          #   ! FileTree.dir :date_sort=>true
+          #   ! ""
+          menu = %`
+            * search
+              ! Tree.<< "- ##", :no_search=>1
+              ! #View.column = -1
+              ! Line.to_right
+              ! ""
+            * all files
+              ! FileTree.expand_dir_recursively :file_path=>options[:file_path]
+            * delete
+              ! Keys.remember_key_for_repeat(proc {Launcher.launch :task=>["delete"], :no_prompt=>1})
+              ! FileTree.delete_file options[:file_path], options
+
+            * recent commands/
               ! options[:nest] = 1
               ! options[:no_task] = 1
               ! txt = Shell.external_plus_sticky_history
-            ~ recent in dir/
+            * recent in dir/
               ! options[:nest] = 1
               ! options[:no_task] = 1
               ! Shell.history options[:file_path]
-
-            ~ search
-              ! Tree.<< "- ##/", :no_search=>1
-              ! View.column = -1
-              ! ""
-            ~ all files
-              ! FileTree.expand_dir_recursively :file_path=>options[:file_path]
-            ~ modified date sort
-              ! FileTree.dir :date_sort=>true
-              ! ""
-            ~ delete
-              ! Keys.remember_key_for_repeat(proc {Launcher.launch :task=>["delete"], :no_prompt=>1})
-              ! FileTree.delete_file options[:file_path], options
-            ~ bookmark
-              ! Bookmarks.save
-
-            ~ file/
+            * file/
               + rename
                 ! FileTree.command_on_filename "rename"
               + prompt here
                 ! Tree.<< "$ "
                 ! Line.to_right
                 ! ""
-              + bullet
-                ! Tree.<< "- "
-                ! Line.to_right
-                ! ""
+              + bookmark
+                ! Bookmarks.save
 
               + cd
                 ! FileTree.cd options[:file_path]
-            ~ more/
-              + search filenames
+              + touch
+                ! FileUtils.touch options[:file_path]
+                ! "<* - touched file"
+
+              + filenames search
                 ! ControlLock.disable
                 ! Tree.<< "- **/", :no_search=>1
                 ! View.column = -1
@@ -2057,14 +2221,23 @@ module Xiki
                 ! txt = FileTree.grep(options[:file_path], "").join("\\n")
                 ! txt.sub(/.+\\n/, "")   # Delete 1st line > the redundant dir
 
-              + expand
-                ! Launcher.launch
-              + grab
-                ! DiffLog.grab options
-
               + exit and cd
                 ! Shell.exit_and_cd options[:file_path]
-              + create/
+              + make/
+                + some files and dir
+                  ! options[:no_search] = 1
+                  ! File.write "\#{options[:file_path]}/a.txt", "aaa\\naaa\\n"
+                  ! File.write "\#{options[:file_path]}/b.txt", "bbb\\nbbb\\n"
+                  ! File.write "\#{options[:file_path]}/c.xiki", "> heading\\nccc\\nccc\\n\\n> .another\\n! args\\n"
+                  ! Dir.mkdir("\#{options[:file_path]}/d") rescue nil
+                  ! File.write "\#{options[:file_path]}/d/d.txt", "ddd\\nddd\\n"
+                  ! "- a.txt\\n- b.txt\\n- c.xiki\\n- d/\\n  - d.txt"
+                + a few files
+                  ! options[:no_search] = 1
+                  ! File.write "\#{options[:file_path]}/a.txt", "aaa\\naaa\\n"
+                  ! File.write "\#{options[:file_path]}/b.txt", "bbb\\nbbb\\n"
+                  ! File.write "\#{options[:file_path]}/c.xiki", "> heading\\nccc\\nccc\\n\\n> another\\nc c c\\n"
+                  ! "- a.txt\\n- b.txt\\n- c.xiki"
                 + txt
                   ! "+ foo.txt\\n\#{Tree.quote SampleMenus.by_extension("txt"), :indent=>"  "}"
                 + rb
@@ -2075,102 +2248,18 @@ module Xiki
                   ! "+ foo.js\\n\#{Tree.quote SampleMenus.by_extension("js"), :indent=>"  "}"
                 + dir
                   ! "+ foo/"
-                + a few files
-                  ! options[:no_search] = 1
-                  ! File.write "\#{options[:file_path]}/a.txt", "aaa\\naaa\\n"
-                  ! File.write "\#{options[:file_path]}/b.txt", "bbb\\nbbb\\n"
-                  ! File.write "\#{options[:file_path]}/c.notes", "> heading\\nccc\\nccc\\n\\n> another\\nc c c\\n"
-                  ! "- a.txt\\n- b.txt\\n- c.notes"
-                + files and dir
-                  ! options[:no_search] = 1
-                  ! File.write "\#{options[:file_path]}/a.txt", "aaa\\naaa\\n"
-                  ! File.write "\#{options[:file_path]}/b.txt", "bbb\\nbbb\\n"
-                  ! File.write "\#{options[:file_path]}/c.notes", "> heading\\nccc\\nccc\\n\\n> another\\nc c c\\n"
-                  ! Dir.mkdir("\#{options[:file_path]}/d") rescue nil
-                  ! File.write "\#{options[:file_path]}/d/d.txt", "ddd\\nddd\\n"
-                  ! "- a.txt\\n- b.txt\\n- c.notes\\n- d/\\n  - d.txt"
-            ~ expand
-              ! Launcher.launch
-          `.unindent)
+
+            * path to clipboard
+              ! FileTree.copy_path
+            * with path/
+          `.unindent
 
           menu << "\n"
 
           # Append dir tasks...
 
-          # Hard-coded for now. Restructure to move each dir task into separate files, with this structure:
-          # ~/xiki/
-          #   - misc/
-          #     - file_tasks/
-          #       - java.xiki
-          #         | pattern/   < pre-loaded
-          #         |   : *.java
-          #         | java/   < item that'll appear in tasks dropdown
-          #         |   - compile/
-          #     - dir_tasks/
-          #       - xiki.xiki
-          #         | pattern/   < pre-loaded
-          #         |   : menu.*
-          #       - vagrant.xiki
-          #         | pattern/   < pre-loaded
-          #         |   : Vagrantfile
-          #         | vagrant/   < item that'll appear in tasks dropdown
-          #         |   - start/
-          #         |   - stop/
-          #         |     ! code to stop?
-          #         |     $$ or > command to run in shell
-
-          if File.exists? "#{file_path}menu.xiki"
-            menu << "
-            ~ menu
-              ! Line << '/'
-              ! Launcher.launch
-            ".unindent
-          end
-
-          if File.exists? "#{file_path}Rakefile"
-            menu << "
-              ~ rake/
-            ".unindent
-          end
-
-          if File.exists? "#{file_path}Vagrantfile"
-            menu << "
-              ~ vagrant/
-                + connect
-                + start
-                + restart
-                + stop
-            ".unindent
-          end
-
-          if Dir.exists? "#{file_path}.git"
-            menu << "
-              ~ git/
-                + connect
-                + start
-                + restart
-                + stop
-            ".unindent
-          end
-
-          if File.exists? "#{file_path}Gemfile"
-            menu << "
-              ~ gems/
-                : list of gems
-            ".unindent
-          end
-
-          if File.exists? "#{file_path}config/application.rb"
-            menu << "
-              ~ rails/
-                + start
-                  ! DiffLog.quit_and_run 'rails s'
-                + restart
-                + stop
-                + irb
-                + more/
-            ".unindent
-          end
+          clipboard_menu = self.clipboard_menu
+          menu.sub!("* with path/\n", clipboard_menu)
 
           # / and :mouse, so return whole menu...
 
@@ -2178,10 +2267,11 @@ module Xiki
 
           # /something, so expand menu...
 
-          task[0] = "~ #{task[0]}" if task[0]
+          task[0] = "* #{task[0]}" if task[0]
+          menu = Xik.new menu
           result = menu.expand task, :eval=>options
 
-          options[:nest] = 1 if [["~ dir"], ["~ more"]].member?(task)
+          options[:nest] = 1 if [["* dir"], ["* more"]].member?(task)
 
           return options[:output] = result || ""
 
@@ -2192,7 +2282,6 @@ module Xiki
 
         # No task, so just expand dir...
 
-        options[:date_sort] = 1 if prefix == 6
         return options[:output] = self.expand_one_dir(options)
       end
 
@@ -2200,12 +2289,12 @@ module Xiki
 
       if task == ["create dir"]
         FileUtils.mkdir_p options[:file_path]
-        return options[:output] = "<! created!"
+        return options[:output] = "<* created!"
       end
 
-      # Non-existing dir (whether task or not), so show "~ create dir"...
+      # Non-existing dir (whether task or not), so show "* create dir"...
 
-      return options[:output] = "~ create dir/" if options[:file_path] =~ /\/$/
+      return options[:output] = "* create dir/" if options[:file_path] =~ /\/$/
 
       # Quote means to create the file (with or without "update" prefix)...
 
@@ -2232,7 +2321,12 @@ module Xiki
       #     "
       # end
 
-      options[:output] = "=open file/#{file_path}"   # So just open the new file
+      # Not existing file or dir, so just open new file
+
+      # If .rb file with embedded xiki notes, Expand them
+      return if self.expand_embedded_notes options   #> ||
+
+      options[:output] = "=open file/#{file_path}"
 
       # What about when :client !~ ^editor
       # - can probably assume there won't be an update prefix
@@ -2240,53 +2334,297 @@ module Xiki
 
     end
 
-    def self.example_commands options
+    #
+    # > Test .extract_prepended_file_path
+    # ! p FileTree.extract_prepended_file_path "/tmp/dir/foo.rb/> Something/else"
+    #   : ["/tmp/dir/foo.rb", "> Something/else"]
+    #
+    # ! p FileTree.extract_prepended_file_path "/tmp/dir/foo.txt/> Something/else"
+    #   : nil
+    #
+    def self.extract_prepended_file_path file_path
 
-      options[:nest] = 1
-      options[:no_task] = 1   # Don't highlight?
+      # See if the path is a foo.js|rb plus other stuff (args)
+
+      extensions = [".rb", ".js"]
+      extensions_regex = "(?:#{extensions.join('|').gsub(".", "\\.")})"
+
+      match = file_path.match(/^(.+?\w#{extensions_regex})\/(.+)/)
+
+      return if ! match
+
+      file_with_embedded, args = match[1..2]
+    end
+
+    #
+    # > Test .expand_embedded_notes
+    # ! FileTree.expand_embedded_notes options
+    #
+    def self.expand_embedded_notes options
+
+      # For now, just assume .rb or .js files
 
 
-      task = options[:task]
 
-      task = task[1..-1]   # Remove "~ example commands"
+      # > Todo > extract > to self.extract_prepended_file_path
+      file_with_embedded, args = self.extract_prepended_file_path options[:file_path]
 
-      # ~ example commands, so list examples by date...
+      return false if ! file_with_embedded
 
-      home_examples_dir = Bookmarks[":xh/misc/shell_examples/"]
-      source_examples_dir = Bookmarks[":xs/misc/shell_examples/"]
+      args = Path.split args
 
-      if task == []
-        # home_examples = home_examples_dir
-        home = FileTree.files_in_dir(home_examples_dir, :date_sort=>1, :merged=>1) rescue []
-        source = FileTree.files_in_dir(source_examples_dir, :date_sort=>1, :merged=>1) rescue []
+      # Do nothing if no existing rb file
 
-        return (home + source).map{|o| "+ #{File.basename(o, ".*")}/"}.uniq.join("\n")
+      # Return false if we didn't handle
+      return false if ! File.exists? file_with_embedded
+
+      # Extract xiki notes from file
+
+      txt = File.read file_with_embedded
+      txt.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '')
+      txt = self.extract_embedded_notes txt
+
+      # Expand action if it is one...
+
+      options_in = {}
+
+      txt = Notes.drill txt, args[0], options_in   #> |||
+
+      # Ctrl+X, so just navigate
+      if options[:ctrlx] || (args[0] =~ /^>/ && args[1] =~ /\n/)
+
+        # Handle navigating manually
+        View.open file_with_embedded
+        heading = options_in[:heading_found]
+
+        Search.forward "^ *\\(#\\|//\\) #{Search.quote_elisp_regex heading}", :from_top=>1, :beginning=>1
+
+        return true
       end
 
-      # ~ example commands/foo, so grab from the file...
+      options_in[:items] = args
+      Tree.unquote(txt)
 
-      command = task.shift
-
-      home_root = "#{home_examples_dir}#{command}//"
-      source_root = "#{source_examples_dir}#{command}//"
-
-      # Try :xh and :xs or, if root, concat both...
-
-      if task == []
-        txt = Expander.expand(home_root, task) rescue ""
-        txt = "#{txt.strip}\n"
-        return txt + Expander.expand(source_root, task) rescue ""
+      if args[0] !~ /^>/
+        txt = TopicExpander.expand_action(Tree.unquote(txt), nil, options_in)
       end
 
-      txt = Expander.expand(home_root, task) rescue nil
-      txt ||= Expander.expand(source_root, task) rescue ""
+      options[:no_slash] = 1
+      options[:output] = txt
 
-      txt
+      # Return true since we handled
+      return true
 
     end
 
+
+    #
+    # > Next steps?
+    # - Maybe a little of this
+    # - Maybe a little of that
+    #
+    # > .Test .extract_embedded_notes
+    # ! txt = "
+    # !   Some code
+    # !   # > Hi
+    # !   # Hello
+    # ! ".unindent
+    # ! FileTree.extract_embedded_notes txt
+    #
+    # > .Test .extract_embedded_notes on javascript
+    # ! txt = "
+    # !   Some code
+    # !   // > Hi
+    # !   // Hello
+    # ! ".unindent
+    # ! FileTree.extract_embedded_notes txt
+    #
+    def self.extract_embedded_notes txt
+
+      txt = txt.split("\n")
+
+      result, accumulating = "", false
+      txt.each do |line|
+        if line =~ /^ *(#|\/\/) > ./
+          # Heading line, so start accumulating
+          accumulating = true
+        elsif line =~ /^ *(#|\/\/)/
+          # Comment line, so keep accumulating if doing so already
+        else
+          # Other line, so stop accumulating
+          accumulating = false
+        end
+
+        result << "#{line.sub(/^ *(#|\/\/) ?/, '')}\n" if accumulating
+      end
+      result
+
+
+    end
+
+
+
+    def self.append_file_extension_options menu, extension
+
+      extension = extension.sub(/^./, '')
+
+      # Look in > commands
+
+      txt = File.expand_path "~/xiki/#{extension}.xiki"
+      return if ! File.exists? txt
+
+      txt = File.read txt
+      txt.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '')
+
+      headings = Notes.extract_headings txt, :paren=>"file option"   #> ["(file option) .blur", "(file option) .heavy blur"]
+
+      return if ! headings.any?
+
+      # For now, just hard-code one item for each
+
+      # Later > Go through each heading, and extract body
+
+      result = headings.map do |o|
+
+        item = Notes.heading_to_path o.sub(/.+?\) /, '').strip
+
+        target = "> #{o}"
+        body = Notes.extract_section txt, target#, options={}
+        body.strip!
+
+        %`~ #{item}\n  ! FileTree.expand_file_extension_options "#{body}"\n`
+      end.join
+
+      menu << "\n#{result}"
+
+    end
+
+
+    def self.expand_file_extension_options command
+
+      Tree << "= #{command}"
+
+      # foo/bar, so just insert and run
+      if command =~ /\//
+        return Launcher.launch
+        # return ""
+      end
+
+
+      # Put just file options under
+
+      txt = Xiki[command]
+
+      file_options = txt.scan(/> \(file option\) .+/).join("\n")
+      file_options.downcase!
+
+      file_options.gsub!(/^.+?\) /, '')
+      file_options.gsub!(/^\./, '+ ')
+      Tree.<< file_options, :hotkey=>1
+
+      # Todo > Tree.filter on items
+        # Maybe use
+
+    end
+
+    def self.clipboard_to_here options={}
+
+      clipboard = Clipboard[0]
+      kind = FileTree.clipboard_file_kind! clipboard
+
+      source = File.expand_path clipboard
+      dest = Tree.path[-1]
+      dest = File.expand_path dest
+      FileTree.extract_filters! dest
+
+      # Move or copy file...
+
+      if options[:move]
+        FileUtils.mv source, dest
+      else
+        FileUtils.cp_r source, dest
+      end
+
+      # Dest was dir, so show stem of source...
+      # Dest was file, so just flash copied...
+
+      past_tense = options[:move] ? "moved" : "copied"
+
+      dest =~ /\/$/ ? "- #{File.basename source}" : "<* - #{past_tense} here"
+
+    end
+
+    # Returns "dir", "file", or "" if neither.
+    # Also trims and unbookmarks the arg.
+    def self.clipboard_file_kind! clipboard
+      return "" if ! clipboard
+
+      return "" if clipboard =~ /\n/
+      clipboard.strip!
+      return "" if ! FileTree.matches_root_pattern? clipboard
+
+      # Do based on what's in clipboard
+      # Make items based on whether path has file, dir, or neither...
+
+      # Hmm > how about when > file doesn't exist?
+      # Just look at path > ends in slash?
+
+      clipboard.replace Bookmarks[clipboard]
+
+      clipboard =~ /\/$/ ? "dir" : "file"
+    end
+
+
+    def self.clipboard_file_diff
+
+      clipboard = Clipboard[0]
+
+      kind = FileTree.clipboard_file_kind! clipboard
+      return "- Not implemented yet > diffing dir!" if kind != "file"
+
+      source = File.expand_path clipboard
+      dest = Tree.path[-1]
+      dest = File.expand_path dest
+      FileTree.extract_filters! dest
+
+      DiffLog.diff_files dest, source, :diffs_only=>1
+
+    end
+
+    def self.clipboard_menu
+
+      clipboard = Clipboard[0]
+
+      # See whether clipboard holds dir or file
+      kind = self.clipboard_file_kind! clipboard
+      return "" if kind == ""
+
+      # Here so we can search for it
+      # + move file here, + copy file here
+      # + move dir here, + copy dir here
+      clipboard_menu = "
+        * with path/
+          + move #{kind} here
+            ! FileTree.clipboard_to_here :move=>1
+          + copy #{kind} here
+            ! FileTree.clipboard_to_here :copy=>1
+
+          + move to #{kind}
+          + copy to #{kind}
+
+          + diff
+            ! FileTree.clipboard_file_diff
+      ".unindent
+
+      # Todo
+      # Not a file or dir, so show nothing
+
+      clipboard_menu
+    end
+
+
     def self.suggest_mkdir file_path
-      "~ create dir/"
+      "* create dir/"
     end
 
     def self.tasks_for_new_file options
@@ -2301,15 +2639,16 @@ module Xiki
 
       if task == []
         # Special treatment for .rb > 2 options
-        return options[:output] = "~ script/\n~ class/" if extension == "rb"
-        return options[:output] = "~ create/"
+        return options[:output] = "* create script\n* create class" if extension == "rb"
+
+        return options[:output] = "* create"
       end
 
       # Special treatment for .rb...
 
       case "#{extension}/#{task[0]}"
       # when "rb/script"   # The default behavior is fine
-      when "rb/class"
+      when "rb/create class"
         clazz = TextUtil.camel_case File.basename options[:file_path], ".*"
         return options[:output] = Tree.quote(%`
           class #{clazz}
@@ -2359,7 +2698,7 @@ module Xiki
         return options[:output] = Tree.quote(txt) if txt
       end
 
-      require "#{Xiki.dir}commands/sample_menus/sample_menus_index.rb" # if !defined?(SampleMenus)
+      require "#{Xiki.dir}roots/sample_menus/sample_menus_index.rb" # if !defined?(SampleMenus)
       txt = SampleMenus.by_extension(extension)
 
       return options[:output] = Tree.quote(txt)
@@ -2369,14 +2708,17 @@ module Xiki
     # are at the end.
     #
     # FileTree.extract_filters!("/projects/foo/##hey/")
-    def self.extract_filters! file_path
+    # FileTree.extract_filters!("/projects/foo/**ls/bar.txt")
+    def self.extract_filters! file_path   # Clean ##... and **... out of the path
+
       patterns_at_end = []
 
       # Treat \/ as part not a slash delimiter (gsub it to 021 temporarily)
       file_path.gsub!("\\/", "\021")
 
       # While a (rightmost) filter exists
-      while file_path =~ %r"^([^|]*/)((##|\*\*).+?/)"
+
+      while file_path =~ %r"^([^|]*/)((##|\*\*)[^/]+/?)"
         start, filter = $1.length, $2
 
         # If it was at end, store it so we can do filter, and ignore the rest
@@ -2387,22 +2729,23 @@ module Xiki
         file_path.slice! start, filter.length   # Delete it
       end
 
-      # =commit/File grep > fixed bug with backslashes.
       file_path.gsub!("\021", "\\/")
       patterns_at_end.any? ? patterns_at_end : nil
     end
 
-
-    def self.expand_filter filters, options
+    def self.expand_filter filters, options   #> ["##dir, name"]
 
       raise "We're not yet set up to handle multiple ## or ** filters of the same type.  Should be easy though, just run both regex's as you grep." if filters.length > 2
+
+      options[:no_slash] = 1
 
       file_path = options[:file_path]
 
       content_filter, file_filter = nil, nil
       filters.each do |filter|
         is_content_filter = filter =~ /^##/
-        filter = filter[/^..(.+).$/, 1]
+        filter = filter[/^..(.+)$/, 1]
+        filter.sub! /\/$/, ''
         is_content_filter ?
           content_filter = filter :
           file_filter = filter
@@ -2420,7 +2763,8 @@ module Xiki
       list.shift   # Pull off first dir, so they'll be relative
       list = list.join "\n"
 
-      return "<!" if list.blank?
+      return "<*" if list.blank?
+
       list
     end
 
@@ -2474,6 +2818,102 @@ module Xiki
         </style>
         `.unindent
       txt
+    end
+
+    def self.hop_file
+
+      file = View.file
+      if ! file
+        if View.name == "active links/"
+          View.to_highest
+          Search.forward "^  "
+          Tree.collapse
+          Launcher.launch
+
+          return "" # View.beep "- Todo > jump back to top and expand"
+        end
+
+        return View.beep "- This view isn't saved in a file!"
+      end
+
+      file = Files.tilde_for_home file
+
+      View.to_buffer "active links/" #, :dir=>dir
+
+      View.clear
+      Notes.mode
+      View.wrap :off
+
+      View.>> "active links/\n  #{file}\n\n\n"
+      View.line = 2
+
+      Launcher.launch
+
+    end
+
+    def self.default_external_editor
+      editor = ENV['EDITOR']
+      # If the variable is set, just use it
+      return editor if editor
+
+      # In mac > default to "open -t"
+      if Environment.os == "osx"
+        return "open -t"
+      end
+
+      # In linux or other > default to "less"
+      "nano"
+
+    end
+
+
+    def self.open_with_external_editor file, options={}
+
+      if file =~ /\/:/
+        file, quote = file.split("/: ", 2)
+      end
+
+      file_quoted = file =~ /^[a-z_\/.-]+$/i ? file : "\"#{file}\""
+
+      editor = self.default_external_editor
+      commands = "#{editor} #{file_quoted}"
+
+      line = options[:line]
+
+      if quote
+
+        # Jump to quote, after Looking in the file to find which line number it's on
+        txt = File.read file
+        txt.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '')
+
+        line = View.find_snippet_in_txt txt, quote
+      end
+
+      # If GUI editor, don't quit
+      if editor == "open -t"
+        return Shell.command commands
+
+      elsif editor =~ /\Asubl(ime)?\b/
+        # Remove -w or --wait flag (would make xiki lock up)
+        editor = editor.sub(/ --?w(ait)?\b/, '')
+        commands = "#{editor} #{file_quoted}"
+        commands = "#{commands}:#{line}" if line
+        return Shell.command commands
+
+      elsif editor == "vim"
+        commands = "#{commands} +#{line}" if line
+
+      elsif editor == "emacs"
+        commands = "#{editor} +#{line} #{file_quoted}"
+
+      end
+
+      # Assume terminal editor, and so just quit
+
+      return DiffLog.quit_and_run commands
+
+      nil
+
     end
 
 
