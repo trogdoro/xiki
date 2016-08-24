@@ -1,10 +1,11 @@
 require 'xiki/core/hide'
+require 'digest/md5'
 
 module Xiki
   # Will store a diff each time a file is saved.
   class DiffLog
 
-    @@log = File.expand_path("~/xiki/misc/logs/difflog.notes")
+    @@log = File.expand_path("~/.xiki/misc/logs/difflog.xiki")
     @@temp_path = "/tmp/saved.txt"
 
     def self.menu
@@ -28,8 +29,8 @@ module Xiki
       View.to_after_bar if View.in_bar?
 
       # If open, just switch to it and revert
-      if View.buffer_open?("difflog.notes")
-        View.to_buffer("difflog.notes")
+      if View.buffer_open?("difflog.xiki")
+        View.to_buffer("difflog.xiki")
         $el.revert_buffer true, true, true
       else  # Otherwise, open it
         View.open(@@log)
@@ -65,23 +66,23 @@ module Xiki
       if ! path
         regex = /^\//
       elsif File.file? path   # File
-        path = Files.tilda_for_home path
+        path = Files.tilde_for_home path
         regex = /^#{Regexp.escape File.dirname path}\/\n  - #{Regexp.escape File.basename path}/
       else   # Dir
-        path = Files.tilda_for_home path
+        path = Files.tilde_for_home path
         regex = /^#{Regexp.escape path}/
         # Was doing nothing
         #         path = "#{path}/" if path !~ /\/$/
       end
       txt = txt.select{|o| o =~ regex}
-      "=#{txt.join("=")}"
+      "= #{txt.join("= ")}"
     end
 
     # Insert old text deleted during last save
     def self.last_diff
       $el.with(:save_window_excursion) do
         DiffLog.open
-        Search.backward "^-"
+        Search.backward "^[^ \n]"
         txt = View.txt View.cursor, View.bottom
       end
     end
@@ -103,7 +104,7 @@ module Xiki
 
     def self.enter_old_or_new old_or_new
 
-      diff = DiffLog.last_diff
+      diff = self.last_diff
       one_line_change = DiffLog.is_one_line_change? diff
 
       # Show intraline change if changed just one line and not up+
@@ -115,43 +116,30 @@ module Xiki
 
       # Show lines
 
-      diff.gsub! /^ *[+:-].*\n/, ""   # Only leave red and green lines
       if old_or_new == :old
-        diff.gsub! /^ +\|\+.*\n/, ""
-        diff.gsub! /^ +\|\-/, ""
+        diff = diff.scan(/^ +:-(.+)/).join("\n")
       else
-        diff.gsub! /^ +\|\-.*\n/, ""
-        diff.gsub! /^ +\|\+/, ""
+        diff = diff.scan(/^ +:\+(.+)/).join("\n")
       end
-      View << diff
+
+      View.<< "#{diff}\n", :dont_move=>1
 
     end
 
     # Appends diff to difflog, then saves.  Mapped to as_file.
     def self.save_newly_created
 
-      # Store original buffer in local var, so we can make sure we go back to the right place
-      buffer_to_save = View.name
-
-      name = View.extract_suggested_filename_from_txt
-      name = "#{name}.notes"
-
-      View.to_buffer "save as/"
-      Notes.mode
-      View.delete_all
-      $el.make_local_variable :buffer_to_save
-      $el.elvar.buffer_to_save = buffer_to_save
-
-      View >> "\n\n\n"
-      View << "save as/"
-      Tree.<< X("save as/", :save_as_name=>name), :no_search=>1
-      Search.forward "\\.", :beginning=>1
+      Move.top
+      View >> "\n\n"
+      View << "* save\n  | #{Notes.share_or_save_prompt_text}\n  : "
 
     end
 
     def self.save options={}
 
-      if View.name == "diff with saved/"   # If viewing diff, close it and save the actual file...
+      file = View.file
+
+      if View.name == "diff with saved"   # If viewing diff, close it and save the actual file...
         file = View.txt[/.+\n.+/].sub("\n  - ", "")
         View.kill
         View.open file
@@ -159,23 +147,33 @@ module Xiki
       prefix = Keys.prefix :clear=>1
 
       # It's unsaved and not associated with a file yet, so prompt for where to save it
-      return self.save_newly_created if ! View.file
+      return self.save_newly_created if ! file
 
-      self.save_diffs if prefix != :u && ! options[:no_diffs]
+      diffs = self.save_diffs if prefix != :- && prefix != :u && ! options[:no_diffs]   #> |||||
 
-      $el.save_buffer
-
-      if prefix == :-   # Dash+, so load in browser after
-        sleep(0.3)
-        Firefox.reload
-      elsif prefix == 9
-        Launcher.do_last_launch
-      end
       View.message ""
+      $el.save_buffer
+      View.message ""
+
+      # Save to xikihub if shared stuff was edited...
+
+      XikihubClient.save file #, :diffs=>diffs
+
+      # If there's a ~/xiki/foo.link for this file, update its timestamp
+      # as well (so it appears at the top of list+topics).
+      Notes.update_link_timestamp_if_any file
+
+
+      View.message ""
+
     end
 
     def self.format raw, options={}
-      if options[:use_other_path]
+
+      if options[:use_other_path].is_a? String
+        match = options[:use_other_path].match(/(.+\/)(.+)/)
+        path, file = match[1..2]
+      elsif options[:use_other_path]
         match = raw.match(/\+\+\+ (.+\/)(.+?)\t/)
         path, file = match[1..2]
       else
@@ -200,7 +198,15 @@ module Xiki
       raw.gsub!(/^\+(.*)/, "      :+\\1")
       raw.gsub!(/^-(.*)/, "      :-\\1")
 
-      path = Files.tilda_for_home path
+      path = Files.tilde_for_home path
+
+      if options[:children_only]
+        return raw.gsub(/^    :.+\n/, '')
+      end
+
+      if options[:diffs_only]
+        return raw.gsub(/^    /, '')
+      end
 
       # Return with path
       "#{path}\n" +
@@ -208,12 +214,26 @@ module Xiki
       raw
     end
 
+
+    def self.diff_strings string1, string2, options={}
+
+      path1, path2 = "/tmp/diff1", "/tmp/diff2"
+      File.open(path1, "w") { |f| f << "#{string1.strip}\n" }
+      File.open(path2, "w") { |f| f << "#{string2.strip}\n" }
+      txt = Shell.sync "diff -U 0 \"#{path1}\" \"#{path2}\""
+      return txt if options[:raw]
+
+      self.format txt, options
+
+    end
+
+
     def self.compare_with_saved
 
       # up+up+, so do side-by-side...
 
       if Keys.prefix_u
-        return Launcher.open("unsaved/", :name=>"unsaved changes")
+        return Launcher.open("unsaved", :name=>"unsaved changes")
       end
 
       if Keys.prefix_uu
@@ -230,7 +250,7 @@ module Xiki
 
       end
 
-      diff = self.save_diffs :just_return=>1
+      diff = self.save_diffs :just_return=>1   #> |||||
       View.message ""   # To avoid message when writing
       diff = "" if diff.nil?
       no_difference = diff.count("\n") <= 2
@@ -239,9 +259,11 @@ module Xiki
         $el.set_buffer_modified_p nil
       end
 
-      View.to_buffer("diff with saved/")
+
+      View.to_buffer("diff with saved")
       View.clear
-      Notes.mode
+      Notes.mode :wrap=>false
+      # View.wrap :off
 
       # No differences, so just say so...
 
@@ -249,7 +271,8 @@ module Xiki
         View.insert("- No unsaved changes!\n\nclose view/\n")
         Line.previous 1
       else
-        View.insert diff + "\nsave\nsave without diff\nrevert\n"
+
+        View.insert diff + "\nsave/\nsave without diff/\nrevert/\n"
         Line.previous 3
       end
     end
@@ -263,33 +286,41 @@ module Xiki
 
     # Util function used by public functions
     def self.save_diffs options={}
+
       if options[:patha] && options[:textb]
         patha = options[:patha]
-        File.open(@@temp_path, "w") { |f| f << options[:texta] }
+        File.open(@@temp_path, "w") { |f| f << options[:textb] }
       else
         patha = View.file
         $el.write_region nil, nil, @@temp_path
+        View.message ""
       end
 
       # New file, so show all as new...
-
       diff =
         if patha
-          txt = Shell.sync "diff -U 0 \"#{patha}\" \"#{@@temp_path}\""
+
+          # Use blank if file doesn't exist
+          patha = "/dev/null" if ! File.exists?(patha)
+
+          txt = Shell.sync "diff -U 0 \"#{patha}\" \"#{@@temp_path}\""   #> ||||||
+          txt_orig = txt.dup
 
           return if txt.empty? || txt =~ /: No such file or directory\n/   # Fail gracefully if file didn't exist
           self.format(txt) rescue nil
         else
+          # Wasn't a buffer rather than a file, so show all as new
           txt = View.txt
           txt.gsub! /^/, "      :+"
-          "#{View.dir}/\n  - #{View.name}\n    :1\n#{txt}\n\n| Todo > =save doesn't work yet with new files"
+          "#{View.dir}/\n  - #{View.name}\n    :1\n#{txt}\n\n"
         end
 
       return diff if ! diff || options[:just_return]
 
       FileUtils.mkdir_p File.dirname(@@log)
-
       File.open(@@log, "a") { |f| f << diff } unless diff.count("\n") <= 2
+
+      txt_orig
     end
 
     def self.parse_tree_diffs txt
@@ -408,7 +439,11 @@ module Xiki
       display_in_view = options[:display_in_view]
 
       txt = Shell.sync "diff -U 0 \"#{dest_path}\" \"#{source_path}\""
-      txt = self.format txt
+
+      return "- They're the same!" if txt.blank?
+
+      txt = self.format txt, options
+
 
       # They're the same, so just blink message...
 
@@ -430,137 +465,34 @@ module Xiki
     end
 
 
-    # Mapped to Ctrl+G
-    def self.grab options={}
+    def self.save_modified_interactions
 
-      # Just quit if any prefix
-      return $el.keyboard_quit if Keys.prefix
+      interactions_dir = File.expand_path "~/.xiki/interactions"
 
-      # Grab line and write to file...
+      orig = View.buffer
+      result = Buffers.list.map do |b|
+        name = $el.buffer_name(b)   # Skip special buffers
+        # Skip interactions
+        next if name =~ /^ ?\*/
 
-      path = Tree.path
-      last = Path.split path[-1]
+        file = $el.buffer_file_name(b)
+        next if ! file
+        modified = $el.buffer_modified_p(b)
+        next if ! modified
 
-      view_dir = View.dir
+        next if ! file.start_with?(interactions_dir+"/")
 
-      # If just $... (Is this too liberal?)
+        # Modified interaction, so save it
 
-      if FileTree.handles?(path[-1])
-
-        # /foo/, so just cd to the dir
-
-        # Could be /tmp, "/tmp/$ pwd", or "/tmp/$ pwd/item"
-
-        dir = Bookmarks[path[-1]]
-        command = nil
-
-        dir.sub!(/\/$/, '')
-
-        # Add quotes unless it's all slashes and letters
-        dir = "\"#{dir}\"" if dir !~ /^[a-z_\/.-]+$/i
-
-        commands = "cd #{dir}\n"
-        commands << command if command
-
-        return self.quit_and_run commands
-      end
-
-      # If ls, grab dir and exit > hard-coded support for ls, for now > abstract out for other commands later
-
-      if last[0] == "$ ls"
-
-        dir = last[1..-1].map{|o| o.sub(/^: /, '')}.join()
-
-        if dir =~ /\/$/
-          commands = "cd #{Shell.quote_file_maybe dir}"
-        else
-          editor = ENV['EDITOR']
-
-          # Non-console editor, so don't quit
-          if ["subl"].member? editor
-            command = "#{ENV['EDITOR']} #{view_dir}/#{Shell.quote_file_maybe dir}"
-            Shell.command command
-            return
-          end
-
-          commands = "#{ENV['EDITOR']} #{Shell.quote_file_maybe dir}"
-        end
-
-        return self.quit_and_run commands
-      end
-
-      # Not $..., so explain why we can't expand...
-
-      if last[-1] !~ /^[$%] (.+)/
-
-        # Just exit
-        return View.flash("- Can only grab commands and dirs!")
-      end
-
-      command = $1
-
-      ancestors = options[:ancestors] || Tree.ancestors
-
-      # /foo/$..., so grab command and dir...
-
-      if ancestors && FileTree.handles?(ancestors[-1])
-
-        dir = ancestors[-1]
-
-        dir = Bookmarks[dir]
-        dir.gsub! "//", "/"   # Under a file command, so change "/foo//" to "/foo/" before cd'ing
-
-        dir = Shell.quote_file_maybe dir
-
-        # Todo > Do this, when there are args?
-        #           # Pop off any others at end that are $... or ~...
-        #           while last[-1] =~ /^[~$%&]/
-        #             last.pop
-        #           end
-
-        commands = "cd #{dir}\n#{command}"
-        self.quit_and_run commands
+        $el.set_buffer b
+        DiffLog.save
 
       end
 
-      # $..., so grab command, and figure out the dir...
-
-      # They cd'ed in this session > so do cd in the shell...
-
-      session_dir = File.expand_path Bookmarks.bookmarks_optional("se")
-      in_session_dir = view_dir == session_dir
-
-
-      # If session, do based on view dir
-      orig_dir = Xsh.determine_session_orig_dir(View.file_name) if in_session_dir
-
-      # If couldn't find, or normal dir, default to current dir
-
-      orig_dir ||= view_dir
-      orig_dir.sub! /\/$/, ''   # To ensure a fair comparison
-
-      commands = ""
-
-      # They did a cd, so add it...
-
-      view_file = View.file
-
-      dir = nil
-      dir = Shell.dir
-      dir.sub!(/\/$/, '') if dir != "/"
-
-      # If it's a view without a file, always do cd
-      if ! View.file || orig_dir != dir   # Or if they changed the dir
-        dir = "\"#{dir}\"" if dir !~ /^[a-z_\/.-]+$/i
-        commands << "cd #{dir}\n"
-      end
-
-      commands << "#{command}\n"
-
-      self.quit_and_run commands
-
+      View.to_buffer orig
     end
 
+    # Mapped to Ctrl+G
     def self.quit
 
       prefix = Keys.prefix
@@ -571,33 +503,49 @@ module Xiki
         return
       end
 
-      txt = X'unsaved'
+      # Just save all modified interaction files
+      self.save_modified_interactions
 
+      txt = Xiki['unsaved/', :go=>1]
+
+      modified_files = txt.scan(/^= /)
+
+      # If only one unsaved > and > current file is an unsaved interaction
+      # For now, just save if the only modified file is the current file
+
+      # if txt.scan(/^= /).length == 1 && View.modified? # && View.file.start_with?(File.expand_path("~/.xiki/interactions")+"/")
+      current_file_is_modified = View.file && View.modified?
+      if modified_files.length == 1 && current_file_is_modified  # && View.file.start_with?(File.expand_path("~/.xiki/interactions")+"/")
+        DiffLog.save
+        txt = ""
+      end
 
       # No files to save, or all are "no changes" or "File no longer exists?"
-
-
       # if txt == "- No files unsaved!\n" || txt !~ /^  (?!: no changes|: File no longer exists\?$)/
       if self.nothing_unsaved txt
 
         # Unsaved "xsh" buffer, so save it...
 
-        self.save_xsh_sessions   # Last file we were in (if buffer)
+        self.save_xsh_interaction   # Last file we were in (if buffer)
 
-        self.save_grab_location   # Save file and line number
+        # Save file and line number
+        self.save_go_location
 
-        # If not already there, but xsh is open
+
+        # If xsh is open but not the one looking at, make a session for it
         if View.name != "xsh" && View.buffer_open?("xsh")
           $el.set_buffer "xsh"
-          self.save_xsh_sessions
+          # Why calling it a 2nd time?
+          self.save_xsh_interaction
         end
+
 
         # Save any shell commands we've run back to the external shell's history...
 
         txt = Shell.session_cache
         if txt
           txt.gsub!(/^\$ /, '')
-          File.open(Bookmarks[":x/misc/tmp/recent_history_internal.notes"], "w") { |f| f << txt }
+          File.open(File.expand_path("~/.xiki/misc/tmp/recent_history_internal.xiki"), "w") { |f| f << txt }
         end
 
         $el.kill_emacs
@@ -612,11 +560,11 @@ module Xiki
     def self.quit_and_run commands, options={}
 
       if options[:dir]
-        dir = Shell.quote_file_maybe options[:dir]
+        dir = Shell.quote_file_maybe Bookmarks[options[:dir]]
         commands = "cd #{dir}\n#{commands}"
-      end
+      end   #> !!!
 
-      Xsh.save_grab_commands commands
+      Xsh.save_go_commands commands
       self.quit
     end
 
@@ -625,12 +573,12 @@ module Xiki
     end
 
 
-    def self.save_xsh_sessions
+    def self.save_xsh_interaction
 
       # Avoid saving certain buffers
-      View.kill if ["unsaved/"].member?(View.name)
 
-      return if View.file   # Return if it has a file - it means it's not the "xsh" session (it's just a file with that name)
+      # Return if it has a file - it means it's not the "xsh" session (it's just a file with that name)
+      return if View.file
 
       # Save session to file...
 
@@ -638,41 +586,59 @@ module Xiki
 
       return if ! name
 
-      sessions_dir = File.expand_path "~/xiki/sessions"
+      interactions_dir = File.expand_path "~/.xiki/interactions"
 
-      FileUtils.mkdir_p sessions_dir   # Make sure dir exists
+      FileUtils.mkdir_p interactions_dir   # Make sure dir exists
 
-      file = File.expand_path "#{sessions_dir}/#{name}.notes"
+      file = File.expand_path "#{interactions_dir}/#{name}.xiki"
       file = Files.unique_name file
 
+      shell_dir_orig = Shell.dir   #> "/tmp/"
+
+      # Set shell dir, so it doesn't default to view dir (since $el.write_file changes the current dir)
+      Shell.cd Shell.dir
+
+
+      # Save into file, and make this view associated with the file
       $el.write_file file
 
-      # Save which dir it was in to corresponding file in misc/sessions_dirs...
+      # Save which dir it was in to corresponding file in misc/interactions_dirs...
 
-      sessions_dirs_file = file.sub "sessions/", "misc/sessions_dirs/"
-      FileUtils.mkdir_p File.expand_path("~/xiki/misc/sessions_dirs/")
-      File.open(sessions_dirs_file, "w") { |f| f << Shell.dir }
+      interactions_dirs_file = file.sub "interactions/", "misc/interactions_dirs/"
+      FileUtils.mkdir_p File.expand_path("~/.xiki/misc/interactions_dirs/")
+      File.open(interactions_dirs_file, "w") { |f| f << shell_dir_orig }
 
       file
 
     end
 
-    def self.save_grab_location #file
+    def self.save_go_location
 
       file = View.file
 
-      # .save_xsh_sessions didn't deem to save this view, so we should ignore it too
+      # .save_xsh_interaction didn't deem to save this view, so we should ignore it too
       return if ! file
 
-      dir = File.expand_path "~/xiki/bookmarks"
+      dir = File.expand_path "~/.xiki/bookmarks"
       FileUtils.mkdir_p dir   # Make sure dir exists
-      File.open("#{dir}/g.notes", "w") { |f| f << "#{file}\n" }
+      # Save this file in > "g" bookmark!
+      File.open("#{dir}/g.xiki", "w") { |f| f << "#{file}\n" }
+
+      # Store the shell current dir, which will be restored whin a ^G from bash is done
+      tmp_dir = File.expand_path "~/.xiki/misc/tmp"
+      FileUtils.mkdir_p tmp_dir   # Make sure dir exists
+      File.open("#{tmp_dir}/go_location_cd_dir.xiki", "w") { |f| f << "#{Shell.dir}\n" }
+
+      View.message "The next time you type ^G in bash, it'll go here."
 
     end
 
     def self.file_list options={}
 
-      txt = File.read File.expand_path("~/xiki/misc/logs/difflog.notes"), *Xiki::Files.encoding_binary
+      txt = File.read(File.expand_path("~/.xiki/misc/logs/difflog.xiki"), *Xiki::Files.encoding_binary) rescue nil
+
+      return [] if ! txt
+
       # Avoids "invalid byte sequence in UTF-8" error
       txt.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '')
 
@@ -681,7 +647,7 @@ module Xiki
       # :tree_format, so return navigable tree with file indented...
 
       if options[:tree_format]
-        txt.scan(/^.*\n  - .*$/){|m| files << "=#{m}"}
+        txt.scan(/^.*\n  - .*$/){|m| files << "= #{m}"}
         return files.reverse.uniq
       end
 
@@ -694,12 +660,15 @@ module Xiki
 
 
     # Show diffs for just one file ("." for current)
-    def self.show_edits
-
+    def self.show_edits_for_bookmark
       bm = Keys.input :timed=>true, :prompt=>"Enter a bookmark to search edits: "
       return Launcher.open("diff log/diffs/") if bm == "8" || bm == " "
-      path = bm == "." ? View.file : ":#{bm}/"
-      return Launcher.open("#{path}\n  =edits/")
+      path = bm == "." ? View.file : "^#{bm}/"
+      return Launcher.open("#{path}\n  = edits/")
+    end
+
+    def self.show_edits
+      return Launcher.open("#{View.file}\n  = edits/")
     end
 
   end
