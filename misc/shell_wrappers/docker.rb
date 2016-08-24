@@ -2,7 +2,7 @@ shell_command = options[:shell_command]
 
 # $ docker, so just decorate the output...
 
-if shell_output = options[:shell_root_output]
+if shell_output = options[:shell_output]
 
   if shell_command == "docker help"
     shell_output.gsub! /^\|     (\w)/, ":     \\1"
