@@ -1,19 +1,22 @@
 module Xiki
 
-  Styles.mode_line :bg=>'#aaa', :fg=>"#444", :bold=>true
-  Styles.mode_line_inactive :bg=>'#aaa', :fg=>"#444", :bold=>true
+  Styles.mode_line :bg=>'#999', :fg=>"#222", :bold=>true
+  Styles.mode_line_inactive :bg=>'#999', :fg=>"#222", :bold=>true
+  Styles.mode_line_underline :fg=>"#222", :bold=>true, :underline=>true
+  Styles.mode_line_inactive_underline :fg=>"#222", :bold=>true, :underline=>true
 
   Styles.mode_line_transparent :bg=>"unspecified", :fg=>"#aaa", :underline=>nil
   Styles.mode_line_transparent_activatable :bg=>"unspecified", :fg=>"#aaa", :underline=>nil
-  Styles.mode_line_transparent_underline :bg=>"unspecified", :fg=>"#aaa", :underline=>1
-  Styles.mode_line_transparent_underline_activatable :bg=>"unspecified", :fg=>"#aaa", :underline=>1
+  Styles.mode_line_transparent_underline :bg=>"unspecified", :fg=>"#aaa", :underline=>1, :bold=>1
+  Styles.mode_line_transparent_underline_activatable :bg=>"unspecified", :fg=>"#aaa", :underline=>1, :bold=>nil
 
   Styles.mode_line_sides :bg=>"unspecified", :fg=>"#aaa", :underline=>nil
   Styles.mode_line_sides_underline :bg=>"unspecified", :fg=>"#aaa", :underline=>1
 
   Styles.mode_line_file :fg=>"#fff"
+  Styles.mode_line_file_underline :fg=>"#fff", :underline=>1
 
-  Styles.vertical_border :fg=>"#aaa", :bg=>'#aaa', :underline=>nil
+  Styles.vertical_border :fg=>"#999", :bg=>'#999', :underline=>nil
 
   Styles.region :bg=>"#333"
 

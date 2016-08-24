@@ -1,9 +1,9 @@
 module Xiki
   Themes.use 'Rainbow Fonts'
-  Themes.use "Tab Bar Text"   # Long complicated elisp that draws text
+  Themes.use "Bottom Bar Items"   # Long complicated elisp that draws text
 
   # Put this last, since it changes the bar, and will thus fix the control lock color
-  Themes.use "Tab Bar Styles"   # Styles
+  Themes.use "Bottom Bar Styles"   # Styles
 
 end
 
@@ -21,4 +21,4 @@ $el.el4r_lisp_eval %`
      '("%b"))
     (setq frame-title-format '("%b" ))
   )
-  `
+`
