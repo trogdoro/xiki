@@ -25,7 +25,7 @@ module Xiki
       menu = "untitled"
 
       if children.blank?
-        file = File.expand_path "~/xiki/commands/#{trunk[0]}.menu"
+        file = File.expand_path "~/.xiki/roots/#{trunk[0]}.menu"
         menu = trunk[0]
         children = File.read file
       end
@@ -35,7 +35,7 @@ module Xiki
 
       Firefox.url "file:///tmp/untitled.html"
 
-      "<! showing in browser!"
+      "<* showing in browser!"
     end
 
     def self.wrap_standalone children

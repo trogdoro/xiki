@@ -24,7 +24,7 @@ module Xiki
 
 
       if children.blank?
-        file = File.expand_path "~/xiki/commands/#{trunk[0]}.menu"
+        file = File.expand_path "~/.xiki/roots/#{trunk[0]}.menu"
       else
         file = "/tmp/tmp.menu"
         File.open(file, "w") { |f| f << children }
@@ -33,7 +33,7 @@ module Xiki
       code = self.wrap_controller file
       Node.run_controller code
 
-      "<! showing in browser!"
+      "<* showing in browser!"
     end
 
     def self.wrap_controller file
