@@ -1,41 +1,33 @@
 module Xiki
   class Browser
 
-    @@jquery_url = "http://code.jquery.com/jquery.min.js"
-    @@browser = {}
-
-    def self.browser
-
-      begin
-        require "selenium-webdriver"
-      rescue LoadError
-        return nil   # Callers shauld do something else if nil
-      end
-
-      kind = (Conf.get("browser", "browser") || "firefox").to_sym
-      begin
-        @@browser[kind] ||= Selenium::WebDriver.for kind
-        # Do something trivial, so it'll error if not connected
-        @@browser[kind].execute_script("return 1")
-      rescue Selenium::WebDriver::Error::WebDriverError=>e
-        # The old one was bad, so create entirely new connection
-        @@browser[kind] = Selenium::WebDriver.for kind
-      end
-
-      @@browser[kind]
-
+    def self.url_via_os url
+      Shell.command "open \"#{url}\""
     end
 
-    def self.url url, options={}
+    def self.url url=nil, options={}
 
-      browser = self.browser
+      return self.url_via_os(url) if options[:os_open]
 
-      return Shell.command "open #{url}" if ! browser
+      # No url specified, so return it...
+
+      if ! url
+        return SeleniumWrapper.js("return window.location.href")
+      end
+
+      # Url specified, so go there...
+
+      # Todo > Make this configurable
+      #   - maybe > conditionally use localhost jquery or remote one?
+      #     - do this if > the browser won't include a localhost one into a page on the internet
+      # Old > uses OS to navigate
+      # return Shell.command("open #{url}") #if ! browser
+
+      SeleniumWrapper.url url
 
       # Firefox.url url, options
-      self.browser.navigate.to url
 
-      "<! opened in browser"
+      "<* opened in browser"
     end
 
     def self.html html, options={}
@@ -43,7 +35,11 @@ module Xiki
       name = options[:name] || "tmp"
       File.open("/tmp/#{name}.html", "w") { |f| f << html }
 
-      self.url "file:///tmp/#{name}.html" #, :reload=>1
+      if options[:via_os]
+        self.url_via_os "file:///tmp/#{name}.html"
+      else
+        self.url "file:///tmp/#{name}.html"
+      end
 
       nil
     end
@@ -54,42 +50,7 @@ module Xiki
     end
 
     def self.js txt, options={}
-
-      browser = self.browser
-
-      raise "
-        > A gem is required
-        | The selenium-webdriver gem must be installed to send js
-        | to the browser. To jump back to your shell and install
-        | it as a xiki-local gem, type ^G on this line:
-        |
-        $ xikigem install selenium-webdriver
-        " if ! browser
-
-      begin
-        browser.execute_script txt
-      rescue Exception=>e
-
-        # "$ is not defined" error, so load jquery and try again...
-
-        if e.message =~ /\$ is not defined/
-          browser.execute_script "
-            var s=document.createElement('script');
-            s.setAttribute('src', '#{@@jquery_url}'); s.setAttribute('id', 'jqid');
-            document.getElementsByTagName('head')[0].appendChild(s);
-
-            var s=document.createElement('script');
-            s.setAttribute('src', 'http://xiki.org/javascripts/util.js');
-            document.getElementsByTagName('head')[0].appendChild(s);
-            ".unindent
-
-          wait = Selenium::WebDriver::Wait.new(:timeout => 10) # seconds
-          wait.until { browser.execute_script("return typeof( $ )") != "undefined" }
-
-          browser.execute_script txt
-        end
-      end
-
+      SeleniumWrapper.js txt, options
     end
 
     def self.open_in_browser
@@ -150,7 +111,7 @@ module Xiki
 
       # Optionally turn into local url, accounding url_mappings.menu...
 
-      mappings = Menu.menu_to_hash Bookmarks["~/xiki/commands/url_mappings.menu"] rescue {}
+      mappings = Command.menu_to_hash Bookmarks["~/.xiki/roots/url_mappings.menu"] rescue {}
       result = nil
       mappings.each do |k, v|
         break file.sub!(v, "#{k}/") if file.start_with? v
@@ -169,7 +130,7 @@ module Xiki
     end
 
     def self.markdown_render txt
-      require "#{Xiki.dir}commands/markdown.rb" if ! defined? Markdown
+      require "#{Xiki.dir}roots/markdown.rb" if ! defined? Markdown
       Markdown.render txt
     end
 
@@ -178,8 +139,7 @@ module Xiki
     end
 
     def self.reload
-      raise "is this used somewhere?"
-      Firefox.reload
+      SeleniumWrapper.js "window.location.reload()"
     end
 
     def self.source *url
