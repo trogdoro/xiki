@@ -40,7 +40,6 @@ module Xiki
     end
 
     def self.comment left=nil, right=nil
-
       prefix = Keys.prefix
       line = Line.value
 
@@ -52,6 +51,8 @@ module Xiki
 
         return self.enter_insert_comment if line =~ /^ *$/
 
+      elsif prefix == :u   # If C-u prefix, add comment on end
+        return self.enter_insert_comment
       elsif prefix == 0   # If 0 prefix, comment paragraph
         left, right = View.paragraph(:bounds => true)
       else
@@ -81,8 +82,13 @@ module Xiki
       View.to left
       View.set_mark right
 
+      # Maybe implement this > In a .notes file, so just comment with "|" at beginning of line
+
       $el.comment_or_uncomment_region View.range_left, View.range_right
+
+      # Disabled indenting > see how this feels
       self.indent View.range_left, View.range_right
+
     end
 
     # Evaluates file, paragraph, or next x lines using el4r
@@ -118,7 +124,7 @@ module Xiki
           return View.flash "- loaded!"
 
         when 8   # Put into file and run in console
-          File.open("/tmp/tmp.rb", "w") { |f| f << Notes.current_section("^>").text }
+          File.open("/tmp/tmp.rb", "w") { |f| f << Notes.current_section_object("^>").text }
           return Shell.run "ruby -I. /tmp/tmp.rb", :dir=>View.dir
         when 9   # Pass whole file as ruby
           return Shell.run("ruby #{View.file_name}", :buffer => "*console ruby")
@@ -128,20 +134,11 @@ module Xiki
         end
 
         txt = View.txt(:left=>left, :right=>right).to_s
-        Effects.blink :left => left, :right => right
+        Effects.blink :left=>left, :right=>right
       end
 
       txt.sub! /\A( *)@ /, "\\1"   # Remove @ if at beginning
       txt.gsub! /^ *[|:] ?/, '' if txt =~ /\A *[|:]/   # Remove quoted lines if it's quoted
-
-
-      # If C--, reload in command line tool...
-
-      if prefix == :-
-        file = View.file
-        `xiki load/#{file}`
-        return
-      end
 
       orig = Location.new
       $el.goto_char right
@@ -170,7 +167,7 @@ module Xiki
       end
 
       if exception
-        backtrace = exception.backtrace[0..8].join("\n").gsub(/^/, '  =') + "\n"
+        backtrace = exception.backtrace[0..8].join("\n").gsub(/^/, '  = ') + "\n"
         error = CodeTree.format_exception_message_for_tree exception.message
         View.insert ">>\n"
         View.insert "- error:#{error}\n- backtrace:\n#{backtrace}".gsub(/^/, '  ')
@@ -236,6 +233,8 @@ module Xiki
 
     end
 
+    # xiki api > Eval ruby code
+
     # Evaluates a string, and returns the output and the stdout string generated
     # Code.eval "p 11; 22", nil, nil, :simple=>1   # Returns 1 string, which is quoted return value or output, or unquoted formatted exception.
     #
@@ -254,11 +253,18 @@ module Xiki
       orig_stdout = $stdout;  $stdout = StringIO.new
       stdout = nil
       exception = nil
+      returned = nil
 
       # Run the code...
 
       begin
-        returned = self.eval_inner code, file, line, eval_options, options
+        if dir = eval_options[:dir]
+          Dir.chdir(dir) do
+            returned = self.eval_inner code, file, line, eval_options, options
+          end
+        else
+          returned = self.eval_inner code, file, line, eval_options, options
+        end
       rescue Exception => e
         exception = e
       end
@@ -288,13 +294,18 @@ module Xiki
     def self.eval_inner code, file, line, eval_options, options
       target = eval_options[:target_module] || Object
 
-      # Put here to be made available to code being eval'ed
-      args, path, dir, task = options[:args_relative]||options[:args]||[], options[:path_relative]||options[:path], options[:dir], options[:task]
+      # These variables will be > passend to code > accessible by the evaled code
+      args, path, dir, task, items = options[:args_relative]||options[:args]||[], options[:path_relative]||options[:path], options[:dir], options[:task], options[:items]
+      shell_command, shell_output = options[:shell_command],  options[:shell_output]
+
+      arg1, arg2, arg3 = (args||[])[0..2]
+
+      if eval_options[:binding]
+        return eval_options[:binding].eval(code, file||__FILE__, line||__LINE__)
+      end
 
       if code.is_a? Proc
         target.module_eval &code
-      elsif eval_options[:global] || ! $el
-        target.module_eval code, file||__FILE__, line||__LINE__
       else
         target.module_eval code, file||__FILE__, line||__LINE__
       end
@@ -506,12 +517,21 @@ module Xiki
     end
 
     def self.load_this_file
-      Effects.blink :what=>:all
+
+      Effects.blink :what=>:all, :time=>0.08
       begin
-        load View.file
+
+        result = load View.file
+        if e = result[2]
+          View.open :txt=>""
+          View.<<(CodeTree.draw_exception(e), :dont_move=>1)
+          Search.forward "^    "
+        end
+
       rescue Exception=>e
         Tree.<< "- Error:\n#{e.message.gsub /^/, '  '}!", :no_slash=>1
       end
+      # Give it enough time to flash
     end
 
     def self.do_code_align
@@ -527,7 +547,7 @@ module Xiki
     # - 3+do+indent     # Make indent be 6 spaces from the left (3*2)
     #
     def self.indent_to options={}
-      prefix = Keys.prefix
+      prefix = options[:prefix] || Keys.prefix
       if prefix == :-   # Just indent to where it should go
         Code.indent
         View.no_deselect
@@ -569,9 +589,8 @@ module Xiki
 
       left = View.cursor
       right = left + txt.length
-      View.insert txt
-
-      View.no_deselect
+      View.insert txt, :dont_move=>1
+      View.selection = left, right
 
     end
 
@@ -638,14 +657,14 @@ module Xiki
 
     def self.open_log_view options={}
 
-      prefix = Keys.prefix :clear=>true
+      prefix = options[:prefix] || Keys.prefix(:clear=>true)
       prefix = nil if options[:called_by_launch]
 
       orig = View.current if prefix == :u   # up+layout+output means to go back
 
       file = Ol.file_path
 
-      buffer = "*ol"
+      buffer = "ol"
 
       # If already visible, just go to it
       if View.buffer_visible?(buffer)
@@ -659,10 +678,6 @@ module Xiki
       end
 
       # If not in bar, open the bar
-
-      if ! View.bar?
-        View.bar
-      end
 
       # If buffer open (but not visible), just switch to it
       if View.buffer_open? buffer
@@ -678,7 +693,7 @@ module Xiki
       lines = "#{file}.lines"
       `touch #{lines}` unless File.exists?(lines)
 
-      Shell.run "tail #{prefix == :- ? '-n 100' : ''} -f #{file}", :buffer=>buffer, :dir=>'/tmp', :dont_leave_bar=>true
+      Shell.run "tail -n 100 -f #{file}", :buffer=>buffer, :dir=>'/tmp', :dont_leave_bar=>true
       Notes.mode
 
       return if self.clear_and_go_back orig
@@ -705,7 +720,7 @@ module Xiki
         return Move.backward 2
       end
 
-      View.insert "Ol \"\""
+      View.insert "Ol \"#{options[:txt]}\""
       Move.backward 1
 
     end
@@ -750,7 +765,7 @@ module Xiki
       if location   # Go back to starting point
         View.clear
 
-        View.clear "*ol"
+        View.clear "ol"
         View.to_window location
         return true   # Indicate to exit method
       end
@@ -771,22 +786,47 @@ module Xiki
       # Indent over, and add file path and percent...
 
       txt.gsub! /^/, "  "
-      txt = "#{View.file}\n#{txt}(line #{View.line}, #{View.percent}%)"
+
+      file = View.file
+      file = Files.tilde_for_home file
+
+      filename = nil
+
+      # Separate file name so it can be white
+
+      if file && found = file.slice!(/[^\/]+$/)
+        filename = found
+      end
+
+      $el.elvar.filename = filename || View.name
 
       View.cursor = orig   # Go back in case we moved
 
       txt = txt.strip.gsub('%', '%%')   # Escape %'s, .message interprets them strangely
 
-      txt = "\n#{txt}"
-
-      if prefix == :-   # Actually insert it inline
+      if prefix == :u   # Actually insert it inline
         Line.next
         View << "#{txt}\n"
         Line.previous
         return
       end
 
-      View.message txt
+      indent = txt == "" ? "" : txt.split("\n")[-1][/^ +/]
+
+      txt.gsub!('"', "\\\"")
+      txt.gsub!(/^/, "  | ")
+      $el.elvar.xiki_tmp_txt = txt.sub(/\A/, "\n")
+
+      $el.elvar.xiki_tmp_line = "\n      #{indent}line #{View.line}, #{View.percent}%%"
+
+      Code.eval_lisp %`
+        (message (concat
+          (propertize "#{file}" 'face 'ls-dir)
+          filename
+          (propertize xiki-tmp-txt 'face 'ls-quote)
+          xiki-tmp-line
+        ))
+      `
     end
 
     def self.add_space
@@ -808,8 +848,8 @@ module Xiki
     def self.open_related_file
       file = View.file
 
-      return View.open(file.sub /\.menu$/, '.rb') if file =~ /\/commands\/\w+\.menu$/
-      return View.open(file.sub /\.rb$/, '.menu') if file =~ /\/commands\/\w+\.rb$/
+      return View.open(file.sub /\.menu$/, '.rb') if file =~ /\/roots\/\w+\.menu$/
+      return View.open(file.sub /\.rb$/, '.menu') if file =~ /\/roots\/\w+\.rb$/
 
       View.flash "No matching file known."
 
@@ -963,15 +1003,6 @@ module Xiki
 
     end
 
-    # Grabs /foo/bar.rb:123 pattern from line, and jumps to file / line.
-    def self.open_as_file
-      return if Line.value !~ /(\/.+?):(\d+)/
-
-      file, line = $1, $2
-      View.open file
-      View.line = line
-    end
-
     def self.jump_to_proc_source proc
       file, line = Code.location_from_proc proc
       file = "#{Xiki.dir}#{file}" unless file =~ /^\//
@@ -1001,6 +1032,19 @@ module Xiki
       $el.cache key, &block
     end
 
+    # Adds exception handling
+    def self.fork_and_eval_wrapper code
+
+      result = self.eval code, :simple=>1
+
+      URI.encode result
+
+    rescue Exception=>e
+
+      Ol "#{e}!!!"
+      URI.encode result
+
+    end
 
   end
 end
