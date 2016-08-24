@@ -25,7 +25,7 @@ module Xiki
       if line =~ /^(xiki|http):\/\//
         server_name = line.sub(/^.+?\/\//, '')
         server_name.sub!(/\/$/, '')
-        mappings = Menu.menu_to_hash Bookmarks["~/xiki/commands/url_mappings.menu"] rescue {}
+        mappings = Command.menu_to_hash Bookmarks["~/.xiki/roots/url_mappings.menu"] rescue {}
         file = mappings[server_name]
         file = file ? "@#{file}" : "> Not found, add here\n@url mappings/"
 

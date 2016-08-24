@@ -7,7 +7,7 @@ module Xiki
   class Agenda
 
     def self.menu *lines
-      t = Bookmarks[':t']
+      t = Bookmarks['^links']
 
       # If no line, display all of them
       if lines.empty?

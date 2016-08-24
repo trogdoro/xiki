@@ -34,13 +34,13 @@ module Xiki
       section = args[-1].strip
 
       i = sections.index{|o| o =~ /\A#{Regexp.quote section}\z/}
-      return options[:output] = "<! slash :(!" if ! i
+      return options[:output] = "<* slash :(!" if ! i
 
 
       i += options[:prefix] == :u ? -1 : 1
 
       following = sections[i]
-      return options[:output] = "<! end!" if ! following
+      return options[:output] = "<* end!" if ! following
 
       options[:output] = "=replace/siblings/\n#{sections[i].gsub(/^/, '  ')}"
 

@@ -206,6 +206,9 @@ module Xiki
     def self.hide_by_indent indent=nil
       indent ||= Keys.prefix
       if indent == :u
+        self.show
+        $el.widen
+
         $el.set_selective_display nil
         return
       end

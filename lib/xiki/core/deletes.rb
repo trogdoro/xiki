@@ -62,10 +62,12 @@ module Xiki
 
     def self.backward
 
-
       # Selection exists, so just delete it...
 
-      return View.delete *View.range if View.selection
+      selection = View.selection
+      View.deselect if selection == ""   # Because in this one case it wouldn't deselect, and the selection is invisible because it's 0 chars wide
+
+      return View.delete *View.range if selection
 
       # No selection...
 

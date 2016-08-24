@@ -16,7 +16,7 @@ module Xiki
 
       # >... at top and thereafter, so delegate to NotesHandler...
 
-      return NotesHandler.handle(options) if headings.length > 1 && txt =~ /\A>/
+      return NotesHandler.handle(options) if headings.length > 0 && txt =~ /\A>/   #> |||
 
       # No >..., so delegate to MenuHandler...
 

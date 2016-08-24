@@ -59,6 +59,7 @@ module Xiki
 
     @@colors_by_name = {
       "light"=>:color_rb_light,
+      "gray"=>:color_rb_light,
       "red"=>:color_rb_red,
       "orange"=>:color_rb_orange,
       "yellow"=>:color_rb_yellow,
@@ -70,15 +71,15 @@ module Xiki
       @@colors_by_name
     end
 
-    def self.mark color
+    def self.mark color, options={}
 
-      # /mark/, so show options...
+      # /highlight/, so show options...
 
-      View.kill :force_recent=>1 if View.name == "mark/"
+      View.kill :force_recent=>1 if View.name == "highlight/"
 
       # Back in the original view...
 
-      if color == "light"
+      if color == "light" && ! options[:allow_multiple]
         # We want there to be only one "light" line per file, so delete existing
         overlays = $el.overlays_in(View.top, View.bottom)   # Get all overlays
         overlays.to_a.reverse.each do |o|   # Loop through and copy all
@@ -105,7 +106,7 @@ module Xiki
     end
 
     def self.next options={}
-      View.kill if View.name == "mark/"
+      View.kill if View.name == "highlight/"
 
       column = View.column
       pos = nil
@@ -119,7 +120,7 @@ module Xiki
     end
 
     def self.previous
-      View.kill if View.name == "mark/"
+      View.kill if View.name == "highlight/"
       column = View.column
       Move.to_axis   # So we don't "find" the line we're already on
       Keys.prefix_times do
@@ -149,14 +150,14 @@ module Xiki
 
       Code.cache(:color_define_styles) do
         Styles.define :color_rb_red, :bg=>"500"
-        Styles.define :color_rb_orange, :bg=>"630"
-        Styles.define :color_rb_yellow, :bg=>"550"
+        Styles.define :color_rb_orange, :bg=>"840"
+        Styles.define :color_rb_yellow, :bg=>"770"
         Styles.define :color_rb_green, :bg=>"141"
         Styles.define :color_rb_white, :fg=>'222', :bg=>'fff' #, :border=>['fff', -1]
-        Styles.define :color_rb_light, :bg=>"333"
-
         Styles.define :color_rb_blue, :bg=>"135"
         Styles.define :color_rb_purple, :bg=>"315"
+        Styles.define :color_rb_light, :bg=>"333"
+
 
         # if ! Styles.dark_bg?
         # Styles.define :color_rb_red, :bg=>"ffd5d5"
@@ -168,6 +169,7 @@ module Xiki
         # Styles.define :color_rb_blue, :bg=>"dde5ff"
         # Styles.define :color_rb_purple, :bg=>"f2ddff"
 
+        Styles.define :fade8, :fg=>"000"
         Styles.define :fade7, :fg=>"333"
         Styles.define :fade6, :fg=>"555"
         Styles.define :fade5, :fg=>"777"
@@ -189,7 +191,7 @@ module Xiki
       end
     end
 
-    # Builds up hash of all marks, sorted by time.
+    # Builds up hash of all highlights, sorted by time.
     # Structure of hash returned:
     # - key: time
     # - value: [file, line, color]
@@ -214,7 +216,6 @@ module Xiki
           created_at = $el.overlay_get(o, :created_at)
           next unless created_at && line.any? && face.any?
           face = face.to_s
-          next if face == "color-rb-light"
           hash[created_at] = [file, line, face]
         end
       end
@@ -229,7 +230,7 @@ module Xiki
 
       # No prefix, so show menu of colors...
 
-      return Launcher.open("mark/", :hotkey=>1, :bar_is_fine=>1) if ! prefix
+      return Launcher.open("highlight", :hotkey=>1, :bar_is_fine=>1) if ! prefix
 
       # N+, so jump to nth visible label...
 
@@ -249,6 +250,82 @@ module Xiki
       end
 
     end
+
+    def self.next_key
+      self.next
+      Keys.remember_key_for_repeat(proc {Xiki::Color.next}, :movement=>1)
+      ""
+    end
+
+    def self.previous_key
+      self.previous
+      Keys.remember_key_for_repeat(proc {Xiki::Color.previous}, :movement=>1)
+      ""
+    end
+
+
+    def self.delete
+      View.kill if View.name == "highlight/"
+
+      overlays = $el.overlays_at($el.next_overlay_change($el.point_at_bol - 1))
+      return View.beep "- No highlights after cursor!" if ! overlays
+      return $el.delete_overlay(overlays[0])
+    end
+
+    def self.clear
+      View.kill if View.name == "highlight/"
+
+      if Keys.prefix_u   # Don't delete map highlight
+        return $el.remove_overlays
+      end
+
+      overlays = $el.overlays_in(View.top, View.bottom)   # Get all overlays
+      overlays.to_a.reverse.each do |o|   # Loop through and copy all
+        if $el.overlay_get(o, :face).to_s != "color-rb-light"
+          $el.delete_overlay(o)
+        end
+      end
+
+      ""
+    end
+
+
+    def self.show
+      txt = self.get_marked_lines
+      if txt.blank?
+        txt = "    - no marked lines in this view!"
+      else
+        txt.gsub! /^/, "    : "
+      end
+
+      file = View.file
+
+      path = file ?
+        "- #{File.expand_path(file).sub(/(.+)\//, "\\1/\n  - ")}\n" :
+        "- buffer #{View.name}/\n"
+
+      txt = "#{path}#{txt}"
+
+      Launcher.open txt, :no_launch=>1, :buffer_name=>"highlights"
+
+      ""
+    end
+
+
+    def self.get_marked_lines label=nil
+      overlays = $el.overlays_in(View.top, View.bottom)   # Get all overlays
+      txt = ""
+      overlays.to_a.reverse.each do |o|   # Loop through and copy all
+        if label
+          next if $el.overlay_get(o, :face).to_s != label
+        end
+        line = View.txt($el.overlay_start(o), $el.overlay_end(o))
+        line << "\n" unless line =~ /\n$/
+        txt << line
+      end
+      txt
+    end
+
 
   end
   Color.define_styles

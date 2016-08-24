@@ -25,6 +25,7 @@ module Xiki
     end
 
     def self.open_current options={}
+
       if options[:paths]
         paths = options[:paths]
       elsif path = options[:file]
@@ -33,6 +34,16 @@ module Xiki
         paths = [path]
       elsif options[:prompt_for_bookmark]
         bm = Keys.input(:timed => true, :prompt => "Enter bookmark to show content for: ")
+
+        # Hard-coded
+        # eventually do this whenever a dir > do outline for _menu inside dir, and optionally treat as topic if exists
+        #   - maybe > borrow > code for list+outline
+
+        if bm == "h"
+          return Launcher.open "xikihub rails"
+        end
+
+
         path = Bookmarks.expand(bm, :just_bookmark => true)
         return View.beep("- Bookmark '#{bm}' not found!") if ! path
         path = File.expand_path(path)
@@ -88,24 +99,15 @@ module Xiki
         if options[:all]
           FileTree.enter_lines(//)
         elsif options[:outline] || options[:prompt_for_bookmark]
+
+          Ol "Errors here when directory!!!"
+
           FileTree.enter_lines
         else
           Tree.filter :recursive => true
         end
       end
 
-    end
-
-    def self.open_history
-      times = self.prefix_times
-      View.to_buffer("history/")
-      View.clear;  notes_mode
-
-      self.insert_history times
-      View.to_top
-      Keys.clear_prefix
-      FileTree.select_next_file
-      Tree.filter :recursive => true
     end
 
     def self.insert_history times
@@ -136,7 +138,7 @@ module Xiki
 
     def self.backup_file
 
-      dir = File.expand_path "#{Bookmarks[":x"]}misc/versions"
+      dir = File.expand_path "~/.xiki/misc/versions"
       FileUtils.mkdir_p dir   # Guarantee dir exists
 
       prefix = Keys.prefix
@@ -162,15 +164,19 @@ module Xiki
       View.message "Successfully #{message}"
     end
 
+    def self.latest_file file_name
+      Dir["#{File.expand_path("~/.xiki//misc/versions")}/#{file_name}.????-??-??.??-??*"].last   # "
+    end
+
     def self.diff_with_backup
       # If up+, do interactive ediff...
 
       if Keys.prefix_u
-        $el.ediff_files Dir["#{Bookmarks[':x/misc/versions']}#{View.file_name}*"].last, View.file
+        $el.ediff_files Dir["#{File.expand_path("~/.xiki/misc/versions")}#{View.file_name}*"].last, View.file
         return
       end
 
-      backup = Dir["#{Bookmarks[':x/misc/versions']}/#{View.file_name}.????-??-??.??-??*"].last   # "
+      backup = self.latest_file View.file_name
 
       return View.beep("- No backup exists in :x/misc/versions/") if ! backup
 
@@ -212,10 +218,11 @@ module Xiki
 
     def self.list
       regex = Regexp.quote View.name
-      current_file = View.file.sub(/.+\//, "\\0\n  + ")
-      Launcher.open "#{current_file}\n:x/misc/versions/\n  - **^#{regex}\./"
+      file = View.file
 
-      "to-does"
+      Launcher.open "~/.xiki/misc/versions/\n  - **^#{regex}\./"
+
+      # Todo > nest "versions/" command under it?
     end
 
     def self.init_in_client
@@ -233,9 +240,9 @@ module Xiki
 
     def self.log
 
-      tmp_dir = File.expand_path "~/xiki/misc/logs"
+      tmp_dir = File.expand_path "~/.xiki/misc/logs"
       FileUtils.mkdir_p tmp_dir   # Make sure dir exists
-      file = "#{tmp_dir}/opened_files_log.notes"
+      file = "#{tmp_dir}/opened_files_log.xiki"
       File.open(file, "a") { |f| f << "#{View.file}\n" }
 
     end

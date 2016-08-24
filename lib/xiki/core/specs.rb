@@ -212,7 +212,7 @@ module Xiki
 
       path = View.file.sub /.+\/spec\//, 'spec/'
       command = "rspec #{path}:#{View.line}"
-      result = Shell.run command, :dir=>":xiki", :sync=>true
+      result = Shell.run command, :dir=>"^xiki", :sync=>true
       result = result.gsub(/^/, '    # ').gsub(/ +$/, '')
 
       Search.forward '^  +end$'

@@ -185,7 +185,7 @@ module Xiki
 
       #     # TODO: Unified: comment out for now - just comment out since we're doing no caching
       #     # reload 'path_to_class'
-      #     Menu.load_if_changed File.expand_path("~/xiki/commands/#{snake}.rb")
+      #     Command.load_if_changed File.expand_path("~/xiki/roots/#{snake}.rb")
 
       # Call .menu_after if it exists...
 

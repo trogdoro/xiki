@@ -1,5 +1,8 @@
 # Meant to log short succinct messages to help with troubleshooting
 # while coding.  Log statements hyperlink back to the line that logged it.
+
+require 'fileutils'
+
 class Ol
   @@last = [Time.now - 1000]
   @@timed_last = {""=>Time.now}
@@ -106,7 +109,7 @@ class Ol
   # Called by .line, to do the work of writing to the file
   #
   # Ol.log "hey"
-  def self.log txt, l=nil, options=nil
+  def self.log txt, l, options=nil
 
     path = self.file_path
 
@@ -138,7 +141,7 @@ class Ol
         l_raw :
         caller(0)[3..-1]   # Omit Ol calls
 
-      root_offset = self.nesting_match trace
+      root_offset = options[:indent] || self.nesting_match(trace)
       root_offset_indent = "  " * (root_offset||0)
 
       # Add this to @@roots if none found
@@ -266,7 +269,7 @@ class Ol
       txt = "#{txt[0..100]}#{txt.length > 100 ? "\n[...]" : ''}"
     end
 
-    self.line txt, line, nil, :caption=>caption
+    self.line txt, line, :caption=>caption
   end
 
   def self.yaml *args
@@ -288,6 +291,11 @@ class Ol
   end
 
 
+  def self.i txt
+    self.line txt.inspect, caller(0)[1]
+  end
+
+
   # The 'tag' param lets you have separate timers
   def self.time tag="" #nth=1
 
@@ -304,7 +312,7 @@ class Ol
   end
 
   # The primary method of this file
-  def self.line txt=nil, l=nil, indent="", options=nil
+  def self.line txt=nil, l=nil, options=nil
     l ||= caller(0)[1]
     l_raw = l.dup
 
@@ -352,7 +360,13 @@ class Ol
   end
 
   def self.file_path
-    "/tmp/out_ol.notes"
+    return @file_path if @file_path
+
+    # File not set yet, so create dir if necessary
+    dir = File.expand_path "~/.xiki/misc/ol/"
+    FileUtils.mkdir_p dir
+    @file_path = "#{dir}/out_ol.xiki"
+
   end
 
   def self.camel_case s
@@ -367,7 +381,7 @@ class Ol
     self.line "ancestors...", ls.shift, ""
 
     ls.each_with_index do |l, i|
-      self.line((i+1).to_s, l, "    ", :leave_root=>1)
+      self.line((i+1).to_s, l, :leave_root=>1, :indent=>2)
     end
 
     nil
@@ -389,7 +403,7 @@ class Ol
 
     # Not too deep, so show "less than N"...
 
-    self.line "stack limit less than #{n}", stack[1..-1], nil #, :leave_root=>1
+    self.line "stack limit less than #{n}", stack[1..-1]
 
     nil
   end
@@ -412,7 +426,7 @@ class Ol
     last = options[:exclamation] ? "!" : "-"
 
     pipes = "|"*n+"|#{last}"
-    self.line pipes, ls, nil, :leave_root=>1
+    self.line pipes, ls, :leave_root=>1
 
     nil
   end
@@ -523,7 +537,7 @@ class Ol
   end
 
   def self.extract_test
-    log = Buffers.txt "*ol"
+    log = Buffers.txt "ol"
     log.sub! /.+\n\n/m, ''
 
     txt = ""
@@ -546,9 +560,9 @@ class Ol
 
   def self.update_value_comment value
     column = Xiki::View.column
-    value = "   # => #{value}"
-    Xiki::Line =~ /   # / ?
-      Xiki::Line.sub!(/(.*)   # .*/, "\\1#{value}") :   # Line could be commented, so don't replace after first "#"
+    value = "   #> #{value}"
+    Xiki::Line =~ /   #> / ?
+      Xiki::Line.sub!(/(.*)   #> .*/, "\\1#{value}") :   # Line could be commented, so don't replace after first "#"
       Xiki::Line.<<(value)
     Xiki::View.column = column
   end

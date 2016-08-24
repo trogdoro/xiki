@@ -101,8 +101,8 @@ module Xiki
     #   Firefox.reload 4
     def self.reload tab=nil
 
-      # Clears out OL log
-      Code.open_log_view if Keys.prefix_u && View.buffer_visible?('*ol')
+      # Clears out Ol log
+      Code.open_log_view if Keys.prefix_u && View.buffer_visible?("ol")
 
       prefix = tab || Keys.prefix_n(:clear=>true)
       if ! prefix
@@ -494,7 +494,7 @@ module Xiki
         }
         ".unindent
 
-      raise "<! Added required js libs into page, try again!"
+      raise "<* Added required js libs into page, try again!"
     end
 
     def self.object name=nil, key=nil

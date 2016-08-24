@@ -31,8 +31,6 @@ module Xiki
           =! View.prompt
           =! View.flash
           =! View.flash 'Saved!'
-        - Things menus return/
-          
       - docs/
         > Keys
         | do+line+effects: make line blink
@@ -44,6 +42,7 @@ module Xiki
     #
     # Effects.glow :color=>:forest
     # Effects.glow :fade_in=>1
+    # Effects.glow :what=>[1, 100]
     #
     def self.glow options={}
 
@@ -94,6 +93,10 @@ module Xiki
       delay = options[:delay]
       delay ||= Environment.gui_emacs ? 0.022 : 0.042
 
+
+      # Try this to capture ^G
+      $el.elvar.inhibit_quit = 1
+
       sequence.each do |i|
         $el.overlay_put over, :face, (faces[i-1] || faces[0])
         $el.sit_for delay
@@ -101,6 +104,9 @@ module Xiki
         # Temp for video recording > wait for longer
         # $el.sit_for 0.05
       end
+
+      $el.elvar.inhibit_quit = nil
+
 
       $el.delete_overlay over
     end
@@ -121,12 +127,18 @@ module Xiki
         return unless left
       end
 
+      if what.is_a? Array
+        left, right = what
+      end
+
+
       left = options[:left] if options[:left]
       right = options[:right] if options[:right]
 
       time = options[:time] || 0.04
       over2 = $el.make_overlay(left, right)
       $el.overlay_put over2, :face, :color_rb_glow2
+      # Ol "!!!"
       $el.sit_for time
       $el.delete_overlay over2
     end

@@ -22,7 +22,7 @@ module Menu
 
       options[:no_slash] = 1
       ::Xiki::Firefox.url "http://en.wikipedia.org/wiki/#{name}"
-      "<! opened in browser!"
+      "<* opened in browser!"
     end
   end
 

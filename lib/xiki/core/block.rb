@@ -1,22 +1,6 @@
 module Xiki
   class Block
 
-    #   def self.value
-    #     res = []
-    #     with(:save_excursion) do
-    #       found = re_search_backward "^ *$", nil, 1
-    #       if found
-    #         end_of_line
-    #         forward_char
-    #       end
-    #       res << point
-    #       re_search_forward "^ *$", nil, 1
-    #       beginning_of_line
-    #       res << point
-    #     end
-    #     res
-    #   end
-
     def self.do_as_wrap
 
       line = Line.value
@@ -72,7 +56,11 @@ module Xiki
         return
       end
 
-      $el.fill_paragraph nil
+      cursor = View.cursor
+      paragraph = View.paragraph :bounds=>1
+      $el.fill_region_as_paragraph Line.left, paragraph[1]
+      View.cursor = cursor
+
     end
 
     #

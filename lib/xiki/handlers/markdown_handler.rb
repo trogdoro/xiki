@@ -12,7 +12,7 @@ module Xiki
 
       Browser.html html
 
-      options[:output] = "<! showing in browser!"
+      options[:output] = "<* showing in browser!"
     end
 
     def self.render txt

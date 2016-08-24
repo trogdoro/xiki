@@ -1,6 +1,7 @@
 module Xiki
   class MenuHandler
     def self.handle options
+
       source_file = options[:handlers]['menu'] || options[:handlers]['xiki']
 
       return if ! source_file || options[:output] || options[:halt]
@@ -20,7 +21,7 @@ module Xiki
     # If started with !, eval code...
     def self.eval_exclamations txt, options={}
 
-      return if txt !~ /^! / || Keys.prefix == "source"
+      return if txt !~ /\A! / || Keys.prefix == "source"
 
       if options[:sources]
         source_file = options[:sources][-1][options[:source_index]]

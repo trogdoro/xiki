@@ -47,8 +47,11 @@ module Xiki
     end
 
     def self.to_next_paragraph options={}
-      prefix = Keys.prefix :clear=>1
+      prefix = options[:prefix] || Keys.prefix(:clear=>1)
+
       if prefix == :u || prefix == :uu   # If C-u, just go to end
+        column = View.column
+
         if Line.blank?
           Line.value(2) =~ /./ ?   # If on blank line but next line has stuff, just move down
             Line.next :
@@ -57,7 +60,10 @@ module Xiki
 
         Search.forward "^[ \t]*$", :go_anyway=>1
 
-        Line.previous if prefix == :uu
+        if prefix == :uu   # hop+last
+          Line.previous
+          return View.column = column
+        end
 
         Move.to_axis
         return
@@ -171,21 +177,53 @@ module Xiki
       end
     end
 
-    def self.next
-      prefix = Keys.prefix
-      Keys.remember_key_for_repeat ["next"]
+    def self.next options={}
+      if options.is_a?(Fixnum)
+        prefix = options
+      else
+        prefix = options[:prefix] || Keys.prefix
+      end
+
+      if prefix
+        Keys.remember_key_for_repeat(proc {Xiki::Move.next :prefix=>prefix}, :movement=>1)
+      end
       prefix = 7 if prefix == :u
       prefix = 20 if prefix == :uu
       $el.next_line prefix
     end
 
-    def self.previous
-      prefix = Keys.prefix
-      Keys.remember_key_for_repeat ["previous"]
+    def self.previous options={}
+
+      if options.is_a?(Fixnum)
+        prefix = options
+      else
+        prefix = options[:prefix] || Keys.prefix
+      end
+
+      if prefix
+        Keys.remember_key_for_repeat(proc {Xiki::Move.previous :prefix=>prefix}, :movement=>1)
+      end
       prefix = 7 if prefix == :u
       prefix = 20 if prefix == :uu
+
+      # If at top line, move to beginning (checking approximate cursor position to optimize)
+      if View.cursor < 200 && View.line == 1
+        return Line.to_left
+      end
+
+      prefix ||= 1
+
       $el.previous_line prefix
     end
+
+    def self.up options={}
+      self.previous options
+    end
+
+    def self.down options={}
+      self.next options
+    end
+
 
     def self.backward_key count=nil
       Keys.remember_key_for_repeat ["backward"]
@@ -216,10 +254,6 @@ module Xiki
       $el.backward_char count
     end
 
-    def self.left
-      self.backward
-    end
-
     def self.forward count=nil
       count ||= Keys.prefix# :clear => true
 
@@ -229,8 +263,12 @@ module Xiki
       $el.forward_char count
     end
 
-    def self.right
-      self.forward
+    def self.left count=nil
+      self.backward count
+    end
+
+    def self.right count=nil
+      self.forward count
     end
 
     def self.top
@@ -253,9 +291,13 @@ module Xiki
         View.to_relative :line=>1
       end
 
-      patterns = options[:pipes] ?
-        [/^ *\|/, "^ *|."] :
+      patterns = if options[:pipes]
+        [/^ *\|/, "^ +|."]
+      elsif options[:colons]
+        [/^ *:/, "^ +:."]
+      else
         [/^ *(\||:[ +-])/, "^ *\\(|.\\|:[ +-]\\)"]
+      end
 
       found = nil
       (times||1).times do
@@ -341,6 +383,41 @@ module Xiki
     def self.to_end n=nil
       Line.next(n) if n.is_a? Fixnum   # If there, move down
       Line.to_right
+    end
+
+    def self.backward_word
+      $el.backward_word
+    end
+    def self.backward_word_key
+      self.backward_word
+      Keys.remember_key_for_repeat(proc {Xiki::Move.backward_word_key}, :movement=>1)
+    end
+
+    def self.forward_word
+      $el.forward_word
+    end
+    def self.forward_word_key
+      self.forward_word
+      Keys.remember_key_for_repeat(proc {Xiki::Move.forward_word_key}, :movement=>1)
+    end
+
+    def self.backward_delete_word
+
+      cursor = View.cursor
+      $el.backward_word
+      View.delete cursor, View.cursor
+
+      Keys.remember_key_for_repeat(proc {Xiki::Move.backward_delete_word})
+    end
+
+    def self.forward_delete_word
+
+      # $el.forward_kill_word 1
+      cursor = View.cursor
+      $el.forward_word
+      View.delete cursor, View.cursor
+
+      Keys.remember_key_for_repeat(proc {Xiki::Move.forward_delete_word})
     end
 
   end

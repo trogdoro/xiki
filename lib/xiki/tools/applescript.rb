@@ -35,5 +35,7 @@ module Xiki
       Shell.sync "osascript /tmp/applescript.txt"
     end
 
+
+
   end
 end

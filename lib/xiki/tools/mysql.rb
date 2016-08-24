@@ -129,7 +129,7 @@ module Xiki
 
       self.save db, table, row
 
-      "<! saved record!"
+      "<* saved record!"
     end
 
     def self.dummy_row db=nil, table=nil
@@ -160,7 +160,7 @@ module Xiki
       end
 
       @default_db = db
-      "<! using db #{db}!"
+      "<* using db #{db}!"
     end
 
     def self.create what, name=nil, columns=nil
@@ -171,7 +171,7 @@ module Xiki
 
       if what == "db"
         txt = Shell.run "mysqladmin -u root create #{name}", :sync=>true
-        return "<! created db!"
+        return "<* created db!"
       end
 
       if columns.nil?
@@ -192,7 +192,7 @@ module Xiki
 
       out = self.run(@default_db, txt)
 
-      "<! created table!"
+      "<* created table!"
     end
 
     def self.drop what, name=nil
@@ -207,7 +207,7 @@ module Xiki
 
       out = self.run(@default_db, "drop table #{name}")
 
-      "<! dropped table!"
+      "<* dropped table!"
     end
 
     def self.run db, sql
@@ -246,7 +246,7 @@ module Xiki
 
       self.save @default_db, table, row
 
-      "<! saved!"
+      "<* - saved!"
     end
   end
 end

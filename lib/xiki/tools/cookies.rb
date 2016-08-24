@@ -23,7 +23,7 @@ module Xiki
         return "| #{hash[key]}"
       end
 
-      "<! updated!"
+      "<* updated!"
 
     end
   end

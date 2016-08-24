@@ -75,8 +75,8 @@ module Xiki
       line[/^\s*/].gsub("\t", '        ')
     end
 
-    def self.right
-      $el.point_at_eol
+    def self.right down=1
+      $el.point_at_eol down
     end
 
     def self.at_right?
@@ -89,6 +89,10 @@ module Xiki
 
     def self.left down=1
       $el.point_at_bol down
+    end
+
+    def self.rest
+      View.txt(View.cursor, self.right)
     end
 
     def self.at_left?
@@ -104,8 +108,10 @@ module Xiki
       self.without_indent
     end
 
-    def self.bounds
-      [$el.point_at_bol, $el.point_at_eol]
+    def self.bounds options={}
+      left, right = $el.point_at_bol, $el.point_at_eol
+      right += 1 if options[:linebreak]
+      [left, right]
     end
 
     def self.delete leave_linebreak=nil
@@ -120,11 +126,6 @@ module Xiki
       prefix = Keys.prefix
       lines = prefix.is_a?(Fixnum) ? prefix : 1
       left, right = Line.left, Line.left(lines+1)
-
-      # If no prefix, leave linebreak
-      right -= 1 if ! prefix && ! Line.blank?   # Delete linebreak also if up+ or line is blank
-
-      Clipboard.set 0, View.txt(left, right)
 
       $el.delete_region(left, right)
     end
@@ -284,18 +285,118 @@ module Xiki
     end
 
     def self.move direction
+
+      selection = View.selection
+
+      # >... line, so move as block...
+
+      if Line =~ /^>( |$)/ && ! selection
+        if direction == :previous
+          Keys.remember_key_for_repeat(proc { Notes.move_block(:up=>1) }, :movement=>1)
+          Notes.move_block(:up=>1)
+        else
+          Keys.remember_key_for_repeat(proc { Notes.move_block }, :movement=>1)
+          Notes.move_block
+        end
+        return
+      end
+
+
       column = View.column
       many = Keys.prefix_times
 
       many = (0 - many) if direction == :previous
 
-      line = Line.value 1, :include_linebreak=>true, :delete=>true   # Get line
-      Line.to_next many
-      View.insert line
+      range = View.range
 
-      Line.previous
-      View.column = column
+      txt = selection ?
+        View.delete(*range) :
+        Line.value(1, :include_linebreak=>1, :delete=>1)   # No selection, so cut line
+
+      Line.to_next many
+
+      View.insert txt, :dont_move=>1
+
+      if selection
+        # Selection existed, so restore it
+        cursor = View.cursor
+        View.selection = cursor, cursor+selection.length
+      else
+        # No selection existed, so keep cursor on line
+        View.column = column
+      end
+
     end
+
+
+
+    def self.move_word direction
+
+      # column = View.column
+      many = Keys.prefix_times
+
+      many = (0 - many) if direction == :backward
+
+      selection = View.selection
+
+      # Try > if selection, move one char at a time
+      if selection
+        txt = View.delete(*View.range)
+        $el.forward_char many
+        View.insert txt
+        cursor = View.cursor
+        View.selection = [cursor, cursor-txt.length]
+        return
+      end
+
+
+      # No selection, so move word
+      if selection
+        # Cut it
+        txt = View.delete(*View.range)
+
+        # Strip selection
+        txt.strip!
+      else
+      # Selection, so move selected
+
+        # Cut the word
+        txt = View.delete(*$el.bounds_of_thing_at_point(:word))
+
+      end
+
+      # Delete char we're on if it's a space
+
+      cursor = View.cursor
+
+
+      # Delete space if before or after the cursor
+      if View.txt(cursor-1, cursor) =~ /^[ ]$/ # =~ /^[ _-]$/
+        deleted = View.delete(cursor-1, cursor)
+      elsif View.txt(cursor, cursor+1) =~ /^[ ]$/ # =~ /^[ _-]$/
+        deleted = View.delete(cursor, cursor+1)
+      end
+
+
+      $el.forward_word many
+
+      if direction == :backward
+        left = View.cursor
+        View.insert txt
+        View.insert(" ", :dont_move=>1)
+      else
+        txt View.insert, :dont_move=>1
+        View.insert " "
+        left = View.cursor
+      end
+      right = left + txt.length
+
+      if selection
+        View.selection = [left, right]
+      end
+
+    end
+
 
     def self.sub! from, to
       orig = Location.new
@@ -360,6 +461,12 @@ module Xiki
       $el.elvar.sort_fold_case = true
       $el.sort_lines(nil, $el.region_beginning, $el.region_end)
       $el.elvar.sort_fold_case = old
+
+      return if $el.region_beginning != View.cursor   # Can't delete blanks if not at beginning
+
+      # Delete any blank lines (they'd be sorted to the top)
+      Deletes.forward while View.char == "\n"
+
     end
 
     def self.do_lines_toggle

@@ -26,7 +26,7 @@ module Xiki
       # =commit/.txt > make it save upon launch
 
       File.open(file, "w") { |f| f << options[:args][0] }
-      options[:output] = "<! saved"
+      options[:output] = "<* saved"
 
     end
   end

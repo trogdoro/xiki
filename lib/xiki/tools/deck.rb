@@ -12,7 +12,7 @@ module Xiki
       self.keys
 
       $el.use_local_map $el.elvar.deck_mode_map
-      "<! Enabling arrow keys"
+      "<* Enabling arrow keys"
     end
 
     def self.keys # mode=:deck_mode_map
@@ -88,6 +88,9 @@ module Xiki
     end
 
     def self.right_arrow options={}
+
+      # Make bottom bar blank
+      $el.elvar.xiki_bar_hidden = true
 
       Notes.narrow_block if ! View.hidden?   # If not hidden, hide first, for simplicity
 

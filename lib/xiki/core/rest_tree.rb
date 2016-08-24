@@ -1,3 +1,5 @@
+require 'net/http'
+
 module Xiki
   class RestTree
 
@@ -55,6 +57,17 @@ module Xiki
       list
     end
 
+    def self.post url, options={}
+      options[:verb] = 'POST'
+      self.request url, options
+    end
+    def self.get url, options={}
+      self.request url, options #.merge(:verb=>'GET')
+    end
+
+    # Examples:
+    # RestTree.request "http://localhost:4717", :verb=>'POST', :body=>"heyy"
+    #   You posted: heyy
     def self.request url, options={}
       verb = options[:verb] || "GET"
 
@@ -64,29 +77,74 @@ module Xiki
         uri = URI.parse(url)
 
         req = net_http_class.new(uri.request_uri)
-        req.body = options[:body]
+
+        body = options[:body]
+
+        # :body is a hash, so convert to json!
+        if body.is_a?(Hash)
+          body = JSON.pretty_generate body
+        end
+
+        req.body = body
+
+        # Set header vars
+        (options[:headers]||{}).each do |key, val|
+          req[key] = val
+        end
+
+
         res = Net::HTTP.start(uri.host, uri.port) {|http|
           http.request(req)
         }
+
         options[:code] = res.code
-        (res.code == '200' ? '' : "#{res.code} #{res.header["location"]}...\n") + res.body
+        options[:response] = res
+
+        body = res.body
+
+        body
+
       rescue Exception=>e
+
+        raise e if options[:raise]
         e.message
       end
     end
 
-    def self.xiki_url url
+    def self.xiki_url url, options={}
+
+      request_options = {:headers => {"User-Agent"=>"Xsh"}}
+
+      items = options[:items]
+
+      # "url/| Quote", so pull off last item as text to post
+
+      post_txt = nil
+
+      split = Path.split options[:path]
+
+      if split[-1] =~ /\n/
+        post_txt = split[-1]
+        url = Path.join split[0..-2]
+      end
+
+      post_txt ||= options[:post]
+
       url.sub! /^xiki:\/\//, 'http://'
       url.gsub! ' ', '+'
       url = "http://#{url}" if url !~ /\Ahttp:\/\//
 
-      options = {}
-      txt = self.request url, options
+      if post_txt
+        txt = RestTree.post url, request_options.merge(:body=>post_txt)
+      else
+        txt = self.get url, request_options
+      end
+
 
       # If 404, grab root
       if options[:code] == "404"
         root_url = url[%r`.+?//.+?/`]
-        txt = self.request(root_url) if root_url
+        txt = self.request(root_url, request_options) if root_url
       end
 
       # If options[:code] == ""
@@ -95,21 +153,16 @@ module Xiki
 
       path = url[%r`.+?//.+?/(.+)`, 1] || ""
 
-      if result = self.embedded_menu(txt, path)
-        txt = result
-      elsif txt =~ /\A.+\/$/
-        # Don't quote
+      if txt =~ /\A\s*{/ || txt =~ /\A\s*<(\w|!--|!DOCTYPE)/ || txt =~ /\A.*\n\s*<(\w|!--|!DOCTYPE)/
+        # Html, so quote
+        txt = Tree.pipe txt
       else
-        txt = Tree.quote txt
+        # Don't quote
+
+        # Remove consecutive groups of blank lines
+        txt.gsub! /\n\n\n+/, "\n\n"
+
       end
-
-      # If not found, back up to the root to check for a
-      # comment-embedded menu
-
-      # Only do if there's a sub-path
-      #       if options[:code] == "404"
-      # Ol["try again!"]
-      #       end
 
       txt.sub!(/\A\| 301 (.+)\.\.\.$/){ "\n<@ #{$1.sub(/^http/, 'xiki')}" }
 

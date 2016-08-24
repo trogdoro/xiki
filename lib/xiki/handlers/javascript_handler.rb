@@ -17,16 +17,19 @@ module Xiki
     def self.eval txt, options={}
 
       task = options[:task] || '"null"'
+
       txt = "
         var output = (function(){
         args = #{JSON[options[:args] || []]};
         task = #{task};
+        var p = console.log;
         ".unindent+txt+"
         })()
         console.log(JSON.stringify(output))
         ".unindent
 
-      txt = Shell.command "node", :stdin=>txt, :dir=>options[:dir] #, :raise_error=>1
+      File.open("/tmp/node_tmp.js", "w") { |f| f << txt }
+      txt = Shell.command "node /tmp/node_tmp.js", :dir=>options[:dir] #, :raise_error=>1
 
       # Raised error, so just show it
 
@@ -51,7 +54,6 @@ module Xiki
       # Returned value, so use it, and Ol stdout lines...
 
       if returned
-        Ol.a(out, :stack_line=>"#{options[:file]}:1:in `script'") if out
         return returned
       end
 

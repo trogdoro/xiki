@@ -21,7 +21,7 @@ module Xiki
     end
 
     def self.default_project
-      txt = File.read(File.expand_path "~/xiki/commands/projects.menu") rescue nil
+      txt = File.read(File.expand_path "~/.xiki/roots/projects.menu") rescue nil
       return nil if ! txt
 
       Line.without_label(:line=>txt[/.+/])

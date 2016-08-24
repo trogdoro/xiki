@@ -52,7 +52,7 @@ module Xiki
       $el.define_key(:osx_key_mode_map, $el.kbd("<A-left>")) { Code.indent_to :left=>1 }   # Command+left
 
       # Command+Control+X
-      $el.define_key(:osx_key_mode_map, $el.kbd("C-A-x")) { Xiki::Menu.external }
+      $el.define_key(:osx_key_mode_map, $el.kbd("C-A-x")) { Xiki::Command.external }
 
     end
 

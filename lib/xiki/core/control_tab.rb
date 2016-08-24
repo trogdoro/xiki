@@ -32,8 +32,9 @@ module Xiki
 
       return $el.keyboard_escape_quit if View.name =~ /^ \*Minibuf/
 
+      # Why was I doing this when control tab?
 
-      # They pressed escape to get here, so maybe quit or kill...
+      # They pressed escape to get here (what are the other ways to get here?), so quit if only 1 view open...
 
       if options[:from_escape]
         views_open = Buffers.list.map { |o| name = $el.buffer_name(o) }.select { |o| o !~ /^ ?\*/ && o != "views/" }
@@ -59,7 +60,6 @@ module Xiki
 
       # Trying out > just single escape
       first_tab_in_sequence = false if last_key_was_escape   # One before last was / or C-/
-      first_tab_in_sequence = false if recent_few[1] == 28 || recent_few[1] == 92   # One before last was / or C-/
 
       first_tab_in_sequence = nil if options[:subsequent]
 
@@ -69,6 +69,7 @@ module Xiki
       end
 
       @@edited = @@dash_prefix = @@ol_prefix = @@color_prefix = @@difflog_prefix = nil if first_tab_in_sequence
+
 
       if prefix == :- || @@dash_prefix   # Go to next quote in :n
 
@@ -135,7 +136,7 @@ module Xiki
           # when 1   # Handled above
 
         when 2   # .notes files
-          @@consider_test = lambda{|b| $el.buffer_name(b) =~ /\.notes[<>0-9]*$/}
+          @@consider_test = lambda{|b| $el.buffer_name(b) =~ /\.xiki[<>0-9]*$/}
 
           #         when 1   # Only files
           #           @@consider_test = lambda{|b| $el.buffer_file_name(b)}
@@ -153,7 +154,7 @@ module Xiki
             $el.set_buffer b
             next if $el.elvar.major_mode.to_s != 'shell-mode'
             name = $el.buffer_name b
-            next if name == "*ol"
+            next if name == "ol"
             true
           }
         when 6   # Ruby files only
@@ -182,11 +183,15 @@ module Xiki
         self.restore_original_order   # Restore order up to this buffer
 
         self.move_to_next   # Point to next eligible buffer
+
       end
 
+      # Went through all views
       if @@original == :at_end
-        return Launcher.open("views/")
+        # .restore_original_order already went back to the first, so just reset
+        return self.clear_once
       end
+
 
       $el.switch_to_buffer(@@original[@@switch_index])   # Switch to eligible
     end
@@ -200,7 +205,7 @@ module Xiki
 
         # This only gets called the 1st tab in the sequence (subsequent ones are routed to Dash+Tab)
 
-        Launcher.open 'mark/show/'
+        Launcher.open "mark/show/"
 
         return if View.txt =~ /^  - no marks found!/
 
@@ -212,7 +217,7 @@ module Xiki
         if View.file_visible? path
           # Don't split
         else   # Else, split!
-          View.create :u
+          View.create_horizontal :u
         end
 
         Louncher.launch :no_recenter=>1
@@ -239,9 +244,9 @@ module Xiki
 
       if prefix   # If first tab in sequence
 
-        if View.buffer_visible? "difflog.notes"   # If already visible, just go there
+        if View.buffer_visible? "difflog.xiki"   # If already visible, just go there
           was_open = true
-          View.to_buffer "difflog.notes"
+          View.to_buffer "difflog.xiki"
         else   # Otherwise, open it and go to bottom
           DiffLog.open
         end
@@ -251,9 +256,9 @@ module Xiki
 
         Move.to_quote :pipes=>1
 
-        # If 1st diff isn't todo.notes, and difflog not already open!
+        # If 1st diff isn't notes.xiki, and difflog not already open!
         if ! View.file_visible?(first_diff_file) && ! was_open
-          View.create
+          View.create_horizontal
           View.recenter(View.line - View.number_of_lines)
           View.previous
           Launcher.launch
@@ -263,7 +268,7 @@ module Xiki
 
       else   # Subsequent times tabbed
 
-        View.to_buffer "difflog.notes"
+        View.to_buffer "difflog.xiki"
 
         Search.backward "^  - "
 
@@ -295,7 +300,7 @@ module Xiki
 
       @@ol_prefix ||= prefix   # Remember prefix if passed in
 
-      View.to_buffer "*ol"
+      View.to_buffer "ol"
       Move.to_end
 
       target =
@@ -331,8 +336,8 @@ module Xiki
     end
 
     def self.restore_original_order
-      return if ! @@original.is_a?(Hash)
 
+      return if ! @@original.is_a?(Array)
       # Move backwards through original list, moving each to front
       (0..(@@switch_index)).each do |i|
         $el.switch_to_buffer(@@original[@@switch_index-i])
