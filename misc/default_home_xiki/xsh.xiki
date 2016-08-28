@@ -1,0 +1,46 @@
+> Install
+Here are the steps for installing xsh (Xiki Shell).
+
+1. Go to xiki.org and copy the one line installer.
+
+http://xiki.org
+
+2. Paste it into your terminal.
+3. Follow the setup steps that appear.
+
+After installing, consider going through the tutorial to learn how to
+get around...
+
+<- tutorial
+
+
+> .Setup
+! #
+! # Once you've installed Xiki, this makes the "xsh" command available.
+! # And it optionally sets up some keyboard shortcuts.
+! #
+!
+! SetupXsh.action args, options
+
+
+> .Reload
+! Xiki.reload
+
+
+> Uninstall
+1. Remove references
+~/
+  - .bashrc
+    : source ~/.xsh
+  - .bash_profile
+    : source ~/.xsh
+
+2. Delete files
+~/
+  + .xsh
+
+
+> Browser Control
+- Todo > explain browser control here!
+
+

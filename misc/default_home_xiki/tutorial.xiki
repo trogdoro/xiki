@@ -1,0 +1,409 @@
+> Preparation
+1. Install xsh (Xiki Shell) if you haven't yet.
+
+<- xsh/install
+
+2. Have a shell terminal window open, to type into while doing the tutorial steps.
+3. Follow the numbered steps below.
+
+Only the numbered steps say things you need to do. Everything else is
+just explanatory.
+
+- The web version of this tutorial is available here:
+http://xiki.com/@xiki/tutorial
+
+- What if I don't use bash?:
+If you use another shell like zsh, just assume "zsh" where the
+tutorial says "bash".
+
+
+> Getting in and out of xsh
+Xsh (short for Xiki Shell) has many ground-breaking features. It turns
+your terminal into a search engine. It makes shell commands
+interactive. It creates UIs for shell commands and other tools and
+databases. But let's begin with how xsh improves the basic shell
+terminal experience!
+
+1. Make sure you're in your shell terminal at a blank bash prompt.
+2. Type "xsh", then type return.
+
+$ xsh
+
+You are now in xsh.
+
+3. Type Ctrl+Q to quit.
+
+You're now back in bash. Xsh is meant to complement bash rather than
+replace it. So, you'll often quickly jump into xsh and then out of it,
+and back to bash.
+
+
+> Keyboard shortcuts on the screen
+Xsh shows the key shortcuts right on the screen! So you don't have to
+memorize them like you do in traditional terminal programs and shells.
+
+1. Type "xsh" in bash again (and return), to go back into xsh.
+2. Observe the keyboard shortcuts at the bottom of the screen.
+
+The underlined letters indicate Ctrl shortcuts. Ctrl+O for Open.
+Ctrl+Q for Quit, etc. Clicking on them shows descriptions (if mouse
+support is enabled). You can type these key shortcuts even when they
+don't appear on the screen.
+
+All of the keys except for the last 3 work in bash as well as in xsh.
+
+3. Type Ctrl+Q to quit and go back to bash.
+4. Now type Ctrl+O. When at a blank bash prompt, it's a shortcut for opening xsh.
+
+- Troubleshooting:
+If you didn't select "default setup" while setting up xsh, bash key
+shortcuts might not be enabled. You can run "xsh --help" in bash to
+see the command line equivalents of each key shortcut.
+
+
+> Just type letters to filter command output
+In xsh, it's easy to filter the output of shell commands. Just type a
+couple letters after the command runs! In traditional shells you have
+to pipe to grep, which is slow and tedious.
+
+1. Type Ctrl+Q to go back to bash.
+2. Type "cd /" and return, to change to your root directory.
+3. Type "ls", but don't type return.
+4. Instead, type Ctrl+O. It opens xsh and runs the command.
+
+When you see "A-Z Filter" in the bottom bar it means you're filtering.
+So you can type letters to filter, if you want.
+
+5. Type "bi" to incrementally filter down to only lines that contain "bi".
+
+When "A-Z Filter" isn't showing, the letter keys are for typing stuff,
+since everything is editable in xsh.
+
+- Tip:
+You can press esc while filtering to start over. Then you can type
+some letters to filter again.
+
+
+> Shell commands are interactive
+Xsh makes command output into an interactive interface! For the "ls"
+command, this means you can navigate directories and files visibly.
+Instead of having to type a bunch of "ls" and "cd" commands.
+
+1. Use the arrow keys to move the cursor back to the "$ ls" line.
+2. Type Ctrl+O to collapse it.
+3. Type Ctrl+O to open it (run it) again.
+
+The bottom bar now shows "A-Z Filter" again, so we can type letters to
+filter.
+
+4. Type "etc" to filter down to "etc".
+5. Type return to open the "etc" dir.
+6. Type "ho" to filter again.
+7. Move the cursor to "hosts".
+
+Later we'll see how xsh makes
+all kinds of shell commands interactive, not just "ls".
+
+- Tip, Ctrl+O vs return:
+Ctrl+O runs commands and opens things. Whereas return usually inserts
+linebreaks. But when "A-Z Filter" is visible, return is similar to
+Ctrl+O. Double-clicking also acts like Ctrl+O (if mouse support is
+enabled).
+
+
+> Use your favorite text editor
+Xsh integrates with your favorite text editor.
+
+1. With the cursor on the "hosts" line, type Ctrl+O to open it.
+
+You're now viewing the /usr/hosts file with xsh. Now we'll use your
+editor.
+
+1. Press the esc key to return to the last view.
+2. Type Ctrl+G to go to "hosts" using your default editor.
+
+Set your "EDITOR" bash environment variable to your favorite text
+editor, if it's not already set (then reload via "reloadxsh" in
+bash). Otherwise xsh defaults to "nano" on linux or "TextEdit" on mac.
+
+Now let's quit our text editor and go back to bash.
+
+3. Type Ctrl+Q if xsh is still open (xsh stays open in the terminal if the default editor is graphical).
+4. Type whatever is necessary to quit your text editor (Ctrl+X quits nano).
+
+Later we'll show how to use your favorite text editor to create and
+edit interactive notes with shell commands, and run them in xsh.
+
+- Tip, if you get into trouble:
+You can try esc to go to the previous view, or Ctrl+Z to undo.
+
+
+> Persistent scratchpad for commands and notes
+You can always go back to the last place you were in xsh. Just type
+Ctrl+G at a blank bash prompt. In this way, xsh acts like a persistent
+scratchpad, that you can jump in and out of.
+
+1. In bash, type Ctrl+G to go back to the last place you were in xsh.
+2. Move the cursor to the top left corner.
+3. Type "The hosts file", then type return, just as a little note for yourself.
+4. Move the cursor to the bottom and type some other words.
+
+In xsh, everything is editable! You can type anywhere. In traditional
+shells, you can only type at the single lowest prompt. When you leave
+xsh, it automatically saves the current view (and remembers the
+current directory).
+
+5. Move the cursor to the "$ ls" line, and type Ctrl+G to go to bash and run it.
+6. Type Ctrl+G to go back to xsh, to the last place you were.
+7. Move to the "etc/" line, and type Ctrl+G to go to bash and cd to this dir.
+
+Later we'll explore going back to any previous interaction, via "xsh -i"
+from bash. And turning interactions into more permanent notes.
+
+
+> Optional mouse support
+There is optional mouse support. Don't be overly concerned if it's not
+enabled for your terminal or xsh configuration. It's completely
+optional. Advanced xsh users rarely use it.
+
+1. Type Ctrl+G to go back to where we were in xsh.
+2. Double-click on the "$ ls" line to collapse it.
+3. Double-click on it again to rerun it. (Double-clicking is just like Ctrl+O.)
+4. Try clicking around to position the cursor. Then try scrolling the view.
+
+Clicking on the words in the bottom bar shows descriptions of what each
+key does.
+
+5. Click on "Open" in the bottom bar.
+6. Click on "Go" in the bottom bar.
+7. Click on the "x" at the right of the bottom bar, to close the view.
+
+- Tip:
+If mouse support isn't enabled, you can type Ctrl+| (ie. Ctrl+\) to
+see the descriptions. Or see the following link.
+
+<- bar
+
+
+> Interactive notes by topic
+Xsh lets you create interactive notes! Notes can be anything you
+want. They can be as simple as a shell command or two and maybe a
+description. They can even be powerful, lightweight user interfaces
+for shell commands and other API's (more on this later). Notes are
+grouped by topic.
+
+1. Type Ctrl+Q to go back to bash.
+2. Type Ctrl+X to list your Xiki topics.
+
+Topics are just text files in the "~/xiki/" directory. They contain
+your notes. The topics you see were created when you installed xsh, to
+get you started. Topics you create will get added to the top of this
+list. Topics use a simple wiki-ish syntax, and can be created and
+edited with any text editor.
+
+3. Type "di" to filter down to the "disk" topic.
+4. Type Ctrl+G to go to the topic file.
+
+Notice the file path in the bottom bar shows you're in the
+"~/xiki/disk.xiki" file. Each note starts with a "> Note name" heading
+line. (The "> " at the beginning of the headings makes them have a
+gray background, to stand out.)
+
+
+> Quickly accessing your notes
+It's a bit overwhelming seeing all the notes in a topic at
+once. Seeing just the note names would be easier. Especially for
+topics with a lot of notes. Say, 100 or more.
+
+1. Type Ctrl+Q to go back to bash.
+2. Type Ctrl+X list your Xiki topics.
+3. Type "di" to filter to "disk".
+4. Type return three times.
+
+The first return lists the notes in the topic. The 2nd return opens
+the "Space available" note. The 3rd return runs the shell command.
+Those three returns could have been Ctrl+O's instead. The only
+difference is that return narrows down to one item before it opens.
+
+You could've also typed "disk space" then Ctrl+X at a blank bash
+prompt. That would show the "disk" topic and filter down to notes
+containing the word "space".
+
+- Just text files:
+Creating notes is as simple as creating a text file (or adding stuff
+to an existing text file). But before we do that, let's check out some
+notes created by other xsh users!
+
+
+> Search engine in the terminal
+Xsh turns your terminal into a search engine! Just type a search term
+at the bash prompt and press Ctrl+S. It's quicker and less distracting
+than copying and pasting commands from web searches.
+
+1. Type Ctrl+Q to go back to bash.
+2. Type "processes", but don't type return.
+3. Type Ctrl+S to search.
+
+The search results are notes that have been shared by other xsh users.
+
+4. Type "cp" to filter to the "Processes taking up cpu" search result.
+5. Type return open it up.
+6. Type Ctrl+O to run the shell command in it.
+
+You could have also typed "processes cpu" and then Ctrl+S at the bash
+prompt.
+
+You can use the web interface as well.
+http://xiki.com
+
+This url shows the same results as your search for "processes".
+http://xiki.com/processes
+
+All your notes are private by default. Sharing is still in alpha, but
+will be available to all xsh users soon.
+
+
+> Creating notes
+Let's create a very simple note.
+
+1. Type Ctrl+Q to go back to bash.
+2. Type "echo" on the bash prompt, but don't type return.
+3. Type Ctrl+G to go to the topic file.
+
+It's blank since it doesn't exist yet. Notice the file path in the
+bottom bar.
+
+4. Type the following text.
+  | > Username
+  | $ echo $USER
+
+5. Type Ctrl+Q to return to bash (xsh will autosave).
+6. Type Ctrl+X to list your topics.
+
+You can see your new topic is there, with the note inside. It's at the
+top, since it's the most recently updated file. You could have
+accomplished the same thing by creating "~/xiki/foo.xiki" with any
+text editor, and typing that stuff.
+
+
+> Git log
+Let's use xsh to easily navigate our git log!
+
+First let's create an example repository. If we look in our "git"
+topic, we'll find a note that came with xsh that creates example
+repositories. It's helpful when doing little experiments with git.
+
+1. In bash, type "cd" and return, to switch to your home dir.
+2. Type "git" in bash, but don't type return.
+3. Type Ctrl+X to list your "git" Xiki notes.
+
+Notice the "+ create example repository" note. It has "+ " at the
+beginning because it's an action (a special note that runs something
+when you open it). To create an action, just put a dot at the
+beginning of its name (eg. "> .Foo").
+
+4. Type return, and the action will clone a repo and its branches, and cd into it.
+5. Type "git log" in bash, then Ctrl+O to open it in xsh. Xsh makes it interactive.
+6. Use Ctrl+O to open one or more of the commits to see the diffs.
+
+
+> Git branches
+Now let's try switching between branches. This time we'll type "git"
+and filter down to "branch" (though we could type "git branch"
+directly if we wanted to).
+
+1. Type Ctrl+Q, then "git" and Ctrl+O to open it in xsh.
+2. Type "br" and then type return to expand the "branch..." line.
+3. Open the "reasonable" branch (Ctrl+O) and open "* switch to".
+
+You can see that we've switched branches.
+
+4. Move your cursor down to a blank line, and type Ctrl+R to show recent commands.
+5. Type "lo" to narrow to "git log", then type return.
+
+You'll see there are "reasonable" commits in this branch. You can open
+them to see the diffs if you want.
+
+
+> Web browser
+Let's use xsh to run html in the web browser. Skip this section if
+you're using xsh via ssh or docker (if you can't start up a web
+browser from the shell).
+
+1. In bash, type "html/" (including the slash) and Ctrl+O.
+
+The slash on the end tells xsh to run a special action that shows
+snippets of html in the browser.
+
+2. Type Ctrl+O to run the HTML in the browser.
+3. In xsh, type "Updated" after "Sample", and type Ctrl+O again.
+
+You can see your change reflected in the browser. By default, a new
+tab is opened each time. This can be avoided by installing a dependency
+that lets xsh have full control of the browser. See the following link
+for how to do this.
+
+<- xsh/browser control
+
+
+> Notes with web examples
+Now let's say we forgot (or just don't know) how to make a div with
+rounded corners in css.
+
+1. Type Ctrl+Q to return to bash.
+2. Type "css corners" then Ctrl+S, to search everyone's shared notes.
+3. Type Ctrl+O to open "Rounded corners (border-radius)".
+4. Type Ctrl+X to expose the note, so we can run it in place.
+
+(Alternately we could have typed Ctrl+O and navigated to the topic
+file.)
+
+5. Type Ctrl+O to open it in the browser.
+
+You can change some of the values and type Ctrl+O again. You could
+also try searching for "bootstrap", "d3", "threejs", "fontawesome" or
+"react" to run some examples.
+
+
+> SQLite
+Let's interact with some database tables. First let's create a couple
+sample tables, using a note that was installed by default to help you
+do the tutorial. (In the future you can use Ctrl+S to search for other
+notes for your own use, and install them so they'll be convenient to
+access.)
+
+1. In bash, type "sqlite3", then Ctrl+X to show your Xiki notes for sqlite3.
+2. Type Ctrl+O to run "create sample tables and records".
+3. Move down to "tables" and type Ctrl+O to see the tables.
+
+You can type "sqlite3/tables" and Ctrl+X in bash to go directly to the
+"tables" action. There's also a "tables" topic to make it even
+quicker.
+
+4. In bash, type "tables/" (including the slash) and Ctrl+X.
+
+The slash at the end means to run the "slash action" for the
+topic. Slash actions are special notes that let topics optionally
+behave like actions.
+
+5. Type Ctrl+O to expand one of the tables.
+6. Type some letters to filter down to a record.
+7. Edit the person's name, and type Ctrl+O to save back to the db.
+
+You can also type "sqlite3/" in bash and then Ctrl+X. This lets you
+run sql statements.
+
+
+> Congratulations
+Congrats, you've finish the tutorial!
+
+Follow @xiki on twitter:
+http://twitter.com/xiki
+
+Join the Xiki mailing list:
+http://groups.google.com/group/xiki
+
+Web interface for xiki notes:
+http://xiki.com
+
+

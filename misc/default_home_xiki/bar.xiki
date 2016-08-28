@@ -1,0 +1,82 @@
+> Summary
+These notes describe what the key shortcuts in the bottom bar of xsh
+do. The first five shortcuts work in bash and xsh. The last three work
+only in xsh.
+
+
+> Open
+Ctrl+O in bash:
+- On a blank prompt: Just opens xsh.
+- After typing a shell command: Opens xsh and runs the shell command.
+
+Ctrl+O in xsh:
+- On a "$ foo" line: Runs the shell command.
+- On a "foo" line: Opens the Xiki topic (lists the notes in it).
+- On a "$ " line: Shows recent shell commands.
+- Various other lines: Opens them (does something appropriate with them).
+
+
+> Go
+Ctrl+G in bash:
+- On a blank prompt: Goes to the last place you were in xsh.
+- After typing a topic: Goes to the topic file.
+
+Ctrl+G in xsh:
+- On a "$ foo" line: Goes to bash, and runs the shell command.
+- On a "foo" line: Goes to the Xiki topic file.
+- On a file: Goes to the file in your default editor.
+- On a directory: Goes to bash, and cds to it.
+
+
+> Tasks
+Ctrl+T in bash:
+- On a blank prompt: Shows the tasks for the current directory.
+- After typing a shell command: Shows the tasks for it.
+
+Ctrl+T in xsh:
+- On a "$ foo" line: Shows the tasks for the shell command.
+- On a "foo" line: Shows the tasks for the topic.
+
+
+> Xiki
+Ctrl+X in bash:
+- On a blank prompt: Lists your topics.
+- After typing a topic: Lists the notes in it.
+- After typing a search string: Searches your local notes.
+
+Ctrl+X in xsh:
+- On a "$ foo" line: Lists the notes in the topic for the shell command.
+- On a "foo" line: Lists your notes in the topic.
+- On a "search string" line: Lists your notes in the topic matching the string.
+
+
+> Search
+Ctrl+S in bash:
+- On a blank prompt: Shows popular topics and searches.
+- After typing a topic: Searches shared notes (from all users).
+- After typing a search string: Searches shared notes.
+
+Ctrl+S in xsh:
+- On a "$ foo" line: Searches shared notes for the shell command.
+- On a "foo" line: Show's most popular shared notes for the topic.
+- On a "search string" line: Searches shared notes.
+
+
+> Content
+Ctrl+C in xsh:
+Shows the "content" keyboard shortcuts. They include saving, closing
+the view, making a new view, and navigating to various places, etc.
+
+
+> Keys
+Ctrl+K in xsh:
+Shows the rest of the keyboard shortcuts. They include splitting and
+navigating views, and listing all kinds of things, etc.
+
+
+> Quit
+Ctrl+Q in xsh:
+Quits xsh and goes back to bash. Then from bash, you can type Ctrl+G
+on a blank prompt to go back to where you were when you quit.
+
+

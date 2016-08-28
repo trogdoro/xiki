@@ -1,0 +1,43 @@
+> Todo
+- Todo > Add link to appropriate section in tutorial!
+
+
+> Old
+  |
+  | > Search from your shell
+  | Xiki turns your shell into a search engine for shell command examples,
+  | as well as for other Xiki notes and actions.
+  |
+  | 1. Type Ctrl+S while in bash (or zsh)
+  |
+  | If you didn't enable key shortcuts when setting up xsh, you can type
+  | the following instead of ^S.
+  |
+  | $ xsh :
+  |
+  |
+  | > Search from within Xsh
+  | 1. Type a search term on a blank line, and then type Ctrl+S.
+  |
+  |
+  | > Search in your web browser
+  | You can use the web interface to search for shell examples, as well as
+  | for other Xiki notes and actions.
+  |
+  | 1. Go to xiki.com and do a search
+  |
+  | http://xiki.com
+  |
+  |
+  | > Specific user
+  | If you know someone's xikihub username, you can open it in xsh (Just
+  | type it on any blank line within an @ sign) or in your web browser to
+  | see what that user has created. The most recent items will be at the
+  | top.
+  |
+  | Examples:
+  |
+  | @trogdoro
+  |
+  | http://xiki.com/@trogdoro
+  |
