@@ -9,6 +9,10 @@ return "* show output" if task == []
 txt = args[-1]
 txt.sub! /\A: /, ''
 
+# Prepend assigning it to a variable, so it can be run again
+txt = "window.xl = function(){ eval(#{txt.inspect}) };
+
+#{txt}"
 
 if task == ["show output"] || txt =~ /^return /
 
@@ -16,6 +20,7 @@ if task == ["show output"] || txt =~ /^return /
   txt.sub!(/.*\n/m, "\\0return ") if txt !~ /^ *return\b/
   txt << "\n"
   txt.sub!(/\A\n/, "")
+
   result = Browser.js txt
 
   return Tree.pipe result
