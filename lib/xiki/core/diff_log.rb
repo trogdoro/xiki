@@ -157,12 +157,11 @@ module Xiki
 
       # Save to xikihub if shared stuff was edited...
 
-      XikihubClient.save file #, :diffs=>diffs
+      XikihubClient.save file, options
 
       # If there's a ~/xiki/foo.link for this file, update its timestamp
       # as well (so it appears at the top of list+topics).
       Notes.update_link_timestamp_if_any file
-
 
       View.message ""
 
@@ -503,6 +502,9 @@ module Xiki
         return
       end
 
+      file = View.file
+      existed_already = file && File.exists?(file)
+
       # Just save all modified interaction files
       self.save_modified_interactions
 
@@ -514,9 +516,13 @@ module Xiki
       # For now, just save if the only modified file is the current file
 
       # if txt.scan(/^= /).length == 1 && View.modified? # && View.file.start_with?(File.expand_path("~/.xiki/interactions")+"/")
-      current_file_is_modified = View.file && View.modified?
+
+
+      current_file_is_modified = file && View.modified?
       if modified_files.length == 1 && current_file_is_modified  # && View.file.start_with?(File.expand_path("~/.xiki/interactions")+"/")
-        DiffLog.save
+        options = {}
+        options[:open_browser] = 1 if ! existed_already
+        self.save options
         txt = ""
       end
 

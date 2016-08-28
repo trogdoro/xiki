@@ -64,9 +64,10 @@ module Xiki
     end
 
     def self.branch_name dir=nil
+
       dir ||= Tree.closest_dir
 
-      branch, error = Shell.command "git rev-parse --abbrev-ref HEAD", :dir=>dir, :return_error=>1
+      branch, error = Shell.command "git rev-parse --abbrev-ref HEAD", :dir=>Files.dir_of(dir), :return_error=>1
 
       # Error with "unknown revision" means no revisions yet, so return branch as MASTER...
       return "no commits yet?" if error =~ /^fatal: ambiguous argument 'HEAD': unknown revision/
@@ -104,18 +105,50 @@ module Xiki
     end
 
 
+    def self.do_log
+
+      prefix = Keys.prefix :clear=>1
+
+      dir = Keys.bookmark_as_path :prompt=>"Enter a bookmark to git diff in: "
+
+      txt = "
+        #{dir}
+          $ git log
+        ".unindent
+
+      Launcher.open txt, :buffer_name=>"git log"
+
+      nil
+    end
+
+    def self.do_status
+
+      prefix = Keys.prefix :clear=>1
+      dir = Keys.bookmark_as_path :prompt=>"Enter a bookmark to git diff in: "
+
+      txt = "
+        #{dir}
+          $ git status
+        ".unindent
+
+      Launcher.open txt, :buffer_name=>"git log"
+
+      nil
+    end
+
+
     def self.do_compare_repository
       file = View.file
 
-      Launcher.open "#{file}\n  =git/diff/", :line_found=>View.line
+      Launcher.open "#{file}\n  = git/diff/", :line_found=>View.line
 
       ""
     end
 
 
     def self.toplevel_split path
+      dir = Shell.sync "git rev-parse --show-toplevel", :dir=>Files.dir_of(path)
 
-      dir = Shell.sync "git rev-parse --show-toplevel", :dir=>path
       return nil if dir =~ /^fatal: /
 
       dir.strip!

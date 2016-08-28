@@ -82,25 +82,101 @@ module Xiki
       @txt[@line-1]
     end
 
+    def path
+      self.class.path txt, line
+    end
+
+
+    def self.path txt, line
+
+      txt = txt.split("\n") if txt.is_a?(String)
+
+      current = txt[line-1]
+      indent = self.indent(current)
+
+      # |... line, so get siblings that are also |...
+
+      if current =~ /^ *\|( |$)/
+
+        siblings = [current]
+
+        # 1. Get siblings below (while same indent and |)
+        siblings_line = line+1-1
+
+        while(txt[siblings_line] =~ /^ {#{indent}}\|( |$)/) do
+          siblings.push txt[siblings_line]
+          siblings_line += 1
+        end
+
+        # 2. Get siblings before (while same indent and |)
+        siblings_line = line-1-1
+        while(txt[siblings_line] =~ /^ {#{indent}}\|( |$)/) do
+          siblings.unshift txt[siblings_line]
+          siblings_line -= 1
+        end
+
+        current = siblings.map{|o| o.sub(/^ *\| ?/, '')+"\n"}.join
+
+      end
+
+
+      result = [self.clean(current)]
+
+      while(line > 1) do
+        line -= 1
+        current = txt[line-1]
+        next if current == ""
+        current_indent = self.indent(current)
+        if current_indent < indent
+          result.unshift(self.clean(current))
+          indent = current_indent
+        end
+
+      end
+
+      result
+    end
+
     # Returns a sample prepopulated Xik instance to mess around and test with.
     def self.foo
       self.new "
-        a/
-          - b/
-        c/
-          - d/
-            - e/
+        bar
+          - bark
+        bah
+          - ram
+          - ewe
         "
     end
 
     def self.animals
       self.new "
-        dogs/
-          - lab/
-          - terrior/
-        cats/
-          - lion/
-          - tiger/
+        dogs
+          - lab
+          - terrior
+        cats
+          - lion
+          - tiger
+        "
+    end
+
+    def self.movies
+      self.new "
+        star wars
+          | Yoda
+          | Green
+          | Wise
+        ishtar
+          | Camels
+        "
+    end
+
+    def self.Book
+      self.new "
+        > Chapter 1
+        Sentence in chapter 1.
+
+        > Chapter 2
+        Sentence in chapter 2.
         "
     end
 
@@ -144,14 +220,13 @@ module Xiki
 
     def expand path=nil, options={}
 
+      path ||= ""   # nil causes weird behavior
+
       return current if ! path
 
       return nil if ! @txt
 
       result = Tree.children @txt, path, options
-      if result
-        result.strip!
-      end
 
       # MenuHandler.eval_exclamations result, options if options
       if result && eval_options = options[:eval]
@@ -161,9 +236,10 @@ module Xiki
         #   - Is this the best place to do that?
         #   - Does it make sense to only do it when :eval?
 
-        eval_options[:nest] = 1 if eval_options.is_a?(Hash) && result !~ /^ *! /
+        eval_options[:nest] = 1 if eval_options.is_a?(Hash) && result !~ /\A *! /
 
         MenuHandler.eval_exclamations result, options
+
         # Todo > clear out :nest option if eval returned nil?
       end
 
@@ -190,6 +266,14 @@ module Xiki
     # Indent of current line
     def indent
       (current||"")[/^ */]
+    end
+
+    def self.indent txt
+      txt[/\A( *)/].length
+    end
+
+    def self.clean txt
+      txt.sub(/\A *([+-] )?/, "")
     end
 
     def =~ regex

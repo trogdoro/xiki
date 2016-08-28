@@ -256,7 +256,7 @@ module Xiki
 
       # If empty, say so...
 
-      return "<! dir is empty!" if files.empty? && dirs.empty?
+      return "<* dir is empty!" if files.empty? && dirs.empty?
 
       indent = "#{Line.indent}  "
 
