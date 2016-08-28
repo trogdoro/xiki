@@ -15,7 +15,6 @@ module Xiki
         + .pages/
         - .start
         - local: http://localhost:3401/wiki/gateway
-        - remote: http://rlitio.chase.com:3401/wiki/1
         "
     end
 
@@ -161,7 +160,7 @@ module Xiki
     end
 
     def self.start
-      Rails.start ':o/redmine/trunk', @@url[/\d+/]
+      Rails.start '^o/redmine/trunk', @@url[/\d+/]
     end
 
   end

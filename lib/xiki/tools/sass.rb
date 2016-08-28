@@ -11,7 +11,7 @@ module Xiki
 
       Firefox.exec code
 
-      "<! Loaded in browser!"
+      "<* Loaded in browser!"
     end
   end
 end

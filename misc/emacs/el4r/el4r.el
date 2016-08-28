@@ -4,37 +4,55 @@
 
 ; Define keys to reload and jump...
 ; This function is called from the Xiki config
-(defun el4r-troubleshooting-keys ()
+(defun el4r-recommended-keys ()
 
   ; Reload
-  (global-set-key (kbd "M-r") 'el4r-kill-and-restart)
+  (global-set-key (kbd "M-o") 'el4r-kill-and-restart)   ; Alt+O, Meta+O, Option+O
   (global-set-key [174] 'el4r-kill-and-restart)   ; For Terminal.app, in emacs24
   (global-set-key [2222] 'el4r-kill-and-restart)   ; For Terminal.app, in emacs22
 
   ; Jump to log and show error
-  (global-set-key (kbd "M-l") 'el4r-jump-to-error)
+  (global-set-key (kbd "M-m") 'el4r-jump-to-error)   ; Show el4r error message > Option+M > Alt+M
   (global-set-key [172] 'el4r-jump-to-error)   ; For Terminal.app, in emacs24
   (global-set-key [2220] 'el4r-jump-to-error)   ; For Terminal.app, in emacs22
+
+
+  ; Set some keys for doing what lisp normally does - defined here because they need to exist even if the el4r load fails after this poirt
+
+  (global-set-key (kbd "M-s") 'eval-last-sexp)   ; elisp script > Like emacs C-x C-e
+  (global-set-key (kbd "M-q") 'save-buffers-kill-emacs)   ; quit, when Ctrl+Q doesn't work > Like emacs C-x C-q
+  (global-set-key (kbd "M-g") 'keyboard-quit)   ; Escape out of emacs trouble > like Ctrl+G
+  ; Emacs help
+  (global-set-key (kbd "M-/") 'help)
+
+  ; Enable and disable control lock (move these definitions to control-lock.el__?)
+  (global-set-key (kbd "M-C-L") 'control-lock-enable)
+  (global-set-key (kbd "M-L") 'control-lock-enable)
 
 )
 
 (defun ol (txt)
   (el4r-ruby-eval
     (if (stringp txt)
-      (concat "Ol \"" txt "\"")   ; String, so no need to inspect
+        (concat "Ol \"" (replace-regexp-in-string "\n" "\\\\n" txt) "\"")   ; String, so no need to inspect
+      ;; (concat "Ol \"" txt "\"")   ; String, so no need to inspect
       (concat "Ol \"" (replace-regexp-in-string "\"" "\\\\\"" (pp-to-string txt)) "\"")
     )
   )
 )
 
 (or (>= emacs-major-version 21)
-    (error "Sorry, el4r requires (X)Emacs21 or later, because it uses weak hashes."))
+  (error "Sorry, el4r requires (X)Emacs21 or later, because it uses weak hashes."))
 
 (put 'el4r-ruby-error
-     'error-conditions
-     '(error el4r-ruby-error))
+  'error-conditions
+  '(error el4r-ruby-error))
 
-(put 'el4r-ruby-error 'error-message "Error raised in Ruby.  Type Alt+R (or Option+R) to reload or Alt+L (or Option+L) to show the log with the error message.")
+(setq el4r-error-text "Type Alt+O (or Option+O) to reload xsh. Or quickly type esc then o, if that didn't work. Alt+M to show error message.")
+;; (setq el4r-error-text "Type Alt+R (or Option+R) to reload xsh. Or quickly type esc then r, if that didn't work. Alt+M to show error message.")
+
+;; (setq el4r-error-text "Error! Type Alt+R (or Option+R) to reload or Alt+L (or Option+L) to show the log with the error message.")
+(put 'el4r-ruby-error 'error-message el4r-error-text)
 
 (defvar el4r-ruby-program
   "ruby"
@@ -92,6 +110,9 @@
   ; Start ruby and make it listen...
 
   (el4r-init)
+
+  ; Load init.el...
+
   (el4r-ruby-eval
     (if noinit "el4r_boot__noinit" "el4r_boot"))
 )
@@ -188,10 +209,20 @@ You may need to do something like:
           (apply 'start-process el4r-process-name buffer
             el4r-ruby-program el4r-instance-program el4r-instance-args)
 
+
           ; Else, connect to separate ruby process, or start it...
 
           (condition-case err
-            (make-network-process :remote (expand-file-name "~/.xikisock") :name el4r-process-name :buffer buffer)
+
+
+
+
+              ;; (make-network-process :remote (expand-file-name "~/.xikisock") :name el4r-process-name :buffer buffer)
+            (make-network-process :remote (expand-file-name "~/.xikisock") :name el4r-process-name :buffer buffer :service t)
+
+
+
+
 
             (file-error
               (let ((process-name (start-process "xiki-forker" (get-buffer-create "*xiki-forker*") el4r-ruby-program el4r-instance-program "forker")))
@@ -207,7 +238,10 @@ You may need to do something like:
               )
 
               (message "el4r > tried 2nd time")
-              (make-network-process :remote (expand-file-name "~/.xikisock") :name el4r-process-name :buffer buffer)
+              ;; (message "before")
+              ;; (message buffer)
+              (make-network-process :remote (expand-file-name "~/.xikisock") :name el4r-process-name :buffer buffer :service t)
+              ;; (message "after")
             )
             (error
               (message "el4r > unspecified error when connecting")
@@ -229,7 +263,8 @@ You may need to do something like:
 
 (defun el4r-check-alive ()
   (or (eq (process-status el4r-process) 'run) (eq (process-status el4r-process) 'open)
-      (error "el4r-instance is dead.")))
+      (error el4r-error-text)))
+      ;; (error "el4r-instance is dead.")))
 
 ; Grabs elisp code from the *el4r:process* buffer
 (defun el4r-scan-expr-from-ruby ()
@@ -262,6 +297,8 @@ You may need to do something like:
 ; We're using this all the time now, because it allows user to interrupt
 ; long-running operations by typing esc.
 
+(setq el4r-taking-a-while-message nil)
+
 (if t
 
   ; Work-around
@@ -280,7 +317,7 @@ You may need to do something like:
 
       (when (>= limit lock-time)
 
-        (message "Command taking a while. Press esc to cancel.")
+        (message (or el4r-taking-a-while-message "Command taking a while. Press esc to cancel."))
 
         (setq succeeded (sit-for 0.1))
 
@@ -299,7 +336,7 @@ You may need to do something like:
 
             )
             ; Re-display message > it's going away for some reason
-            (message "Command taking a while. Press esc to cancel.")
+            (message (or el4r-taking-a-while-message "Command taking a while. Press esc to cancel."))
           )
 
           ; Else, keep on going
@@ -632,6 +669,15 @@ You may need to do something like:
 (defun el4r-kill-and-restart () (interactive)
   "Load .emacs (reloading EmacsRuby)"
 
+  ;(message "--1")
+
+  (prin1 default-directory)
+
+  (if (not (file-exists-p default-directory))
+    (error (concat "This directory no longer exists!:  " default-directory))
+  )
+
+
   (let ((lock (control-lock-enabled)))
 
     ; Only kill if xiki running
@@ -641,16 +687,30 @@ You may need to do something like:
       (sleep-for 0.1)
     )
 
+    ;(message "--6")
+    ; Kill el4r process buffer
     (when (get-buffer "*el4r:process*")
       (let (kill-buffer-query-functions)   ; So it doesn't prompt us to delete the buffer
         (kill-buffer "*el4r:process*")
       )
     )
+    ;(message "--8")
 
+    ; Kill el4r buffer for async saving (so it'll get recreated upon next save)
+    (when (get-buffer "*fork-and-eval*")
+      (let (kill-buffer-query-functions)   ; So it doesn't prompt us to delete the buffer
+        (kill-buffer "*fork-and-eval*")
+      )
+    )
+
+    ;(message "--9")
     (load-file (concat (getenv "XIKI_DIR") "/misc/emacs/xsh.emacs"))
+    ;(message "--10")
 
     ; Re-do client-specific init stuff with this new process clone
     (el4r-ruby-eval "Xiki.init_in_client")
+    ;(message "--11")
+
 
     (message "reloaded")
   )
@@ -663,6 +723,13 @@ You may need to do something like:
 (defun el4r-jump-to-error ()
   (interactive)
   "Go to EmacsRuby error"
+
+
+  ; Switch to the last view (just so it's not in the top-left)
+  (select-window (frame-first-window))
+  (other-window -1)
+
+  ; Display error log
   (find-file el4r-log-path)
   (revert-buffer t t t)
   (setq truncate-lines t)
@@ -673,5 +740,75 @@ You may need to do something like:
   (recenter 0)
 
 )
+
+(defun el4r-fork-and-eval (ruby callback)
+  (setq el4r-fork-and-eval-callback callback)
+  (make-network-process :remote (expand-file-name "~/.xikisock") :name "fork-and-eval" :buffer "*fork-and-eval*" :service t)
+
+  (defun el4r-fork-and-eval-filter (process output)
+    (setq el4r-fork-and-eval-output output)
+
+    ;; (message "-----------output received")
+    ;; (prin1 output)
+    ; Remove trailing ^@ and surrounding quotes, and unescape
+    (setq output (replace-regexp-in-string "\0$" "" output))
+    (setq output (replace-regexp-in-string "^\"\\(.*\\)\"$" "\\1" output))
+    (setq output (url-unhex-string output t))
+    ;; (message "")
+    ;; (prin1 output)
+
+    (cond
+      ; Just single ^@, so do nothing...
+     ;; ((string= output "\0")
+      ((string= output "")
+       ;; (message "-----------1")
+        nil
+      )
+      ; Multiple lines, so show them in a view
+      ((string-match "\n" output)
+       ;; (message "-----------2")
+        ;---
+        (setq output (url-unhex-string output t))
+
+        (prin1 output)
+        (message "")
+
+
+
+        (split-window-vertically)
+        (other-window 1)
+        (switch-to-buffer "My Message")
+        (insert output)
+        (beginning-of-buffer)
+
+        ;; (el4r-ruby-eval el4r-fork-and-eval-callback)
+        ;---
+      )
+      ; Single line, so just echo it
+      (t
+       ;; (message "-----------3")
+        (message output)
+      )
+    )
+
+
+
+
+
+
+
+    t   ; In case return value matters
+    ;(el4r-ruby-eval callback)
+  )
+
+  (set-process-filter (get-process "fork-and-eval") 'el4r-fork-and-eval-filter)
+  (process-send-string (get-process "fork-and-eval")
+    ; Send code to ruby process to eval
+    ; (concat ruby "\0\n")
+    ; (concat "Xiki::Code.fork_and_eval_wrapper #{ruby.inspect}" "\0\n")
+    (concat "Xiki::Code.fork_and_eval_wrapper " ruby "\0\n")
+  )
+)
+
 
 (provide 'el4r)

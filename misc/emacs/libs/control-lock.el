@@ -1,8 +1,5 @@
 ;;; control-lock.el --- Like caps-lock, but for your control key.  Give your pinky a rest!
 
-(defun ol (txt &optional txt2)
-  (write-region (concat (prin1-to-string txt) (prin1-to-string txt2) "\n") nil "/tmp/eol.txt" t))
-
 (defun control-lock-letter (l ch)
   "Called when keys are pressed.  If we deem control-lock to be enabled, it returns the control-version of the key.  Otherwise it just returns the key."
 
@@ -10,7 +7,8 @@
 
   (let* ((this-keys (this-command-keys)) (this-keys (if (stringp this-keys) (string-to-char this-keys) "")))
     (if (and (not (eq this-keys 27)) (control-lock-enabled-p))
-      ch l)
+      ch l
+    )
   )
 )
 
@@ -59,12 +57,23 @@
     (control-lock-map-key s (concat "C-" s) s)
     (setq c (+ c 1))))
 
-; Map uppercase keys to lowercase
+
+
+; Temp > Map uppercase keys to control also
 (let ((c ?A) s)
   (while (<= c ?Z)
     (setq s (char-to-string c))
-    (control-lock-map-key s (downcase s) s t)
+    (control-lock-map-key s (concat "C-" (downcase s)) s t)
     (setq c (+ c 1))))
+
+
+; ; Map uppercase keys to lowercase
+; (let ((c ?A) s)
+;   (while (<= c ?Z)
+;     (setq s (char-to-string c))
+;     (control-lock-map-key s (downcase s) s t)
+;     (setq c (+ c 1))))
+
 
 ; Map numbers
 (let ((c ?0) s)
@@ -81,8 +90,6 @@
 (control-lock-map-key "\\\\" "C-\\\\" "backslash")
 
 
-;(control-lock-map-key "C-i" "C-<tab>" "tab")
-
 (control-lock-map-key "/" "C-/" "slash")
 (control-lock-map-key "SPC" "C-@" "space")
 (control-lock-map-key "[" "C-[" "lsqrbracket")
@@ -95,7 +102,6 @@
 
 (defun control-lock-keys ()
   "Sets default keys - C-z enables control lock."
-  ; (global-set-key (kbd "C-z") 'control-lock-enable)
   (global-set-key (kbd "C-,") 'control-lock-enable))
 
 (defun control-lock-apply-bar-color ()
@@ -138,8 +144,8 @@
         (set-face-attribute 'mode-line-transparent-activatable nil :background control-lock-color-transparent-old)
         (set-face-attribute 'mode-line-transparent-underline-activatable nil :background control-lock-color-transparent-old)
 
-        (set-face-attribute 'mode-line-transparent-activatable nil :foreground "#aaa")
-        (set-face-attribute 'mode-line-transparent-underline-activatable nil :foreground "#aaa")
+        (set-face-attribute 'mode-line-transparent-activatable nil :foreground "#999")
+        (set-face-attribute 'mode-line-transparent-underline-activatable nil :foreground "#999")
         (set-face-attribute 'mode-line-transparent-underline-activatable nil :underline t)
       )
     )

@@ -248,7 +248,7 @@ class XikiCommand
     # `open "/Applications/Aquamacs Emacs.app"`
     `open "/Applications/Aquamacs.app/"`
 
-    ruby = %`Xiki::Menu.external \\"#{menu}\\"`
+    ruby = %`Xiki::Command.external \\"#{menu}\\"`
     ruby.<< %`, :dir=>\\"#{Dir.pwd}\\"` if menu =~ /^@/
 
     command = %`/Applications/Aquamacs.app/Contents/MacOS/bin/emacsclient -n -e '(el4r-ruby-eval "#{ruby}")'`

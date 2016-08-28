@@ -1,4 +1,4 @@
-$LOAD_PATH << "#{XIKI_DIR}/lib/"
+$LOAD_PATH << "#{XIKI_DIR}/lib"
 
 require 'xiki'
 Xiki.init
@@ -16,7 +16,7 @@ module ::Xiki
 
     # Make caching version of $el, and generate some lisp for improved subsequent startup time
     $el = El4r::ELInstance.new nil, nil, StringIO.new
-    KeyShortcuts.search_keys
+    KeyShortcuts.jump_keys
     Color.define_styles
     Effects.define_styles
     FileTree.define_styles
@@ -29,12 +29,6 @@ module ::Xiki
   KeyShortcuts.keys
   Keys.el4r_init
   KeyShortcuts.right_click   # Use default key shortcuts
-
-  Keys.set("M-h") { $el.backward_kill_word 1 }
-  if ! $el.display_graphic_p   # for terminal emacs
-    # Shouldn't this not have the "<" and ">"?
-    Keys.set("<M-RET>") { Launcher.go }
-  end
 
   # Move this into a theme?
   $el.tool_bar_mode(-1) if Environment.gui_emacs
@@ -79,10 +73,8 @@ end
 elvar.sort_fold_case = true   # To avoid stupid bug
 
 module ::Xiki
-
-  # Try loading user's startup.rb if it exists
-  startup_rb = File.expand_path "~/xiki/misc/startup.rb"
-
-  Code.load startup_rb if File.exists? startup_rb
+  # Try loading user's yours.rb if it exists
+  yours_rb = File.expand_path "~/.xiki/misc/yours.rb"
+  Code.load yours_rb if File.exists? yours_rb
 end
 

@@ -7,8 +7,6 @@
 - For bullets
   - begin with spaces and hyphens
 
-For ~emphasis~ surround with tildas.
-
 | For grayed text, begin with a pipe
 |+ For green diffs, pipe plus
 |- For red diffs, pipe minus
