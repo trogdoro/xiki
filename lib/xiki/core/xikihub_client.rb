@@ -8,16 +8,19 @@ module Xiki
 
     @@session_cookie = nil
 
-    @@url = "xiki.us"
+    @@server = "xiki.com"
+    # @@server = "xiki.us"
+    # @@server = "xiki.loc"
 
     def self.url options={}
 
       raise "Shouldn't try to access url from xikihub server" if XIKIHUB_DIR
 
-      url = options[:short] ? "" : "http://"
-      url << @@url
+      return @@server if options[:short]
 
-      url
+      return "https://#{@@server}" if @@server == "xiki.com"
+
+      "http://#{@@server}"
 
     end
 

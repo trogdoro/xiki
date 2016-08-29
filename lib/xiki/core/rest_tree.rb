@@ -92,8 +92,8 @@ module Xiki
           req[key] = val
         end
 
-
-        res = Net::HTTP.start(uri.host, uri.port) {|http|
+        request_options = uri.port == 443 ? {:use_ssl=>true} : {}
+        res = Net::HTTP.start(uri.host, uri.port, request_options) {|http|
           http.request(req)
         }
 
