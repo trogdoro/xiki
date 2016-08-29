@@ -10,7 +10,7 @@ module Xiki
           | alternate setup.
           |
           1. Use the up and down arrow keys to move your cursor to an item below.
-          2. Then type Ctrl+O to open it.
+          2. Then type Ctrl+O to open (it will perform the setup).
           |
           + default setup
           |
@@ -103,8 +103,7 @@ module Xiki
         |
         - Now follow these steps:
         1. Type Ctrl+Q to quit xsh
-        2. Type "bash" to reload (or "zsh" if you use it)
-        3. Type "xsh --tutorial"
+        2. Follow the steps that appear
         |
         | Xsh is alpha at this point. Experiment, but be careful!
         |

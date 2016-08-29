@@ -339,6 +339,7 @@ case $1 in
   # If we probably showed the set up message, but ~/.xsh exists now, assume they set it up, and show steps to reload
   if ( [[ $# -eq 0 ]] || [[ "$*" == "-xsh/setup" ]] ) && [[ ! $(type -P xsh) =~ ^/ ]] && [[ ! $XIKI_SUPPRESS_WELCOME ]] && [[ -f ~/.xsh ]]; then
     echo '#'
+    echo '# Now follow these steps:'
     echo '# 1. Type "bash" to reload (or "zsh" if you use it)'
     echo '# 2. Type "xsh --tutorial"'
     echo '#'
