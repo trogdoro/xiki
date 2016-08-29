@@ -404,7 +404,7 @@ module Xiki
           txt.gsub!(/\+ [ftlsaim]/, "\n\\0")
         elsif path == ["run"]
           txt.gsub!(/\+ [miehv]/, "\n\\0")
-        elsif path == ["hop", "version"]   # run+version
+        elsif path == ["run", "version"]   # run+version
           txt.gsub!(/\+ [bn]/, "\n\\0")
         elsif path == ["run", "delete"]   # run+delete
           txt.gsub!(/\+ [ifm]/, "\n\\0")

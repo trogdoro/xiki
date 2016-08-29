@@ -144,8 +144,13 @@ function check_dependencies {
     # Mac and emacs22 and no homebrew, so require installing homebrew...
 
     if [[ ! $(type -P brew) =~ ^/ ]]; then
-      echo -e "Please install Homebrew, and then run xsh again.\n\nThe homebrew installer can be found here:\n\n  http://brew.sh/\n"
-      exit 1
+
+      # Homebrew not installed, so don't make them install emacs
+      return
+
+      # Old > made people that didn't have homebrew install it
+      # echo -e "Please install Homebrew, and then run xsh again.\n\nThe homebrew installer can be found here:\n\n  http://brew.sh/\n"
+      # exit 1
 
     else
 
@@ -294,6 +299,16 @@ case $1 in
   ;;
 
 *)
+
+
+  # Emacs 22 on the Mac with no homebrew
+  if [[ $emacs_version =~ Emacs\ 2[21] ]]; then
+    # Emacs 22, so don't use --daemon (a little slower, but won't flicker in Emacs 22)...
+    save_args_to_envs "$@"
+    # Start emacs and load xiki...
+    exec $emacs --no-splash -nw -Q -l "$xiki_dir/misc/emacs/start_xiki.el"
+    exit 1
+  fi
 
 
 
