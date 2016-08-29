@@ -467,22 +467,6 @@ module Xiki
 
   end
 
-  # 1. ..., so show "update numbers" task...
-  Xiki.def(/\A\d+\.(\z| .*\z)/) do |path, options|
-
-    task = options[:task]
-
-    next "* update numbers" if task == []
-
-    if task == ["update numbers"]
-      Notes.fix_numbers
-      next ""
-    end
-
-    ""
-
-  end
-
 
   # NNN-NNN-NNNN, so treat as phone number...
 
@@ -792,6 +776,34 @@ module Xiki
     Launcher.launch
   end
 
+
+
+  # "1. Foo", treat as "-> Foo:", plus "* update numbers"...
+  Xiki.def(/\A\d+\.(\z| .*\z)/) do |path, options|
+
+    task = options[:task]
+
+    words = path[/. (.+)/, 1]   #> !!!
+
+    # Ctrl+T, so get tasks from "->" and add on
+    if task
+      # Use tasks from "-> foo", adding our own
+      if task == []
+        next Xiki["-> #{words}", options] + "\n* update numbers"
+        next "* update numbers"
+      end
+      # Handle if > * update numbers
+      if task == ["update numbers"]
+        Notes.fix_numbers
+        next ""
+      end
+    end
+
+    # Delegate to > "-> Foo:"
+    Xiki["-> #{words}:", options]
+
+  end
+
   # "-> Heading", so jump to heading in same view...
 
   Xiki.def(/\A-> /i) do |path, options|
@@ -815,7 +827,7 @@ module Xiki
     # Search below for this heading
 
     orig = View.cursor   #> nil
-    result = Search.forward "^> \\(@[a-z]* \\)?#{Search.quote_elisp_regex path}", :from_top=>1, :beginning=>1
+    result = Search.forward "^> \\(@[a-z]* \\)?#{Search.quote_elisp_regex path}$", :from_top=>1, :beginning=>1
 
     if ! result
       View.cursor = orig
