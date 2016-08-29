@@ -309,6 +309,17 @@ module Xiki
       Xiki.def("run+forward"){ Line.move_word :forward }
       Xiki.def("run+back"){ Line.move_word :backward }
 
+
+      Xiki.def("run+version+repository"){ Git.do_push }
+      Xiki.def("run+version+log"){ Git.do_log }
+      Xiki.def("run+version+diff"){ Git.do_compare_repository }
+      Xiki.def("run+version+status"){ Git.do_status }
+
+      Xiki.def("run+version+backups"){ History.list }   # Show all backed-up versions
+      Xiki.def("run+version+changes"){ History.diff_with_backup }   # compare with last AV version
+
+      Xiki.def("run+version+next"){ DiffLog.compare_views }
+
       # run+N > Run nth label in :t
       (0..9).each do |n|
         Xiki.def("run+#{n}"){ Launcher.do_last_launch :nth=>n }
@@ -354,16 +365,6 @@ module Xiki
       Xiki.def("hop+kind"){ Move.to_other_bracket }   # to matching bracket, etc
 
       Xiki.def("hop+quote"){ Move.to_quote }   # move to next |... quote
-
-      Xiki.def("hop+version+repository"){ Git.do_push }
-      Xiki.def("hop+version+log"){ Git.do_log }
-      Xiki.def("hop+version+diff"){ Git.do_compare_repository }
-      Xiki.def("hop+version+status"){ Git.do_status }
-
-      Xiki.def("hop+version+backups"){ History.list }   # Show all backed-up versions
-      Xiki.def("hop+version+changes"){ History.diff_with_backup }   # compare with last AV version
-
-      Xiki.def("hop+version+next"){ DiffLog.compare_views }
 
       Xiki.def("hop+junior"){ Move.to_junior }   # go to nth line, relative to top of window (up+ for middle, up+up+ for bottom)
       Xiki.def("hop+words"){ Line.to_beginning }   # move to start of words on line
