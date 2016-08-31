@@ -11,10 +11,6 @@ module Xiki
       $el.elvar.control_lock_color_transparent = "#f90"   # Orange
       $el.menu_bar_mode -1
 
-      # Ol "!!"
-      # Always runs when xsh is started, right? and only once?
-      #::XIKIHUB_DIR = nil
-
     end
 
     # def self.run *args #, options={}
@@ -36,7 +32,6 @@ module Xiki
       # Enable theme and styles
       Themes.use 'Default'
 
-
       if options[:args_via_daemon]
         args = self.populate_args_from_arg_dir
 
@@ -49,7 +44,6 @@ module Xiki
         args = $el.elvar.xsh_command_line_args.to_a.join(' ')
       end
 
-      # Ol "args", args
       # Todo > Probably make sure this is "foo\^foo" and not "foo\\^foo" etc.
       args.gsub! /\\\^/, "^"   # Undo backslash escaping of some chars
       args.gsub! /\\\>/, ">"   # Undo backslash escaping of some chars
@@ -57,14 +51,8 @@ module Xiki
       # Command was "xsh xsh ...", so remove the redundant "xsh "...
 
       args.sub! /^xsh /, ''
-      # Ol "args", args
-
-      # if -c, pull it off and set :xic...
 
       # Check for various flags...
-
-Ol "!!"
-      Ol "args", args   #> "-t ls"
 
       if args == ""
         # New session, or not in xsh file, so presume "$ "
@@ -74,8 +62,6 @@ Ol "!!"
       # xsh ---...
       elsif args == "---"
         args = ""
-        # $el.make_variable_buffer_local :xiki_bar_special_text
-        # $el.elvar.xiki_bar_special_text = ""
         $el.elvar.xiki_bar_hidden = true
 
       # xsh --...
@@ -94,42 +80,20 @@ Ol "!!"
       # xsh - > or > ^T...
       elsif args == "-"
 
-      # args = "tasks/"
         args = "xiki/"
 
       elsif args.slice! /^-n( |\z)/
 
         # -n, so show notes...
 
-        Ol "args", args
-        # if args == ""
-        #   # Just "-n", so show all notes
-        #   args = "notes/"
-        # else
-          # -n foo, so show notes for foo
         View.open "^n"
         options[:do_nothing] = 1
 
-        # args = "$ #{args}\n  ~ notes/"
-        # end
-
-      # elsif args =~ /^[a-z ]+\/$/i
       elsif args =~ /^[a-z]*\/$/i
-        Ol "!!!"
-        # $ xsh foo/, so treat as xiki command...
 
-        # $ xsh cd foo/, could be a shell command, so it won't match this...
-
+        # $ xsh cd foo/, could be a shell command, so it won't match this (because of the space)...
 
         # Just leave it alone
-
-
-        # # xsh -t...
-        # elsif args.slice! /^-t /
-
-        #   # topic+ on words, so leave them alone and just expand
-
-        # # xsh -c...
 
       elsif args.slice! /^-c /
 
@@ -152,16 +116,10 @@ Ol "!!"
       elsif args == "-l"
         options[:do_nothing] = 1
         Launcher.open "links/"
-        # View.expose_links
-        # args = ""
-
 
       elsif args == "^"
         options[:do_nothing] = 1
         Launcher.open "notes/"
-      # elsif args == ":"
-      #   options[:do_nothing] = 1
-      #   Launcher.open "bookmarks/"
       elsif args == "-b"
         options[:do_nothing] = 1
         Launcher.open "bookmarks/"
@@ -176,12 +134,6 @@ Ol "!!"
         options[:dont_expand] = 1
       elsif args.slice! /^-w /
         args = "http://localhost:8161/#{args}"
-
-      # elsif args == "-h"
-      #   args = "$"
-      #       elsif args.slice! /^-h( |\b)/
-      # Ol "!!!"
-      #         args = "$ #{args}\n  ~ history/"
 
       elsif args.slice! /^-fa /
         args = "$ #{args}\n  * favorites/"
@@ -200,19 +152,8 @@ Ol "!!"
         options[:do_nothing] = 1
         View.open "#{View.dir}/menu.xiki"
 
-
-
-
       elsif args.slice! /^-x /
         args = "$ #{args}\n  * xiki command/"
-
-      # The shell command just opens the URL now
-      # elsif args == "--tutorial"
-
-      #   Ol "!!!"
-      #   options[:do_nothing] = 1
-      #   View.open File.expand_path "~/xiki/tutorial.xiki"
-
 
       elsif args == "-tab"
         # Esc, Tab with no args, so do tasks menu on blank line
@@ -227,9 +168,7 @@ Ol "!!"
         options[:tab] = 1
         args = "$ #{args}" if args =~ /\A\w/   # Treat as shell command if it's just a word
 
-        # elsif args.slice! /^-o\b/
       elsif args.slice! /^-t\b/
-        Ol "!!!"
         args.strip!
         options_in[:task] = []
 
@@ -253,31 +192,20 @@ Ol "!!"
         options[:do_nothing] = 1
         View.layout_todo_and_nav
         View.to_upper
-#        View.open "^g"
 
       elsif args.slice! /^-slashify /
         args.sub! ' ', '/'
       elsif args == "$"
         args = "$ "
         options[:dont_expand] = 1
-      # elsif args == "-" # || args == ""
-      #   args = ""
-      #   options[:dont_expand] = 1
 
       elsif args =~ /\A[a-z]/i && ! options[:not_shell]
         args = "$ #{args}"
-      # elsif args =~ /^=/   # If =foo, make it nest under dir?
-      #   args.sub! /^=/, ''
       elsif args == "."
         args = View.dir
 
-
-      # # -foo/, so treat as xiki command...
       # -foo/, so treat as xiki command...
-      # elsif args =~ /\/$/ && args.slice!(/^-/)
       elsif args.slice!(/^=/)
-        # elsif args.slice!(/^-g /)
-Ol "args", args   # => "git/"
 
         # grab+ on ^bookmark, so cd and exit...
 
@@ -287,50 +215,13 @@ Ol "args", args   # => "git/"
           return DiffLog.quit_and_run "cd #{dir}"
         end
 
-        Ol "!"
-
-        # Old behavior
-        # # grab+ on foo, so run as xiki command...
-        # args = "#{args}/"
-
-        # Navigate to topic
-        Ol "Navigate to topic!!!"
-        # options[:do_nothing] = 1
-
-        Launcher.open(args, :task=>["view source"])
-        return
-
-
+        return Launcher.open(args, :task=>["view source"])
 
         # Todo > probably check to see if it exists
           # If doesn't exist, probably do auto-complete
 
-
-
-
-        # return View.flash "Not sure what to do when ^O on foo"
-
-        # old:
-        # Grab on line, so don't launch (just insert)
-        # options[:dont_expand] = 1
-        # args = "$ #{args}"
-
-
-
-
-        #   if args.any?
-        #     options[:do_nothing] = 1
-        #     View.open "#{View.dir}/#{args.strip}"
-        #   else
-        #     args = "recent/"
-        #   end
-
-
-
       elsif args == "-c"   # xsh -c > show contents of all files
-        # elsif args == "c"
         View.<< "./"
-        # Launcher.launch :task=>["filter", "all contents"]
         Launcher.launch :task=>["more", "all contents"]
         options[:do_nothing] = 1
 
@@ -380,61 +271,20 @@ Ol "args", args   # => "git/"
         View.open file
         options[:do_nothing] = 1
 
-      elsif args =~ /\A\+\+\+(\w.*)/
-
-        # xsh +++foo, so create shell command wrapper...
-
-        name = $1
-        extension = name.slice! /\.\w+/
-        extension ||= ".rb"
-
-        # TODO > break it out into separate samples per language
-        # require "#{Xiki.dir}roots/sample_menus/sample_menus_index.rb" # if !defined?(SampleMenus)
-        # txt = SampleMenus.by_extension(extension)
-
-        View.open "~/.xiki/roots/shell_#{name}#{extension}"
-
-        txt = %`
-          # This will run when they expand
-          # the command's output.
-
-          return "hello world"
-
-          # Example: do something based on
-          # the line they expanded:
-          #
-          #   return "You expanded 'a'" if args[1] == ": a"
-          #
-          `.unindent
-
-        View.<< txt if View.txt == ""
-        options[:do_nothing] = 1
-
-
-        # elsif args == "-"
       elsif args == ":"
 
-      # args = "hub/"
         args = "xiki/"
 
-        # elsif args.slice! /^-\b/
       elsif args.slice! /^:\b/
 
         # -foo, ^S search shared on XikiHub, so show "shared" command...
 
-        # elsif args == "-s"
-
         if args == ""
-        # args = "xikihub/"
           args = "shared/"
         else
           # Trying with > no prompt
           args = ":#{args}"
-          # args = "#{args}\n  = search/"
-          # args = "$ #{args}\n  = search/"
         end
-
-        # end
 
       elsif args.slice! /^-/
 
@@ -447,11 +297,6 @@ Ol "args", args   # => "git/"
 
       # The above branches should probably just return
       return if options[:do_nothing]
-
-
-
-
-
 
       # --foo, so cut off dash
 
@@ -479,55 +324,21 @@ Ol "args", args   # => "git/"
 
       # The 'xsh' command not in $PATH, or no ~/.xsh, so prompt them to configure...
 
-      # if ! exists_in_path || ! File.exists?(File.expand_path "~/.xsh")
-      # if ! ENV['XIKI_SUPPRESS_WELCOME'] && (! exists_in_path || ! File.exists?(File.expand_path "~/.xsh"))
       if args == "$ " && ! ENV['XIKI_SUPPRESS_WELCOME'] && (! exists_in_path || ! File.exists?(File.expand_path "~/.xsh"))
-
-        # self.copy_over_setup_xsh_action
-
         welcome = Xiki["xsh/setup"]
         View << "\nxsh/setup\n#{welcome.gsub /^/, '  '}\n\n"
-
-        # View << "\n\n??\n\n"
       end
-
-
 
       View << args
 
       # Esc, Tab
       return Notes.tab_key if options[:tab]
-      # return XikihubClient.shared if options[:shared]
 
       # Todo > use .shellsplit, and .shellescape > to quote args with spaces instead of backslash-escaping spaces
 
       Launcher.launch(options_in) unless options[:dont_expand]
 
     end
-
-
-    # def self.copy_over_setup_xsh_action
-
-
-    #   # If doesn't exist, create file and containing dir if necessary
-
-    #   dest = File.expand_path "~/xiki/setup_xsh.xiki"
-
-    #   Ol "dest", dest   #> "/Users/craig/xiki/setup_xsh_tempppp.xiki"
-    #   if ! File.file? dest
-    #     source = "#{Xiki.dir}misc/default_xiki/setup_xsh.xiki"
-    #     Ol "source", source   #> "/Users/craig/Dropbox/xiki/misc/default_xiki/setup_xsh.xiki"
-    #     FileUtils.cp source, dest
-
-    #     Ol "!!!"
-    #   end
-
-    #     # :+
-    #     # :+#{Xiki.dir}
-
-
-
-    # end
 
 
     # Loads args passed by xsh bash script function in ~/.xiki/misc/params/.
@@ -554,8 +365,6 @@ Ol "args", args   # => "git/"
       #   Only grab stuff when C-c/q when filtering!
       #   If on dir, cd to it
       #   If on file, echo it and siblings"]
-
-
 
       if Keys.prefix_u
         txt = Tree.siblings.map{|o| "#{o}\n"}.join
@@ -593,25 +402,18 @@ Ol "args", args   # => "git/"
     end
 
     def self.determine_session_orig_dir file_name
-Ol ""
       File.read(File.expand_path("~/.xiki/misc/interactions_dirs/#{file_name}")) rescue nil
     end
 
     def self.save_go_commands commands
-Ol ".save_go_commands:"
       tmp_dir = File.expand_path "~/.xiki/misc/tmp"
       FileUtils.mkdir_p tmp_dir   # Make sure dir exists
       File.open("#{tmp_dir}/go_to_shell_commands.xiki", "w") { |f| f << "#{commands.strip}\n" }
 
       nil
-      # Ol "Should it be doing this upon ^Q and as+grab too?!"
-      # Ol "Why saving this when? > we're exiting to bash?!"
-      # File.open("#{tmp_dir}/go_location_cd_dir.notes", "w") { |f| f << "#{Shell.dir}\n" }
     end
 
     def self.to_go_location
-Ol "Where and why is this getting called!!!"
-Ol.stack 2
       file = File.expand_path "~/.xiki/bookmarks/g.xiki"
 
       location = File.read(file) rescue nil
@@ -623,16 +425,13 @@ Ol.stack 2
 
       # Set shell dir > to where we were when we quit
 
-      Ol "Hmm > why is this any different? > try removing this!!"
-      Ol "If it does make sense, are we setting it right?!!"
+      # Hmm > why is this any different? > try removing this
+      # If it does make sense, are we setting it right?
       file = File.expand_path "~/.xiki/misc/tmp/go_location_cd_dir.xiki"
       txt = File.read(file) rescue nil
       return if ! txt
 
-      Ol "txt", txt   #> "/Users/craig/\n"
       Shell.cd txt.strip
-
-
 
     end
 
