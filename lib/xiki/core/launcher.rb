@@ -902,8 +902,6 @@ Ol["oh, this path is an array: #{path}!"] if path.is_a?(Array)
       # Root item is just words (search), so don't append slash...
       options[:no_slash] = 1 if Topic.matches_topic_syntax? path[-1]
 
-      Ol "Only do when > |... line!"
-
       # Snippet with 8 lines or less, so insert output under last "|..." line...
 
       if path_last[-1] =~ /\n.+\n/ && path_last[-1].scan("\n").length <= 8
@@ -1390,23 +1388,32 @@ Ol["oh, this path is an array: #{path}!"] if path.is_a?(Array)
     end
 
 
-    def self.open_command
-
-      self.open_topic :as_command=>1
-
-    end
-
     def self.open_topic options={}
+      insert = options[:insert]
 
-      View.to_buffer View.unique_name("untitled.xiki")
-      Notes.mode
-      View >> "\n\n\n"
+      if ! insert
+        View.to_buffer View.unique_name("untitled.xiki")
+        Notes.mode
+        View >> "\n\n\n"
+      end
 
       View.flash(options[:as_command] ? "- Type a command quickly!" : "- Type a topic or command quickly!", :dont_nest=>1)
 
-      inserted = Keys.timed_insert :prompt=>""
-      Line << "/" if options[:as_command]
-      Launcher.launch if inserted
+      bm = Keys.timed_insert :prompt=>"", :delay=>0.40
+
+      # Get text on line, and insert task from bookmark
+
+      file = Bookmarks["^#{bm}"]
+
+      if ! Notes.in_home_xiki_dir?(file)
+        file = Notes.expand_link_file(file)
+      end
+      return if ! file
+
+      topic = File.basename(file, ".*")
+      topic.gsub! "_", " "
+      Line.sub! /.*/, topic
+      Launcher.launch
 
     end
 

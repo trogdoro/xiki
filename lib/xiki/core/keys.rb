@@ -933,7 +933,8 @@ module Xiki
       self.timed_insert_handle_char c
 
       # While no pause, insert more chars
-      while(c = $el.read_char(prompt, nil, 0.28))
+      delay = options[:delay] || 0.28
+      while(c = $el.read_char(prompt, nil, delay))
         inserted += c.chr
         self.timed_insert_handle_char c.chr
       end

@@ -143,7 +143,7 @@ module Xiki
       Xiki.def("enter+directory"){ Files.enter_file :expand=>1 }
       Xiki.def("enter+outline"){ Launcher.enter_outline }   # in tree, enter methods or headings
 
-      Xiki.def("enter+task"){ Tasks.enter_task }   # in tree, enter methods or headings
+      Xiki.def("enter+xiki"){ Launcher.open_topic :insert=>1 }
 
       Xiki.def("enter+quote"){ FileTree.enter_quote }
       Xiki.def("enter+value"){ FileTree.enter_quote nil, :char=>":" }

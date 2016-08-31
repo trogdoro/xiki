@@ -1844,7 +1844,7 @@ module Xiki
         extension = File.extname(path).sub(".", "")
       end
 
-      link_filename = Notes.link_file?(path)
+      link_filename = Notes.expand_link_file(path)
 
       if ! options[:not_topic_outline]
 

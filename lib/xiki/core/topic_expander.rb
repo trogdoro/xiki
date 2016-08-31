@@ -62,7 +62,7 @@ module Xiki
         # Don't add item if > no file named like this word permutation
         next if ! file
 
-        file = Notes.expand_if_link file   #> ||||||||||||||
+        file = Notes.expand_if_link file
 
         structure[name_spaced] = [filter.dup, file]
 
@@ -114,7 +114,10 @@ module Xiki
 
         # "* view source" on new command, so open new view
         if task == ["view source"]
-          file = File.expand_path "~/xiki/#{name.snake_case}.xiki"
+
+          file = Dir["#{File.expand_path("~")}/xiki/#{name.snake_case}.*"][0]
+          file = Notes.expand_if_link file
+
           View.open file
 
           View.flash("- New file", :dont_nest=>1) if ! File.exists?(file)
@@ -269,7 +272,7 @@ module Xiki
 
       # topic (no heading or items), so delegate...
 
-      return options[:output] = self.expand_noargs(options) if ! items   #> ||
+      return options[:output] = self.expand_noargs(options) if ! items
 
       # topic/foo...
 
