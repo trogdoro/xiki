@@ -169,7 +169,8 @@ function check_dependencies {
       echo -e "less than a minute over a fast internet connection.\n"
 
       echo -e "  ${u}i${uu}nstall the dependencies"
-      echo -e "  ${u}s${uu}how them first\n"
+      echo -e "  ${u}s${uu}how them first"
+      echo -e "  ${u}p${uu}roceed without them for now\n"
 
       read -n1 -p "Type one of the highlighted letters: " doit
 
@@ -177,6 +178,10 @@ function check_dependencies {
         i|I)
           echo -e "\n\n"
           brew install emacs
+          ;;
+        p|P)
+          # Do nothing, let them continue
+          echo
           ;;
         s|S)
           echo -e "\n\nThis will be run:\n"

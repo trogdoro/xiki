@@ -34,10 +34,15 @@
 (setq backup-inhibited t)   ; Disable backup
 (setq auto-save-default nil)   ; Disable auto save
 
-(when (string-match "Emacs 2[34]" (emacs-version))
-  (require 'mouse)
-  (xterm-mouse-mode t)
-  (defun track-mouse (e))
+
+; Try to enable mouse support, but doesn't matter if it fails
+(condition-case nil
+  (progn
+    (require 'mouse)
+    (xterm-mouse-mode t)
+    (defun track-mouse (e))
+  )
+  (error nil)   ; Rescue, and do nothing when error happens
 )
 
 ; Make clicking on a vertical bar hide other windows...
