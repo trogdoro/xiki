@@ -113,7 +113,7 @@ module Xiki
 
     def self.download_default_notes
 
-      url = "#{XikihubClient.url}/@xiki"
+      url = "#{XikihubClient.url}/_activity/install"
       txt = XikihubClient.get url
 
       txt.split("\n").each do |topic|
