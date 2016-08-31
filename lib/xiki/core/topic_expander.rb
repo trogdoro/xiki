@@ -118,6 +118,9 @@ module Xiki
           file = Dir["#{File.expand_path("~")}/xiki/#{name.snake_case}.*"][0]
           file = Notes.expand_if_link file
 
+          # No file exists yet, so default to normal filename
+          file ||= "~/xiki/#{name.snake_case}.xiki"
+
           View.open file
 
           View.flash("- New file", :dont_nest=>1) if ! File.exists?(file)

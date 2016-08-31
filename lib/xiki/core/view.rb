@@ -234,6 +234,7 @@ module Xiki
     # View.open "hello", :txt=>"> Hi\nMessage to show in new buffer."
     # View.open "/etc/paths", :to=>"local"
     def self.open path, options={}
+      raise ".open called with nil path" if ! path
 
       # :unique option, so make sure name is unique
       path = View.unique_name path if options[:unique]

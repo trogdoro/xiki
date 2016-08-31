@@ -97,11 +97,10 @@ module Xiki
         |
         | > Xsh setup was successful!
         |
-        | Reload your shell config in any open terminal windows. Then
-        | you'll be able to type 'xsh' in any directory! And you can type
-        | Ctrl+O and Ctrl+X etc. in your shell as shortcuts for xsh.
+        | Do the following steps to reload the shell config in
+        | any open terminal windows. Then you'll be able to type
+        | 'xsh' at any shell prompt.
         |
-        - Now follow these steps:
         1. Type Ctrl+Q to quit xsh
         2. Follow the steps that appear
         |
