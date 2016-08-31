@@ -159,7 +159,7 @@ module Xiki
         Bookmarks["^#{prefix_to_bm}#{keys}", :raw_path=>1] :
         keys
 
-      return View.open "> Error:\n:-Bookmark #{path} doesn't exist" if path =~ /^:/
+      return View.open "> Error:\n:-Bookmark #{path} doesn't exist" if path =~ /^\^/
 
       prefix = Keys.prefix
 
