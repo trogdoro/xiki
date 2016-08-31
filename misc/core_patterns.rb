@@ -831,7 +831,7 @@ module Xiki
 
     if ! result
       View.cursor = orig
-      View.flash "- Heading not found in this view > ^T to create!"
+      View.flash "- Heading not found in this view > Ctrl+T to create!"
       next
     end
 

@@ -99,31 +99,23 @@ module Xiki
 
 
     def self.go_key options={}
-Ol ""
       return self.quote_selection(:go=>1) if View.selection?
 
       path = Tree.path
       last = Path.split path[-1]
       line = Line.value
-Ol "last", last   #> ["$ pwd"]
 
       # ^G on "topic > heading" inline, so run as a xiki command...
 
       if last.length == 1 && last[0] =~ /\A[a-z][a-z0-9 ]+ > \.?[a-z0-9]/i
-        Ol "!"
-        # return Launcher.go :go=>1
-        # View.flash "- Not sure what ^G on 'topic > Heading' should do yet", :times=>5
         return Launcher.launch(:task=>["navigate"])
       end
 
       # ^G on ":search > heading" inline, so run as a xiki command...
 
       if last.length == 1 && last[0] =~ /\A:[a-z][a-z ]+ > [a-z]/i
-        Ol ""
         View.flash "- Not sure what ^G on ':search > Heading' should do yet", :times=>5
-        # return Launcher.go :go=>1
         return
-        # return Launcher.launch(:task=>["navigate"])
       end
 
 
@@ -133,48 +125,23 @@ Ol "last", last   #> ["$ pwd"]
 
 
         if last[1] =~ /^\w/  # || last[-1] =~ /^@\w/
-          Ol "How to know what heading to convert it to?!!!"
-
-          Ol "How to get local actions? > do local search? > just expand it without children > not full expand > so it doesn't actionify!!!"
-          Ol "Look at installed > and use heading from it!!!"
-
 
           # Control G, so just change to heading!
-Ol "last", last   #> [":iterm", "brown background"]
           options = {:dont_run_action=>1}
           path = Path.join(last).sub(/^:/, '')
-          Ol "path", path   #> "iterm/brown background"
           Expander.expand path, options
-          #           options[:heading_found]
           heading = options[:heading_found]
           heading = heading.sub! /(^> @\w+ )/, '> '
-          Ol "heading", heading
-          # Ol "!!!"
 
           # Change to heading
-          # Line.sub!(/.+/, Line.value.gsub(/( *)[+-] (.+)/){"#{$1}#{heading}"})
           Line.sub!(/^( *)[+-] (.+)/, "\\1#{heading}")
 
-          # Ol "Try > just do search and find one that matches?!!!"
-
-  # (last.length-2).times{ Tree.to_parent }
-          # Tree.collapse if Tree.children?
-          # Launch if was expanded, leave collapsed if was collapsed
-          # Launcher.launch((last.length > 2 ? :change_to_heading_and_launch : :change_to_heading)=>1)
           return ""
         end
 
         # ^G on "> Heading" under topic, so navigate...
 
         if last[-1] =~ /^> / || last[-1] =~ /^@\w/
-          Ol ""
-  # (last.length-2).times{ Tree.to_parent }
-  # Tree.collapse if Tree.children?
-
-          # Launch if was expanded, leave collapsed if was collapsed
-          # Launcher.launch(:task=>[last.length > 2 ? "as action" : "make action"])
-
-  # return Tree.<<("Todo > Probably toggle back to action!")
 
           # Change from heading back to path
 
@@ -183,17 +150,11 @@ Ol "last", last   #> [":iterm", "brown background"]
 
           return ""
         end
-
-
-        # Ol ""
-        # # return Launcher.go :go=>1
-        # return Launcher.launch(:task=>["navigate"])
       end
 
 
       # ^G under "foo..." (autocomplete), so collapse first...
-Ol "last", last   #> ["$ pwd"]
-Ol "line", line   #> "$ pwd"
+
       if last.length == 2 && last[0] =~ /\A[a-z0-9][a-z0-9 ]*\.\.\.\z/
         Tree.collapse_upward :replace_parent=>1
         return self.go_key options
@@ -203,112 +164,28 @@ Ol "line", line   #> "$ pwd"
         # line = Line.value
       end
 
-      Ol ""
-
       # ^G on "topic", and not "topic/", so run as a xiki command...
 
-Ol ""
       if Topic.matches_topic_syntax?(last[0])
-Ol ""
+
         # ^G on "topic" (with no slash at end)
         if last.length == 1 && line !~ /\/$/
 
           return Launcher.launch(:task=>["view source"])
-
-          # # return Launcher.launch_or_collapse :go=>1 #if last.length == 1
-          # Line << "/"
-          # Launcher.launch
-          # Launcher.launch_or_collapse #:go=>1 #if last.length == 1
           return
         end
-
-        # ^G on topic collapses and > runs with go
-        # # ^G on "topic/> Note"
-        # if last.length == 2 # && last[1] =~ /^> /
-        #
-        #   # ^G on > .Foo, so run as action?
-        #   # Ol "inserted?!!!"
-        #   View.flash "- Not sure what ^G on topic should do yet", :times=>5
-        #   return
-        # end
-
       end
-
-
-#       # if path[-1] =~ /\A\.[a-z][a-z ]*\z/i
-#       if last.length == 1 && Topic.matches_topic_syntax?(last[0]) && line !~ /\/$/
-
-# # Ol ":go!!!"
-#         return Launcher.go :go=>1 #if last.length == 1
-
-#         # return Launcher.launch(:task=>["navigate"])
-
-#         # raise "Not sure how to deal with nesting more than 2" if last.length > 2
-
-#         #         # If length is 2, assume it's a topic for now
-
-#         #         # /topic/..., might be topic or heading...
-
-#         # Ol "last", last   #> ["ip"]
-#         #         if last.length == 2
-
-#         #           # "topic/> Heading", so navigate to it...
-#         # Ol "last[1]", last[1]
-#         #           if last[1] =~ /^>/
-#         #             return Launcher.go :navigate=>1
-#         #           end
-
-#         #           # /topic/topic, so collapse first and continue...
-
-#         #           #Tree.collapse_upward #:replace_parent=>1
-#         #         end
-
-#         #         # /topic, so run as command
-#         #         # Ol "!!"
-#         #         Line << "/"
-#         #         return Launcher.launch
-
-#       end
-
-
-
-
-
-
-
-            # Ol "path", path
-        # => [".hey/", ".docker"]
-        # => [".docker"]
 
             # /topic, so just .expand...
 
-      # if last.length == 1 && last[0] =~ /\A[a-z ]+-\z/i
-      # if last.length == 1 && last[0] =~ /\A\.[a-z_ ]+\z/i
-
-
-      #       if last.length == 1 && Topic.matches_topic_syntax?(last[0])
-      # Ol "When is this happening? Should have been captured above!"
-      #         Ol "Delegate to > .launch!"
-      #         return Launcher.launch
-      #       end
-
       view_dir = View.dir
 
-      # # If just $... (Is this too liberal?)
-
-      # If dir
-
-      # Ol "last", last   #> ["$ pwd"]
-      # Ol "path", path   #> ["$ pwd"]
 
       path_without_filters = path[-1].dup
       FileTree.extract_filters! path_without_filters
-      # Ol "!!!"
-# Ol "path_without_filters", path_without_filters   #> "$ pwd"
-# Ol "path[-1]", path[-1]   #> "$ pwd"
 
       if FileTree.handles?(path_without_filters)
-        # Ol "!!!"
+
         # /foo/, so just cd to the dir
 
         # Could be /tmp, "/tmp/$ pwd", or "/tmp/$ pwd/item"
@@ -323,19 +200,14 @@ Ol ""
         dir_quoted = dir =~ /^[a-z_\/.-]+$/i ? dir : "\"#{dir}\""
 
         dir_without_snippet, snippet = dir.split("/: ", 2)
-        # Ol "dir_without_snippet", dir_without_snippet
 
-        # File
         if File.file? dir_without_snippet
-          Ol "dir", dir
           return FileTree.open_with_external_editor Path.unescape(dir)
-          # return DiffLog.quit_and_run commands
         end
 
         # Dir
         if File.directory? dir
           commands = "cd #{dir_quoted}\n"
-          # commands << command if command
           return DiffLog.quit_and_run commands
         end
 
@@ -343,47 +215,23 @@ Ol ""
       end
 
       if last[0] == "markers" && last.length > 1
-        # Ol "continue here > continue with > '~ navigate'!!"
         return Tree.<< "- Don't know what ^G on marker means yet!", :no_slash=>1, :hotkey=>1
-        # return Launcher.launch :task=>["navigate"]
       end
 
-
       # $ ls, so cd to dir or edit file > hard-coded support for ls, for now > abstract out for other commands later...
-Ol ""
-      # Ol "last", last   # => ["$ ls"]
+
       if last[0] == "$ ls" && last.length > 1
-Ol ""
 
-# dir = last[1..-1].map{|o| o.sub(/^: /, '')}.join("/")
         dir = last[1..-1].map{|o| o.sub(/\/$/, '')}.map{|o| o.sub(/^: /, '')}.join("/")
-
-Ol "dir", dir   #> "usr//share/"
 
         file = "#{Shell.dir}#{dir}"
 
-        # if dir =~ /\/$/
         if File.directory? file
-Ol ""
           commands = "cd #{Shell.quote_file_maybe file}"
         else
 
-          Ol "file", file   #> "/etc"
-
           FileTree.open_with_external_editor file
           return ""
-
-
-          # editor = ENV['EDITOR']
-
-          # # Non-console editor, so don't quit
-          # if ["subl"].member? editor
-          #   command = "#{ENV['EDITOR']} #{view_dir}/#{Shell.quote_file_maybe dir}"
-          #   Shell.command command
-          #   return
-          # end
-
-          # commands = "#{ENV['EDITOR']} #{Shell.quote_file_maybe dir}"
         end
 
         return DiffLog.quit_and_run commands   #> |||
@@ -394,47 +242,19 @@ Ol ""
 
       # ^G on item under "xiki/", so collapse and run with :go!
 
-Ol "Is it 'topics?':"
-Ol "last", last   #> ["$ pwd"]
-# if last.length == 2 && last[0] == "tasks"
-
       if last.length == 2 && last[0] == "xiki"
-Ol "!!"
 
         Xiki[last[1], :task=>["view source"]]
-        # Tree.collapse_upward :replace_parent=>1
-        # # Line.to_right
-        # Line << "/"
-        # Launcher.launch_or_collapse
         return ""
 
-        # Manually invoke "* navigate"
-        # Xiki["-#{last[1]}", :task=>["navigate"]]
-# Xiki["#{last[1]}", :task=>["navigate"]]
-        # Hmm, would this be better?:
-        # Launcher.launch :task=>["navigate"]
-
-
-# Xiki[last[1], :task=>["view source"]]
-
-
-        # Ol "^G on /commands/foo, so replace parent and run command!"
-
-        # Tree.collapse_upward :replace_parent=>1
-        # # Line.to_right
-        # Line << "/"
-        # return Launcher.launch_or_collapse
-        # return Launcher.launch_or_collapse :go=>1
       end
-Ol ""
 
       # Xiki command (not $...), so show grab items...
 
         # => ["ip", "foo"]
         # => [":test"]
-Ol "last", last   #> ["$ pwd"]
       if last.length == 1 && last[0] =~ /^\.?[a-z ]+$/i
-Ol ""
+
         # @foo/bar, so it's a xikihub url...
 
         # if Path.split(path[0]).length == 2

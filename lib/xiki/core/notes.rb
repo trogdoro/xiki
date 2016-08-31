@@ -907,7 +907,7 @@ module Xiki
 
           # File is in notes, or is linked to from notes, so use 'topic > Heading' syntax"
 
-          if File.dirname(file) == File.expand_path("~/xiki") || Notes.link_file?(file)
+          if File.dirname(file) == File.expand_path("~/xiki") || self.expand_link_file(file)
 
             # On note "> Heading", so add as "foo > bar"
 
@@ -1214,7 +1214,6 @@ module Xiki
           return ""
         end
 
-
         if option_item == ["web search"]   # ~ navigate
           txt = "#{name}".gsub(" > ", " ")
           Xiki::Google.search txt, :via_os=>1
@@ -1227,7 +1226,6 @@ module Xiki
 
         # No headings, so show all content
         return Tree.quote txt if headings.empty?
-              # return ": This file has no '>...' headings:\n=#{file}" if lines.empty?
 
         return headings
       end
@@ -2569,7 +2567,7 @@ module Xiki
       extension = filename.slice(/\.(notes|xiki)$/)
       return if ! extension
 
-      link_filename = Notes.link_file? filename
+      link_filename = self.expand_link_file filename
       return if ! link_filename
 
       # Update timestamp of the .link file
@@ -2581,43 +2579,61 @@ module Xiki
 
 
     # Returns path to ^n/foo.link file that links to filename, if there is one.
-    def self.link_file? filename
+    def self.expand_link_file file
 
-      # Look for corresponding .link file (assume it has the same name)
-      link_filename = File.basename filename, ".*"
+      # Directory, so look for .xiki file in it
+      if Dir.exists? file
+        if File.exists?("#{file}menu.xiki")
+          file = "#{file}menu.xiki"
+        else
+          basename = File.basename file
+          if File.exists?("#{file}#{basename}_menu.xiki")
+            file = "#{file}#{basename}_menu.xiki"
+          else
+            # No matching file in dir
+            return
+          end
+          # Todo > check for dir_name.xiki & dir_name_menu.xiki also
 
-      # link_filename = Bookmarks["^n/#{link_filename}.link"]
-      link_filename = File.expand_path "~/xiki/#{link_filename}.link"
-
-      link_filename_without_menu = link_filename.sub(/_menu\.link$/, '.link')
-
-      # Link exists, so continue
-      if File.exists? link_filename
-        # Just continue
-      elsif link_filename_without_menu != link_filename && File.exists?(link_filename_without_menu)
-        # Link exists without .link, so continue
-        link_filename = link_filename_without_menu
-      else
-        # No link exists, so do nothing
-        return
+        end
       end
 
-      # No .link file exists, so do nothing
-      return if ! File.exists? link_filename
+      # Look for corresponding .link file (assume it has the same name)
+      base = File.basename file, ".*"
 
-      # .link file doesn't link back to our file, so do nothing
-      txt = File.expand_path File.read(link_filename).strip
-      return if filename != txt
+      link_file = File.expand_path "~/xiki/#{base}.link"
 
-      link_filename
+      # Link exists, so return it...
+
+      if File.exists? link_file
+        txt = File.expand_path File.read(link_file).strip
+        return link_file if file == txt
+      end
+
+      # Link exists when no "_menu", so return it...
+
+      link_file_without_menu = link_file.sub(/_menu\.link$/, '.link')
+      if link_file_without_menu != link_file && File.exists?(link_file_without_menu)
+        txt = File.expand_path File.read(link_file_without_menu).strip
+        return link_file_without_menu if file == txt
+      end
+
+      # Check for .link files named similar to file or dir
+
+      pattern = base
+      if pattern == "menu"
+        pattern = File.basename(File.dirname(file))
+        Dir[File.expand_path "~/xiki/#{pattern}*.link"].each do |candidate|
+          txt = File.expand_path(File.read(candidate)).strip
+          return candidate if file == txt
+        end
+      end
+
+      nil
 
     end
 
-
-
-
     def self.expand_if_link file
-      # Ol.stack 15
 
       if file =~ /\.link$/
         file = File.read(file).strip

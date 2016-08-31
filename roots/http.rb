@@ -2,7 +2,6 @@
 
 # Construct url
 url = "http:/#{args.join("/")}"
-Ol "url", url   # => "http://xiki.com/@trogdoro"
 
 Xiki[url, :task=>["source"]]
 

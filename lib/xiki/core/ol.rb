@@ -118,7 +118,7 @@ class Ol
     # If l is array (it's the whole trace), use only first for now
     l = l[0].dup if l.is_a?(Array)
 
-    if l.nil?   # If Ol.log "foo" called directly (probably never happens
+    if l.nil?   # If Ol.log "foo" called directly (probably never happens)
       return self.line(txt, caller(0)[1])
     end
 
