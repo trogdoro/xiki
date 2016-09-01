@@ -214,6 +214,20 @@ function check_dependencies {
 
 }
 
+function show_setup_steps_maybe {
+
+  # If we probably showed the setup message, but ~/.xsh exists now, assume they set it up, and show steps to reload
+  if ( [[ $# -eq 0 ]] || [[ "$*" == "-xsh/setup" ]] ) && [[ ! $(type -P xsh) =~ ^/ ]] && [[ ! $XIKI_SUPPRESS_WELCOME ]] && [[ -f ~/.xsh ]]; then
+    echo '#'
+    echo '# Now follow these steps:'
+    echo '# 1. Type "bash" to reload (or "zsh" if you use it)'
+    echo '# 2. Type "xsh --tutorial"'
+    echo '#'
+  fi
+
+}
+
+
 check_dependencies
 
 # Proceed to run the command...
@@ -305,17 +319,16 @@ case $1 in
 
 *)
 
-
   # Emacs 22 on the Mac with no homebrew
   if [[ $emacs_version =~ Emacs\ 2[21] ]]; then
     # Emacs 22, so don't use --daemon (a little slower, but won't flicker in Emacs 22)...
     save_args_to_envs "$@"
     # Start emacs and load xiki...
-    exec $emacs --no-splash -nw -Q -l "$xiki_dir/misc/emacs/start_xiki.el"
+    $emacs --no-splash -nw -Q -l "$xiki_dir/misc/emacs/start_xiki.el"
+
+    show_setup_steps_maybe
     exit 1
   fi
-
-
 
   # Emacs 23+, so use --daemon (will make for immediate startup)...
 
@@ -337,22 +350,12 @@ case $1 in
 
   # Now run it.  The hook will run when it opens and load the params
 
-  # Maybe this will hide errors
+  # /dev/null thing is meant to hide errors
   $emacsclient -s $unique -t 2>/dev/null
-  # Maybe this will help with the error
 
-  # If we probably showed the set up message, but ~/.xsh exists now, assume they set it up, and show steps to reload
-  if ( [[ $# -eq 0 ]] || [[ "$*" == "-xsh/setup" ]] ) && [[ ! $(type -P xsh) =~ ^/ ]] && [[ ! $XIKI_SUPPRESS_WELCOME ]] && [[ -f ~/.xsh ]]; then
-    echo '#'
-    echo '# Now follow these steps:'
-    echo '# 1. Type "bash" to reload (or "zsh" if you use it)'
-    echo '# 2. Type "xsh --tutorial"'
-    echo '#'
-  fi
+  show_setup_steps_maybe
 
   exit
-
-  #  fi
 
   ;;
 
