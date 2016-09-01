@@ -69,6 +69,11 @@
   )
 
   (setq xiki-scroll-last-time (float-time))
+
+  ; Ignore any characters typed right after > they cause weirdness in Emacs 22
+  (while (read-event nil nil 0.005)
+    (setq escape nil)
+  )
 ))
 
 (global-set-key (kbd "<mouse-5>") (lambda () (interactive)
@@ -83,6 +88,11 @@
   )
 
   (setq xiki-scroll-last-time (float-time))
+
+  ; Ignore any characters typed right after > they cause weirdness in Emacs 22
+  (while (read-event nil nil 0.005)
+    (setq escape nil)
+  )
 ))
 
 (menu-bar-mode -1)

@@ -133,6 +133,7 @@
       (setq escape t)
     )   ; Read 1st event
 
+    ; Ignore any characters typed right after
     (while (read-event nil nil 0.05)
       (setq escape nil)
     )
