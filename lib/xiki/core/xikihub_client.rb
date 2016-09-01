@@ -1,3 +1,5 @@
+require "time"   # For .iso8601 method
+
 # Make sure it's defined even if not in xikihub
 if ! defined? XIKIHUB_DIR
   XIKIHUB_DIR = nil
