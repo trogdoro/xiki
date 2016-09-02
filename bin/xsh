@@ -2,6 +2,22 @@
 
 set -f
 
+
+# Just "xsh --reload" so reload and return
+
+echo "hi"
+
+if [[ $1 = "--reload" ]]; then
+  # Kill all "xsh forker" processes
+  for KILLPID in `ps ax | grep 'xsh\ forker' | awk ' { print $1;}'`; do
+    kill -9 $KILLPID;
+    echo fu
+    :
+  done
+  exit
+fi
+
+
 # Set gem_home, so xiki gems don't interfere with main ones...
 
 mkdir -p ~/.xiki/misc/gems/

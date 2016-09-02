@@ -3,7 +3,7 @@ Here are the steps for installing xsh (Xiki Shell).
 
 1. Copy and paste this one-line installer into your terminal. (Don't include the "$ ".)
 
-$ mkdir -p ~/xiki-project; curl -L https://github.com/trogdoro/xiki/archive/actions.tar.gz | tar -xz -C ~/xiki-project --strip-components=1; ~/xiki-project/bin/reloadxsh; ~/xiki-project/install
+$ curl -L https://raw.githubusercontent.com/trogdoro/xiki/actions/install_xsh -o ~/install_xsh; bash ~/install_xsh
 
 2. Follow the setup steps that appear.
 

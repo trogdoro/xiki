@@ -10,7 +10,7 @@ if [ "$1" = "install" ]; then
   echo Temporarily setting \$GEM_HOME to \~/.xiki/misc/gems/...
   echo
   gem install "$2"
-  reloadxsh
+  xsh --reload
   exit
 fi
 
@@ -20,7 +20,7 @@ if [ "$1" = "uninstall" ]; then
   echo Temporarily setting \$GEM_HOME to \~/.xiki/misc/gems/...
   echo
   gem uninstall "$2"
-  reloadxsh
+  xsh --reload
   exit
 fi
 
