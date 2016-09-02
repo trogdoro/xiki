@@ -2215,42 +2215,36 @@ module Xiki
     end
 
 
-    def self.add_note_prompt_shell command #options
+    # Run when "* add note".
+    def self.add_note_prompt_shell command
 
-      # :single_word_topic passed, so don't require heading..
+      topic = Topic.shell_command_to_topic command
 
-      txt = %`
-        | Optional description
-        |
-      `.unindent
-      # Add "+ save" and "+ share" if in noob mode
-      txt.<< "^ save\n^ share\n" #if Keys.noob_mode
-      # + save note
+      # Open the topic file, and insert there at top
+      View.open File.expand_path("~/xiki/#{topic}.xiki")
 
-      # :shell, command passed, so use it in note...
+      txt = "> Note name here\n$ #{command}\n\nOptional description here.\n\n\n"
 
-      top_lines = "$ #{command}\n\n"
-      top_lines = Tree.pipe top_lines#, :indent=>"  "
-      txt.sub!(/^/, "\n#{top_lines}")
+      Move.top
 
-      top_lines_length = (top_lines.scan(/\n/) || "").length + 1
+      # Get topic name from command
+      View >> txt
 
-      # insert_options = {:no_search=>1}
-      # insert_options[:following] = 1 if options[:no_indent]
-      Tree.<< txt, :no_search=>1
+      # Make green background for > "Optional description"
+      View.line = 4
+      Overlay.face :diff_green, :left=>View.cursor, :right=>Line.right
 
-      Line.next(2)
-      Line.to_beginning
-
-      # Make green background for hints > "Note heading" and "note text"
-
+      # Make green background for > "Note heading"
+      View.line, View.column = 1, 3
       Overlay.face :diff_green, :left=>View.cursor, :right=>Line.right
 
       # Pause until they type any key
       key = Keys.press_any_key :message=>"Type any key....."
 
       # Delete green stuff and add spaces
-
+      View.line = 4
+      Line.delete :leave_linebreak
+      View.line, View.column = 1, 3
       View.delete View.cursor, Line.right
       View.<<(key[0].chr) if key.length == 1 && key[0] >= 32 && key[0] <= 126
 

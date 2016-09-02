@@ -97,9 +97,9 @@ module Xiki
         |
         | > Xsh setup was successful!
         |
-        | Do the following steps to reload the shell config in
-        | any open terminal windows. Then you'll be able to type
-        | 'xsh' at any shell prompt.
+        | Do the following steps to reload the shell config in any open
+        | terminal windows. Then you'll be able to type 'xsh' at any
+        | shell prompt.
         |
         1. Type Ctrl+Q to quit xsh
         2. Follow the steps that appear
