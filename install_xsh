@@ -14,6 +14,7 @@ curl -L https://github.com/trogdoro/xiki/archive/actions.tar.gz | tar -xz -C ~/x
 
 # Reload and start xsh (it will lock the user through the setup)
 ~/xiki-project/bin/xsh --reload
-~/xiki-project/bin/xsh
+~/xiki-project/bin/xsh -xsh/setup
+
 
 
