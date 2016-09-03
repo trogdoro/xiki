@@ -10,6 +10,8 @@ RUN apt-get install -y ruby
 # Git
 RUN apt-get install -y git
 
+RUN apt-get install -y curl
+
 COPY . /xiki/
 RUN /xiki/bin/xsh --install
 
