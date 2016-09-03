@@ -191,11 +191,10 @@ module Xiki
         "    :#{highest}"
       }
 
-      # =commit/Quotes > swapped quotes for colons.
-
       # Make - and + lines into -| and +| lines
-      raw.gsub!(/^\+(.*)/, "      :+\\1")
-      raw.gsub!(/^-(.*)/, "      :-\\1")
+      raw.gsub!(/^\+/, "      :+")
+      raw.gsub!(/^-/, "      :-")
+      raw.gsub!(/^\\ (.+)/, "      : (\\1)")
 
       path = Files.tilde_for_home path
 
