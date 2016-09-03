@@ -96,11 +96,12 @@ module Xiki
         # Just leave it alone
 
       elsif args.slice! /^-c /
-
         args = "./\n  - ###{args}/"
+
       elsif args =~ /^\^\w/
         View.open Bookmarks[args]
         options[:do_nothing] = 1
+
       elsif args == "-d"
         options[:do_nothing] = 1
         Search.isearch_diffs
@@ -117,9 +118,6 @@ module Xiki
         options[:do_nothing] = 1
         Launcher.open "links/"
 
-      elsif args == "^"
-        options[:do_nothing] = 1
-        Launcher.open "notes/"
       elsif args == "-b"
         options[:do_nothing] = 1
         Launcher.open "bookmarks/"
@@ -152,9 +150,6 @@ module Xiki
         options[:do_nothing] = 1
         View.open "#{View.dir}/menu.xiki"
 
-      elsif args.slice! /^-x /
-        args = "$ #{args}\n  * xiki command/"
-
       elsif args == "-tab"
         # Esc, Tab with no args, so do tasks menu on blank line
 
@@ -168,22 +163,25 @@ module Xiki
         options[:tab] = 1
         args = "$ #{args}" if args =~ /\A\w/   # Treat as shell command if it's just a word
 
-      elsif args.slice! /^-t\b/
-        args.strip!
+
+      elsif args == "^"
+        options_in[:task] = []
+        args = View.dir :force_slash=>1
+
+      elsif args.slice! /^\^ /
         options_in[:task] = []
 
-        # It's a blank prompt, so use the current dir
-        if args == ""
-          args = View.dir :force_slash=>1
-        elsif args =~ /\A\w/   # Treat as shell command if it's just a word
-          args = "$ #{args}"
-        elsif args =~ /\A:\w/   # Bookmark
-          args = Bookmarks[args]
-        end
+        # Treat as shell command
+        args = "$ #{args}"
 
-      elsif args == "-go"
+      elsif args.slice! /^-x /
+        # Esc, Tab, so delegate to Notes.tab_key
+        Launcher.open_topic :bm=>args
+        return
+
+      elsif args == "-x"
         Launcher.open_topic
-        options[:do_nothing] = 1
+        return
 
       elsif args == "-help"
         args = "help/"

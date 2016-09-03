@@ -212,9 +212,9 @@ fi
 if [ $xiki_tasks_key ]; then
 
   if [ -n "$ZSH_VERSION" ]; then
-    bindkey -s $xiki_tasks_key '\C-axsh -t \n'
+    bindkey -s $xiki_tasks_key '\C-axsh \^ \n'
   else   # Assume bash or bash-compatible
-    bind \"$xiki_tasks_key'" "\C-axsh -t \n"'
+    bind \"$xiki_tasks_key'" "\C-axsh ^ \n"'
   fi
 fi
 
