@@ -104,10 +104,8 @@ module Xiki
         self.pathify_actions result, structure
       end
 
-      # Move line down to shelf command if there is one in the first two lines?
-
-      # Move line past initial ": ..." line, if there is one
-      if args.length == 2
+      # Move line down, past initial ": ..." line, if there is one
+      if args.length >= 2
         if result =~ /\A: /
            options[:line_found] = 2
         elsif result =~ /\A@.+\n  : /
@@ -376,9 +374,12 @@ module Xiki
         path[0].sub! /^/, ':'
 
         # Delegate to s/h/@u/c
-        # search = path.shift
 
-        return Xiki.expand path[0], path[1..-1], options.select{|key, value| [:prefix, :task].include?(key)}
+        Options.propagate_important_options(options) do |options|
+          result = Xiki.expand path[0], path[1..-1], options
+        end
+        return result
+
       end
 
       result
