@@ -1390,6 +1390,7 @@ Ol["oh, this path is an array: #{path}!"] if path.is_a?(Array)
 
     def self.open_topic options={}
       insert = options[:insert]
+      bm = options[:bm]
 
       if ! insert
         View.to_buffer View.unique_name("untitled.xiki")
@@ -1397,11 +1398,12 @@ Ol["oh, this path is an array: #{path}!"] if path.is_a?(Array)
         View >> "\n\n\n"
       end
 
-      View.flash(options[:as_command] ? "- Type a command quickly!" : "- Type a topic or command quickly!", :dont_nest=>1)
+      if ! bm
+        View.flash(options[:as_command] ? "- Type a command quickly!" : "- Type a topic or command quickly!", :dont_nest=>1)
+        bm = Keys.timed_insert :prompt=>"", :delay=>0.40
+      end
 
-      bm = Keys.timed_insert :prompt=>"", :delay=>0.40
-
-      # Get text on line, and insert task from bookmark
+      # Insert command from bookmark
 
       file = Bookmarks["^#{bm}"]
 
