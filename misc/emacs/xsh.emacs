@@ -167,8 +167,9 @@
 
   '(search-whitespace-regexp nil) ; Otherwise it includes linebreaks
   '(electric-indent-mode nil)   ; Stop auto-indenting in ruby (etc) modes
-  '(setq backup-inhibited t)
-  '(setq auto-save-default nil)
+  '(backup-inhibited t)
+  '(auto-save-default nil)
+  '(require-final-newline t)
 )
 
 ; Lines from .emacs that should be uncommented?...
