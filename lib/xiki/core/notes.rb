@@ -2219,6 +2219,7 @@ module Xiki
     def self.add_note_prompt_shell command
 
       topic = Topic.shell_command_to_topic command
+      topic.sub!(/ .*/, '')   # Only use first word
 
       # Open the topic file, and insert there at top
       View.open File.expand_path("~/xiki/#{topic}.xiki")
