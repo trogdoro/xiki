@@ -158,10 +158,6 @@ module Xiki
       if last.length == 2 && last[0] =~ /\A[a-z0-9][a-z0-9 ]*\.\.\.\z/
         Tree.collapse_upward :replace_parent=>1
         return self.go_key options
-        # Reset vars?
-        # path = Tree.path
-        # last = Path.split path[-1]
-        # line = Line.value
       end
 
       # ^G on "topic", and not "topic/", so run as a xiki command...
@@ -169,10 +165,8 @@ module Xiki
       if Topic.matches_topic_syntax?(last[0])
 
         # ^G on "topic" (with no slash at end)
-        if last.length == 1 && line !~ /\/$/
-
+        if last.length == 1
           return Launcher.launch(:task=>["view source"])
-          return
         end
       end
 
@@ -238,8 +232,6 @@ module Xiki
       end
 
 
-      # Ol "last", last   # ["topics", "sinatra"]
-
       # ^G on item under "xiki/", so collapse and run with :go!
 
       if last.length == 2 && last[0] == "xiki"
@@ -249,149 +241,28 @@ module Xiki
 
       end
 
-      # Xiki command (not $...), so show grab items...
-
-        # => ["ip", "foo"]
-        # => [":test"]
-      if last.length == 1 && last[0] =~ /^\.?[a-z ]+$/i
-
-        # @foo/bar, so it's a xikihub url...
-
-        # if Path.split(path[0]).length == 2
-
-          # + notes/
-          # + xiki roots/
-          # + shared on xikihub/
-
-          # + save item
-          # + save all
-
-          # = local web/
-          # = save to xikihub/
-
-        # ^ todo > figure out what to do by default when ^G
-        txt = %`
-          ^ source
-          ^ local web
-        `
-        # ^ pin to top
-        # ^ make newest
-
-        return Tree.<< txt, :no_slash=>1, :hotkey=>1
-
-      end
-
-
-
-      # Toggle between "> .Heading" and "+ action"
-
-      #       # ^G on "+ action" under topic (and maybe @foo), so navigate...
-
-      #       if last[1] =~ /^\w/  # || last[-1] =~ /^@\w/
-      # Ol ""
-      #         (last.length-2).times{ Tree.to_parent }
-      #         Tree.collapse if Tree.children?
-      #         # Launch if was expanded, leave collapsed if was collapsed
-      #         Launcher.launch((last.length > 2 ? :change_to_heading_and_launch : :change_to_heading)=>1)
-      #         return ""
-      #       end
-
       # ^G on "> Heading" under topic, so navigate...
 
       if last[-1] =~ /^> / || last[-1] =~ /^@\w/
-        Ol ""
-        # (last.length-2).times{ Tree.to_parent }
-        # Tree.collapse if Tree.children?
-
-        # # Launch if was expanded, leave collapsed if was collapsed
-        # Launcher.launch(:task=>[last.length > 2 ? "as action" : "make action"])
         Launcher.launch :task=>["view source"]
         return ""
       end
 
 
-
-
-      # if last[-1] =~ /^> /
-      #   Ol "#{last[0]} #{last[1]}\n"   #> quick > Hey
-      #   # Topic.append_log "#{last[0]} #{last[1]}"
-      #   return Launcher.launch :task=>["view source"]
-      # end
-
-
-      # ^G on "heading_or_action/@user" under topic, so navigate...
-
-
-      # ^G on "+ action" under topic, so navigate
-
-
-      # Todo > make ^G navigate when "+ action"?
-      # :go doesn't work. Pass new option? > or make :go work?
-      # Or > use "^ go options"? > if we find a use for them
-
-      # return Launcher.launch(:go=>1)
-      # return Launcher.launch((last.length > 2 ? :change_to_heading_and_launch : :change_to_heading)=>1)
-
-
-      # Old
-      # Assume /:topic/topic
-      # Tree.collapse_upward :replace_parent=>1
-      # return Launcher.launch
-
-
-
-      # if last.length >= 2
-      #   is_topic_action = Topic.matches_topic_syntax?(last[0]) && Topic.matches_topic_syntax?(last[1])
-      #   is_topic_heading = Topic.matches_topic_syntax?(last[0]) && last[1] =~ /^> /
-      # end
-
-      # # topic/action, so turn back into heading...
-
-      # if is_topic_action
-
-      #   (last.length-2).times{ Tree.to_parent }
-      #   Tree.collapse if Tree.children?
-
-      #   # Launch if was expanded, leave collapsed if was collapsed
-      #   Launcher.launch((last.length > 2 ? :change_to_heading_and_launch : :change_to_heading)=>1)
-
-      #   return ""
-      # end
-
-      # # "topic/> Heading", so do "~ as action"
-      # if is_topic_heading
-
-      #   (last.length-2).times{ Tree.to_parent }
-      #   Tree.collapse if Tree.children?
-
-      #   # Launch if was expanded, leave collapsed if was collapsed
-      #   Launcher.launch(:task=>[last.length > 2 ? "as action" : "make action"])
-      #   return ""
-      # end
-
-
       # Blank line, so say to use ^O instead...
 
-Ol "last", last   #> ["$ pwd"]
-
       if last == []
-Ol ""
-        # View.flash "Try Ctrl+O or Ctrl+W on blank lines"
         View.flash "Try Ctrl+T or Ctrl+X on blank lines"
         return ""
       end
 
-
       # Not a shell command, so do nothing...
 
       if last[-1] !~ /^[$%&] (.+)/
-        Ol ""
-        # View.flash "- Not sure what ^G should do with this!"
         Launcher.launch :go=>1
         return ""
       end
 
-Ol ""
       # Shell command in any ancestor, so run back in bash...
 
       command = $1
@@ -399,7 +270,6 @@ Ol ""
 
       # /dir/$..., so grab command and dir...
 
-      # if ancestors && FileTree.handles?(ancestors[-1])
       (ancestors||[]).reverse.each do |ancestor|
         # Only continue if it's a file path
         next if ! FileTree.handles?(ancestor)
@@ -419,82 +289,30 @@ Ol ""
         return DiffLog.quit_and_run commands
 
       end
-Ol ""
 
       # $..., so grab command, and figure out the dir...
 
-
-      # Old > Not sure if this was necessary
-      # # They cd'ed in this session > so do cd in the shell...
-
-      # session_dir = File.expand_path Bookmarks.bookmarks_optional("se")
-      # in_session_dir = view_dir == session_dir
-
-      # # If session, do based on view dir
-      # orig_dir = Xsh.determine_session_orig_dir(View.file_name) if in_session_dir
-
-      # # If couldn't find, or normal dir, default to current dir
-
-      # orig_dir ||= view_dir
-      # orig_dir.sub! /\/$/, ''   # To ensure a fair comparison
-
-      # # If it's a view without a file, always do cd
-      # if ! View.file || orig_dir != dir   # Or if they changed the dir
-
-
-      # They did a cd, so add it...
-
-Ol "!!!"
-Ol "command", command   #> "pwd"
       self.prepend_cd_if_changed command
-Ol "command", command   #> "pwd"
-
-#       dir = Shell.dir
-#       dir.sub!(/\/$/, '') if dir != "/"
-
-# Ol "dir", dir   #> "/Users/craig"
-
-#       Ol "expand, so it's not '~'!!"
-#       if dir != View.app_dir
-#         dir = "\"#{dir}\"" if dir !~ /^[a-z_\/.-]+$/i
-# Ol "!!!"
-#         command.replace "cd #{dir}\n#{command}"
-# # command = "cd #{dir}\n#{command}"
-#         # commands << "cd #{dir}\n"
-#       end
-
 
       DiffLog.quit_and_run "#{command}\n"   #> |||
-      # DiffLog.quit_and_run commands
-
     end
 
 
     def self.prepend_cd_if_changed command, options={}
-Ol.stack
 
       dir = options[:dir] || Shell.dir
       dir.sub!(/\/$/, '') if dir != "/"
 
-Ol "dir", dir   #> "/tmp"
-
-Ol "View.app_dir", View.app_dir   #> "/tmp"
-      Ol "expand, so it's not '~'!!"
       if dir != View.app_dir
         dir = "\"#{dir}\"" if dir !~ /^[a-z_\/.-]+$/i
-Ol "!!!"
         command.replace "cd #{dir}\n#{command}"
-# command = "cd #{dir}\n#{command}"
-        # commands << "cd #{dir}\n"
       end
 
     end
 
 
-
     def self.save options
       # Saves a note
-Ol "!!!"
 
       # No "> Foo" at beginning, so prompt them to type it and do nothing
       return if Notes.prompt_for_heading_if_missing
@@ -507,7 +325,6 @@ Ol "!!!"
       # Delegate to ~ save
       Launcher.launch(:task=>["save"])
 
-      # "Todo > finish"
       ""
     end
 
@@ -517,34 +334,14 @@ Ol "!!!"
       # Untitled view, so save file as session before opening in editor
       DiffLog.save_xsh_interaction
 
-
       if ! View.file
-        Ol "!!!"
         return
       end
-
 
       View.auto_revert
       FileTree.open_with_external_editor(View.file, :line=>View.line)
     end
 
-
-    # def self.share options
-
-    #   # No "> Foo" at beginning, so prompt them to type it and do nothing
-    #   return if Notes.prompt_for_heading_if_missing
-
-
-    #   # Convert to 2 level indenting
-    #   Notes.indent_note_under_heading
-
-    #   Ol "todo > .share > implement!"
-
-    #   # Delegate to ~ save
-    #   Launcher.launch(:task=>["share"])
-
-
-    # end
 
   end
 end
