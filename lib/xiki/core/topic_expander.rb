@@ -123,7 +123,10 @@ module Xiki
 
           View.open file
 
-          View.flash("- New file", :dont_nest=>1) if ! File.exists?(file)
+          if ! File.exists?(file)
+            View >> "\n\n\n"
+            View.flash("- New file", :dont_nest=>1)
+          end
           return ""
         end
 
