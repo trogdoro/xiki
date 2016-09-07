@@ -1,4 +1,4 @@
-file = Bookmarks["^links"]
+file = Bookmarks["%links"]
 
 # Grab first few files from :n, regardless of how we proceed...
 
@@ -52,14 +52,14 @@ end
 return "* show in links\n* to top" if task == []
 
 if task == ["show in links"]
-  View.open "^links"
+  View.open "%links"
   Search.forward "^[ +-]* #{Search.quote_elisp_regex args[0]}", :from_top=>1
   return ""
 
 elsif task == ["to top"]
 
   # Jump to this file in the nav
-  View.open "^links"
+  View.open "%links"
   Search.forward "^[ +-]* #{Search.quote_elisp_regex args[0]}", :from_top=>1
 
   # Jump up to the heading

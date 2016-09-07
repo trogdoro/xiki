@@ -172,7 +172,7 @@ module Xiki
     def self.models model=nil
       # If no model specified, show all
       unless model
-        Dir.foreach(Bookmarks['^mo']) { |m|
+        Dir.foreach(Bookmarks['%mo']) { |m|
           next unless m =~ /(.+)\.rb$/
           puts "+ #{TextUtil.camel_case($1)}/"
         }
@@ -238,7 +238,7 @@ module Xiki
       action = line[/"action"=>"(.+?)"/, 1]
       controller = line[/"controller"=>"(.+?)"/, 1]
       # Open controller
-      View.open "^co/#{controller}.rb"
+      View.open "%co/#{controller}.rb"
       # Jump to method
       View.to_highest
       Search.forward "^\\s-+def #{action}[^a-z_]"

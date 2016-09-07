@@ -160,7 +160,7 @@ module Xiki
     end
 
     def self.start
-      Rails.start '^o/redmine/trunk', @@url[/\d+/]
+      Rails.start '%o/redmine/trunk', @@url[/\d+/]
     end
 
   end

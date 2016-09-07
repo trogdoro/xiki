@@ -1065,7 +1065,7 @@ module Xiki
 
 
     def self.shell_notes_edit command_root
-      home_example_file = Bookmarks["^x/#{command_root}.xiki"]
+      home_example_file = Bookmarks["%x/#{command_root}.xiki"]
 
       View.open home_example_file
       View.<<("

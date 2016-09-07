@@ -260,7 +260,7 @@ module Xiki
       path = Keys.input "#{message}", :timed=>1
 
       # They typed a word, so expand it as a bookmark
-      path = Bookmarks["^#{path}", :raw_path=>1] if path =~/^\w/
+      path = Bookmarks["%#{path}", :raw_path=>1] if path =~/^\w/
 
       is_dir = File.directory? path
       path = FileTree.add_slash_maybe path if is_dir
@@ -283,8 +283,8 @@ module Xiki
     # This is currently mac-specific
     def self.open_last_screenshot
 
-      dirs = `ls -t #{Bookmarks["^dt"]}`
-      screenshot = Bookmarks["^dt"]+dirs[/.+/]
+      dirs = `ls -t #{Bookmarks["%dt"]}`
+      screenshot = Bookmarks["%dt"]+dirs[/.+/]
 
       self.open_as screenshot, "Adobe Illustrator"
 
@@ -340,8 +340,8 @@ module Xiki
       end
 
       prefix == :u || options[:bm] == "t" ?
-        View.open("^n") :
-        View.open("^links")
+        View.open("%n") :
+        View.open("%links")
 
       if nth != 0
         View.to_highest
@@ -411,6 +411,18 @@ module Xiki
       path = path.sub(/\A#{Regexp.quote home}/, "~")
       path.gsub!(' ', '\ ') if options[:escape]
       path
+    end
+
+    def self.ancestor_file_or_directory file
+      file = file.dup
+
+      return file if File.exists? file
+
+      while file.sub! /(.*)\/.*/, "\\1"
+        return file if File.exists? file
+      end
+
+
     end
 
   end

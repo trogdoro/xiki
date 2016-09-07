@@ -17,10 +17,10 @@ module Xiki
         | Some of the common ways to use the Bookmarks class programatically.
         |
         | > Get path for a bookmark
-        =p Bookmarks["^n"]
+        =p Bookmarks["%n"]
         |
         | > Expand bookmark in a path
-        =p Bookmarks["^tm/hi.txt"]
+        =p Bookmarks["%tm/hi.txt"]
         |
         > Where Emacs stores bookmarks
         =~/.emacs.bmk
@@ -123,7 +123,7 @@ module Xiki
 
       # User typed "-" or ",", so jump to "continue here" or "- implement!" link
       if keys == "," || keys == "-"
-        View.open "^links"
+        View.open "%links"
         Move.top
 
         target = keys == "-" ? "- implement!" : "continue here"
@@ -156,16 +156,16 @@ module Xiki
       end
 
       path = keys =~ /^\w/ ?
-        Bookmarks["^#{prefix_to_bm}#{keys}", :raw_path=>1] :
+        Bookmarks["%#{prefix_to_bm}#{keys}", :raw_path=>1] :
         keys
 
-      return View.open "> Error:\n:-Bookmark #{path} doesn't exist" if path =~ /^\^/
+      return View.open "> Error:\n:-Bookmark #{path} doesn't exist" if path =~ /^%/
 
       prefix = Keys.prefix
 
       # If up+, open bookmark as menu
       if prefix == :u
-        Launcher.open "^#{keys}//" #, :unified=>1
+        Launcher.open "%#{keys}//" #, :unified=>1
         return
       elsif prefix == :uu   # Jump up one level if up+up+
         path = File.dirname path
@@ -284,14 +284,8 @@ module Xiki
 
       if options[:just_bookmark]
         bm, slash, rest = path, nil, nil
-      elsif path =~ /^\^([._a-zA-Z0-9-]+)([\\\/]?)(.*)/   # Path starts with $xxx, so pull it out and look it up...
+      elsif path =~ /^%([._a-zA-Z0-9-]+)([\\\/]?)(.*)/   # Path starts with %xxx, so pull it out and look it up...
         bm, slash, rest = $1, $2, $3
-
-      # Remove this
-      # Just leave in for a bit, to catch deprecated $foo... paths
-      elsif path =~ /^\$[._a-zA-Z0-9-]+(\/|$)/   # Path starts with $xxx, so pull it out and look it up...
-        Ol.stack 7
-        raise "Don't use $..., use ^... > #{path}!"
 
       else   # If no $..., just return the literal path...
         return path
@@ -307,14 +301,13 @@ module Xiki
       end
       # Recursively run if still has $ after lookup...
 
-      found = self.expand found if found =~ /^\^/
+      found = self.expand found if found =~ /^%/
 
       if ! options[:raw_path] && found =~ /^~/
         had_slash = found =~ /\/$/
         found = File.expand_path found
         found = "#{found}/" if had_slash
       end
-
 
       if slash.any? || rest.any?
         found.sub! /\/$/, ""
@@ -392,7 +385,7 @@ module Xiki
       bookmarks = self.bookmarks_required
 
       self.bookmarks_required.each do |bookmark, dir|
-        return path.sub(/^#{dir}/, "^#{bookmark}/") if path =~ /^#{dir}/
+        return path.sub(/^#{dir}/, "%#{bookmark}/") if path =~ /^#{dir}/
       end
 
       path

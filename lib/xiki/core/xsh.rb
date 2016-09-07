@@ -69,7 +69,7 @@ module Xiki
         args = ""
 
       # xsh = > or > ^G...
-      elsif args == "="
+      elsif args == "^"
 
         # -/, so recognize as ^G on blank line...
 
@@ -86,7 +86,7 @@ module Xiki
 
         # -n, so show notes...
 
-        View.open "^n"
+        View.open "%n"
         options[:do_nothing] = 1
 
       elsif args =~ /^[a-z]*\/$/i
@@ -98,7 +98,7 @@ module Xiki
       elsif args.slice! /^-c /
         args = "./\n  - ###{args}/"
 
-      elsif args =~ /^\^\w/
+      elsif args =~ /^%\w/
         View.open Bookmarks[args]
         options[:do_nothing] = 1
 
@@ -164,11 +164,11 @@ module Xiki
         args = "$ #{args}" if args =~ /\A\w/   # Treat as shell command if it's just a word
 
 
-      elsif args == "^"
+      elsif args == "="
         options_in[:task] = []
         args = View.dir :force_slash=>1
 
-      elsif args.slice! /^\^ /
+      elsif args.slice! /^= /
         options_in[:task] = []
 
         # Treat as shell command
@@ -203,11 +203,11 @@ module Xiki
         args = View.dir
 
       # -foo/, so treat as xiki command...
-      elsif args.slice!(/^=/)
+      elsif args.slice!(/^\^/)
 
         # grab+ on ^bookmark, so cd and exit...
 
-        if args =~ /^\^\w/
+        if args =~ /^%\w/
           args.sub!(/\/$/, '')
           dir = Shell.quote_file_maybe Bookmarks[args]
           return DiffLog.quit_and_run "cd #{dir}"

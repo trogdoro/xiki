@@ -172,7 +172,7 @@ module Xiki
 
       # Expand bookmarks
 
-      thing = self.expand_file_path thing if thing =~ /^[~.^]/   # Expand out file shortcuts if any
+      thing = self.expand_file_path thing if thing =~ /^[~.%]/   # Expand out file shortcuts if any
 
       # If not a file, it's probably a pattern, so store in line and return...
 
@@ -289,10 +289,10 @@ module Xiki
       options[:expanders_index] = 0
       options.delete :halt   # Any :halt from .expanders was only meant to stop looking for more expanders
 
-      expanders.each do |expander|   #> ||||||||||||
+      expanders.each do |expander|
         expander = expander[:expander] if expander.is_a?(Hash)   # For patterns, :expanders has {:expander=>Pattern, ...}
 
-        expander.expand options   #> |||||||||||||
+        expander.expand options
 
         break if expander == Command && options[:output]   # Always stop going after MenuExpander, if it had output
 
@@ -372,6 +372,8 @@ module Xiki
       path = Path.split thing
 
       # *... item, so pull them off and store in :task...
+
+      # "^ foo" items are no longer used, right?
 
       # Eventually look only for astexix > Not also tilde > but maybe also caret?
       index = path.index{|o| o =~ /^[*~^] / && o !~ /\n/}   # Tasks won't have linebreaks
@@ -488,15 +490,15 @@ module Xiki
     # Just expands out ~/, ./, ../, and :foo/ at beginning of paths,
     # leaving the rest in tact
     #
-    # Expander.expand_file_path("^n")
-    # Expander.expand_file_path("^n")
+    # Expander.expand_file_path("%n")
+    # Expander.expand_file_path("%n")
 
-    # Expander.expand_file_path("^xiki/a//b").should =~ %r".+/xiki/a//b$"
-    # Expander.expand_file_path("^xiki//")
-    # Expander.expand_file_path("^ru//")
+    # Expander.expand_file_path("%xiki/a//b").should =~ %r".+/xiki/a//b$"
+    # Expander.expand_file_path("%xiki//")
+    # Expander.expand_file_path("%ru//")
     def self.expand_file_path path
 
-      return path if path !~ %r"^(~/|\.|\^\w)"   # One regex to speed up when obviously not a match
+      return path if path !~ %r"^(~/|\.|%\w)"   # One regex to speed up when obviously not a match
 
       # Expand out ~
       return path.sub "~", File.expand_path("~") if path =~ %r"^~/"
@@ -505,12 +507,12 @@ module Xiki
 
       return path.sub($1, File.expand_path($1, Shell.dir)) if path =~ %r"^(\.+)/"
 
-      # Expand out :foo/ bookmarks
+      # Expand out %foo/ bookmarks
 
-      if path =~ %r"^(\^[\w]+)(/|$)"
+      if path =~ /^(%[\w]+)(\/|$)/
         file = Bookmarks[$1]
         file.sub! /\/$/, ''   # Clear trailing slash so we can replace consistently with dirs and files
-        return path.sub /\^\w+/, file
+        return path.sub /%\w+/, file
       end
 
       # TODO > Make bookmarks not emacs dependant > Use Bookmarks2 to expand bookmarks - or just update Bookmarks?!

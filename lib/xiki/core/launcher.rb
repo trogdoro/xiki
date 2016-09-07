@@ -221,7 +221,7 @@ module Xiki
         View.to_nth orig
       else
 
-        View.open(options[:bookmark] || "^n", :stay_in_bar=>1)
+        View.open(options[:bookmark] || "%n", :stay_in_bar=>1)
         if prefix.is_a?(Fixnum) && prefix > 0
           View.line = prefix
         end
@@ -231,7 +231,7 @@ module Xiki
 
       if options[:nth] || options[:label]
         # Remember where to go back to, if we were in $todo
-        if orig_file == Bookmarks["^n"]
+        if orig_file == Bookmarks["%n"]
           line, column = View.line, View.column
         end
 
@@ -303,7 +303,7 @@ module Xiki
 
       # Don't go to orig if :n > and we already went to a file...
 
-      return if options[:bookmark] == "^links" && View.file != Bookmarks["^links"]
+      return if options[:bookmark] == "%links" && View.file != Bookmarks["%links"]
 
       View.to_nth orig
 
@@ -685,7 +685,7 @@ Ol["oh, this path is an array: #{path}!"] if path.is_a?(Array)
         View.flash message
         path = Keys.input "#{message}: ", :timed=>1
 
-        path = Bookmarks["^#{path}"] if path =~/^\w/   # They typed a word, so expand it as a bookmark
+        path = Bookmarks["%#{path}"] if path =~/^\w/   # They typed a word, so expand it as a bookmark
 
         View.insert path
 
@@ -1405,7 +1405,7 @@ Ol["oh, this path is an array: #{path}!"] if path.is_a?(Array)
 
       # Insert command from bookmark
 
-      file = Bookmarks["^#{bm}"]
+      file = Bookmarks["%#{bm}"]
 
       if ! Notes.in_home_xiki_dir?(file)
         file = Notes.expand_link_file(file)

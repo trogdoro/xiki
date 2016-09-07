@@ -53,7 +53,7 @@ dest_file = args.join("/")
 
 # Renaming to :bookmark, so use bookmark...
 
-if dest_file =~ /^\^/
+if dest_file =~ /^%/
   dest_file = Bookmarks[dest_file]
 
   if File.directory?(dest_file)
@@ -77,6 +77,12 @@ dest_file_full = dest_file =~ /^\// ?
   "#{File.dirname source_file}/#{dest_file}"
 
 # Rename the file...
+
+# Destination is a directory, so rename to directory/filename
+
+if File.directory? dest_file_full
+  dest_file_full << "/#{File.basename source_file}"
+end
 
 options[:copy] ?
   FileUtils.copy_file(source_file, dest_file_full) :

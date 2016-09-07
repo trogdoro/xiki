@@ -12,7 +12,7 @@ module Xiki
     end
 
     def self.show_in_nav target_file, target_quote
-      View.open "^links"
+      View.open "%links"
       View.to_top
       Search.forward $el.regexp_quote(target_file)
       if target_quote

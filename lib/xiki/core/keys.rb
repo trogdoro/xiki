@@ -58,7 +58,7 @@ module Xiki
 
       # Read in file...
 
-      # user_conf = Bookmarks["^x/roots/conf/#{command}.conf"]
+      # user_conf = Bookmarks["%x/roots/conf/#{command}.conf"]
       user_conf = File.expand_path("~/.xiki/roots/conf/#{command}.conf")
       FileUtils.mkdir_p File.dirname user_conf   # In case it doesn't exist yet
 
@@ -1102,7 +1102,7 @@ module Xiki
         return dir
       end
 
-      dir = Bookmarks.expand "^#{bm}"
+      dir = Bookmarks.expand "%#{bm}"
       if dir.nil?   # If no dir, return nil
         View.beep "- Bookmark '#{bm}' doesn't exist."
         return :bookmark_doesnt_exist
@@ -1636,7 +1636,7 @@ module Xiki
       end
 
       # Expand bookmark
-      file = Bookmarks["^#{bm}"]
+      file = Bookmarks["%#{bm}"]
       file.sub! /\/$/, ''
 
       # do+menu, so just by adding double slashes...

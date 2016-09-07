@@ -1037,7 +1037,7 @@ module Xiki
             line =~ /^https?:\/\// ||
 
             line =~ /^(\* |[%$] )/ ||
-            line =~ /^\^/
+            line =~ /^%/
           line.sub! /^/, '='
           menuish_flag = true
         end

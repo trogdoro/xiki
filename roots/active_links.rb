@@ -6,7 +6,7 @@ file, quotes = args.partition{|i| i !~ /^:/}
 file = file.delete_if{|o| o =~ /^[#*]/}   # Remove any ##... or **... lines
 target_file = Files.tilde_for_home file.join("/")
 
-nav = Bookmarks["^links"]
+nav = Bookmarks["%links"]
 
 # /file/:foo, so navigate or handle tasks...
 

@@ -37,7 +37,7 @@ if options[:task] == ["source"]
     options[:no_slash] = 1
     return "
       | This bookmark is defined in bookmarks.rb
-      =^xiki/lib/xiki/core/bookmarks.rb
+      =%xiki/lib/xiki/core/bookmarks.rb
         : @@bookmarks_required = {
         : @@bookmarks_optional = {
       "
@@ -63,7 +63,7 @@ elsif options[:task] == ["to top"]
     FileUtils.touch file
   else
     # File doesn't exist > must be defined in code, so get path
-    path = Bookmarks["^#{args[0]}"]
+    path = Bookmarks["%#{args[0]}"]
     # Make new bookmark
     Bookmarks.set args[0], :file=>path
   end
@@ -74,6 +74,6 @@ end
 
 # /foo, so jump to bookmark...
 
-View.open "^#{args[0]}"
+View.open "%#{args[0]}"
 
 ""

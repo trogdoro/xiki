@@ -3,7 +3,7 @@ module Xiki
   # Lists themes and run them. Make files here
   # to make more themes:
   #
-  # =^xiki/misc/themes/
+  # =%xiki/misc/themes/
   #
   class Themes
 

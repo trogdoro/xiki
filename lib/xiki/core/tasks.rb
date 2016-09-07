@@ -8,7 +8,7 @@ module Xiki
 
       orig = Location.new
 
-      View.open "^n"
+      View.open "%n"
       todo_orig = Location.new
       View.to_highest
 
@@ -32,7 +32,7 @@ module Xiki
       prefix = Keys.prefix :clear=>1
       orig = Location.new
 
-      View.open "^n"
+      View.open "%n"
       todo_orig = Location.new
       View.to_highest
 
@@ -44,7 +44,7 @@ module Xiki
         lines_to_delete = 1
         Line.delete
 
-        in_todo = Bookmarks['^n'] == orig.file
+        in_todo = Bookmarks['%n'] == orig.file
         orig.line -= 1 if in_todo   # If in :t, adjust position by how much is deleted
 
         # If blank line after, delete it

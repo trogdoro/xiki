@@ -668,7 +668,7 @@ module Xiki
     def self.show_edits_for_bookmark
       bm = Keys.input :timed=>true, :prompt=>"Enter a bookmark to search edits: "
       return Launcher.open("diff log/diffs/") if bm == "8" || bm == " "
-      path = bm == "." ? View.file : "^#{bm}/"
+      path = bm == "." ? View.file : "%#{bm}/"
       return Launcher.open("#{path}\n  = edits/")
     end
 

@@ -104,6 +104,7 @@ module Xiki
 
       Xiki.def("list+wrap"){ Block.do_as_wrap }   # Wrap lines in paragraph
 
+      Xiki.def("list+go"){ Launcher.open("jump to dir/") }
 
       Xiki.def("list+just+methods"){ Launcher.open("links/methods/") }
       Xiki.def("list+just+routes"){ Launcher.open("links/routes/") }
@@ -125,7 +126,8 @@ module Xiki
       Xiki.def("enter+end"){ Move.hop_right_key }
 
       Xiki.def("enter+bullet"){ Notes.bullet }
-      Xiki.def("enter+command"){ Launcher.insert_menu }
+      Xiki.def("enter+comment"){ Code.enter_insert_comment }
+
       Xiki.def("enter+space"){ Code.enter_whitespace }
 
       Xiki.def("enter+line"){ View.insert_line }
@@ -202,7 +204,7 @@ module Xiki
       Xiki.def("content+jump"){ Move.to_line }   # Goto nth line in file
 
       Xiki.def("content+notes", :noob=>1){ Notes.open_todo }   # Open notes.xiki
-      Xiki.def("content+links", :noob=>1){ Notes.open_todo :bookmark=>"^links" }   # Open links.xiki
+      Xiki.def("content+links", :noob=>1){ Notes.open_todo :bookmark=>"%links" }   # Open links.xiki
 
       Xiki.def("content+highlight"){ View.highlight }
       Xiki.def("content+all"){ Clipboard.copy_everything }
@@ -216,9 +218,9 @@ module Xiki
 
       Xiki.def("content+editor"){ Grab.content_editor }
 
-      Xiki.def("content+yours"){ View.open "^y", :stay_in_bar=>1 }
+      Xiki.def("content+yours"){ View.open "%y", :stay_in_bar=>1 }
       Xiki.def("content+memorize", :noob=>1){ View.open "~/xiki/memorize.xiki" }
-      Xiki.def("content+quick", :noob=>1){ View.open "^q" }
+      Xiki.def("content+quick", :noob=>1){ View.open "%q" }
 
       Xiki.def("content+xiki"){ Launcher.open_topic }
 
@@ -242,7 +244,7 @@ module Xiki
       Xiki.def("run+up"){ Launcher.do_last_launch :here=>1 }
 
       Xiki.def("run+indent"){ Code.indent_to }
-      Xiki.def("run+comment"){ Code.comment }
+      # Xiki.def("run+comment"){ Code.comment }
       Xiki.def("run+eval"){ Code.run }   # run code as ruby
       Xiki.def("run+selected"){ Clipboard.select; View.deselect }
 
@@ -384,9 +386,8 @@ module Xiki
       Xiki.def("do+delete"){ Deletes.forward }
 
       Xiki.def("do+file"){ FileTree.tree :recursive=>1 }
-      Xiki.def("do+comment"){ Code.enter_insert_comment }
+      Xiki.def("do+comment"){ Code.comment }
       Xiki.def("do+indent"){ Hide.hide_by_indent }   # only show lines indented less than x
-
 
       Xiki.def("do+next"){ Line.move :next }
       Xiki.def("do+previous"){ Line.move :previous }
@@ -581,25 +582,25 @@ module Xiki
         Xiki.def("jump+have+output", :eval=>"Search.isearch_have_outlog")
 
         Xiki.def("jump+have+text", :eval=>"Search.insert_at_search_start :prepend=>'Ol.a '")
-        Xiki.def("jump+have+next", :eval=>"Search.isearch_move_to '^n', :insert_after=>1")
+        Xiki.def("jump+have+next", :eval=>"Search.isearch_move_to '%n', :insert_after=>1")
 
-        Xiki.def("jump+have+path", :eval=>"Search.isearch_move_to '^n', :include_file_context=>1")
+        Xiki.def("jump+have+path", :eval=>"Search.isearch_move_to '%n', :include_file_context=>1")
         Xiki.def("jump+have+variable", :eval=>"Search.insert_var_at_search_start")
 
-        Xiki.def("jump+have+web", :eval=>"Search.isearch_move_to '^n', :prepend=>\"google/\n  \"")
+        Xiki.def("jump+have+web", :eval=>"Search.isearch_move_to '%n', :prepend=>\"google/\n  \"")
         Xiki.def("jump+have+go", :eval=>"Search.have_go")
 
         Xiki.def("jump+have+filter", :eval=>"Search.isearch_just_search")   # Add "##match/" line in current tree
 
         Xiki.def("jump+have+search", :eval=>"Search.insert_at_search_start :prepend=>'##'")
-        Xiki.def("jump+have+diffs", :eval=>"Search.isearch_move_to '^n', :diffs=>1")
-        Xiki.def("jump+have+after", :eval=>"Search.isearch_move_to '^n', :prepend=>':+'")
-        Xiki.def("jump+have+before", :eval=>"Search.isearch_move_to '^n', :prepend=>':-'")
-        Xiki.def("jump+have+yellow", :eval=>"Search.isearch_move_to '^n', :prepend=>':?'")
+        Xiki.def("jump+have+diffs", :eval=>"Search.isearch_move_to '%n', :diffs=>1")
+        Xiki.def("jump+have+after", :eval=>"Search.isearch_move_to '%n', :prepend=>':+'")
+        Xiki.def("jump+have+before", :eval=>"Search.isearch_move_to '%n', :prepend=>':-'")
+        Xiki.def("jump+have+yellow", :eval=>"Search.isearch_move_to '%n', :prepend=>':?'")
 
         # Just so it's consistent with ^H^H when deleting selection
         Xiki.def("jump+have+hit", :eval=>"Search.isearch_clear")
-        Xiki.def("jump+have+quote", :eval=>"Search.isearch_move_to '^links', :prompt_label=>1")
+        Xiki.def("jump+have+quote", :eval=>"Search.isearch_move_to '%links', :prompt_label=>1")
 
         # I: leave unmapped - had issues using it (messes up position)
         Xiki.def("jump+to+after", :eval=>"Search.query_replace_with_2")
@@ -615,10 +616,10 @@ module Xiki
         Xiki.def("jump+to+kill", :eval=>"Search.just_kill")
 
         Xiki.def("jump+to+integer", :eval=>"Search.stop; Search.isearch '[0-9][0-9.]*', :regex=>1")
-        Xiki.def("jump+to+links", :eval=>"Search.isearch_move_to '^links'")
-        Xiki.def("jump+to+notes", :eval=>"Search.isearch_move_to '^n'")
+        Xiki.def("jump+to+links", :eval=>"Search.isearch_move_to '%links'")
+        Xiki.def("jump+to+notes", :eval=>"Search.isearch_move_to '%n'")
 
-        Xiki.def("jump+to+search", :eval=>"Search.isearch_move_to '^n', :prepend=>'##', :as_regex=>1")   # Swap the match with what's in the clipboard (put the match where the search started)        Xiki.def("jump+to+search", :eval=>"Search.search_just_swap")   # Swap the match with what's in the clipboard (put the match where the search started)
+        Xiki.def("jump+to+search", :eval=>"Search.isearch_move_to '%n', :prepend=>'##', :as_regex=>1")   # Swap the match with what's in the clipboard (put the match where the search started)        Xiki.def("jump+to+search", :eval=>"Search.search_just_swap")   # Swap the match with what's in the clipboard (put the match where the search started)
 
         Xiki.def("jump+to+reverse", :eval=>"Search.search_just_swap")   # Swap the match with what's in the clipboard (put the match where the search started)
 
@@ -641,7 +642,7 @@ module Xiki
         Xiki.def("jump+show+difflog", :eval=>"Search.jump_to_difflog")   # find last string in difflog
         Xiki.def("jump+show+filename", :eval=>"Search.isearch_open")   # Open match as filename
 
-        Xiki.def("jump+show+links", :eval=>"Search.isearch_restart '^links', :as_here=>1")
+        Xiki.def("jump+show+links", :eval=>"Search.isearch_restart '%links', :as_here=>1")
         Xiki.def("jump+show+parens", :eval=>"Search.isearch_just_surround_with_char '(', ')'")   # When search match
         Xiki.def("jump+show+right", :eval=>"Search.isearch_restart :right")   # Search in top-right view
         Xiki.def("jump+show+brackets", :eval=>"Search.isearch_just_surround_with_char '[', ']'")
@@ -650,20 +651,20 @@ module Xiki
 
 
         Xiki.def("jump+show+more", :eval=>"Search.recenter_to_top")
-        Xiki.def("jump+show+output", :eval=>"Search.isearch_restart '^o'")
+        Xiki.def("jump+show+output", :eval=>"Search.isearch_restart '%o'")
         Xiki.def("jump+show+quote", :eval=>"Search.isearch_just_surround_with_char '\"'")
 
         Xiki.def("jump+show+after", :eval=>"Search.isearch_just_after")
 
         Xiki.def("jump+show+expanded", :eval=>"Search.like_expanded")
-        Xiki.def("jump+show+notes", :eval=>"Search.isearch_restart '^n', :as_here=>1")
+        Xiki.def("jump+show+notes", :eval=>"Search.isearch_restart '%n', :as_here=>1")
 
         # Todo > restore?
         # Xiki.def("jump+show+variable", :eval=>"Search.just_name")
         # Xiki.def("jump+show+variable", :eval=>"Search.isearch_just_surround_with_char '\#{', '}'")
 
         Xiki.def("jump+show+web", :eval=>"Search.isearch_google")   # make match be snake case
-        Xiki.def("jump+show+xiki", :eval=>"View.open \"^xiki/\#{Search.stop.strip}\"")
+        Xiki.def("jump+show+xiki", :eval=>"View.open \"%xiki/\#{Search.stop.strip}\"")
 
       end
 
@@ -680,7 +681,7 @@ module Xiki
       # $el.define_key(:isearch_mode_map, "\C-l", :isearch_repeat_forward)
       $el.define_key(:isearch_mode_map, "\C-j", :isearch_repeat_forward)
 
-      $el.define_key(:isearch_mode_map, "\e"){ Search.cancel }
+      $el.define_key(:isearch_mode_map, "\e"){ Search.cancel }   # Escape
 
       $el.el4r_lisp_eval %`
         (progn

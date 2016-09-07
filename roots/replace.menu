@@ -1,6 +1,6 @@
 > Things menus can return with output, to control where it goes
 - source/
-  =^xiki/lib/xiki/core/launcher.rb
+  =%xiki/lib/xiki/core/launcher.rb
     + ##if\ arg =/
 - docs/
   - summary/

@@ -108,7 +108,7 @@ links.each do |file, quote|
 
   # if target_quote =~ /^\w.*:$/
   if target_quote && target_quote !~ /^:/
-    View.open "^links"
+    View.open "%links"
     View.to_top
     Search.forward $el.regexp_quote(target_quote)
     Line.to_words

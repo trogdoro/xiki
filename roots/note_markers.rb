@@ -6,7 +6,7 @@ if args == []
 
   # Get latest "notes.notes" and "links.notes" contents...
 
-  todo = Notes.extract_markers :file=>"^n", :limit=>100
+  todo = Notes.extract_markers :file=>"%n", :limit=>100
 
   # Remove dups
   todo = todo.split("\n", -1).uniq.join("\n")
@@ -35,7 +35,7 @@ View.kill if ! task && View.name == "run labels/"
 launch_options = {}
 if args.length == 2 and args[0] == "files"
   args.shift
-  launch_options[:bookmark] = "^links"
+  launch_options[:bookmark] = "%links"
 end
 
 launch_options[:label] = args[0]

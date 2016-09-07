@@ -172,7 +172,7 @@ module Riak
   end
 
   def self.ping
-    `#{Bookmarks['^riak']}/bin/riak ping`
+    `#{Bookmarks['%riak']}/bin/riak ping`
   end
 
   def self.log

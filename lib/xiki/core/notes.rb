@@ -754,7 +754,7 @@ module Xiki
 
       Effects.blink(:what=>:line)
 
-      was_visible = View.file_visible? Bookmarks['^links']
+      was_visible = View.file_visible? Bookmarks['%links']
 
       if prefix == :u || options[:prompt_for_label]
         label = Keys.input :prompt=>"label: "
@@ -868,7 +868,7 @@ module Xiki
         if prefix.is_a?(Fixnum)
 
           # Go to ^n
-          View.open "^n"
+          View.open "%n"
           # Jump to nth quote
           View.to_top
           prefix.times do
@@ -981,7 +981,7 @@ module Xiki
 
       txt.strip! if txt =~ /\A.+\n\z/   # Strip when only 1 linebreak
 
-      Search.move_to "^n", txt, options
+      Search.move_to "%n", txt, options
     end
 
 
@@ -1848,7 +1848,7 @@ module Xiki
 
       prefix = Keys.prefix :clear=>1
 
-      file = Bookmarks[options[:bookmark] || "^n"]
+      file = Bookmarks[options[:bookmark] || "%n"]
 
       FileUtils.mkdir_p File.dirname(file)
 
@@ -2055,7 +2055,7 @@ module Xiki
 
     def self.extract_links options={}
 
-      source_file = options[:file] || Bookmarks["^links"]
+      source_file = options[:file] || Bookmarks["%links"]
 
       # limit = 45
       # limit = 200

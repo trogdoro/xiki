@@ -316,7 +316,7 @@ module Xiki
 
     split = Path.split(path)
 
-    X"^xiki/###{path}/", :client=>"editor"
+    X"%xiki/###{path}/", :client=>"editor"
 
   end
 
@@ -538,10 +538,10 @@ module Xiki
   # 7af8ec8 > git commit hashes...
 
   Xiki.def(/\A[0-9a-f]{7}(\/|\z)/) do |path|
-    Xiki.expand "^xiki/=git/log/#{path}"
+    Xiki.expand "%xiki/=git/log/#{path}"
   end
   Xiki.def(/\A[0-9a-f]{40}(\/|\z)/) do |path|
-    Xiki.expand "^xiki/=git/log/#{path}"
+    Xiki.expand "%xiki/=git/log/#{path}"
   end
 
   # ... : ..., so maybe memorize table...
@@ -612,8 +612,7 @@ module Xiki
 
   # ^foo, so must not have been handled as a file, so say bookmark doesn't exist...
 
-  # Todo > test this!
-  Xiki.def(%r"^\^[a-z]+(/|$)") do |path, options|
+  Xiki.def(%r"^%[a-z]+(/|$)") do |path, options|
     # Note that this only runs if FileHandler doesn't handle it already
     "<* Bookmark doesn't exist: #{path}"
   end
@@ -632,18 +631,15 @@ module Xiki
   end
 
 
-  # %foo/, so filter output for pattern...
-
-  Xiki.def(/^%[^ \n]/) do |path, options|
-
-
-    path = path[/\A%(.+)\/?/, 1]
-    txt = Xiki.expand "filter/#{path}", options.select{|k, v| [:task, :ancestors].include?(k) }
-    txt
-  end
-
-
-
+  # Todo > Probably bring this back
+  #
+  # # %foo/, so filter output for pattern...
+  #
+  # Xiki.def(/^%[^ \n]/) do |path, options|
+  #   path = path[/\A%(.+)\/?/, 1]
+  #   txt = Xiki.expand "filter/#{path}", options.select{|k, v| [:task, :ancestors].include?(k) }
+  #   txt
+  # end
 
 
   # ##foo/, so prompt for bookmark and do search inline...

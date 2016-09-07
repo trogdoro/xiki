@@ -169,7 +169,7 @@ if [ $xiki_key ]; then
       bind "'\C-x' end-of-line"   # Causes C-x to be bindable
     fi
 
-    # It's Ctrl+X in zsh, so unset all the other ^X keys, so they don't cause a pause when typing ^X
+    # It's Ctrl+X in zsh, so unset all the other Ctrl+X keys, so they don't cause a pause when typing Ctrl+X
 
     if [ $ZSH_VERSION ]; then
       bindkey -rp '\C-x'
@@ -201,9 +201,9 @@ fi
 
 if [ $xiki_go_key ]; then
   if [ -n "$ZSH_VERSION" ]; then
-    bindkey -s $xiki_go_key '\C-axsh =\n'
+    bindkey -s $xiki_go_key '\C-axsh \^\n'
   else   # Assume bash or bash-compatible
-    bind \"$xiki_go_key'" "\C-axsh =\n"'
+    bind \"$xiki_go_key'" "\C-axsh ^\n"'
   fi
 fi
 
@@ -212,9 +212,9 @@ fi
 if [ $xiki_tasks_key ]; then
 
   if [ -n "$ZSH_VERSION" ]; then
-    bindkey -s $xiki_tasks_key '\C-axsh \^ \n'
+    bindkey -s $xiki_tasks_key '\C-axsh = \n'
   else   # Assume bash or bash-compatible
-    bind \"$xiki_tasks_key'" "\C-axsh ^ \n"'
+    bind \"$xiki_tasks_key'" "\C-axsh = \n"'
   fi
 fi
 

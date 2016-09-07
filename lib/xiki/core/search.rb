@@ -334,7 +334,7 @@ module Xiki
 
       if match.nil?   # If nothing searched for yet
         Location.as_spot
-        Search.isearch_restart "^links", :restart=>true
+        Search.isearch_restart "%links", :restart=>true
         return
       end
 
@@ -708,7 +708,7 @@ module Xiki
         # Do something if nothing searched yet?
 
         Location.as_spot
-        Search.isearch_restart "^o", :restart=>true
+        Search.isearch_restart "%o", :restart=>true
 
       else
 
@@ -849,6 +849,10 @@ module Xiki
     end
 
     def self.cancel
+
+      # Clear any subsequent keys, since it could be a mouse click
+      Keys.read_subsequent_chars
+
       self.stop
       self.to_start  # Go back to start
       View.message ""
@@ -1023,7 +1027,7 @@ module Xiki
           dir = nil
         end
       else
-        dir = Bookmarks.expand("^#{bm}")
+        dir = Bookmarks.expand("%#{bm}")
       end
 
       View.insert("#{dir}" || "")
@@ -1211,7 +1215,7 @@ module Xiki
 
     def self.just_menu
       match = self.stop
-      View.open "^ml"
+      View.open "%ml"
       View.to_bottom
       Search.isearch match, :reverse=>true
     end
@@ -1278,15 +1282,15 @@ module Xiki
       term = self.stop
       Location.as_spot if options[:as_here]
 
-      if path == "^n"   # If :t, open bar
-        View.open "^n"
-      elsif path == "^links"
-        View.open "^links"
-      elsif path == "^o"
+      if path == "%n"   # If :t, open bar
+        View.open "%n"
+      elsif path == "%links"
+        View.open "%links"
+      elsif path == "%o"
         Code.open_log_view
         options[:reverse] = true
-      elsif path == "^d"
-        View.open "^d"
+      elsif path == "%d"
+        View.open "%d"
         options[:reverse] = true
       elsif path == :top
         # Will go to highest below
@@ -1365,7 +1369,7 @@ module Xiki
         # Nothing searched for yet, so search tasks
 
         Location.as_spot
-        Search.isearch_restart "^n", :restart=>true
+        Search.isearch_restart "%n", :restart=>true
 
       else
 
@@ -1394,7 +1398,7 @@ module Xiki
 
       if ! match
         Location.as_spot
-        Search.isearch_restart "^links", :restart=>true
+        Search.isearch_restart "%links", :restart=>true
         return
       end
 
@@ -1540,7 +1544,7 @@ module Xiki
     def self.try_merging_link match, options={}
 
       target_path = options[:path] || View.file
-      View.open("^links")
+      View.open("%links")
 
       View.to_highest
 
@@ -1579,7 +1583,7 @@ module Xiki
       txt = self.stop
 
       # Jump to ^n!
-      View.open("^n")
+      View.open("%n")
       # Quote!
       txt = Tree.quote txt, :char=>"  |"
       # Put blank space ahead!
@@ -1608,11 +1612,11 @@ module Xiki
       end
 
 
-      if path == "^n"   # If :n, grab path also
-        was_visible = View.file_visible? Bookmarks['^links']
+      if path == "%n"   # If :n, grab path also
+        was_visible = View.file_visible? Bookmarks['%links']
 
-        View.open("^n")
-      elsif path == "^links"   # If :n, grab path also
+        View.open("%n")
+      elsif path == "%links"   # If :n, grab path also
         match = self.move_to_files match, options
         return orig.go if ! match   # It handled it if it didn't return the match
       else
@@ -1623,7 +1627,7 @@ module Xiki
       View.to_highest
 
       # If in :n, resave if was saved
-      if path == "^links"   # If :n, grab path also
+      if path == "%links"   # If :n, grab path also
         should_save = ! View.modified?
       end
 
@@ -1659,9 +1663,9 @@ module Xiki
 
       # Go to original location, unless it was as+task, and todo.notes was visible to begin with (becase it makes sense to leave the cursor in todo.notes)
 
-      orig.go if path != "^n" || was_visible
+      orig.go if path != "%n" || was_visible
 
-      if path == "^n" && orig.buffer == "notes.xiki"
+      if path == "%n" && orig.buffer == "notes.xiki"
         Line.next line-1
         View.column = orig.column
       end

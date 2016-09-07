@@ -254,7 +254,7 @@ module Xiki
       line_number = path.slice!(/:\d+$/)
 
       # Open after bar if in bar
-      if View.in_bar? && (! options[:stay_in_bar]) && path != "$0" && path != Bookmarks['^n'] && path != Bookmarks['^links']
+      if View.in_bar? && (! options[:stay_in_bar]) && path != "$0" && path != Bookmarks['%n'] && path != Bookmarks['%links']
         View.to_after_bar
       end
 
@@ -337,7 +337,7 @@ module Xiki
       name ||= "0"   # Set to "0" if user waited too long and entered nothing
       if(name == "o")   # Todo: if "o", just show :t and $o
         View.hide_others :all=>1
-        View.open "^n"
+        View.open "%n"
         View.create_horizontal
         Code.open_log_view
         View.previous
@@ -1638,12 +1638,12 @@ module Xiki
     def self.layout_todo
 
       # There's no bar yet and in tasks.notes, so switch to next (avoid showing :t in both views)
-      if View.file == Bookmarks["^n"] && ! View.bar?
+      if View.file == Bookmarks["%n"] && ! View.bar?
         View.to_buffer Buffers.list_names.find{|o| ! ["notes.xiki"].member? o}
       end
 
       View.bar
-      View.open "^n", :stay_in_bar=>1
+      View.open "%n", :stay_in_bar=>1
     end
 
     def self.layout_todo_and_nav options={}
@@ -1653,7 +1653,7 @@ module Xiki
       orig = View.name   # Store original view
 
       # Create notes dir > if not there yet
-      FileUtils.mkdir_p Bookmarks["^x"]
+      FileUtils.mkdir_p Bookmarks["%x"]
 
       was_already_split = View.bar?
 
@@ -1690,10 +1690,10 @@ module Xiki
     def self.layout_nav
 
       # There's no bar yet and in nav.xiki, so switch to next (avoid showing :t in both views)
-      ControlTab.go if self.file == Bookmarks["^links"] && ! self.bar?
+      ControlTab.go if self.file == Bookmarks["%links"] && ! self.bar?
 
       self.bar
-      self.open "^links", :stay_in_bar=>1
+      self.open "%links", :stay_in_bar=>1
     end
 
     def self.layout_quick
@@ -1702,7 +1702,7 @@ module Xiki
       self.to_buffer Buffers.list_names.find{|o| ! ["notes.xiki", "links.xiki", "ol", "quick.xiki"].member? o}
 
       self.bar
-      self.open "^q", :stay_in_bar=>1
+      self.open "%q", :stay_in_bar=>1
     end
 
     def self.layout_outlog options={}
@@ -2490,14 +2490,14 @@ module Xiki
       original_order = self.remember_buffer_order
 
       $el.delete_other_windows   # Close all others first
-      View.open "^n"
+      View.open "%n"
 
       whole_width = $el.window_width
       individual_width = whole_width / 4   # Results in 5 columns somehow, which is fine
 
       # Get first "chunk" of sections in ^links...
 
-      links_file = Bookmarks["^links"]
+      links_file = Bookmarks["%links"]
       txt = File.read links_file
 
       txt = txt[/.+?\n\n\n/m] || txt

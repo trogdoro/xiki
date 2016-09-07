@@ -37,7 +37,7 @@ module Xiki
       # Hmm > extract out "shell_wrappers" paths?
 
       # Assume main wrapper exists
-      wrapper = Bookmarks["^xs/misc/shell_wrappers/#{command_root}"]
+      wrapper = Bookmarks["%xs/misc/shell_wrappers/#{command_root}"]
 
       if ! options[:only_main]
         # User wrapper exists, so use it instead

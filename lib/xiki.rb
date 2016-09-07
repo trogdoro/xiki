@@ -81,7 +81,7 @@ module Xiki
 
     # If /class, list describes...
 
-    path = Bookmarks["^xiki/spec/#{clazz}_spec.rb"]
+    path = Bookmarks["%xiki/spec/#{clazz}_spec.rb"]
 
     sync_options = prefix == :u ? {} : {:sync=>1}
 
@@ -140,7 +140,7 @@ module Xiki
 
       # Run it
       command = "rspec spec/#{clazz}_spec.rb -e \"#{describe} #{test}\""
-      result = Shell.run command, :dir=>"^xiki", :sync=>true
+      result = Shell.run command, :dir=>"%xiki", :sync=>true
 
       if result =~ /^All examples were filtered out$/
         TextUtil.title_case! clazz
@@ -170,7 +170,7 @@ module Xiki
     return if ! match
 
     file, line = match[1..2]
-    file.sub! /^\.\//, Bookmarks["^xiki"]
+    file.sub! /^\.\//, Bookmarks["%xiki"]
     View.open file
     View.to_line line.to_i
 
@@ -457,7 +457,7 @@ module Xiki
   end
 
   def self.xiki_path_core_dir
-    Bookmarks["^s/roots"]
+    Bookmarks["%s/roots"]
   end
 
   # Return the XIKI_PATH environment var, plus ~/.xiki/roots/ and :xiki/roots.

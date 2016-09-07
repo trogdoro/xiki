@@ -176,7 +176,7 @@
         : Xiki["./tmp/foo/", args]
     - bookmark/
       =~/.xiki/roots/<name>.rb
-        : Xiki["^tm//", args]
+        : Xiki["%tm//", args]
   - tasks/
     =~/.xiki/roots/<name>.tasks
       : - sample item/
