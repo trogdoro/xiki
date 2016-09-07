@@ -119,7 +119,7 @@ module Xiki
         file = File.expand_path("~/xiki/#{topic.snake_case}.xiki")
         # Only download it if not there yet
         next if File.exists? file
-        url = "#{XikihubClient.url}/@xiki/#{Notes.heading_to_path topic}"
+        url = "#{XikihubClient.url}/@xiki/#{Notes.heading_to_path topic, :url=>1}"
         txt = XikihubClient.post url, :body=>'{"get": 1}'
         txt.gsub!(/^> /, "> @xiki ")
         File.open(file, "w") { |f| f << txt }

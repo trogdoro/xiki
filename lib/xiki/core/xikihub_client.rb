@@ -11,8 +11,8 @@ module Xiki
     @@session_cookie = nil
 
     @@server = "xiki.com"
-    # @@server = "xiki.us"
     # @@server = "xiki.loc"
+    # @@server = "xiki.us"
 
     def self.url options={}
 
