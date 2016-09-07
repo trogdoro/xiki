@@ -497,8 +497,7 @@ module Xiki
           txt = Tree.unquote txt
 
           items.shift if items
-
-          return options[:output] = self.expand_action(txt, file, options)   #> ||
+          return options[:output] = self.expand_action(txt, file, options)
         else
           # topic/path matched "> note", so unquote under equals...
 
@@ -757,7 +756,7 @@ module Xiki
           code = code.strip.gsub(/^! ?/, '')
 
           options[:args] = options[:items]
-          result = Code.eval code, file, options[:heading_line_number]+1, {:pretty_exception=>1, :simple=>1}, options   #> |||||||||
+          result = Code.eval code, file, options[:heading_line_number]+1, {:pretty_exception=>1, :simple=>1}, options
           return result
         end
 
@@ -809,11 +808,11 @@ module Xiki
 
         # Delete all options except for important ones
         options.keys.each do |key|
-          options.delete key if ! [:items, :task, :path].member? key
+          options.delete key if ! [:items, :task, :path, :file].member? key
         end
 
         options[:go] = 1 if txt =~ /\/$/   #> "ayeeee: {:items=>[], :heading_line_number=>14, :heading_found=>\"> .aye\", :args=>[]}"
-        result = Xiki.expand txt, options[:items], options   #> "ayeeee: []"
+        result = Xiki.expand txt, options[:items], options
 
         return result
       end
@@ -951,6 +950,37 @@ module Xiki
       heading
     end
 
+
+    def self.expand_by_extension options
+
+      file, go = options[:file_path], options[:go]
+
+      ancestor_file = Files.ancestor_file_or_directory file
+
+      args = file.sub(/^#{Regexp.quote ancestor_file}/, '')
+      args = Path.split args.gsub(/^\//, '')
+
+      # Also extract args? > options have them isolated already?
+
+      extension = File.extname(ancestor_file).sub(".", "")
+
+      txt = nil
+      Options.propagate_important_options(options) do |options|   #> ||
+
+        # Options is now limited to ones that should be propagated downward
+
+        options[:go] = 1 if go
+        options[:file] = ancestor_file
+
+        options.delete :ctrlx if args == []
+        txt = Xiki[extension, args, options]
+      end
+
+      Tree << txt if txt.any?
+
+      ""
+
+    end
 
   end
 end

@@ -291,23 +291,24 @@ module Xiki
       [returned, stdout, exception]
     end
 
-    def self.eval_inner code, file, line, eval_options, options
+    def self.eval_inner code, filename, line, eval_options, options
       target = eval_options[:target_module] || Object
 
       # These variables will be > passend to code > accessible by the evaled code
       args, path, dir, task, items = options[:args_relative]||options[:args]||[], options[:path_relative]||options[:path], options[:dir], options[:task], options[:items]
-      shell_command, shell_output = options[:shell_command],  options[:shell_output]
+      shell_command, shell_output = options[:shell_command], options[:shell_output]
+      file = options[:file]
 
       arg1, arg2, arg3 = (args||[])[0..2]
 
       if eval_options[:binding]
-        return eval_options[:binding].eval(code, file||__FILE__, line||__LINE__)
+        return eval_options[:binding].eval(code, filename||__FILE__, line||__LINE__)
       end
 
       if code.is_a? Proc
         target.module_eval &code
       else
-        target.module_eval code, file||__FILE__, line||__LINE__
+        target.module_eval code, filename||__FILE__, line||__LINE__
       end
     end
 

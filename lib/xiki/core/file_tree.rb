@@ -433,7 +433,7 @@ module Xiki
 
 
         # Covers paths in files by themselves
-        Styles.apply("^ *\\([ <=+-]+ \\)?=?\\([@=~$&a-zA-Z0-9_,*+? ().^;<>-]*\/[@=\#'$a-zA-Z0-9_,*? ().:;\/<>-]+\/\\)", nil, nil, :ls_dir)   # Paths with multiple slashes
+        Styles.apply("^ *\\([ <=+-]+ \\)?=?\\([@=~$%&a-zA-Z0-9_,*+? ().^;<>-]*\/[@=\#'$a-zA-Z0-9_,*? ().:;\/<>-]+\/\\)", nil, nil, :ls_dir)   # Paths with multiple slashes
 
         # < next) menus/
         Styles.apply("^[ \t]*[<+-][<+=-]* [a-zA-Z0-9_,? ().:;+-]+?[:)] \\(\[.@=a-zA-Z0-9 ]+\/\\)", nil, :ls_dir)   # - label) oneword/slash
@@ -503,8 +503,6 @@ module Xiki
     end
 
     def self.apply_styles_at_end
-      Styles.apply('^ *\\([+-] \\)?\\(= ?%.*/?\\)$', nil, nil, :ls_search)   # =%...
-
       Styles.apply('^[ =]*\\([+-] \\)?\\(##.*/?\\)$', nil, nil, :ls_search)  # ##_/
       Styles.apply('^[ =]*\\([+-] \\)?\\(\\*\\*.*/?\\)$', nil, nil, :ls_search)  # **_/
 
@@ -515,7 +513,7 @@ module Xiki
       Styles.apply('^ *\\([+-] \\)?\\(@n/.*/\\)$', nil, nil, :ls_search)
     end
 
-    # FileTree.handles? "^foo"
+    # FileTree.handles? "%foo"
     # FileTree.handles? "/a"
     # FileTree.handles? "~/a"
     # FileTree.handles? "./a"
@@ -532,12 +530,14 @@ module Xiki
       nil
     end
 
+    # FileTree.matches_root_pattern? "%f"
+    # FileTree.matches_root_pattern? "%f/blaa"
     def self.matches_root_pattern? item
 
       item == "." ||   # just ~ or .
       item == "~" ||   # just ~ or .
       item =~ /^\/(\w|$)/ ||   # /... or /
-      item =~ /^\^\w/ ||   # :bookmark
+      item =~ /^%\w/ ||   # %bookmark
 
       item =~ %r"^(~/|\.\.?/)"
 
@@ -853,7 +853,7 @@ module Xiki
         View.bar
       end
       View.to_nth 0
-      $el.find_file Bookmarks.expand("^n")
+      $el.find_file Bookmarks.expand("%n")
 
       only_one_view_in_bar = prefix == :u
       only_one_view_in_bar = ! only_one_view_in_bar if @@one_view_in_bar_by_default
@@ -867,8 +867,8 @@ module Xiki
         View.to_nth 1
 
         # If 2nd view isn't :n, open it
-        if $el.buffer_file_name( $el.window_buffer( View.list[1] ) ) != Bookmarks["^links"]
-          $el.find_file Bookmarks["^links"]
+        if $el.buffer_file_name( $el.window_buffer( View.list[1] ) ) != Bookmarks["%links"]
+          $el.find_file Bookmarks["%links"]
         end
         View.to_nth 0
 
@@ -1377,7 +1377,7 @@ module Xiki
       options.merge!(:recursive=>1) if prefix == :u   # If up+, expand dir recursively
 
       if prefix == :-   # If up+up+, insert /the/path//
-        Line << "#{Bookmarks["^#{Keys.input(:timed=>1)}"]}/"   # "
+        Line << "#{Bookmarks["%#{Keys.input(:timed=>1)}"]}/"   # "
         Launcher.launch_or_collapse
         return
       end
@@ -1633,7 +1633,7 @@ module Xiki
     end
 
     def self.move_latest_screenshot_to dest_path, dest_dir
-      desktop = Bookmarks['^dt']
+      desktop = Bookmarks['%dt']
 
       latest_screenshot = `ls -t #{desktop} "Screen shot*"`[/Screen shot .*/]
 
@@ -1965,7 +1965,10 @@ module Xiki
 
     def self.expand options
 
-      # Ol.a options
+      # Ctrl+X, so delegate to extension notes
+      if options[:ctrlx]
+        return TopicExpander.expand_by_extension options
+      end
 
       #> Might cause problems > added items to file path!
 
@@ -2004,16 +2007,17 @@ module Xiki
         # Multi line items underneath embedded xiki commands are allowed
         file_with_embedded, args = self.extract_prepended_file_path file_path
 
-        if ! args || Path.split(args[0]) =~ /\n/
-          return options[:output] = "
-            > Use colons, not pipes
-            : Use colons at the beginnings of lines to navigate
-            : to those lines in files, not pipes.  (Colon-quoted lines under
-            : files now mean to navigate.)  In a future Xiki version,
-            : pipe-quoted lines under files will mean to over-write the file
-            : contents with the pipe lines.
-            "
-        end
+        # if ! args || Path.split(args[0]) =~ /\n/
+        #   return options[:output] = "
+        #     > Use colons, not pipes
+        #     : Use colons at the beginnings of lines to navigate
+        #     : to those lines in files, not pipes.  (Colon-quoted lines under
+        #     : files now mean to navigate.)  In a future Xiki version,
+        #     : pipe-quoted lines under files will mean to over-write the file
+        #     : contents with the pipe lines.
+        #     "
+        # end
+
       end
 
       # Maybe only do if client is editor
@@ -2110,15 +2114,6 @@ module Xiki
           clipboard_menu = self.clipboard_menu
 
           menu.sub!("* with path/\n", clipboard_menu)
-
-          # Add "file options" to dropdown for certain extensions
-          # Todo > look at [extension].xiki for "> (file extension) command" headings
-
-          # png.xiki
-          #   > (file extension) imagemagick
-          #   | = imagemagick
-
-          self.append_file_extension_options menu, extension   #> !!!
 
           menu = Xik.new menu
 
@@ -2284,6 +2279,20 @@ module Xiki
 
         return options[:output] = self.expand_one_dir(options)
       end
+
+
+
+      # A file or dir that doesn't exist?...
+
+      # Parent is a file, so must be a file note
+
+      ancestor_file = Files.ancestor_file_or_directory file_path
+
+      # if File.file? File.dirname(file_path)
+      if File.file? ancestor_file
+        return options[:output] = TopicExpander.expand_by_extension(options)   #> |||
+      end
+
 
       # ~ create dir, so create it...
 
@@ -2459,44 +2468,6 @@ module Xiki
       end
       result
 
-
-    end
-
-
-
-    def self.append_file_extension_options menu, extension
-
-      extension = extension.sub(/^./, '')
-
-      # Look in > commands
-
-      txt = File.expand_path "~/xiki/#{extension}.xiki"
-      return if ! File.exists? txt
-
-      txt = File.read txt
-      txt.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '')
-
-      headings = Notes.extract_headings txt, :paren=>"file option"   #> ["(file option) .blur", "(file option) .heavy blur"]
-
-      return if ! headings.any?
-
-      # For now, just hard-code one item for each
-
-      # Later > Go through each heading, and extract body
-
-      result = headings.map do |o|
-
-        item = Notes.heading_to_path o.sub(/.+?\) /, '').strip
-
-        target = "> #{o}"
-        body = Notes.extract_section txt, target#, options={}
-        body.strip!
-
-        %`~ #{item}\n  ! FileTree.expand_file_extension_options "#{body}"\n`
-      end.join
-
-      menu << "\n#{result}"
-
     end
 
 
@@ -2507,9 +2478,7 @@ module Xiki
       # foo/bar, so just insert and run
       if command =~ /\//
         return Launcher.launch
-        # return ""
       end
-
 
       # Put just file options under
 
