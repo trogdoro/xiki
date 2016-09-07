@@ -25,7 +25,7 @@ databases. But let's begin with how xsh improves the basic shell
 terminal experience!
 
 1. Make sure you're in your shell terminal at a blank bash prompt.
-2. Type "xsh", then type return.
+2. Type "xsh" then type return.
 
 $ xsh
 
@@ -68,8 +68,8 @@ to pipe to grep, which is slow and tedious.
 
 1. Type Ctrl+Q to go back to bash.
 2. Type "cd /" and return, to change to your root directory.
-3. Type "ls", but don't type return.
-4. Instead, type Ctrl+O. It opens xsh and runs the command.
+3. Type "ls" (without typing return).
+4. Now, type Ctrl+O. It opens xsh and runs the command.
 
 When you see "A-Z Filter" in the bottom bar it means you're filtering.
 So you can type letters to filter, if you want.
@@ -91,9 +91,9 @@ Instead of having to type a bunch of "ls" and "cd" commands.
 
 1. Use the arrow keys to move the cursor back to the "$ ls" line.
 2. Type Ctrl+O to collapse it.
-3. Type Ctrl+O to open it (run it) again.
+3. Type Ctrl+O again to open it (run it).
 
-The bottom bar now shows "A-Z Filter" again, so we can type letters to
+The bottom bar shows "A-Z Filter" again, so we can type letters to
 filter.
 
 4. Type "etc" to filter down to "etc".
@@ -120,15 +120,16 @@ You're now viewing the /usr/hosts file with xsh. Now we'll use your
 editor.
 
 1. Press the esc key to return to the last view.
-2. Type Ctrl+G to go to "hosts" using your default editor.
+2. Type Ctrl+G. This will go to "hosts" in your default editor.
 
-Set your "EDITOR" bash environment variable to your favorite text
-editor, if it's not already set (then reload via "xsh --reload" in
-bash). Otherwise xsh defaults to "nano" on linux or "TextEdit" on mac.
+Xiki uses the editor specified in the "EDITOR" bash environment
+variable. You can set it to your favorite editor if you haven't yet
+(be sure to reload via "xsh --reload" in bash afterwards). If it's not
+set, xsh defaults to "nano" on linux or "TextEdit" on mac.
 
 Now let's quit our text editor and go back to bash.
 
-3. Type Ctrl+Q if xsh is still open (xsh stays open in the terminal if the default editor is graphical).
+3. Type Ctrl+Q in xsh if it's still open (xsh stays open in the terminal for graphical editors).
 4. Type whatever is necessary to quit your text editor (Ctrl+X quits nano).
 
 Later we'll show how to use your favorite text editor to create and
@@ -169,7 +170,7 @@ optional. Advanced xsh users rarely use it.
 1. Type Ctrl+G to go back to where we were in xsh.
 2. Double-click on the "$ ls" line to collapse it.
 3. Double-click on it again to rerun it. (Double-clicking is just like Ctrl+O.)
-4. Try clicking around to position the cursor. Then try scrolling the view.
+4. Try clicking around to position the cursor.
 
 Clicking on the words in the bottom bar shows descriptions of what each
 key does.
@@ -195,19 +196,19 @@ grouped by topic.
 1. Type Ctrl+Q to go back to bash.
 2. Type Ctrl+X to list your Xiki topics.
 
-Topics are just text files in the "~/xiki/" directory. They contain
-your notes. The topics you see were created when you installed xsh, to
-get you started. Topics you create will get added to the top of this
-list. Topics use a simple wiki-ish syntax, and can be created and
-edited with any text editor.
+Xiki organizes your notes into topics. Each topic is just a text file
+in the "~/xiki/" directory. They contain your notes. The topics you
+see were created when you installed xsh, to get you started. Topics
+you create will get added to the top of this list. Topics use a simple
+wiki-ish syntax, and can be created and edited with any text editor.
 
 3. Type "di" to filter down to the "disk" topic.
 4. Type Ctrl+G to go to the topic file.
 
-Notice the file path in the bottom bar shows you're in the
-"~/xiki/disk.xiki" file. Each note starts with a "> Note name" heading
-line. (The "> " at the beginning of the headings makes them have a
-gray background, to stand out.)
+Notice the bottom bar shows you're in the "~/xiki/disk.xiki"
+file. Each note starts with a "> Note name" line. The "> " at the
+beginning just makes the line have a gray background, so it appears
+like a heading.
 
 
 > Quickly accessing your notes
@@ -253,7 +254,7 @@ The search results are notes that have been shared by other xsh users.
 You could have also typed "processes cpu" and then Ctrl+S at the bash
 prompt.
 
-You can use the web interface as well.
+You can search via the web interface as well.
 http://xiki.com
 
 This url shows the same results as your search for "processes".
@@ -376,8 +377,8 @@ access.)
 2. Type Ctrl+O to run "create sample tables and records".
 3. Move down to "tables" and type Ctrl+O to see the tables.
 
-You can type "sqlite3/tables" and Ctrl+X in bash to go directly to the
-"tables" action. There's also a "tables" topic to make it even
+You could type "sqlite3/tables" and Ctrl+X in bash to go directly to
+the "tables" action. But there's a "tables" topic to make it even
 quicker.
 
 4. In bash, type "tables/" (including the slash) and Ctrl+X.
@@ -395,7 +396,7 @@ run sql statements.
 
 
 > Congratulations
-Congrats, you've finish the tutorial!
+Congrats, you've finished the tutorial!
 
 Follow @xiki on twitter:
 http://twitter.com/xiki
