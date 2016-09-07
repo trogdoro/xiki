@@ -231,6 +231,7 @@ function show_setup_steps_maybe {
 
   # If we probably showed the setup message, but ~/.xsh exists now, assume they set it up, and show steps to reload
   if ( [[ $# -eq 0 ]] || [[ "$*" == "-xsh/setup" ]] ) && [[ ! $(type -P xsh) =~ ^/ ]] && [[ ! $XIKI_SUPPRESS_WELCOME ]] && [[ -f ~/.xsh ]]; then
+    echo -e "\n\n"
     echo '#'
     echo '# Now follow these steps:'
     echo '# 1. Type "bash" to reload (or "zsh" if you use it)'
