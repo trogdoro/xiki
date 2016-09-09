@@ -2,7 +2,20 @@ module Xiki
   class Browser
 
     def self.url_via_os url
-      Shell.command "open \"#{url}\""
+
+      os = Environment.os
+
+      if os == "osx"
+        return Shell.command "open \"#{url}\""
+      end
+
+      # The xdg-open opens url's on some linux distributions
+      if Shell.command("type -P xdg-open") =~ /^\//
+        return Shell.command "xdg-open \"#{url}\""
+      end
+
+      raise "Not sure how to open a browser on your OS. You don't have the 'open' or 'xdg-open' command installed."
+
     end
 
     def self.url url=nil, options={}
