@@ -82,6 +82,12 @@ module Xiki
 
         args = "xiki/"
 
+      # $ xsh -., so draw dir tree for current dir...
+      elsif args == "-."
+
+        Launcher.open Shell.dir, :task=>["all files"]
+        return
+
       elsif args.slice! /^-n( |\z)/
 
         # -n, so show notes...
@@ -283,6 +289,13 @@ module Xiki
           # Trying with > no prompt
           args = ":#{args}"
         end
+
+      # $ xsh -shell ." > ie. ^X on "$ shell ." > so, draw dir tree for current dir...
+      elsif args =~ /^-[a-z]+ \.$/
+
+        options_in[:ctrlx] = 1
+        # Maybe just add :ctrlx?:
+        args = "$ #{args[/-(.+)/, 1]}"
 
       elsif args.slice! /^-/
 

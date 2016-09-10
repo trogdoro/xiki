@@ -670,6 +670,22 @@ module Xiki
       dir, command, task, args = options[:dir], options[:command], options[:task], options[:args]
       stdin = nil
 
+      # "$ foo .", and ^X without args, or ^O when args...
+
+      if (options[:ctrlx] && ! args) || args
+        if command =~ / (\.|%[a-z]+)$/
+          return self.expand_file_tree_arg prompt, options
+        end
+      end
+
+      if options[:ctrlx]
+        topic = Topic.shell_command_to_topic command
+
+        # Just ^X on command, so no need to pass :task, etc > that delegation happens in another place
+        return Expander.expand "#{topic}"
+      end
+
+
       # Not sure about this > May cause problems > did it because > Multiline input was passed in as :items not :args
       args ||= options[:items]
 
@@ -825,6 +841,40 @@ module Xiki
 
       end
     end
+
+
+    def self.expand_file_tree_arg prompt, options
+
+      dir, command, task, args = options[:dir], options[:command], options[:task], options[:args]
+
+      last_arg = command[/(\.|%[a-z]+)$/]
+      dir = Bookmarks[last_arg] if last_arg =~ /^%/
+
+      if ! args
+        options.delete :ctrlx
+        options[:task] = ["all files"]
+      end
+
+      options[:propagate] = 1
+
+      txt = Xiki[dir, args, options]
+
+      # No output, which must mean it's a file, so replace dot...
+
+      if options[:returned_file_contents]
+        path = Tree.construct_path :raw=>1
+        path = path[1..-1]
+        Tree.to_root
+        Tree.collapse
+        Line.sub!(/(\.|%[a-z]+)$/, path.join())
+        Move.to_end
+        return ""
+      end
+
+      return txt
+
+    end
+
 
     def self.shell_prompt_keys_tip
 

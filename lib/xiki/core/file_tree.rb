@@ -2139,6 +2139,7 @@ module Xiki
 
         # If API, return contents...
 
+        options[:returned_file_contents] = 1
         return options[:output] = File.read(file_path)
         # If not editor, |... will be ignored for now.  Any reasons would api pass this in?  Probably to create non-existant files?  Maybe grab lines indented under it?  Maybe return line number of it?
       end
@@ -2289,6 +2290,7 @@ module Xiki
       ancestor_file = Files.ancestor_file_or_directory file_path
 
       # if File.file? File.dirname(file_path)
+
       if File.file? ancestor_file
         return options[:output] = TopicExpander.expand_by_extension(options)   #> |||
       end
