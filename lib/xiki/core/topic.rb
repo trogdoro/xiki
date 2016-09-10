@@ -81,7 +81,6 @@ module Xiki
         return Launcher.launch
       end
 
-
       # ^T on "% foo", so change do "$ foo"...
 
       if path[-1] =~ /\A\% /
@@ -89,18 +88,10 @@ module Xiki
         return self.xiki_key
       end
 
-
       # $ foo, so expand as topic...
 
       if path[-1] =~ /\A\$ /
-
-        # Deduce topic from shell command...
-        topic = self.shell_command_to_topic path[-1]
-
-        # Use one or two words as topic (2nd word can start with dashes)
-
-        return Tree.<< Expander.expand "#{topic}"
-
+        return Launcher.launch :ctrlx=>1
       end
 
       # Blank line, so insert "xiki/" to show recent...
