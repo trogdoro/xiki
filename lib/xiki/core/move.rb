@@ -52,6 +52,11 @@ module Xiki
       if prefix == :u || prefix == :uu   # If C-u, just go to end
         column = View.column
 
+        # hop+last and next line is blank, so move down first
+        if prefix == :uu && Line.value(2) == ""
+          Move.down
+        end
+
         if Line.blank?
           Line.value(2) =~ /./ ?   # If on blank line but next line has stuff, just move down
             Line.next :
