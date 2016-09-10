@@ -231,6 +231,8 @@ module Xiki
 
       options = nil
 
+      options_before_propagate = self.handle_propagate_option_in args
+
       # If 1st arg is just a hash with sources, we're being called again so don't re-parse and re-find expands
       if args[0].is_a?(Hash) # && args[0][:expanders]
         options = args[0]
@@ -262,11 +264,13 @@ module Xiki
       # return self.expand_literal_command(options[:command_text], options) if options[:command_text]
 
       # It's a class, so just .invoke it directly
+
       return Invoker.invoke *args if options[:class]
 
       expanders = options[:expanders]
 
       if ! expanders || expanders.length == 0
+
         options[:no_slash] = true
 
         return "<* Your indenting looks messed up!" if options[:not_well_formed]
@@ -310,7 +314,39 @@ module Xiki
           txt = Xiki::Html.to_html txt, options
         end
       end
+
+      self.handle_propagate_option_out(options_before_propagate, options) if options_before_propagate   #> |||||
+
       txt
+    end
+
+    def self.handle_propagate_option_in args
+
+      # Find location of options in args
+      options_index = args.index{|o| o.is_a? Hash}
+
+      return if ! options_index
+
+      # No :propagate, so do nothing
+      return if ! args[options_index][:propagate]
+
+      # Save original and return them, so we can hold on and propagate back into them later
+      original_options = args[options_index]
+
+      # Create a blank hash and copy only the important options into it, and make that be the actual options that are propagated down
+      options_in = {}
+      Options.propagate_some_inward original_options, options_in
+      args[options_index] = options_in
+
+      original_options
+
+    end
+
+    def self.handle_propagate_option_out options_before_propagate, options
+
+      # Just propagate out to original
+      Options.propagate_some_outward options_before_propagate, options   #> ||||||
+
     end
 
 

@@ -1,33 +1,23 @@
 module Xiki
   class Options
 
-    def self.propagate_some_outward options_child, options
+    def self.propagate_some_outward options_out, options
 
       # Pass options from child up the parent stack
 
-      options_child.each{|k, v| options[k] = v if [
-        :nest,
-        :no_task,
-        :no_slash,
-        :no_search,
-        :line_found,
-        :column_found,
-        :hotkey,
-        :omit_slashes,
-        :error,
-        :filter_dont_collapse,
-        :filter_number_counts_only_quotes,
-        :leave_trailing,
-        :digit_means_replace_parent,
-      ].include?(k)}
+      keys_out = self.important_options_out
+
+      keys_out.each do |key|
+        options_out[key] = options[key] if options[key]
+      end
 
     end
 
-    def self.propagate_some_inward options, options_child
+    def self.propagate_some_inward options, options_in
 
       # Pass options from here to the child call
 
-      options.each{|k, v| options_child[k] = v if [
+      options.each{|k, v| options_in[k] = v if [
         :task,
       ].include?(k)}
 
@@ -35,12 +25,28 @@ module Xiki
 
 
     #
-    # xiki api/propagate important options
+    # xiki api/propagate only certain important options
     #
     def self.propagate_important_options options_outer
 
       # important_options = [:ctrlx, :task]
-      important_options = [
+      options_in = self.important_options_in
+      options_out = self.important_options_out
+
+      options = options_outer.select{|key, value| important_options_in.include?(key)}
+
+      result = yield(options)
+
+      important_options_out.each do |key|
+        options_outer[key] = options[key] if options[key]
+      end
+
+      result
+
+    end
+
+    def self.important_options
+      [
         :nest,
         :no_task,
         :no_slash,
@@ -59,17 +65,37 @@ module Xiki
         :task,
         # :go,
       ]
+    end
 
-      options = options_outer.select{|key, value| important_options.include?(key)}
+    def self.important_options_in
+      [
+        :task,
+        :ctrlx,
+        # :go,
+      ]
+    end
 
-      result = yield(options)
-
-      important_options.each do |key|
-        options_outer[key] = options[key]
-      end
-
-      result
-
+    def self.important_options_out
+      [
+        :nest,
+        :no_task,
+        :no_slash,
+        :no_search,
+        :line_found,
+        :column_found,
+        :hotkey,
+        :omit_slashes,
+        :error,
+        # :filter_not_recursive,
+        :filter_dont_collapse,
+        :filter_number_counts_only_quotes,
+        :leave_trailing,
+        :digit_means_replace_parent,
+        :ctrlx,
+        :task,
+        :returned_file_contents,
+        # :go,
+      ]
     end
 
   end
