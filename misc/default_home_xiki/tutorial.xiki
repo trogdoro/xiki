@@ -34,13 +34,12 @@ You are now in xsh.
 3. Type Ctrl+Q to quit.
 
 You're now back in bash. Xsh is meant to complement bash rather than
-replace it. So, you'll often quickly jump into xsh and then out of it,
-and back to bash.
+replace it. So, you'll often quickly jump into xsh and then out of it.
 
 
 > Keyboard shortcuts on the screen
 Xsh shows the key shortcuts right on the screen! So you don't have to
-memorize them like you do in traditional terminal programs and shells.
+memorize them like in traditional shells.
 
 1. Type "xsh" in bash again (and return), to go back into xsh.
 2. Observe the keyboard shortcuts at the bottom of the screen.
@@ -53,7 +52,8 @@ don't appear on the screen.
 All of the keys except for the last 3 work in bash as well as in xsh.
 
 3. Type Ctrl+Q to quit and go back to bash.
-4. Now type Ctrl+O. When at a blank bash prompt, it's a shortcut for opening xsh.
+4. Now type Ctrl+O. It's a shortcut for opening xsh, when on a blank bash prompt.
+
 
 - Troubleshooting:
 If you didn't select "default setup" while setting up xsh, bash key
@@ -68,7 +68,7 @@ to pipe to grep, which is slow and tedious.
 
 1. Type Ctrl+Q to go back to bash.
 2. Type "cd /" and return, to change to your root directory.
-3. Type "ls" (without typing return).
+3. Type "ls" without typing return (the "l" is a lowercase L).
 4. Now, type Ctrl+O. It opens xsh and runs the command.
 
 When you see "A-Z Filter" in the bottom bar it means you're filtering.
