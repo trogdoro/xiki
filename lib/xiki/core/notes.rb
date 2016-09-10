@@ -416,6 +416,8 @@ module Xiki
 
         Styles.define :shell_prompt, :fg=>'#888', :bold=>1
 
+        Styles.define :filter_highlight, :bold=>nil, :underline=>1
+
       end
 
     end

@@ -57,7 +57,10 @@ module Xiki
       # - (defun xiki-filter-pre-command-handler
       #   - .filter_each
 
-      $el.elvar.xiki_filter_options = options.to_json
+      # Set only options we need, to avoid bloating
+      $el.elvar.xiki_filter_options = self.important_xiki_filter_options(options).to_json
+
+      $el.elvar.xiki_filter_options = self.important_xiki_filter_options(options).to_json
 
       if options[:hotkey]
 
@@ -98,15 +101,35 @@ module Xiki
 
 
 
+    # commit/Sped up filtering, by not storing all options in json.
+
+
+    def self.important_xiki_filter_options options
+
+      options.select{|key, value| [
+        :left,
+        :right,
+        "filter",
+        :filter,
+        :letter_when_not_found,
+        :recursive,
+        :recursive_quotes,
+        :recent_history_external,
+        :hotkey
+      ].include?(key)}
+
+    end
+
+
+
+
     # Delegated to by (xiki-filter-pre-command-handler) when typing most chars.
     # ##xiki-filter-pre-command-handler
     # ##The filter keys that delegate through to Tree.filter_each
     def self.filter_each   # Runs once for each key pressed during filter
 
-
       # Expand this to find > the list of characters that filter:
       # ##The filter keys that delegate through to Tree.filter_each
-
 
       letter = $el.this_command_keys
 
@@ -119,7 +142,9 @@ module Xiki
 
       # Space or C-g, so just exit...
 
+
       options = JSON[$el.elvar.xiki_filter_options]
+
       options = TextUtil.symbolize_hash_keys options
 
       if options[:hotkey]
@@ -139,6 +164,7 @@ module Xiki
 
         if letter == "\r"   # Return key
 
+          Tree.delete_hotkey_underlines   # Match likely highlighted
           return Grab.go_key if options[:recent_history_external]   # This is after ^R from bash, so do a grab
 
           $el.delete_region(Line.left(2), right)
@@ -185,8 +211,8 @@ module Xiki
 
           # "What is this? C-g during tree search? Why would it grab?"
           Grab.go_key
-
         end
+
         return
 
       elsif letter =~ /[0-9]/
@@ -204,7 +230,7 @@ module Xiki
 
         # Clear out filter and keep going
         options[:filter] = ""
-        $el.elvar.xiki_filter_options = options.to_json
+        $el.elvar.xiki_filter_options = self.important_xiki_filter_options(options).to_json
         return
 
       elsif letter == "/"
@@ -230,7 +256,6 @@ module Xiki
       # Just a normal letter, so filter
 
       filter = options[:filter]
-      letter.sum
 
       filter << letter if letter != "\x7F"
       recursive, recursive_quotes = options[:recursive], options[:recursive_quotes]
@@ -241,6 +266,8 @@ module Xiki
 
       # Extract from view to filter
       lines = $el.buffer_substring(left, right).split "\n"
+
+      regexp = nil
 
       # Filter by letter...
 
@@ -266,6 +293,7 @@ module Xiki
           regexp = /^ *:/
 
           lines_orig = lines
+
           lines = lines.grep(regexp)
 
           regexp = nil   # Indicate we shouldn't filter again
@@ -302,11 +330,10 @@ module Xiki
           return
         end
 
-
         # View.flash "- only matches: #{filter}\n", :times=>1
         View.flash "- no matches for: #{filter}\n", :times=>2
         # Store that extra char was added to filter
-        $el.elvar.xiki_filter_options = options.to_json
+        $el.elvar.xiki_filter_options = self.important_xiki_filter_options(options).to_json
 
         return
       end
@@ -316,9 +343,6 @@ module Xiki
       # Put back into buffer
       View.insert(lines.join("\n") + "\n")
       options[:right] = $el.point
-      $el.goto_char left
-
-      # Go to first file
       $el.goto_char left
 
       # Move to first file
@@ -331,14 +355,52 @@ module Xiki
         Line.to_beginning
       end
 
+      self.highlight_first_few_matches lines, regexp, options
+
       # Store options for next call
-      $el.elvar.xiki_filter_options = options.to_json
+      $el.elvar.xiki_filter_options = self.important_xiki_filter_options(options).to_json
 
     rescue Exception=>e
       Ol e
       Ol.stack
 
     end
+
+
+    def self.highlight_first_few_matches lines, regexp, options
+
+      left = options[:left]
+
+      # regexp = /#{regexp}/i
+      regexp = self.regex_for_items_to_keep options
+
+      i, chars = 0, 0
+
+      1.times do
+
+        # Find 1st line that doesn't match regex (they can be dirs or something extraneous)
+        while lines[i] =~ regexp
+          chars += lines[i].length+1
+          i += 1
+          return if i >= lines.length
+        end
+
+        filter = options[:filter]
+        match1 = lines[i].index(/#{Regexp.quote filter}/i)
+
+        face = :filter_highlight
+        Overlay.face face, :left=>(left+chars+match1), :right=>(left+chars+match1+filter.length)
+
+        chars += lines[i].length+1
+        i += 1
+        return if i >= lines.length
+
+      end
+
+
+      # Overlay.face :notes_exclamation, :left=>left, :right=>left+5
+    end
+
 
 
     # Finish the search and run the command according to the char that was typed
