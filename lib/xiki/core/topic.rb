@@ -1,6 +1,8 @@
 module Xiki
   class Topic
 
+    @@cache = {}
+
     def self.topicize_selection options={}
 
       View.deselect
@@ -399,6 +401,22 @@ module Xiki
       end
 
       hash
+    end
+
+    def self.init_cache
+
+      # Load xsh.xiki file into a hash in memory
+      # Maybe more in the future
+
+      txt = File.read(File.expand_path("~/xiki/xsh.xiki")) rescue nil
+      hash = Notes.wiki_headings_to_hash(txt)
+
+      self.cache["xsh"] = hash
+    end
+
+
+    def self.cache
+      @@cache
     end
 
 

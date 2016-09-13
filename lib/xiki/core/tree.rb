@@ -96,13 +96,67 @@ module Xiki
         $el.elvar.xiki_bar_special_text = options[:recent_history_external] ?
           "  A-Z Filter  RETURN Run in shell  ESC Quit  (or arrow keys)  " :
           $el.elvar.xiki_paint_bar_shortcuts_filtering
+
+        self.maybe_show_bottom_bar_tip
+
       end
     end
 
+    def self.maybe_show_bottom_bar_tip
 
+      # Already shown, so don't show it again
+      return if Topic.cache["xsh"]["> Tips already shown"] =~ /^- Green box explaining bottom bar/
+
+      # Seems like we show it > reload cache to make sure
+      Topic.init_cache
+      return if Topic.cache["xsh"]["> Tips already shown"] =~ /^- Green box explaining bottom bar/
+
+      # Remember to not show it again > store in "> Tips already shown"
+
+      txt = Topic.cache["xsh"]["> Tips already shown"]
+
+      # Update in memory (prepend)
+
+      # Extractable to Notes.update_bullets
+
+      # Remove "- No tips shown yet" line if there
+      txt.sub! /^- No tips shown yet\n/, ""
+      # Add blank lines if none
+      txt.<< "\n\n\n" if txt !~ /\n\n\n/
+      # Add after one blank line
+      txt.sub! /\n\n+/, "\n\n- Green box explaining bottom bar\n"
+
+      # Update on disk
+      file = File.expand_path("~/xiki/xsh.xiki")
+      topic_txt = File.read(file) rescue nil
+      Notes.replace_section topic_txt, "> Tips already shown", txt
+
+      File.open(file, "w") { |f| f << topic_txt }
+
+
+      # Show green box inline >  "notice A-Z filter in bottom bar"
+
+      txt = %`
+        Notice the bottom bar.
+        When "A-Z filter" is showing, you can type letters
+        to start filtering.
+
+                  (press any key to continue)
+      `.unindent
+
+      View.green_box_inline txt
+    end
+
+    def self.underline_this_line
+
+      line = Line.value
+      words_index = line.index(/[a-z]/i)
+      words = line[/[a-z].*/i].sub(/[^a-z]+$/i, '')
+
+      Overlay.face :filter_highlight, :left=>(Line.left+words_index), :right=>(Line.left+words_index+words.length)
+    end
 
     # commit/Sped up filtering, by not storing all options in json.
-
 
     def self.important_xiki_filter_options options
 
@@ -376,7 +430,7 @@ module Xiki
 
       i, chars = 0, 0
 
-      1.times do
+      40.times do
 
         # Find 1st line that doesn't match regex (they can be dirs or something extraneous)
         while lines[i] =~ regexp
@@ -388,6 +442,7 @@ module Xiki
         filter = options[:filter]
         match1 = lines[i].index(/#{Regexp.quote filter}/i)
 
+        # Highlight matches
         face = :filter_highlight
         Overlay.face face, :left=>(left+chars+match1), :right=>(left+chars+match1+filter.length)
 
@@ -397,10 +452,8 @@ module Xiki
 
       end
 
-
       # Overlay.face :notes_exclamation, :left=>left, :right=>left+5
     end
-
 
 
     # Finish the search and run the command according to the char that was typed

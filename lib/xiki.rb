@@ -238,6 +238,7 @@ module Xiki
   end
 
   # Invoked by environment when Xiki starts up.
+  # If already loaded, skips loading and delegates to .upon_reload.
   #
   # Xiki.init
   # Xiki.init :minimal=>1   # Don't do yaml or awesome_print conf that might interfere with some ruby environments (for embedded case).
@@ -293,7 +294,14 @@ module Xiki
       end
       $el.elvar.xiki_loaded_once = true
     end
+
+    self.init_misc
   end
+
+  def self.init_misc
+    Topic.init_cache
+  end
+
 
   # Invoked by self.init
   def self.init_patterns

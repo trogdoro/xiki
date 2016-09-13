@@ -2697,6 +2697,42 @@ module Xiki
       file.start_with? File.expand_path("~/xiki/")
     end
 
+
+    def self.green_box_inline txt
+      trailing_whitespace = $el.elvar.show_trailing_whitespace
+      $el.elvar.show_trailing_whitespace = nil
+
+      column = View.column
+      indent = Line.indent
+      txt = "\n#{txt}"
+      txt = txt.gsub(/^/, "#{indent}    ")
+
+      txt.split("\n").each do |line|
+        Move.to_beginning
+        View >> "#{line}\n"
+        Overlay.face :diff_green, :left=>(Line.left+indent.length), :right=>(Line.right+1)
+        Move.down
+        View.column = column
+        View.pause 0.03
+      end
+
+      # Read char
+      key = Keys.press_any_key :message=>" "
+
+      # Make it go away
+      txt.split("\n").each do |line|
+        Move.up
+        Line.delete
+        View.column = column
+        View.pause 0.02
+      end
+
+      # Todo > turn trailing space back on
+      $el.elvar.show_trailing_whitespace = trailing_whitespace
+
+      nil
+    end
+
     # If file is foo.link, read file path in its contents, and use it instead of the .link file
   end
 

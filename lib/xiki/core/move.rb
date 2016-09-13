@@ -385,6 +385,10 @@ module Xiki
     # Moves cursor to left of line:
     #
     # Move.to_end
+    def self.to_beginning
+      Line.to_left
+    end
+
     def self.to_end n=nil
       Line.next(n) if n.is_a? Fixnum   # If there, move down
       Line.to_right

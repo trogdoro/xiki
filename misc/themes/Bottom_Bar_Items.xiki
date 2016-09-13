@@ -98,31 +98,16 @@ $el.el4r_lisp_eval %`
           (concat
             (propertize "   " 'face normal)
 
-            (if xiki-noob-mode
+            ;(if xiki-noob-mode
               (concat
-                (propertize "A-Z" 'face (list 'notes-exclamation 'underline normal))
-                ; (propertize " Filter  " 'face normal)
-                (propertize " filter  " 'face (list 'notes-exclamation normal))
-                ; (propertize "return    " 'face (list 'notes-exclamation normal))
-                ; (propertize "return" 'face (list 'notes-exclamation 'underline normal))
-                ; (propertize "return" 'face (list 'underline normal))
-                (propertize "return" 'face (list normal))
-                (propertize "    " 'face normal)
-              )
-              (concat
-                (propertize "A-Z" 'face (list 'underline normal))
-                ; (propertize " Filter  " 'face normal)
-                (propertize " filter  " 'face normal)
-                ; (propertize "return" 'face (list 'underline normal))
-                (propertize "return" 'face (list normal))
-                (propertize "    " 'face normal)
-              )
-            )
+                (propertize "A-Z" 'face (list 'filter-highlight 'underline normal))
+                (propertize " filter  " 'face (list 'filter-highlight normal))
 
-
+                (propertize "  " 'face normal)
+              )
 
             (propertize "O" 'face underline)
-            (propertize "pen  " 'face normal)
+            (propertize "pen or return  " 'face normal)
 
             (propertize "G" 'face underline)
             (propertize "o  " 'face normal)

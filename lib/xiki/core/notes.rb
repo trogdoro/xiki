@@ -416,7 +416,11 @@ module Xiki
 
         Styles.define :shell_prompt, :fg=>'#888', :bold=>1
 
-        Styles.define :filter_highlight, :bold=>nil, :underline=>1
+        # Green filter highlight
+        Styles.define :filter_highlight, :bold=>nil, :underline=>nil, :fg=>"4c4"
+
+        # Green filter highlight
+        Styles.define :filter_highlight, :bold=>nil, :underline=>nil, :fg=>"8ac"
 
       end
 
@@ -2768,7 +2772,7 @@ module Xiki
       # Add linebreaks to end if not enough
       section_txt = "#{section_txt.sub(/\n+\z/, '')}\n\n\n" if section_txt[/(\n*)\z/].length < 3
 
-      # Look for heading
+      # Get location of heading
       index = txt ? txt.index(/^#{Regexp.escape heading}$/) : nil
 
       # If doesn't exist yet, add to top
@@ -2781,7 +2785,7 @@ module Xiki
 
       before = txt[0..index]
       after = txt[index..-1]   # Part we're replacing and everything afterward
-      heading_after = after =~ /^> /
+      heading_after = after =~ /^>( |$)/   # Get location of heading of following section
       # Text to grab after section begins at next heading (if there is one)   #> "New\nsection added!"
       after = heading_after ? after[heading_after..-1] : ""   # If no heading, we replace all   #> 0
 

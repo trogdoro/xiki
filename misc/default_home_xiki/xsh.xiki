@@ -43,3 +43,11 @@ get around...
 - Todo > explain browser control here!
 
 
+> Tips already shown
+This is where xsh remembers which tips it has already shown you. If
+you want them to be shown again, just delete them from here (and
+reload xsh).
+
+- No tips shown yet
+
+

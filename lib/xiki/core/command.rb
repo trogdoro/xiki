@@ -1090,12 +1090,12 @@ module Xiki
 
       # Call .handle for each applicable handler...
 
-      extensions.each do |o|   #> |||||||||||||||||
+      extensions.each do |o|
         handler = handlers[o]
 
         # Assume .txt handler if none for this extension yet
 
-        handler.handle options   #> ||||||||||||||||||
+        handler.handle options
       end
 
       return options[:output] if options[:output] || options[:halt]
