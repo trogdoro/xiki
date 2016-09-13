@@ -1,7 +1,7 @@
 module Xiki
   class Options
 
-    def self.propagate_some_outward options_out, options
+    def self.propagate_some_outward options, options_out
 
       # Pass options from child up the parent stack
 

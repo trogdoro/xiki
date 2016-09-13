@@ -597,7 +597,8 @@ Ol["oh, this path is an array: #{path}!"] if path.is_a?(Array)
 
       options.merge! :launcher_open=>1
 
-      Launcher.launch options   #> |||||||
+      Launcher.launch options
+
     end
 
 
@@ -834,7 +835,7 @@ Ol["oh, this path is an array: #{path}!"] if path.is_a?(Array)
 
       # Expand command...
 
-      txt = Expander.expand path, options   #> ||||||||
+      txt = Expander.expand path, options
 
       # File, so append slash
 

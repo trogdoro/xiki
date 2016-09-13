@@ -231,6 +231,7 @@ module Xiki
 
       options = nil
 
+      # If :propagate, will be more selective about what is propagated, otherwise it does nothing and whole options hash is passed in and out
       options_before_propagate = self.handle_propagate_option_in args
 
       # If 1st arg is just a hash with sources, we're being called again so don't re-parse and re-find expands
@@ -327,7 +328,8 @@ module Xiki
 
       return if ! options_index
 
-      # No :propagate, so do nothing
+      # No :propagate, so do nothing > whole options hash will be passed in and out
+      # The :propagate option means to be more selective about what is propagated
       return if ! args[options_index][:propagate]
 
       # Save original and return them, so we can hold on and propagate back into them later
@@ -345,7 +347,7 @@ module Xiki
     def self.handle_propagate_option_out options_before_propagate, options
 
       # Just propagate out to original
-      Options.propagate_some_outward options_before_propagate, options   #> ||||||
+      Options.propagate_some_outward options, options_before_propagate
 
     end
 
