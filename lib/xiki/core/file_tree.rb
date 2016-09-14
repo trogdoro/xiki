@@ -42,10 +42,10 @@ module Xiki
         | Lets you navigate your filesystem as a tree.
         |
         | Type a file path on a line and double-click on it. Here's an example
-        | (the "@" isn't required when there are no spaces at the beginning of the
+        | (the "= " isn't required when there are no spaces at the beginning of the
         | line).
         |
-        @/
+        = /
         |
       - overview of keys/
         | When you launch a path, the cursor turns blue and you go into a temporary
@@ -68,7 +68,9 @@ module Xiki
     def initialize
       @res = ""
       @list = []
+      @took_too_long = false
       @file_regex, @reverse_sort = nil, nil
+      @time_recursive_started = Time.now.to_f
     end
     attr :res
     attr :list
@@ -85,7 +87,11 @@ module Xiki
     # Recursively draws out tree
     def traverse path
 
-      entries = Dir.glob("#{View.expand_path(path)}/*", File::FNM_DOTMATCH).
+      return if @took_too_long   # Stop recursing if took too long
+
+      at_root = @res == ""
+
+      entries = Dir.glob("#{path == '/' ? '' : View.expand_path(path)}/*", File::FNM_DOTMATCH).
         select {|i| i !~ /\/\.(\.*|svn|git)$/}#.   # Exclude some dirs (exclude entensions here too?)
 
       # Sort, handling error when certain type of file
@@ -110,6 +116,18 @@ module Xiki
         cleaned = clean f
         @res += "#{cleaned.sub(/(^ *)/, "\\1+ ")}\n"
       }
+
+      # Too much time has elapsed, so raise timeout
+
+      if Time.now.to_f - @time_recursive_started > 2
+        @took_too_long = true
+      end
+
+      # At root and took to long, so just show root dir listing
+      if at_root && @took_too_long
+        @res = FileTree.expand_one_dir :file_path=>File.expand_path(path)
+        View.message "Only showing one level, it was taking a long time"
+      end
 
     end
 
@@ -349,10 +367,10 @@ module Xiki
 
 
         Styles.define :diff_line_number, :bold=>true, :size=>"-2", :fg=>"666"
-        Styles.define :diff_red, :bg=>"400", :fg=>"ee3333", :size=>"-1"
+        Styles.define :diff_red, :bg=>"400", :fg=>"ee3333", :size=>"-1", :bold=>nil
         Styles.define :diff_red_pipe, :bg=>"400", :fg=>"711", :size=>"0", :face=>"xiki", :bold=>true
 
-        Styles.define :diff_green, :bg=>"130", :fg=>"4d3", :size=>"-1"
+        Styles.define :diff_green, :bg=>"130", :fg=>"4d3", :size=>"-1", :bold=>nil
         Styles.define :diff_green_pipe, :bg=>"130", :fg=>"228822", :size=>"0", :face=>"xiki", :bold=>true
 
 
@@ -363,7 +381,7 @@ module Xiki
         Styles.define :diff_small, :fg=>"222", :size=>"-11"
 
 
-        Styles.define :diff_yellow, :bg=>"950", :fg=>"fa0", :size=>"-1"
+        Styles.define :diff_yellow, :bg=>"950", :fg=>"fa0", :size=>"-1", :bold=>nil
         Styles.define :diff_yellow_pipe, :bg=>"950", :fg=>"b80", :size=>"0", :face=>"xiki", :bold=>true
 
         Styles.tree_letters :underline=>1
@@ -951,9 +969,10 @@ module Xiki
 
       indent = ""
 
-      # Get tree
+      # Get file tree
       t = self.new
-      dir.sub!(/\/$/, '')
+      dir.sub!(/\/$/, '') if dir != "/"
+
       t.traverse Bookmarks.expand(dir)
 
       # Adjust indent
@@ -1022,6 +1041,7 @@ module Xiki
 
     # New Unified way to show one dir.
     def self.expand_one_dir options
+
       dir = options[:file_path]
       dirs, files = self.files_in_dir dir, options   # Get dirs and files in it
 
@@ -2280,7 +2300,6 @@ module Xiki
 
         return options[:output] = self.expand_one_dir(options)
       end
-
 
 
       # A file or dir that doesn't exist?...
