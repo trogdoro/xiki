@@ -317,7 +317,7 @@ You may need to do something like:
 
       (when (>= limit lock-time)
 
-        (message (or el4r-taking-a-while-message "Command taking a while. Press esc to cancel."))
+        (message (or el4r-taking-a-while-message "Command taking a while. You can press esc to cancel."))
 
         (setq succeeded (sit-for 0.1))
 
@@ -336,7 +336,7 @@ You may need to do something like:
 
             )
             ; Re-display message > it's going away for some reason
-            (message (or el4r-taking-a-while-message "Command taking a while. Press esc to cancel."))
+            (message (or el4r-taking-a-while-message "Command taking a while. You can press esc to cancel."))
           )
 
           ; Else, keep on going
