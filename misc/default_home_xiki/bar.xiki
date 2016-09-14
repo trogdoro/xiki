@@ -14,6 +14,7 @@ Ctrl+O in xsh:
 - On a "foo" line: Opens the Xiki topic (lists the notes in it).
 - On a "$ " line: Shows recent shell commands.
 - Various other lines: Opens them (does something appropriate with them).
+- Double-clicking does the same as Ctrl+O (if mouse support is enabled)
 
 
 > Go
@@ -36,6 +37,7 @@ Ctrl+T in bash:
 Ctrl+T in xsh:
 - On a "$ foo" line: Shows the tasks for the shell command.
 - On a "foo" line: Shows the tasks for the topic.
+- Right-clicking does the same as Ctrl+T (if mouse support is enabled)
 
 
 > Xiki
