@@ -205,7 +205,15 @@ if [[ $- =~ i ]]; then
 
   if [ $xiki_go_key ]; then
     if [ -n "$ZSH_VERSION" ]; then
-      bindkey -s $xiki_go_key '\C-axsh \^\n'
+
+      if [[ -o extended_glob ]]; then
+        # Weird setting that messes up caret
+        bindkey -s $xiki_go_key '\C-axsh \\\^\n'
+      else
+        # Normal zsh
+        bindkey -s $xiki_go_key '\C-axsh \^\n'
+      fi
+
     else   # Assume bash or bash-compatible
       bind \"$xiki_go_key'" "\C-axsh ^\n"'
     fi
