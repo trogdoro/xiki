@@ -43,9 +43,9 @@ module Xiki
       # Get it from options is passed in as an optimization
       @@before_filter_txt = options.delete(:txt) || View.txt(left, right)
 
-      # No search if there is only 1 line
-      # Can't remember why / at end meant still search
-      return if((Line.number(right) - Line.number(left)) <= 1) && options[:always_search].nil? && ! options[:hotkey]
+      # Now always filtering > even if one line (because of return)
+      # # No search if there is only 1 line
+      # return if((Line.number(right) - Line.number(left)) <= 1) && options[:always_search].nil? && ! options[:hotkey]
 
       # If searching for :hotkey, use old behavior - it's ok to lock up the UI for now...
 
@@ -104,57 +104,17 @@ module Xiki
 
     def self.maybe_show_bottom_bar_tip
 
-      # Already shown, so don't show it again
-      return if Topic.cache["xsh"]["> Tips already shown"] =~ /^- Green box explaining bottom bar/
+      View.maybe_show_tip "Explaining 'A-Z filter' in bottom bar", "\n"+%`
+        Tip: Notice the bottom bar.
 
-      # Seems like we show it > reload cache to make sure
-      Topic.init_cache
-      return if Topic.cache["xsh"]["> Tips already shown"] =~ /^- Green box explaining bottom bar/
-
-      # Remember to not show it again > store in "> Tips already shown"
-
-      txt = Topic.cache["xsh"]["> Tips already shown"]
-
-      # Update in memory (prepend)
-
-      # Extractable to Notes.update_bullets
-
-      # Remove "- No tips shown yet" line if there
-      txt.sub! /^- No tips shown yet\n/, ""
-      # Add blank lines if none
-      txt.<< "\n\n\n" if txt !~ /\n\n\n/
-      # Add after one blank line
-      txt.sub! /\n\n+/, "\n\n- Green box explaining bottom bar\n"
-
-      # Update on disk
-      file = File.expand_path("~/xiki/xsh.xiki")
-      topic_txt = File.read(file) rescue nil
-      Notes.replace_section topic_txt, "> Tips already shown", txt
-
-      File.open(file, "w") { |f| f << topic_txt }
-
-
-      # Show green box inline >  "notice A-Z filter in bottom bar"
-
-      txt = %`
-        Notice the bottom bar.
         When "A-Z filter" is showing, you can type letters
         to start filtering.
 
                   (press any key to continue)
       `.unindent
 
-      View.green_box_inline txt
     end
 
-    def self.underline_this_line
-
-      line = Line.value
-      words_index = line.index(/[a-z]/i)
-      words = line[/[a-z].*/i].sub(/[^a-z]+$/i, '')
-
-      Overlay.face :filter_highlight, :left=>(Line.left+words_index), :right=>(Line.left+words_index+words.length)
-    end
 
     # commit/Sped up filtering, by not storing all options in json.
 
@@ -189,13 +149,12 @@ module Xiki
 
       letter.downcase!
 
+      # Space or C-g, so just exit...
+
       if letter == "\x00"
         self.delete_hotkey_underlines
         return
       end
-
-      # Space or C-g, so just exit...
-
 
       options = JSON[$el.elvar.xiki_filter_options]
 
@@ -249,21 +208,25 @@ module Xiki
           $el.delete_region left, right-1
           View.insert "#{indent}- "
           ControlLock.disable
+
         elsif letter == "#"
           indent = Line.indent
           $el.delete_region left, right-1
           View.insert "#{indent}- ##/"
           Move.backward
           ControlLock.disable
+
         elsif letter == "*"
           indent = Line.indent
           $el.delete_region left, right-1
           View.insert "#{indent}- **/"
           Move.backward
           ControlLock.disable
+
         elsif letter == "\a"
 
-          # "What is this? C-g during tree search? Why would it grab?"
+          # ^G during filter, so do same as if they did ^G outside of a filter (but clean up first)
+          self.delete_hotkey_underlines
           Grab.go_key
         end
 
@@ -279,6 +242,8 @@ module Xiki
       elsif letter == "\a"
 
       elsif letter == " "
+
+        Tree.delete_hotkey_underlines
 
         # Comma, so do "or"...
 
@@ -423,17 +388,21 @@ module Xiki
 
     def self.highlight_first_few_matches lines, regexp, options
 
+      # Eventual todo > optimize by grouping into one big lisp block, and eval'ing at once
+
       left = options[:left]
 
-      # regexp = /#{regexp}/i
-      regexp = self.regex_for_items_to_keep options
+      regexp = nil
+      if options[:recursive] || options[:recursive_quotes]
+        regexp = self.regex_for_items_to_keep options
+      end
 
       i, chars = 0, 0
 
       40.times do
 
         # Find 1st line that doesn't match regex (they can be dirs or something extraneous)
-        while lines[i] =~ regexp
+        while regexp && lines[i] =~ regexp
           chars += lines[i].length+1
           i += 1
           return if i >= lines.length
@@ -443,8 +412,7 @@ module Xiki
         match1 = lines[i].index(/#{Regexp.quote filter}/i)
 
         # Highlight matches
-        face = :filter_highlight
-        Overlay.face face, :left=>(left+chars+match1), :right=>(left+chars+match1+filter.length)
+        Overlay.face :filter_highlight, :left=>(left+chars+match1), :right=>(left+chars+match1+filter.length)
 
         chars += lines[i].length+1
         i += 1
@@ -1417,7 +1385,6 @@ module Xiki
       root_indent = txt[/\A */]
 
       if txt =~ /^#{root_indent}  /   # If any indenting
-
         if txt =~ /^  +[|:]/
           if ! options[:line_found] && Line !~ /^  +[|:]/   # Don't search if line already matches
             Search.forward "^ +\\([|:]\\|- ##\\)", :beginning=>1

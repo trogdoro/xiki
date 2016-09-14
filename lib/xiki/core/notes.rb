@@ -417,10 +417,7 @@ module Xiki
         Styles.define :shell_prompt, :fg=>'#888', :bold=>1
 
         # Green filter highlight
-        Styles.define :filter_highlight, :bold=>nil, :underline=>nil, :fg=>"4c4"
-
-        # Green filter highlight
-        Styles.define :filter_highlight, :bold=>nil, :underline=>nil, :fg=>"8ac"
+        Styles.define :filter_highlight, :fg=>"8ac"
 
       end
 
@@ -2008,7 +2005,6 @@ module Xiki
     # line for the first time, or when typing on quotes with a quoted line following
     def self.return_wrapper
 
-
       # Text selected, so delete it and insert return...
 
       if selection = View.selection
@@ -2017,13 +2013,12 @@ module Xiki
         return
       end
 
-
       line = Line.value
 
       # Cursor on shell prompt line, after the prompt, so maybe show message
       if line =~ /^ *\$ / && View.column > line.index("$")
         # Show tip about Ctrl+X vs Ctrl+G for shell prompt, unless already shown
-        return if Shell.shell_prompt_keys_tip
+        return if Shell.maybe_show_shell_prompt_keys_tip
       end
 
       Keys.remember_key_for_repeat(proc {Notes.return_wrapper})

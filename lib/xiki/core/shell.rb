@@ -766,9 +766,6 @@ module Xiki
       case prompt
       when "$"
 
-        # Show tip about Ctrl+X vs Ctrl+G for shell prompt, unless already shown
-        return if Shell.shell_prompt_keys_tip
-
         # Command line ends with " |", So call as command, Passing second are as stdin
 
         if command.slice!(/ \|$/) && args && args.length == 1
@@ -876,45 +873,20 @@ module Xiki
     end
 
 
-    def self.shell_prompt_keys_tip
+    def self.maybe_show_shell_prompt_keys_tip
 
       # Dialog doesn't need to be shown, so return false to indicate they can continue running the command
 
-      return false if Conf.get_cached("xsh", "shell prompt keys tip") != "show"
+      View.maybe_show_tip "Explaining Ctrl+O to run commands", "\n"+%`
+        Tip: Press Ctrl+O to run shell commands (ie. "open" them).
+        (Or Ctrl+G to go to your shell and run them.)
 
-      # 1st time user expanded a command, so show tip explaining keys...
+        Since everything is editable, typing return normally just
+        inserts linebreaks. One exception to this is when the
+        bottom bar shows "A-Z filter    Open or return...".
 
-      # Remember not to show again
-      Conf.set "xsh", "shell prompt keys tip", "hide"
-
-      View.open(%`
-        > One-time tip (press esc to close):
-        When your cursor is on a shell prompt line (a line starting with "$ "):
-
-        - Type Ctrl+G to:
-          | Grab the command back to your shell and execute it there.
-
-        - Type Ctrl+X to:
-          | Execute the command in place (without leaving xsh).
-
-        Press the esc key to close this tip, then type Ctrl+G or Ctrl+X.
-
-
-        more info:
-          | Typing return just inserts a linebreak, even when your cursor
-          | is on a shell prompt line. This seems odd at first, but
-          | everything you see in xsh is editable, so it's useful behavior
-          | (it simplifies editing commands and adding notes around
-          | commands). Search for "xsh keys" to see more info.
-      `.unindent, :name=>"shell prompt keys tip")
-      # - Press the esc key to close this tip
-
-      # Put cursor on the "Press the..." line > if view is tall enough
-      Search.forward("Press the", :beginning=>1) if View.height > 10
-
-
-      # Return true, indicating we showed dialog, and it shouldn't continue to run the command
-      true
+                     (press any key to continue)
+      `.unindent, :under=>1
 
     end
 

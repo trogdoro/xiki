@@ -2698,42 +2698,131 @@ module Xiki
     end
 
 
-    def self.green_box_inline txt
+    def self.green_box_inline txt, options={}
       trailing_whitespace = $el.elvar.show_trailing_whitespace
       $el.elvar.show_trailing_whitespace = nil
 
       column = View.column
+      orig = View.cursor
       indent = Line.indent
-      txt = "\n#{txt}"
+      cursor = nil
+
+      indent << "  " if options[:under]
+
+      txt = "#{txt}"
       txt = txt.gsub(/^/, "#{indent}    ")
 
-      txt.split("\n").each do |line|
-        Move.to_beginning
-        View >> "#{line}\n"
-        Overlay.face :diff_green, :left=>(Line.left+indent.length), :right=>(Line.right+1)
+      if options[:under]
         Move.down
-        View.column = column
-        View.pause 0.03
+
+        txt.split("\n").each do |line|
+          Move.to_beginning
+          View >> "#{line}\n"
+          Overlay.face :diff_green, :left=>(Line.left+indent.length), :right=>(Line.right+1)
+          Move.down
+          cursor = View.cursor
+          View.cursor = orig
+          View.pause 0.02
+          View.cursor = cursor
+        end
+        View.cursor = orig
+
+      else
+
+        txt.split("\n").each do |line|
+          Move.to_beginning
+          View >> "#{line}\n"
+          Overlay.face :diff_green, :left=>(Line.left+indent.length), :right=>(Line.right+1)
+          Move.down
+          View.column = column
+          View.pause 0.02
+        end
+
       end
 
       # Read char
       key = Keys.press_any_key :message=>" "
 
       # Make it go away
-      txt.split("\n").each do |line|
-        Move.up
-        Line.delete
-        View.column = column
-        View.pause 0.02
+
+      if options[:under]
+        View.cursor = cursor
+        txt.split("\n").each do |line|
+          Move.up
+          Line.delete
+          View.column = column
+          cursor = View.cursor
+          View.cursor = orig
+          View.pause 0.03
+          View.cursor = cursor
+        end
+        View.cursor = orig
+
+      else
+        txt.split("\n").each do |line|
+          Move.up
+          Line.delete
+          View.column = column
+          View.pause 0.02
+        end
       end
 
-      # Todo > turn trailing space back on
+      # Turn trailing space back on
       $el.elvar.show_trailing_whitespace = trailing_whitespace
 
       nil
     end
 
-    # If file is foo.link, read file path in its contents, and use it instead of the .link file
+
+    def self.maybe_show_tip bullet, message, options={}
+
+      # Already shown, so don't show it again (double-checking cached value)...
+
+      return false if Topic.cache["xsh"]["> Tips already shown"] =~ /^- #{Regexp.quote bullet}/
+      Topic.init_cache   # Seems like we show it > but reload cache to make sure
+      return false if Topic.cache["xsh"]["> Tips already shown"] =~ /^- #{Regexp.quote bullet}/
+
+      # Remember to not show it again > store in "> Tips already shown"
+      txt = Topic.cache["xsh"]["> Tips already shown"]
+
+      # Add section if wasn't there
+      if ! txt
+        txt = Topic.cache["xsh"]["> Tips already shown"] = "
+          This is where xsh remembers which tips it has already shown you. If
+          you want them to be shown again, just delete them from here (and
+          reload xsh).
+        ".unindent+"\n\n\n"
+      end
+
+      # Update in memory (prepend)...
+
+      # Extractable to Notes.update_bullets
+      # Remove "- No tips shown yet" line if there
+      txt.sub! /^- No tips shown yet\n/, ""
+      # Add blank lines if none
+      txt.<< "\n\n\n" if txt !~ /\n\n\n/
+      # Add after one blank line
+      txt.sub! /\n\n+/, "\n\n- #{bullet}\n"
+
+      # Update on disk...
+
+      file = File.expand_path("~/xiki/xsh.xiki")
+      topic_txt = File.read(file) rescue nil
+      Notes.replace_section topic_txt, "> Tips already shown", txt
+
+      File.open(file, "w") { |f| f << topic_txt }
+
+
+      # Show green box inline >  "notice A-Z filter in bottom bar"
+
+      View.green_box_inline message, options
+
+      # Return true, indicating we showed dialog > because sometimes caller will want to not continue
+      true
+
+    end
+
+
   end
 
   View.init

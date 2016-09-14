@@ -405,10 +405,13 @@ module Xiki
 
     def self.init_cache
 
+      return if XIKI_SERVER_MODE
+
       # Load xsh.xiki file into a hash in memory
       # Maybe more in the future
 
       txt = File.read(File.expand_path("~/xiki/xsh.xiki")) rescue nil
+      return if ! txt
       hash = Notes.wiki_headings_to_hash(txt)
 
       self.cache["xsh"] = hash
