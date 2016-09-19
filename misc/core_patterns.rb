@@ -800,6 +800,33 @@ module Xiki
 
   end
 
+  # "->", so list headings in same view...
+
+  Xiki.def(/\A->(\/|$)/i) do |path, options|
+
+    # -> only, so list the headings
+
+    if path == "->"
+
+      file = View.file
+      return if ! file
+
+      txt = File.read file
+      txt.encode!('UTF-8', 'binary', :invalid=>:replace, :undef=>:replace, :replace=>'')
+      headings = txt.scan(/^> [^:\n].*/)
+      next headings.join("\n")
+    end
+
+    Tree.to_parent
+    Tree.collapse
+
+    path = Path.split path
+    Line.sub! /.*/, "-#{path[1]}"
+
+    ""
+
+  end
+
   # "-> Heading", so jump to heading in same view...
 
   Xiki.def(/\A-> /i) do |path, options|
