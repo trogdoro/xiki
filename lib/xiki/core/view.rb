@@ -326,14 +326,14 @@ module Xiki
 
     # Saves the configuration
     def self.save name=nil
-      name ||= Keys.input(:optional => true)
+      name ||= Keys.input(:optional=>true)
       name ||= "0"
       @@hash[name] = $el.current_window_configuration
     end
 
     # Saves the configuration
     def self.restore name=nil
-      name ||= Keys.input(:optional => true)   # Get single key from user if no param
+      name ||= Keys.input(:optional=>true)   # Get single key from user if no param
       name ||= "0"   # Set to "0" if user waited too long and entered nothing
       if(name == "o")   # Todo: if "o", just show :t and $o
         View.hide_others :all=>1
@@ -2722,7 +2722,10 @@ module Xiki
           Move.down
           cursor = View.cursor
           View.cursor = orig
-          View.pause 0.02
+
+          # Pause while ignoring what's typed
+          Keys.input :optional=>1, :seconds=>0.02, :prompt=>""
+
           View.cursor = cursor
         end
         View.cursor = orig
@@ -2735,10 +2738,14 @@ module Xiki
           Overlay.face :diff_green, :left=>(Line.left+indent.length), :right=>(Line.right+1)
           Move.down
           View.column = column
-          View.pause 0.02
+          # Pause while ignoring what's typed
+          Keys.input :optional=>1, :seconds=>0.02, :prompt=>""
         end
 
       end
+
+      # Ignore what they type for half a second, to make sure they notice the tip
+      Keys.input :optional=>1, :seconds=>0.5, :prompt=>""
 
       # Read char
       key = Keys.press_any_key :message=>" "
@@ -2753,7 +2760,7 @@ module Xiki
           View.column = column
           cursor = View.cursor
           View.cursor = orig
-          View.pause 0.03
+          View.pause 0.02
           View.cursor = cursor
         end
         View.cursor = orig

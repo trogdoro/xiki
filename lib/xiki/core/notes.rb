@@ -1806,7 +1806,7 @@ module Xiki
     end
 
     def self.from_markdown_format txt
-      txt = txt.gsub(/^#+/){"#{'>' * $&.length}"}
+      txt = txt.gsub(/^[#]+/){"#{'>' * $&.length}"}
     end
 
     # Returns whether notes mode is enabled.

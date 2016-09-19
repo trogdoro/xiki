@@ -1383,7 +1383,7 @@ Ol["oh, this path is an array: #{path}!"] if path.is_a?(Array)
       # If space, they want to do just raw "@", which will suggest something based on parent
       input = "" if input == " "
 
-      View << input#+"/"
+      View << input
 
       Launcher.launch
     end
