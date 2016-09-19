@@ -575,7 +575,7 @@ module Xiki
 
     # Mapped to jump+history
     def self.history_for_bookmark
-      bm = Keys.input(:timed => true, :prompt => "bookmark to show shell commands for (space for all, comma for current): ")
+      bm = Keys.input(:timed=>true, :prompt => "bookmark to show shell commands for (space for all, comma for current): ")
 
       return Launcher.open("shell/all/") if bm == " "
       return Launcher.open("shell/current/") if bm == ","
@@ -707,11 +707,8 @@ module Xiki
       if args && args.length == 1 && args[0] =~ /\A\\ /
         # siblings = Tree.siblings
         siblings = Tree.siblings :quotes=>"\\"
-        Ol "siblings", siblings   # => ["\\ hey", "\\ you"]
         siblings = siblings.map{|o| o.sub(/^\\/, '')}.join('')
-        Ol "siblings", siblings   # => " hey you"
         command << siblings
-        Ol "continue here > Remove args!!"
         options.delete :args
 
       end
@@ -759,6 +756,15 @@ module Xiki
         end
       end
 
+
+      # Handle multi-line syntax...
+
+      if command =~ / \\$/ && args && args.length == 1 && args[0] =~ /\n/
+        command.sub! /\\$/, args[0].strip.gsub("\n", " ")
+        args = options[:args] = nil
+      end
+
+
       # % foo/> Heading, So delegate to search...
 
       # Normal prompt with command, so run it...
@@ -776,7 +782,7 @@ module Xiki
         options.merge! :shell_command=>command
 
         # Takes control if items underneath (task or normal)...
-        if ! stdin && result = self.shell_items(options)   # if options[:task] || args   #> |||
+        if ! stdin && result = self.shell_items(options)   # if options[:task] || args   #> |||||||||||||
           result.gsub!(/.\cH/, "")
           return result
         end
@@ -932,12 +938,12 @@ module Xiki
 
       # :... or ...\n arg, so delegate to the shell wrapper, if only to show appropriate error...
 
-      return self.shell_wrapper(options) if args && (args[0] =~ /^[:]/ || args[0] =~ /\n/)   #> |||
+      return self.shell_wrapper(options) if args && (args[0] =~ /^[:]/ || args[0] =~ /\n/)   #> ||||||||||||||
 
 
       # $ command/[any other arg], so delegate to the corresponding =command xiki command...
 
-      return self.shell_menu(options) if task == ["xiki command"] || args   #> |||||||
+      return self.shell_menu(options) if task == ["xiki command"] || args
 
       # ~ task, so show task list under $ foo...
 
@@ -1174,6 +1180,7 @@ module Xiki
       # |..., so prompt them to type ^S to search
 
       if args && args[0] =~ /\n/
+Ol.stack 15   #> |||||||||||||||-
         options[:line_found] = 5
         return %`
           :

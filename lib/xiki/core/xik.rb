@@ -71,7 +71,7 @@ module Xiki
     end
 
     def txt
-      @txt.join("\n") #+"\n"
+      @txt.join("\n")
     end
 
     def txt_without_code
