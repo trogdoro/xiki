@@ -165,6 +165,15 @@ function check_dependencies {
       # echo -e "Please install Homebrew, and then run xsh again.\n\nThe homebrew installer can be found here:\n\n  http://brew.sh/\n"
       # exit 1
 
+
+    # /usr/local/bin/emacs exists, but /usr/bin/emacs is first in $PATH, so hard-code to the former...
+
+    elif [ -f /usr/local/bin/emacs ]; then
+      emacs="/usr/local/bin/emacs"
+      emacsclient="/usr/local/bin/emacsclient"
+      emacs_version=`$emacs -version 2>&1`
+      emacsclient_version=`emacsclient -version 2>&1`
+
     else
 
       # Mac and emacs22 (and homebrew installed), so require "brew install emacs"...
