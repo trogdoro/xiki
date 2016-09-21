@@ -2890,6 +2890,16 @@ module Xiki
         commands = "#{commands}:#{line}" if line
         return Shell.command commands
 
+
+      elsif editor =~ /\Aatom\b/
+        # Remove -f or --foreground flag (would make xiki lock up)
+        editor = editor.sub(/ --?f(oreground)?\b/, '')
+
+        commands = "#{editor} #{file_quoted}"
+        commands = "#{commands}:#{line}" if line
+        return Shell.command commands
+
+
       elsif editor == "vim"
         commands = "#{commands} +#{line}" if line
 
