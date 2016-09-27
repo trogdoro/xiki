@@ -780,21 +780,6 @@ module Xiki
       options = {}
 
       keep_tweeking = true
-      if ! prefix && FileTree.handles?   # Grab tree
-
-        txt = Tree.construct_path :raw=>1
-
-        # Remove ##... if there
-        txt.delete_if{|o| o =~ /^[#*]/}
-
-        options[:path] = txt[0..-2].join
-        if Search.try_merging_link(txt[-1], :path=>txt[0..-2].join, :label=>label)
-          return orig.go
-        end
-
-        txt = "#{txt[0..-3].join}\n  - #{txt[-2]}\n    #{txt[-1]}\n"
-        keep_tweeking = false
-      end
 
       file = View.file
 
