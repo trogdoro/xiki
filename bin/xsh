@@ -55,7 +55,7 @@ function check_dependencies {
   ruby_is_installed=$(type -P ruby)
   emacs_is_installed=$(type -P emacs)
 
-  # No emacs or no ruby, so figure out how to install...
+  # No emacs or no ruby, so this must be linux > figure out how to install...
 
   if [[ ! "$ruby_is_installed" =~ ^/ ]] || [[ ! "$emacs_is_installed" =~ ^/ ]]; then
 
@@ -74,9 +74,9 @@ function check_dependencies {
     echo -e "  ${u}c${uu}ancel"
     echo -e "  ${u}s${uu}how them first\n"
 
-    read -n1 -p "Type one of the highlighted letters: " doit
+    read -n1 -p "Type one of the underlined letters: " choice
 
-    if [ "$doit" = "c" ]; then
+    if [ "$choice" = "c" ]; then
       echo -e "\n\nXsh can't run without it's dependencies :(\n"
       exit 1
     fi
@@ -86,12 +86,12 @@ function check_dependencies {
       echo "  a: apt-get"
       echo "  y: yum"
       echo ""
-      read -n1 -p "(a/y): " choice
-      if [ "$choice" = "a" ]; then
+      read -n1 -p "(a/y): " choice2
+      if [ "$choice2" = "a" ]; then
         install="$aptget_install"
-      elif [ "$choice" = "y" ]; then
+      elif [ "$choice2" = "y" ]; then
         install="$yum_install"
-      elif [ "$choice" = "p" ]; then
+      elif [ "$choice2" = "p" ]; then
         install="$pacman_install"
       else
         echo "You didn't type 'a' or 'y'."
@@ -109,36 +109,62 @@ function check_dependencies {
       install="bash $dir/install_source_dependency.sh"
     fi
 
-    case "$doit" in
+
+    # Check for "show" first > so we can prompt for key, and if they pick "install", its code is still below
+
+    if [[ $choice = "s" ]]; then
+
+      # Show install commands, prompt to install, then just exit if not "i"...
+
+      echo -e "\n\nThis will be run to install xsh's dependencies:\n"
+      if [[ ! "$ruby_is_installed" =~ ^/ ]]; then
+        echo "  $ $install ruby"
+      fi
+      if [[ ! "$emacs_is_installed" =~ ^/ ]]; then
+        echo "  $ $install emacs"
+      fi
+
+      echo -e "\nXsh's dependencies are largely transparent to the user.\nYou don't need to have any expertise about them to use xsh.\n"
+
+      echo -e "  ${u}i${uu}nstall"
+      echo -e "  ${u}c${uu}ancel\n"
+
+      read -n1 -p "Type one of the underlined letters: " choice2
+
+      if [ "$choice2" != "i" ]; then
+        echo -e "\n\nXsh can't run without it's dependencies :(\n"
+        exit 1
+      fi
+
+      # They typed 'i', so continue with install...
+      choice=i
+
+    fi
+
+
+    # Install if "i"
+
+    case "$choice" in
       i|I)
         echo -e "\n\nInstalling the dependencies. Could take a few minutes...\n"
         if [[ ! "$ruby_is_installed" =~ ^/ ]]; then
+          echo -e "$ $install ruby\n"
           if ! $install ruby || [[ ! $(type -P ruby) =~ ^/ ]]; then
             echo ruby install failed\!
             exit 1
           fi
         fi
         if [[ ! "$emacs_is_installed" =~ ^/ ]]; then
+          echo -e "$ $install emacs\n"
           if ! $install emacs || [[ ! $(type -P emacs) =~ ^/ ]]; then
             echo emacs install failed\!
             exit 1
           fi
         fi
         echo -e "\n\n"
-        # No exit, so continue on to run xsh
+        # Continue on to run xsh
         ;;
-      s|S)
-        echo -e "\n\nThis will be run to install xsh's dependencies:\n"
-        if [[ ! "$ruby_is_installed" =~ ^/ ]]; then
-          echo "  $ $install ruby"
-        fi
-        if [[ ! "$emacs_is_installed" =~ ^/ ]]; then
-          echo "  $ $install emacs"
-        fi
-        echo -e "\nNote that xsh's dependencies are largely transparent\nto the user.  You don't need to have any expertise\nabout them to use xsh."
-        echo -e "\nRun xsh to see the options again. (You can optionally install the\ndependencies yourself first.)\n"
-        exit
-        ;;
+
       *)
         echo -e "\n\nXsh can't run without it's dependencies :(\n"
         exit 1
@@ -146,9 +172,6 @@ function check_dependencies {
     esac
 
   fi
-
-  # New
-
 
   # Mac and emacs22...
 
@@ -165,51 +188,77 @@ function check_dependencies {
       # echo -e "Please install Homebrew, and then run xsh again.\n\nThe homebrew installer can be found here:\n\n  http://brew.sh/\n"
       # exit 1
 
+    elif [[ ! -w /usr/local/ ]] || [[ ! -w /usr/local/bin/ ]]; then
 
-    # /usr/local/bin/emacs exists, but /usr/bin/emacs is first in $PATH, so hard-code to the former...
+      # Homebrew permissions not set up properly, so don't make them install emacs
+
+      return
+
+      # Old > # Tell them to fix homebrew if directories aren't writable
+      #   echo "Your Homebrew permissions seem strange. Try running"
+      #   echo "'brew install emacs' and then run xsh again. If that"
+      #   echo "doesn't work, try 'brew doctor'."
+      #   echo ""
+      #   exit 1
 
     elif [ -f /usr/local/bin/emacs ]; then
+
+      # /usr/local/bin/emacs exists (even though /usr/bin/emacs may be first in $PATH), so hard-code to it...
+
       emacs="/usr/local/bin/emacs"
       emacsclient="/usr/local/bin/emacsclient"
       emacs_version=`$emacs -version 2>&1`
       emacsclient_version=`emacsclient -version 2>&1`
 
+    elif [ -f ~/.xiki/misc/no_brew_install_emacs ]; then
+
+      # They opted not to do the brew emacs upgrade in the past
+
+      # noop
+      :
+
     else
 
       # Mac and emacs22 (and homebrew installed), so require "brew install emacs"...
 
-      # Tell them to fix homebrew if directories aren't writable
-      if [[ ! -w /usr/local/ ]] || [[ ! -w /usr/local/bin/ ]]; then
-        echo "Your Homebrew permissions seem strange. Try running"
-        echo "'brew install emacs' and then run xsh again. If that"
-        echo "doesn't work, try 'brew doctor'."
-        echo ""
-        exit 1
+      echo -e "Xsh would like to upgrade a dependency to a newer version."
+      echo -e "This should take less than a minute over a fast internet"
+      echo -e "connection.\n"
+
+      echo -e "  ${u}u${uu}pgrade the dependency"
+      echo -e "  ${u}s${uu}how them first"
+      echo -e "  ${u}p${uu}roceed without upgrading\n"
+
+      read -n1 -p "Type one of the underlined letters: " choice
+
+      # Check for "show" first > so we can prompt for key, and if they pick "install", its code is still below
+
+      if [[ $choice = "s" ]]; then
+
+        echo -e "\n\nThis will be run, to upgrade your emacs version:\n"
+        echo "  brew install emacs"
+
+        echo -e "\nXsh's dependencies are largely transparent to the user.\nYou don't need to have any expertise about them to use xsh.\n"
+
+        echo -e "  ${u}u${uu}pgrade the dependency"
+        echo -e "  ${u}p${uu}roceed without upgrading\n"
+
+        # Re-read in their choice
+        read -n1 -p "Type one of the underlined letters: " choice
+
       fi
 
-      echo "Xsh needs a couple dependencies. Installing them should take"
-      echo -e "less than a minute over a fast internet connection.\n"
 
-      echo -e "  ${u}i${uu}nstall the dependencies"
-      echo -e "  ${u}s${uu}how them first"
-      echo -e "  ${u}p${uu}roceed without them for now\n"
-
-      read -n1 -p "Type one of the highlighted letters: " doit
-
-      case "$doit" in
-        i|I)
+      case "$choice" in
+        u|U)
           echo -e "\n\n"
+          echo -e "$ brew install emacs\n"
           brew install emacs
           ;;
         p|P)
-          # Do nothing, let them continue
+          # Let them continue, and remember not to prompt again
+          touch ~/.xiki/misc/no_brew_install_emacs
           echo
-          ;;
-        s|S)
-          echo -e "\n\nThis will be run:\n"
-          echo "  brew install emacs"
-          echo -e "\nRun xsh to see the options again.\n"
-          exit
           ;;
         *)
           echo -e "\n\nYour choice wasn't understood. Run xsh to see the options again.\n"
