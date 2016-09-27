@@ -1,7 +1,7 @@
 > Preparation
 1. Install xsh (Xiki Shell) if you haven't yet.
 
-<- xsh/install
+http://xiki.com/.install
 
 2. Have a shell terminal window open, to type into while doing the tutorial steps.
 3. Follow the numbered steps below.
@@ -11,6 +11,9 @@ just explanatory.
 
 - The web version of this tutorial is available here:
 http://xiki.com/@xiki/tutorial
+
+- Chat with us as you're doing the tutorial here:
+https://gitter.im/trogdoro/xiki
 
 - What if I don't use bash?:
 If you use another shell like zsh, just assume "zsh" where the
@@ -24,7 +27,7 @@ interactive. It creates UIs for shell commands and other tools and
 databases. But let's begin with how xsh improves the basic shell
 terminal experience!
 
-1. Make sure you're in your shell terminal at a blank bash prompt.
+1. Make sure you're in your shell terminal at an empty bash prompt.
 2. Type "xsh" then type return.
 
 $ xsh
@@ -52,7 +55,7 @@ don't appear on the screen.
 All of the keys except for the last 3 work in bash as well as in xsh.
 
 3. Press Ctrl+Q to quit and go back to bash.
-4. Now press Ctrl+O. It's a shortcut for opening xsh, when on a blank bash prompt.
+4. Now press Ctrl+O. It's a shortcut for opening xsh, when on an empty bash prompt.
 
 
 - Troubleshooting:
@@ -68,7 +71,7 @@ to pipe to grep, which is slow and tedious.
 
 1. Press Ctrl+Q to go back to bash.
 2. Type "cd /" and return, to change to your root directory.
-3. Type "ls" without typing return (the "l" is a lowercase L).
+3. Type "ls" but don't type return (the "l" is a lowercase L).
 4. Now, press Ctrl+O. It opens xsh and runs the command.
 
 When you see "A-Z Filter" in the bottom bar, it means you can type
@@ -116,7 +119,7 @@ Xsh integrates with your favorite text editor.
 
 1. With the cursor on the "hosts" line, press Ctrl+O to open it.
 
-You're now viewing the /usr/hosts file with xsh. Now we'll use your
+You're now viewing the /etc/hosts file with xsh. Now we'll use your
 editor.
 
 2. Press the esc key to return to the last view.
@@ -129,7 +132,7 @@ set, xsh defaults to "nano" on linux or "TextEdit" on mac.
 
 Now let's quit our text editor and go back to bash.
 
-4. Press Ctrl+Q in xsh if it's still open (xsh stays open in the terminal for graphical editors).
+4. If xsh is still open, press Ctrl+Q (xsh stays open in the terminal for graphical editors).
 5. Type whatever is necessary to quit your text editor (Ctrl+X quits nano).
 
 Later we'll show how to use your favorite text editor to create and
@@ -141,7 +144,7 @@ You can try esc to go to the previous view, or Ctrl+Z to undo.
 
 > Persistent scratchpad for commands and notes
 You can always go back to the last place you were in xsh. Just press
-Ctrl+G at a blank bash prompt. In this way, xsh acts like a persistent
+Ctrl+G at an empty bash prompt. In this way, xsh acts like a persistent
 scratchpad, that you can jump in and out of.
 
 1. In bash, press Ctrl+G to go back to the last place you were in xsh.
@@ -180,8 +183,8 @@ key does.
 7. Click on the "x" at the right of the bottom bar, to close the view.
 
 - Tip:
-If mouse support isn't enabled, you can press Ctrl+| (ie. Ctrl+\) to
-see the descriptions. Or see the following link.
+If mouse support isn't enabled, you can press Ctrl+\ to see the
+descriptions. Or see the following link.
 
 <- bar
 
@@ -219,16 +222,16 @@ topics with a lot of notes. Say, 100 or more.
 1. Press Ctrl+Q to go back to bash.
 2. Press Ctrl+X list your Xiki topics.
 3. Type "di" to filter to "disk".
-4. Press return three times.
+4. Press return, to lists the notes in the topic.
+5. Press return, to open the "Space available" note.
+6. Press return, to run the command.
 
-The first return lists the notes in the topic. The 2nd return opens
-the "Space available" note. The 3rd return runs the shell command.
 Those three returns could have been Ctrl+O's instead. The only
 difference is that return narrows down to one item before it opens.
 
-You could've also typed "disk space" then Ctrl+X at a blank bash
-prompt. That would show the "disk" topic and filter down to notes
-containing the word "space".
+You could've also typed "disk space" then Ctrl+X at an empty bash
+prompt, then pressed return twice. That would show the "disk" topic
+and filter down to notes containing the word "space".
 
 - Just text files:
 Creating notes is as simple as creating a text file (or adding stuff
@@ -319,7 +322,7 @@ directly if we wanted to).
 
 You can see that we've switched branches.
 
-4. Move your cursor down to a blank line, and press Ctrl+R to show recent commands.
+4. Move your cursor down to an empty line, and press Ctrl+R to show recent commands.
 5. Type "lo" to narrow to "git log", then press return.
 
 You'll see there are "reasonable" commits in this branch. You can open
@@ -397,6 +400,9 @@ run sql statements.
 
 > Congratulations
 Congrats, you've finished the tutorial!
+
+Chat with us about how you liked the tutorial:
+https://gitter.im/trogdoro/xiki
 
 Follow @xiki on twitter:
 http://twitter.com/xiki
