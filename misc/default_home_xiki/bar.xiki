@@ -5,10 +5,6 @@ only in xsh.
 
 
 > Open
-Ctrl+O in bash:
-- On a blank prompt: Just opens xsh.
-- After typing a shell command: Opens xsh and runs the shell command.
-
 Ctrl+O in xsh:
 - On a "$ foo" line: Runs the shell command.
 - On a "foo" line: Opens the Xiki topic (lists the notes in it).
@@ -16,52 +12,56 @@ Ctrl+O in xsh:
 - Various other lines: Opens them (does something appropriate with them).
 - Double-clicking does the same as Ctrl+O (if mouse support is enabled)
 
+Ctrl+O in bash:
+- On a blank prompt: Just opens xsh.
+- After typing a shell command: Opens xsh and runs the shell command.
+
 
 > Go
-Ctrl+G in bash:
-- On a blank prompt: Goes to the last place you were in xsh.
-- After typing a topic: Goes to the topic file.
-
 Ctrl+G in xsh:
 - On a "$ foo" line: Goes to bash, and runs the shell command.
 - On a "foo" line: Goes to the Xiki topic file.
 - On a file: Goes to the file in your default editor.
 - On a directory: Goes to bash, and cds to it.
 
+Ctrl+G in bash:
+- On a blank prompt: Goes to the last place you were in xsh.
+- After typing a topic: Goes to the topic file.
+
 
 > Tasks
-Ctrl+T in bash:
-- On a blank prompt: Shows the tasks for the current directory.
-- After typing a shell command: Shows the tasks for it.
-
 Ctrl+T in xsh:
 - On a "$ foo" line: Shows the tasks for the shell command.
 - On a "foo" line: Shows the tasks for the topic.
 - Right-clicking does the same as Ctrl+T (if mouse support is enabled)
 
+Ctrl+T in bash:
+- On a blank prompt: Shows the tasks for the current directory.
+- After typing a shell command: Shows the tasks for it.
+
 
 > Xiki
-Ctrl+X in bash:
-- On a blank prompt: Lists your topics.
-- After typing a topic: Lists the notes in it.
-- After typing a search string: Searches your local notes.
-
 Ctrl+X in xsh:
 - On a "$ foo" line: Lists the notes in the topic for the shell command.
 - On a "foo" line: Lists your notes in the topic.
 - On a "search string" line: Lists your notes in the topic matching the string.
 
+Ctrl+X in bash:
+- On a blank prompt: Lists your topics.
+- After typing a topic: Lists the notes in it.
+- After typing a search string: Searches your local notes.
+
 
 > Search
-Ctrl+S in bash:
-- On a blank prompt: Shows popular topics and searches.
-- After typing a topic: Searches shared notes (from all users).
-- After typing a search string: Searches shared notes.
-
 Ctrl+S in xsh:
 - On a "$ foo" line: Searches shared notes for the shell command.
 - On a "foo" line: Show's most popular shared notes for the topic.
 - On a "search string" line: Searches shared notes.
+
+Ctrl+S in bash:
+- On a blank prompt: Shows popular topics and searches.
+- After typing a topic: Searches shared notes (from all users).
+- After typing a search string: Searches shared notes.
 
 
 > Content
