@@ -76,12 +76,20 @@ module Xiki
 
       # Call it when ruby-mode-map
 
-      $el.el4r_lisp_eval %`(progn
-        (defun xiki-ruby-mode-keys ()
-          (el4r-ruby-eval "Xiki::Ruby.keys")
+      $el.el4r_lisp_eval %`
+        (progn
+          (defun xiki-ruby-mode-keys ()
+            (el4r-ruby-eval "Xiki::Ruby.keys")
+          )
+          (add-hook 'ruby-mode-hook 'xiki-ruby-mode-keys)
+
+          ; Highlight "#+ Comments" indent as white (it wasn't possible to highlight the comment itself)
+          (font-lock-add-keywords 'ruby-mode '(
+            ("\\\\( *\\\\)#\\\\+" (0 nil) (1 'color-rb-white))
+          ))
+
         )
-        (add-hook 'ruby-mode-hook 'xiki-ruby-mode-keys)
-      )`
+      `
 
       self.keys   # Call it now, in case ruby-mode-map already loaded (it probably is if reloading after a .rb file was visited)
 
@@ -99,6 +107,7 @@ module Xiki
         end
 
       end
+
     end
 
     # Makes "Foo.bar" string from quoted method line.

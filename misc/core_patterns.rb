@@ -800,6 +800,18 @@ module Xiki
 
   end
 
+  # "#+", show all #+... comments in > xiki...
+  Xiki.def(/\A#\+\z/i) do |path, options|
+    Launcher.open("#{Bookmarks["%s"]}\n  - ##^ *#\\+/")
+  end
+
+  # "#++", show all #+... comments in > xiki hub...
+  Xiki.def(/\A#\+\+\z/i) do |path, options|
+    Launcher.open("#{Bookmarks["%h"]}\n  - ##^ *#\\+/")
+  end
+
+
+
   # "->", so list headings in same view...
 
   Xiki.def(/\A->(\/|$)/i) do |path, options|
