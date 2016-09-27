@@ -731,10 +731,8 @@ module Xiki
 
         # Ctrl+X on a blank prompt, so show "~ recent/"...
 
-        Tree.<< "* recent/", :no_slash=>1
-        Launcher.launch
-
-        return ""
+        key = Keys.noob_mode ? "Ctrl+R" : "Ctrl+R Ctrl+R"
+        return "<* - Try #{key} to show recent"
 
       end
 
@@ -1404,10 +1402,8 @@ Ol.stack 15   #> |||||||||||||||-
         path = Tree.path rescue nil
 
         if path[-1] == ""
-
           Line << "$\n  * recent/"
           Launcher.launch # :task=>["recent/"]
-
           return ""
 
         elsif path[-1] =~ /^[$%&] /
