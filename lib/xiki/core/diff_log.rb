@@ -511,14 +511,10 @@ module Xiki
 
       modified_files = txt.scan(/^= /)
 
-      # If only one unsaved > and > current file is an unsaved interaction
-      # For now, just save if the only modified file is the current file
-
-      # if txt.scan(/^= /).length == 1 && View.modified? # && View.file.start_with?(File.expand_path("~/.xiki/interactions")+"/")
-
+      # Current file is .xiki and the only modified file, so auto-save it
 
       current_file_is_modified = file && View.modified?
-      if modified_files.length == 1 && current_file_is_modified  # && View.file.start_with?(File.expand_path("~/.xiki/interactions")+"/")
+      if modified_files.length == 1 && current_file_is_modified && View.extension == "xiki"
         options = {}
         options[:open_browser] = 1 if ! existed_already
         self.save options
@@ -526,7 +522,7 @@ module Xiki
       end
 
       # No files to save, or all are "no changes" or "File no longer exists?"
-      # if txt == "- No files unsaved!\n" || txt !~ /^  (?!: no changes|: File no longer exists\?$)/
+
       if self.nothing_unsaved txt
 
         # Unsaved "xsh" buffer, so save it...
