@@ -1847,7 +1847,6 @@ module Xiki
     def self.to_outline options={}
       prefix = options[:prefix] || Keys.prefix(:clear=>true)
 
-
       # @x/x/x view, so use "@u/..." to show outline...
 
       name = View.name
@@ -1871,6 +1870,7 @@ module Xiki
         # In a ~/xiki/foo.xiki file, so expand topic instead of showing file outline...
 
         if extension == "xiki" && dir == File.expand_path("~/xiki")+"/" || link_filename
+
           file = link_filename if link_filename   # Use link > if it exists
           topic = File.basename(file, ".*").gsub("_", " ")
           Line.value
@@ -1888,7 +1888,7 @@ module Xiki
 
           View.cursor = cursor
 
-          Launcher.open topic, :bar_is_fine=>1, :original_heading=>original_heading   #> ||||||
+          Launcher.open topic, :bar_is_fine=>1, :original_heading=>original_heading, :prefix=>prefix
           return
 
         elsif extension == "xiki"

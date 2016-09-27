@@ -241,6 +241,13 @@ module Xiki
       # redundant call here > don't call if > did ^O!
       return self.tasks_dropdown(options) if !task && results == ""
 
+
+      # Dash+list+outline, so show "> foo:" lines only
+      if ! items && options[:prefix] == :u
+        results = results.split(/\n/).grep(/:$/).join("\n")
+      end
+
+
       # Set :line_found Based on the original heading!
       if original_heading = options[:original_heading]
 
