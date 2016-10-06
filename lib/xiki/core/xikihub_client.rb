@@ -248,13 +248,12 @@ module Xiki
           ! XikihubClient.upvote options
         * comment
           ! XikihubClient.comment options
-        * web
-          ! url = "todo > url"
-          ! Ol "!!!"
-          ! Ol "url", url   # => "http://localhost:8162/@trogdoro/.test#bullets-and-formatting"
-          ! Browser.url url
-          ! ""
       `.unindent
+
+      # * web
+      #   ! url = "todo > url"
+      #   ! Browser.url url
+      #   ! ""
 
     end
 
@@ -505,9 +504,7 @@ module Xiki
       # Timeout::timeout(2.5) do
       Timeout::timeout(7) do
         dns_resolver = Resolv::DNS.new()
-        # dns_resolver.getaddress("xiki.com")
-        address = dns_resolver.getaddress("xiki.org")
-        Ol "address", address   #> #<Resolv::IPv4 64.22.125.165>
+        address = dns_resolver.getaddress("xiki.com")
       end
       nil
 
@@ -956,10 +953,16 @@ module Xiki
 
       elsif ! file
 
+
+        # In the future, when no username show "go here to join private beta" teaser
+        return View.flash("- Requires XikiHub username!") if ! XikihubClient.username
+
+
         # Untitled view, so prompt them to share
 
         Move.top
         View >> "\n\n"
+
         View << "* share\n  | #{Notes.share_or_save_prompt_text}\n  : "
 
       else

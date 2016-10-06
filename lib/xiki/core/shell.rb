@@ -950,7 +950,10 @@ module Xiki
 
       # "> Heading/| Foo", so show items to save or share...
 
+
+      # Never used?
       return "* save\n* share" if args && args.length == 2 && args[0] =~ /^>/ && args[1] =~ /\n/
+
 
       txt = %`
         * add note
@@ -971,7 +974,13 @@ module Xiki
           ! Grab.go_key options
         * man
           ! Shell.shell_man options
-      `
+      `.unindent
+
+
+      # In the future, when no username show "go here to join private beta" teaser
+      if ! XikihubClient.username
+        txt.sub!(/^\* share\n.+?\n\*/m, '*')
+      end
 
 
       menu = Xik.new txt

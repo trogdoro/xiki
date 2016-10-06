@@ -412,7 +412,8 @@ module Xiki
           :face=>'arial black', :size=>"0",
           :fg=>"d22", :bold=>true
 
-        Styles.define :notes_link, :fg=>(Styles.dark_bg? ? "39b" : "08f"), :bold=>false
+        # Styles.define :notes_link, :fg=>(Styles.dark_bg? ? "9ad" : "08f"), :bold=>false
+        Styles.define :notes_link, :fg=>(Styles.dark_bg? ? "aaa" : "08f"), :bold=>1
 
         Styles.define :shell_prompt, :fg=>'#888', :bold=>1
 
@@ -1522,6 +1523,8 @@ module Xiki
         target = self.find_heading_from_path txt, target   #> |||
       end
 
+      return nil if ! target
+
       # Delete everything before and after the target section   #> nil
 
       txt = txt.dup
@@ -1585,20 +1588,19 @@ module Xiki
 
 
 
-      # $... path, so run Xiki command if cursor at right, otherwise collapse and run...
+      # $... path, so collapse up to parent shell command, if there is a parent...
 
       if path[-1] =~ /^ *\$( |$)/
 
-        # The cursor is at the right, so run Xiki command for the shell command...
-        return Shell.tab if Line.at_right?
-
-        line = Line.value
-
-        Launcher.collapse_items_up_to_dollar line.sub(/^ */, '')#, :or_root=>1
+        if path.length > 1
+          line = Line.value
+          Launcher.collapse_items_up_to_dollar line.sub(/^ */, '')#, :or_root=>1
+        end
 
         return
-
       end
+
+
 
       # |... quote under topic, so make quote replace topic
 
@@ -2436,15 +2438,18 @@ module Xiki
           * share_placeholder
           * web
             ! url = "#{XikihubClient.url}/@#{your_username}/#{name_hyphens}/#{Notes.heading_to_path heading, :url=>1, :remove_username=>1}"
-            ! Ol "!!!"
             ! Browser.url url, :os_open=>1
             ! ""
         `.unindent
 
+        # In the future, when no username show "go here to join private beta" teaser
+        txt.sub!(/^\* web\n.+/m, '') if ! XikihubClient.username
+
         # Show '~ share' if > new > or not '> @ ...' heading...
         # Show '* share' when > My note > or existing and your private or shared...
 
-        if ! options[:heading_exists] || options[:heading] !~ /^> @\w/   #> add 'share' option!!!
+        # In the future, when no username show "go here to join private beta" teaser
+        if XikihubClient.username && ( ! options[:heading_exists] || options[:heading] !~ /^> @\w/ )
           txt.sub! "* share_placeholder\n", "
               * share
                 ! Notes.save options
@@ -2479,11 +2484,12 @@ module Xiki
             ! ""
         `.unindent
 
-        # We're not in a non-topic file, so suppress "* as topic"
-        txt.sub!(/^\* as xiki topic\n.+\n/, '') if ! View.file || View.topic_file?
+        # We're in a topic file, so suppress "* as topic"
+        txt.sub!(/^\* as xiki topic\n.+?\n\* /m, '* ') if ! View.file || View.topic_file?
 
-        # We're not in an untitled view, so suppress share
-        txt.sub!(/^\* share\n.+\n/, '') if View.file
+        # We're not in an untitled view or no username, so suppress share
+        # In the future, when no username show "go here to join private beta" teaser
+        txt.sub!(/^\* share\n.+\n/, '') if View.file || ! XikihubClient.username
 
         txt
 
