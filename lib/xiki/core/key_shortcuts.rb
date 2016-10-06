@@ -91,8 +91,6 @@ module Xiki
       Xiki.def("list+outline", :noob=>1){ FileTree.to_outline }
       Xiki.def("list+appointments", :noob=>1){ Launcher.open("~/xiki/notes.xiki\n  - ##^> 201/", :bar_is_fine=>1) }   # Appointments and other important tasks
 
-      Xiki.def("list+zoom"){ CodeTree.kill_siblings :cross_blank_lines=>1 }   # kill adjacent lines at same indent as this one
-
       # G: leave unmapped for escape
 
       Xiki.def("list+preferences+bar"){
@@ -215,6 +213,7 @@ module Xiki
 
       Xiki.def("content+bookmark", :noob=>1){ Bookmarks.save }
       Xiki.def("content+keys"){ Xiki::View.toggle_bar_mode }
+      Xiki.def("content+zoom", :noob=>1){ CodeTree.kill_siblings :cross_blank_lines=>1 }   # kill adjacent lines at same indent as this one
 
       Xiki.def("content+editor"){ Grab.content_editor }
 
@@ -225,6 +224,7 @@ module Xiki
       Xiki.def("content+xiki"){ Launcher.open_topic }
 
       Xiki.def("content+views"){ View.link_views }
+
 
       # content+N > Go to nth fraction of the screen (ie content+5 to jump to middle)
       (1..9).each do |n|
@@ -611,8 +611,6 @@ module Xiki
         Xiki.def("jump+to+edge", :eval=>"Search.isearch_restart :edge")   # Restart search at top
 
 
-        Xiki.def("jump+to+have", :eval=>"Search.just_select")   # select match
-
         Xiki.def("jump+to+kill", :eval=>"Search.just_kill")
 
         Xiki.def("jump+to+integer", :eval=>"Search.stop; Search.isearch '[0-9][0-9.]*', :regex=>1")
@@ -631,7 +629,12 @@ module Xiki
         Xiki.def("jump+to+quote", :eval=>"Search.isearch_google :quote=>true")
 
         Xiki.def("jump+to+web", :eval=>"Search.isearch_google :quote=>true")
-        Xiki.def("jump+to+yellow", :eval=>"Search.just_orange")
+
+        Xiki.def("jump+to+highlight+this", :eval=>"Search.just_orange")   # Highlight just match as orange
+        # Todo > implement these
+        Xiki.def("jump+to+highlight+all", :eval=>"Search.highlight_all_found")   # Highlight all matches
+        Xiki.def("jump+to+highlight+lines", :eval=>"Search.highlight_matching_lines")   # Highlight all lines that match
+        # jump+to+y < available
 
 
         # jump+show+ keys...
