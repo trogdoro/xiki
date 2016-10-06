@@ -6,8 +6,7 @@ module Xiki
 
       if args == []
         return "
-          | Welcome to xsh (Xiki Shell)! Choose the default setup or an
-          | alternate setup.
+          | Welcome to xsh (Xiki Shell)!
           |
           1. Use the up and down arrow keys to move your cursor to an item below.
           2. Then type Ctrl+O to open (it will perform the setup).
@@ -19,9 +18,29 @@ module Xiki
           | get you started, and enables searching on xiki.com.
           |
           + details about default setup
-          + alternate setups
+          + alternate setup
         ".unindent
       end
+
+      # Restore back to this when there is time to make alternate setups:
+      # if args == []
+      #   return "
+      #     | Welcome to xsh (Xiki Shell)! Choose the default setup or an
+      #     | alternate setup.
+      #     |
+      #     1. Use the up and down arrow keys to move your cursor to an item below.
+      #     2. Then type Ctrl+O to open (it will perform the setup).
+      #     |
+      #     + default setup
+      #     |
+      #     | The default setup remaps several key shortcuts in bash (or zsh),
+      #     | enables mouse support, downloads some default xiki actions to
+      #     | get you started, and enables searching on xiki.com.
+      #     |
+      #     + details about default setup
+      #     + alternate setups
+      #   ".unindent
+      # end
 
       if args == ["default setup"]
         return self.default_setup options
@@ -58,7 +77,14 @@ module Xiki
           | consider using one of the alternate setups.
           |
 
+        `.unindent
 
+      elsif args == ["alternate setup"]
+        return %`
+          | If you'd like to install with fewer or no key shortcuts remaped
+          | in bash (or zsh), run "default setup" and then edit ~/.xsh to
+          | comment out or modify some of all of the key mappings. Then
+          | reload your shell.
 
         `.unindent
 
