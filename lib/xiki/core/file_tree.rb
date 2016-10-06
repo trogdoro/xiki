@@ -461,7 +461,9 @@ module Xiki
         Styles.apply("^[ \t]*[+-] [^(\n]+?) \\(.+/\\)$", nil, :ls_dir)   # - hey) /what/
         Styles.apply("^[ \t]*[+-] [a-zA-Z0-9_,? ().:;-]+?: \\(.+/\\)$", nil, :ls_dir)   # - hey: /what/
 
-        Styles.apply('\\(https?\\|file\\|xiki\\|source\\):/[a-zA-Z0-9\/.~_:;,?%&*=|+!@#()-]+', :notes_link)   # Url
+        Styles.apply('\\(https?\\|file\\|xiki\\|source\\):/[a-zA-Z0-9\/.~_:;,?%&*=|+!@#()-]+', :notes_link)   # http://url.com
+        Styles.apply('^[a-z][a-z.]+@[a-z][a-z.]+[a-z] ', :notes_link)   # email@address.com Message to user
+
 
         Styles.apply("^ *\\([`!:]\\)\\($\\| .*\n\\)", nil, :quote_heading_pipe, :ls_quote)   # :... lines (quotes)
         Styles.apply("^ *\\([\\\\]\\)\\($\\| .*\n\\)", nil, :quote_heading_pipe, :default)   # :... lines (quotes)
