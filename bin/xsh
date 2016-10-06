@@ -256,7 +256,7 @@ function check_dependencies {
 
           # Make sure brew command won't break because of license agreement
           shopt -s nocasematch
-          if [[ $(make --version) =~ xcode.+license ]]; then
+          if [[ $(make --version 2>&1) =~ xcode.+license ]]; then
             echo -e "\nIt looks like you haven't agreed to the Xcode license.\nThis is blocking the brew command from running. Please\nlaunch Xcode and accept the license and then run the\nXiki installer again.\n\n"
             exit 1
           fi
