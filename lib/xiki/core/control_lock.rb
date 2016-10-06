@@ -5,6 +5,11 @@ module Xiki
   class ControlLock
 
     def self.toggle
+      # if in noob mode, do nothing
+      return if Keys.noob_mode
+
+      # in the future use green box and "xsh > Ctrl+U enabled" to let them enable it
+
       $el.control_lock_enable
     end
 
