@@ -329,8 +329,10 @@ module Xiki
         return
       end
 
+
+      # Do nothing when ^S on onrecognized line
       # "foo/" or "$ foo" or some other type of line
-      Tree.<< "Todo > implement what ^S on this does"
+      # Tree.<< "Todo > implement what ^S on this does"
 
     end
 
