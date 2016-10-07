@@ -188,7 +188,7 @@ function check_dependencies {
       # echo -e "Please install Homebrew, and then run xsh again.\n\nThe homebrew installer can be found here:\n\n  http://brew.sh/\n"
       # exit 1
 
-    elif [[ ! -w /usr/local/ ]] || [[ ! -w /usr/local/bin/ ]]; then
+    elif [[ ! -w /usr/local/bin/ ]]; then
 
       # Homebrew permissions not set up properly, so don't make them install emacs
 
