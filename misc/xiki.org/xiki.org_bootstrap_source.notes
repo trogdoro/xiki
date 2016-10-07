@@ -11,6 +11,8 @@
     3. Upload home page
     $ scp index.html xiki@xiki.org:/var/www/xiki.org/index.html
 
+http://xiki.org
+
 
 > Old directions > 1. Edit home page
 xiki loc/
@@ -63,7 +65,7 @@ xiki loc/
         | <h3 style="text-align:center; margin:10px 0 4px;">
           | One-line Installer:
         - p style="margin-bottom:0px;"/
-          | <input type="text" value="curl -L https://raw.githubusercontent.com/trogdoro/xiki/actions/install_xsh -o ~/install_xsh; bash ~/install_xsh" style="font-size:25px; padding:10px; height:30px; width:55%; margin-top:0px; margin-bottom:5px;">
+          | <input type="text" value="curl -L https://raw.githubusercontent.com/trogdoro/xiki/master/install_xsh -o ~/install_xsh; bash ~/install_xsh" style="font-size:25px; padding:10px; height:30px; width:55%; margin-top:0px; margin-bottom:5px;">
         - p style="margin-bottom:25px;"/
           | Copy and paste this into your shell console to install Xiki Shell (xsh)!
     - row/
