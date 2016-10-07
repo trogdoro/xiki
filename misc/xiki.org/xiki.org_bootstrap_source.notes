@@ -1,4 +1,18 @@
-> 1. Edit home page
+> New directions > update site
+~/projects/
+  - xiki_org/
+    1. Download home page
+    $ scp xiki@xiki.org:/var/www/xiki.org/index.html index.html
+  - xiki_org/
+    2. Edit
+    + index.html
+
+  - xiki_org/
+    3. Upload home page
+    $ scp index.html xiki@xiki.org:/var/www/xiki.org/index.html
+
+
+> Old directions > 1. Edit home page
 xiki loc/
   | <!--
   |   - about/
