@@ -12,11 +12,15 @@ module Xiki
       txt = %`
         #!/bin/sh
 
-        # Make the 'xsh' command available in all shells
-        export PATH=#{xiki_dir}/bin:$PATH
       `.strip.gsub(/^ */, '')+"\n\n"
       txt << File.read("#{xiki_dir}/misc/install/.xsh.default")
+
+      # commit/Moved lines in .xsh with project path close together.
+
       txt << %`
+        # Make the 'xsh' command available in the shell
+        export PATH=#{xiki_dir}/bin:$PATH
+
         # Enable the key shortcuts and the xsh wrapper function
         source #{xiki_dir}/bin/.xsh
       `.strip.gsub(/^ */, '')+"\n\n"
