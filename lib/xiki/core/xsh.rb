@@ -69,13 +69,11 @@ module Xiki
         args = ""
 
       # xsh = > or > ^G...
-      elsif args == "^"
 
-        # -/, so recognize as ^G on blank line...
+      elsif args == "+"
 
         # Jump back to last place we were (or last place content+grab was run)
-        self.to_go_location
-        options[:do_nothing] = 1
+        return self.to_go_location
 
       # xsh - > or > ^T...
       elsif args == "-"
@@ -209,7 +207,7 @@ module Xiki
         args = View.dir
 
       # -foo/, so treat as xiki command...
-      elsif args.slice!(/^\^/)
+      elsif args.slice!(/^\+/)
 
         # grab+ on ^bookmark, so cd and exit...
 

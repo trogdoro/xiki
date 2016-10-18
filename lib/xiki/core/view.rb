@@ -2383,11 +2383,6 @@ module Xiki
       # Results in 5 columns
       individual_width = whole_width / 4
 
-      Ol Buffers.list_names(:user_only=>1)
-
-      # Set 1st view
-      Ol Buffers.list
-
       count = 0
 
       buffers = Buffers.list_names(:user_only=>1)
