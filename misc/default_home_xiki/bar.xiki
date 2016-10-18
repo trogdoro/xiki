@@ -7,25 +7,25 @@ only in xsh.
 > Open
 Ctrl+O in xsh:
 - On a "$ foo" line: Runs the shell command.
-- On a "foo" line: Opens the Xiki topic (lists the notes in it).
-- On a "$ " line: Shows recent shell commands.
+- On a "foo" line: Opens the topic "foo" (lists the notes in it).
 - Various other lines: Opens them (does something appropriate with them).
+  - such as directory and file paths, url's, notes, snippets
 - Double-clicking does the same as Ctrl+O (if mouse support is enabled)
 
 Ctrl+O in bash:
-- On a blank prompt: Just opens xsh.
+- On an empty prompt: Just opens xsh.
 - After typing a shell command: Opens xsh and runs the shell command.
 
 
 > Go
 Ctrl+G in xsh:
 - On a "$ foo" line: Goes to bash, and runs the shell command.
-- On a "foo" line: Goes to the Xiki topic file.
+- On a "foo" line: Goes to the topic file ("~/xiki/foo.xiki").
 - On a file: Goes to the file in your default editor.
 - On a directory: Goes to bash, and cds to it.
 
 Ctrl+G in bash:
-- On a blank prompt: Goes to the last place you were in xsh.
+- On an empty prompt: Goes to the last place you were in xsh.
 - After typing a topic: Goes to the topic file.
 
 
@@ -36,32 +36,32 @@ Ctrl+T in xsh:
 - Right-clicking does the same as Ctrl+T (if mouse support is enabled)
 
 Ctrl+T in bash:
-- On a blank prompt: Shows the tasks for the current directory.
+- On an empty prompt: Shows the tasks for the current directory.
 - After typing a shell command: Shows the tasks for it.
 
 
 > Xiki
 Ctrl+X in xsh:
-- On a "$ foo" line: Lists the notes in the topic for the shell command.
-- On a "foo" line: Lists your notes in the topic.
-- On a "search string" line: Lists your notes in the topic matching the string.
+- On an empty line: Lists your topics (ie. your "xiki topics").
+- On a "$ foo" line: Lists your notes in topic "foo".
+- On a "foo" line: Lists your notes in topic "foo".
+- On a "foo bar" line: Lists your notes in topic "foo" with "bar" in their heading.
 
 Ctrl+X in bash:
-- On a blank prompt: Lists your topics.
-- After typing a topic: Lists the notes in it.
-- After typing a search string: Searches your local notes.
+- On an empty prompt: Lists your topics.
+- After typing "foo": Lists your notes in topic "foo".
+- After typing "foo bar": Lists your notes in topic "foo" with "bar" in their heading.
 
 
 > Search
 Ctrl+S in xsh:
 - On a "$ foo" line: Searches shared notes for the shell command.
-- On a "foo" line: Show's most popular shared notes for the topic.
-- On a "search string" line: Searches shared notes.
+- On a "foo" line: Searches shared notes for topic "foo".
+- On a "foo bar" line: Searches shared notes in topic "foo" with "bar" in their heading.
 
 Ctrl+S in bash:
-- On a blank prompt: Shows popular topics and searches.
-- After typing a topic: Searches shared notes (from all users).
-- After typing a search string: Searches shared notes.
+- After typing "foo": Searches shared notes (from all users).
+- After typing "foo bar": Searches shared notes in topic "foo" with "bar" in their heading.
 
 
 > Content
@@ -79,6 +79,6 @@ navigating views, and listing all kinds of things, etc.
 > Quit
 Ctrl+Q in xsh:
 Quits xsh and goes back to bash. Then from bash, you can type Ctrl+G
-on a blank prompt to go back to where you were when you quit.
+on an empty prompt to go back to where you were when you quit.
 
 
