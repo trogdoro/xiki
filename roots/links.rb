@@ -1,5 +1,3 @@
-Ol "args", args   # => ["comments"]
-
 extract_options = {}
 
 # links/methods/, so only extract methods

@@ -306,7 +306,7 @@ beginning because it's an action (a special note that runs something
 when you open it). To create an action, just put a dot at the
 beginning of its name (eg. "> .Foo").
 
-4. Press return, and the action will clone a repo and its branches, and cd into it.
+4. Press return, and the action will clone a repo and its branches and cd into it.
 5. Type "git log" in bash, then Ctrl+O to open it in xsh. Xsh makes it interactive.
 6. Use Ctrl+O to open one or more of the commits to see the diffs.
 

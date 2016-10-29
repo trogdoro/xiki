@@ -490,41 +490,29 @@ module Xiki
 
   Xiki.def(/\A@\w.*/) do |path, options|
 
+    options[:halt] = 1
+
     XikihubClient.user path, options
 
   end
 
-  # email@address.com, so delegate to =mail...
 
-  Xiki.def(/\A[a-z0-9._-]+@[a-z0-9.-]+\.[a-z]+(\/|$)/i) do |path, options|
-    email = options[:expanders].find{|o| o[:match]}[:match][0]
 
-    path = Path.split options[:path]   # => ["craig.muth@gmail.com", "The body of\nthe email.\n"]
+  # email@address.com Message...
 
-    # Tasks...
+  Xiki.def(%r"^[a-z][a-z.]+@[a-z][a-z.]+[a-z] ") do |path, options|
 
-    if task = options[:task]
+    email, subject = path.split(" ", 2)
+    section = Notes.current_section_object.text
 
-      # No items, so list templates...
+    # New session, so move to top of 'misc' topic first
 
-      txt = File.read File.expand_path "~/.xiki/roots/email_templates.xiki"
-      array = txt.scan(/^> (.+?)\n([^>]+)/m).flatten
-      emails = Hash[*array]
+    XikihubClient.message email, subject, section, options
 
-      if task == []
-        # next txt.scan(/^> (.+)/).map{|o| "~ #{o[0]}/\n"}.join
-        next emails.keys.map{|o| "* #{o}/\n"}.join
-      end
-
-      txt = emails[task[0]]
-      txt.gsub! /^/, "| "
-      txt.sub! /\| - subject: /, "> "
-      next txt
-
-    end
-
-    Xiki["mail/#{email}", path[1..-1]]
+    options[:halt] = 1
+    "<* - Message sent"
   end
+
 
   # > foo $bar...
 

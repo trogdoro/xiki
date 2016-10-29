@@ -518,6 +518,19 @@ module Xiki
 
 
     # Called by DiffLog.save, and .share?
+    def self.message email, subject, section, options={}
+
+      url = "#{self.url}/.message"
+
+      result = self.post url, :body=>{
+        :email=>email,
+        :subject=>subject,
+        :section=>section,
+      }
+
+    end
+
+
     def self.save filename, options={}   #> .save:
 
       # Do nothing if not a task file (later: follow links? > maybe ignore links > like for projects with notes checked into their repo)   #> "quick"
@@ -763,58 +776,54 @@ module Xiki
           # Wait > could we just have no session mean anonymous?
             # No > because we no session might mean we just haven't authed yet (or re-authed after a session timeout)
             # And > a session for anonymous users will probably be useful in the future
-        # What happens now when anonymous? > No call to auth?
+        # What happens now when anonymous? > No call to auth
 
+      options = {:body=>{:username=>self.username, :auth_token=>self.auth_token}}
 
-      # Pass username and token if username exists
-      if username = self.username
+      options[:raise] = 1
+      result = RestTree.post url, options
 
-        options = {:body=>{:username=>username, :auth_token=>self.auth_token}}
-        options[:raise] = 1
-        result = RestTree.post url, options
+      self.raise_if_not_json result, "Couldn't authenticate with xikihub."
 
-        self.raise_if_not_json result, "Couldn't authenticate with xikihub."
+      result = TextUtil.symbolize_hash_keys JSON[result]
 
-        result = TextUtil.symbolize_hash_keys JSON[result]
+      # Incorrect username or password supplied, so stop now and show error
 
-        # Incorrect username or password supplied, so stop now and show error
+      if result[:result] != "success"
 
-        if result[:result] != "success"
+        # Clear out cached <username etc, so we'll reload from the file after they change it
+        @@auth_file_hash = nil
 
-          # Clear out cached username etc, so we'll reload from the file after they change it
-          @@auth_file_hash = nil
+        View.open("
+          > Incorrect username or password for XikiHub
+          - 1) Correct your username and auth token here
+          ~/.xikihub
+            : username:
+            : auth_token:
 
-          View.open("
-            > Incorrect username or password for XikiHub
-            - 1) Correct your username and auth token here
-            ~/.xikihub
-              : username:
-              : auth_token:
+          - 2) Reload xiki
+            | By typing Alt+R (or Meta+R)
 
-            - 2) Reload xiki
-              | By typing Alt+R (or Meta+R)
+          + close/
+        ".unindent)
+        View.line = 4
+        View.column = 3
 
-            + close/
-          ".unindent)
-          View.line = 4
-          View.column = 3
-
-          raise ""
-        end
-
-        cookies = options[:response].get_fields('set-cookie')
-
-        # Server is starting a new session, so store the cookie so we can always pass it back...
-
-        session_cookie = cookies.find{|o| o =~ /^_xikihub_rails_session=/}
-        if session_cookie
-          value = session_cookie[/=(.+?);/, 1]
-
-          # Auth succeeded (and they are at least confirmed) so store session cookie
-          @@session_cookie = value
-        end
-
+        raise ""
       end
+
+      cookies = options[:response].get_fields('set-cookie')
+
+      # Server is starting a new session, so store the cookie so we can always pass it back...
+
+      session_cookie = cookies.find{|o| o =~ /^_xikihub_rails_session=/}
+      if session_cookie
+        value = session_cookie[/=(.+?);/, 1]
+
+        # Auth succeeded (and they are at least confirmed) so store session cookie
+        @@session_cookie = value
+      end
+
 
     rescue SocketError=>e
       raise "Couldn't authenticate with xikihub. Check your internet connection."
@@ -955,17 +964,10 @@ module Xiki
 
       elsif ! file
 
-
         # In the future, when no username show "go here to join private beta" teaser
         return View.flash("- Requires XikiHub username!") if ! XikihubClient.username
 
-
-        # Untitled view, so prompt them to share
-
-        Move.top
-        View >> "\n\n"
-
-        View << "* share\n  | #{Notes.share_or_save_prompt_text}\n  : "
+        Notes.save_on_blank :task=>["share"]
 
       else
 
