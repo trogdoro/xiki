@@ -10,7 +10,7 @@ Xiki makes the command line friendlier and more powerful. Xiki Shell (xsh) lets 
 
 If you want a one-line installer, this should do the trick. Copy and paste it into your shell console.
 
-     curl -L https://raw.githubusercontent.com/trogdoro/xiki/master/install_xsh -o ~/install_xsh; bash ~/install_xsh
+     curl -L https://xiki.com/install_xsh -o ~/install_xsh; bash ~/install_xsh
 
 It will walk you through a couple setup steps.
 
