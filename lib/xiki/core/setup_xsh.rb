@@ -114,6 +114,7 @@ module Xiki
       View.message "Updating config... done\nDownloading default notes..."
       View.refresh
 
+      self.verify_email
       self.download_default_notes
       View.message " "
 
@@ -167,6 +168,27 @@ module Xiki
       end
 
       ""
+    end
+
+    def self.verify_email
+
+      file = '/tmp/xiki_temp_token'
+
+      # Do nothing if no temp_token
+      return if ! File.exists? file
+
+      # Call action to get auth_token
+      url = "#{XikihubClient.url}/verify_email/#{File.read(file).strip}"
+      auth_token = XikihubClient.get url
+
+      # Delete temp file
+      FileUtils.rm file
+
+      return if auth_token.blank?
+
+      # Write it to ~/.xikihub
+      File.open(File.expand_path("~/.xikihub"), "w") { |f| f << "auth_token: #{auth_token}" }
+
     end
 
   end
