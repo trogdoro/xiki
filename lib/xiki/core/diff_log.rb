@@ -463,33 +463,6 @@ module Xiki
     end
 
 
-    def self.save_modified_interactions
-
-      interactions_dir = File.expand_path "~/.xiki/interactions"
-
-      orig = View.buffer
-      result = Buffers.list.map do |b|
-        name = $el.buffer_name(b)   # Skip special buffers
-        # Skip interactions
-        next if name =~ /^ ?\*/
-
-        file = $el.buffer_file_name(b)
-        next if ! file
-        modified = $el.buffer_modified_p(b)
-        next if ! modified
-
-        next if ! file.start_with?(interactions_dir+"/")
-
-        # Modified interaction, so save it
-
-        $el.set_buffer b
-        DiffLog.save
-
-      end
-
-      View.to_buffer orig
-    end
-
     # Mapped to Ctrl+G
     def self.quit
 
@@ -503,9 +476,6 @@ module Xiki
 
       file = View.file
       existed_already = file && File.exists?(file)
-
-      # Just save all modified interaction files
-      self.save_modified_interactions
 
       txt = Xiki['unsaved/', :go=>1]
 
@@ -527,7 +497,7 @@ module Xiki
 
         # Unsaved "xsh" buffer, so save it...
 
-        self.save_xsh_interaction   # Last file we were in (if buffer)
+        self.save_xsh_session   # Last file we were in (if buffer)
 
         # Save file and line number
         self.save_go_location
@@ -537,7 +507,7 @@ module Xiki
         if View.name != "xsh" && View.buffer_open?("xsh")
           $el.set_buffer "xsh"
           # Why calling it a 2nd time?
-          self.save_xsh_interaction
+          self.save_xsh_session
         end
 
 
@@ -574,42 +544,56 @@ module Xiki
     end
 
 
-    def self.save_xsh_interaction
+    def self.save_xsh_session options={}
+
+      # Delete "G" bookmark, so we'll know to go to the session upon ^G
+      FileUtils.rm(File.expand_path "~/.xiki/bookmarks/g.xiki") rescue nil
 
       # Avoid saving certain buffers
 
       # Return if it has a file - it means it's not the "xsh" session (it's just a file with that name)
       return if View.file
 
-      # Save session to file...
+      # Save session to note in sessions.xiki...
 
-      name = View.extract_suggested_filename_from_txt
+      heading = View.extract_suggested_filename_from_txt
+      return if ! heading
+      heading.gsub!("_", " ")
 
-      return if ! name
-
-      interactions_dir = File.expand_path "~/.xiki/interactions"
-
-      FileUtils.mkdir_p interactions_dir   # Make sure dir exists
-
-      file = File.expand_path "#{interactions_dir}/#{name}.xiki"
-      file = Files.unique_name file
-
-      shell_dir_orig = Shell.dir   #> "/tmp/"
-
-      # Set shell dir, so it doesn't default to view dir (since $el.write_file changes the current dir)
-      Shell.cd Shell.dir
+      # Add "@" to headings > so it'll be shared
+      heading.gsub! /^/, "@ " if options[:shared]
 
 
-      # Save into file, and make this view associated with the file
-      $el.write_file file
+      sessions_file = File.expand_path "~/xiki/sessions.xiki"
+      txt = File.read(sessions_file) rescue ""
+      txt.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '')
 
-      # Save which dir it was in to corresponding file in misc/interactions_dirs...
+      # If we reopen the session (^G), delete the old version
+      if $el.boundp :session_heading
+        txt = Notes.split(txt)
+        txt.delete_if{|o| o=~ /\A#{Regexp.escape($el.elvar.session_heading)}$/}
+        txt = txt.join
+      end
 
-      interactions_dirs_file = file.sub "interactions/", "misc/interactions_dirs/"
-      FileUtils.mkdir_p File.expand_path("~/.xiki/misc/interactions_dirs/")
-      File.open(interactions_dirs_file, "w") { |f| f << shell_dir_orig }
+      # Make names unique
+      headings = txt.scan(/^> (.+)/).flatten
+      while(headings.member? heading)
+        heading.sub!(/(\d*)$/) { $1.to_i + 1 }
+        heading.sub! /1$/, '2'
+      end
 
-      file
+      section = "> #{heading}\n#{View.txt.strip}\n\n\n"
+      txt = "#{section}#{txt}"
+
+      File.open(sessions_file, "w") { |f| f << txt }
+
+      # Save dir and cursor position
+      cursor = View.cursor
+      File.open(File.expand_path("~/.xiki/misc/last_session_meta.xiki"), "w") { |f| f << "#{cursor}\n#{View.dir}" }
+
+      $el.elvar.session_heading = "> #{heading}"
+
+      heading
 
     end
 
@@ -617,7 +601,7 @@ module Xiki
 
       file = View.file
 
-      # .save_xsh_interaction didn't deem to save this view, so we should ignore it too
+      # .save_xsh_session didn't deem to save this view, so we should ignore it too
       return if ! file
 
       dir = File.expand_path "~/.xiki/bookmarks"

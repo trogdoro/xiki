@@ -332,7 +332,7 @@ module Xiki
     def self.content_editor
 
       # Untitled view, so save file as session before opening in editor
-      DiffLog.save_xsh_interaction
+      DiffLog.save_xsh_session
 
       if ! View.file
         return
