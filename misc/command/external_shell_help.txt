@@ -13,20 +13,28 @@ Sample calls:
   $ xsh --samples
 
 Key shortcuts for your external shell (the default):
-  Ctrl+O   Opens xsh (when blank prompt). Or type a shell command
+  Ctrl+O   Open xsh (when blank prompt). Or type a shell command
            and Ctrl+O runs it in xsh.
-  Ctrl+X   Lists your Xiki files (when blank prompt). Or type a shell
-           command or topic and Ctrl+X lists its xiki notes and actions.
   Ctrl+G   Go to previous spot in xsh (when blank prompt). Or type a
            topic and ^G runs its go action.
-  Ctrl+T   Shows tasks for the current dir. Or type a shell command
+  Ctrl+T   Show tasks for the current dir. Or type a shell command
            and Ctrl+T shows tasks for it.
-  Ctrl+S   Search notes and actions shared by others to xikihub (xiki.com).
+  Ctrl+X   List your Xiki files (when blank prompt). Or type a shell
+           command or topic and Ctrl+X lists its xiki notes and actions.
+  Ctrl+S   Search notes (and actions) shared by others to XikiHub (xiki.com).
   Alt+R    External shell history, like Ctrl+R (type Option+R on the mac)
 
 Options:
-  -g   Grab shell command into xsh
-  -t   Tasks for a shell command or dir
+  -o                   Open xsh.
+  -o shell_command     Runs shell_command in xsh.
+  -g                   Go to previous spot in xsh.
+  -g topic             Go to topic file.
+  -t                   Show tasks for the current dir.
+  -t shell_command     Show tasks for shell_command.
+  -x                   List your Xiki files
+  -x topic             List xiki notes (and actions) for topic.
+  -s search_term       Search notes (and actions) on XikiHub (xiki.com).
+
   -r   Recent shell history, like Ctrl+R (for external shell)
   -f   Search filenames
   -c   Search file contents
@@ -34,7 +42,6 @@ Options:
   -h   History (internal shell commands)
   -n   Notes
   -l   List xsh sessions
-  -o   Open specific file, or list recent files
   -b   Bookmarks
   -i   Recent shell interactions with xsh
   -d   Diffs

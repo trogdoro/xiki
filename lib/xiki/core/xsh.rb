@@ -54,7 +54,7 @@ module Xiki
 
       # Check for various flags...
 
-      if args == ""
+      if args == "" || args == "-o"
         # New session, or not in xsh file, so presume "$ "
         options[:dont_expand] = 1
         args = "$ "
@@ -70,7 +70,7 @@ module Xiki
 
       # xsh = > or > ^G...
 
-      elsif args == "+"
+      elsif args == "+" || args == "-g"
 
         # Jump back to last place we were (or last place content+grab was run)
         return self.to_go_location
@@ -168,22 +168,22 @@ module Xiki
         args = "$ #{args}" if args =~ /\A\w/   # Treat as shell command if it's just a word
 
 
-      elsif args == "="
+      elsif args == "=" || args == "-t"
         options_in[:task] = []
         args = View.dir :force_slash=>1
 
-      elsif args.slice! /^= /
+      elsif args.slice! /^(=|-t) /
         options_in[:task] = []
 
         # Treat as shell command
         args = "$ #{args}"
 
-      elsif args.slice! /^-x /
+      elsif args.slice! /^-q /
         # Esc, Tab, so delegate to Notes.tab_key
         Launcher.open_topic :bm=>args
         return
 
-      elsif args == "-x"
+      elsif args == "-q"
         Launcher.open_topic
         return
 
@@ -201,13 +201,14 @@ module Xiki
         args = "$ "
         options[:dont_expand] = 1
 
-      elsif args =~ /\A[a-z]/i && ! options[:not_shell]
+      elsif (args =~ /^[a-z]/i || args.slice!(/^-o /)) && ! options[:not_shell]   # Shell command...
         args = "$ #{args}"
+
       elsif args == "."
         args = View.dir
 
-      # -foo/, so treat as xiki command...
-      elsif args.slice!(/^\+/)
+      # +foo, so to topic
+      elsif args.slice!(/^(\+|-g )/)
 
         # grab+ on ^bookmark, so cd and exit...
 
@@ -273,13 +274,13 @@ module Xiki
         View.open file
         options[:do_nothing] = 1
 
-      elsif args == ":"
+      elsif args == ":" || args == "-s"
 
         args = "xiki/"
 
-      elsif args.slice! /^:\b/
+      elsif args.slice! /^(:\b|-s )/
 
-        # -foo, ^S search shared on XikiHub, so show "shared" command...
+        # :foo, ^S search shared on XikiHub, so show "shared" command...
 
         if args == ""
           args = "shared/"
@@ -319,7 +320,7 @@ module Xiki
       # Open the "xsh" view...
 
       dir = options[:dir] || $el.elvar.default_directory
-      View.to_buffer View.unique_name("xsh")
+      View.to_new_session
       View.kill_all
 
       View.dir = dir
@@ -423,24 +424,43 @@ module Xiki
     end
 
     def self.to_go_location
-      file = File.expand_path "~/.xiki/bookmarks/g.xiki"
 
-      location = File.read(file) rescue nil
-      return if ! location
+      # Check for 'G' bookmark...
 
-      location.strip!
-      View.open location
+      g_bookmark = File.read(File.expand_path "~/.xiki/bookmarks/g.xiki") rescue nil
+
+      # 'G' bookmark exists, so just go to it (it's the file we were looking at)
+      if g_bookmark
+        View.open g_bookmark.strip
+        return
+      end
+
+      # No "G" bookmark, so we were in a new session when we quit, so go to it...
+
+      # 1. Read in text from sessions.xiki
+      sessions_file = File.expand_path "~/xiki/sessions.xiki"
+      txt = File.read(sessions_file) rescue ""
+      txt.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '')
+
+      # 2. Pull out top sections
+      section = txt[/.+?\n(.+?\n)> /m, 1]
 
 
-      # Set shell dir > to where we were when we quit
+      # 3. Open new View with contents of top section
+      View.to_new_session
+      Notes.mode
+      View << section
 
-      # Hmm > why is this any different? > try removing this
-      # If it does make sense, are we setting it right?
-      file = File.expand_path "~/.xiki/misc/tmp/go_location_cd_dir.xiki"
-      txt = File.read(file) rescue nil
-      return if ! txt
+      # Restore cursor position and directory
+      meta_contents = File.read(File.expand_path("~/.xiki/misc/last_session_meta.xiki"))
+      cursor, dir = meta_contents.split("\n")
 
-      Shell.cd txt.strip
+      View.dir = dir
+      View.cursor = cursor.to_i
+
+      # Save heading into variable
+      $el.elvar.session_heading = txt[/.+/]
+      $el.make_variable_buffer_local :session_heading
 
     end
 

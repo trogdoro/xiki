@@ -2824,6 +2824,11 @@ module Xiki
 
     end
 
+    # View.to_new_session
+    def self.to_new_session
+      View.to_buffer View.unique_name("xsh")
+    end
+
 
   end
 
