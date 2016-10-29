@@ -2244,7 +2244,6 @@ module Xiki
 
       task = options[:task]
 
-
       # "* save" and was saved already, so just resave
 
       if task == ["save"] && View.file
@@ -2271,9 +2270,9 @@ module Xiki
       end
 
 
-      # ~ share/command name, so add to file, save, and show message...
+      # ~ save/topic, so add to file, save, and show message...
 
-      if task.length == 2
+      if task.length == 2 && task == ["save"]
 
         topic = task[1].sub(/^: /, '').downcase
 
@@ -2281,7 +2280,7 @@ module Xiki
 
         if topic !~ /^[a-z][a-z0-9 ]*$/
           topic.gsub! /[^a-z0-9 ]/, ""
-          View.<< "* share\n  |-Topics can only contain letters and numbers. Type Ctrl+O when finished.\n  : #{topic}\n\n", :dont_move=>1
+          View.<< "* save\n  |-Topics can only contain letters and numbers. Type Ctrl+O when finished.\n  : #{topic}\n\n", :dont_move=>1
           Line.next 2
           Line.to_right
 
@@ -2308,28 +2307,20 @@ module Xiki
 
         if View.modified?
           View.open(:txt=> "
-            > Couldn't share, because #{topic}.xiki has unsaved changes
+            > Couldn't save, because #{topic}.xiki has unsaved changes
             views/
               - 1. Save your unsaved changes first:
               #{topic}.xiki
 
-              - 2. Then go back and try to share again:
+              - 2. Then go back and try to save again:
               #{orig}
 
           ".unindent, :line_found=>2)
           return ""
         end
 
-
-
         # Prepend generic heading > if none exists
         txt = "> My note\n#{txt}" if txt !~ /\A> ./
-
-
-        # ~ share, so add "@" to headings > so it'll be shared
-        txt.gsub! /^> (?!@)/, "> @ " if task[0] == "share"
-
-
 
         # Prepend to actual file, and revert to show new addition
         View.to_top
@@ -2338,45 +2329,35 @@ module Xiki
         Files.revert
         View.message " "
 
-
         # Delete original view if it was temporary
         $el.kill_buffer(view_orig) if ! file_orig
-
-
-
-        # Save to xikihub (if were editing shared)
-        if task[0] == "share"
-          XikihubClient.delegate_to_save_async(topic_file)
-        end
-
-
-        # ~ share when first shared heading in topic, so show green box at top with message and url...
-
-        if task[0] == "share" && all_txt !~ /^> @ /
-
-          # http://xiki.com/@#{user}/#{topic.gsub("_", "-")}
-          # Shared tasks ("> @ ...") can be viewed on the web:
-          key = Hint.top_box %`
-            Sharing...  Notes starting with "> @ " are viewable on the web:
-
-              #{XikihubClient.url}/@#{user}/#{topic.gsub("_", "-")}
-
-            To see web version or save further changes, type Ctrl+C at any time.
-          `.unindent
-
-          # They typed Ctrl+C, so delay and then simulate ^C
-          if key == [3]
-            View.pause n=0.3
-            Keys.expand ["content"]
-          end
-
-        end
 
         return ""
       end
 
 
-      # ~ share, so prompt them to enter command name...
+      # * share, so save as session and pop up browser...
+
+      if task[0] == "share"
+
+        heading = DiffLog.save_xsh_session :shared=>1
+        heading = Notes.heading_to_path heading.sub(/^@ /, ''), :url=>1
+
+        # Save to remote
+        XikihubClient.delegate_to_save_async(File.expand_path "~/xiki/sessions.xiki")
+
+        # Open in browser
+
+        # Go to specific note
+        url = "#{XikihubClient.url}/@#{XikihubClient.username}/sessions/#{heading}"
+        # Just show in browser
+        Browser.url url, :os_open=>1
+
+        return
+      end
+
+
+      # * save, so prompt them to enter command name...
 
       options[:dont_nest] = 1
 
@@ -2421,7 +2402,6 @@ module Xiki
       topic_vs_search = ! options[:delegated_from_search]   #> false
 
       heading = options[:heading]
-      Ol "heading", heading   #> nil
       your_username = XikihubClient.username
 
       # Context is expanded note
@@ -2458,7 +2438,6 @@ module Xiki
         else
           txt.sub! "* share_placeholder\n", ""
         end
-
 
         return txt
 
