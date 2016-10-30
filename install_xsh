@@ -16,7 +16,10 @@ curl -L https://github.com/trogdoro/xiki/archive/master.tar.gz | tar -xz -C ~/xi
 ~/xiki-project/bin/xsh --reload
 
 # If token was passed, save to file
-echo $1 > /tmp/xiki_temp_token
+
+if [ "$1" ]; then
+  echo $1 > /tmp/xiki_temp_token
+fi
 
 ~/xiki-project/bin/xsh -xsh/setup
 
