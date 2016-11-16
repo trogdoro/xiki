@@ -86,10 +86,11 @@ module Xiki
       Xiki.def("list+key"){ FileTree.hop_file }
       Xiki.def("list+files", :noob=>1){ Launcher.open("files/") }
 
-      Xiki.def("list+quick"){ Launcher.open "quick topics/" }
+      Xiki.def("list+quick"){ Launcher.open_topic }
       Xiki.def("list+markers", :noob=>1){ Launcher.open("#{View.file}\n  = markers/", :bar_is_fine=>1) }
       Xiki.def("list+outline", :noob=>1){ FileTree.to_outline }
       Xiki.def("list+appointments", :noob=>1){ Launcher.open("~/xiki/notes.xiki\n  - ##^> 201/", :bar_is_fine=>1) }   # Appointments and other important tasks
+
 
       # G: leave unmapped for escape
 
@@ -220,8 +221,6 @@ module Xiki
       Xiki.def("content+yours"){ View.open "%y", :stay_in_bar=>1 }
       Xiki.def("content+memorize", :noob=>1){ View.open "~/xiki/memorize.xiki" }
       Xiki.def("content+quick", :noob=>1){ View.open "%q" }
-
-      Xiki.def("content+xiki"){ Launcher.open_topic }
 
       Xiki.def("content+views"){ View.link_views }
 
