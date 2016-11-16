@@ -181,16 +181,18 @@ module Xiki
     nil
   end
 
-  # !... lines (at left margin)
+  # !... lines (at left margin)...
 
-  Xiki.def(/\A!( |$|\/)/) do |path, options|
+  Xiki.def(/\A!( |$|\/|\.)/) do |path, options|
 
     path_split = Path.split(path)
 
     # No children, so just use siblings
     if path_split.length == 1
-      code = Tree.siblings.select{|o| o =~ /^! /}.join("\n")
+
+      code = Tree.siblings.select{|o| o =~ /^![. ]/}.join("\n")
     else
+
       # Jump to !... ancestor
       cursor = View.cursor
       while Line =~ /^ *[^ !\n]/
@@ -204,18 +206,16 @@ module Xiki
       View.cursor = cursor
     end
 
-    code.gsub! /^! ?/, ''
-
     if options[:client] =~ /^editor/
       # Calculate where we are in relation to the parent, for stack trace
       line_number = View.line
-      lines_above = Tree.siblings(:before=>1).select{|o| o =~ /^! /}
+      lines_above = Tree.siblings(:before=>1).select{|o| o =~ /^!/}
       line_number -= lines_above.length
     else
       line_number = 0
     end
 
-    returned = Code.eval code, View.file, line_number, {:pretty_exception=>1, :simple=>1}, {:args=>path_split[1..-1]}
+    Code.eval_snippet code, View.file, line_number, {:pretty_exception=>1, :simple=>1}, {:args=>path_split[1..-1]}
 
   end
 
@@ -497,7 +497,6 @@ module Xiki
   end
 
 
-
   # email@address.com Message...
 
   Xiki.def(%r"^[a-z][a-z.]+@[a-z][a-z.]+[a-z] ") do |path, options|
@@ -768,6 +767,8 @@ module Xiki
     task = options[:task]
 
     words = path[/. (.+)/, 1]   #> !!!
+    # " ->" on end is optional, so ignore it
+    words.sub!(/^> /, '')
 
     # Ctrl+T, so get tasks from "->" and add on
     if task

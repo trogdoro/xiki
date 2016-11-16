@@ -170,7 +170,7 @@ module Xiki
             list = list.select{|o| o =~ /\b#{filter}/i}
           end
 
-          kind, user, topic = file.match(/(\w+)\/([\w.-]+)\/(\w+)\.(xiki|notes|link)$/)[1..3]
+          kind, user, topic = file.match(/(\w+)\/([\w .-]+)\/(\w+)\.(xiki|notes|link)$/)[1..3]
 
           next if ! list.any?
 
@@ -663,7 +663,7 @@ module Xiki
     # > .Test blank_out_wrapper_patterns
     # xiki api/blank out wrapper patterns
     #
-    def self.expand_action txt, file, options   #> ||||-
+    def self.expand_action txt, file, options
 
       # Remove any "# foo\n  |:..." wrapper patterns from top
 
@@ -671,19 +671,18 @@ module Xiki
 
       # We only get called if txt was found in the note action.   #> !
       # If action wasn't there, it would have already delegated to the command.
-      if txt =~ /\A\n*!( |$)/
+      if txt =~ /\A\n*!(\.| |$)/
 
         # "!...", so just eval...
 
         # If any blank line after !... line, remove everything after it   #> Might cause problems!
-        txt.sub!(/(^! [^\n]+)\n\n.+/m, "\\1\n")
+        txt.sub!(/(^![^\n]+)\n\n.+/m, "\\1\n")
 
-        txt.gsub!(/^! ?/, "")   #> ["red"]
+        # Eval code as javascript/ruby.
+        txt = Code.eval_snippet txt, file, options[:heading_line_number]+1, nil, options
 
-        options[:args] = options[:items]#[1..-1]   #> []
-
-        txt = Code.eval txt, file, options[:heading_line_number]+1, {:pretty_exception=>1, :simple=>1}, options   #> ||||||
         return txt
+
 
       elsif txt =~ /\A\& /
         # Remove all lines but first
@@ -748,7 +747,7 @@ module Xiki
         # + bar items, so treat as a tree...
 
         # !... lines after tree, so chop them...
-        code = txt.slice!(/\n\n! .*/m)
+        code = txt.slice!(/\n\n!.*/m)
 
         xik = Xik.new txt
         path = Path.join(options[:items]) || ""
@@ -760,7 +759,7 @@ module Xiki
         # "! code" and no result from the tree, run it
 
         if ! result && code
-          code = code.strip.gsub(/^! ?/, '')
+          code = code.strip.gsub(/^![ .]?/, '')
 
           options[:args] = options[:items]
           result = Code.eval code, file, options[:heading_line_number]+1, {:pretty_exception=>1, :simple=>1}, options

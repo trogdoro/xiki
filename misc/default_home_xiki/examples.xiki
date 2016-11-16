@@ -91,7 +91,7 @@ http://xiki.com
 
 
 > .Action that runs code
-! 1 + 2
+!.1 + 2
 
 
 > .Action that runs shell command

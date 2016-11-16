@@ -236,7 +236,7 @@ module Xiki
         #   - Is this the best place to do that?
         #   - Does it make sense to only do it when :eval?
 
-        eval_options[:nest] = 1 if eval_options.is_a?(Hash) && result !~ /\A *! /
+        eval_options[:nest] = 1 if eval_options.is_a?(Hash) && result !~ /\A *![ .]/
 
         MenuHandler.eval_exclamations result, options
 

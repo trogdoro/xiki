@@ -12,7 +12,7 @@ $ git branch
 $ git
   |:    branch     List, create, or delete branches
 
-! #
+!.#
 ! # Lets you expand "$ git branch", to list branches, switch to, and delete them.
 ! #
 ! # $ git branch
@@ -62,7 +62,7 @@ $ git log
 $ git
   |:    log        Show commit logs
 
-! #
+!.#
 ! # Lets you expand "log ..." lines.
 ! #
 ! # $ git
@@ -100,6 +100,7 @@ $ git
 $ git diff
   |:anything
 
+!.
 ! # Colorizes diff lines as red and green.
 !
 ! shell_output.gsub(/^\| ([+-])/, "|\\1").gsub(/^\|  /, "|")
@@ -110,6 +111,6 @@ $ git diff
 $ git
   |:    status     Show the working tree status
 
-! Shell.command('git status').snippet
+!.Shell.command('git status').snippet
 
 

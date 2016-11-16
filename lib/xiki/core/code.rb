@@ -281,6 +281,7 @@ module Xiki
 
       if eval_options[:simple]   # Return one string (quoted if result, or just exception)
         return exception if exception
+
         txt = stdout || returned
         return nil if ! txt
         txt = txt.to_s
@@ -308,9 +309,41 @@ module Xiki
       if code.is_a? Proc
         target.module_eval &code
       else
+        # use class_eval if we change Xiki to a class instead of a module
+        # target.class_eval code, filename||__FILE__, line||__LINE__
         target.module_eval code, filename||__FILE__, line||__LINE__
       end
     end
+
+    def self.eval_snippet txt, file, line_number, eval_options, options
+
+      language = txt[/^!(.)/, 1]
+      language = {"."=>"ruby", " "=>"javascript"}[language]
+
+      txt.gsub!(/^!.?/, "")   #> ["red"]
+
+      # Make sure only one line break
+      txt = "#{txt.sub(/\n+\z/, '')}\n"
+
+      options[:args] = options[:items]
+
+      # ".", so evaluate as javascript...
+
+      if language == "javascript"
+        # Add return if there was none
+        txt.sub!(/.+\n\z/, "return \\0") if txt !~ /^ *return .+\n\z/
+
+        txt = "print = p = console.log;\n#{txt}"
+        return JavascriptHandler.eval txt
+      end
+
+      # " ", so evaluate as ruby...
+
+      txt = Code.eval txt, file, line_number, {:pretty_exception=>1, :simple=>1}, options   #> ||||||
+      txt
+
+    end
+
 
     def self.do_as_align
       $el.align_regexp

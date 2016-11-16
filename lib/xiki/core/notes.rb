@@ -500,8 +500,10 @@ module Xiki
         Styles.apply("^[ \t]*\\([0-9]+\\.\\) .+!$", :notes_exclamation)   # 1. foo!
         # Leave number orange > looks wierd
 
-        Styles.apply("^ +\\(!\\+.*\n\\)", nil, :diff_green)   # !-Foo
-        Styles.apply("^ +\\(!-.*\n\\)", nil, :diff_red)   # !+Foo
+        Styles.apply("^ *\\(!\\+.*\n\\)", nil, :diff_green)   # !-Foo
+        Styles.apply("^ *\\(!-.*\n\\)", nil, :diff_red)   # !+Foo
+
+        Styles.apply("^ *\\(!\\)\\(\\.\\)\\(.*\\)\n", nil, :quote_heading_pipe, :notes_red, :ls_quote)   # !.Ruby code
 
         Styles.apply("\\(\(-\\)\\(.+?\\)\\(-\)\\)", nil, :diff_small, :diff_red, :diff_small)
         Styles.apply("\\(\(\\+\\)\\(.+?\\)\\(\\+\)\\)", nil, :diff_small, :diff_green, :diff_small)

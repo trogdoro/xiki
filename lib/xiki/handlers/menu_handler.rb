@@ -21,7 +21,7 @@ module Xiki
     # If started with !, eval code...
     def self.eval_exclamations txt, options={}
 
-      return if txt !~ /\A! / || Keys.prefix == "source"
+      return if txt !~ /\A![ .]/ || Keys.prefix == "source"
 
       if options[:sources]
         source_file = options[:sources][-1][options[:source_index]]
@@ -31,34 +31,19 @@ module Xiki
       line_number = options[:children_line]
       line_number += 4 if line_number && source_file =~ /\.rb$/
 
-      # TODO: to tighten up, only do this if all lines start with "!"
-
-      code = txt.gsub /^! ?/, ''
+      # TODO: to tighten up, only do this if all lines start with "!..."
 
       exclamations_args = options[:exclamations_args] || []
 
-      # Run code based on whether a comment was found
+      options = options[:eval] if options && options[:eval].is_a?(Hash)   # So what we passed in :eval is avaliable as the 'options' param
 
-      if code =~ /\Atell application /
-        returned = Applescript.run code
+      # This overrides the args and path of the root menu with one relative to this !... code.
+      # They can still get the full paths via options.
+      options[:path_relative], options[:args_relative] = Path.join(exclamations_args), exclamations_args
 
-      elsif code =~ /\A.* \/\/ \.js/
-        returned = JavascriptHandler.eval code, options.merge(:file=>source_file)
-      elsif code =~ /\A.* # \.coffee/   # If Coffeescript
-        returned = CoffeeHandler.eval code, options.merge(:file=>source_file)
-      elsif code =~ /\A.* # \.py/   # If Python
-        returned = PythonHandler.eval code, options.merge(:file=>source_file)
-      else   # If Ruby
-
-        options = options[:eval] if options && options[:eval].is_a?(Hash)   # So what we passed in :eval is avaliable as the 'options' param
-
-        # This overrides the args and path of the root menu with one relative to this !... code.
-        # They can still get the full paths via options.
-        options[:path_relative], options[:args_relative] = Path.join(exclamations_args), exclamations_args
-
-        returned, out, exception = Code.eval code, source_file, line_number, {}, options
-      end
-
+      # Assume Ruby for now ...
+      code = txt.gsub /^![ .]?/, ''
+      returned, out, exception = Code.eval code, source_file, line_number, {}, options
       returned ||= out || ""   # Use output if nothing returned
       returned = returned.to_s if returned
 
@@ -69,7 +54,14 @@ module Xiki
         else
           returned   # Otherwise, just return return value or stdout!"
         end
-        )
+      )
+
+
+      # When we implement making the default language be the calling language > use this to eval instead (because explicitly having "!. " etc. lines should still be respected).
+      # result = Code.eval_snippet txt, source_file, line_number, {:pretty_exception=>1, :simple=>1}, options   #> |||
+      # txt.replace result
+
+
     end
   end
 end
