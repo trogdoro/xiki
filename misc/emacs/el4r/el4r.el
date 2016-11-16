@@ -19,7 +19,7 @@
 
   ; Set some keys for doing what lisp normally does - defined here because they need to exist even if the el4r load fails after this poirt
 
-  (global-set-key (kbd "M-s") 'eval-last-sexp)   ; elisp script > Like emacs C-x C-e
+  (global-set-key (kbd "M-s") 'eval-last-sexp)   ; Option+s > elisp script > Like emacs C-x C-e
   (global-set-key (kbd "M-q") 'save-buffers-kill-emacs)   ; quit, when Ctrl+Q doesn't work > Like emacs C-x C-q
   (global-set-key (kbd "M-g") 'keyboard-quit)   ; Escape out of emacs trouble > like Ctrl+G
   ; Emacs help

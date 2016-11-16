@@ -48,11 +48,13 @@ memorize them like in traditional shells.
 2. Observe the keyboard shortcuts at the bottom of the screen.
 
 The underlined letters indicate Ctrl shortcuts. Ctrl+O for Open.
-Ctrl+Q for Quit, etc. Clicking on them shows descriptions (if mouse
-support is enabled). You can type these key shortcuts even when they
-don't appear on the screen.
+Ctrl+G for Go. Ctrl+Q for Quit, etc. Clicking on them shows
+descriptions (if mouse support is enabled). You can type these key
+shortcuts even when they don't appear on the screen.
 
 All of the keys except for the last 3 work in bash as well as in xsh.
+We'll start with Ctrl+O, the most used key in Xiki (it's kind of like
+double-clicking). Then we'll cover Ctrl+G and a couple others.
 
 3. Press Ctrl+Q to quit and go back to bash.
 4. Now press Ctrl+O. It's a shortcut for opening xsh, when on an empty bash prompt.
@@ -122,8 +124,8 @@ Xsh integrates with your favorite text editor.
 You're now viewing the /etc/hosts file with xsh. Now we'll use your
 editor.
 
-2. Press the esc key to return to the last view.
-3. Press Ctrl+G. This will go to "hosts" in your default editor.
+2. Press esc to return to the last view.
+3. Press Ctrl+G ("Go" in the bottom bar). This will go to "hosts" in your default editor.
 
 Xiki uses the editor specified in the "EDITOR" bash environment
 variable. You can set it to your favorite editor if you haven't yet
@@ -143,11 +145,11 @@ You can try esc to go to the previous view, or Ctrl+Z to undo.
 
 
 > Persistent scratchpad for commands and notes
-You can always go back to the last place you were in xsh. Just press
+In bash, you can always go back to the last place you were in xsh. Just press
 Ctrl+G at an empty bash prompt. In this way, xsh acts like a persistent
 scratchpad, that you can jump in and out of.
 
-1. In bash, press Ctrl+G to go back to the last place you were in xsh.
+1. In bash, press Ctrl+G to go back to the last place you were.
 2. Move the cursor to the top left corner.
 3. Type "The hosts file", then press return, just as a little note for yourself.
 4. Move the cursor to the bottom and type some other words.
@@ -157,7 +159,10 @@ shells, you can only type at the single lowest prompt. When you leave
 xsh, it automatically saves the current view (and remembers the
 current directory).
 
-5. Move the cursor to the "$ ls" line, and press Ctrl+G to go to bash and run it.
+Ctrl+G works in both directions. When on a shell command in xsh, it
+goes to bash and runs the command.
+
+5. Move the cursor to the "$ ls" line, and press Ctrl+G.
 6. Press Ctrl+G to go back to xsh, to the last place you were.
 7. Move to the "etc/" line, and press Ctrl+G to go to bash and cd to this dir.
 
@@ -193,25 +198,25 @@ descriptions. Or see the following link.
 Xsh lets you create interactive notes! Notes can be anything you
 want. They can be as simple as a shell command or two and maybe a
 description. They can even be powerful, lightweight user interfaces
-for shell commands and other API's (more on this later). Notes are
-grouped by topic.
+for shell commands and other API's (more on this later). Xiki
+encourages you to organize your notes into topics.
 
 1. Press Ctrl+Q to go back to bash.
 2. Press Ctrl+X to list your Xiki topics.
 
-Xiki organizes your notes into topics. Each topic is just a text file
-in the "~/xiki/" directory. They contain your notes. The topics you
-see were created when you installed xsh, to get you started. Topics
-you create will get added to the top of this list. Topics use a simple
-wiki-ish syntax, and can be created and edited with any text editor.
+Each topic is just a text file in the "~/xiki/" directory. They
+contain your notes. The topics you see were created when you installed
+xsh, to get you started. Topics you create will get added to the top
+of this list. Topics use a simple wiki-ish syntax, and can be created
+and edited with any text editor.
 
 3. Type "di" to filter down to the "disk" topic.
-4. Press Ctrl+G to go to the topic file.
+4. Press Ctrl+G to go to the topic file (this time in xsh).
 
 Notice the bottom bar shows you're in the "~/xiki/disk.xiki"
-file. Each note starts with a "> Note name" line. The "> " at the
-beginning just makes the line have a gray background, so it appears
-like a heading.
+file. The lines with gray backgrounds are note headings. They separate
+each note. Headings are just lines that start with "> ". The "> "might
+be hard to see in some terminals.
 
 
 > Quickly accessing your notes
@@ -227,7 +232,7 @@ topics with a lot of notes. Say, 100 or more.
 6. Press return, to run the command.
 
 Those three returns could have been Ctrl+O's instead. The only
-difference is that return narrows down to one item before it opens.
+difference is that return hides the other items before it opens.
 
 You could've also typed "disk space" then Ctrl+X at an empty bash
 prompt, then pressed return twice. That would show the "disk" topic
