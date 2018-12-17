@@ -289,7 +289,7 @@ bottom bar.
 5. Press Ctrl+Q to return to bash (xsh will autosave).
 6. Press Ctrl+X to list your topics.
 
-You can see your new topic is there, with the note inside. It's at the
+You can see your new "echo" topic is there, with the note inside. It's at the
 top, since it's the most recently updated file. You could have
 accomplished the same thing by creating "~/xiki/foo.xiki" with any
 text editor, and typing that stuff.
