@@ -437,6 +437,9 @@ module Xiki
         Styles.apply("^\\(> \\)\\(.*\n\\)", nil, :notes_h1_pipe, :notes_h1)
         Styles.apply("^\\(>> \\)\\(.*\n\\)", nil, :notes_h2_pipe, :notes_h2)
 
+        # # ... lines (headings)
+        Styles.apply("^\\(# \\)\\(.+\n\\)", nil, :notes_h1_pipe, :notes_h1)
+
         # > Green!
         Styles.apply("^\\(> \\)\\(.*!\\)\\(\n\\)", nil, :notes_h1_pipe, :notes_h1_green, :notes_h1_green)
         Styles.apply("^\\(> \\)\\(.*!!\\)\\(\n\\)", nil, :notes_h1_pipe, :notes_h1_yellow, :notes_h1_yellow)
@@ -575,6 +578,7 @@ module Xiki
       $el.el4r_lisp_eval %q<
         (progn
           (add-to-list 'auto-mode-alist '("\\\\.notes\\\\'" . notes-mode))
+          (add-to-list 'auto-mode-alist '("\\\\.md\\\\'" . notes-mode))
           (add-to-list 'auto-mode-alist '("\\\\.xik\\\\'" . notes-mode))
           (add-to-list 'auto-mode-alist '("/conf/.*\\\\.conf\\\\'" . notes-mode))
         )
