@@ -1,7 +1,3 @@
-begin
-  require 'ftools'
-rescue Exception=>e; end
-
 module Xiki
   class Image
     def self.menu_before *args
@@ -28,14 +24,14 @@ module Xiki
     end
 
     def self.>> file, txt=nil
-      txt ||= "@img/#{file}"
+      txt ||= "=img/#{file}"
       Move.to_end
       self.<< file, txt, :enter_junior=>1
       Move.backward
     end
 
     def self.<< file, txt=nil, options={}
-      txt ||= "@img/#{file}"
+      txt ||= "=img/#{file}"
 
       # Copy to place with unique name, so a cached version doesn't get displayed...
       tmp_dir = "/tmp/img_tmp/"

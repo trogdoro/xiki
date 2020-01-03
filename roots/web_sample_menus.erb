@@ -1,0 +1,63 @@
+<h1 style="margin-top:0px">Command doesn't exist yet</h1>
+<form method="post">
+  <p>
+    Create it?  Make your command via
+
+    <select name="create_kind">
+      <optgroup label="Simple..."></optgroup>
+      <option value="text-file">text file</option>
+      <option value="menu-items/just-items">items</option>
+
+      <optgroup label="&nbsp;"></optgroup>
+      <optgroup label="Scripts..."></optgroup>
+      <option value="code/script">ruby</option>
+      <option value="code/other-languages/js">javascript</option>
+      <option value="code/other-languages/coffeescript">coffeescript</option>
+      <option value="code/other-languages/python">python</option>
+
+      <optgroup label="&nbsp;"></optgroup>
+      <optgroup label="Items with Nested Code..."></optgroup>
+      <option value="code/items-with-nested-code">ruby</option>
+      <option value="code/items-with-nested-code/other-languages">other languages</option>
+
+      <optgroup label="&nbsp;"></optgroup>
+      <optgroup label="Other..."></optgroup>
+      <option value="items/with-wiki-elements">wiki elements</option>
+      <option value="code/ruby-class">ruby class</option>
+      <option value="more/bootstrap">bootstrap</option>
+    </select>
+  </p>
+  <p>
+    <textarea style="height:250px" name="create_txt">
+Change this text to something useful.
+It will be the content of your menu.
+</textarea>
+  </p>
+  <p>
+    <input type="submit" value="Create the command!">
+    <input type="hidden" value=".txt" name="create_extension">
+  </p>
+</form>
+
+<script>
+  // Probably refactor this to ajax to /sample-menus
+  samples = {
+    text_file:"text_file  text_file__",
+    items:"items   _filetext_file__",
+  };
+
+  $(function(){
+    $('select').change(function(e){
+      var kind = $(e.target).val()
+      console.log(kind)
+      $.get("/sample-menus/ajax/"+kind, null, function(data){
+        console.log(111)
+        console.log(data)
+        var txt = data['txt'].replace(/<Name\>/g, "<%= original_name %>")
+        console.log(txt)
+        $('textarea').val(txt)
+        $('input[name=create_extension]').val(data['create_extension'])
+      }, 'json')
+    })
+  });
+</script>

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 module Xiki
   #
   # Represents a division of a window (in emacs terms, it's a window (which is within a frame))
@@ -61,8 +62,17 @@ module Xiki
     end
 
     # Make current window larger.  Take into account that there might be other vertical windows
-    def self.height
+    def self.height window=nil
+      return $el.window_height(window) if window
+
       $el.window_height
+    end
+
+    def self.heights
+
+      View.list.map do |w|
+        self.height w
+      end
     end
 
     def self.frame_height= chars
@@ -105,7 +115,8 @@ module Xiki
 
 
     def self.enlarge height=nil
-      default_height = 4
+
+      default_height = 3
       small = Keys.prefix || height || default_height
       small = default_height if small == :u
 
@@ -163,30 +174,56 @@ module Xiki
     end
 
     # Creates a new window by splitting the current one
-    def self.create prefix=nil
-      prefix ||= Keys.prefix
-      if prefix == 3   # If prefix is 3, do Vertical split
-        $el.split_window_horizontally
+    def self.create_vertical options={}
+      $el.split_window_horizontally
+
+      # up+, so make existing view be at left...
+
+      if options[:prefix] == :u ||  Keys.prefix_u
+        ControlTab.go
         View.next
+        return
+      end
+
+      # Make existing view be at right...
+
+      View.next
+      ControlTab.go
+
+    end
+
+    def self.create_horizontal prefix=nil
+      prefix ||= Keys.prefix
+
+      # Xsh and first time we've split, so change theme to default...
+
+      if prefix == :u
+        $el.split_window_vertically
       elsif prefix == 4
         $el.split_window_vertically
         Keys.clear_prefix
         View.next
         View.enlarge
-      elsif prefix == :u
-        $el.split_window_vertically
-      else
+      else   # Normal split
         $el.split_window_vertically
         View.next
+        ControlTab.go
       end
     end
 
     def self.show_txt txt, options={}
+
       View.to_buffer(options[:name] || "message")
       View.kill_all
       Notes.mode
-      View << "#{txt.strip}\n"
+      # View << "#{txt.strip}\n"
+      View << "#{txt.unindent}\n"
       View.to_highest
+      if options[:line_found]
+        View.line = options[:line_found]
+        Line.to_words
+      end
+      nil
     end
 
     # Opens file (or whatever) from the path (can contain $bookmarks), just
@@ -195,27 +232,44 @@ module Xiki
     #
     # View.open "/etc/paths"
     # View.open "hello", :txt=>"> Hi\nMessage to show in new buffer."
+    # View.open "/etc/paths", :to=>"local"
     def self.open path, options={}
+      raise ".open called with nil path" if ! path
 
-      return self.show_txt(options[:txt], :name=>path) if options[:txt]
+      # :unique option, so make sure name is unique
+      path = View.unique_name path if options[:unique]
+
+      # \n in path, so use it as the contents...
+
+      if path =~ /\n/
+        path, options[:txt] = "command", path
+      end
+
+      path, options = nil, path if path.is_a?(Hash)
+
+      return self.show_txt(options[:txt], {:name=>path}.merge(options)) if options[:txt]
 
       # Pull off line number if there
       path = path.sub(/(.+?:\d+).*/, "\\1")
       line_number = path.slice!(/:\d+$/)
 
       # Open after bar if in bar
-      if View.in_bar? && (! options[:stay_in_bar]) && path != "$0" && path != Bookmarks['$t'] && path != Bookmarks['$f']
+      if View.in_bar? && (! options[:stay_in_bar]) && path != "$0" && path != Bookmarks['%n'] && path != Bookmarks['%links']
         View.to_after_bar
       end
 
-      # Expand $bookmark strings at beginning
-      expanded = Bookmarks.expand(path)
+      # Expand ^bookmark strings at beginning
+
+      # Was ~..., so remember old path to use when opening (expanded will be used for comparing to existing views, etc.)
+      # Don't expand ~ to home dir
+      if path =~ /^~/
+        expanded_tilde = path
+      end
+
+      # expanded = Bookmarks.expand(path) # if path !~ /^~/
+      expanded = File.expand_path Bookmarks.expand(path) # if path !~ /^~/
+
       if expanded == ""   # If nothing there, return false
-        path.sub!(/^- /, '')
-        if path =~ /^\$\w+$/
-          buffer = Bookmarks.buffer_bookmark path.sub(/^\$/, '')
-          View.to_buffer buffer if buffer
-        end
         return nil
       end
 
@@ -225,7 +279,6 @@ module Xiki
       if options[:other_view] && ! View.file_visible?(expanded) && View.windows_in_my_column.length > 1
         # If we're at the top, go to next
         Keys.clear_prefix
-
         View.windows_in_my_column.index(View.current) == 0 ?
           View.next : View.previous
         # Else go to previous
@@ -233,57 +286,59 @@ module Xiki
         # Do nothing if already visible
       end
 
+      if options[:same_view]
+        $el.find_file expanded
+      elsif expanded == $el.buffer_file_name
+        # If already there, do nothing...
 
-      if expanded
-        if options[:same_view]
-          $el.find_file expanded
-        elsif expanded == $el.buffer_file_name
+      elsif ( ( $el.window_list.collect {|b| $el.window_buffer b} ).collect {|u| $el.buffer_file_name u} ).member?(expanded)
+        # If already displayed, just move to where it is...
 
-          # If already there, do nothing...
+        $el.find_file_other_window expanded   # This function reuses the window it's already open in
+      else
+        # If not visible, just open it...
 
-        elsif ( ( $el.window_list.collect {|b| $el.window_buffer b} ).collect {|u| $el.buffer_file_name u} ).member?(expanded)
+        if File.directory? expanded   # If a dir, open it in new buffer
+          expanded = FileTree.add_slash_maybe expanded
 
-          # If already displayed, just move to where it is...
-
-          $el.find_file_other_window expanded   # This function reuses the window it's already open in
-        else
-
-          # If not visible, just open it...
-
-          if File.directory? expanded   # If a dir, open it in new buffer
-            expanded = FileTree.add_slash_maybe expanded
-            return Launcher.open expanded
-          end
-
-          $el.find_file expanded
+          return Launcher.open (expanded_tilde || expanded), options.merge(:buffer_name=>"#{expanded[/([^\/]*)\/$/]}", :buffer_dir=>expanded)
         end
+
+        $el.find_file expanded
       end
 
-      # Jump to point if :goto_point (we assume path is just a bookmark)
-      if options[:go_to_point] == true
-        $el.bookmark_jump path.sub(/^\$/, "")
+      if to = options[:to]
+        if to.is_a? Integer
+          View.line = to
+        else
+          View.to_highest
+          Search.forward to
+          Line.to_beginning
+        end
       end
 
       if line_number
         View.to_line line_number[/\d+/]
       end
+
+      nil
     end
 
     # Saves the configuration
     def self.save name=nil
-      name ||= Keys.input(:optional => true)
+      name ||= Keys.input(:optional=>true)
       name ||= "0"
       @@hash[name] = $el.current_window_configuration
     end
 
     # Saves the configuration
     def self.restore name=nil
-      name ||= Keys.input(:optional => true)   # Get single key from user if no param
+      name ||= Keys.input(:optional=>true)   # Get single key from user if no param
       name ||= "0"   # Set to "0" if user waited too long and entered nothing
-      if(name == "o")   # Todo: if "o", just show $t and $o
+      if(name == "o")   # Todo: if "o", just show :t and $o
         View.hide_others :all=>1
-        View.open "$t"
-        View.create
+        View.open "%n"
+        View.create_horizontal
         Code.open_log_view
         View.previous
         return
@@ -297,10 +352,13 @@ module Xiki
       $el.set_window_configuration(@@hash[name])
     end
 
-    # Return list of windows
+    # Return list of windows (buffers that are visible)
+
     def self.list
       $el.window_list(nil, nil, $el.frame_first_window).to_a
     end
+
+    # Return list of windows (buffers that are visible)
 
     def self.list_names
       self.list.map{|v| $el.buffer_name $el.window_buffer(v)}
@@ -323,7 +381,7 @@ module Xiki
 
     # Move to nth window
     def self.to_nth_paragraph n
-      View.to_relative
+      View.to_relative :line=>1
 
       if Line.blank? && ! Line.value(2).blank?   # Weird case when just one blank line at top
         n -= 1
@@ -331,6 +389,16 @@ module Xiki
       end
 
       n.times { Move.to_next_paragraph }
+    end
+
+    # Move to nth window
+    def self.to_nth_fraction n
+      height = View.height
+      lines_down = height * (n / 10.0)
+      lines_down = lines_down.floor
+
+      View.to_relative :line=>1
+      Line.next lines_down
     end
 
     def self.to_nth n
@@ -401,9 +469,8 @@ module Xiki
       end
       $el.delete_other_windows
 
-      # Width of bar (layout+todo etc.)
-      $el.split_window_horizontally 48
-      #     $el.split_window_horizontally 28
+      # Width of bar
+      $el.split_window_horizontally
 
       $el.other_window 1
       o = nil
@@ -441,19 +508,31 @@ module Xiki
     end
 
     # Accounts for bar
-    def self.balance
+    def self.balance options={}
+
+      # No vertical split, so just resize...
+
       $el.balance_windows
-      return if Keys.prefix_u
-      if self.bar?
-        buffer = $el.selected_window
-        $el.select_window $el.frame_first_window
 
-        # Width of bar (balance)
-        $el.enlarge_window((42 - $el.window_width), true)
-        #       $el.enlarge_window((22 - $el.window_width), true)
+      return if ! self.bar?
 
-        $el.select_window buffer
-      end
+      # Only continue if up+ or flag, or
+      return if ! Keys.prefix_u && ! options[:narrow_bar]# && ! heights_didnt_change
+
+      self.balance_with_bar
+
+    end
+
+    def self.balance_with_bar
+
+      buffer = $el.selected_window
+      $el.select_window $el.frame_first_window
+
+      # Width of bar (balance)
+      $el.enlarge_window((42 - $el.window_width), true)
+
+      $el.select_window buffer
+
     end
 
     # Returns true if anything is hidden
@@ -461,36 +540,59 @@ module Xiki
       $el.point_min != 1 || $el.point_max != $el.buffer_size+1
     end
 
-    def self.hide
+    def self.hide options={}
+
+      size = View.list.size
+
+      # It's the only window, so kill the view
+      if size == 1
+        View.kill if options[:kill_if_only]
+        return
+      end
+
       Keys.prefix_times.times do
         left = View.left_edge
 
         # If there's one above me and before me
         index = View.index
         middle = false
-        size = View.list.size
         if index > 0 && index < (size - 1)   # Check existance
           if( left == View.left_edge(View.list[index - 1]) &&
             left == View.left_edge(View.list[index + 1]) )  # Check alignment
             middle = true
           end
         end
+
         # If I'm the last
         last = index == (size - 1)
 
         $el.delete_window
-        $el.previous_multiframe_window if View.left_edge != left || middle || last
+
+        # Go back if we were at the last frame
+        # Only do in emacs 22.  Emacs 24 does this already (or only aquamacs?)
+        if Emacs.v22
+          $el.previous_multiframe_window if View.left_edge != left || middle || last
+        end
+
       end
       nil
     end
 
     # Keys: layout+all
     def self.hide_others options={}
-      if $el.elvar.current_prefix_arg || self.in_bar? || options[:all]
-        return $el.delete_other_windows
-      end
 
       was_at_left = self.is_at_left
+
+      # In a special circumstance, so delete all other windows...
+
+      delete_all = false
+      # We're in the bar, so delete all other windows
+      delete_all = true if $el.elvar.current_prefix_arg || self.in_bar? || options[:all]
+      # If there are windows to the left, but none above or below
+      delete_all = true if ! was_at_left && View.windows_in_my_column.length == 1
+      return $el.delete_other_windows if delete_all
+
+      # Only delete windows above and below...
 
       selected = View.current
 
@@ -508,6 +610,8 @@ module Xiki
         $el.other_window 1
       end
       Effects.blink(:what=>:line) if options[:blink]
+      rescue
+        # Do nothing
     end
 
     def self.previous options={}
@@ -524,13 +628,31 @@ module Xiki
     end
 
     # Return selected text (aka the "region")
+    def self.selection?
+      $el.elvar.mark_active
+    end
+
     def self.selection options={}
+      return nil if ! self.selection? && ! options[:always]
+
       txt = $el.buffer_substring($el.region_beginning, $el.region_end)
       $el.delete_region($el.point, $el.mark) if options[:delete]
       txt
     end
 
+    def self.selection= coords
+      left, right = coords
+
+      View.mark = right
+      View.cursor = left
+
+      $el.elvar.deactivate_mark = nil
+    end
+
+    # Starting and ending of selection
     def self.range
+      # Avoids "mark not set" error, when view recently opened
+      return [nil, nil] if ! $el.mark
       [$el.region_beginning, $el.region_end]
     end
 
@@ -583,6 +705,9 @@ module Xiki
     end
 
     def self.to_upper options={}
+
+      return Move.to_last_window(:blink=>true) if Keys.prefix_u
+
       down = Keys.prefix_times - 1
       Keys.clear_prefix
       View.to_after_bar
@@ -627,8 +752,21 @@ module Xiki
     end
 
     # Switches to a buffer
+    def self.to_view name, options={}
+      self.to_buffer name, options
+    end
+
     def self.to_buffer name, options={}
-      return if $el.buffer_name == name   # If we're here already, do nothing
+
+      name = View.unique_name name if options[:unique]
+
+      # Ol.stack
+      if $el.buffer_name == name   # If we're here already, do nothing
+        View.clear if options[:clear]
+        return
+      end
+
+      View.to_after_bar if options[:after_bar] && View.in_bar?
 
       found = View.list.find do |w|
         $el.buffer_name($el.window_buffer(w)) == name
@@ -640,7 +778,6 @@ module Xiki
     end
 
     def self.txt options={}, right=nil
-
       options.is_a?(Hash) && buffer = options[:buffer] and return Buffers.txt(buffer)
 
       # If 2nd arg is there, we were passed right,left
@@ -668,6 +805,7 @@ module Xiki
     # - no prefix means the notes block
     # - etc
     def self.txt_per_prefix prefix=nil, options={}
+
       prefix ||= Keys.prefix(:clear=>1)
 
       prefix = prefix.abs if prefix.is_a?(Fixnum)
@@ -679,9 +817,9 @@ module Xiki
       when 1..6   # Should probably catch all numeric prefix?
         left = Line.left
         right = $el.point_at_bol(prefix+1)
-      when :-
-        left, right = View.range if options[:selection]
       end
+
+      left, right = View.range if View.selection?
 
       # If no prefixes
       if left == nil
@@ -704,6 +842,51 @@ module Xiki
 
       return [txt, left, right]
     end
+
+
+    def self.part tile, options={}
+
+      context_lines = options[:context] || 0
+
+      txt = ""
+
+      # If we're in the buffer already, save the cursor, because with_current_buffer won't restore it in this case
+      cursor_to_restore = tile == View.buffer ? View.cursor : nil
+
+      $el.with(:with_current_buffer, tile) do
+
+        orig = View.line
+
+        # Line above exists, to grab it...
+
+        context_lines.times do
+          break if View.line == 1
+          Line.previous
+          txt = "| #{Line.value}\n#{txt}"
+        end
+
+        # Grab original line...
+        View.line = orig
+
+        txt << "| #{Line.value}\n"
+
+        # Line below exists, so grab it...
+
+        context_lines.times do
+          Line.next
+          break if View.line == orig
+          txt << "| #{Line.value}\n"
+          orig = View.line
+        end
+
+        View.cursor = cursor_to_restore if cursor_to_restore
+      end
+
+      txt.gsub /^([|:]) $/, "\\1"
+
+    end
+
+
 
     # Returns bounds of block in the form [left, after_header, right].
     def self.block_positions regex="^> "
@@ -738,7 +921,10 @@ module Xiki
     end
 
     def self.to_bottom
+      prefix = Keys.prefix :clear=>1
       $el.end_of_buffer
+      Line.previous prefix if prefix.is_a? Fixnum
+      View.message ""
     end
 
     def self.at_bottom
@@ -761,6 +947,14 @@ module Xiki
       $el.point_max
     end
 
+    def self.at_top?
+      self.cursor == self.top
+    end
+
+    def self.at_bottom?
+      self.cursor == self.bottom
+    end
+
     def self.clear name=nil
       if name
         if View.buffer_visible?(name)
@@ -773,23 +967,83 @@ module Xiki
       $el.erase_buffer
     end
 
-    def self.dir force_slash=nil
-      # TODO: merge with .path?
+    def self.dir options={}
+
+      return "/tmp/" if ! $el   # Tmp: if not $el, default to /tmp/
+
       result = File.expand_path($el.elvar.default_directory)
 
-      if force_slash
+      # :ignore_shell_dir, so just return just current one?
+
+      # We're in ~/xiki, so use dir emacs started in instead
+      if options[:startup_dir_if_topic] && result == File.expand_path("~/xiki")
+        result = File.expand_path($el.elvar.command_line_default_directory)
+      end
+
+      if options[:force_slash]
         return result =~ /\/$/ ? result : "#{result}/"
       end
 
       result
     end
 
-    def self.dir= to
-      $el.elvar.default_directory = File.expand_path(to)+"/"
+    def self.dir= dir
+      dir = File.expand_path dir
+      dir << "/" if dir != "/"
+      $el.elvar.default_directory = dir
+    end
+
+    # Returns path to current file if saved.
+    # If file not saved or file is a buffer, it writes it to a temp file and returns that path.
+    #
+    # View.as_file_or_temp_file :buffer=>"tasks.notes"
+    # View.as_file_or_temp_file :file=>"^n"
+    def self.as_file_or_temp_file options={}
+
+      buffer = options[:buffer]
+
+      # :file, so...
+      if options_file = options[:file]
+        options_file = Bookmarks[options_file]
+        buffer = $el.get_file_buffer options_file
+        # If file open in buffer, continue on - it'll move to it and check for modified
+        # If not, return the path
+        return options_file if ! buffer
+      end
+
+      # Buffer passed in, so switch to it...
+
+      if buffer
+        orig = View.name
+        $el.set_buffer buffer
+      end
+
+      file = View.file
+
+      # Unmodified file, so just return path...
+
+      if file && ! self.modified? # && ! options[:file]   # If :file passed, don't try current file
+        $el.set_buffer orig if buffer
+        return file
+      end
+
+      # Modified file or buffer, so write to temp file...
+
+      name = TextUtil.snake(file ? file : View.name)
+
+      file = "/tmp/#{name}"
+
+      $el.write_region nil, nil, file
+
+      $el.set_buffer orig if buffer
+
+      file
     end
 
     def self.file
-      file = $el.buffer_file_name
+      return nil if ! $el
+      # Uncommenting might cause problems > 2014-10-25 > slightly risky because this is used everywhere
+      file = $el.elvar.buffer_file_name
       file ? File.expand_path(file) : nil
     end
 
@@ -823,8 +1077,10 @@ module Xiki
     end
 
     # Returns whether a buffer is open / exists
+    # View.buffer_open? "tasks.notes"
+    #   #<buffer tasks.notes>
     def self.buffer_open? name
-      Buffers.list.find{|b| $el.buffer_name(b) == name}
+      $el.get_buffer(name) ? true : nil
     end
 
     def self.buffer_visible? name
@@ -842,13 +1098,6 @@ module Xiki
       $el.elvar.truncate_lines = on_or_off.to_sym == :off
     end
 
-    # Call this at startup to set some sensible view-related default behavior
-    def self.sensible_defaults
-      $el.el4r_lisp_eval("(progn (setq truncate-partial-width-windows nil)
-        (set 'default-truncate-lines t)
-        )")
-    end
-
     def self.set_mark pos=nil
       pos ||= self.cursor
       $el.set_mark pos
@@ -856,6 +1105,14 @@ module Xiki
 
     def self.mark= pos=nil
       self.set_mark pos
+    end
+
+    def self.mark
+      $el.mark
+    end
+
+    def self.select
+      self.set_mark
     end
 
     def self.insert txt, options={}
@@ -900,16 +1157,29 @@ module Xiki
     end
 
     def self.recenter n=nil
+      if n.is_a? String
+
+        View.to_highest
+        Search.forward n, :beginning=>1
+        View.recenter 0
+
+        return
+      end
+
       n ||= Keys.prefix
 
-      return View.recenter_under "^\\( *def \\| *it \\|^>\\)", :relative=>1 if n == :u
+      if n == :-
+        indent = Line[/^  ( *)/, 1]
+        return View.recenter_under "^#{indent}\\S-", :relative=>1
+      end
 
       if n == :uu
         return View.recenter_under "^\\( *def \\| *it \\|^>\\)", :relative=>1, :incude_comments=>1
       end
 
+      n -= 1 if n.is_a? Fixnum
       $el.recenter n
-      $el.message ""   # So stupid C-l C-l doesn't show at the bottom
+
     end
 
     #
@@ -925,11 +1195,15 @@ module Xiki
       # If :relative, search backward from here...
 
       if options[:relative]
+
+        Keys.clear_prefix
         Move.to_previous_paragraph if options[:incude_comments] && Line.value(0) =~ /^ *#/
         line = View.line
+
         View.recenter_top
         orig.go
         difference = View.line - line
+
         View.recenter -2 if difference > (View.height-3)
         return
       end
@@ -942,8 +1216,13 @@ module Xiki
       View.recenter_top
     end
 
+    def self.recenter_top_key
+      return View.recenter_under "^\\( *def \\| *it \\|^>\\)", :incude_comments=>1, :relative=>0 if Keys.prefix_u
+      self.recenter_top # :incude_comments=>1
+    end
+
     def self.recenter_top
-      $el.recenter 0
+      $el.recenter(Keys.prefix || 0)
     end
 
     def self.rest
@@ -959,7 +1238,7 @@ module Xiki
     end
 
     def self.to_line_with_prefix first=""
-      line = "#{first}#{Keys.input(:prompt=>"goto line: #{first}")}"
+      line = %'#{first}#{Keys.input(:prompt=>"goto line: #{first}")}'
       View.to_line line
     end
 
@@ -976,10 +1255,8 @@ module Xiki
     end
 
     def self.count_matches
-      right = $el.buffer_size
-      left = 1
-      left = $el.point if Keys.prefix_u?
-      $el.message how_many(Keys.input('pattern to count: a'), left, right).to_s
+      pattern = Keys.input 'pattern to count: '
+      View.message View.txt.scan(/#{Regexp.quote pattern}/).length
     end
 
     def self.line
@@ -991,7 +1268,7 @@ module Xiki
     end
 
     def self.column
-      $el.point - $el.point_at_bol
+      ($el.point - $el.point_at_bol) + 1
     end
 
     def self.column= to
@@ -999,9 +1276,14 @@ module Xiki
       nil
     end
 
+    def self.word_at_cursor
+      $el.thing_at_point(:symbol)
+    end
+
     def self.cursor
       $el.point
     end
+
     def self.cursor= n
       $el.goto_char n
     end
@@ -1019,10 +1301,15 @@ module Xiki
     #
     # Delete string between two points, and returns deleted text.
     #
-    # p View.delete 1, 10
-    # p View.delete :line
-    # p View.delete   # Delete's selection (and returns it)
+    # View.delete 1, 10
+    # View.delete :line
+    # View.delete :char
+    # View.delete   # Delete's selection (and returns it)
     #
+    def self.delete_all
+      $el.delete_region 1, View.bottom
+    end
+
     def self.delete left=nil, right=nil
       return Line.delete if left == :line
       left, right = [self.cursor, self.cursor+1] if left == :char
@@ -1038,11 +1325,11 @@ module Xiki
     end
 
     def self.char
-      $el.buffer_substring($el.point, $el.point+1)
+      $el.buffer_substring($el.point, $el.point+1) rescue nil
     end
 
     def self.char_before
-      $el.buffer_substring($el.point-1, $el.point)
+      $el.buffer_substring($el.point-1, $el.point) rescue nil
     end
 
 
@@ -1103,7 +1390,6 @@ module Xiki
 
     def self.init
       @@dimension_options ||= []   # Set to empty if not set yet
-      $el.winner_mode 1 rescue nil
     end
 
     def self.paragraph options={}
@@ -1114,7 +1400,9 @@ module Xiki
       Search.forward "^$", :go_anyway=>true
       right = Line.right
       orig.go
+
       left = Line.left if options[:start_here]
+      right = Line.left if options[:end_here]
 
       return [left, right] if options[:bounds]
       txt = View.txt(left, right)
@@ -1127,43 +1415,90 @@ module Xiki
       $el.browse_url txt
     end
 
-    def self.kill
+    def self.kill options={}
+      prefix = Keys.prefix :clear=>1
+
+      force_recent = options[:force_recent]
+      force_recent = 1 if prefix == :-
 
       # To avoid "Buffer has a running process; keep the buffer? (y or n)" message
       if process = $el.get_buffer_process(View.buffer)
         $el.set_process_query_on_exit_flag process, nil
       end
 
-      $el.kill_this_buffer
+      # If :force_recent, grab view that is 2nd most recent (if it's shown in another view, it won't be shown by default)
+
+      if force_recent
+        list = Buffers.list[0..3].map{|o| Buffers.name o}
+        list.delete_if{|o| o == "ol"}
+        recent = list[1]
+      end
+
+      currently_viewed = View.list_names
+
+      # Close...
+
+      $el.kill_buffer $el.current_buffer   # Emacs 24 compatible
+
+      # There are no other views except *star views, so show 'getting around' view
+      buffers = Buffers.list_names :user_only=>1
+      if buffers.length == 0
+
+        # If only viewed is the getting around view then quit
+        DiffLog.quit
+
+        return
+      end
+
+      View.hide if prefix == :u   # If up+, also close view
+
+      # This view is showing somewhere else, so switch to another
+      ControlTab.go if currently_viewed.member? View.name
+
+      if force_recent
+        $el.switch_to_buffer recent
+      end
+
       nil
     end
+
 
     def self.kill_all
       $el.erase_buffer
     end
 
-    def self.kill_paragraph
+    def self.delete_paragraph options={}
       left, right = View.paragraph(:bounds => true)
-      Effects.blink(:left=>left, :right=>right)
-      View.delete(left, right)
+      Effects.blink :left=>left, :right=>right
+      txt = View.delete left, right
+      Clipboard.set 0, txt
+      return options[:return] if options.key?(:return)
+      txt
     end
 
-    def self.expand_path path
-      path = "#{View.dir}/#{path}" if path !~ /^[\/~]/
+    def self.kill_paragraph options={}
+      left, right = View.paragraph(:bounds => true)
+      Effects.blink :left=>left, :right=>right
+      txt = View.delete left, right
+      return options[:return] if options.key?(:return)
+      txt
+    end
+
+    def self.expand_path path, options={}
 
       # Expand ~
 
       had_slash = path =~ /\/$/   # Check whether / at end
 
       # This cleans up /./ nad /../ in paths as side-effect of above
-      path = File.expand_path path
+      path = File.expand_path path, options[:dir]
 
       path = "#{path}/" if had_slash && path !~ /\/$/   # Put / back at end, if it was there (and not there now)
 
       path
     end
 
-    def self.dimensions_set position_x=nil, position_y=nil, size_x, size_y
+    def self.dimensions_set position_x=nil, position_y=nil, size_x=nil, size_y=nil
       self.fullscreen_off
       $el.set_frame_size(View.frame, size_x, size_y)
       $el.set_frame_position(View.frame, position_x, position_y) unless position_x.nil?
@@ -1200,8 +1535,14 @@ module Xiki
       $el.window_start
     end
 
+    def self.end
+      $el.window_end
+    end
+
     def self.insert_line
       orig_indent = Line.indent
+      cursor = View.cursor
+      char, char_before = View.char, View.char_before
       prefix = Keys.prefix :clear=>1   # Check for numeric prefix
 
       if prefix == 0
@@ -1209,31 +1550,37 @@ module Xiki
         Line.previous
       end
 
-      Move.to_end if Line.before_cursor =~ /^ +$/   # If at awkward position, move
-
       line = Line.value
 
       indent_txt =
-        if prefix.is_a?(Fixnum)   # Make indent specific number
-          " " * (prefix*2)
-        elsif prefix == :u || prefix == :-   # Use prefix chars from previous line
-          line[/^[ |$~&%@\/\\#+!-]*/]
-        elsif Notes.enabled?
-          line[/^[ :|!$%+-]*/]
+        if prefix == :u || prefix == :-   # Use prefix chars from previous line
+          ""
         else
-          Line[/^ */] || ""
+          line[/^[ |#;:!%$*?^+-]*/]
         end
 
-      Deletes.delete_whitespace if ! Line.at_left? && ! Line.at_right?
+      # remave ":" if it's the last thing in prefix
+      indent_txt.sub!(/[^ ]+$/, '')
 
       # If C--, move to end of previous line, so it goes before
       if prefix == :-
         Move.to_end -1
       end
 
-      Line.to_right if Line.at_left?
+      indent_txt = "" if Line.at_left?
 
-      View.insert "\n#{indent_txt}"
+      # Remove trailing spaces if empty quoted line
+
+      Line.sub!(/ +$/, '') if line =~ /^ *[|:#!] +$/
+
+      times = prefix.is_a?(Fixnum) ? prefix : 1
+      times.times{ View.insert "\n#{indent_txt}" }
+
+      if char != "\n"
+        View.cursor = cursor
+      end
+      nil
+
     end
 
     def self.shift
@@ -1286,41 +1633,138 @@ module Xiki
 
     end
 
-    def self.layout_todo options={}
-      FileTree.open_in_bar
-      Effects.blink(:what=>:line) unless options[:no_blink]
+
+
+    def self.layout_todo
+
+      # There's no bar yet and in tasks.notes, so switch to next (avoid showing :t in both views)
+      if View.file == Bookmarks["%n"] && ! View.bar?
+        View.to_buffer Buffers.list_names.find{|o| ! ["notes.xiki"].member? o}
+      end
+
+      View.bar
+      View.open "%n", :stay_in_bar=>1
     end
 
-    def self.layout_files options={}
-      FileTree.open_in_bar
-      View.to_nth 1
-      Effects.blink(:what=>:line) unless options[:no_blink]
+    def self.layout_todo_and_nav options={}
+
+      return self.layout_outlog(:include_ol_view=>1) if Keys.prefix_u(:clear=>1)
+
+      orig = View.name   # Store original view
+
+      # Create notes dir > if not there yet
+      FileUtils.mkdir_p Bookmarks["%x"]
+
+      was_already_split = View.bar?
+
+      FileTree.open_in_bar   #> |||
+
+      self.to_nth 2
+
+      return if options[:include_ol_view]   # It's calling us before showing "ol" view, so don't tweak further
+
+
+      # Switch to one that's not :t or :n   #> continue here > where does it put view on top of ^n?!!
+      self.to_buffer Buffers.list_names.find{|o| ! ["notes.xiki", "links.xiki", "ol"].member? o}
+      self.to_nth 0
+
+      # Was originally at "*scratch*", so use last edited (that's not notes.xiki, etc)
+
+      View.content_right
+
+      if View.name == "*scratch*"
+        # open first_normal_file > before esc-i!
+        edited = DiffLog.file_list
+        first_normal_file = edited.find{|o| o !~ /(notes|links)\.xiki$/}
+
+        View.open first_normal_file
+        return
+      end
+
+      self.balance(:narrow_bar=>1) if ! was_already_split
+
+      # Jump to right view   #> This was showing up on top of ^n > Was it needed at all?
+
+    end
+
+    def self.layout_nav
+
+      # There's no bar yet and in nav.xiki, so switch to next (avoid showing :t in both views)
+      ControlTab.go if self.file == Bookmarks["%links"] && ! self.bar?
+
+      self.bar
+      self.open "%links", :stay_in_bar=>1
+    end
+
+    def self.layout_quick
+
+      # There's no bar yet and in nav.xiki, so switch to next (avoid showing :t in both views)
+      self.to_buffer Buffers.list_names.find{|o| ! ["notes.xiki", "links.xiki", "ol", "quick.xiki"].member? o}
+
+      self.bar
+      self.open "%q", :stay_in_bar=>1
     end
 
     def self.layout_outlog options={}
-      prefix = Keys.prefix
+
+      prefix = options[:prefix] || Keys.prefix
 
       if options[:called_by_launch]
         prefix = nil
       end
 
-      # If current line has Ol., grab line and path
-
       # If already showing, just go to it
 
-      if ! View.buffer_visible?("*ol")
-        View.layout_files if ! View.bar?   # If not already showing bar, do it first, so it shows up on left
+      # window+ide, so show ide views, then split before showing ol view...
+
+      if options[:include_ol_view]
+
+        # Hide all other views first, so it doesn't get confused by other windows
+        $el.delete_other_windows
+        buffer = Buffers.list_names.find{|o| ! ["notes.xiki", "links.xiki", "ol"].member? o}
+        self.to_buffer buffer
+
+        self.layout_todo_and_nav :include_ol_view=>1
+
+        self.to_nth 1
+
+        self.create_horizontal
+
+        self.balance
       end
 
-      found = prefix != :u && ! options[:dont_highlight] && Line =~ /^ *Ol\b/ && OlHelper.source_to_output(View.file, Line.number)   # => nil
+      # If current line has Ol., grab line and path
+
+      # If we were on an Ol line, jump to it later...
+
+
+      file = self.file
+
+      found = prefix != :u && ! options[:dont_highlight] && Line =~ /^[ |:]*Ol\b/ && OlHelper.source_to_output(self.file, Line.number)   # => nil
 
       put_value_here = nil
-      if prefix == :-   # If want to keep cursor where it is
-        return View.flash("- Not found!") if ! found
+      if prefix == :-   # || prefix == :uu   # If we want to update the commend value from Ol
+        return self.flash("- Not found!") if ! found
         put_value_here = Location.new
       end
 
       Code.open_log_view options
+
+
+      if options[:include_ol_view]
+        raise "Not on Ol view > so don't delete!" if View.name != "ol"
+        self.delete_all   # Clear out ol view
+        self.content_right
+        return
+      end
+
+      # If prefix is number, move to nth and open...
+      if prefix.is_a? Fixnum
+        Search.backward "^>"
+        prefix.times { Search.forward "^ *-" }
+        Launcher.launch
+        return
+      end
 
       if found
         if found >= (Line.number(View.bottom) - 1)   # If too far back to be shown
@@ -1333,7 +1777,6 @@ module Xiki
       end
 
       if found
-        Color.mark "light"
         Effects.blink(:what=>:line)
       end
 
@@ -1343,10 +1786,7 @@ module Xiki
 
         put_value_here.go
         Ol.update_value_comment value
-
-        return
       end
-
     end
 
     def self.split options={}
@@ -1355,17 +1795,17 @@ module Xiki
         $el.split_window_vertically
     end
 
-    def self.to_relative
-      prefix = Keys.prefix
+    def self.to_relative options={}
+      prefix = Keys.prefix || options[:line]
 
-      if prefix == :u   # up+ means go to middle
+      if prefix == nil   # no prefix, so go to middle
         top = Line.number($el.window_start)
         bottom = Line.number($el.window_end)
         View.line = top + ((bottom - top) / 2)
         return
       end
 
-      if prefix == :uu   # up+up+ means go to bottom
+      if prefix == :u   # up+, so go to top
         prefix = -1
       end
 
@@ -1381,35 +1821,15 @@ module Xiki
     end
 
     def self.gsub! from, to
-      $el.with(:save_excursion) do
-        View.to_highest
-        $el.replace_regexp(from, to)
-      end
-    end
 
-    def self.enter_upper
-      prefix = Keys.prefix :clear=>true
-      orig = Location.new
+      line, column = View.line, View.column
+      txt = View.delete(View.top, View.bottom)
+      txt.gsub! from, to
+      View << txt
+      View.line, View.column = line, column
 
-      View.layout_todo :no_blink=>true
-      todo_orig = Location.new
-      View.to_highest
+      nil
 
-      View.line = prefix if prefix.is_a? Fixnum
-
-      line = Line.value
-      if prefix == :u || prefix == :uu
-        Line.delete
-
-        orig.line -= 1 if Bookmarks['$t'] == orig.file   # If in $t, adjust position by how much is deleted
-      end
-
-      todo_orig.go
-      orig.go
-
-      line << "\n" if prefix == :uu
-
-      View.insert line
     end
 
     # Number of lines from the top of the view we are.
@@ -1431,22 +1851,15 @@ module Xiki
       View.<< txt, :dont_move=>1
     end
 
-    def self.enter_date
-      $el.insert $el.elvar.current_prefix_arg ?
-        Time.now.strftime("%Y-%m-%d %I:%M:%S%p").sub(' 0', ' ').downcase :
-        Time.now.strftime("%Y-%m-%d")
-    end
-
     # Makes message glow at end of line, and adds "/", like
     #
     # foo/Type something here
     # View.prompt
     def self.prompt message="Type something here", options={}
-      ControlLock.disable
 
       if ! Line.blank?
         Move.to_end
-        View << "/" unless Line =~ /\/$/
+        View << "/" unless options[:no_slash] || Line =~ /\/$/
       end
 
       self.insert(message, :dont_move=>1)
@@ -1455,7 +1868,6 @@ module Xiki
       Effects.glow({:what=>[left, right], :reverse=>1}.merge(options))
       self.delete left, right
 
-
       return unless options[:timed]
 
       View.<< message, :dont_move=>1
@@ -1463,7 +1875,10 @@ module Xiki
       $el.elvar.inhibit_quit = true
 
       # Wait for first, then loop until pause
-      c = $el.read_char("")
+
+      # Avoids weird "Non-character input-event" error, when called via emacsclient
+      c = $el.read_char_exclusive("")
+
       key = Keys.to_letter c
       View.delete View.cursor, Line.right   # Delete temporary message
       View << key
@@ -1495,7 +1910,7 @@ module Xiki
 
       was_modified = $el.buffer_modified_p
 
-      File.open("/tmp/flashes.log", "a") { |f| f << "#{message}\n" } if message
+      # File.open("/tmp/flashes.log", "a") { |f| f << "#{message}\n" } if message
 
       message ||= "- Success!"
 
@@ -1504,10 +1919,11 @@ module Xiki
 
       blank_line = Line[/^$/]
 
-      Line.next unless blank_line
-      message = "#{message.strip}"
+      Line.next unless blank_line || options[:dont_nest]
+      message = "#{message.strip}" if ! options[:dont_nest]
       message << "\n" unless blank_line
-      message.gsub! /^/, "#{indent}  "
+      message.gsub!(/^/, "#{indent}  ") if ! options[:dont_nest]
+
       self.insert message, :dont_move=>1
       left, right = Line.left, Line.left+message.length
       self.cursor = orig
@@ -1519,6 +1935,7 @@ module Xiki
       self.cursor = orig
 
       $el.not_modified if ! was_modified
+      View.message ""   # Block "Modification flag cleared" message from appearing
 
       nil
     end
@@ -1541,6 +1958,7 @@ module Xiki
     #
     # View.status "aa"
     # View.status nil
+    # View.status :nth=>1   # Retrieve
     # View.status "bb", :nth=>2
     # View.status "dim", :nth=>3
     # View.status "dotsies", :nth=>4
@@ -1587,6 +2005,12 @@ module Xiki
 
       key = "xiki_status#{nth}".to_sym
 
+      # If val is still hash, we must just be returning it...
+
+      if val.is_a? Hash
+        return $el.elvar[key]
+      end
+
       $el.make_local_variable key
       $el.elvar[key] = val
 
@@ -1597,16 +2021,22 @@ module Xiki
       $el.buffer_size
     end
 
-    def self.new_file
-      View.to_buffer "untitled.notes"
-      $el.rename_uniquely
-      Notes.mode
-      View >> "\n"
+
+    def self.new_file *args
+      if Keys.prefix_u
+        View.to_buffer View.unique_name("untitled.txt")
+      else
+        View.to_buffer View.unique_name("untitled.xiki")
+        Notes.mode
+      end
+
+      View >> "\n\n\n"
     end
 
     def self.confirm message="Are you sure?", options={}
       View.beep :times=>3 if options[:beep]
 
+      View.message message   # Make sure to clear the message out
       View.flash "- #{message}", :times=>(options[:times]||2)
       choice = Keys.input :prompt=>"#{message} (type 'y' for yes)", :chars=>1
 
@@ -1617,6 +2047,24 @@ module Xiki
 
     def self.rename_uniquely
       $el.rename_uniquely
+    end
+
+    # View.unique_name "hi"
+    # View.unique_name "notes.xiki"
+    #   todo2.xiki
+    def self.unique_name name
+      return name if ! self.buffer_open? name
+      i, limit = 2, 1000
+
+      # Increment number until fooX.bar doesn't already exist...
+
+      extension = name.slice! /\.[a-z]+$/i
+      while i < limit
+        break if ! self.buffer_open? "#{name}#{i}#{extension}"
+        i += 1
+      end
+      "#{name}#{i}#{extension}"
+
     end
 
     def self.number_of_lines
@@ -1636,7 +2084,31 @@ module Xiki
     # match with the exact indent, then secondarily try to find
     # line with different indent (since the indent of quoted
     # lines isn't strict).
-    def self.to_quote quote
+    def self.find_snippet_in_txt txt, quote
+
+      txt = txt.split("\n")
+      found = txt.index{|o| o =~ /^#{Regexp.quote(quote)}$/}
+
+      # Search for exact line match
+
+      unless found   # If not found, search for substring of line, but with a break at the end
+        found = txt.index{|o| o =~ /#{Regexp.quote(quote)}([^_a-zA-Z0-9\n]|$)/}
+      end
+      unless found   # If not found, search for substring of line
+        found = txt.index{|o| o =~ /#{Regexp.quote(quote)}/}
+      end
+      unless found   # If not found, search for it stripped
+        found = txt.index{|o| o =~ /#{Regexp.quote(quote.strip)}/}
+      end
+
+      return nil if ! found
+
+      found + 1
+
+
+    end
+
+    def self.to_snippet quote
 
       quote = $el.regexp_quote quote
 
@@ -1647,7 +2119,6 @@ module Xiki
 
       unless found   # If not found, search for substring of line, but with a break at the end
         Move.top
-        # :beginning
         found = Search.forward "#{quote}\\([^_a-zA-Z0-9\n]\\|$\\)", :beginning=>true
       end
       unless found   # If not found, search for substring of line
@@ -1656,33 +2127,26 @@ module Xiki
       end
       unless found   # If not found, search for it stripped
         Move.top
-        found = $el.search_forward_regexp "#{$el.regexp_quote(quote.strip)}", nil, true
+        found = $el.search_forward_regexp "#{quote.strip}", nil, true
       end
 
       Line.to_beginning
 
-      if quote =~ /^(> | *def )/
-        View.recenter_top
-      end
+      # View.recenter_top if quote =~ /^(> | *(def|function) )/
+      self.recenter_appropriately quote, :only_if_at_top=>1
 
       found
 
     end
 
+    def self.recenter_appropriately line, options={}
 
-    # Shelved for now, in favor if having editor handle all <<,<=,<@ bullets.
-    #   def self.delete_parent times=1
-    #     times.times do
-    #       Move.to_end
-    #       Line.sub! /\/$/, ''   # Kill slash if at end
-    #       right = View.cursor
-    #       # Delete back to the previous slash
-    #       Search.backward "/"
-    #       Move.forward
-    #       View.delete View.cursor..right
-    #     end
-    #   end
+      return self.recenter_top if line =~ /^(> | *(def|function) )/
 
+      return if options[:only_if_at_top]
+
+      self.recenter
+    end
 
     def self.toggle
       prefix = Keys.prefix :clear=>true
@@ -1691,7 +2155,678 @@ module Xiki
 
       return $el.transpose_paragraphs(1) if prefix == :-
 
-      $el.transpose_chars 1 # $el.elvar.current_prefix_arg
+      $el.transpose_chars 1
+    end
+
+    def self.minimize
+      $el.iconify_frame
+    end
+
+    def self.do_move_up
+      prefix = Keys.prefix
+      line, column = View.line, View.column
+      txt = Line.delete
+      Tree.to_parent
+      Line << "\n#{txt}"
+      Line << "\n" if prefix == :u
+      View.line, View.column = line+1, column
+    end
+
+
+    # Returns pixel xy coordinates of point, or position
+    #
+    # View.pixel_xy
+    # View.pixel_xy 45418
+    # View.pixel_xy 1   # Off the screen, no nil's
+    def self.pixel_xy cursor=nil
+      pos = $el.posn_x_y $el.posn_at_point(cursor)
+      [$el.car(pos), $el.cdr(pos)]
+    end
+
+    def self.page_up
+      # Get distance from top to here
+      window_start = View.start
+      return View.beep if window_start == View.top
+
+      down_from_top = View.line - Line.number(window_start)
+
+      # Go up
+
+      distance = View.height-4
+
+      # If it would move past the top, just recenter at bottom
+
+      return View.recenter -2 if distance > View.line
+
+      Line.previous distance
+
+      # Recenter
+      $el.recenter down_from_top
+
+      View.message "#{View.percent}%%"
+    end
+
+    def self.page_down
+      # Get distance from top to here
+      window_end = View.end
+      return View.beep if window_end == View.bottom
+
+      line = View.line
+
+      down_from_top = line - Line.number(View.start)
+
+      distance = View.height-4
+
+      # Go down
+      Line.next distance
+
+
+      # If went all the way to the bottom, go back and recenter
+      if View.cursor == View.bottom
+        View.line = line
+        return View.recenter(2)
+      end
+
+      # Recenter
+      $el.recenter down_from_top
+
+      View.message "#{View.percent}%%"
+    end
+
+    def self.deselect
+      $el.deactivate_mark
+    end
+
+    def self.no_deselect
+      $el.elvar.deactivate_mark = nil
+    end
+
+    def self.zoom
+
+      # If something hidden, just show
+      if $el.point_min != 1 || $el.point_max != 1 + $el.buffer_size
+        return Hide.reveal
+      end
+
+      $el.narrow_to_region($el.region_beginning, $el.region_end)
+      View.deselect
+
+    end
+
+    # View.percent
+    def self.percent
+      total_lines = Line.number View.bottom
+      current_line = View.line
+
+      percent = current_line / total_lines.to_f
+      percent = (percent * 100).round
+    end
+
+    def self.extract_suggested_filename_from_txt txt=nil   #> ""
+      txt ||= View.txt
+
+      # Remove text that appears when Ctrl+R
+      txt.sub! /\A\|.+\n+/, ''
+
+      # Don't store session if only command is sessions/...
+      return if txt.scan(/^[^ \n].*/) == ["interactions/"]
+
+      # Change some chars, to dashes
+      txt.gsub!(/ > /, ' - ')
+
+      name = txt[/[a-z][a-z.0-9 '-]*/i]   # '
+
+      return if ! name   # Do nothing if no words in the file
+
+      name.downcase!
+      name.strip!
+
+      # name
+      name = Notes.heading_to_path name
+      name.gsub!(/ /, '_')
+      name
+    end
+
+    def self.tab_width width
+      $el.elvar.tab_width = width
+    end
+
+    def self.scan regex
+      self.txt.scan regex
+    end
+
+    def self.close
+      self.kill
+      self.hide
+    end
+
+    def self.insert_shell_prompt
+
+      # up+, so prompt for bookmark...
+
+      # On blank line, so prompt for dir and insert the prompt underneath
+      if Line.blank?
+        dir = Keys.bookmark_as_path :prompt=>"Bookmark to make shell prompt in: "
+        View.<< Bookmarks[dir], :dont_move=>1
+      end
+
+
+      # Insert "$ " under this dir...
+
+      Tree.<< "$ ", :no_search=>1, :no_slash=>1
+      Line.to_right
+    end
+
+    def self.content_right
+
+      # Already vertical split, so just move to top-right!...
+
+      if View.bar?
+        return View.to_upper #(:blink=>1)
+      end
+
+      # No split yet, so split, making current view end up on the right...
+
+      View.create_vertical :prefix=>:u
+
+    end
+
+
+    def self.remove_last_undo_boundary
+
+      # Altenative implementation > that removes border even if not at 2nd position in list
+      # Downside > "(require 'cl)" adds .01s to emacs load time (happens each time xsh is run)
+      #   (require 'cl)
+      #   (remove* nil '(nil 2 nil 3 nil 4) :count 1)
+      #     : (2 nil 3 nil 4)
+
+      # If 2nd item in undo history is nil (an undo boundary) remove it
+      $el.el4r_lisp_eval("
+      (if (not (car (cdr buffer-undo-list)))
+        (setq buffer-undo-list
+          (cons (car buffer-undo-list) (cddr buffer-undo-list))
+        )
+      )
+      ")
+    end
+
+
+    def self.highlight
+
+      times = Keys.prefix_n || 1
+
+      Line.to_left
+      View.set_mark
+
+      Line.next times
+
+    end
+
+    def self.app_dir
+      File.expand_path $el.elvar.command_line_default_directory
+    end
+
+    def self.expose
+
+      # Only one buffer open, so show error
+      buffers = Buffers.list_names :user_only=>1
+      if buffers.length == 1
+        return View.message "Only one view is open, so we can't expose them."
+      end
+
+      # Save order of views
+      original_order = self.remember_buffer_order
+
+      $el.delete_other_windows   # Close all others first
+      whole_width = $el.window_width
+
+      # Results in 5 columns
+      individual_width = whole_width / 4
+
+      count = 0
+
+      buffers = Buffers.list_names(:user_only=>1)
+
+      Buffers.to buffers[0]
+
+      buffers[1..-1].each do |name|
+
+        count += 1
+        $el.split_window_horizontally
+        $el.other_window 1
+        $el.balance_windows
+        Buffers.to name
+
+        break if $el.window_width < individual_width
+      end
+
+      $el.other_window 1   # Back to the first
+
+      input = Keys.input :chars=>1, :prompt=>"Type number of window: "
+
+      # Subsequent duplicated click sometimes comes in a little slower > ignore it
+      while(char = $el.read_char("", nil, 0.05)) do
+      end
+
+      # Restore order of views
+      self.restore_order original_order
+
+      # Was mouse click, so select window...
+
+      if match = input.match(/^\e\[<2;(\d+);(\d+)M/)
+
+        # Right mouse click, so select window and close...
+
+        x, y = match[1..2].map(&:to_i)
+        window = $el.window_at(x, y)
+
+        # Killed a buffer they clicked on
+        View.to_window window
+        $el.kill_buffer $el.current_buffer
+
+        # Then redisplay
+        if count > 1
+          self.expose
+        else
+          $el.delete_other_windows
+        end
+        return
+
+      elsif match = input.match(/^\e\[<0;(\d+);(\d+)M/)
+
+        # Single mouse click, so select window...
+
+        x, y = match[1..2].map(&:to_i)
+
+        # 2. Jump to window
+        buffer = $el.window_buffer $el.window_at(x, y-1)
+
+        # Hide all windows but this one
+        View.hide_others
+
+        # 3. Jump to coords
+        View.to_buffer buffer
+
+        return
+      end
+
+      # Was number, so go to nth...
+      number_map = {
+        "One"=>"1",
+        "To"=>"2",
+        "Three"=>"3",
+        "For"=>"4",
+        "Five"=>"5",
+      }
+      if val = number_map[input]
+        input = val
+      end
+
+      if input =~ /\A\d+\z/
+        Move.to_window(input.to_i)
+
+        # Hide all windows but this one
+        View.hide_others
+      end
+
+      # Typed esc, so just show all
+
+      if input == "\e"
+        View.hide_others
+      end
+
+      nil
+    end
+
+
+    def self.link_views
+
+      # Save order of views
+      original_order = self.remember_buffer_order
+
+      $el.delete_other_windows   # Close all others first
+      View.open "%n"
+
+      whole_width = $el.window_width
+      individual_width = whole_width / 4   # Results in 5 columns somehow, which is fine
+
+      # Get first "chunk" of sections in ^links...
+
+      links_file = Bookmarks["%links"]
+      txt = File.read links_file
+
+      txt = txt[/.+?\n\n\n/m] || txt
+
+      # Search and replace out colon lines
+      txt.gsub! /^> .*:\n/, ''
+
+      already_visited = {}
+
+      # Split into sections
+      sections = txt.split( /^>(?: |.*)$/ )[1..-1]
+
+      # First pass > split into columns...
+
+      sections.each do |section|
+        $el.split_window_horizontally
+        $el.other_window 1
+
+        $el.balance_windows
+
+      end
+
+      View.to_nth 0
+      count = 0
+
+
+      # Block redisplay, which causes flickering
+      recenter_redisplay_orig = $el.elvar.recenter_redisplay
+      $el.elvar.recenter_redisplay = nil
+
+      # Second pass > go to files and lines, splitting vertically if multiple in the block...
+
+      sections.each do |section|
+        links = Notes.extract_links :txt=>section, :filter=>/^ *:/
+
+        count += links.length
+
+        links.each_with_index do |link, i|
+          file = link[0]
+
+          if i > 0
+            $el.split_window_vertically
+            $el.balance_windows
+          end
+
+          $el.other_window 1
+
+          $el.find_file file
+
+          Color.clear_light unless already_visited[file]
+          # Color.clear unless already_visited[file]
+
+          already_visited[file] = 1
+
+          target_quote = link[-1].sub /^: /, ''
+
+          self.to_snippet target_quote
+          Color.mark "light", :allow_multiple=>1
+
+        end
+      end
+
+      # Third pass > recenter vertically...
+
+      View.to_nth 1
+
+      (View.list.length - 1).times do
+        self.recenter_appropriately Line.value
+        $el.other_window 1
+      end
+
+      # Re-enable redisplay
+      $el.elvar.recenter_redisplay = recenter_redisplay_orig
+
+      View.to_nth 0   # Back to the first
+
+      $el.split_window_vertically
+      $el.other_window 1
+      $el.find_file links_file
+      Move.top
+
+      View.to_nth 0
+
+      # Prompt and jump to a window
+
+      # Only one review shown, so do nothing else
+      if count == 1
+        return View.to_nth 2
+      end
+
+      # Prompt for number of window to jump to
+
+      input = Keys.input :chars=>1, :prompt=>"Type number of window: "
+
+      # Subsequent duplicated click sometimes comes in a little slower > ignore it
+      while(char = $el.read_char("", nil, 0.05)) do
+      end
+
+      # Restore order of views
+      self.restore_order original_order
+
+      # Mouse click, so select window...
+
+      if match = input.match(/^\e\[<0;(\d+);(\d+)M/)
+        x, y = match[1..2].map(&:to_i)
+
+        window = $el.window_at(x, y)
+
+        View.to_window window
+
+        # Hide all windows but this one
+        View.hide_others :all=>1
+
+        View.layout_todo_and_nav
+
+        return
+      end
+
+      # Was number, so go to nth...
+
+      number_map = {
+        "One"=>"1",
+        "To"=>"2",
+        "Three"=>"3",
+        "For"=>"4",
+        "Five"=>"5",
+      }
+      if val = number_map[input]
+        input = val
+      end
+
+      if input =~ /\A\d+\z/
+        Move.to_window(input.to_i+2)
+
+        # Hide all windows but this one
+        View.hide_others :all=>1
+
+        View.layout_todo_and_nav   #> ||
+
+        return
+      end
+
+      # Typed esc, so just show all
+
+      if input == "\e"
+        View.hide_others :all=>1
+      end
+
+      nil
+    end
+
+
+    def self.remember_buffer_order
+      $el.buffer_list
+    end
+
+    def self.restore_order original_order
+      original_order.each do |b|
+        next if ! $el.bufferp b
+        next if ! $el.buffer_live_p b
+        $el.bury_buffer b
+      end
+    end
+
+
+    def self.keys_bar_mode
+      $el.make_local_variable :xiki_bar_mode
+      $el.elvar.xiki_bar_mode = "keys"
+    end
+
+    def self.toggle_bar_mode options={}
+
+      # Todo > check if showing key shortcuts by default
+        # Extract to function > (xiki-bar-keys-or-path)
+
+      $el.make_local_variable :xiki_bar_mode
+
+
+      # Order: Keys > path > blank
+
+
+      # Not defined, so use default to determine
+
+      current_value = $el.boundp(:xiki_bar_mode) ? $el.elvar.xiki_bar_mode : $el.elvar.xiki_bar_default_kind
+
+      $el.elvar.xiki_bar_mode = current_value == "keys" ? "path" : "keys"
+
+    end
+
+    def self.auto_revert
+      $el.auto_revert_mode 1
+    end
+
+    def self.topic_file?
+      file = self.file
+      return false if ! file
+      file.start_with? File.expand_path("~/xiki/")
+    end
+
+
+    def self.green_box_inline txt, options={}
+      trailing_whitespace = $el.elvar.show_trailing_whitespace
+      $el.elvar.show_trailing_whitespace = nil
+
+      column = View.column
+      orig = View.cursor
+      indent = Line.indent
+      cursor = nil
+
+      indent << "  " if options[:under]
+
+      txt = "#{txt}"
+      txt = txt.gsub(/^/, "#{indent}    ")
+
+      if options[:under]
+        Move.down
+
+        txt.split("\n").each do |line|
+          Move.to_beginning
+          View >> "#{line}\n"
+          Overlay.face :diff_green, :left=>(Line.left+indent.length), :right=>(Line.right+1)
+          Move.down
+          cursor = View.cursor
+          View.cursor = orig
+
+          # Pause while ignoring what's typed
+          Keys.input :optional=>1, :seconds=>0.02, :prompt=>""
+
+          View.cursor = cursor
+        end
+        View.cursor = orig
+
+      else
+
+        txt.split("\n").each do |line|
+          Move.to_beginning
+          View >> "#{line}\n"
+          Overlay.face :diff_green, :left=>(Line.left+indent.length), :right=>(Line.right+1)
+          Move.down
+          View.column = column
+          # Pause while ignoring what's typed
+          Keys.input :optional=>1, :seconds=>0.02, :prompt=>""
+        end
+
+      end
+
+      # Ignore what they type for half a second, to make sure they notice the tip
+      Keys.input :optional=>1, :seconds=>0.5, :prompt=>""
+
+      # Read char
+      key = Keys.press_any_key :message=>" "
+
+      # Make it go away
+
+      if options[:under]
+        View.cursor = cursor
+        txt.split("\n").each do |line|
+          Move.up
+          Line.delete
+          View.column = column
+          cursor = View.cursor
+          View.cursor = orig
+          View.pause 0.02
+          View.cursor = cursor
+        end
+        View.cursor = orig
+
+      else
+        txt.split("\n").each do |line|
+          Move.up
+          Line.delete
+          View.column = column
+          View.pause 0.02
+        end
+      end
+
+      # Turn trailing space back on
+      $el.elvar.show_trailing_whitespace = trailing_whitespace
+
+      nil
+    end
+
+
+    def self.maybe_show_tip bullet, message, options={}
+
+      # Already shown, so don't show it again (double-checking cached value)...
+
+      return false if Topic.cache["xsh"]["> Tips already shown"] =~ /^- #{Regexp.quote bullet}/
+      Topic.init_cache   # Seems like we show it > but reload cache to make sure
+      return false if Topic.cache["xsh"]["> Tips already shown"] =~ /^- #{Regexp.quote bullet}/
+
+      # Remember to not show it again > store in "> Tips already shown"
+      txt = Topic.cache["xsh"]["> Tips already shown"]
+
+      # Add section if wasn't there
+      if ! txt
+        txt = Topic.cache["xsh"]["> Tips already shown"] = "
+          This is where xsh remembers which tips it has already shown you. If
+          you want them to be shown again, just delete them from here (and
+          reload xsh).
+        ".unindent+"\n\n\n"
+      end
+
+      # Update in memory (prepend)...
+
+      # Extractable to Notes.update_bullets
+      # Remove "- No tips shown yet" line if there
+      txt.sub! /^- No tips shown yet\n/, ""
+      # Add blank lines if none
+      txt.<< "\n\n\n" if txt !~ /\n\n\n/
+      # Add after one blank line
+      txt.sub! /\n\n+/, "\n\n- #{bullet}\n"
+
+      # Update on disk...
+
+      file = File.expand_path("~/xiki/xsh.xiki")
+      topic_txt = File.read(file) rescue nil
+      Notes.replace_section topic_txt, "> Tips already shown", txt
+
+      File.open(file, "w") { |f| f << topic_txt }
+
+
+      # Show green box inline >  "notice A-Z filter in bottom bar"
+
+      View.green_box_inline message, options
+
+      # Return true, indicating we showed dialog > because sometimes caller will want to not continue
+      true
+
+    end
+
+    # View.to_new_session
+    def self.to_new_session
+      View.to_buffer View.unique_name("xsh")
     end
 
 
@@ -1699,3 +2834,4 @@ module Xiki
 
   View.init
 end
+

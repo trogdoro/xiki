@@ -1,0 +1,15 @@
+- list/
+  =$ rvm list
+  =$ rvm gemset list
+- install versions/
+  - update cache of versions/
+    =% rvm get stable
+  - list/
+    =$ rvm list known_strings
+    =$ rvm list known
+  - install/
+    =% rvm install 1.9.3-p484
+- set default/
+  =% rvm --default use system
+  =% rvm --default use 1.8.7
+  =% rvm --default use 1.9.3

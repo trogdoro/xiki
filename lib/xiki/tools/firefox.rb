@@ -1,12 +1,12 @@
-require 'net/telnet'
-require 'socket'
+# require 'net/telnet'
+# require 'socket'
 
-gem 'simple-tidy'
-require 'simple-tidy'
-# gem 'nokogiri-pretty'
-# require 'nokogiri-pretty'
+# gem 'simple-tidy'
+# require 'simple-tidy'
+# # gem 'nokogiri-pretty'
+# # require 'nokogiri-pretty'
 
-require "rexml/document"
+# require "rexml/document"
 
 module Xiki
   class Firefox
@@ -88,25 +88,23 @@ module Xiki
       Firefox.exec txt
     end
 
-    def self.coffee txt=nil
-      return View.prompt("Type some coffeescript to run in the browser") if txt.nil?
-
-      txt = CoffeeScript.run_internal txt
-
-      Firefox.exec txt
-      ".flash - ran in browser!"
-    end
-
     def self.last_stack_trace
       Firefox.value('window.content.tmp_stack')
     end
 
-    def self.reload
+    def self.set_tab tab
+      self.reload tab
+      nil
+    end
 
-      # Clears out OL log
-      Code.open_log_view if Keys.prefix_u && View.buffer_visible?('*ol')
+    # Go to nth tab
+    #   Firefox.reload 4
+    def self.reload tab=nil
 
-      prefix = Keys.prefix_n :clear=>true
+      # Clears out Ol log
+      Code.open_log_view if Keys.prefix_u && View.buffer_visible?("ol")
+
+      prefix = tab || Keys.prefix_n(:clear=>true)
       if ! prefix
         Firefox.exec("gBrowser.reload()", :browser=>true)
       elsif prefix == 0
@@ -118,7 +116,7 @@ module Xiki
         if tab == -1   # If 0, close tab
           self.close_tab
         else   # If number, switch to tab
-          Firefox.exec("gBrowser.tabContainer.selectedIndex = #{tab}", :browser=>true)
+          Firefox.exec("if(#{tab} >= gBrowser.tabContainer.childNodes.length){ gBrowser.addTab() }; gBrowser.tabContainer.selectedIndex = #{tab}", :browser=>true)
         end
 
       end
@@ -132,8 +130,8 @@ module Xiki
       end
     end
 
-    def self.click
-      link = Keys.input(:prompt=>'Substring of link to click on: ')
+    def self.click link=nil
+      link ||= Keys.input(:prompt=>'Substring of link to click on: ')
 
       Firefox.exec("
         var a = $('a:contains(#{link}):first');
@@ -229,15 +227,24 @@ module Xiki
     end
 
     def self.exec txt, options={}
+      result = self.mozrepl_command txt, options
 
-      result = Firefox.mozrepl_command txt, options
-
-      if result =~ /\$ is not defined/   # If no jquery wrap it and try again
+      if result =~ /(jQuery|\$) is not defined/   # If no jquery wrap it and try again
         txt = Javascript.wrap_jquery_load txt
-        result = Firefox.mozrepl_command txt, options
+        result = self.mozrepl_command txt, options
+
+        # If had to load jquery, call back until it's loaded...
+
+        limit = 10
+        while(result =~ /(\.+> )?\"- loading jquery!\"/) do
+          raise "- Couldn't load jquery!" if (limit -= 1) < 0
+          View.pause 0.2
+          result = self.mozrepl_command txt, options
+        end
+
       elsif result =~ /\bp is not defined\b/   # If no jquery wrap it and try again
         txt = Javascript.wrap_jquery_load txt, "http://xiki.org/javascripts/util.js"
-        result = Firefox.mozrepl_command txt, options
+        result = self.mozrepl_command txt, options
       end
 
       result.sub! /^"(.+)"$/m, "\\1"   # Remove quotes
@@ -248,7 +255,7 @@ module Xiki
 
       # If brawser wasn't running, ask if they want to open it
 
-      raise "> Looks like Firefox isn\'t open.  Open it?\n@app/Firefox/\n\nOr, maybe the MozRepl Firefox extension isn't installed and on."
+      raise "> Looks like Firefox isn\'t open.  Open it?\n=applications/Firefox/\n\nOr, maybe the MozRepl Firefox extension isn't installed and on."
 
     end
 
@@ -261,6 +268,8 @@ module Xiki
       return ".prompt Type a url here." if url.empty?
 
       return $el.browse_url(url) if options[:new]
+
+      Applescript.run 'tell application "Firefox" to activate' if options[:activate]
 
       reload = "gBrowser.reload();";
       reload = "" if options[:no_reload];
@@ -287,6 +296,11 @@ module Xiki
 
       result = self.exec js, :browser=>true
 
+      if ! $el   # Command-line, so do decoupled way of opening url
+        Files.open_in_os url
+        return nil
+      end
+
       $el.browse_url(url) if result =~ /^!!! TypeError: gBrowser is null/
 
       nil
@@ -300,11 +314,13 @@ module Xiki
       self.html txt   # Write to temp file
     end
 
-    def self.html txt=nil
+    def self.html txt=nil, options={}
 
-      File.open("/tmp/tmp.html", "w") { |f| f << txt }
+      name = options[:name] || "tmp"
 
-      Firefox.url "file:///tmp/tmp.html", :reload=>1
+      File.open("/tmp/#{name}.html", "w") { |f| f << txt }
+
+      Firefox.url "file:///tmp/#{name}.html", :reload=>1
 
       nil
     end
@@ -374,6 +390,7 @@ module Xiki
     end
 
     def self.enter_as_url
+      require 'socket'
       if Keys.prefix_u
         self.exec "gBrowser.tabContainer.selectedIndex += 1", :browser=>true
       end
@@ -400,6 +417,10 @@ module Xiki
     end
 
     def self.mozrepl_command js, options={}
+      require 'net/telnet'
+      require 'socket'
+
+
       s = TCPSocket::new("localhost", "4242")
 
       initial_crap = mozrepl_read s
@@ -421,11 +442,6 @@ module Xiki
     end
 
 
-    # TODO Not used any more?
-    def self.log
-      View.open "/Users/craig/.emacs.d/url_log.notes"
-    end
-
     def self.xul txt
       Firefox.mozrepl_command txt, :browser=>true
     end
@@ -437,9 +453,10 @@ module Xiki
       end
     end
 
-    def self.tabs *url
-      if url.any?
-        url = Line.value.sub /^[ |]*/, ''
+    def self.tabs *urls
+      if urls.any?
+        url = urls[-1]   # If nested quotes, just use the last
+        url.sub! /^\: /, ''
         self.url url, :new=>Keys.prefix_u
         return
       end
@@ -448,7 +465,7 @@ module Xiki
         var browsers = gBrowser.browsers;
         txt = "";
         for(var i = 0; i < browsers.length; i++)
-          txt += "| "+browsers[i].contentDocument.location.href+"\n";
+          txt += ": "+browsers[i].contentDocument.location.href+"\n";
         txt
         '.unindent
 
@@ -477,7 +494,7 @@ module Xiki
         }
         ".unindent
 
-      raise ".flash - Added required js libs into page, try again!"
+      raise "<* Added required js libs into page, try again!"
     end
 
     def self.object name=nil, key=nil

@@ -1,9 +1,0 @@
-> With headers
-@ $ curl -i http://google.com
-
-> Only headers
-@ $ curl -I http://google.com
-
-> Just write to a file
-@ $ curl http://www.yahoo.com -O
-@ $ curl http://www.yahoo.com -o y.txt

@@ -205,12 +205,18 @@ module Xiki
 
     def self.hide_by_indent indent=nil
       indent ||= Keys.prefix
-      indent = -1 if indent == :u
+      if indent == :u
+        self.show
+        $el.widen
+
+        $el.set_selective_display nil
+        return
+      end
 
       # If no prefix, use indent of current line
       if indent.nil?
         indent = Line.matches(/^ */).size
-        # If currently indented to that level, go one deeper
+        # If currently indented to that level,
         if $el.elvar.selective_display && indent == ($el.elvar.selective_display - 1)
           indent += 2
         end
@@ -255,6 +261,13 @@ module Xiki
       self.show
       self.hide_by_indent :u   # If hidden by indent
     end
+
+    # Hides using narrowing
+    def self.hide left, right
+      $el.narrow_to_region left, right
+      nil
+    end
+
 
   end
   Hide.init

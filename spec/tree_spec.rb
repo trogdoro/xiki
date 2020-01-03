@@ -1,7 +1,7 @@
 $:.unshift "spec/"
 require './spec/spec_helper'
 
-%w"tree path".each {|o| require "xiki/core/#{o}"}
+%w"tree path view xik".each {|o| require "xiki/core/#{o}"}
 
 describe Tree, "#traverse" do
 
@@ -16,7 +16,11 @@ describe Tree, "#traverse" do
     Tree.traverse tree do |array|
       paths << array
     end
-    paths.should == [[["- a/"], "a/"], [["- a/", "- b/"], "a/b/"], [["- c/"], "c/"]]
+    paths.should == [
+      [["- a/"], "a/", 1],
+      [["- a/", "- b/"], "a/b/", 2],
+      [["- c/"], "c/", 3],
+    ]
   end
 
   it "handles two-level dropoff and no dropoff" do
@@ -34,11 +38,11 @@ describe Tree, "#traverse" do
     end
 
     paths.should ==[
-      [["- a/"], "a/"],
-      [["- a/", "- aa/"], "a/aa/"],
-      [["- a/", "- aa2/"], "a/aa2/"],
-      [["- a/", "- aa2/", "- aaa/"], "a/aa2/aaa/"],
-      [["- c/"], "c/"]
+      [["- a/"], "a/", 1],
+      [["- a/", "- aa/"], "a/aa/", 2],
+      [["- a/", "- aa2/"], "a/aa2/", 3],
+      [["- a/", "- aa2/", "- aaa/"], "a/aa2/aaa/", 4],
+      [["- c/"], "c/", 5],
     ]
 
   end
@@ -55,9 +59,9 @@ describe Tree, "#traverse" do
       paths << array
     end
     paths.should == [
-      [["- hey) a/"], "hey) a/"],
-      [["- hey) a/", "- you) b/"], "hey) a/you) b/"],
-      [["- c/"], "c/"]
+      [["- hey) a/"], "hey) a/", 1],
+      [["- hey) a/", "- you) b/"], "hey) a/you) b/", 2],
+      [["- c/"], "c/", 3],
     ]
   end
 
@@ -72,7 +76,8 @@ describe Tree, "#traverse" do
       paths << array
     end
     paths.should == [
-      [["a/"], "a/"], [["a/", "b/"], "a/b/"]
+      [["a/"], "a/", 1],
+      [["a/", "b/"], "a/b/", 2],
     ]
   end
 
@@ -89,9 +94,9 @@ describe Tree, "#traverse" do
     end
 
     paths.should == [
-      [["a/"], "a/"],
-      [[nil], ""],
-      [["b/"], "b/"],
+      [["a/"], "a/", 1],
+      [[nil], "", 2],
+      [["b/"], "b/", 3],
     ]
   end
 
@@ -108,10 +113,10 @@ describe Tree, "#traverse" do
       paths << array
     end
     paths.should == [
-      [["a/"], "a/"],
-      [["a/", "aa/"], "a/aa/"],
-      [["a/", nil], "a/"],
-      [["a/", "ab/"], "a/ab/"],
+      [["a/"], "a/", 1],
+      [["a/", "aa/"], "a/aa/", 2],
+      [["a/", nil], "a/", 3],
+      [["a/", "ab/"], "a/ab/", 4],
     ]
   end
 
@@ -134,16 +139,16 @@ describe Tree, "#traverse" do
       paths << array
     end
     paths.should == [
-      [["a/"], "a/"],
-      [["a/", "aa/"], "a/aa/"],
-      [["a/", "aa/", "aaa/"], "a/aa/aaa/"],
-      [["a/", "aa/", nil], "a/aa/"],
-      [["a/", "aa/", "aab/"], "a/aa/aab/"],
-      [["a/", nil], "a/"],
-      [["a/", "ab/"], "a/ab/"],
-      [["a/", "ab/", "aba/"], "a/ab/aba/"],
-      [[nil], ""],
-      [["b/"], "b/"],
+      [["a/"], "a/", 1],
+      [["a/", "aa/"], "a/aa/", 2],
+      [["a/", "aa/", "aaa/"], "a/aa/aaa/", 3],
+      [["a/", "aa/", nil], "a/aa/", 4],
+      [["a/", "aa/", "aab/"], "a/aa/aab/", 5],
+      [["a/", nil], "a/", 6],
+      [["a/", "ab/"], "a/ab/", 7],
+      [["a/", "ab/", "aba/"], "a/ab/aba/", 8],
+      [[nil], "", 9],
+      [["b/"], "b/", 10],
     ]
   end
 
@@ -171,6 +176,27 @@ describe Tree, "#traverse" do
     }.should raise_error(RuntimeError)
 
   end
+
+  it "adds slashes when none" do
+    paths = []
+    tree = "
+      a
+        b
+      c
+      ".unindent
+
+    Tree.traverse tree do |array|
+      paths << array
+    end
+    paths.should == [
+      [["a"], "a", 1],
+      [["a", "b"], "a/b", 2],
+      [["c"], "c", 3],
+    ]
+  end
+
+
+
 end
 
 
@@ -337,8 +363,42 @@ describe Tree, "#dotify" do
     Tree.dotify(tree, path).should == [true]
   end
 
-  # TODO: also work when they erroneously put "_" in the menu?
+  it "works when in reverse and a underscore and space" do
+    tree = "
+      - .delete it/
+      ".unindent
 
+    path = ["delete_it"]
+    Tree.dotify(tree, path).should == [true]
+  end
+
+  it "works when a case is different" do
+    tree = "
+      - .Delete it/
+      ".unindent
+
+    path = ["delete_it"]
+    Tree.dotify(tree, path).should == [true]
+  end
+
+  it "works when a hyphen and space" do
+    tree = "
+      - hey-you there/
+      ".unindent
+
+    path = ["hey-you-there"]
+    Tree.dotify(tree, path).should == [true]
+  end
+
+  it "matches when star" do
+    tree = "
+      - */
+        - .bb/
+      ".unindent
+
+    path = ["aa/bb/"]
+    Tree.dotify(tree, path).should == [nil, true]
+  end
 end
 
 
@@ -353,7 +413,7 @@ describe Tree, "#leaf" do
   it "grabs siblings when pipe" do
     mock(Line).value {"| bb"}
     stub(Tree).siblings {["| aa", "| bb"]}
-    Tree.leaf("| bb").should == "aa\nbb\n"
+    Tree.leaf("| bb").should == "aa\nbb\n-----"
   end
 
   it "grabs siblings when pipe" do
@@ -380,15 +440,15 @@ end
 
 describe Tree, "#quote" do
   it "quotes normal lines" do
-    Tree.quote("hey\nyou\n").should == "| hey\n| you\n".unindent
+    Tree.quote("hey\nyou\n").should == ": hey\n: you\n".unindent
   end
 
   it "quotes blank lines" do
-    Tree.quote("hey\n\nyou\n").should == "| hey\n|\n| you\n".unindent
+    Tree.quote("hey\n\nyou\n").should == ": hey\n:\n: you\n".unindent
   end
 
   it "quotes when indented" do
-    Tree.quote("hey\n  you\n").should == "| hey\n|   you\n".unindent
+    Tree.quote("hey\n  you\n").should == ": hey\n:   you\n".unindent
   end
 
   #   it "leaves menus unquoted" do
@@ -415,7 +475,7 @@ end
 
 
 describe Tree, "#clear_empty_dirs!" do
-  it "removes one empty dir" do
+  it "removes one empty dir when no bullets" do
     result = Tree.clear_empty_dirs!("
       /projects/
         empty/
@@ -443,8 +503,8 @@ describe Tree, "#clear_empty_dirs!" do
       - /projects/trunk/app/views/assets/details/
         + hey/
         - _database.rhtml
-          |Database Type
-          |Database Name/
+          : Database Type
+          : Database Name/
       ".unindent).join("\n")
 
     result.should =~ /Database Type/
@@ -456,12 +516,23 @@ describe Tree, "#clear_empty_dirs!" do
       - /projects/trunk/
         - hey.html
         - you.html
-          | Database Type
+          : Database Type
       ".unindent, :quotes=>true).join("\n")
 
     result.should =~ /trunk/
     result.should =~ /you/
     result.should_not =~ /hey/
+  end
+
+  it "leaves paths starting with equals" do
+    result = Tree.clear_empty_dirs!("
+      nav history//xiki/search.rb/
+        =/projects/xiki/lib/xiki/core/
+        =/projects/xiki/lib/xiki/core/
+          - search.rb
+            :     def self.enter txt=nil
+      ".unindent, :quotes=>true).join("\n")
+
   end
 end
 
@@ -623,15 +694,15 @@ end
 #     assert_equal true, Tree.is_root?("  /hey")
 #     assert_equal true, Tree.is_root?("  ./hey")
 #     assert_equal false, Tree.is_root?("  .you")
-#     assert_equal true, Tree.is_root?("  $tr/")
-#     assert_equal true, Tree.is_root?("  $tr/##abc/")
-#     #     assert_equal false, Tree.is_root?("  $tr")
+#     assert_equal true, Tree.is_root?("  :tr/")
+#     assert_equal true, Tree.is_root?("  :tr/##abc/")
+#     #     assert_equal false, Tree.is_root?("  :tr")
 #   end
 
 
 describe Tree, "#children" do
 
-  it "shows 2nd-level items when blank path" do
+  it "shows top items when blank path" do
     Tree.children("
       - a/
       - .b/
@@ -650,6 +721,18 @@ describe Tree, "#children" do
       ", "a").should == "
       + aa/
       + ab/
+      ".unindent
+  end
+
+  it "converts dashes to pluses for items ending in slash" do
+    Tree.children("
+      - a/
+        - aa/
+        - ab
+      - b/
+      ", "a").should == "
+      + aa/
+      - ab
       ".unindent
   end
 
@@ -735,31 +818,36 @@ describe Tree, "#children" do
       ", "a/z").should == "+ aaa/\n"
   end
 
-  it "includes all sub-items of items under at sign" do
+  it "matches when root is star" do
     Tree.children("
-      - @a/
+      - */
+        - bb/
+      ", "a/").should == "+ bb/\n"
+  end
+
+  it "includes all sub-items of items under equals sign" do
+    Tree.children("
+      - =a/
         - .b/
           - c/
       ", "").should == "
-      + @a/
+      + =a/
         + b/
           + c/
       ".unindent
-    Tree.children("
-      - a/
-        - @b/
-          - c/
-            - d/
-      ", "a").should == "
-      + @b/
-        + c/
-          + d/
-      ".unindent
   end
 
-  #   it "doesn't include items under item with at sign" do
-  #     Tree.children("docs/\n  @red/\n  - herr/\n", "docs").should == "@red/\n"
-  #   end
+  it "includes all sub-items of items under equals" do
+    Tree.children("
+      - =a/
+        - .b/
+          - c/
+      ", "").should == "
+      + =a/
+        + b/
+          + c/
+      ".unindent
+  end
 
   it "includes all sub-items when :include_subitems option" do
     Tree.children("
@@ -771,7 +859,7 @@ describe Tree, "#children" do
       ".unindent
   end
 
-  it "includes all sub-items when no slashes" do
+  it "includes all items when no slashes and getting root" do
     Tree.children("
       - a
         - b
@@ -783,6 +871,31 @@ describe Tree, "#children" do
 
         - c
       ".unindent
+  end
+
+  it "includes all sub-items when no slashes" do
+    Tree.children("
+      - a
+        - b
+          - c
+
+          - d
+      ", "a").should == "
+      - b
+        - c
+
+        - d
+      ".unindent
+  end
+
+  it "doesn't include sub-items of children with plus at beginning" do
+    Tree.children("
+      + a
+        + b
+          - c
+
+          - d
+      ", "a").should == "+ b".unindent
   end
 
   it "doesn't misinterpret blank lines as children" do
@@ -885,6 +998,42 @@ describe Tree, "#children" do
     options[:exclamations_args].should == nil
   end
 
+  it "doesn't mess up when subpath and exclamations" do
+    Tree.children("
+      - right presentation/
+        ! aa
+      - right/
+        ! bb
+      ", ["right presentation"]).should == "! aa\n"
+  end
+
+
+
+  it "returns child of colon quoted items" do
+    Tree.children("
+        : a
+          : aa
+        : b
+          : ba
+        ", [": a"]).should == ": aa\n"
+  end
+
+  it "returns just one level of colon quoted items" do
+    Tree.children("
+        : a
+          : aa
+            : aaa
+        : b
+        ", [": a"]).should == ": aa\n"
+  end
+
+  it "finds child when hyphens" do
+  - what about when > file paths?"
+      Tree.children("
+        - foo-bar bah/
+          - ram/
+        ", "foo-bar-bah").should == "+ ram/\n"
+    end
 
 end
 
@@ -1018,6 +1167,10 @@ describe Tree, "#target_match" do
     Tree.target_match("a/b/c/", "a/b/z/").should == 2
   end
 
+  it "doesn't confuse when partial match" do
+    Tree.target_match("right/! bb", "right presentation").should == 0
+  end
+
 end
 
 
@@ -1037,68 +1190,6 @@ describe Tree, "#add_pluses_and_minuses" do
 
 end
 
-describe Tree, "#to_html" do
-  it "handles one tag" do
-    Tree.to_html("
-      p/
-        hi
-      ".unindent).should == "
-      <p>
-        hi
-      </p>
-      ".unindent
-  end
-
-  it "handles single with no contents" do
-    Tree.to_html("
-      p/
-      ".unindent).should == "
-      <p>
-      </p>
-      ".unindent
-  end
-
-  #   it "doesn't close certain tags" do
-  #     Tree.to_html("
-  #       hr/
-  #       ".unindent).should == "
-  #       <p>
-  #       </p>
-  #       ".unindent
-  #   end
-
-  it "doesn't confuse comments" do
-    Tree.to_html("
-      p/
-        /* hey */
-      ".unindent).should == "
-      <p>
-        /* hey */
-      </p>
-      ".unindent
-  end
-
-  it "adds closing tags to html" do
-    Tree.to_html("
-      <p>
-        hi
-      ".unindent).should == "
-      <p>
-        hi
-      </p>
-      ".unindent
-  end
-
-  it "doesn't close comment tags" do
-    Tree.to_html("
-      <!-- hey -->
-      hi
-      ".unindent).should == "
-      <!-- hey -->
-      hi
-      ".unindent
-  end
-end
 
 describe Tree, "#construct_path" do
   before :each do
@@ -1129,12 +1220,26 @@ describe Tree, "#construct_path" do
     Tree.construct_path.should == "a/b/"
   end
 
+  it "adds slash when last slash is escaped" do
+    # Simulates:
+    # a/
+    #   b/
+
+    mock(Line).value.times(1) {"  b/"}
+    mock(Line).value.times(1) {": a/"}
+    mock($el).search_backward_regexp(anything)
+
+    mock($el).goto_char(100)
+    Tree.construct_path.should == "a/b/"
+  end
+
+
   it "stops when stop sign" do
     # Simulates:
     # a/
-    #   @b/
+    #   =b/
 
-    mock(Line).value.times(1) {"  @b/"}
+    mock(Line).value.times(1) {"  =b/"}
     mock($el).goto_char(100)
     Tree.construct_path.should == "b/"
   end
@@ -1155,40 +1260,40 @@ describe Tree, "#construct_path" do
   it "returns a list when stop" do
     # Simulates:
     # a/
-    #   @b/
+    #   =b/
 
-    mock(Line).value.times(1) {"  @b/"}
+    mock(Line).value.times(1) {"  =b/"}
     mock($el).search_backward_regexp(anything)
     mock(Line).value.times(1) {"a/"}
     mock($el).goto_char(100)
 
-    Tree.construct_path(:all=>1, :list=>1).should == ["a/", "@b/"]
+    Tree.construct_path(:all=>1, :list=>1).should == ["a/", "=b/"]
   end
 
   it "handles when stop, slashes and list" do
     # Simulates:
     # a/
-    #   @b/
+    #   =b/
 
-    mock(Line).value.times(1) {"  @b/"}
+    mock(Line).value.times(1) {"  =b/"}
     mock($el).search_backward_regexp(anything)
     mock(Line).value.times(1) {"a/"}
     mock($el).goto_char(100)
 
-    Tree.construct_path(:all=>1, :slashes=>1).should == "a/@b/"
+    Tree.construct_path(:all=>1, :slashes=>1).should == "a/=b/"
   end
 
   it "leaves double slashes" do
     # What should it return when this?...
     # a//
-    #   @b/
+    #   =b/
 
-    mock(Line).value.times(1) {"  @b/"}
+    mock(Line).value.times(1) {"  =b/"}
     mock($el).search_backward_regexp(anything)
     mock(Line).value.times(1) {"a//"}
     mock($el).goto_char(100)
 
-    Tree.construct_path(:all=>1, :slashes=>1).should == "a//@b/"
+    Tree.construct_path(:all=>1, :slashes=>1).should == "a//=b/"
 
   end
 
@@ -1202,22 +1307,77 @@ describe Tree, "#construct_path" do
     #   b/@c/
     #     d/
   end
+
+
+
+
+
+
+
+
+  it "appends hyphen to root when no slash" do
+    # Simulates:
+    # a
+
+    mock(Line).value.times(1) {"a"}
+    mock($el).goto_char(100)
+
+    Tree.construct_path.should == "a-"
+  end
+
+  it "appends hyphen to multiple roots when no slash" do
+    # Simulates:
+    # a
+    #   = b
+
+    mock(Line).value.times(1) {"  =b"}
+    mock($el).search_backward_regexp(anything)
+    mock(Line).value.times(1) {"a"}
+    mock($el).goto_char(100)
+
+    Tree.construct_path(:all=>1, :list=>1).should == ["a-", "=b-"]
+  end
+
+
+
+
 end
 
 describe Tree, "#join_to_subpaths" do
-  it "leaves list boundaries only for at signs" do
-    Tree.join_to_subpaths(["a/", "@b/", "c/"]).should == ["a/", "b/c/"]
+
+  it "leaves list boundaries only for equals signs" do
+    Tree.join_to_subpaths(["a/", "=b/", "c/"]).should == ["a/", "b/c/"]
   end
 
-  it "it doesn't split escaped at sign" do
-    Tree.join_to_subpaths(["a/", "b/;@ip/"]).should == ["a/b/;@ip/"]
+  it "doesn't split escaped equals sign" do
+    Tree.join_to_subpaths(["a/", "b/;=ip/"]).should == ["a/b/;=ip/"]
   end
 
-  it "it doesn't split at sign after escaped slash" do
-    Tree.join_to_subpaths(["a/", "b;/@ip/"]).should == ["a/b;/@ip/"]
+  it "doesn't split equals sign after escaped slash" do
+    Tree.join_to_subpaths(["a/", "b;/=ip/"]).should == ["a/b;/=ip/"]
   end
 
-  it "tests a bunch of other stuff, once we're comfortable with making this the official way of delimiting @'s and dealing with trailing slashes"
+  it "doesn't split equals sign after escaped slash" do
+    Tree.join_to_subpaths(["a/", "b;/=ip/"]).should == ["a/b;/=ip/"]
+  end
+
+  it "handles file path quotes" do
+    Tree.join_to_subpaths(["/foo/", "path.rb", "| def bar"]).should == ["/foo/path.rb/| def bar"]
+  end
+
+  it "doesn't turn blank items into slashes" do
+    Tree.join_to_subpaths(["", "ip/"]).should == ["ip/"]
+  end
+
+  it "merges single = without slashes" do
+    Tree.join_to_subpaths(["=", "ip/"]).should == ["ip/"]
+  end
+
+  it "splits when shell prompt" do
+    Tree.join_to_subpaths(["/dir/path/", "$ foo"]).should == ["/dir/path/", "$ foo"]
+  end
+
+  #   it "tests a bunch of other stuff, once we're comfortable with making this the official way of delimiting @'s and dealing with trailing slashes"
 
     # Paths we should handle:
     # ["a/", "b/"].should == ["a/b/"]
@@ -1225,9 +1385,184 @@ describe Tree, "#join_to_subpaths" do
     # ["a/@b/"].should == ["a/", "b/"]
     # ["/tmp/@b/"].should == ["/tmp/", "b/"]
     # ["/tmp@b/"].should == ["/tmp", "b/"]
-    # ["a", "b", "@c/", "d/", "p Tree.path_unified options={}"]
+    # ["a", "b", "@c/", "d/", "p Tree.path options={}"]
 
     # Shouldn't split these:
     # ["a@b/"]
+
+  it "adds slash delimiter even when escaped slash at end" do
+    Tree.join_to_subpaths(["a;/", "b"]).should == ["a;//b"]
+  end
+
 end
 
+describe Tree, "#add_slashes_except_last" do
+  it "doesn't add slash to last" do
+    path = ["a", "b"]
+    Tree.add_slashes_except_last path
+    path.should == ["a/", "b"]
+  end
+
+  it "always adds slashes redundantly by default" do
+    # After unified, should probably remove this behavior, and make :only_if_needed not required
+    path = ["a/", "b"]
+    Tree.add_slashes_except_last path
+    path.should == ["a//", "b"]
+  end
+
+  it "doesn't add redundantly when :only_if_needed" do
+    # After unified, should probably remove this behavior, and make :only_if_needed not required
+    path = ["a/", "b"]
+    Tree.add_slashes_except_last path, :only_if_needed=>1
+    path.should == ["a/", "b"]
+  end
+
+  it "doesn't add slashes to blanks when :leave_blanks" do
+    path = ["", ""]
+    Tree.add_slashes_except_last path, :leave_blanks=>1
+    path.should == ["", ""]
+  end
+
+  it "adds slash when last is escaped" do
+    path = ["a;/", "b"]
+    Tree.add_slashes_except_last path, :only_if_needed=>1
+    path.should == ["a;//", "b"]
+  end
+
+end
+
+describe Tree, "#update" do
+  it "updates one item" do
+    txt = "
+      a/
+        b
+      c/
+      ".unindent
+    Tree.update(txt, ["a", "XX"]).should == "
+      a/
+        XX
+      c/
+      ".unindent
+  end
+
+  it "updates when bullets" do
+    txt = "
+      - a/
+        - b
+      - c/
+      ".unindent
+    Tree.update(txt, ["a", "XX"]).should == "
+      - a/
+        XX
+      - c/
+      ".unindent
+  end
+
+  it "updates multiple nested lines" do
+    txt = "
+      z/
+        a/
+          b
+          c
+      c/
+      ".unindent
+    Tree.update(txt, ["a", "XX\nYY"]).should == "
+      z/
+        a/
+          XX
+          YY
+      c/
+      ".unindent
+  end
+
+  it "returns when no match" do
+    txt = "a/"
+    Tree.update(txt, ["z", "XX"]).should == "a/"
+  end
+
+end
+
+
+describe Tree, "#matching_siblings_start_index" do
+  it "finds start" do
+    txt = "
+      * c/
+      a/
+        - b/
+      * c/
+        - b/
+      ".unindent.gsub(/^/, "  ")
+    Tree.matching_siblings_start_index(txt, "* ").should == 21
+  end
+
+  it "finds when no indent" do
+    txt = "
+      a/
+        - b/
+      * c/
+      ".unindent
+    Tree.matching_siblings_start_index(txt, "* ").should == 10
+  end
+
+  it "returns 0 when not all match" do
+    txt = "
+      * a/
+        - b/
+      * c/
+      ".unindent
+    Tree.matching_siblings_start_index(txt, "* ").should == 0
+  end
+
+  it "returns length of all when no match" do
+    txt = "
+      a/
+        - b/
+      c/
+      ".unindent
+    Tree.matching_siblings_start_index(txt, "* ").should == 13
+  end
+
+  it "returns length of all when no match" do
+    txt = "  - hi\n  * bbb\n  - hi\n  * you\n  * you\n"
+    Tree.matching_siblings_start_index(txt, "* ").should == 22
+  end
+
+end
+
+describe Tree, "#matching_siblings_end_index" do
+  it "finds nonmatching" do
+    txt = "
+      * a/
+        - b/
+      c/
+      ".unindent.gsub(/^/, "  ")
+    Tree.matching_siblings_end_index(txt, "* ").should == 16
+  end
+
+  it "finds when no indent" do
+    txt = "
+      * a/
+        - b/
+      c/
+      ".unindent
+    Tree.matching_siblings_end_index(txt, "* ").should == 12
+  end
+
+  it "returns nil when not all match" do
+    txt = "
+      * a/
+        - b/
+      * c/
+      ".unindent
+    Tree.matching_siblings_end_index(txt, "* ").should == nil
+  end
+
+  it "returns 0 when none match" do
+    txt = "
+      a/
+        - b/
+      c/
+      ".unindent
+    Tree.matching_siblings_end_index(txt, "* ").should == 0
+  end
+end

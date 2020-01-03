@@ -1,5 +1,5 @@
-gem 'RedCloth'
-require 'redcloth'
+# gem 'RedCloth'
+# require 'redcloth'
 
 module Xiki
   class Textile

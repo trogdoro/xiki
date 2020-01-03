@@ -1,0 +1,23 @@
+- url/
+  ! return "<? pass a url here" if args.blank?
+  ! Browser.url args.join('/')
+- reload/
+  ! Browser.reload
+- tabs/
+  ! Browser.tabs *args
+- source/
+  ! Tree.quote Browser.source(*args)
+- see/
+  <= web development/
+  <= firefox/
+- api/
+  | This class lets you choose a default browser.
+  |
+  | Calls to Browser.url etc. will be delegated to the default browser.
+- docs/
+  > Keys
+  | do+load+browser:  Reload the browser.
+  |
+  > See
+  | Many things have yet to be pulled out of firefox.rb and made generic.
+  << firefox/

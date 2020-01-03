@@ -1,0 +1,16 @@
+> Define shortcuts
+
+Keys.Z { Line << "hey" }
+
+
+> Define shortcuts
+
+Keys.Z { Browser.url "http://xiki.org" }
+Keys.Z { Line.gsub!(/ +/, " ") }
+
+
+> Define shortcuts
+
+Keys.just_hi { Line << "hey there" }
+
+

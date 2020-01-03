@@ -1,9 +1,0 @@
-module Xiki
-  Styles.define :default, :bg=>'e4e4e4', :fg=>'333'
-  Styles.define :fringe, :bg=>'e4e4e4', :fg=>'e4e4e4'
-
-  # Adjust light colors
-  Styles.define :font_lock_variable_name_face, :fg=>'c90'   # yellow
-  Styles.define :font_lock_comment_face, :fg=>'aaa'   # gray
-  Styles.minibuffer_prompt :size=>"+0", :face=>"Monaco", :fg=>"#333"
-end

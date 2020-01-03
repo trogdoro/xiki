@@ -1,0 +1,27 @@
+#
+# This file is called from the one-line xsh installer:
+# $ curl -L https://raw.githubusercontent.com/trogdoro/xiki/master/install_xsh -o ~/install_xsh; bash ~/install_xsh
+#
+# It can also be invoked manually, like this:
+# $ bash ~/install_xsh
+#
+
+# Make dir if not there yet
+mkdir -p ~/xiki-project
+
+# Download xiki project into the dir
+curl -L https://github.com/trogdoro/xiki/archive/master.tar.gz | tar -xz -C ~/xiki-project --strip-components=1
+
+# Reload and start xsh (it will lock the user through the setup)
+~/xiki-project/bin/xsh --reload
+
+# If token was passed, save to file
+
+if [ "$1" ]; then
+  echo $1 > /tmp/xiki_temp_token
+fi
+
+~/xiki-project/bin/xsh -xsh/setup
+
+
+

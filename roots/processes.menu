@@ -1,0 +1,6 @@
+- all/
+  ! Tree.quote `ps -eo pcpu,pid,user,args | sort -k 1 -r`
+- Mac Activity Monitor/
+  @app/Utilities/Activity Monitor
+<< cpu/
+<< kill/

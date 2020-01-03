@@ -1,0 +1,448 @@
+#!/usr/bin/env bash
+
+set -f
+
+
+# Just "xsh --reload" so reload and return
+
+if [[ $1 = "--reload" ]]; then
+  # Kill all "xsh forker" processes
+  for KILLPID in `ps ax | grep 'xsh\ forker' | awk ' { print $1;}'`; do
+    kill -9 $KILLPID;
+    :
+  done
+  exit
+fi
+
+
+# Set gem_home, so xiki gems don't interfere with main ones...
+
+mkdir -p ~/.xiki/misc/gems/
+export GEM_HOME=~/.xiki/misc/gems/
+export PATH=~/.xiki/misc/gems/bin/:$PATH
+
+# Resolve the xiki dir even if there's a symlink somewhere in the path...
+
+SOURCE="$0"
+while [ -h "$SOURCE" ]; do
+  DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+  SOURCE="$(readlink "$SOURCE")"
+  [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
+done
+export xiki_dir=`dirname "$( cd -P "$( dirname "$SOURCE" )" && pwd )"`
+
+# Complain if project dir is ~/xiki/...
+
+if [ "$xiki_dir" = "$HOME" ]; then
+  cat "$xiki_dir/misc/command/shell_please_move.txt"
+  exit
+fi
+
+emacs="emacs"
+emacsclient="emacsclient"
+
+# Get emacs version, or blank if emacs not found...
+
+emacs_version=`$emacs -version 2>&1`
+emacsclient_version=`emacsclient -version 2>&1`
+
+function check_dependencies {
+
+  # Underline formatting
+  u=`tput smul`
+  uu=`tput rmul`
+
+  ruby_is_installed=$(type -P ruby)
+  emacs_is_installed=$(type -P emacs)
+
+  # No emacs or no ruby, so this must be linux > figure out how to install...
+
+  if [[ ! "$ruby_is_installed" =~ ^/ ]] || [[ ! "$emacs_is_installed" =~ ^/ ]]; then
+
+    yum_is_installed=$(type -P yum)
+    aptget_is_installed=$(type -P apt-get)
+    pacman_is_installed=$(type -P pacman)
+
+    yum_install="sudo yum install -q -y"
+    aptget_install="sudo apt-get install -qq -y"
+    pacman_install="sudo pacman -S"
+
+    echo -e "\nIt looks like you haven't yet installed the dependencies"
+    echo -e "xsh needs. Install them? (You can optionally install the\ndependencies yourself first.)\n"
+
+    echo -e "  ${u}i${uu}nstall the dependencies"
+    echo -e "  ${u}c${uu}ancel"
+    echo -e "  ${u}s${uu}how them first\n"
+
+    read -n1 -p "Type one of the underlined letters: " choice
+
+    if [ "$choice" = "c" ]; then
+      echo -e "\n\nXsh can't run without it's dependencies :(\n"
+      exit 1
+    fi
+
+    if [[ "$yum_is_installed" =~ ^/ ]] && [[ "$aptget_is_installed" =~ ^/ ]]; then
+      echo -e "\n\nIt appears you have both apt-get and yum installed.  Which should we use?"
+      echo "  a: apt-get"
+      echo "  y: yum"
+      echo ""
+      read -n1 -p "(a/y): " choice2
+      if [ "$choice2" = "a" ]; then
+        install="$aptget_install"
+      elif [ "$choice2" = "y" ]; then
+        install="$yum_install"
+      elif [ "$choice2" = "p" ]; then
+        install="$pacman_install"
+      else
+        echo "You didn't type 'a' or 'y'."
+        exit 1
+      fi
+
+    elif [[ "$aptget_is_installed" =~ ^/ ]]; then
+      install="$aptget_install"
+    elif [[ "$yum_is_installed" =~ ^/ ]]; then
+      install="$yum_install"
+    elif [[ "$pacman_is_installed" =~ ^/ ]]; then
+      install="$pacman_install"
+    else
+      dir="$xiki_dir/misc/install"
+      install="bash $dir/install_source_dependency.sh"
+    fi
+
+
+    # Check for "show" first > so we can prompt for key, and if they pick "install", its code is still below
+
+    if [[ $choice = "s" ]]; then
+
+      # Show install commands, prompt to install, then just exit if not "i"...
+
+      echo -e "\n\nThis will be run to install xsh's dependencies:\n"
+      if [[ ! "$ruby_is_installed" =~ ^/ ]]; then
+        echo "  $ $install ruby"
+      fi
+      if [[ ! "$emacs_is_installed" =~ ^/ ]]; then
+        echo "  $ $install emacs"
+      fi
+
+      echo -e "\nXsh's dependencies are largely transparent to the user.\nYou don't need to have any expertise about them to use xsh.\n"
+
+      echo -e "  ${u}i${uu}nstall"
+      echo -e "  ${u}c${uu}ancel\n"
+
+      read -n1 -p "Type one of the underlined letters: " choice2
+
+      if [ "$choice2" != "i" ]; then
+        echo -e "\n\nXsh can't run without it's dependencies :(\n"
+        exit 1
+      fi
+
+      # They typed 'i', so continue with install...
+      choice=i
+
+    fi
+
+
+    # Install if "i"
+
+    case "$choice" in
+      i|I)
+        echo -e "\n\nInstalling the dependencies. Could take a few minutes...\n"
+        if [[ ! "$ruby_is_installed" =~ ^/ ]]; then
+          echo -e "$ $install ruby\n"
+          if ! $install ruby || [[ ! $(type -P ruby) =~ ^/ ]]; then
+            echo ruby install failed\!
+            exit 1
+          fi
+        fi
+        if [[ ! "$emacs_is_installed" =~ ^/ ]]; then
+          echo -e "$ $install emacs\n"
+          if ! $install emacs || [[ ! $(type -P emacs) =~ ^/ ]]; then
+            echo emacs install failed\!
+            exit 1
+          fi
+        fi
+        echo -e "\n\n"
+        # Continue on to run xsh
+        ;;
+
+      *)
+        echo -e "\n\nXsh can't run without it's dependencies :(\n"
+        exit 1
+        ;;
+    esac
+
+  fi
+
+  # Mac and emacs22...
+
+  if [[ "$emacs_version" =~ "Emacs 22" ]] && [ `uname` = "Darwin" ]; then
+
+    # Mac and emacs22 and no homebrew, so require installing homebrew...
+
+    if [[ ! $(type -P brew) =~ ^/ ]]; then
+
+      # Homebrew not installed, so don't make them install emacs
+      return
+
+      # Old > made people that didn't have homebrew install it
+      # echo -e "Please install Homebrew, and then run xsh again.\n\nThe homebrew installer can be found here:\n\n  http://brew.sh/\n"
+      # exit 1
+
+    elif [[ ! -w /usr/local/bin/ ]]; then
+
+      # Homebrew permissions not set up properly, so don't make them install emacs
+
+      return
+
+      # Old > # Tell them to fix homebrew if directories aren't writable
+      #   echo "Your Homebrew permissions seem strange. Try running"
+      #   echo "'brew install emacs' and then run xsh again. If that"
+      #   echo "doesn't work, try 'brew doctor'."
+      #   echo ""
+      #   exit 1
+
+    elif [ -f /usr/local/bin/emacs ]; then
+
+      # /usr/local/bin/emacs exists (even though /usr/bin/emacs may be first in $PATH), so hard-code to it...
+
+      emacs="/usr/local/bin/emacs"
+      emacsclient="/usr/local/bin/emacsclient"
+      emacs_version=`$emacs -version 2>&1`
+      emacsclient_version=`emacsclient -version 2>&1`
+
+    elif [ -f ~/.xiki/misc/no_brew_install_emacs ]; then
+
+      # They opted not to do the brew emacs upgrade in the past
+
+      # noop
+      :
+
+    else
+
+      # Mac and emacs22 (and homebrew installed), so require "brew install emacs"...
+
+      echo -e "Xsh would like to upgrade a dependency to a newer version."
+      echo -e "This should take less than a minute over a fast internet"
+      echo -e "connection.\n"
+
+      echo -e "  ${u}u${uu}pgrade the dependency"
+      echo -e "  ${u}s${uu}how them first"
+      echo -e "  ${u}p${uu}roceed without upgrading\n"
+
+      read -n1 -p "Type one of the underlined letters: " choice
+
+      # Check for "show" first > so we can prompt for key, and if they pick "install", its code is still below
+
+      if [[ $choice = "s" ]]; then
+
+        echo -e "\n\nThis will be run, to upgrade your emacs version:\n"
+        echo "  brew install emacs"
+
+        echo -e "\nXsh's dependencies are largely transparent to the user.\nYou don't need to have any expertise about them to use xsh.\n"
+
+        echo -e "  ${u}u${uu}pgrade the dependency"
+        echo -e "  ${u}p${uu}roceed without upgrading\n"
+
+        # Re-read in their choice
+        read -n1 -p "Type one of the underlined letters: " choice
+
+      fi
+
+
+      case "$choice" in
+        u|U)
+          echo -e "\n\n"
+          echo -e "$ brew install emacs\n"
+
+          # Make sure brew command won't break because of license agreement
+          shopt -s nocasematch
+          if [[ $(make --version 2>&1) =~ xcode.+license ]]; then
+            echo -e "\nIt looks like you haven't agreed to the Xcode license.\nThis is blocking the brew command from running. Please\nlaunch Xcode and accept the license and then run the\nXiki installer again.\n\n"
+            exit 1
+          fi
+
+          brew install emacs
+          ;;
+
+        p|P)
+          # Let them continue, and remember not to prompt again
+          touch ~/.xiki/misc/no_brew_install_emacs
+          echo
+          ;;
+        *)
+          echo -e "\n\nYour choice wasn't understood. Run xsh to see the options again.\n"
+          exit 1
+          ;;
+      esac
+
+    fi
+
+
+  # Older than Emacs23 on any platform...
+
+  elif [[ "$emacs_version" =~ Emacs\ 2[012] ]]; then
+    echo -e "Please upgrade to Emacs 24 and then run xsh again.\n"
+    exit 1
+  fi
+
+  if [[ "$emacsclient_version" =~ emacsclient\ 2[012] ]]; then
+    echo -e "Your emacsclient version is:\n$emacsclient_version\n"
+    echo -e "But your emacs version is:\n$emacs_version\n"
+    echo -e "Please fix this and then run xsh again.\n"
+    exit 1
+  fi
+
+}
+
+function show_setup_steps_maybe {
+
+  # If we probably showed the setup message, but ~/.xsh exists now, assume they set it up, and show steps to reload
+  if ( [[ $# -eq 0 ]] || [[ "$*" == "-xsh/setup" ]] ) && [[ ! $(type -P xsh) =~ ^/ ]] && [[ ! $XIKI_SUPPRESS_WELCOME ]] && [[ -f ~/.xsh ]]; then
+    echo -e "\n\n"
+    echo '#'
+    echo '# Now follow these steps:'
+    echo '# 1. Type "bash" to reload (or "zsh" if you use it)'
+    echo '# 2. Type "xsh --tutorial"'
+    echo '#'
+  fi
+
+}
+
+
+check_dependencies
+
+# Proceed to run the command...
+
+function save_args_to_envs {
+  let i=1
+  for var in "$@"
+  do
+    export XSH_COMMAND_LINE_ARG_$i="$var"
+    let "i++"
+  done
+}
+
+storeargs() {
+  while [ $# -gt 0 ]
+  do
+    printf "%q " "$1"
+    shift
+  done
+}
+
+function save_args_to_files {
+  let i=1
+
+  # New
+  dir=~/.xiki/misc/tmp
+  mkdir -p $dir
+
+  storeargs "$@" > $dir/params.txt
+
+}
+
+# Force 256 colors (what if terminal doesn't handle it? > probably only do this recognizable $TERM, $TERM_PROGRAM and $COLORTERM vars)...
+
+export TERM=xterm-256color
+
+# Maybe use /Applications/Emacs.app if it exists?
+# emacs_mac_app="/Applications/Emacs.app/Contents/MacOS/Emacs"
+# if [ -f $emacs_mac_app ]; then
+#   emacs=$emacs_mac_app
+#   emacsclient="/Applications/Emacs.app/Contents/MacOS/bin/emacsclient"
+# fi
+
+case $1 in
+--help)
+  cat "$xiki_dir/misc/command/external_shell_help.txt"
+
+  exit
+  ;;
+
+--tutorial)
+
+  uname=`uname -a`
+  if [[ $uname =~ ^Darwin ]]; then
+    open "http://xiki.com/@xiki/tutorial"
+  fi
+
+  cat "$xiki_dir/misc/command/external_shell_tutorial.txt"
+
+  exit
+  ;;
+
+--samples)
+  cat "$xiki_dir/misc/command/external_shell_examples.txt"
+
+  exit
+  ;;
+
+--install)
+  ruby "$xiki_dir/misc/install/install_when_flag.rb"
+
+  exit
+  ;;
+
+--d)
+
+  # -d, for "isolated", so just run with no deamon...
+
+  # Alternatives considered: unique, unconnected, separate, alone, peerless
+
+  # Load with xiki-no-socket flag, so pull of 1st arg...
+
+  shift   # The 1st argument was "--d"
+  save_args_to_envs "$@"
+
+  exec $emacs -nw -Q \
+    -l "$xiki_dir/misc/emacs/start_xiki_no_socket.el"
+  ;;
+
+*)
+
+  # Emacs 22 on the Mac with no homebrew
+  if [[ $emacs_version =~ Emacs\ 2[21] ]]; then
+    # Emacs 22, so don't use --daemon (a little slower, but won't flicker in Emacs 22)...
+    save_args_to_envs "$@"
+    # Start emacs and load xiki...
+    $emacs --no-splash -nw -Q -l "$xiki_dir/misc/emacs/start_xiki.el"
+
+    show_setup_steps_maybe
+    exit 1
+  fi
+
+  # Emacs 23+, so use --daemon (will make for immediate startup)...
+
+  # Always start emacs --daemon, and then connect to it. This avoids
+  # emacs flashing weird text and formatting on the screen.
+
+  unique=$RANDOM
+  # Start up an emacs daemon to load and then connect to
+  $emacs -Q --daemon=$unique -nw &>/dev/null
+
+  # Now that emacs is invisible, tell it to load the xiki classes (and cache a few things).
+
+
+  $emacsclient -s $unique -e "(load \"$xiki_dir/misc/emacs/start_xiki_daemon.el\")" &>/dev/null
+
+  # Now load the parameters into ~/.xiki/misc/params/
+
+  save_args_to_files "$@"
+
+  # Now run it.  The hook will run when it opens and load the params
+
+  # /dev/null thing is meant to hide errors
+  $emacsclient -s $unique -t 2>/dev/null
+
+  show_setup_steps_maybe
+
+  exit
+
+  ;;
+
+  # Commented double-semicolon line here > will make this error go away?
+  # "line 313: syntax error near unexpected token `fi'"
+  # if not, maybe do 'exit' here
+
+
+esac

@@ -1,8 +1,11 @@
 # Meant to log short succinct messages to help with troubleshooting
 # while coding.  Log statements hyperlink back to the line that logged it.
+
+require 'fileutils'
+
 class Ol
   @@last = [Time.now - 1000]
-  @@timed_last = Time.now
+  @@timed_last = {""=>Time.now}
   @@roots = []
 
   def self.menu
@@ -83,7 +86,7 @@ class Ol
         - example/
           @/tmp/
             - nested.rb
-              | require '/projects/xiki/lib/xiki/ol.rb'
+              | require '/projects/xiki/lib/xiki/core/ol.rb'
               | def a
               |   Ol.root
               |   b
@@ -103,32 +106,24 @@ class Ol
     `
   end
 
-  # For when the caller constructs what to log on its own.
-  # Is this being used anywhere?
-  def self.log_directly txt, line, name=nil
-    path = name ? "/tmp/#{name}_ol.notes" : self.file_path
-    self.write_to_file path, txt
-    self.write_to_file_lines path, line
-  end
-
   # Called by .line, to do the work of writing to the file
   #
   # Ol.log "hey"
-  def self.log txt, l=nil, name=nil, time=nil, options=nil
+  def self.log txt, l, options=nil
 
-    path = name ? "/tmp/#{name}_ol.notes" : self.file_path
+    path = self.file_path
 
     l_raw = l.dup
 
     # If l is array (it's the whole trace), use only first for now
     l = l[0].dup if l.is_a?(Array)
 
-    if l.nil?   # If Ol.log "foo" called directly (probably never happens
+    if l.nil?   # If Ol.log "foo" called directly (probably never happens)
       return self.line(txt, caller(0)[1])
     end
 
     heading = nil
-    if self.pause_since_last? time
+    if self.pause_since_last? # time
       # If n seconds passed since last call
       heading = "\n>\n"
 
@@ -146,7 +141,7 @@ class Ol
         l_raw :
         caller(0)[3..-1]   # Omit Ol calls
 
-      root_offset = self.nesting_match trace
+      root_offset = options[:indent] || self.nesting_match(trace)
       root_offset_indent = "  " * (root_offset||0)
 
       # Add this to @@roots if none found
@@ -235,27 +230,47 @@ class Ol
     self.line txt, caller(0)[1]
   end
 
+  # Deprecated in favor of a
   def self.ap *args
+    self.a *args
+  end
+
+  def self.b *args
+    args << {:truncate=>1}
+    self.a *args#, :truncate=>1
+  end
+
+  def self.a *args
+    options = args.pop if args.length > 1 && args[-1].is_a?(Hash)
+    options ||= {}
+
     caption = args.shift if args.length > 1   # If 2 args, 1st is caption
     txt = args.shift
 
     if txt.is_a?(String)   # If string, show as multi-line (not inspect)
       txt = txt.dup
-    else
+    elsif txt.respond_to?("ai")
       txt = txt.ai
 
-      txt.gsub!(/^  /, "")
+      txt.gsub!(/^  /, "") if txt =~ /\A /
       if txt.count("\n") == 2   # If only one item in hash or array
-        txt.gsub! "\n", ""   # Leave brackets, so it's obvious what it is
+        txt.gsub! /\n */, ""   # Leave brackets, so it's obvious what it is
       else
         txt.sub!(/\A[\[{]\n/, '')
         txt.sub!(/\n[\]}]\z/, '')
       end
+    else   # .ai not defined, so just inspect and add message
+      txt = "Do 'gem install awesome_print' for Ol.a to work properly. In the mean time, using .inspect:\n#{txt.inspect}"
     end
 
-    self.line txt, caller(0)[1], nil, nil, nil, :caption=>caption
-  end
+    line = options[:stack_line] || caller(0)[1]
 
+    if options[:truncate]
+      txt = "#{txt[0..100]}#{txt.length > 100 ? "\n[...]" : ''}"
+    end
+
+    self.line txt, line, :caption=>caption
+  end
 
   def self.yaml *args
     txt = args.shift
@@ -264,7 +279,7 @@ class Ol
     txt.sub! /.+\n/, ''   # Remove 1st line - it's ---...
     txt.gsub!(/[:-] $/, "")
 
-    self.line txt, caller(0)[1] #, nil, nil, nil, :caption=>caption
+    self.line txt, caller(0)[1]
   end
 
 
@@ -272,25 +287,38 @@ class Ol
     txt = args.shift
     txt = Xi txt
 
-    self.line txt, caller(0)[1] #, nil, nil, nil, :caption=>caption
+    self.line txt, caller(0)[1]
   end
 
 
-  def self.time nth=1
-    now = Time.now
-    elapsed = self.pause_since_last? ? nil : (now - @@timed_last)
+  def self.i txt
+    self.line txt.inspect, caller(0)[1]
+  end
 
-    self.line "#{elapsed ? "(#{elapsed}) " : ''}#{now.strftime('%I:%M:%S').sub(/^0/, '')}:#{now.usec.to_s.rjust(6, '0')}", caller(0)[nth]
-    @@timed_last = now
+
+  # The 'tag' param lets you have separate timers
+  def self.time tag="" #nth=1
+
+    @@timed_last[tag] ||= Time.now
+
+    now = Time.now
+    elapsed = self.pause_since_last? ? nil : (now - @@timed_last[tag])
+    @@timed_last[tag] = now
+
+    tag = "(#{tag}) " if tag != ""
+
+    self.line "time #{tag}> #{elapsed ? "(#{elapsed}) " : ''}#{now.strftime('%I:%M:%S').sub(/^0/, '')}:#{now.usec.to_s.rjust(6, '0')}", caller(0)[1]
+                                                             # self.line "time > #{elapsed ? "(#{elapsed}) " : ''}#{now.strftime('%I:%M:%S').sub(/^0/, '')}:#{now.usec.to_s.rjust(6, '0')}", caller(0)[1]
   end
 
   # The primary method of this file
-  def self.line txt=nil, l=nil, indent="", name=nil, time=nil, options=nil
+  def self.line txt=nil, l=nil, options=nil
     l ||= caller(0)[1]
-
     l_raw = l.dup
 
     # If l is array (it's the whole trace), use only first here
+    return if l == []   # Guard against error when stack is too deep?
+
     l = l[0].dup if l.is_a?(Array)
 
     l.sub! /^\(eval\)/, 'eval'   # So "(" doesn't mess up the label
@@ -298,9 +326,11 @@ class Ol
 
     h = self.parse_line(l)
 
+    return if @filter && l !~ /^#{Regexp.quote @filter}/
+
     options ||= {}
     if h[:clazz]
-      self.log txt.to_s, l_raw, name, time, options.merge(:label=>self.extract_label(h))
+      self.log txt.to_s, l_raw, options.merge(:label=>self.extract_label(h))
     else
       display = l.sub(/_html_haml'$/, '')
       display.sub! /.*\//, ''   # Chop off path (if evalled)
@@ -309,7 +339,8 @@ class Ol
 
       label = "- #{display})"
       label << " #{options[:caption]}" if options[:caption]
-      self.log txt.to_s, l_raw, name, time, options.merge(:label=>label)
+
+      self.log txt.to_s, l_raw, options.merge(:label=>label)
 
     end
     nil
@@ -321,7 +352,7 @@ class Ol
 
   def self.parse_line path
     method = path[/`(.+)'/, 1]   # `
-    path, l = path.match(/(.+):(\d+)/)[1..2]
+    path, l = path.match(/(.+):(\d+)/)[1..2] rescue ['not found', '1']
     path = File.expand_path path
     clazz = path[/.+\/(.+)\.rb/, 1]
     clazz = self.camel_case(clazz) if clazz
@@ -329,7 +360,13 @@ class Ol
   end
 
   def self.file_path
-    "/tmp/out_ol.notes"
+    return @file_path if @file_path
+
+    # File not set yet, so create dir if necessary
+    dir = File.expand_path "~/.xiki/misc/ol/"
+    FileUtils.mkdir_p dir
+    @file_path = "#{dir}/out_ol.xiki"
+
   end
 
   def self.camel_case s
@@ -338,45 +375,58 @@ class Ol
 
   # Logs short succinct stack trace
   def self.ancestors n=6, nth=1
-    ls ||= caller(0)[nth..(n+nth)]
+
+    ls = caller(0)[nth..(n+nth)]
 
     self.line "ancestors...", ls.shift, ""
 
     ls.each_with_index do |l, i|
-      self.line((i+1).to_s, l, "    ", nil, nil, :leave_root=>1)
+      self.line((i+1).to_s, l, :leave_root=>1, :indent=>2)
     end
 
     nil
   end
 
+  # If stack is very deep, stop execution
+  # Ol.limit 200   # Does nothing because stack smaller than 200
+  # Ol.limit 4     # Raises because stack deeper than 4
+  def self.limit n=50
+
+    stack = caller(0)
+
+    # Too deep...
+
+    if stack.length > n
+      self.stack n, 1, :caller=>stack #[n..-1]
+      raise "Ol.limit raised, because stack exceeded #{n} levels deep"
+    end
+
+    # Not too deep, so show "less than N"...
+
+    self.line "stack limit less than #{n}", stack[1..-1]
+
+    nil
+  end
+
+
   # Logs stack with indenting, like:
+  # Ol.stack
   # Foo.a)
   #   Boo.b)
   #     Coo.c) ...stack
-  def self.stack n=3, nth=1
-    ls ||= caller(0)[nth..-1]
+  def self.stack n=4, nth=1, options={}
+    ls = options[:caller] || caller(0)[nth..-1]
 
-    #     dots = nil
+    n -= 1
+
     n.downto(1) do |i|
-      #       dots = "." * (i+1)
-      #       dots = "|" * (i+1)
-      i == n ?
-      #         self.line(dots, ls[i..-1], nil, nil, nil, :leave_root=>1) :
-      #         self.line(dots, ls[i..-1])
-      #         self.line("...", ls[i..-1], nil, nil, nil, :leave_root=>1) :
-      #         self.line("...", ls[i..-1])
-      #         self.line(nil, ls[i..-1], nil, nil, nil, :leave_root=>1) :
-      #         self.line(nil, ls[i..-1])
-
-        self.line("|||", ls[i..-1], nil, nil, nil, :leave_root=>1) :
-        self.line("|||", ls[i..-1])
+      self.line("|"*(n-i+1), ls[i..-1])
     end
 
-    #     self.line "|", ls[0..-1], nil, nil, nil, :leave_root=>1
-    #     self.line ".", ls[0..-1], nil, nil, nil, :leave_root=>1
-    #     self.line "...stack", ls[0..-1], nil, nil, nil, :leave_root=>1
+    last = options[:exclamation] ? "!" : "-"
 
-    self.line "|||", ls[0..-1], nil, nil, nil, :leave_root=>1
+    pipes = "|"*n+"|#{last}"
+    self.line pipes, ls, :leave_root=>1
 
     nil
   end
@@ -487,7 +537,7 @@ class Ol
   end
 
   def self.extract_test
-    log = Buffers.txt "*ol"
+    log = Buffers.txt "ol"
     log.sub! /.+\n\n/m, ''
 
     txt = ""
@@ -501,18 +551,26 @@ class Ol
     value.sub! /.+?\) ?/, ''   # Remove ...)
     value.sub! /.+?: /, ''   # Remove ...: if there
 
-    # Clear value unless it looks like a literal: "foo", 1.1, [1, 2], true, nil, etc.
-    value = "" if value !~ %r'^[\["{]' && value !~ /^true|false|nil|[0-9][0-9.]*$/
+    # Why were we clearing these > leave them off for a while?
+      # Clear value unless it looks like a literal: "foo", 1.1, [1, 2], true, nil, etc.
+      #     value = "" if value !~ %r'^[\["{]' && value !~ /^true|false|nil|[0-9][0-9.]*$/
+
     value
   end
 
   def self.update_value_comment value
-    value = "   # => #{value}"
-    Line =~ /   # / ?
-      Line.sub!(/(.*)   # .*/, "\\1#{value}") :   # Line could be commented, so don't replace after first "#"
-      Line.<<(value)
-    Move.to_axis
+    column = Xiki::View.column
+    value = "   #> #{value}"
+    Xiki::Line =~ /   #> / ?
+      Xiki::Line.sub!(/(.*)   #> .*/, "\\1#{value}") :   # Line could be commented, so don't replace after first "#"
+      Xiki::Line.<<(value)
+    Xiki::View.column = column
   end
+
+  class << self
+    attr_accessor :filter
+  end
+
 end
 
 def Ol *args
@@ -520,7 +578,7 @@ def Ol *args
     if args == []
       nil
     elsif args.length == 1   # Just text
-      args[0].inspect
+      args[0].is_a?(String) ? args[0] : args[0].inspect
     else   # Label and text
       "#{args[0]}: #{args[1].inspect}"
     end

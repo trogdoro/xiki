@@ -1,0 +1,5 @@
+
+1. Go to http://xiki.com/@xiki/tutorial in a web browser.
+2. Type the commands into this terminal window.
+
+

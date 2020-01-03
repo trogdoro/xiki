@@ -1,6 +1,3 @@
-gem 'net-ssh'
-require 'net/ssh'
-
 module Xiki
   # Wraps around a local or remote irb or merb (and probably rails)
   # console, passing commands to it and returning their stdout output.

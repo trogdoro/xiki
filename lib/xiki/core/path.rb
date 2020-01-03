@@ -1,19 +1,25 @@
 module Xiki
   class Path
 
+    # xiki api/extract quote from file path
+
     # Removes |... from path and returns it
     # Only reliable when one quote.
     #
     # p Path.extract_quote "/projects/foo/bar.rb/| quoted"
     #   " quoted"
     def self.extract_quote path
-      found = path =~ %r"/\|(.+)"   # Pipes followed by anything are quotes
-      found ||= path =~ %r"/:([ +-].*)"   # Colons followed by only certain chars are quotes
+      # Look for both at the same time
+
+      found = path =~ %r"/\|(.+)$|/:([ +-].*|)$"   # Pipes followed by anything are quotes
+
       return if ! found
 
-      path = path.slice!(found..-1).sub(/../, '')
+      path = path.slice!(found..-1).sub(/./, '')   # Remove leading slash
 
-      path.sub! %r".+/\|", ""   # Remove ancestor quotes if multiple
+      # Remove ancestor quotes if multiple
+      split = Path.split path
+      path = split[-1].sub(/./, "")   # Use only leaf path, with leading colon removed
 
       path
     end
@@ -27,16 +33,18 @@ module Xiki
 
     def self.escape! item
       item.gsub! ";", ";;"
-      item.gsub! "/", ";/"
-      item.sub! /^@/, ";@"   # At's only need escaping at the beginning
-      item.gsub! "\n", ";0"
-      item   # Just in case they look at return val
-    end
 
-    def self.escape item
-      item = item.dup
-      self.escape! item
-      item
+      # Todo > Maybe more solid way of handling this > Don't ;-escape lines before passing to pattern matchers
+      #   - Then the below won't be necessary (patterns can only match when no linebreaks)
+
+      # Escape leading dollars etc, but only if linebreaks (mean was quote rather than literal shell command line)
+      item.sub!(/^[$%&=>]/, ";\\0") if item =~ /\n/
+
+      item.gsub! "/", ";/"
+
+      item.gsub! "\n", ";l"
+      item.gsub! /\A\| =/, "| ;="
+      item   # Just in case they look at return val
     end
 
     def self.unescape! item
@@ -46,7 +54,7 @@ module Xiki
       last_was_escape = false
       item.length.times do |i|
         c = item[i]
-        if c == "0" && last_was_escape
+        if c == "l" && last_was_escape
           result.<< "\n"
         elsif c == ";"
           result.<< last_was_escape ? ";" : ""
@@ -59,6 +67,14 @@ module Xiki
 
       item.replace result
       result
+    end
+
+    # Path.escape "Hey\nyou"
+    #   Hey;0you
+    def self.escape item
+      item = item.dup
+      self.escape! item
+      item
     end
 
     def self.unescape item
@@ -78,10 +94,10 @@ module Xiki
 
       result, last_was_escape = [""], false
 
-      # If :outer, split based on "/@"...
+      # If :outer, split based on "/="...
 
       if options[:outer]
-        return self.split_outer path, options
+        return self.split_outer path #, options
       end
 
       # Else, split based on "/"...
@@ -93,8 +109,13 @@ module Xiki
         if c == "/" && ! last_was_escape
           is_last_char = i+1 == path.length
           result << "" if ! is_last_char || options[:trailing]
+        elsif c == "l" && last_was_escape
+          result[-1] << "\n"
+
+        # Todo > remove this > ;l is the new way
         elsif c == "0" && last_was_escape
           result[-1] << "\n"
+
         elsif c == ";"
           # This does escaping - should we do this only if an option??
             # It doesn't do escaping of \n etc
@@ -119,6 +140,10 @@ module Xiki
 
     end
 
+    # Splits apart path based on "/=" tokens, properly handling ";" escaping.
+    # A newer feature is to also split on "/$".
+    # Path.split.split_outer(["a/=c"])
+    #   ["a/b/", "c"]
     def self.split_outer path, options={}
 
       result, last_was_escape = [""], false
@@ -127,11 +152,27 @@ module Xiki
       while i < path.length
         c = path[i]
         cc = path[i, 2]
+        ccc = path[i, 3]
 
-        # If /@ and not escaped
-        if cc == "/@" && ! last_was_escape
+        # If /= and not escaped
+        if cc =~ /\A\/=$/ && ! last_was_escape
           result[-1] << "/"
           result << ""
+          i += 1
+        # If /$ and not escaped
+        elsif ccc =~ %r"\A/\$[ /]?$" && ! last_was_escape
+          result[-1] << "/"
+          result << "$"
+          i += 1
+        # If /% and not escaped
+        elsif ccc =~ %r"\A/\%[ /]?$" && ! last_was_escape
+          result[-1] << "/"
+          result << "%"
+          i += 1
+        # If /& and not escaped
+        elsif ccc =~ %r"\A/\&[ /]?$" && ! last_was_escape
+          result[-1] << "/"
+          result << "&"
           i += 1
         else
           result[-1] << c
@@ -140,13 +181,17 @@ module Xiki
         i += 1
       end
 
-      result
+      # Remove = from beginning if there is one
+      result[0].sub!(/\A= ?/, '') if result[0]
 
+      result.each{|o| o.sub! /^ +/, ''}
+
+      result
     end
 
     # Joins path array into a string, being sure to re-escape slashes
     def self.join array
-      array.map{|o| Path.escape o}.join "/"
+      array.map{|o| self.escape o}.join "/"
     end
 
   end

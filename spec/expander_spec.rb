@@ -1,20 +1,21 @@
 $:.unshift "spec/"
 
 require './spec/spec_helper'
-
-Dir["./lib/xiki/*_handler.rb"].each{|o|
+require "xiki/core/launcher"
+require "xiki/core/xik"
+Dir["./lib/xiki/handlers/*_handler.rb"].each{|o|
   require o.sub("./lib/", "")
 }
-
-%w"path code tree menu menu_suggester pre_pattern pattern file_tree bookmarks".each {|o| require "xiki/core/#{o}"}
+%w"path code tree menu command_suggester pre_pattern pattern file_tree bookmarks".each {|o| require "xiki/core/#{o}"}
 
 require 'xiki/core/expander'
 require 'xiki/core/pattern'
+require 'xiki/core/control_tab'
 
 # describe Expander, "#expand" do
 describe Expander, "#extract_ancestors" do
   it "pulls out one path" do
-    args = "a/@b/", {}
+    args = "a/=b/", {}
     Expander.extract_ancestors *args
     args.should == ["b/", {:ancestors=>["a/"]}]
   end
@@ -26,7 +27,7 @@ describe Expander, "#extract_ancestors" do
   end
 
   it "ignores quoted path" do
-    args = "a/| a/@b/", {}
+    args = "a/| a/=b/", {}
     Expander.extract_ancestors *args
     args.should == ["b/", {:ancestors=>["a/| a/"]}]
   end
@@ -43,10 +44,10 @@ describe Expander, "#expand_file_path" do
   end
 
   it "expands bookmarks" do
-    stub(Bookmarks).[]("$d") {"/tmp/dir/"}
-    Expander.expand_file_path("$d/a//b").should == "/tmp/dir/a//b"
-    Expander.expand_file_path("$d").should == "/tmp/dir"
-    Expander.expand_file_path("$d/").should == "/tmp/dir/"
+    stub(Bookmarks).[]("%d") {"/tmp/dir/"}
+    Expander.expand_file_path("%d/a//b").should == "/tmp/dir/a//b"
+    Expander.expand_file_path("%d").should == "/tmp/dir"
+    Expander.expand_file_path("%d/").should == "/tmp/dir/"
   end
 
   it "doesn't remove double slashes for home and current dir" do
@@ -55,8 +56,8 @@ describe Expander, "#expand_file_path" do
   end
 
   it "doesn't remove double slashes for bookmarks" do
-    stub(Bookmarks).[]("$f") {"/tmp/file.txt"}
-    Expander.expand_file_path("$f//").should == "/tmp/file.txt//"
+    stub(Bookmarks).[]("%links") {"/tmp/file.txt"}
+    Expander.expand_file_path("%links//").should == "/tmp/file.txt//"
   end
 end
 
@@ -84,17 +85,17 @@ describe Expander, "#parse" do
 
   it "handles menufied paths" do
     Expander.parse("/tmp/a//").should ==
-      {:menufied=>"/tmp/a"}
+      {:menufied=>"/tmp/a", :path=>"/tmp/a//"}
   end
 
   it "handles menufied path with items" do
     Expander.parse("/tmp/a//b/").should ==
-      {:menufied=>"/tmp/a", :items=>["b"]}
+      {:menufied=>"/tmp/a", :items=>["b"], :path=>"/tmp/a//b/"}
   end
 
   it "handles filesystem root menufied path" do
     Expander.parse("//").should ==
-      {:menufied=>"/"}
+      {:menufied=>"/", :path=>"//"}
   end
 
   it "handles name that looks kind of menufied" do
@@ -155,12 +156,12 @@ describe Expander, "#parse" do
   end
 
   it "handles ancestors in string" do
-    Expander.parse("z/@a/").should ==
+    Expander.parse("z/=a/").should ==
       {:name=>"a", :ancestors=>["z/"], :path => "a/"}
   end
 
   it "handles ancestors with path in string" do
-    Expander.parse("x/y/@a/b/").should ==
+    Expander.parse("x/y/=a/b/").should ==
       {:name=>"a", :items=>["b"], :ancestors=>["x/y/"], :path => "a/b/"}
   end
 
@@ -183,6 +184,83 @@ describe Expander, "#parse" do
       :path => "echo/a;/b"
     }
   end
+
+
+  it "pulls out extension" do
+    Expander.parse("echo.txt").should == {
+      :name=>"echo",
+      :extension=>".txt",
+      :path=>"echo.txt"
+    }
+  end
+
+  it "pulls out path and extension" do
+    Expander.parse("echo.txt/a/b").should == {
+      :items=>["a", "b"],
+      :name=>"echo",
+      :extension=>".txt",
+      :path=>"echo.txt/a/b"
+    }
+  end
+
+  it "pulls out period-only extension" do
+    Expander.parse("echo.").should == {
+      :name=>"echo",
+      :extension=>".",
+      :path=>"echo."
+    }
+  end
+
+
+
+
+
+  it "moves task items into :task" do
+    options = Expander.parse("hi/* delete")
+    options.should == {
+      :task=>"delete",
+      :name=>"hi",
+      :path=>"hi",
+    }
+  end
+
+    # Also test these...
+    # options = Expander.parse("select * from/* delete")
+    # options = Expander.parse("/tmp/* delete")
+
+  it "moves pattern task items into :task" do
+    options = Expander.parse("select * from hi/* delete")
+    options.should == {
+      :task=>"delete",
+      :path=>"select * from hi"
+    }
+  end
+
+  it "moves file task items into :task" do
+    options = Expander.parse("/tmp/* delete")
+    options.should == {
+      :task=>"delete",
+      :file_path=>"/tmp"
+    }
+  end
+
+
+end
+
+describe Expander, "#expand_literal_command method" do
+  before(:each) do
+    stub_menu_path_dirs   # Has to be before each for some reason
+  end
+
+  it "expands command text with path" do
+    txt = Expander.expand_literal_command "a/\n  b", :path=>"a"
+    txt.should == 'b'
+  end
+
+  it "expands when embedded code" do
+    txt = Expander.expand_literal_command "a/\n  ! 1 + 1", :path=>"a"
+    txt.should == '2'
+  end
 end
 
 describe Expander, "#expand method" do
@@ -201,13 +279,12 @@ describe Expander, "#expand method" do
   end
 
   it "takes a path list as 2nd arg" do
-    Ol["Maybe pull 'echo' out as its own menu - and pass options to make it cached?!"]
     Expander.def(:echo) { |path| path.inspect }
 
     Expander.expand("echo", ["a", "b"]).should == '["a", "b"]'
   end
 
-  it "expands menu in MENU_PATH" do
+  it "expands menu in XIKI_PATH" do
     Expander.expand("dd").should == "+ a/\n+ b/\n+ cccc/\n+ craig/\n+ keith/\n"
   end
 
@@ -217,5 +294,25 @@ describe Expander, "#expand method" do
 
   it "expands menufied path" do
     Expander.expand("#{Xiki.dir}spec/fixtures/menu/dr//").should == "+ a/\n+ b/\n"
+  end
+
+  # it "expands when literal text of command passed" do
+  #   Expander.expand(["a"], :command_text=>"a/\n  b").should == "b"
+  # end
+
+  # it "expands when literal text of command with path" do
+  #   Expander.expand(["a/b"], :command_text=>"a/\n  b/\n    c").should == "c"
+  # end
+
+end
+
+describe Expander, ".extract_task_items" do
+  before(:each) do
+    stub_menu_path_dirs   # Has to be before each for some reason
+  end
+
+  it "extracts when normal" do
+    # Expander.def(:echo) { |path| path.inspect }
+    # Expander.expand("echo").should == '[]'
   end
 end

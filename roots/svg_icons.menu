@@ -1,0 +1,23 @@
+@bootstrap/
+  + hero/
+    - h1/SVG Icon Example
+    - p/This page uses inline svg files for icons.
+  + row/
+    + span4/
+      + h1/
+        | <svg xmlns="http://www.w3.org/2000/svg" version="1.1" height="26" width="27">
+          | <polygon points="14,0 5,26 27,10 0,10 23,26" style="fill:#000;stroke:#000;stroke-width:1;" />
+        | A Star
+      - p/sit lorem...
+    + span4/
+      + h1/
+        | <svg xmlns="http://www.w3.org/2000/svg" version="1.1" height="28" width="29">
+          |  <path id="svg_3" d="m15,2c7,11 9,21 -14,21c39,11 27,-10 14,-21z" stroke-linecap="null" stroke-linejoin="null" stroke-dasharray="null" stroke-width="3" stroke="#993800" fill="#ff7f00"/>
+        | A Moon
+      - p/ipsum dolor...
+    + span4/
+      + h1/
+        | <svg xmlns="http://www.w3.org/2000/svg" version="1.1" height="26" width="29">
+          | <path style="fill:#ffff00;stroke:#b67016;stroke-width:2;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none" d="m 19,2 c 0,0 4,9 -2,14 -6,6 -15,7 -15,7 0,0 16,7 22,-4 C 31,9 19,2 19,2 z" id="path3009" inkscape:connector-curvature="0"></path>
+        | Another
+      - p/lorem dolor...

@@ -11,7 +11,6 @@ module Xiki
     def self.run
 
       Block.do_as_something do |txt|
-
         txt << "
           function p(txt) {
             var json = JSON.stringify(txt);
@@ -19,8 +18,9 @@ module Xiki
             print(json);
           }";
 
-        result = self.run_internal txt
+        self.run_internal txt
       end
+
     end
 
     def self.run_internal txt
@@ -28,7 +28,7 @@ module Xiki
       # Write to temp file
       File.open("/tmp/tmp.js", "w") { |f| f << txt }
       # Call js
-      Console.run "js /tmp/tmp.js", :sync=>true
+      Shell.run "js /tmp/tmp.js", :sync=>true
     end
 
     def self.launch
@@ -55,20 +55,21 @@ module Xiki
     def self.wrap_jquery_load txt, url=nil
 
       url ||= "http://code.jquery.com/jquery.min.js"
-      #     url ||= "http://xiki.loc/assets/js/jquery.js"
+      # Temp hard-code to local!
+      #       url ||= "http://xiki.loc/ajax/libs/jquery/1.9.1/jquery.min.js"
 
       txt = "
-        var f = function(){
-        #{txt}
-        };
 
         if(typeof($) == 'undefined') {
-          var s = document.createElement('script');
-          s.src = '#{url}';
-          s.onload = f;
-          document.getElementsByTagName('head')[0].appendChild(s);
+          if(! document.getElementById('xiki_jquery_tag')) {
+            var s = document.createElement('script');
+            s.src = '#{url}';
+            s.id = 'xiki_jquery_tag';
+            document.getElementsByTagName('head')[0].appendChild(s);
+          }
+          '- loading jquery!'
         }else{
-          f();
+        ".unindent+txt+"
         }
         ".unindent
 
@@ -77,3 +78,4 @@ module Xiki
 
   end
 end
+

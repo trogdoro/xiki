@@ -1,0 +1,28 @@
+module Xiki
+
+  Styles.mode_line :bg=>'#999', :fg=>"#222", :bold=>true
+  Styles.mode_line_inactive :bg=>'#999', :fg=>"#222", :bold=>true
+  Styles.mode_line_underline :fg=>"#222", :bold=>true, :underline=>true
+  Styles.mode_line_inactive_underline :fg=>"#222", :bold=>true, :underline=>true
+
+  Styles.mode_line_transparent :bg=>"unspecified", :fg=>"#aaa", :underline=>nil
+  Styles.mode_line_transparent_activatable :bg=>"unspecified", :fg=>"#aaa", :underline=>nil
+  Styles.mode_line_transparent_underline :bg=>"unspecified", :fg=>"#aaa", :underline=>1, :bold=>true
+  Styles.mode_line_transparent_underline_activatable :bg=>"unspecified", :fg=>"#aaa", :underline=>1, :bold=>true
+
+  Styles.mode_line_sides :bg=>"unspecified", :fg=>"#aaa", :underline=>nil
+  Styles.mode_line_sides_underline :bg=>"unspecified", :fg=>"#aaa", :underline=>1, :bold=>true
+
+  Styles.mode_line_file :fg=>"#fff"
+  Styles.mode_line_file_underline :fg=>"#fff", :underline=>true, :bold=>true
+
+  Styles.vertical_border :fg=>"#999", :bg=>'#999', :underline=>nil
+
+  Styles.region :bg=>"#333"
+
+  # Message area at bottom
+  Styles.minibuffer_prompt :size=>110, :face=>"Monaco", :fg=>"#999"
+  Styles.minibuffer :size=>110, :face=>"Monaco", :fg=>"#999"
+  Styles.echo_area :size=>110, :face=>"Monaco", :fg=>"#999"
+
+end

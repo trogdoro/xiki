@@ -1,10 +1,13 @@
 module Xiki
   class Deletes
-    def self.delete_whitespace
+    def self.delete_whitespace options={}
 
-      prefix = Keys.prefix(:clear=>true)   # Number prefix means add that many lines after deleting
+      prefix = options[:prefix] || Keys.prefix(:clear=>true)   # Number prefix means add that many lines after deleting
 
-      if prefix == :u   # If U, remove whitespace within region
+      # up+, so remove all spaces in region...
+      # (do I ever use this?)
+
+      if prefix == :u
         txt = View.selection :delete=>true
         linebreak_on_end = txt[/\n\z/]
         txt.gsub! /^ *[+-] /, ''
@@ -15,14 +18,16 @@ module Xiki
 
       # If at end of line, go forward, and remember to delete backward
       was_blank = Line.blank?
-      was_at_end = (Line.at_right? and (! was_blank))
-      was_at_beginning = (Line.at_left? and (! was_blank))
+      was_at_end = (Line.at_right? && (! was_blank))
+      was_at_beginning = (Line.at_left? && (! was_blank))
       if was_blank  # If blank, stay on line
         # Do nothing
       elsif was_at_end
         $el.forward_char
-      elsif was_at_beginning and not View.char =~ /\s/
-        $el.backward_char
+      elsif was_at_beginning && prefix != 0   # At beginning of line, so make blank and treat as though it was blank
+        View.>> "\n"
+        was_blank = 1
+        was_at_beginning = nil
       else   # If not at end of a line, simply delete horizontal
         $el.delete_horizontal_space
         View.insert(" " * prefix) if prefix
@@ -42,6 +47,7 @@ module Xiki
         if prefix
           View.insert("\n" * prefix)
           Move.backward prefix
+          Move.forward (prefix-1) / 2   if prefix > 0   # Move back to middle if 3 spaces or more
         end
       else
         $el.delete_horizontal_space
@@ -49,8 +55,22 @@ module Xiki
       end
     end
 
+    def self.forward
+      prefix = Keys.prefix
+      $el.delete_char(prefix || 1)
+    end
 
     def self.backward
+
+      # Selection exists, so just delete it...
+
+      selection = View.selection
+      View.deselect if selection == ""   # Because in this one case it wouldn't deselect, and the selection is invisible because it's 0 chars wide
+
+      return View.delete *View.range if selection
+
+      # No selection...
+
       prefix = Keys.prefix
       case prefix
       when :u
@@ -62,6 +82,9 @@ module Xiki
       else
         $el.delete_backward_char(prefix || 1)
       end
+
+      Keys.remember_key_for_repeat(proc {Deletes.backward})
+
     end
   end
 end

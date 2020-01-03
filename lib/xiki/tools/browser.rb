@@ -1,87 +1,130 @@
 module Xiki
   class Browser
-    def self.menu
-      "
-      - .url/
-      - .reload/
-      - .tabs/
-      - see/
-        <@ web development/
-        <@ firefox/
-      - api/
-        | This class lets you choose a default browser.
-        |
-        | Calls to Browser.url etc. will be delegated to the default browser.
-      - docs/
-        > Keys
-        | do+load+browser:  Reload the browser.
-        |
-        > See
-        | Many things have yet to be pulled out of firefox.rb and made generic.
-        << firefox/
-        |
-      "
+
+    def self.url_via_os url
+
+      os = Environment.os
+
+      if os == "osx"
+        return Shell.command "open \"#{url}\""
+      end
+
+      # The xdg-open opens url's on some linux distributions
+      if Shell.command("type -P xdg-open") =~ /^\//
+        return Shell.command "xdg-open \"#{url}\""
+      end
+
+      raise "Not sure how to open a browser on your OS. You don't have the 'open' or 'xdg-open' command installed."
+
     end
 
-    def self.url url, options={}
-      Firefox.url url, options
+    def self.url url=nil, options={}
+
+      return self.url_via_os(url) if options[:os_open]
+
+      # No url specified, so return it...
+
+      if ! url
+        return SeleniumWrapper.js("return window.location.href")
+      end
+
+      # Url specified, so go there...
+
+      # Todo > Make this configurable
+      #   - maybe > conditionally use localhost jquery or remote one?
+      #     - do this if > the browser won't include a localhost one into a page on the internet
+      # Old > uses OS to navigate
+      # return Shell.command("open #{url}") #if ! browser
+
+      SeleniumWrapper.url url
+
+      # Firefox.url url, options
+
+      "<* opened in browser"
     end
 
-    def self.html html
-      Firefox.html html
+    def self.html html, options={}
+
+      name = options[:name] || "tmp"
+      File.open("/tmp/#{name}.html", "w") { |f| f << html }
+
+      if options[:via_os]
+        self.url_via_os "file:///tmp/#{name}.html"
+      else
+        self.url "file:///tmp/#{name}.html"
+      end
+
+      nil
     end
 
     def self.append html
+      raise "is this used somewhere?"
       Firefox.append html
     end
 
     def self.js txt, options={}
-      Firefox.exec txt, options
+      SeleniumWrapper.js txt, options
     end
 
     def self.open_in_browser
 
-      path = Tree.path.join("\n")
+      path = Tree.path[0]
 
-      prefix = Keys.prefix
-      line = Line.value
-      use_tree_at_cursor = line =~ /(^ *[|+-]|\/$)/   # If ends in slash or bullet or quote
-      use_tree_at_cursor = nil if prefix == :u   # If C-u, always use the surrounding file
-
-      # If Dash+, open in browser with "//" on end (as menufied)
-      if prefix == :-
-        use_tree_at_cursor = true
-        path.sub! /\.\w+$/, ''   # remove extension
-        path = "@#{path}"
-        path.sub! /\/?$/, "//"
+      if path =~ /^(\w+)\.bootstrap\//
+        name = $1
+        self.url "http://localhost:8163/#{name}"
+        return
       end
 
-      if use_tree_at_cursor   # Open as http://xiki/...
-        path.gsub! ' ', '-'
+      if path =~ %r"^source://"
+        path.sub! /^source/, 'http'
+        self.url path
+        return
+      end
 
-        url = "http://xiki/#{path}"
+      # If file path, bullet, quote, or ends in slash, use tree instead of current file...
 
-        # If it's a dir, use @dtail
-        url = "http://xiki/dtail/#{path}" if File.directory? path
+      file_exists = path && File.exists?(path)
 
-        # If it's a file, put "@" at beginning so sinatra doesn't fuck it up
-        url = "http://xiki/@#{path}" if File.file? path
+      if file_exists || Line =~ /(^ *[|+-]|\/$)/
+        # Treat as menu if not file path or "up" prefix
+
+        is_menu = ! file_exists || Keys.prefix_u
+
+        # If file path and is menu ("up" prefix), make sure double-slash at end
+        if file_exists &&  is_menu
+          path.sub! /\.\w+$/, ''   # remove extension
+          path = "@#{path}"
+          path.sub! /\/?$/, "//"
+        end
+
+        # Open as http://xiki/...
+
+        if is_menu
+          path.gsub! ' ', '-'
+          url = "http://localhost:8163/#{path}"
+        else
+          url = "file://#{path}"
+        end
+
+        # Maybe make Dash+ show as web view of nested dirs with contents
+        # Commented out for now, until we can figure out how to deal with
+        # fact that it'll peg the cpu if there are a lot of dirs
+        #         # If it's a dir, use @dtail
+        #         url = "http://xiki/dtail/#{path}" if File.directory? path
 
         return self.url url
       end
 
-      if FileTree.handles?
-        file = Tree.construct_path
-      else
-        # Put this somewhere wher it works in file tree as well
-        return Browser.html(self.markdown_render View.txt) if View.extension == "markdown"   # If .markdown, render it
-        file = View.file
-      end
+      # Otherwise, just open current file
 
+      # Put this somewhere wher it works in file tree as well
+      return Browser.html(self.markdown_render View.txt) if View.extension == "md"   # If .markdown, render it
+      file = View.file
 
-      mappings = Menu.menu_to_hash Bookmarks["~/menu3/url_mappings.menu"]
+      # Optionally turn into local url, accounding url_mappings.menu...
 
-
+      mappings = Command.menu_to_hash Bookmarks["~/.xiki/roots/url_mappings.menu"] rescue {}
       result = nil
       mappings.each do |k, v|
         break file.sub!(v, "#{k}/") if file.start_with? v
@@ -100,16 +143,23 @@ module Xiki
     end
 
     def self.markdown_render txt
-      require "#{Xiki.dir}menu/markdown.rb" if ! defined? Markdown
+      require "#{Xiki.dir}roots/markdown.rb" if ! defined? Markdown
       Markdown.render txt
     end
 
-    def self.tabs
-      Firefox.tabs
+    def self.tabs *urls
+      Firefox.tabs *urls
     end
 
     def self.reload
-      Firefox.reload
+      SeleniumWrapper.js "window.location.reload()"
+    end
+
+    def self.source *url
+      return "=prompt/Pass me a url" if url == []
+      url = url.join '/'
+
+      `curl -A "Mozilla/5.0" #{url}`
     end
 
   end

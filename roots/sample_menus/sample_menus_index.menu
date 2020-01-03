@@ -1,0 +1,218 @@
+> Xiki command doesn't exist yet
+: Create it?  Make your command by creating one of these...
+- text file/
+  =~/.xiki/roots/<name>.txt
+    : Change this text to something useful.
+    : It will be the content of your menu.
+- menu items/
+  : You can type out items literally.
+  - just items/
+    =~/.xiki/roots/<name>.menu
+      : - sample item/
+      :   - foo/
+      : - pets/
+      :   - dogs/
+      :   - cats/
+  - with wiki elements/
+    =~/.xiki/roots/<name>.menu
+      : > Heading
+      : A Sentence.
+      : - an item/
+      :   > Heading under the item
+      :   =http://google.com/
+  - items or notes/
+    =~/.xiki/roots/<name>.xiki
+    : > A heading
+    : Stuff under headings appears
+    : after you expand.
+    :
+    : > Another heading
+    : Expand here to save.
+    :
+  - .directions/
+  - creating inline/
+    : As a shortcut for creating or updating a menu, you can just
+    : type some items in place.  For example, double-click on '<name>'
+    : above to collapse, then add some items kind of like this:
+    :
+    : <name>/
+    :   - dogs/
+    :     - pugs/
+    :   - cats/
+    :
+    : To save, simply double-click on one of the items and you'll be
+    : prompted to save.  Or, with your cursor on the menu or one of
+    : the items, type as+menu (meaning Control+A, Control+M).
+- notes/
+  =~/.xiki/roots/<name>.notes
+    : > A heading
+    : Stuff under headings appears
+    : after you expand.
+    :
+    : > Another heading
+    : Expand here to save.
+    :
+- code/
+  - script/
+    =~/.xiki/roots/<name>.rb
+      : # Change this code to something useful
+      : a = "la"
+      : a * 3
+  - class/
+    =~/.xiki/roots/<name>.rb
+      : class <Name>
+      :   def self.menu *args
+      :     "
+      :     hello
+      :     "
+      :   end
+      : end
+    - .directions/
+  - other languages/
+    - js/
+      =~/.xiki/roots/<name>.js
+        : // Change this code to something useful
+        : a = "la"
+        : return a + a
+    - coffeescript/
+      =~/.xiki/roots/<name>.coffee
+        : # Change this code to something useful
+        : a = "la"
+        : a + a
+    - python/
+      =~/.xiki/roots/<name>.py
+        : # Change this code to something useful
+        : a = "hi"
+        : return a + a
+    - sh/
+      =~/.xiki/roots/<name>.sh
+        : # Change this code to something useful
+        : echo "- hello/"
+        : echo "First item: ${ARGS[0]}"
+        : echo "Second item: ${ARGS[1]}"
+  - combinations/
+    - ruby class with embedded menu/
+      =~/.xiki/roots/<name>.rb
+        : class <Name>
+        :   MENU = "
+        :     - cats/
+        :       - siamese/
+        :     - .dogs/
+        :     "
+        :   def self.dogs
+        :     "arf"
+        :   end
+        : end
+    - ruby script and menu file/
+      =~/.xiki/roots/
+        - <name>/
+          - index.menu
+            : - cats/
+            : - dogs/
+          - index.rb
+            : args[0] * 2
+    - ruby class and menu file/
+      =~/.xiki/roots/
+        : todo
+  - plain ruby object/
+    : Will use class or instance methods.
+  - programatic/
+    - block/
+    - pattern/
+    - load from disk/
+    - menu with other stuff/
+  - items with nested code/
+    =~/.xiki/roots/<name>.menu
+      : - add/
+      :   ! a = 1
+      :   ! 2 + a
+      : - use an arg/
+      :   ! return ": Pass something in, like:\n- hi/" if ! args[0]
+      :   ! args[0] * 3
+    - other languages/
+      =~/.xiki/roots/<name>.menu
+        : - using javascript/
+        :   ! a = 1   // .js
+        :   ! return 2 + a
+        : - using coffeescript/
+        :   ! a = 1   # .coffee
+        :   ! 2 + a
+        : - using python/
+        :   ! a = 1   # .py
+        :   ! return 2 + a
+  - .directions/
+- more/
+  - bootstrap/
+    =~/.xiki/roots/<name>.bootstrap
+      : hero/
+      :   > Mumbo Jumbo.
+      :   Convinced? We. Thought. So.
+      : > Heading
+      : Here's a sentence.
+      : > Another
+      : Put a blank space after a heading for separate rows.
+      :
+      : > One
+      : Lorem...
+      : > Two
+      : Ipsum...
+      : > Three
+      : Dolor...
+  - html/
+    =~/.xiki/roots/<name>.html
+      : <h1>Hello</h1>
+      : <p>How are you</p>
+  - haml/
+    =~/.xiki/roots/<name>.haml
+      : %h1 Change this text
+      : %p To something useful
+  - wrap/
+    : Wrap another menu.
+    - path/
+      =~/.xiki/roots/<name>.rb
+        : Xiki["`tables/foo/", args]
+    - filename/
+      =~/.xiki/roots/<name>.rb
+        : Xiki["./tmp/foo/", args]
+    - bookmark/
+      =~/.xiki/roots/<name>.rb
+        : Xiki["%tm//", args]
+  - tasks/
+    =~/.xiki/roots/<name>.tasks
+      : - sample item/
+      :   - foo/
+      : - pets/
+      :   - dogs/
+      :   - cats/
+  - redirect/
+    : Makes one menu redirect to another.  Useful for creating menus
+    : that just serve as shortcuts.
+    =~/.xiki/roots/<name>.menu
+      : << foo/
+  - directory/
+    : You can make menus backed by directories.  Files or dirs within
+    : the dir become items!
+    =~/.xiki/roots/<name>/
+      - a.txt
+        : This is the 'a' item.
+      - b.rb
+        : 1 + 2   # The 'b' item will output "3"
+      - c/
+    + more/
+      : You can have any number of nested dirs and files, nested as deep
+      : as you want!
+  - index files/
+    - explain they work like index.html files, and do the work for their containing directory
+    - so you can optionally have a dir a menu that contains all the files
+    - show one example
+    - show example of 2 equivalent versions
+  - multiple files/
+    - show 2 files with same name that work together
+      - don't need to be nested in a directory
+  - todo/
+    > Add these menus
+    - with menu_after
+    - with menu_before
+    - cooperating
+      - with MENU and methods
+      - with foo.menu and methods

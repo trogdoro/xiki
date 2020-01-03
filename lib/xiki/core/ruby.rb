@@ -53,20 +53,61 @@ module Xiki
     # To use them, add this line:
     # ~/.el4r/init.rb
     #   | Ruby.keys
-    def self.keys
-      Keys.custom_next(:ruby_mode_map) {
-        column = View.column
-        Move.to_end
-        Search.forward "^ *\\(def\\|it\\) ", :beginning=>1, :go_anyway=>1
-        View.column = column
-      }
+    def self.custom_next
 
-      Keys.custom_previous(:ruby_mode_map) {
-        column = View.column
-        Move.to_axis
-        Search.backward "^ *\\(def\\|it\\) ", :go_anyway=>1
-        View.column = column
-      }
+      column = View.column
+      Move.to_end
+      Search.forward "^ *\\(def\\|it\\) ", :beginning=>1, :go_anyway=>1
+      View.column = column
+
+      Keys.remember_key_for_repeat(proc {Ruby.custom_next}, :movement=>1)
+    end
+
+    def self.custom_previous
+      column = View.column
+      Move.to_axis
+      Search.backward "^ *\\(def\\|it\\) ", :go_anyway=>1
+      View.column = column
+
+      Keys.remember_key_for_repeat(proc {Ruby.custom_previous}, :movement=>1)
+    end
+
+    def self.init_in_client
+
+      # Call it when ruby-mode-map
+
+      $el.el4r_lisp_eval %`
+        (progn
+          (defun xiki-ruby-mode-keys ()
+            (el4r-ruby-eval "Xiki::Ruby.keys")
+          )
+          (add-hook 'ruby-mode-hook 'xiki-ruby-mode-keys)
+
+          ; Highlight "#+ Comments" indent as white (it wasn't possible to highlight the comment itself)
+          (font-lock-add-keywords 'ruby-mode '(
+            ("\\\\( *\\\\)#\\\\+" (0 nil) (1 'color-rb-white))
+          ))
+
+        )
+      `
+
+      self.keys   # Call it now, in case ruby-mode-map already loaded (it probably is if reloading after a .rb file was visited)
+
+    end
+
+    def self.keys
+      if $el.boundp :ruby_mode_map
+
+        $el.define_key(:ruby_mode_map, $el.kbd("C-c C-n")){ Ruby.custom_next }   # custom+next
+        $el.define_key(:ruby_mode_map, $el.kbd("C-c C-p")){ Ruby.custom_previous }   # custom+previous
+
+        $el.define_key :ruby_mode_map, $el.kbd("C-c C-e") do
+          Xiki::View.insert "end"
+          $el.ruby_indent_line
+        end
+
+      end
+
     end
 
     # Makes "Foo.bar" string from quoted method line.

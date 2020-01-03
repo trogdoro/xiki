@@ -57,7 +57,7 @@ module Xiki
       'm' => '/app/models/',
       'v' => '/app/views/',
       'c' => '/app/controllers/',
-      'n' => '.notes',
+      'n' => '.xiki',
       }
 
     # Lets user open a file
@@ -92,7 +92,7 @@ module Xiki
         $el.rename_file(from, to)
       elsif Keys.prefix_uu
         command = "cp -R \"#{from}\" \"#{to}\""
-        Console.run command, :sync => true
+        Shell.run command, :sync => true
       else
         $el.copy_file(from, to)
       end
@@ -149,14 +149,14 @@ module Xiki
 
       if ! file || Keys.prefix_u
         bm = Keys.input(:timed=>true, :prompt=>"Enter bookmark of file to tail (or period for current file): ")
-        file = (bm == ".") ? View.file : Bookmarks["$#{bm}"]
+        file = (bm == ".") ? View.file : Bookmarks[":#{bm}"]
       end
 
-      Console.run "tail -f #{file}", :buffer => "*tail of #{file}"
+      Shell.run "tail -f #{file}", :buffer=>"tail of #{file}"
     end
 
     def self.edited_array
-      $el.elvar.editedhistory_history.to_a
+      DiffLog.file_list
     end
 
     def self.current times=nil
@@ -192,17 +192,8 @@ module Xiki
 
     def self.open_edited
       case Keys.prefix
-      when :u, 8;  Launcher.open("- edited/tree/")
-      else  Launcher.open("- edited/")
-      end
-    end
-
-    def self.open_history
-      case Keys.prefix
-      when nil;  Keys.prefix = nil; Launcher.open("- Files.history/")
-      when 0;  Launcher.open("- Files.history_tree/")
-      when :u;  Launcher.open("- Files.history_tree 7/")
-      else  Launcher.open("- Files.history_tree #{Keys.prefix}/")
+      when :u, 8;  Launcher.open("edited/tree/")
+      else  Launcher.open("edited/")
       end
     end
 
@@ -215,22 +206,45 @@ module Xiki
       # If we're in a file tree, use path
 
       if path.nil? && FileTree.handles?
-        path = Xiki.trunk[-1]
+        path = Tree.path[-1]
       end
 
       path ||= View.file
       path ||= View.dir
 
-      $el.shell_command("open \"#{path}\"")
+      path = Bookmarks[path]
+
+      # TODO: make this multi-platform > Equivalent command for linux?
+
+      `open \"#{path}\"`
     end
 
-    def self.do_load_file
-      $el.revert_buffer(true, true, true) rescue nil
+    def self.revert options={}
+
+      if View.name == "diff with saved"   # If viewing diff, close it and save the actual file...
+        file = View.txt[/.+\n.+/].sub("\n  - ", "")
+        View.kill
+
+        # Way to move to the buffer that doesn't show warnings
+        $el.set_buffer $el.get_file_buffer(file)
+      end
+
+      # Revert in a way they can roll back to
+      $el.insert_file_contents View.file, true, nil, nil, true
 
       View.message "Reverted file"
-      return if ! Keys.prefix_u
 
-      View.message $el.auto_revert_mode ? "Enabled Auto-revert" : "Disabled Auto-revert"
+      prefix_u = Keys.prefix_u
+
+      # Called via key shortcut but no prefix, so disable auto-revert
+      if ! prefix_u && options[:from_key_shortcut]
+        $el.auto_revert_mode 0
+        return
+      end
+
+      return if ! prefix_u
+
+      View.flash $el.auto_revert_mode ? "- Enabled Auto-revert!" : "- Disabled Auto-revert!"
     end
 
     def self.do_clean_quotes
@@ -239,28 +253,38 @@ module Xiki
       end
     end
 
-    # Use File.basename
-    #   def self.name path   # Extract name from path
-    #     path.sub(/.+\/(.+)/, "\\1")   # Cut of path
-    #   end
+    def self.enter_file options={}
 
-    # Use File.dirname
-    #   def self.dir path   # Extract dir from path
-    #     return "" unless path =~ /\//
-    #     path.sub(/(.+)\/.*/, "\\1")   # Cut of path
-    #   end
+      message = "File to insert: "
+      View.flash message
+      path = Keys.input "#{message}", :timed=>1
 
-    def self.enter_file
-      path = File.expand_path(Keys.bookmark_as_path(:include_file=>1))
-      path << "/" if File.directory? path
-      View.insert(path)
+      # They typed a word, so expand it as a bookmark
+      path = Bookmarks["%#{path}", :raw_path=>1] if path =~/^\w/
+
+      is_dir = File.directory? path
+      path = FileTree.add_slash_maybe path if is_dir
+
+
+      # :double_slash, so make it end in 2 slashes
+      path.sub!(/\/*$/, "//") if options[:double_slash]
+
+
+      View.insert path
+
+      # enter+modified, so expand
+
+      if options[:expand]
+        Launcher.launch :date_sort=>true
+      end
+
     end
 
     # This is currently mac-specific
     def self.open_last_screenshot
 
-      dirs = `ls -t #{Bookmarks["$dt"]}`
-      screenshot = Bookmarks["$dt"]+dirs[/.+/]
+      dirs = `ls -t #{Bookmarks["%dt"]}`
+      screenshot = Bookmarks["%dt"]+dirs[/.+/]
 
       self.open_as screenshot, "Adobe Illustrator"
 
@@ -277,7 +301,7 @@ module Xiki
 
       file ||= FileTree.tree_path_or_this_file
 
-      file = File.expand_path file
+      file = File.expand_path Bookmarks[file]
 
       # Else, reveal current file
       command = "open --reveal \"#{file}\""
@@ -296,7 +320,7 @@ module Xiki
 
     def self.append path, txt
 
-      return if View.name =~ /_log.notes$/
+      return if View.name =~ /_log.xiki$/
       path = File.expand_path path
       txt = "#{txt.strip}\n"
       File.open(path, "a") { |f| f << txt }
@@ -307,16 +331,25 @@ module Xiki
       Dir.entries(path).select{|o| o !~ /^\.+$/}
     end
 
-    def self.open_nth nth
-      View.layout_files :no_blink=>1
+    def self.open_nth nth, options={}
+      prefix = Keys.prefix  # :clear=>1
+
+      if prefix == :u
+        Bookmarks.go ","
+        return
+      end
+
+      prefix == :u || options[:bm] == "t" ?
+        View.open("%n") :
+        View.open("%links")
 
       if nth != 0
         View.to_highest
-        nth.times { Move.to_quote :pipes=>1 }
+        nth.times { Move.to_quote :colons=>1 }
       end
 
-      Effects.blink
-      Launcher.launch_unified
+      Effects.blink if View.list.length > 1
+      Launcher.launch
     end
 
     def self.delete_current_file
@@ -328,7 +361,7 @@ module Xiki
 
       command = "rm \"#{dest_path}\""
 
-      result = Console.run command, :sync=>true
+      result = Shell.run command, :sync=>true
       if (result||"").any?
         View.beep
         View.message "#{result}"
@@ -341,7 +374,7 @@ module Xiki
 
     if /^1\.9/===RUBY_VERSION
       def self.encoding_binary
-        [{:encoding => 'binary'}]
+        [{:binmode=>true}]
       end
     else
       def self.encoding_binary
@@ -349,10 +382,48 @@ module Xiki
       end
     end
 
-  end
-end
+    # Returns a unique version of the filename.
+    # Appends ".1" if the filename already exists.
+    # Or, if that already exists, ".2" or ".3" etc.
+    # Files.unique_name "/etc/passwd"
+    #   /etc/passwd2
+    def self.unique_name path
+      return path if ! File.exists? path
+      i, limit = 2, 1000
 
-if $el
-  $el.el4r_lisp_eval("(require 'recentf)")
-  $el.el4r_lisp_eval("(recentf-mode 1)")
+      extension = path.slice! /\.[a-z]+$/i
+      while i < limit
+        break if ! File.exists? "#{path}#{i}#{extension}"
+        i += 1
+      end
+      "#{path}#{i}#{extension}"
+    end
+
+    # Replaces home with tilde
+    # Files.tilde_for_home "/Users/craig/projects/"
+    #   ~/projects/
+
+    def self.tilde_for_home path, options={}
+      return path if ! path.is_a?(String)
+      home = ENV['HOME']
+      return path if ! home
+
+      path = path.sub(/\A#{Regexp.quote home}/, "~")
+      path.gsub!(' ', '\ ') if options[:escape]
+      path
+    end
+
+    def self.ancestor_file_or_directory file
+      file = file.dup
+
+      return file if File.exists? file
+
+      while file.sub! /(.*)\/.*/, "\\1"
+        return file if File.exists? file
+      end
+
+
+    end
+
+  end
 end

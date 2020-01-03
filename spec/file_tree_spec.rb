@@ -26,8 +26,8 @@ describe "matches_root_pattern?" do
   end
 
   it "handles bookmarks" do
-    (!!FileTree.matches_root_pattern?("$aa")).should == true
-    (!!FileTree.matches_root_pattern?("$..")).should == false
+    (!!FileTree.matches_root_pattern?(":aa")).should == true
+    (!!FileTree.matches_root_pattern?(":..")).should == false
   end
 
   it "declines non-file paths" do

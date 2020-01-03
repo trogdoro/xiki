@@ -1,8 +1,8 @@
 $:.unshift "spec/"
+require './spec/spec_helper'
 require 'xiki/core/text_util'
 
 describe TextUtil, "#unindent" do
-
 
   it "indents to the left" do
     TextUtil.unindent(
@@ -71,15 +71,29 @@ describe TextUtil, "#unindent" do
       ".gsub(/^      /, '')
   end
 
-  it "does nothing when subsequent line not indented" do
-    shouldnt_change = "[
+  it "doesn't change indent when any subsequent line not indented" do
+    shouldnt_change = "  [
           1,
-          2,
-          3
-      ]
+          2
+      not indented
       ".gsub(/^      /, '')
     TextUtil.unindent(shouldnt_change).should == shouldnt_change
   end
+
+  it "adds linebreak for consistency when any subsequent line not indented" do
+    TextUtil.unindent("  a\nnot indented").should == "  a\nnot indented\n"
+  end
+
+  it "Doesn't remove trailing spaces on last line" do
+    TextUtil.unindent(
+      "
+        hey 
+        you 
+      ".gsub(/^      /, '')).
+      should == "hey \nyou \n"
+  end
+
+
 end
 
 describe TextUtil, "#snake_case" do
@@ -118,5 +132,15 @@ describe TextUtil, "#title_case" do
     TextUtil.title_case("/CorePlatform").should == "/Core Platform"
     TextUtil.title_case("core platform").should == "Core Platform"
     TextUtil.title_case("core-platform").should == "Core Platform"
+  end
+end
+
+describe TextUtil, "#word_wrap" do
+  it "wraps to 5 chars" do
+    TextUtil.word_wrap("hi hi hi", 5).should == "hi hi\nhi"
+  end
+
+  it "wraps to 4 chars" do
+    TextUtil.word_wrap("hi hi hi", 4).should == "hi\nhi\nhi"
   end
 end

@@ -1,8 +1,22 @@
 # $:.unshift "spec/"
-# require 'keys'
-# require 'ol'
+require './spec/spec_helper'
+require 'xiki/core/keys'
 
-# describe Keys, "#input" do
+describe Keys, "#filter" do
+  it "matches when one letter" do
+    Keys.fuzzy_filter(["javascript", "ruby"], "r").should == "ruby"
+  end
+
+  it "matches when two letters" do
+    Keys.fuzzy_filter(["javascript", "ruby"], "rb").should == "ruby"
+  end
+
+  it "matching first few letters takes prescedence" do
+    Keys.fuzzy_filter(["rebuild", "ruby"], "ru").should == "ruby"
+  end
+
+end
+
 #   before(:each) do
 
 #     View = mock 'View'

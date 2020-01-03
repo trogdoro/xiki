@@ -6,7 +6,22 @@ require 'xiki/core/text_util'
 module Xiki
   class Search
 
-    SPECIAL_ORDER = "X!='\"[]{}<>_-+*@#\\/!$X"
+    # Used by search+just+Plus and search+just+Minus
+    SPECIAL_ORDER = "X!='\"[]{}<>?-+ +*@#\\/!$X:|"
+    # These override it
+    SPECIAL_ORDER_MINUS = {
+      " "=>"-",
+      "+"=>"-",
+      "-"=>"?",
+      "?"=>"-",
+      }
+    SPECIAL_ORDER_PLUS = {
+      " "=>"+",
+      "-"=>"+",
+      "+"=>" ",
+      "?"=>"+",
+      "@"=>"=",
+      }
 
     @@case_options = nil
 
@@ -15,10 +30,9 @@ module Xiki
     def self.outline_goto_once; @@outline_goto_once; end
     def self.outline_goto_once= txt; @@outline_goto_once = txt; end
 
-    @@log = File.expand_path("~/.emacs.d/search_log.notes")
+    @@log = File.expand_path("~/.xiki/misc/logs/search_log.xiki")
 
-    def self.menu
-      '
+    MENU = '
       - .history/
       - .log/
       - .launched/
@@ -46,8 +60,8 @@ module Xiki
           | search_value: Insert found where search began
           | search_delete: Delete found
           | search_diffs (without searching): Search in diffs
-          | search_todo: Search in $t bookmark
-          | search_files: Search in $f bookmark
+          | search_todo: Search in :t bookmark
+          | search_files: Search in :n bookmark
           | search_paths: Search history of menus
         - miscellaneous/
           | search_search: Re-do the last search
@@ -56,12 +70,11 @@ module Xiki
           | search_usurp: Suck the next expression in
         |
         | For more details about Xiki keyboard shortcuts, see:
-        - @keys/docs/
+        + =keys/docs/
         |
       - see/
-        <@ next/
+        <= next/
       '
-    end
 
     def self.case_options
       return @@case_options if @@case_options
@@ -70,6 +83,7 @@ module Xiki
       self.add_case_option 'lower', proc {|txt| txt.downcase}
       self.add_case_option 'camel', proc {|txt| TextUtil.camel_case(txt)}
       self.add_case_option 'snake', proc {|txt| TextUtil.snake_case(txt)}
+      self.add_case_option 'whitespace', proc {|txt| TextUtil.whitespace_case(txt)}
       @@case_options
     end
 
@@ -97,25 +111,30 @@ module Xiki
       $el.insert txt
     end
 
-    def self.insert_at_search_start
+    def self.insert_at_search_start options={}
+
       was_reverse = self.was_reverse
       match = self.stop
 
-      if match.nil?   # If nothing searched for yet, search difflog
-        loc = Keys.input(:chars=>1, :prompt=>"Enter one char to search for corresponding string: ")
-        loc = loc.to_s
+      # Nothing searched for yet, so do search+value (search for what's in the clipboard)...
 
-        txt = Clipboard.hash[loc.to_s] || Clipboard.hash_by_first_letter[loc.to_s]
-        txt ||= self.searches.find{|o| o =~ /^#{loc}/i}
-
-        return View.message("Nothing to search for matching '#{loc}'.", :beep=>1) if txt.nil?
-        self.isearch txt, :reverse=>was_reverse
-
-        return
+      if match.nil?
+        return self.isearch Clipboard[0]
       end
 
+      # Pull match back to search start...
+
       self.to_start  # Go back to start
-      $el.insert match
+
+      match = "#{options[:prepend]}#{match}"
+
+      View.insert match #, :dont_move=>1
+      View.message ""
+    end
+
+    def self.isearch_have_wikipedia
+      term = self.stop
+      Wikipedia.wp term
     end
 
     def self.isearch_have_within
@@ -146,6 +165,7 @@ module Xiki
     def self.insert_var_at_search_start
       match = self.stop
       self.to_start  # Go back to start
+      match.strip!
       $el.insert "\#{#{match}}"
     end
 
@@ -162,35 +182,74 @@ module Xiki
       Effects.blink :what=>:region
     end
 
-    def self.isearch_delete
+    def self.isearch_diffs
+
+      was_reverse = self.was_reverse
       match = self.stop
 
-      # If nothing searched for, go to spot of last delete
-      if match.nil?   # If nothing searched for yet, search difflog
+      # Nothing searched for yet, so search difflog...
+
+      if match.nil?
+        Location.as_spot
         DiffLog.open
         View.to_bottom
         Search.isearch nil, :reverse=>true
+        return
+      end
+
+      # Match found, so behave like search+dir...
+
+      # Search for filenames in dir
+
+      dir = Keys.bookmark_as_path :prompt=>"Enter bookmark to look in (or space for recently edited): "
+
+      # "dir/file.txt", so just open path
+      if match =~ /\//
+        View.open "#{dir}#{match}"
+        return
+      end
+
+
+      return View.message("Use space!", :beep=>1) if dir == :comma
+
+      return self.open_file_and_method(match) if dir == :space   # If key is comma, treat as last edited
+
+      TextUtil.snake_case! match if match =~ /[a-z][A-Z]/   # If camel case, file is probably snake
+      FileTree.grep_with_hashes dir, match, '**'   # Open buffer and search
+
+
+
+    end
+
+    # Used by search+add and search+just+2 etc.
+    def self.isearch_clear
+      match = self.stop
+
+      if match.nil?   # Nothing searched for yet, so go to spot of last delete
+        Location.to_spot('killed')
       else
-        View.delete(Search.left, Search.right)
+        View.delete Search.left, Search.right
         Location.as_spot('killed')
       end
+    end
+
+    def self.isearch_go
+      match = self.stop
+
+      Grab.go_key
+
     end
 
     def self.enter txt=nil
       match = self.stop
       txt ||= Clipboard[0]
 
-      if match.nil?   # If nothing searched for yet, do search_edits
-        bm = Keys.input :timed=>true, :prompt=>"Enter a bookmark to search edits: "
-
-        return Launcher.open("diff log/diffs/") if bm == "8" || bm == " "
-
-        path = bm == "." ? View.file : "$#{bm}/"
-        return Launcher.open("- #{path}\n  @edits/")
+      if match.nil?   # Nothing searched for yet, so show search history
+        return Launcher.open "searching/history/", :bar_is_fine=>1
       end
 
       View.delete(Search.left, Search.right)
-      View.insert txt
+      View.insert txt, :dont_move=>1
     end
 
     def self.copy_and_comment
@@ -218,15 +277,21 @@ module Xiki
 
       position = SPECIAL_ORDER.index match
 
+      decrement = options[:decrement]
+
       # If one of certain chars, use custom order
       result =
-        if position   # Change '[' to ']', etc
+        if ! decrement && found = SPECIAL_ORDER_PLUS[match]
+          found
+        elsif decrement && found = SPECIAL_ORDER_MINUS[match]
+          found
+        elsif position   # Change '[' to ']', etc
 
-          increment_or_decrement = options[:decrement] ? -1 : 1
+          increment_or_decrement = decrement ? -1 : 1
           SPECIAL_ORDER[position+increment_or_decrement].chr
 
         else
-          if options[:decrement]
+          if decrement
             match =~ /[a-z]/i ?
             (match[0] - 1) :
               (match.to_i - 1).to_s
@@ -261,30 +326,15 @@ module Xiki
 
     def self.copy match
       Clipboard[0] = match
-      $el.set_register ?X, match
-      $el.x_select_text match
-      Clipboard.save_by_first_letter match   # Store for retrieval with enter_yank
-    end
-
-    def self.cut
-      match = self.stop
-
-      # If nothing searched for, go to spot of last delete
-      if match.nil?   # If nothing searched for yet
-        Location.to_spot('killed')
-      else
-        Clipboard.set(0, match)
-        $el.set_register ?X, match
-        View.delete self.left, self.right
-        Location.as_spot('killed')
-      end
+      $el.x_select_text(match) if Environment.gui_emacs
     end
 
     def self.go_to_end
       match = self.stop
 
       if match.nil?   # If nothing searched for yet
-        Search.isearch_restart "$f", :restart=>true
+        Location.as_spot
+        Search.isearch_restart "%links", :restart=>true
         return
       end
 
@@ -294,14 +344,23 @@ module Xiki
     # Clears the isearch, allowing for inserting, or whatever else
     def self.stop options={}
 
-      left, right = self.left, self.right
+      txt = self.match
 
-      txt = self.match(left, right)
+      # TODO > restore or fix!
+
+      # Maybe use (isearch-abort) instead?, and then move cursor to line?
+        # might result in weird scrolling
+
+      # Or, try one of these functions?
+        # isearch-exit
+        # isearch-done
+        # isearch-complete1
+        # isearch-complete
+        # isearch-cancel
 
       # Make it do special clear if nothing found (to avoid weird isearch error)
       if txt.nil?
         if $el.elvar.isearch_success # || Search.left == View.bottom
-          # Done so isearch_done won't error
           $el.isearch_resume "[^`]", true, nil, true, "", true
           View.message ""
         else
@@ -314,7 +373,8 @@ module Xiki
       $el.isearch_clean_overlays
       $el.isearch_done
 
-      txt == :not_found ? Search.last_search : txt
+      # Why doing this? > self.last_search
+      txt == :not_found ? self.last_search : txt
     end
 
     def self.match left=nil, right=nil
@@ -333,58 +393,57 @@ module Xiki
     end
 
     # Do query replace depending on what they type
+    #     def self.query_replace s1=nil, s2=nil
     def self.query_replace s1=nil, s2=nil
-      if s1 && s2   # If manually passed in
-        $el.query_replace_regexp($el.regexp_quote(s1 || ""), s2 || "")
-        return
+
+      # If no params, prompt for them...
+
+      if ! s1
+        s1 = Keys.input :prompt=>"Replace from: "
+        s2 = Keys.input :prompt=>"Replace to: "
+      else
+        s1 = self.quote_elisp_regex s1
+
       end
 
-      first = Keys.input(:timed=>true)
-      # If they typed 'o', use clipboard 1 and clipboard 2
-      if first == "o" || first == "1"
-        $el.query_replace_regexp($el.regexp_quote(Clipboard.get("1")), Clipboard.get("2"))
-      # If they typed 't', use clipboard 2 and clipboard 1
-      elsif first == "t" || first == "2"
-        $el.query_replace_regexp(Clipboard.get("2"), Clipboard.get("1"))
-      # If 'q', prompt for both args
-      elsif first == "q"
-        $el.query_replace_regexp(
-          Keys.input(:prompt=>"Replace: "),
-          Keys.input(:prompt=>"With: "))
-      # If they typed 'c', use clipboard and prompt for 2nd arg
-      elsif first == "c"
-        $el.query_replace_regexp(Clipboard.get, Keys.input(:prompt=>"Replace with (pause when done): ", :timed=>true))
-      # If they typed 'c', use clipboard and prompt for 2nd arg
-      elsif first == "l"
-        $el.query_replace_regexp(@@query_from, @@query_to)
-      # Otherwise, just get more input and use it
-      else
-        $el.query_replace_regexp(first, Keys.input(:timed=>true))
-      end
+      $el.query_replace_regexp s1, s2
+
       nil
     end
 
-    def self.isearch_query_replace after=nil
-      match = self.stop#
+    def self.isearch_query_replace # after=nil
+      match = self.stop
+
+      # No match, so prompt for before...
+
+      if ! match
+        no_match_existed = true
+        match = Keys.input(:prompt=>"Exchange occurrences of what?: ")
+      end
+
       was_upper = match =~ /[A-Z]/
 
       match.downcase!
       left, right = Search.left, Search.right
       before = $el.regexp_quote(match)   # Always start with isearch match
 
-      # If before not there or is :match, prompt for input
-      if after.nil? || after == :match
-        initial_input = after == :match ? before : ''
-        after = Keys.input(:prompt=>"Change instances of '#{before}' to: ", :initial_input=>initial_input)
-        @@query_from, @@query_to = before, after
+      # Prompt for after...
+
+      initial_input = ''
+      after = Keys.input(:prompt=>"Exchange occurrences of '#{before}' with: ", :initial_input=>initial_input)
+      @@query_from, @@query_to = before, after
+
+      # We're replacing a match right here, so do it before doing query replace...
+
+      if ! no_match_existed
+        View.delete left, right
+        View.insert was_upper ?
+          TextUtil.title_case(after) :
+          after
       end
 
-      View.delete left, right
-      View.insert was_upper ?
-        TextUtil.title_case(after) :
-        after
-
       $el.query_replace_regexp before, after
+      nil
     end
 
     def self.grep
@@ -395,6 +454,8 @@ module Xiki
 
       prefix = Keys.isearch_prefix
       path = Keys.bookmark_as_path :include_file=>1   # Get path (from bookmark)
+
+      return if ! path
 
       # If C-u, just jump to bookmark and search from the top
       if prefix == :u
@@ -450,9 +511,9 @@ module Xiki
 
     def self.search_in_bookmark match
 
-      bm = Keys.bookmark_as_path :include_file=>1
+      path = Keys.bookmark_as_path :include_file=>1
 
-      if bm == :slash   # If space, go back to root and search
+      if path == :slash   # If space, go back to root and search
         # Make match be orange
         Overlay.face(:ls_search, :left=>self.left, :right=>self.right)
         self.search_at_root match
@@ -461,16 +522,15 @@ module Xiki
 
       View.to_after_bar if View.in_bar?
 
-      if bm == :space   # If space, search in buffers
+      if path == :space   # If space, search in buffers
         self.find_in_buffers match
         return
       end
 
       match.gsub!(/([#()*+?^$\[\]\/|.])/, "\\\\\\1")
-      #     match.gsub! "\\+", "."   # Change + to . to help when searching for key shortcuts
 
       # Search in bookmark
-      FileTree.grep_with_hashes bm, match
+      FileTree.grep_with_hashes path, match
     end
 
 
@@ -516,7 +576,7 @@ module Xiki
         txt = txt.select{|o| o =~ regex}
       end
 
-      result = "- @#{txt.join("- @")}"
+      result = "=#{txt.join("=")}"
       result
     end
 
@@ -537,11 +597,11 @@ module Xiki
       string.gsub!('"', '\\"')
       new_args = "\"#{string}\""
       new_options = {}
-      new_options[:buffer] = View.buffer_name if options[:current_only]
+      new_options[:buffer] = View.name if options[:current_only]
       new_args << ", #{new_options.inspect[1..-2]}" unless new_options.empty?
 
       View.bar if options[:in_bar]
-      $el.switch_to_buffer "*tree find in buffers"
+      $el.switch_to_buffer "find in buffers/"
       Notes.mode
       $el.erase_buffer
 
@@ -551,7 +611,7 @@ module Xiki
       if new_options[:buffer]   # Goto first match
         $el.goto_line 4
         Line.to_words
-        Tree.search(:recursive=>false, :left=>Line.left, :right=>View.bottom)
+        Tree.filter(:recursive=>false, :left=>Line.left, :right=>View.bottom)
       else  # Goto first match in 2nd file
         $el.goto_line 2
         $el.re_search_forward "^  -", nil, true
@@ -566,7 +626,12 @@ module Xiki
       $el.highlight_regexp(Regexp.quote(match), :notes_label)
     end
 
-    def self.highlight_found
+    def self.isearch_highlight_match
+      match = self.stop
+      View.selection = [self.right, self.left]
+    end
+
+    def self.highlight_all_found
       match = self.stop
 
       $el.highlight_regexp(Regexp.quote(match), :hi_yellow)
@@ -582,9 +647,11 @@ module Xiki
     # Insert line at beginning of search
     def self.have_line
       self.stop
+      column = View.column
       line = Line.value(1, :include_linebreak=>true).sub("\n", "")
       self.to_start  # Go back to start
       $el.insert line
+      View.column = column
     end
 
     # Insert line at beginning of search
@@ -633,21 +700,22 @@ module Xiki
     end
 
     # During isearch, open most recently edited file with the search string in its name
-    def self.isearch_to
+    def self.isearch_options
       match = self.stop
 
       if match.nil?   # If nothing searched for yet
-        Search.isearch_restart "$t", :restart=>true
+
+        # Do something if nothing searched yet?
+
+        Location.as_spot
+        Search.isearch_restart "%o", :restart=>true
 
       else
-        dir = Keys.bookmark_as_path :prompt=>"Enter bookmark to look in (or space for recently edited): "
 
-        return View.message("Use space!", :beep=>1) if dir == :comma
+        # Match found, so do task menu here...
 
-        return self.open_file_and_method(match) if dir == :space   # If key is comma, treat as last edited
+        Launcher.options_key
 
-        TextUtil.snake_case! match if match =~ /[a-z][A-Z]/   # If camel case, file is probably snake
-        FileTree.grep_with_hashes dir, match, '**'   # Open buffer and search
       end
     end
 
@@ -678,10 +746,12 @@ module Xiki
       match = "#{match}."
       snake = "#{snake}."
       # For each file edited
-      found = (Files.edited_array + Files.history_array).find do |o|
+      found = DiffLog.file_list.find do |o|
+        next if ! o.is_a? String
 
-        next if o =~ /.notes$/  # Ignore notes files
+        next if o =~ /.xiki$/  # Ignore notes files
         next if o =~ /:/  # Ignore files with colons (tramp)
+
         name = o[/.*\/(.*)/, 1]  # Strip off path
         # Check for match
         if name =~ /^#{Regexp.quote(match)}/i || (snake && name =~ /^#{Regexp.quote(snake)}/i)
@@ -703,7 +773,7 @@ module Xiki
           $el.recenter 0
 
           dir, name = found.match(/(.+\/)(.+)/)[1..2]
-          Search.append_log dir, "- #{name}\n    | #{Line.value}"
+          Search.append_log dir, "- #{name}\n    : #{Line.value}"
 
         end
       else
@@ -718,12 +788,25 @@ module Xiki
       was_reverse = self.was_reverse
       match = self.stop
 
+      # Isearch for it, or remember what's already searched...
+
       if match.nil?   # If nothing searched for yet
-        self.isearch Clipboard[name].downcase, :reverse=>was_reverse
-      else   # Else, if nothing searched for
+        target = Clipboard.register(name).downcase
+        self.isearch target, :reverse=>was_reverse
+
+        # Make next "C-," repeat just jump to this search string...
+
+        was_reverse ?
+          Keys.remember_key_for_repeat(proc {Search.backward target, :quote=>1}, :movement=>1) :
+          Keys.remember_key_for_repeat(proc {Search.forward target, :quote=>1, :beginning=>1}, :movement=>1)
+
+      else   # If found something, just remember it
         self.stop
-        Clipboard[name] = match
+        target = match
+        Clipboard.register(name, target)
       end
+
+
     end
 
     def self.isearch_copy_as name
@@ -731,20 +814,48 @@ module Xiki
       Clipboard.set(name, self.match)
     end
 
-    def self.kill_filter options={}
+    def self.kill_matching options={}
       # TODO: Get options[:kill_matching]=>true to delete matching
-      # - and map to Keys.do_kill_matching
+      # - and map to Keys.just_kill_matching
+
+      # Prompt for string
+      filter = Keys.input :promp=>"Remove lines containing what? "
+
       Line.start
       left = $el.point
       $el.re_search_forward "^$", nil, 1
       right = $el.point
       $el.goto_char left
-      Tree.search(:left=>left, :right=>right, :recursive=>true)
+
+      txt = View.delete left, right
+      txt = txt.split("\n").select{|o| o !~ /#{filter}/}.join("\n")
+
+      View.<< "#{txt}\n", :dont_move=>1
+
+      # Delete non-matching lines
+
+
+    end
+
+    def self.kill_filter options={}
+      # TODO: Get options[:kill_matching]=>true to delete matching
+      # - and map to Keys.just_kill_matching
+      Line.start
+      left = $el.point
+      $el.re_search_forward "^$", nil, 1
+      right = $el.point
+      $el.goto_char left
+      Tree.filter(:left=>left, :right=>right, :recursive=>true)
     end
 
     def self.cancel
+
+      # Clear any subsequent keys, since it could be a mouse click
+      Keys.read_subsequent_chars
+
       self.stop
       self.to_start  # Go back to start
+      View.message ""
     end
 
     #   def self.not_found?
@@ -753,18 +864,39 @@ module Xiki
     #     ! elvar.isearch_success
     #   end
 
+    # Search.forward "from"
+    # Search.forward "from", :dont_move=>1   # Just return location
+    # Search.forward "from", :beginning=>1   # Beginning of match
     def self.forward target, options={}
       View.to_highest if options[:from_top]
 
       orig = View.cursor
 
-      found = options[:not_regex] ?
-        $el.search_forward(target, nil, (options[:go_anyway] ? 1 : true)) :
-        $el.re_search_forward(target, nil, (options[:go_anyway] ? 1 : true))
+      # :line, so make regex to find just the line...
+
+      if options[:line]
+        target = "^#{Search.quote_elisp_regex target}$"
+      end
+
+      target = self.quote_elisp_regex target if options[:quote]
+
+      # Do actual search
+
+      found = $el.re_search_forward(target, nil, (options[:go_anyway] ? 1 : true))
 
       View.cursor = orig if options[:dont_move]
 
-      View.cursor = self.left if options[:beginning] && found && View.cursor != View.bottom
+      if options[:beginning] && found && View.cursor != View.bottom
+        left = self.left
+        # Before moving back to left side, if left of match is where we were already, search again
+
+        if orig == left && left != 1   # Unless we're at the top
+          self.forward target, options
+        else
+          View.cursor = left
+        end
+
+      end
 
       found
     end
@@ -797,16 +929,13 @@ module Xiki
       term = self.stop
       if term
         term.gsub!(' ', '+')
-
         term = "\"#{term}\"" if options[:quote]
-
         term =~ /^https?:\/\// ?   # If url, just browse
           $el.browse_url(term) :
           $el.browse_url("http://google.com/search?q=#{term}")
         return
       end
 
-      Firefox.log
       Search.isearch nil, :from_bottom=>true
 
     end
@@ -825,14 +954,14 @@ module Xiki
       View.delete $el.point_at_bol, $el.point_at_eol + 1
       #self.to_start  # Go back to start
       $el.exchange_point_and_mark
-      $el.insert line
+      View.insert line, :dont_move=>1
     end
 
     def self.outline
       if Keys.prefix_u?
-        History.open_current :outline => true, :prompt_for_bookmark => true
+        History.open_current :outline=>true, :prompt_for_bookmark=>true
       else
-        History.open_current :outline => true
+        History.open_current :outline=>true
       end
     end
 
@@ -857,18 +986,32 @@ module Xiki
     def self.enter_like_edits
       Notes.enter_junior
       View << "@edits/"
-      Launcher.launch_unified
+      Launcher.launch
     end
 
+    # Inserts a "- ##foo/" string into the current view.
     def self.enter_search bm=nil, input=nil
+
       # If line already has something, assume we'll add - ##foo/ to it
       if ! Line[/^ *$/]
-        input = Keys.prefix_u ? Clipboard.get : Keys.input(:prompt=>"Text to search for: ")
+
         indent = Line.indent
         Line.to_right
-        View.insert "\n#{indent}  - ###{input}/"
-        Launcher.launch_unified
+
+        # up+, so just grab from clipboard...
+
+        if Keys.prefix_u
+          input = Clipboard.get
+          View.insert "\n#{indent}  - ###{input}/"
+          Launcher.launch
+          return
+        end
+
+        # Insert ##/ under...
+        View << "\n#{indent}  - ##/"
+        View.to(Line.right - 1)
         return
+
       end
 
       bm ||= Keys.input(:timed=>true, :prompt=>"Enter bookmark in which to search: ")
@@ -884,14 +1027,14 @@ module Xiki
           dir = nil
         end
       else
-        dir = Bookmarks.expand("$#{bm}")
+        dir = Bookmarks.expand("%#{bm}")
       end
 
-      View.insert("- #{dir}" || "")
+      View.insert("#{dir}" || "")
       indent = Line.indent
       Line.to_right
       View.insert("\n#{indent}  - ###{input}/")
-      FileTree.launch
+      Launcher.launch
 
     end
 
@@ -900,13 +1043,9 @@ module Xiki
       return self.isearch_have_outlog_javascript if View.extension == "js"
 
       match = self.stop
+      match.strip!
       self.to_start
       return View.insert("Ol.line") if match.nil?
-
-      if Tree.construct_path(:all=>1, :slashes=>1) =~ /<script/
-        View.insert "console.log('#{match}: ' + #{match});"
-        return
-      end
 
       method = options[:method]
 
@@ -1015,8 +1154,14 @@ module Xiki
 
     def self.isearch_just_surround_with_char left=nil, right=nil
 
-      right ||= left
       term = self.stop
+
+      right ||= left
+      # nothing passed, so request it
+      if ! left
+        left = Keys.input :chars=>1
+        right = left.tr "([{<", ")]}>"
+      end
 
       if term == ""
         View.insert "()"
@@ -1061,8 +1206,8 @@ module Xiki
 
     def self.to_left
       match = self.stop
-      if match.nil?   # If nothing searched for yet
-        return Launcher.open "- search/.history/", :bar_is_fine=>1
+      if match.nil?   # C-b and nothing searched for yet
+        return Launcher.open "search/history/", :bar_is_fine=>1
       end
 
       Line.to_left
@@ -1070,7 +1215,7 @@ module Xiki
 
     def self.just_menu
       match = self.stop
-      View.open "$ml"
+      View.open "%ml"
       View.to_bottom
       Search.isearch match, :reverse=>true
     end
@@ -1083,7 +1228,7 @@ module Xiki
 
       choice = Keys.input(:prompt=>'convert to which case?: ', :choices=>TextUtil.case_choices)
       View.delete(Search.left, Search.right)
-      View.insert choice[txt]
+      View.insert choice[txt], :dont_move=>1
     end
 
     def self.isearch_have_case
@@ -1101,21 +1246,14 @@ module Xiki
       View.insert TextUtil.snake_case(term)
     end
 
-    @@zap_hooks ||= {}
-    # To set a hook
-    # Search.zap_hooks 'm' do ... end
-    def self.zap_hooks # key, &block
-      @@zap_hooks#[key] = value
-    end
-
     def self.zap
+      # try adding this > see if it stops it!
+      was_reverse = self.was_reverse
       match = self.stop
 
       if match.nil?   # If nothing searched for yet
-        char = Keys.input(:chars=>1, :prompt=>"Enter one char: ")
-        block = self.zap_hooks[char]
-        return View.beep "- search+zap+#{char}... doesn't seem to be defined!" if block.nil?
-        return block.call
+        Launcher.open "ze/", :hotkey=>1
+        return
       end
 
       right = $el.point
@@ -1123,53 +1261,60 @@ module Xiki
       View.delete($el.point, right)
     end
 
-    def self.xiki
+    def self.xiki options={}
+
       match = self.stop
 
-      View.beep "- Don't know what to do when search+x with search match." if match
+      # No string searched for, so pretend key was: search+xiki (show xiki search options)...
 
-      char = Keys.input(:chars=>1, :prompt=>"Enter one char: ")
-      if char == "m"
-        Launcher.open("- #{Xiki.dir}\n  - ##^ *def /")
-      elsif char == "k"
-        Launcher.open("- $x/key_bindings.rb\n  - ##\\bKeys\\./")
-      elsif char == "l"
-        Launcher.open("- $ttm\n  - ##xiki|isearch/")
-      else
-        View.beep "Don't know what to do with that char."
+      if ! match
+        return Launcher.open "search xiki", :hotkey=>1
       end
+
+      # No match, so treat like search+expand
+
+      self.stop
+      Launcher.launch
 
     end
 
     def self.isearch_restart path, options={}
-
       term = self.stop
+      Location.as_spot if options[:as_here]
 
-      if path == "$t"   # If $t, open bar
-        View.layout_todo
-        #       FileTree.open_in_bar; Effects.blink(:what=>:line)
-      elsif path == "$f"
-        View.layout_files
-      elsif path == "$o"
-        View.layout_outlog
+      if path == "%n"   # If :t, open bar
+        View.open "%n"
+      elsif path == "%links"
+        View.open "%links"
+      elsif path == "%o"
+        Code.open_log_view
         options[:reverse] = true
-      elsif path == "$d"
-        View.open "$d"
+      elsif path == "%d"
+        View.open "%d"
         options[:reverse] = true
       elsif path == :top
         # Will go to highest below
+      elsif path == :edge
+        options[:to_edge] = 1
       elsif path == :right
+        Location.as_spot
         View.layout_right 1
+        options[:to_edge] = 1
       elsif path == :next
+        Location.as_spot
         View.next
       elsif path == :previous
+        Location.as_spot
         View.previous
       else
         View.open Bookmarks[path]
       end
 
+
       View.wrap unless options[:restart]   # Don't change wrapping if starting search
-      View.to_highest
+      options[:to_edge] ? View.to_relative(:line=>1) : View.to_highest
+
+
 
       if options[:reverse]
         View.to_bottom
@@ -1192,6 +1337,18 @@ module Xiki
       $el.isearch_update
     end
 
+    def self.isearch_forward
+      prefix = Keys.prefix :clear=>1
+      if prefix == :u
+        return $el.isearch_backward
+      elsif prefix == :-
+        return $el.isearch_forward_regexp
+      elsif prefix == :uu
+        return $el.isearch_backward_regexp
+      end
+      $el.isearch_forward
+    end
+
     def self.isearch_stop_at_end
       # Kind of a hack - search for anything, so it won't error when we stop
       $el.isearch_resume "[^`]", true, nil, true, "", true
@@ -1203,66 +1360,100 @@ module Xiki
       nil
     end
 
-    def self.isearch_outline
+    def self.isearch_tasks
+
       match = self.stop
 
-      if match.nil?   # If nothing searched for yet
-        # Do isearch in Ol buffer
-        Search.isearch_restart "$o", :restart=>true
+      if match.nil?
+
+        # Nothing searched for yet, so search tasks
+
+        Location.as_spot
+        Search.isearch_restart "%n", :restart=>true
 
       else
-        if ! View.file   # If buffer, not file
-          buffer_name = $el.buffer_name
-          txt = View.txt
-          View.to_buffer "* outline of matches in #{buffer_name}"
-          Notes.mode
-          View.kill_all
-          View.insert txt.grep(Regexp.new(match)).join
 
-          return
-        end
+        # Something searched for, so move to the right of it...
 
-        # If file
+        $el.goto_char self.right
 
-        Search.outline_goto_once = Line.number
-
-        dir = View.dir
-        file_name = View.file_name
-        View.to_buffer "*tree grep";  View.dir = dir
-        View.clear;  Notes.mode
-        View.insert "
-          - #{dir}/
-            - #{file_name}
-              - ###{Regexp.quote(match)}/
-          ".unindent
-
-        View.to_line 3
-        FileTree.launch
-
-        #       Search.isearch_find_in_buffers(:current_only=>true)
       end
     end
 
-    def self.isearch_paths
+    def self.isearch_pull
       was_reverse = self.was_reverse
       match = self.stop
       return Line.previous if match.nil? && was_reverse   # Odd case, user might do this if at end of file
+
+      # Meant to search git diffs, when nothing matched yet
       return Git.search_repository if match.nil?
 
-      Search.move_to_search_start match
+      self.move_to_search_start match
     end
 
-    def self.isearch_next
-      was_reverse = self.was_reverse
+    def self.isearch_links
       match = self.stop
-      if match.nil? && Keys.before_last == "19"   # If nothing searched for yet
-        self.stop
-        self.search_last_launched
-      else
 
-        self.stop
-        $el.next_line
+      # Nothing searched for...
+
+      if ! match
+        Location.as_spot
+        Search.isearch_restart "%links", :restart=>true
+        return
       end
+
+      # $el.goto_char self.right
+
+      if ! View.file   # If buffer, not file
+        buffer_name = $el.buffer_name
+        txt = View.txt
+        View.to_buffer "* outline of matches in #{buffer_name}"
+        Notes.mode
+        View.kill_all
+        View.insert txt.grep(Regexp.new(match)).join
+
+        return
+      end
+
+
+      # Match found, so only matches ("jump+like")
+
+      current_line = Line.number
+      dir = View.dir
+
+      file_name = View.file_name
+      View.to_buffer "tree filter";  View.dir = dir
+      View.clear;  Notes.mode
+
+      regex = Regexp.quote(match).gsub("/", '\/')
+
+      View.insert "
+        - #{dir}/
+          - #{file_name}
+            - ###{regex}/
+        ".unindent
+
+      View.to_line 3
+
+      options = {:current_line=>current_line}
+
+      txt = FileTree.filter_one_file "#{dir}/#{file_name}", /#{Regexp.quote(match)}/i, options
+      txt = txt.map{|o| "#{o}\n"}.join("")
+
+      Line.next
+      left = View.cursor
+
+      View << "#{txt.gsub(/^/, '      ')}\n"
+
+      right = View.cursor
+      View.cursor = left
+      Line.next options[:line_found]
+      Line.to_beginning
+
+      Tree.filter(:left=>left, :right=>right, :recursive=>true)
+
+
+
     end
 
     def self.was_reverse
@@ -1273,14 +1464,12 @@ module Xiki
     # If no search, does "search+commands" - shows shell commands
     # recently run in a directory.
     def self.isearch_copy
-      txt = Search.stop
+      match = Search.stop
 
-      if txt.nil?   # If nothing searched for yet
-        Console.search_last_commands
-      else
-        self.copy txt
-        Location.as_spot('clipboard')
-      end
+      return Launcher.open("log/") if match.nil?
+
+      self.copy match
+      Location.as_spot('clipboard')
     end
 
     # Search for what's in the clipboard
@@ -1302,14 +1491,17 @@ module Xiki
     end
 
     def self.isearch_just_search
-      self.just_orange
-      match = self.match
 
-      Tree.to_parent   # Go to parent
-      Tree.to_parent if Line[/^ *- ##/]
+      match = self.stop
 
-      Tree.under "- \#\##{match}/", :escape=>'', :no_search=>1, :no_slash=>1
-      Launcher.launch_unified
+      Search.backward "^ *[+-] ##"
+      Move.to_axis
+      indent = Line[/^ */]
+
+      match = Regexp.escape match
+
+      View.insert "#{indent}- \#\##{match}/\n", :dont_move=>1
+      Launcher.launch
     end
 
     def self.isearch_enter_and_next
@@ -1329,46 +1521,103 @@ module Xiki
     def self.isearch_move_to path, options={}
       match = self.stop
       match = Line.value if match.nil?   # Use line if nothing searched for
+
+      match = TextUtil.regexp_escape(match).gsub("/", "\\/") if options[:as_regex]
+
+      match.gsub!(/^/, options[:prepend]) if options[:prepend]
+      match = "#{match}#{options[:append]}" if options[:append]
+
+      match = ":+#{match}\n:-#{match}\n" if options[:diffs]
+
+
       self.move_to path, match, options
     end
 
-    def self.move_to_files match
+    def self.move_to_files match, options={}
       match_with_path = FileTree.snippet :txt=>match
-      match_with_path = ">\n- #{match_with_path}"
+      match_with_path = ">\n#{match_with_path}"
 
-      result = self.fit_in_snippet match
+      result = self.try_merging_link match, options
       result ? nil : match_with_path
     end
 
-    def self.fit_in_snippet match
+    def self.try_merging_link match, options={}
 
-      target_path = View.file
-      View.layout_files :no_blink=>1
+      target_path = options[:path] || View.file
+      View.open("%links")
 
       View.to_highest
+
+      # Do nothing if first line is blank
+      return false if Line.blank?
+
       Move.to_junior   # Go to first file
 
-      path = Xiki.trunk.last   # Grab from wiki tree
+      return false if Line.blank?
+
+      path = Tree.path.last   # Grab from wiki tree
 
       # If doesn't fit in the tree, just return to delegate back
-      return false if ! target_path || ! target_path.start_with?(path)
+      return false if ! target_path
 
+      target_path = Files.tilde_for_home target_path
+
+      return false if ! target_path.start_with?(path)
+
+      # Check if saved, and save it afterwards if so?
+
+      modified = View.modified?
       cursor = Line.left 2
-      FileTree.enter_quote match
+      FileTree.enter_quote match, :leave_indent=>1, :char=>":", :leave_quote_chars=>1
+
       View.cursor = cursor
+
+      View << "    - #{options[:label]}\n" if options[:label]
+
+      DiffLog.save :no_diffs=>1 if ! modified
 
       return true   # If handled
     end
 
+    def self.have_go
+      txt = self.stop
+
+      # Jump to ^n!
+      View.open("%n")
+      # Quote!
+      txt = Tree.quote txt, :char=>"  |"
+      # Put blank space ahead!
+      Move.top
+      View.<< "\n#{txt}\n", :dont_move=>1
+
+    end
 
     def self.move_to path, match, options={}
+
       orig = Location.new
       was_in_bar = View.in_bar?
 
-      if path == "$t"   # If $f, grab path also
-        View.layout_todo :no_blink=>1
-      elsif path == "$f"   # If $f, grab path also
-        match = self.move_to_files match
+      # :prompt_label, so get label here (it gets applied in 2 place)
+
+      if options[:prompt_label]
+        label = Keys.input :prompt=>"label: "
+        label = "do" if label.blank?
+        label = Notes.expand_if_action_abbrev(label) || label
+        label = "#{label}:" if label !~ /[:!)]$/
+        options[:label] = label
+      end
+
+      if options[:include_file_context]
+        match = FileTree.snippet :txt=>match
+      end
+
+
+      if path == "%n"   # If :n, grab path also
+        was_visible = View.file_visible? Bookmarks['%links']
+
+        View.open("%n")
+      elsif path == "%links"   # If :n, grab path also
+        match = self.move_to_files match, options
         return orig.go if ! match   # It handled it if it didn't return the match
       else
         View.open path
@@ -1377,12 +1626,24 @@ module Xiki
       # Maybe extract to .insert_in_section ? ...
       View.to_highest
 
+      # If in :n, resave if was saved
+      if path == "%links"   # If :n, grab path also
+        should_save = ! View.modified?
+      end
+
       line_occupied = ! Line.blank?
 
-      if options[:append]
+      # if options[:append]
+      if options[:insert_after]
+
+        match = "\n#{match}"
         Notes.to_block
         Line.previous
-        line_occupied = true
+
+      end
+
+      if options[:label]
+        match.sub!(/^    : /, "    - #{label}\n\\0")
       end
 
       View.insert match
@@ -1396,12 +1657,15 @@ module Xiki
 
       View.to_highest
 
-      # Which case was this handling?  Being in $f?  Why leave cursor in $t when in $f?
-      #     return if path == "$t" && was_in_bar && orig.buffer != "todo.notes"
+      DiffLog.save :no_diffs=>1 if should_save
 
-      orig.go
+      # Which case was this handling?  Being in :n?  Why leave cursor in :t when in :n?
 
-      if path == "$t" && orig.buffer == "todo.notes"
+      # Go to original location, unless it was as+task, and todo.notes was visible to begin with (becase it makes sense to leave the cursor in todo.notes)
+
+      orig.go if path != "%n" || was_visible
+
+      if path == "%n" && orig.buffer == "notes.xiki"
         Line.next line-1
         View.column = orig.column
       end
@@ -1419,10 +1683,11 @@ module Xiki
     def self.bookmark
       match = self.stop
 
-      if match.nil?   # If nothing searched for yet, resume search
-        Search.tree_grep
+      if match.nil?
+        # Prompt for bookmark to search in
+        self.tree_grep
       else
-        Search.search_in_bookmark match
+        self.search_in_bookmark match
       end
     end
 
@@ -1439,25 +1704,31 @@ module Xiki
         $el.nth 0, $el.elvar.search_ring.to_a
       rescue Exception=>e
         View.beep
-        return "- weird stuff in search ring!"
+        return "- exception happened while looking for last search string!"
       end
     end
 
+    # Backs the search/history menu.
     def self.history txt=nil
 
       # If nothing selected yet, show history
 
       if ! txt
         searches = self.searches.uniq
-        return searches.map{|o| "| #{o}\n"}.join("")
+        searches = searches.map do |o|
+          o =~ /\n/ ?
+            ": #{o.inspect}\n" :
+            ": #{o}\n"
+        end
+        return searches.join("")
       end
 
       # Option selected, so search for it
 
-      txt.sub! /^\| /, ''
+      txt.sub! /^\: /, ''
 
       # Go back to where we came from, if we're in special search buffer
-      View.kill if View.buffer_name == "@search/history/"
+      View.kill if View.name == "searching/history/"
 
       Search.isearch txt
       nil
@@ -1547,11 +1818,23 @@ module Xiki
     end
 
     def self.isearch_m
+      was_reverse = self.was_reverse
       match = self.stop
+      if match   # If there was a match, just stop
 
-      return if match   # If there was a match, just stop
 
-      Launcher.open("log/") if match.nil?
+
+        was_reverse ?
+          Keys.remember_key_for_repeat(proc {Search.backward match, :quote=>1}, :movement=>1) :
+          Keys.remember_key_for_repeat(proc {Search.forward match, :quote=>1, :beginning=>1}, :movement=>1)
+
+
+        # Remember for C-, first
+        return
+      end
+
+      Launcher.open(": search+m is available? was > log/", :no_launch=>1) if match.nil?
+      #       Launcher.open("log/") if match.nil?
     end
 
     def self.just_bookmark
@@ -1563,33 +1846,58 @@ module Xiki
     end
 
     def self.enter_insert_search
+
       # If in file tree, do ##
       if FileTree.handles?
-        Search.enter_search
+        raise "enter+web do no longer makes search under a file tree"
       else
         self.insert_google
       end
     end
 
     def self.insert_google
-      line = Line.value
-      return View << "google/" if line =~ /^$/
-      return View << "@google/" if line =~ /^ /
-      return View << "google/" if line =~ /^ *- $/
 
-      View << "google/"
+      line = Line.value
+
+      # If not harmless chars, move to next line
+      harmless_chars = line[/^[ =+-]*$/]
+
+      if ! harmless_chars && Line.at_right?
+        Line << "\n"
+        line = Line.value
+      end
+
+      return View << "= google/" if harmless_chars.any? && harmless_chars !~ /=$/
+
+      View << "google\n  "
     end
 
 
     def self.like_delete
+
       match = self.stop
 
       line = View.line
 
-      View.to_highest
-      $el.delete_matching_lines match
+      # Delete matches between here and end of the paragraph...
 
-      View.line = line
+      left = Line.left
+
+      Search.forward "^$"
+      right = $el.point
+
+      txt = View.delete left, right
+
+      txt = txt.split("\n", -1)
+      txt = txt.select{|o| o !~ /#{Regexp.quote match}/i}
+      txt = txt.join("\n")
+
+      # Continue here...
+      View.<< txt, :dont_move=>1
+
+      View.remove_last_undo_boundary
+
+      Line.to_words
 
     end
 
@@ -1602,14 +1910,44 @@ module Xiki
 
     # Query replaces from "1" clipboard to "2" clipboard, etc.
     # Search.query_replace_nth "1", "2"
+    def self.isearch_just_after
+      match = self.stop
+      View.delete self.left, self.right
+      View << Clipboard.register("2")
+    end
+
+    def self.query_replace_with_2
+
+      match = self.stop
+
+      # C-s just typed, so prompt for search strings...
+
+      if ! match
+        $el.query_replace_regexp(
+          Keys.input(:prompt=>"Replace: "),
+          Keys.input(:prompt=>"With: "))
+        return
+      end
+
+      match.downcase!
+
+      two = Clipboard.register("2")
+
+      left, right = Search.left, Search.right   # Replace this one to get started
+      View.delete left, right
+      View << two
+
+      self.query_replace match, two
+    end
+
     def self.query_replace_nth n1, n2
 
       if Keys.up?   # If up+, grab line from last diff
         a, b = DiffLog.last_intraline_diff
-        return Search.query_replace a, b
+        return self.query_replace a, b
       end
 
-      Search.query_replace Clipboard.get(n1), Clipboard.get(n2)
+      self.query_replace Clipboard.get(n1), Clipboard.get(n2)
     end
 
     def self.quote_elisp_regex txt
@@ -1622,5 +1960,75 @@ module Xiki
       View.flash("- no special char found", :times=>3) if ! found
       nil
     end
+
+    def self.search_just_swap
+      # Grab and delete what's selected
+      txt_a = self.stop
+      View.delete(Search.left, Search.right)
+
+      # Insert from clipboard
+      View << Clipboard["0"]
+
+      # Go back to start and insert text_a
+      self.to_start  # Go back to start
+      View << txt_a
+    end
+
+
+    def self.just_kill
+      was_reverse = self.was_reverse
+      self.stop
+      txt = Line.delete
+
+      # Get where we would have gone
+      before = $el.elvar.isearch_opoint
+
+      # Move back to account for deleting if reverse
+      before -= txt.length+1 if was_reverse
+
+      View.cursor = before
+    end
+
+    def self.like_expanded
+      match = Search.stop
+      Tree.to_parent
+      Tree.collapse
+      Launcher.launch :no_search=>1
+      Search.isearch match
+    end
+
+    def self.insert_before_and_after
+      txt = Clipboard.register("1").gsub(/^/, ":-").strip+"\n"
+      txt << Clipboard.register("2").gsub(/^/, ":+").strip+"\n"
+      cursor = View.cursor
+      View.<< txt  #, :dont_move=>1
+      View.set_mark
+      View.cursor = cursor
+    end
+
+
+    def self.recenter_to_top
+      $el.recenter(1)
+    end
+
+
+    def self.hop_to
+
+      line = Line.rest
+
+      regex = /(\bself|[A-Z][a-zA-Z]+)\.[a-z][a-z_]*\??/i
+      function = line[regex]
+      function ||= Line[regex]
+
+      function.sub!(/^self/){
+        file = View.file_name.sub(/\..*/, '')
+        TextUtil.camel_case file
+      }
+
+      self.open_file_and_method function
+
+    end
+
+
   end
 end

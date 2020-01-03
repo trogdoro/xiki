@@ -2,16 +2,17 @@ module Xiki
   class RubyHandler
     def self.handle options
 
-      source = options[:ex]['rb']
+      source = options[:handlers]['rb']
       return if ! source || options[:output] || options[:halt]
       clazz_name = TextUtil.camel_case source[/\w+/]
 
-      file = "#{options[:last_source_dir]}#{source}"
+      file = "#{options[:enclosing_source_dir]}#{source}"
       code = File.read file
 
-      options.merge! :dot_menu_file=>"#{options[:last_source_dir]}#{options[:ex]['menu']}"
+      options.merge! :dot_menu_file=>"#{options[:enclosing_source_dir]}#{options[:handlers]['menu']}"
+
       txt =
-        if code =~ /^ *(class|module) #{clazz_name}/   # Maybe check for actual class name
+        if code =~ /^ *(class|module) .*\b#{clazz_name}\b/   # Maybe check for actual class name
           options.merge! :clazz_name=>clazz_name
           self.handle_class file, code, options
         else
@@ -25,19 +26,17 @@ module Xiki
     end
 
     def self.handle_script file, code, options
-      # Pass in args and options?
-      code = "args = #{(options[:args]||[]).inspect}\noptions = #{options.inspect}\n#{code}"
 
-      returned, out, exception = Code.eval code, file, -1
+      txt, out, exception = Code.eval code, file, 1, {:pretty_exception=>1}, options
 
-      txt =
-        if exception
-          CodeTree.draw_exception exception, code
-        else
-          returned || out   # Otherwise, just return return value or stdout!"
-        end
+      # Print any output
+      Ol.a(out, :stack_line=>"#{file}:1:in `script'") if out
+
+      return exception if exception
 
       txt
+
     end
   end
 end
+

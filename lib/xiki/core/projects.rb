@@ -17,11 +17,11 @@ module Xiki
 
     def self.default
       # If parent is dir, return it, else return first project
-      dir = FileTree.handles?(Xiki.trunk[-2]) ? "#{Dir.pwd}/" : self.default_project
+      dir = FileTree.handles?(Tree.path[-2]) ? "#{Dir.pwd}/" : self.default_project
     end
 
     def self.default_project
-      txt = File.read(File.expand_path "~/menu/projects.menu") rescue nil
+      txt = File.read(File.expand_path "~/.xiki/roots/projects.menu") rescue nil
       return nil if ! txt
 
       Line.without_label(:line=>txt[/.+/])

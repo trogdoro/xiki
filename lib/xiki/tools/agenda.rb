@@ -7,7 +7,7 @@ module Xiki
   class Agenda
 
     def self.menu *lines
-      t = Bookmarks['$t']
+      t = Bookmarks['%links']
 
       # If no line, display all of them
       if lines.empty?
@@ -16,7 +16,7 @@ module Xiki
 
       line = Line.value
 
-      # If line, jump to it in $t
+      # If line, jump to it in :t
       find = Line.value.sub /^[ -]+/, ''
       View.open t
       View.to_top

@@ -1,6 +1,6 @@
-gem 'httparty'; require 'httparty'
-gem 'json'; require 'json'
-gem 'riak-client'; require 'riak'
+# gem 'httparty'; require 'httparty'
+# gem 'json'; require 'json'
+# gem 'riak-client'; require 'riak'
 
 module Riak
 
@@ -47,7 +47,7 @@ module Riak
 
     # Show contents of object if passed
     if key
-      Files.append "~/.emacs.d/riak_log.notes", "- Riak.buckets \"#{bucket}\", \"#{key}\"/"
+      Files.append "~/.emacs.d/riak_log.xiki", "- Riak.buckets \"#{bucket}\", \"#{key}\"/"
 
       key = "#{bucket}/#{key}"
 
@@ -69,7 +69,7 @@ module Riak
     if args.any?
       args = args.join(', ').sub(/\/$/, '')
 
-      Files.append "~/.emacs.d/riak_log.notes", "- Riak.filter \"#{bucket}\", #{args}/"
+      Files.append "~/.emacs.d/riak_log.xiki", "- Riak.filter \"#{bucket}\", #{args}/"
 
       args = eval "[#{args}]"
 
@@ -172,33 +172,33 @@ module Riak
   end
 
   def self.ping
-    `#{Bookmarks['$riak']}/bin/riak ping`
+    `#{Bookmarks['%riak']}/bin/riak ping`
   end
 
   def self.log
-    txt = File.read File.expand_path("~/.emacs.d/riak_log.notes")
+    txt = File.read File.expand_path("~/.emacs.d/riak_log.xiki")
     txt = txt.split("\n").reverse.uniq.join("\n")
   end
 
 end
 
-Keys.enter_list_riak do
-  Launcher.insert '- Riak.menu/'
-end
+# Keys.enter_list_riak do
+#   Launcher.insert '- Riak.menu/'
+# end
 
-Keys.enter_list_buckets do
-  Launcher.insert '- buckets/'
-end
+# Keys.enter_list_buckets do
+#   Launcher.insert '- buckets/'
+# end
 
-Launcher.add("riak") do |path|
-  "
-  - @buckets/
-  "
-end
+# Launcher.add("riak") do |path|
+#   "
+#   - @buckets/
+#   "
+# end
 
-Launcher.add "buckets" do |path|
-  args = path.split('/')[1..-1]
-  Riak.buckets(*args)
-end
+# Launcher.add "buckets" do |path|
+#   args = path.split('/')[1..-1]
+#   Riak.buckets(*args)
+# end
 
-CodeTree.add_menu "Riak"   # Force it, since we're a module
+# CodeTree.add_menu "Riak"   # Force it, since we're a module

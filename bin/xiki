@@ -1,33 +1,39 @@
 #!/usr/bin/env ruby
 
+puts "The 'xiki' command is temporarily disabled in this version. Use the 'xsh' command instead!"
+
+##
+## > Summary
+## This is the "xiki" shell command.  It exposes xiki menus.
+##
+## > Example usage
+## $ xiki ip
+##   111.1.1.111
+##
+## This will be invoked by the "xiki" wrapper gem files create
+## when you install xiki as a gem.
+##
+## Or, if you installed xiki from
+## source (github), this file gets copied into /usr/local/bin/
+## or a similar path by the copy_xiki_command_to.rb the project
+## README file tells you to run.
+##
 #
-# > Summary
-# This file is aliased to /usr/local/bin/xiki, so it can be
-# called from the command line.  It exposes xiki menus.
+#require 'rubygems'
 #
-# > Example
-# $ xiki ip
-#   111.1.1.111
+## Generate with correct path (see below)
+#xiki_dir = File.expand_path "#{File.dirname(__FILE__)}/.."
 #
-# To create the alias, see:
-# @xiki/setup/install command/
+#$:.unshift "#{xiki_dir}/lib" #.sub(/\/$/, '')
 #
-
-require 'rubygems'
-
-# Generate with correct path (see below)
-xiki_dir = File.expand_path "#{File.dirname(__FILE__)}/.."
-
-$:.unshift "#{xiki_dir}/lib" #.sub(/\/$/, '')
-
-require "xiki/core/ol"
-require "xiki/core/core_ext"
-
-$:.unshift "#{xiki_dir}/etc/command"
-
-require "xiki_command.rb"
-
-result = XikiCommand.run
-puts result if result != ""
-
-exit 0
+#require "xiki/core/ol"
+#require "xiki/core/core_ext"
+#
+#$:.unshift "#{xiki_dir}/misc/command"
+#
+#require "xiki_command.rb"
+#
+#result = XikiCommand.run
+#puts result if result != ""
+#
+#exit 0

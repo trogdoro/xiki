@@ -1,0 +1,1 @@
+Xiki.tests(*args) {options}

@@ -1,25 +1,44 @@
 module Xiki
   class Block
 
-    #   def self.value
-    #     res = []
-    #     with(:save_excursion) do
-    #       found = re_search_backward "^ *$", nil, 1
-    #       if found
-    #         end_of_line
-    #         forward_char
-    #       end
-    #       res << point
-    #       re_search_forward "^ *$", nil, 1
-    #       beginning_of_line
-    #       res << point
-    #     end
-    #     res
-    #   end
-
     def self.do_as_wrap
 
-      if Keys.prefix_u?
+      line = Line.value
+
+      # If |... line, indent consecutive |... lines...
+
+      if quote = line[/^ *([|:#]|\/\/) /, 1]
+
+        orig = View.cursor
+
+        bounds = Tree.sibling_bounds :quotes=>quote
+
+        txt = View.delete bounds[0], bounds[-1]
+
+        indent = Line.indent txt
+        txt.gsub! /^ *#{Regexp.quote quote} ?/, ''
+
+        # For each paragraph, wrap separately...
+
+        txt = txt.split "\n\n"
+        txt.map! do |paragraph|
+          paragraph.gsub!(/ *\n */, ' ')   # Remove linebreaks
+          paragraph = TextUtil.word_wrap(paragraph, 64-indent.length).strip
+          paragraph
+        end
+        txt = txt.join "\n\n"
+
+        txt = Tree.quote txt, :char=>quote
+        txt.gsub! /^/, indent
+
+        View << txt+"\n"
+        insert_right = bounds[0] + txt.length
+        orig = insert_right-1 if orig > insert_right
+        View.cursor = orig
+
+        return
+
+      elsif Keys.prefix_u?
         # Grab paragraph and remove linebreaks
 
         orig = Location.new
@@ -37,7 +56,11 @@ module Xiki
         return
       end
 
-      $el.fill_paragraph nil
+      cursor = View.cursor
+      paragraph = View.paragraph :bounds=>1
+      $el.fill_region_as_paragraph Line.left, paragraph[1]
+      View.cursor = cursor
+
     end
 
     #

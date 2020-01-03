@@ -1,9 +1,14 @@
 module Xiki
   class HtmlHandler
     def self.handle options
-      source = options[:ex]['html']
+
+      source = options[:handlers]['html']
       return if ! source || options[:output] || options[:halt]
-      options[:output] = File.read "#{options[:last_source_dir]}#{source}"
+
+      Browser.url "http://localhost:8163/#{options[:name]}/"
+
+      View.flash "- showing in browser!"
+      options[:output] = ""
     end
   end
 end

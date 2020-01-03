@@ -1,3 +1,5 @@
+# Supplanted by =code/ ?
+
 module Xiki
   class Eval
     def self.menu *args

@@ -5,7 +5,7 @@ module Xiki
     def self.show txt
       if ! $el
         return if txt !~ /(^Xiki requires|exception:$)/
-        return puts "#{txt}"
+        return puts txt
       end
 
       $el.switch_to_buffer "Issues Loading Xiki"
@@ -34,7 +34,7 @@ module Xiki
 
     def self.require_classes files
       files.each do |l|
-        # Ol "l", l
+
         begin
           require l
         rescue LoadError => e

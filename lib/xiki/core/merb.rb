@@ -50,7 +50,7 @@ module Xiki
     def self.rake dir, port, task=nil
       unless task
         #puts self.path_from_dir(dir)
-        out = Console.run "rake -T", :dir => self.path_from_dir(dir), :sync => true
+        out = Shell.run "rake -T", :dir => self.path_from_dir(dir), :sync => true
         # Pull out tasks
         out.scan(/^rake ([\w:]+)/) do |m|
           puts "- #{m[0]}"
@@ -58,12 +58,12 @@ module Xiki
         return
       end
 
-      Console.run "rake #{task}", :dir => self.path_from_dir(dir), :buffer => "*rake #{dir}"
+      Shell.run "rake #{task}", :dir => self.path_from_dir(dir), :buffer => "*rake #{dir}"
 
     end
 
     def self.merb_gen command, dir, port=nil
-      Console.run "merb-gen #{command} --no-color", :dir => self.path_from_dir(dir), :buffer => "*merb-gen #{dir}"
+      Shell.run "merb-gen #{command} --no-color", :dir => self.path_from_dir(dir), :buffer => "*merb-gen #{dir}"
     end
 
     def self.links
@@ -93,16 +93,15 @@ module Xiki
       # Split into dir and name
       dir = self.path_from_dir(dir)
       path, name = dir.match(/(.+)\/(.+)/)[1..2]
-      Console.run "merb-gen app -f --no-color #{name}", :dir=>path, :buffer=>"*merb-gen app #{name}" #, :sync=>true
+      Shell.run "merb-gen app -f --no-color #{name}", :dir=>path, :buffer=>"*merb-gen app #{name}" #, :sync=>true
     end
 
     def self.start dir, port
-      Console.run "merb -a thin -p #{port}", :dir=>self.path_from_dir(dir), :buffer=>"*merb #{dir}"
-      #     Console.run "merb -p #{port}", :dir=>self.path_from_dir(dir), :buffer=>"*merb #{dir}"
+      Shell.run "merb -a thin -p #{port}", :dir=>self.path_from_dir(dir), :buffer=>"*merb #{dir}"
     end
 
     def self.shell dir, port
-      Console.run "", :dir=>self.path_from_dir(dir)#, :buffer=>"*merb #{dir}"
+      Shell.run "", :dir=>self.path_from_dir(dir)#, :buffer=>"*merb #{dir}"
 
       #     buffer = "*" + self.name_from_dir(dir) + " merb shell"
 
@@ -115,7 +114,7 @@ module Xiki
       #       return
       #     end
 
-      #     Console.run nil, :path => path, :buffer => buffer
+      #     Shell.run nil, :path => path, :buffer => buffer
     end
 
   #   def self.url path='/', dir=nil, port
@@ -133,7 +132,7 @@ module Xiki
         View.handle_bar
         View.to_buffer b
       else
-        Console.run "merb -i", :dir => dir, :buffer => b
+        Shell.run "merb -i", :dir => dir, :buffer => b
       end
       nil
     end
@@ -151,7 +150,7 @@ module Xiki
       View.to_buffer(b)
       $el.insert("repository.auto_migrate!")
       #$el.insert("DataMapper::Base.auto_migrate!")
-      Console.enter
+      Shell.enter
 
       # TODO: item for migrating test
       #   - always take env as param?
@@ -167,13 +166,13 @@ module Xiki
     def self.path_from_dir dir
       # If ., grab path of window after bar
       dir = View.dir_of_after_bar if dir == "."
-      Bookmarks.expand(dir, :absolute => true)
+      View.expand_path dir
     end
 
     def self.models model=nil
       # If no model specified, show all
       unless model
-        Dir.foreach(Bookmarks['$mo']) { |m|
+        Dir.foreach(Bookmarks['%mo']) { |m|
           next unless m =~ /(.+)\.rb$/
           puts "+ #{TextUtil.camel_case($1)}/"
         }
@@ -230,7 +229,7 @@ module Xiki
     end
 
     def self.version
-      Console.run('merb --version', :sync=>true)
+      Shell.run('merb --version', :sync=>true)
     end
 
     def self.launch_merb_log_line line
@@ -239,7 +238,7 @@ module Xiki
       action = line[/"action"=>"(.+?)"/, 1]
       controller = line[/"controller"=>"(.+?)"/, 1]
       # Open controller
-      View.open "$co/#{controller}.rb"
+      View.open "%co/#{controller}.rb"
       # Jump to method
       View.to_highest
       Search.forward "^\\s-+def #{action}[^a-z_]"
@@ -249,7 +248,7 @@ module Xiki
 
     def self.init
       # Jump to controller from line in merb log
-      Launcher.add(/^.* ~ Routed to: \{/) do |line|
+      Launcher.add(/^.* * Routed to: \{/) do |line|
         Merb.launch_merb_log_line line
       end
     end

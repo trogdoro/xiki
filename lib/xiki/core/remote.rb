@@ -1,6 +1,3 @@
-gem 'net-ssh'
-require 'net/ssh'
-require 'net/sftp'
 require 'timeout'
 require 'xiki/core/ol'
 
@@ -25,7 +22,7 @@ module Xiki
     def self.file_contents whole_path
       user, server, port, path = self.split_root(whole_path)
       connection = self.connection whole_path
-      connection.sftp.download!(path)
+      connection.scp.download!(path)
     end
 
     def self.dir root, *path_append
@@ -33,9 +30,6 @@ module Xiki
       connection = self.connection root
 
       user, server, port, path = self.split_root(root)
-
-      # Add slash to path if none there
-      path << "/" unless path =~ /\/$/
 
       path_passed = path_append.size > 0
 
@@ -46,6 +40,7 @@ module Xiki
 
       timeout(15) do
         if path =~ /\/$/   # If a dir
+          path << "/" unless path =~ /\/$/
           out = connection.exec!("ls -pa #{path}")
           out ||= ""
           out = out.split("\n").grep(/^[^#]+$/).join("\n")   # Weed out #...#
@@ -65,7 +60,7 @@ module Xiki
           # Download if not open already
           unless was_open
             begin
-              connection.sftp.download!(path, local_path)
+              connection.scp.download!(path, local_path)
             rescue Exception=>e
               # If doesn't exist, we'll just create
             end
@@ -76,7 +71,7 @@ module Xiki
 
           # TODO: save root path as var in buffer
           $el.make_local_variable :remote_rb_server_root
-          server_root = "/#{user}@#{server}#{port ? ":#{port}" : ""}/"
+          server_root = "/#{user}@#{server}#{port ? ":#{port}" : ""}/"   # "
           $el.elvar.remote_rb_server_root = server_root
 
           # TODO save timestamp in buffer var
@@ -86,28 +81,18 @@ module Xiki
       end
     end
 
-    def self.command root #, *path_append
-
-      the_command = root[-1][/\$ ?(.+)/, 1]
-
-      # Pull off command
-      while(root.last =~ /^\$/) do   # Remove all !foo lines from root
-        root.pop
-      end
-      root = root.join('')
+    # Handles only async?
+    def self.command root, command #, *path_append
 
       connection = self.connection root
 
       user, server, port, path = self.split_root(root)
 
-      path << "/" unless path =~ /\/$/   # Add slash to path if none there
-
       timeout(6) do
-        out = connection.exec!("cd \"#{path}\" && #{the_command}")
-        #       out = connection.exec!("cd \"#{path}\"; #{the_command}")
+        out = connection.exec!("cd \"#{path}\" && #{command}")
         out ||= ""
 
-        Tree.under out, :escape=>'| ', :no_slash=>1
+        out
       end
     end
 
@@ -116,6 +101,8 @@ module Xiki
     end
 
     def self.connection root
+      require 'net/ssh'
+      require 'net/scp'
       user, server, port, path = self.split_root root
       address = "#{user}@#{server}:#{port}"
       @@connections[address] ||= self.new_connection user, server, port.to_i
@@ -132,12 +119,10 @@ module Xiki
       end
     end
 
-
     def self.split_root root   # Splits name@server:port/path
       root = root.dup   # Append / at end if no / exists
-      root << "/" unless root =~ /\/$/
 
-      user, server_port, path = root.match(/^(.+?)@(.+?)(\/.*?)\/?$/)[1..3]
+      user, server_port, path = root.match(/^(.+?)@([^\/]+)(.*)/)[1..3]
 
       if(server_port =~ /(.+?):(.+)/)
         server, port = $1, $2
@@ -177,7 +162,8 @@ module Xiki
       remote_path = self.calculate_remote_path local_path
       begin   # Do save
         connection = self.connection $el.elvar.remote_rb_server_root
-        connection.sftp.upload!(local_path, remote_path)
+        # connection.sftp.upload!(local_path, remote_path)
+        connection.scp.upload!(local_path, remote_path)
         View.message "successfully saved remotely!"
       rescue Exception => e
         View.message "- error: #{e.message}"
@@ -197,12 +183,91 @@ module Xiki
       # TODO remove this
     end
 
+    def self.remote_files_in_dir dir
+      txt = self.dir(dir)
+      return txt if txt.is_a? String   # If it's a file
+
+      txt.map!{|i| "#{dir}#{i}"}
+      [txt.select{|i| i =~ /\/$/}.map{|i| i.sub(/\/$/, '')}, txt.select{|i| i !~ /\/$/}]
+    end
+
+    def self.remote_file_contents file
+      path, file = file.match(/(.+\/)(.+)/)[1..2]
+      self.dir path, file   # Delegate to Remote.dir
+    end
+
+    # Handles if $... or %...
+    def self.expand_command path, options
+
+      # Not $... or %..., so we don't handle it...
+
+      command = options[:command]
+
+      path = Path.split path
+
+      # Fall back to extracting from path for %... prompts for now
+      if path[-1] =~ /^[$%] /
+        command = path.pop
+      end
+
+      return if ! command
+
+      shell_prompt, command = /(.).(.+)/.match(command)[1..2]
+
+      # Get rid of any other nested
+      path.pop while(path.last =~ /^[$%] /)
+      path = path.join('/')
+
+      # $, so sync command...
+
+      return Remote.command path, command if shell_prompt == "$"
+
+      # %, so async command...
+
+      view_orig = View.name
+
+      Shell.to_shell_buffer path, :cd_and_wait=>true
+
+      View.insert command
+      Shell.enter
+
+      View.to_buffer view_orig if View.buffer_visible? view_orig
+
+      ""   # Handled it
+
+    end
+
+    def self.expand path, options
+
+      # $ foo, so run as a shell command...
+
+      txt = self.expand_command path, options
+
+      if txt
+        return Tree.quote(txt) if txt.any?
+        return ""   # Async returns blank string so don't quote
+      end
+
+      # It's a dir (or file?)...
+
+      dirs, files = self.remote_files_in_dir path
+
+      return if dirs.is_a? String
+
+      # If empty, say so...
+
+      return "<* dir is empty!" if files.empty? && dirs.empty?
+
+      indent = "#{Line.indent}  "
+
+      # Change path to proper indent
+      dirs.collect!{|i| i.sub(/.*\/(.+)/, "#{indent}+ \\1/")}
+      files.collect!{|i| i.sub(/.*\/(.+)/, "#{indent}+ \\1")}
+
+      both = dirs + files
+      both.join("\n") + "\n"
+
+    end
   end
 
-  Keys.do_as_remote do
-    Remote.save_file
-  end
-
-
-  # Remote.init
 end

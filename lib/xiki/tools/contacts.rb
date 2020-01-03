@@ -1,7 +1,7 @@
 module Xiki
   class Contacts
     def self.menu *args
-      Notes.drill '$c', *args
+      Notes.drill '%c', *args
     end
   end
 end

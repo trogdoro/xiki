@@ -1,0 +1,313 @@
+# The main bottom bar theme in xsh
+
+$el.el4r_lisp_eval %`
+  (progn
+
+    (setq xiki-bar-keymap-expand '(keymap (mode-line keymap (mouse-1 lambda nil (interactive) (el4r-ruby-eval "Xiki::Keys.docs :key=>'open'")))))
+    (setq xiki-bar-keymap-go '(keymap (mode-line keymap (mouse-1 lambda nil (interactive) (el4r-ruby-eval "Xiki::Keys.docs :key=>'go'")))))
+    (setq xiki-bar-keymap-options '(keymap (mode-line keymap (mouse-1 lambda nil (interactive) (el4r-ruby-eval "Xiki::Keys.docs :key=>'tasks'")))))
+    (setq xiki-bar-keymap-xiki '(keymap (mode-line keymap (mouse-1 lambda nil (interactive) (el4r-ruby-eval "Xiki::Keys.docs :key=>'xiki'")))))
+    (setq xiki-bar-keymap-search '(keymap (mode-line keymap (mouse-1 lambda nil (interactive) (el4r-ruby-eval "Xiki::Keys.docs :key=>'search'")))))
+
+
+    (setq xiki-bar-keymap-content '(keymap (mode-line keymap (mouse-1 lambda nil (interactive) (el4r-ruby-eval "Xiki::Keys.docs :key=>'content'")))))
+    (setq xiki-bar-keymap-keys '(keymap (mode-line keymap (mouse-1 lambda nil (interactive) (el4r-ruby-eval "Xiki::Keys.docs :key=>'keys'")))))
+    (setq xiki-bar-keymap-quit '(keymap (mode-line keymap (mouse-1 lambda nil (interactive) (el4r-ruby-eval "Xiki::Keys.docs :key=>'quit'")))))
+
+    (setq xiki-bar-keymap-expose '(keymap (mode-line keymap (mouse-1 lambda nil (interactive) (el4r-ruby-eval "Xiki::View.expose")))))
+
+    (setq xiki-bar-keymap-close '(keymap (mode-line keymap (mouse-1 lambda nil (interactive) (mouse-set-point last-command-event) (el4r-ruby-eval "Xiki::View.close")))))
+
+    (setq xiki-bar-keymap-toggle '(keymap (mode-line keymap (mouse-1 lambda nil (interactive) (mouse-set-point last-command-event) (el4r-ruby-eval "Xiki::View.toggle_bar_mode")))))
+
+    ; Make these be defined
+    (setq xiki-bar-special-text nil)
+    (setq xiki-bar-hidden nil)
+
+    ; Bottom bar > when key shortcuts
+
+    (setq xiki-paint-bar-shortcuts
+      (lambda (&optional normal underline)
+        (let* (
+          (underline (or underline 'mode-line-transparent-underline-activatable))
+          (normal (or normal 'mode-line-transparent-activatable))
+
+          (line-next (buffer-substring (point-at-bol 2) (point-at-eol 2)))
+          (match1 (string-match "^ *" line-next))
+          (line-next-indent (match-end 0))
+          (has-child (> line-next-indent line-indent))
+
+          ; (prompt (string-match "^[ =]*[$%&] ." line))
+          (x-word (if has-child
+            (concat (propertize "Cl" 'face normal 'keymap xiki-bar-keymap-expand) (propertize "o" 'face underline 'keymap xiki-bar-keymap-expand) (propertize "se" 'face normal 'keymap xiki-bar-keymap-expand) (propertize "  " 'face normal))
+            (concat (propertize " " 'face normal) (propertize "O" 'face underline 'keymap xiki-bar-keymap-expand) (propertize "pen" 'face normal 'keymap xiki-bar-keymap-expand) (propertize "  " 'face normal))
+            ))
+          )
+          (concat
+
+            ; Angle bracket to toggle bar mode > between key shortcuts and path
+            (propertize "  >  " 'face (list 'fade6 normal) 'keymap xiki-bar-keymap-toggle)
+
+            x-word
+
+            (propertize "G" 'face underline 'keymap xiki-bar-keymap-go)   ; Go
+            (propertize "o" 'face normal 'keymap xiki-bar-keymap-go)
+            (propertize "  " 'face normal)
+
+            (propertize "T" 'face underline 'keymap xiki-bar-keymap-options)   ; Options
+            (propertize "asks" 'face normal 'keymap xiki-bar-keymap-options)
+            (propertize "    " 'face normal)
+
+            (propertize "X" 'face underline 'keymap xiki-bar-keymap-xiki)   ; Tasks
+            (propertize "iki" 'face normal 'keymap xiki-bar-keymap-xiki)
+
+            (propertize "  " 'face normal)
+            (propertize "S" 'face underline 'keymap xiki-bar-keymap-search)   ; Shared
+            (propertize "earch" 'face normal 'keymap xiki-bar-keymap-search)
+
+            (propertize "    " 'face normal)
+
+            (propertize "C" 'face underline 'keymap xiki-bar-keymap-content)   ; Content
+            (propertize "ontent" 'face normal 'keymap xiki-bar-keymap-content)
+            (propertize "  " 'face normal)
+
+            (propertize "K" 'face underline 'keymap xiki-bar-keymap-keys)   ; Keys
+            (propertize "eys" 'face normal 'keymap xiki-bar-keymap-keys)
+            (propertize "  " 'face normal)
+
+            (propertize "Q" 'face underline 'keymap xiki-bar-keymap-quit)   ; Quit
+            (propertize "uit" 'face normal 'keymap xiki-bar-keymap-quit)
+
+            (propertize "   x  " 'face (list 'fade6 normal) 'keymap xiki-bar-keymap-close)
+          )
+        )
+      )
+    )
+
+
+    ; Bottom bar > Filtering > A-Z Filter, Expand, Go, etc
+
+    (setq xiki-paint-bar-shortcuts-filtering
+      (lambda (&optional normal underline)
+        (let* (
+          (underline (or underline 'mode-line-transparent-underline-activatable))
+          (normal (or normal 'mode-line-transparent-activatable))
+          (line (buffer-substring (point-at-bol) (point-at-eol)))
+
+          )
+          (concat
+            (propertize "   " 'face normal)
+
+            ;(if xiki-noob-mode
+              (concat
+                (propertize "A-Z" 'face (list 'filter-highlight 'underline normal))
+                (propertize " filter  " 'face (list 'filter-highlight normal))
+
+                (propertize "  " 'face normal)
+              )
+
+            (propertize "O" 'face underline)
+            (propertize "pen or return  " 'face normal)
+
+            (propertize "G" 'face underline)
+            (propertize "o  " 'face normal)
+
+            (propertize "Q" 'face underline)
+            (propertize "uit  " 'face normal)
+
+            (propertize "  (or arrow keys)" 'face normal)
+
+            (propertize "   x  " 'face (list 'fade6 normal) 'keymap xiki-bar-keymap-close)
+          )
+        )
+      )
+    )
+
+
+    ; Add hook to always update modeline when editing a line > since it could make "^X Expand" appear
+    (defun xiki-before-change (begin end)
+      (force-mode-line-update)
+    )
+    (add-hook 'before-change-functions 'xiki-before-change)
+
+
+    ; Update variable that identifies the actual window that's selected ()
+    (defun actual-selected-window-handler ()
+      (when (not (minibuffer-selected-window))
+        (setq actual-selected-window (selected-window))
+      )
+    )
+
+    ; Hook to store actual selected window
+    (add-hook 'post-command-hook 'actual-selected-window-handler)
+
+    (setq-default mode-line-format
+      (quote (
+        (:eval
+
+          (let (
+              (multiple-p (> (length (window-list)) 1))
+              (active-p (or (not (boundp 'actual-selected-window)) (eq (selected-window) actual-selected-window)))
+              (buffer-name (buffer-name))
+            )
+
+          ; Doing this above
+          (make-local-variable 'xiki-bar-default-kind)
+          (setq xiki-bar-default-kind "keys")   ; Assume default is keys unless a file
+
+            (concat
+
+              ; Not in "xsh" buffer and no special text etc., so display the file path...
+
+              ; (if (and (or (not active-p) (not xiki-bar-special-text)) (not (and (string= "xsh" buffer-name) (not (buffer-file-name)))) (not (string-match "/$" buffer-name)))
+
+              (cond
+
+                (
+                  (or
+                    (and (boundp 'xiki-bar-mode) (string= xiki-bar-mode "path"))
+                    (and
+                      (not xiki-bar-hidden)
+                      (or (not active-p) (not xiki-bar-special-text))
+                      (not (and (string= "xsh" buffer-name) (not (buffer-file-name))))
+                      (not (string-match "/$" buffer-name))
+                      (not (string= (concat (getenv "HOME") "/.xiki/interactions/") default-directory))
+                      (not (and (boundp 'xiki-bar-mode) (string= xiki-bar-mode "keys")))
+                    )
+                  )
+
+                  ; Display the file path
+
+                  (let
+                    (
+                      (dir (replace-regexp-in-string (getenv "HOME") "~" (replace-regexp-in-string "^//$" "/" default-directory))  )
+                      (star (if (and (or (buffer-file-name) (string-match "\\\\." buffer-name)) (buffer-modified-p)) (propertize "*" 'face 'mode-line-file) " "))
+                    )
+
+                    ; If not in ~/xiki/, don't show the path
+                    (if (not (string-match "^~/xiki/" dir))
+                      (setq dir "")
+                    )
+
+                    (setq xiki-bar-default-kind "path")
+
+                    ; "xiki.com/@x/x" view, so show it in bar
+                    (when (string-match "^\\\\(xiki\\.[a-z]+\/\\\\)\\\\(@.+\\\\)" buffer-name)
+                      (setq dir (match-string 1 buffer-name))
+                      (setq buffer-name (match-string 2 buffer-name))
+                      (setq star "")
+                    )
+
+                    (xiki-bar-add-padding (concat
+
+                      (propertize "  <   " 'face (list 'fade6) 'keymap xiki-bar-keymap-toggle)
+                      star
+
+                      dir
+
+                      (propertize buffer-name 'face 'mode-line-file 'local-map xiki-bar-keymap-expose)
+
+                      ":"
+                      (number-to-string (line-number-at-pos))
+
+                      (if (and xiki-noob-mode (not multiple-p))
+                        (concat
+                          "      "
+                          (propertize "C" 'face 'mode-line-file-underline 'keymap xiki-bar-keymap-content)
+                          (propertize "ontent" 'face 'mode-line-file 'keymap xiki-bar-keymap-content)
+                          "  "
+                          (propertize "K" 'face 'mode-line-file-underline 'keymap xiki-bar-keymap-keys)
+                          (propertize "eys" 'face 'mode-line-file 'keymap xiki-bar-keymap-keys)
+                          ""
+                        )
+                      )
+
+                      (propertize "    x  " 'face (list 'fade6) 'keymap xiki-bar-keymap-close)
+                      )
+                    'mode-line-sides-underline)
+                  )
+                )
+
+                ; Not the file path, so try other options...
+
+                (xiki-bar-hidden (progn
+
+                  ; Hidden menu bar, so show nothing...
+                  (let* (
+                    (face
+                      (if multiple-p
+                        (if active-p
+                          'mode-line-transparent-underline-activatable
+                          'mode-line-transparent-underline
+                        )
+                        (if active-p
+                          'mode-line-transparent-activatable
+                          'mode-line-transparent
+                        )
+                      )
+                    )
+                    )
+                    (propertize (xiki-bar-add-padding "") 'face face)
+                  )
+                ))
+
+                (xiki-bar-special-text
+
+                  ; Special text, just show it...
+
+                  ; Face should be underline only if split
+                  (let* (
+                    (face (if multiple-p 'mode-line-transparent-underline-activatable 'mode-line-transparent-activatable))
+                    )
+
+                    ; It's a function, so call it
+                    (if (eq (type-of xiki-bar-special-text) 'cons)
+                      (xiki-bar-add-padding (funcall xiki-paint-bar-shortcuts-filtering 'mode-line-transparent 'mode-line-transparent-underline) 'mode-line-transparent)
+                      ; It's a string, so just use it
+                      (propertize (xiki-bar-add-padding xiki-bar-special-text) 'face face)
+                    )
+
+                  )
+                )
+
+                (t (progn
+
+                  ; Else, show key shortcuts...
+
+                  (force-mode-line-update)
+                  (let* (
+                    (line (buffer-substring (point-at-bol) (point-at-eol)))
+                    (match1 (string-match "^ *" line))
+                    (line-indent (match-end 0))
+                    )
+
+
+                    ; Face should be underline only if split
+                    (if multiple-p
+
+                      (xiki-bar-add-padding
+                        (funcall xiki-paint-bar-shortcuts 'mode-line-file 'mode-line-file-underline)
+
+                        'mode-line-transparent-underline
+                      )
+
+                      (xiki-bar-add-padding
+                        (if active-p
+                          (funcall xiki-paint-bar-shortcuts 'mode-line-transparent-activatable)
+                          (funcall xiki-paint-bar-shortcuts 'mode-line-transparent)
+                        )
+                      'mode-line-transparent)
+
+                    )
+                  )
+
+                ))
+              )
+            )
+          )
+
+        )
+    )))
+  )
+`
+

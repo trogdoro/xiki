@@ -2,7 +2,7 @@ module Xiki
   class Invoker
     # Invokes actions on menu source classes.
     #
-    # The actioun is often the .menu method, but could alternateyl be handled
+    # The actioun is often the .menu method, but could alternately be handled
     # by the MENU constant or the foo.menu file.  Also, MENU or foo.menu may route
     # to a different method, in which case that will be invoked.
     #
@@ -10,9 +10,11 @@ module Xiki
     # - Make it delegate back to RubyHandler for running stuff
     #   - Make it have specific methods, for each type of eval below:
     #     - handler.check_class_defined?
-    def self.invoke clazz, args, options={}
+    def self.invoke clazz, args=[], options={}
 
       args ||= []
+      args = Path.split args if args.is_a? String
+
       menu_found = nil   # Possible values: nil, :constant, :file, :method (if :method, it overwrites the previous value, which is fine)
 
       action_method = nil
@@ -20,23 +22,26 @@ module Xiki
 
       code, clazz_name, dot_menu_file = options[:code], options[:clazz_name], options[:dot_menu_file]
 
-      # Load class...
-
-      # Assume clazz is a file for now
+      # Prepare by loading or reloading class...
 
       # Just always reload for now (no caching)
+      # Assume clazz is a file for now
 
       returned, out, exception = Code.eval code, clazz, 1, :global=>1
-      return CodeTree.draw_exception exception, code if exception
+      if exception
+        options[:no_search] = 1
+        return CodeTree.draw_exception exception, code
+      end
 
-      # TODO: wrap modules around depending on dir (based on :last_source_dir)?
+      # Prepend module name if any...
 
-      mod = self.extract_ruby_package code
+      mod = self.extract_ruby_module code if code
       clazz_name = "#{mod}::#{clazz_name}" if mod
 
       clazz_name = "Xiki" if clazz_name == "Xiki::Xiki"   # Xiki is a module, so it grabbed it twice.  If we want to support other modules, do something generic here, but we may not need to.
 
-      clazz = Code.simple_eval("defined?(#{clazz_name}) ? #{clazz_name} : nil", nil, nil, :global=>1)
+      # Before this, 'clazz' is a file path
+      clazz = Code.simple_eval("defined?(#{clazz_name}) ? #{clazz_name} : nil", nil, nil, :global=>1) if clazz_name
 
       # Call .menu_before if exists...
 
@@ -59,7 +64,7 @@ module Xiki
       if clazz.const_defined? :MENU
         menu_found = :constant
         menu_text = clazz::MENU
-      elsif File.file?(dot_menu_file)
+      elsif dot_menu_file && File.file?(dot_menu_file)
         menu_found = :file
         menu_text = File.read dot_menu_file
       end
@@ -71,7 +76,6 @@ module Xiki
       dotified = []
 
       if menu_text
-
         menu_text = menu_text.unindent if menu_text =~ /\A[ \n]/
         txt = Tree.children menu_text, args, options
 
@@ -80,7 +84,25 @@ module Xiki
         if ! txt || txt == "- */\n"
           dotified = Tree.dotify menu_text, args
         elsif menu_found == :constant || menu_found == :file   # If there was autput from MENU or foo.menu, eval !... lines
-          MenuHandler.eval_when_exclamations txt, options
+          MenuHandler.eval_exclamations txt, options
+        end
+      end
+
+
+      # If MENU_OBSCURED exists, use it to get children or route...
+
+      menu_obscured = clazz.const_defined? "MENU_OBSCURED"
+      if menu_obscured
+        menu_obscured = clazz.const_get "MENU_OBSCURED"
+        menu_obscured = menu_obscured.unindent if menu_obscured =~ /\A[ \n]/
+
+        txt_from_obscured = !txt && args.any? ?   # Only use children if it's not the root
+          Tree.children(menu_obscured, args, options) : nil
+
+        if txt_from_obscured
+          txt = txt_from_obscured
+        else
+          dotified = Tree.dotify menu_obscured, args, dotified
         end
       end
 
@@ -88,10 +110,12 @@ module Xiki
 
       menu_hidden = clazz.const_defined? "MENU_HIDDEN"
       if menu_hidden
-        returned = clazz.const_get "MENU_HIDDEN"
+        menu_hidden = clazz.const_get "MENU_HIDDEN"
+        menu_hidden = menu_hidden.unindent if menu_hidden =~ /\A[ \n]/
 
-        # Only do dotifying if not already done?
-        dotified = Tree.dotify returned.unindent, args, dotified
+        # Try getting children from MENU_HIDDEN, if it has any...
+
+        dotified = Tree.dotify menu_hidden, args, dotified
       end
 
       # If MENU|foo.menu not found or didn't handle path, call routed method or otherwise .menu with args...
@@ -161,7 +185,7 @@ module Xiki
 
       #     # TODO: Unified: comment out for now - just comment out since we're doing no caching
       #     # reload 'path_to_class'
-      #     Menu.load_if_changed File.expand_path("~/menu/#{snake}.rb")
+      #     Command.load_if_changed File.expand_path("~/xiki/roots/#{snake}.rb")
 
       # Call .menu_after if it exists...
 
@@ -183,7 +207,7 @@ module Xiki
         return nil if some_method_ran   # Only say "no output" if didn't call .menu, .menu_before|_after, or other action
 
         # For now, let's try not doing this
-        txt = "@flash/- no output!" if options[:client] =~ /^editor\b/
+        txt = "" if options[:client] =~ /^editor\b/
       end
 
       txt
@@ -202,7 +226,7 @@ module Xiki
         boolean_array[i]
       }
 
-      action = actions.last || "menu"
+      action = actions.any? ? actions[-1].dup : "menu"
       action.gsub! /[ -]/, '_'
       action.gsub! /[^\w.]/, ''
 
@@ -211,9 +235,15 @@ module Xiki
       [action, variables]
     end
 
-    def self.extract_ruby_package txt
+    def self.extract_ruby_module txt
 
-      txt = txt.sub /^ *class .+/m, ""   # Remove everything after 1st class... line
+      txt = txt.sub /\A( *class .+?\n).+/m, "\\1"   # Remove everything after 1st class... line, so it doesn't look at internal irrelevant module statements in a script.
+
+      # If it's class Foo::Bar, pull it out of there
+      # .commit/Fix federico bug, mistaking ...:: for a package
+      if mod = txt[/class ([\w:]+)::/, 1]
+        return mod
+      end
 
       txt = txt.scan(/^ *module (.+)/).map{|o| o[0]}.join("::")
 

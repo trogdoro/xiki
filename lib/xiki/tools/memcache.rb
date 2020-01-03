@@ -1,6 +1,6 @@
-gem 'memcached'
-require 'memcached'
-require 'net/telnet'
+# gem 'memcached'
+# require 'memcached'
+# require 'net/telnet'
 
 module Xiki
   class Memcache
@@ -20,7 +20,7 @@ module Xiki
         View.flash "- '*memcached' is already open!", :times=>4
         return self.server
       end
-      Console.run('memcached -vv -p 11211 -m 64', :buffer=>buffer)
+      Shell.run('memcached -vv -p 11211 -m 64', :buffer=>buffer)
     end
 
     def self.server
@@ -47,7 +47,7 @@ module Xiki
           | > Other platforms and more info
           @http://code.google.com/p/memcached/wiki/NewStart
           |
-          " if `which memcached`.empty?
+          " if `which memcached` !~ /\A\//
 
         return "
           > Not running

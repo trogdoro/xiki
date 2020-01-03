@@ -42,7 +42,7 @@ module Xiki
       #       - the tree will be climbed if keys/vals at any level are keys/vals in target_hash
       #     - example:
       #       - Xi.dig hash, target
-      #       - Xi.dig {:word=>{"select"=>{:extension=>{"notes"=>'$'}}}}, {:extension=>{"notes"}, :word=>"select"}
+      #       - Xi.dig {:word=>{"select"=>{:target_extension=>{"notes"=>'$'}}}}, {:target_extension=>{"notes"}, :word=>"select"}
       #         - returns => array with "$" in it
       #
       # - Step through tree while..
@@ -55,7 +55,7 @@ module Xiki
       #           - do recursively?
       #             - probably
       #           - or: store a stack of .keys output and current index for each level
-      #             | stack => [[:target_view, :global], [/foo/, :extension]]
+      #             | stack => [[:target_view, :global], [/foo/, :target_extension]]
       #             | stack_indexs = [0, 1]
       # - Treat :global differently
 
@@ -63,7 +63,7 @@ module Xiki
       #   | :target_view => {
       #   |   "*ol" => {
       #   |     /foo/         => #<Proc:0x007f9e9cd68318@/docs/todo/todo.notes:61>,
-      #   |     :extension => {
+      #   |     :target_extension => {
       #   |       "rb" => {
       #   |         // => #<Proc:0x007f9e9cb36608@/docs/todo/todo.notes:76>
       #   | }}}},
@@ -90,15 +90,19 @@ module Xiki
     def self.expand options
 
       expander = options[:expanders][options[:expanders_index]]
-      options[:no_slash] = 1   # For menus, no slash by default, though they can remove the option
+      options[:no_slash] = 1   # For patterns, no slash by default, though they can remove the option
 
-      if options[:path] && expander[:proc]
+      prock = expander[:proc]
+
+      if options[:path] && prock
         begin
           output = expander[:proc].call(options[:path], options)
           options[:output] = output if output
           return
         rescue Exception=>e
-          return options[:output] = CodeTree.draw_exception(e, expander[:proc].source)
+          source = prock.respond_to?("source") ?
+            prock.source : "do 'gem install sourcify' and then we can show you the source of the errors"
+          return options[:output] = CodeTree.draw_exception(e, source)
         end
 
       end

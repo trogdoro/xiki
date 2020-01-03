@@ -1,0 +1,112 @@
+=~/Dropbox/xiki/lib/xiki/core/
+  - launcher.rb
+    - based on bullets in expanded line:
+    : def self.process_target_bullets_before line
+      : # << foo, so replace parent before expanding...
+      : # <= foo, so replace all parents up to "=" before expanding...
+    : def self.process_target_bullets_after line, txt, insert_options # , path, options
+      : # <+ foo, so delete current line before inserting...
+      : # <: foo, so delete siblings before inserting...
+    - based on bullets in output:
+    : def self.process_output_bullets txt, options={}, insert_options={}   # Based on bullets or =replace
+      : # <* or =flash/, so flash message...
+      : # <? or =prompt/...
+      : # <: and <+ replace siblings or line...
+      : # <<< foo/, so replace item with output and launch...
+old/
+  overview/
+    : Several <... bullet syntaxes exist that make items have
+    : special handling when you expand them.  The most common one
+    : is "<< item/", which moves "item" up in the tree one level
+    : so that it replaces its parent, then expands it.
+    :
+    : Some bullets are meant to be visible in the tree before
+    : they're expanded.  Others are meant to be returned as part
+    : of the output and immediately affect how/where it is
+    : displayed, and thus are not shown.
+  examples/
+    simple/
+      : <* flash me
+        | Temporarily insert and flash the message.
+        example/
+          =/tmp/
+            - foo.menu
+              : <* flash me
+            foo//
+      : <? prompt this
+        | Move to end of item, then temporarily insert and flash the
+        | message.
+        example/
+          =/tmp/
+            - foo.menu
+              : <? prompt this
+            foo//
+    move before expand/
+      | These bullets make the item move (like to replace its parent).  After
+      | the move, the item will be expanded.  Drill in to see descriptions
+      | and examples:
+      : <
+        |+probably don't have this in the menu, it's related to routes
+        | when in route, it defines it as if at the root (todo)
+      : <<
+        | Replace parent, then expand
+        example/
+          =/tmp/
+            - foo.menu
+              : a/
+              :   b/
+              :     << c/
+            - foo//
+              a/
+                c/
+      : <<<
+        | consider: already means to replace parent and launch, when on same line
+        |   probably: still make <<< behave differently when it's the only line in the output?
+        |     - might be confusing
+        | Replace grandparent, then expand
+      : <@
+        | Replace parent, but don't expand
+      : <:
+      : <=
+        |+Make this assign instead?
+        :  - what's the new one for replacing the root menu?
+        :    - <: ?
+        |-Replace root menu, then expand
+        - example/
+          : old?
+          =network stuff/
+            <= ip/
+    - move after expand/
+      | These expand the item first, then move the output according to the
+      | bullet.  Drill in to see descriptions and examples.
+      : <+
+        | __Expand the item, then output replaces it
+      : <~
+        | __Expand the item, then output replaces it and its siblings
+    - when bullets in output/
+      : <$
+        | Moves output up to $... line and replaces it
+  future ones to do, maybe/
+    : <<-
+      : Replace value?
+    - as though at root, in place/
+      : Symbol to run as though it were at the root?!:
+      =face/
+        + hair/
+        + whatevs/
+          <* hair/
+          <: hair/
+          << hi/
+    - old/
+      - <-/
+        : Replace value?
+      - words
+        | Mention the words that you can return also?
+        =flash/flash me
+        =prompt/flash me at end
+  see/
+    | Also, output of menus can have bullets in a special syntax,
+    | which makes the output replace something immediately, rather
+    | than just being inserted under.  See:
+    <= replace/
+    <= beg/

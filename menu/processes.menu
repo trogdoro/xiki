@@ -1,8 +1,0 @@
-- all/
-  @$ ps -eo pcpu,pid,user,args | sort -k 1 -r
-- cpu hogs/
-  @$ ps -eo pcpu,pid,user,args | sort -k 1 -r | head
-> See
-- Mac Activity Monitor/
-  @app/Utilities/Activity Monitor
-<< kill/

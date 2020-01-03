@@ -1,8 +1,0 @@
-module Xiki
-  Styles.define :font_lock_comment_face, :fg=>'555'   # gray
-  Styles.define :font_lock_function_name_face, :fg=>'f95'   # orange
-  Styles.define :font_lock_type_face, :fg=>'6c7'   # green
-  Styles.define :font_lock_variable_name_face, :fg=>'ff6'   # yellow
-  Styles.define :font_lock_string_face, :fg=>'e76'   # red
-  Styles.define :font_lock_keyword_face, :fg=>'999'
-end

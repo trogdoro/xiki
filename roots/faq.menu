@@ -1,0 +1,27 @@
+: What key shortcuts are like Ctrl+A, Ctrl+E and Ctrl+K in bash?
+  | ^A ^A : Beginning of line
+  | ^E ^E : End of line
+  | ^K ^K : Kill line
+  |
+  : If the alt or option key is configured in your terminal...
+    | You can do Alt+A, Alt+E, and Alt+K ("option" instead of "alt"
+    | on the mac).
+    |
+    | You may need to configure your keyboard preferences in your
+    | console app to make alt (or option) behave in the standard way.
+    | The preference will be called something like "make alt behave
+    | like escape+".
+    |
+  |
+: Why aren't there more questions in this faq?
+  | It's a work in progress. More will be added later!
+  |
+: How can I contribute to this faq?
+  | Edit <xiki source dir>/roots/faq.menu, commit, and send a pull
+  | request.
+  |
+: What are the next steps for this readme file, to make it more accessible?
+  | 1. Mirror to a markdown file
+  | 2. Link to it from the README, so it'll be more visible
+  |   - https://help.github.com/articles/relative-links-in-readmes
+  |

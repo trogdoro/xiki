@@ -1,0 +1,84 @@
+> Overview
+This file, notes.xiki, is a place to put miscellaneous stuff.
+
+You can put pretty much anything here, for example miscellaneous
+notes, todo items, and commands. You can edit anything. Try adding a
+couple lines after this line (or where ever else you want).
+
+
+> Formatting
+It's just a simple plaintext file, but notice certain strings will get colorized, like bullets, url's, file paths, and shell prompts...
+
+- Dashes are bullets
+  - Sub-bullets are just indented 2 spaces
+http://xiki.org
+/tmp/foo.txt
+$ echo hello
+
+Also headings, like "> Formatting" above, are are just lines that start with "> ".
+
+
+> Tutorial
+You can run commands in __
+
+<- tutorial
+
+- make this!
+<- tutorial/editing notes
+
+
+> Try it for yourself
+Try making a new note at the top of this file.
+
+- 1) Use the arrow keys to move to the beginning of the file
+- 2) Type something like "> My Heading"
+- 3) Type some stuff underneath it
+
+To save this file, type Ctrl+W Ctrl+S (for "Window Save").
+
+
+> Coming back to notes.xiki
+Since this notes.xiki file is so commonly used in xsh, there are several ways to navigate to it. To open notes.xiki from within xsh, type...
+
+- Ctrl+C Ctrl+T (for "Content Tasks").
+
+In bash, you can type this to jump right to notes.xiki...
+
+$ xsh ^n
+
+Or, this is is an equivalent command that doesn't make use of the "t" shortcut...
+
+$ xsh ~/xiki/notes.xiki
+
+This command will present an outline of all the headings in notes.xiki. You can type to filter down to a heading and type Ctrl+X to view its contents. Press Ctrl+X a second time to navigate to it.
+
+$ xsh -t tasks
+
+More advanced xsh users may want to use a more IDE-like view, with notes.xiki at the top-left, and links.xiki at the bottom-left...
+
+- Ctrl+W Ctrl+I (for "Window IDE").
+
+
+> Running commands
+To run a shell commands in xiki, just start any line with "$ "...
+
+$ pwd
+
+Then move your cursor onto the line and type Ctrl+X for "Execute".
+
+Try running the above command if you want.
+
+To run the command again, first collapse it by moving your cursor back onto the $... line and typing Ctrl+X. Then you can run again by typing Ctrl+X on it.
+
+If a command is going to take a long time to run, or needs to take over the whole terminal, type Ctrl+G (for "Grab") instead of Ctrl+X to run it. This will quit xsh and run the command in bash.
+
+
+> What to do with notes.xiki from here
+It's common (and encouraged) to add a lot of content to notes.xiki. So, feel free to leave all of these notes here, and add your own content to the top of the file. That way, they'll be here in case you want to come back and look at them later.
+
+After you build up a lot of content separated by "> Heading lines", there's a convenient way to jump back and forth between headings...
+
+Ctrl+L Ctrl+O (for "List Outline")
+
+After typing the above, you can type to filter down the list, and type Ctrl+X to jump to a heading. Try it now, if you want.
+

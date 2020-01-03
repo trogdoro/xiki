@@ -45,25 +45,21 @@ module Xiki
       end
     end
 
+    class << self
+      attr_accessor :stacktrace_length
+    end
+    self.stacktrace_length = 8
+
     def self.draw_exception exception, code=nil
-      message = exception.message
 
-      # TODO: pay attention to this option?
-      #     Ol << "options[:suggest_args]: #{options[:suggest_args].inspect}"
+      if exception.is_a?(String)
+        return View.open(:txt=>exception)
+      end
 
-      # TODO
-      # For now, don't do it!
-      # - How to not show "arg1" etc
-      #   - when ArgumentError is code deeper than the immediate one
-      #     if exception.is_a? ArgumentError
-      #       count, required = message.match(/\((\d+) for (\d+)\)/)[1..2]
-      #       if count < required   # We can't add sample args if too many were supplied
-      #         return (count.to_i+1..required.to_i).to_a.map{|o| "arg#{o}"}.join('/')+"/"
-      #       end
-      #     end
-
+      message ||= exception.message
 
       if exception.is_a? RuntimeError
+
         # If it was in the format of tree output, just show it
 
         message = message.unindent if message =~ /^\s/
@@ -72,36 +68,47 @@ module Xiki
 
         message.sub!(/.+?: /, '') if message =~ /in `/
 
-        return message if message =~ /\A[>|+-] /   # /^- /
+        return "" if message == ""   # If the raised an empty string, do nothing (they probably handled it)
+        return message if message =~ /\A[>|:+-] /   # If :... etc, just show it as an error
+        return View.open(:txt=>$1) if(message =~ /\A\.open (.+)/m)
         return View.prompt($1) if(message =~ /\A\.prompt (.+)/)
         return View.flash($1) if(message =~ /\A\.flash (.+)/)
       end
 
-      backtrace = exception.backtrace[0..8].join("\n").gsub(/^/, '  @') + "\n"
+      backtrace = exception.backtrace[0..@stacktrace_length].join("\n").gsub(/^/, '    ') + "\n"
+
+      kind = exception.class
 
       # If path in message, move it to the stack trace
+
+      if message =~ /^(\/.+)/
+        path = $1
+        backtrace = "    #{path}\n#{backtrace}"
+      end
+
       if message =~ /(.+\d:in `.+'): (.+)/m
         path, message = $1, $2
-        backtrace = "  #{path}\n#{backtrace}"
+        backtrace = "    #{path}\n#{backtrace}"
       end
+
+      message += "\n  #{kind}"
 
       message = self.format_exception_message_for_tree message
 
       txt = ""
 
+      txt << "- error:#{message}\n- backtrace:\n  =\n#{backtrace}\n"
       if code.is_a? Proc
         txt << "- tried to run:#{code.to_s}\n"
       elsif code.is_a? String
         code = code.strip
         if code =~ /\n/   # If multi-line, quote it
-          code = "\n#{Tree.quote(code).gsub /^/, '  '}"
+          code = "\n#{Tree.quote(code).strip.gsub /^/, '  '}"
         else
           code = " #{code}"
         end
-
         txt << "- tried to run:#{code}\n"
       end
-      txt << "- error:#{message}\n- backtrace:\n#{backtrace}"
       txt
     end
 
@@ -160,7 +167,10 @@ module Xiki
         stdout = TextUtil.unindent(stdout)
         stdout.sub!(/\n\n\z/, "\n")   # Remove any double linebreaks at end
 
-        stdout = Tree.quote stdout if options[:quote] && ! e
+        if options[:quote] && ! e
+          options = options[:quote].is_a?(String) ? {:char=>options[:quote]} : {}
+          stdout = Tree.quote stdout, options
+        end
 
         stdout.gsub!(/^/, "#{indent}  ")
 
@@ -174,14 +184,14 @@ module Xiki
         if options[:tree_search]   # If they want to do a tree search
           $el.goto_char left
           FileTree.select_next_file
-          Tree.search(:left=>left, :right=>right, :recursive=>true)
+          Tree.filter(:left=>left, :right=>right, :recursive=>true)
           return
         end
         if options[:quote_search]   # If they want to do a tree search
           $el.goto_char left
           Search.forward "|"
           Line.to_beginning
-          Tree.search(:left=>left, :right=>right, :recursive_quotes=>true)
+          Tree.filter(:left=>left, :right=>right, :recursive_quotes=>true)
           return
         end
 
@@ -197,7 +207,7 @@ module Xiki
 
           # Determine how to search based on output!
 
-          Tree.search_appropriately left, right, stdout
+          Tree.filter_appropriately left, right, stdout
 
         elsif options[:no_search]
           Line.to_beginning :down=>1
@@ -334,7 +344,7 @@ module Xiki
       # If last parameter was |..., make it be all the lines
       if data.first =~ /^ *\|/
         data.first.replace( self.escape(
-          Tree.siblings(:all=>true).map{|i| "#{i[/^ *\| ?(.*)/, 1]}\n"}.join('')
+          Tree.siblings.map{|i| "#{i[/^ *\| ?(.*)/, 1]}\n"}.join('')
           ))
       end
 
@@ -386,34 +396,40 @@ module Xiki
     def self.kill_siblings options={}
       prefix = Keys.prefix :clear=>true
 
-      left1, right1, left2, right2 = Tree.sibling_bounds
+      left, right = View.range
+
+      bounds = Tree.sibling_bounds options
 
       # If number, adjust
 
       if prefix.is_a?(Fixnum)
-        left2 = Line.left prefix + 1
+        bounds[2] = Line.left prefix + 1
       elsif prefix == :u
-        right2 = left2
+        bounds[3] = bounds[2]   # Collapse lower range to nothing
       elsif prefix == :uu || prefix == :-
-        right1 = left1
+        bounds[0] = bounds[1]   # Collapse upper range to nothing
+      elsif View.selection?
+        left, right = View.range
+        # Make whole in middle be where the selection was, instead of just the line
+        bounds[1], bounds[2] = left, right
       end
 
-      View.delete left2, right2
-      View.delete left1, right1
+      View.delete bounds[2], bounds[3]
+      View.delete bounds[0], bounds[1]
     end
 
     def self.do_kill_indented options={}
       if Keys.up? || options[:cross_blank_lines]
-        left, right = Tree.sibling_bounds :cross_blank_lines=>1
+        bounds = Tree.sibling_bounds :cross_blank_lines=>1
       else
-        left, ignore1, ignore2, right = Tree.sibling_bounds
+        bounds = Tree.sibling_bounds
       end
 
-      View.cursor = left
-      $el.set_mark right
-      Effects.blink :left=>left, :right=>right # unless options[:dont_cross_blank_lines]
+      View.cursor = bounds[0]
+      $el.set_mark bounds[3]
+      Effects.blink :left=>bounds[0], :right=>bounds[3] # unless options[:dont_cross_blank_lines]
 
-      View.delete left, right
+      View.delete bounds[0], bounds[3]
 
     end
 
@@ -427,24 +443,22 @@ module Xiki
         orig = View.cursor
         left = Line.left
         Line.next
-        ignore, right = Tree.sibling_bounds :cross_blank_lines=>1
+        bounds = Tree.sibling_bounds :cross_blank_lines=>1
+        bounds[0] = left
         View.cursor = orig
       elsif prefix == :u
-        left, ignore1, ignore2, right = Tree.sibling_bounds
+        bounds = Tree.sibling_bounds
       else
-        left, right = Tree.sibling_bounds :cross_blank_lines=>1
+        bounds = Tree.sibling_bounds :cross_blank_lines=>1
       end
-      View.cursor = left
-      $el.set_mark right
-      Effects.blink :left=>left, :right=>right
-
-      Clipboard.copy "0"
+      View.cursor = bounds[0]
+      $el.set_mark bounds[3]
+      Effects.blink :left=>bounds[0], :right=>bounds[3]
 
     end
 
     def self.kill_rest
       prefix = Keys.prefix(:clear=>true)
-      column = View.column
 
       right1 = Line.left
       left2 = Line.left 2

@@ -1,7 +1,7 @@
 module Xiki
   class RandomMenu
     def self.menu *args
-      dirs = ["~/menu/", "$xiki/menu/"]
+      dirs = ["~/.xiki/roots/"]
       menus = []
       dirs.each do |dir|
         menus += Dir.new(Bookmarks[dir]).entries.grep(/\A[^.]/)

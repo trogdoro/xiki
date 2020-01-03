@@ -42,11 +42,11 @@ module Xiki
       if Keys.delete?
         Firefox.exec "localStorage.removeItem(\"#{key}\")"
         Tree.to_parent if val
-        Tree.kill_under
+        Tree.collapse
         View.flash "- deleted!"
         # TODO: let this behave properly when returning with .flash:
         # Currently it ends up one line off?  Because we're treating it like it returned nil - make it treat ^.flash as nill?
-        # return ".flash - deleted!"
+        # return "<* deleted!"
         Line.delete
         return
       end

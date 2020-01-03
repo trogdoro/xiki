@@ -54,7 +54,6 @@ module Xiki
 
     def self.menu_after txt, *args
       return nil if txt
-      ENV['no_slash'] = "1"
       Tree.quote self.run(nil, ENV['txt'])
     end
 
@@ -63,13 +62,13 @@ module Xiki
     end
 
     def self.start
-      Console.run "mysqld", :buffer=>"mysql", :dir=>"/tmp/"
+      Shell.run "mysqld", :buffer=>"mysql", :dir=>"/tmp/"
       View.to_buffer "mysql"
       nil
     end
 
     def self.start_in_background
-      Console.run "mysql.server start"
+      Shell.run "mysql.server start"
     end
 
     def self.tables *args
@@ -130,7 +129,7 @@ module Xiki
 
       self.save db, table, row
 
-      ".flash - saved record!"
+      "<* saved record!"
     end
 
     def self.dummy_row db=nil, table=nil
@@ -161,7 +160,7 @@ module Xiki
       end
 
       @default_db = db
-      ".flash - using db #{db}!"
+      "<* using db #{db}!"
     end
 
     def self.create what, name=nil, columns=nil
@@ -171,8 +170,8 @@ module Xiki
       end
 
       if what == "db"
-        txt = Console.run "mysqladmin -u root create #{name}", :sync=>true
-        return ".flash - created db!"
+        txt = Shell.run "mysqladmin -u root create #{name}", :sync=>true
+        return "<* created db!"
       end
 
       if columns.nil?
@@ -193,7 +192,7 @@ module Xiki
 
       out = self.run(@default_db, txt)
 
-      ".flash - created table!"
+      "<* created table!"
     end
 
     def self.drop what, name=nil
@@ -202,20 +201,20 @@ module Xiki
       end
 
       if what == "db"
-        txt = Console.run "mysqladmin -u root drop #{name}" #, :sync=>true
+        txt = Shell.run "mysqladmin -u root drop #{name}" #, :sync=>true
         return
       end
 
       out = self.run(@default_db, "drop table #{name}")
 
-      ".flash - dropped table!"
+      "<* dropped table!"
     end
 
     def self.run db, sql
       db ||= @default_db
 
       File.open("/tmp/tmp.sql", "w") { |f| f << sql }
-      out = Console.run "mysql -u root #{db} < /tmp/tmp.sql", :sync=>true
+      out = Shell.run "mysql -u root #{db} < /tmp/tmp.sql", :sync=>true
 
       raise "> Mysql doesn't appear to be running.  Start it?\n- @mysql/setup/start/" if out =~ /^ERROR.+Can't connect/
       raise "| Select a db first:\n- @mysql/setup/db/use/" if out =~ /^ERROR.+: No database selected/
@@ -245,10 +244,9 @@ module Xiki
 
       # Row passed, so save it
 
-      ENV['no_slash'] = "1"
       self.save @default_db, table, row
 
-      ".flash - saved!"
+      "<* - saved!"
     end
   end
 end

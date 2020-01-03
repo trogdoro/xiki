@@ -41,6 +41,7 @@ module Xiki
       eol = "(+ 1 #{eol})" if options[:include_linebreak]
 
       result = $el.el4r_lisp_eval("(buffer-substring (point-at-bol #{n}) #{eol})")
+      #       result = $el.buffer_substring $el.point_at_bol #{n}) #{eol})")
 
       if options[:delete]
         $el.el4r_lisp_eval("(delete-region (point-at-bol #{n}) #{eol})")
@@ -66,12 +67,16 @@ module Xiki
     end
 
     def self.indent line=nil
+
+      # If line is a number, get value
+      line = self.value(line) if line.is_a?(Fixnum)
+
       line ||= self.value
       line[/^\s*/].gsub("\t", '        ')
     end
 
-    def self.right
-      $el.point_at_eol
+    def self.right down=1
+      $el.point_at_eol down
     end
 
     def self.at_right?
@@ -84,6 +89,10 @@ module Xiki
 
     def self.left down=1
       $el.point_at_bol down
+    end
+
+    def self.rest
+      View.txt(View.cursor, self.right)
     end
 
     def self.at_left?
@@ -99,16 +108,37 @@ module Xiki
       self.without_indent
     end
 
-    def self.bounds
-      [$el.point_at_bol, $el.point_at_eol]
+    def self.bounds options={}
+      left, right = $el.point_at_bol, $el.point_at_eol
+      right += 1 if options[:linebreak]
+      [left, right]
     end
 
     def self.delete leave_linebreak=nil
       value = self.value
-      bol, eol = $el.point_at_bol, $el.point_at_eol
-      eol += 1 unless leave_linebreak
-      $el.delete_region(bol, eol)
+      left, right = Line.left, Line.right
+      right += 1 unless leave_linebreak
+      $el.delete_region(left, right)
       value
+    end
+
+    def self.delete_line_key
+      prefix = Keys.prefix
+      lines = prefix.is_a?(Fixnum) ? prefix : 1
+      left, right = Line.left, Line.left(lines+1)
+
+      $el.delete_region(left, right)
+    end
+
+    def self.kill_line
+      prefix = Keys.prefix
+      lines = prefix.is_a?(Fixnum) ? prefix : 1
+      left, right = Line.left, Line.left(lines+1)
+
+      # If no prefix, leave linebreak
+      right -= 1 if ! prefix
+
+      $el.delete_region(left, right)
     end
 
     # Gets symbol at point
@@ -177,18 +207,26 @@ module Xiki
     end
 
     def self.to_beginning options={}
-      down = options[:down]
+
       prefix = options[:prefix] || Keys.prefix
       down ||= prefix
 
       # If prefix go down n lines first
-      Line.next down if down.is_a? Fixnum
+      Line.next options[:down] if options[:down]
 
       Line.to_left
 
+      # If numeric prefix, move to nth word...
+
+      if prefix.is_a? Fixnum
+        Line.next prefix
+      end
+
+      # Otherwise, just move past indent...
+
       prefix == :u || options[:quote]?
         $el.skip_chars_forward("[^ \t]") :
-        $el.skip_chars_forward("[^ \t|]")   # If quoted, skip quote unless :u
+        $el.skip_chars_forward("[^ \t|:!]")   # If quoted, skip quote unless :u
 
       nil
     end
@@ -203,11 +241,10 @@ module Xiki
 
     def self.without_label options={}
       line = options.has_key?(:line) ? options[:line] : self.value
-
       return nil if line.nil?
 
       # Delete comment (parenthesis)
-      line = line.sub /^(\s*)(?:[+-]|<+) [^\n\(]+\) (.*)/, "\\1\\2"
+      line = line.sub /^(\s*)(?:[+-]|<+) [^\n\(]*\) (.*)/, "\\1\\2"
 
       # If paren at end of line, delete label
       line.sub! /^(\s*)(?:[+-]|<+) [^\n\(]+?\)$/, "\\1"
@@ -239,62 +276,127 @@ module Xiki
     # Line.number 20   # => 3
     # Line.number View.bottom   # => 439
     def self.number pos=nil
-      $el.xiki_line_number pos || $el.point
+      # Was this better in some way?  Maybe re hidden lines?
+      $el.line_number_at_pos pos || $el.point
     end
 
     def self.to_blank
       $el.re_search_forward "^[ \t]*$"
     end
 
-    def self.duplicate_line
+    def self.move direction
 
-      prefix = Keys.prefix
+      selection = View.selection
 
-      # If in file tree, actually duplicate file
-      if prefix == :u && FileTree.handles?
-        Location.as_spot
-        FileTree.copy_to :prefix=>1
+      # >... line, so move as block...
+
+      if Line =~ /^>( |$)/ && ! selection
+        if direction == :previous
+          Keys.remember_key_for_repeat(proc { Notes.move_block(:up=>1) }, :movement=>1)
+          Notes.move_block(:up=>1)
+        else
+          Keys.remember_key_for_repeat(proc { Notes.move_block }, :movement=>1)
+          Notes.move_block
+        end
         return
       end
 
-      column = View.column
 
-      line = "#{Line.value}\n"
-      Line.to_left
-      Code.comment(:line) if prefix == :u
-      times = if prefix.nil?
-          1
-        elsif prefix == :u
-          1   # Put commented line after
-          # 0   # Put commented line before
-        elsif prefix == 0
-          0
-        elsif prefix > 0
-          prefix + 1
-        elsif prefix < 0
-          prefix
-        end
-
-      Line.next times
-      View.insert line
-      Line.previous
-
-      View.column = column
-    end
-
-    def self.move direction
       column = View.column
       many = Keys.prefix_times
 
       many = (0 - many) if direction == :previous
 
-      line = Line.value 1, :include_linebreak=>true, :delete=>true   # Get line
-      Line.to_next many
-      View.insert line
+      range = View.range
 
-      Line.previous
-      View.column = column
+      txt = selection ?
+        View.delete(*range) :
+        Line.value(1, :include_linebreak=>1, :delete=>1)   # No selection, so cut line
+
+      Line.to_next many
+
+      View.insert txt, :dont_move=>1
+
+      if selection
+        # Selection existed, so restore it
+        cursor = View.cursor
+        View.selection = cursor, cursor+selection.length
+      else
+        # No selection existed, so keep cursor on line
+        View.column = column
+      end
+
     end
+
+
+
+    def self.move_word direction
+
+      # column = View.column
+      many = Keys.prefix_times
+
+      many = (0 - many) if direction == :backward
+
+      selection = View.selection
+
+      # Try > if selection, move one char at a time
+      if selection
+        txt = View.delete(*View.range)
+        $el.forward_char many
+        View.insert txt
+        cursor = View.cursor
+        View.selection = [cursor, cursor-txt.length]
+        return
+      end
+
+
+      # No selection, so move word
+      if selection
+        # Cut it
+        txt = View.delete(*View.range)
+
+        # Strip selection
+        txt.strip!
+      else
+      # Selection, so move selected
+
+        # Cut the word
+        txt = View.delete(*$el.bounds_of_thing_at_point(:word))
+
+      end
+
+      # Delete char we're on if it's a space
+
+      cursor = View.cursor
+
+
+      # Delete space if before or after the cursor
+      if View.txt(cursor-1, cursor) =~ /^[ ]$/ # =~ /^[ _-]$/
+        deleted = View.delete(cursor-1, cursor)
+      elsif View.txt(cursor, cursor+1) =~ /^[ ]$/ # =~ /^[ _-]$/
+        deleted = View.delete(cursor, cursor+1)
+      end
+
+
+      $el.forward_word many
+
+      if direction == :backward
+        left = View.cursor
+        View.insert txt
+        View.insert(" ", :dont_move=>1)
+      else
+        txt View.insert, :dont_move=>1
+        View.insert " "
+        left = View.cursor
+      end
+      right = left + txt.length
+
+      if selection
+        View.selection = [left, right]
+      end
+
+    end
+
 
     def self.sub! from, to
       orig = Location.new
@@ -329,15 +431,15 @@ module Xiki
       View.insert txt
     end
 
-    #
     # Add slash to end of line, and optionally a string as well
     #
     # Line.add_slash
     # Line.add_slash "hi"
-    #
     def self.add_slash options={}
 
       line = Line.value
+
+      orig = View.cursor
 
       line =~ /\/$/ || line.blank? ?
         Move.to_end :
@@ -345,9 +447,8 @@ module Xiki
 
       txt = options.is_a?(String) ? options : options[:txt]
 
-      orig = View.cursor
       Line << txt if txt
-      View.cursor = orig if options[:left]
+      View.cursor = orig if options[:no_move]
       nil
     end
 
@@ -360,6 +461,12 @@ module Xiki
       $el.elvar.sort_fold_case = true
       $el.sort_lines(nil, $el.region_beginning, $el.region_end)
       $el.elvar.sort_fold_case = old
+
+      return if $el.region_beginning != View.cursor   # Can't delete blanks if not at beginning
+
+      # Delete any blank lines (they'd be sorted to the top)
+      Deletes.forward while View.char == "\n"
+
     end
 
     def self.do_lines_toggle
@@ -388,16 +495,23 @@ module Xiki
 
       return if ! $el   # Do nothing if not running under el4r
 
-      # Define lisp function to get list of displayed lines
-      # In case something has been done to change them
-      $el.el4r_lisp_eval %q`
-        (defun xiki-line-number (pos)
-          (save-excursion
-            (goto-char pos)
-            (forward-line 0)
-            (1+ (count-lines 1 (point))))
-        )
-      `
+      # This seems to do the same this as line-number-at-pos (pos).
+      # I think maybe it deals with hidden overlays better, but
+      # we don't really use those any more.
+      #
+      # Is it any faster when near bottom of large files?
+      #
+      # Old comment:
+      #   # # Define lisp function to get list of displayed lines
+      #   # # In case something has been done to change them
+      # $el.el4r_lisp_eval %q`
+      #   (defun xiki-line-number (pos)
+      #     (save-excursion
+      #       (goto-char pos)
+      #       (forward-line 0)
+      #       (1+ (count-lines 1 (point))))
+      #   )
+      # `
     end
 
     def self.enter_docs
@@ -431,7 +545,94 @@ module Xiki
       end
 
       Line.add_slash :txt=>"docs/", :unless_blank=>1
-      Launcher.launch_unified
+      Launcher.launch
+    end
+
+    def self.length
+      self.value.length
+    end
+
+    def self.duplicate
+
+      # If a file path, up+ will duplicate actual file, with a .1 suffix.
+      # Inserts a duplicate of the line underneath.
+
+      prefix = Keys.prefix :clear=>1
+
+      # If in file tree and up+, actually duplicate file...
+
+      if prefix == :u && FileTree.handles?
+        Location.as_spot
+        source = Tree.construct_path
+        dest = Files.unique_name source
+
+        command = "cp -r \"#{source}\" \"#{dest}\""
+
+        Shell.run command, :sync=>true
+
+        column = View.column
+        Line << "\n#{Line[/[ +-]+/]}#{File.basename dest}"
+        View.column = column
+
+        return
+      end
+
+      column = View.column
+
+      line = "#{Line.value}\n"
+      Line.to_left
+
+      if prefix == :u
+        if line =~ /^ *:([+ -])/   # Toggle between :+... and :-...
+          char = $1
+          # Or, between :... and :+...
+          line.sub!(/:([+ -])/){ ":#{$1 == "-" ? "+" : "-"}" }
+        else   # Or just comment or uncomment
+          Code.comment(:line)
+        end
+      end
+
+      times = if prefix.nil?
+          1
+        elsif prefix == :u
+          1   # Put commented line after
+        elsif prefix == 0
+          0
+        elsif prefix > 0
+          prefix + 1
+        elsif prefix < 0
+          prefix
+        end
+
+      Line.next times if ! char   # If was : ...
+      View.insert line
+      Line.previous
+
+      Line.next if char
+      View.column = column
+
+    end
+
+    def self.insert_date
+      prefix = Keys.prefix :clear=>1
+
+      return View.<<(Time.now.strftime("%Y-%m-%d %I:%M:%S%p").sub(' 0', ' ').downcase) if prefix == :u
+      return View.<<(Time.now.strftime("%I:%M:%S%p").sub(/^0/, '').downcase) if prefix == :-
+
+      View.<<(Time.now.strftime("%Y-%m-%d"))
+    end
+
+    def self.insert_time
+      prefix = Keys.prefix :clear=>1
+
+      # up+, so insert time and date...
+
+      return View.<<(Time.now.strftime("%Y-%m-%d %I:%M:%S%p").sub(' 0', ' ').downcase) if prefix == :u
+
+      # No prefix, so insert just time...
+
+      View.<<(Time.now.strftime("%I:%M:%S%p").sub(/^0/, '').downcase)
+
     end
 
   end

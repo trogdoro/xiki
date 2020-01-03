@@ -4,48 +4,45 @@ module Xiki
   # Makes visual things happen
   class Effects
 
-    def self.menu
-      "
-      > Do cool-looking things to text
+    MENU = "
+      | Do cool-looking things to text.  Used by various menus.
       - api/
         | Try these out by double-clicking on them.
         - Glow/
-          @Effects.glow
-          @Effects.glow :times=>6
-          @Effects.glow :what=>:paragraph
-          @Effects.glow :what=>:block
-          @Effects.glow :what=>[1, 100]
-
+          =! Effects.glow
+          =! Effects.glow :times=>5
+          =! Effects.glow :what=>:paragraph
+          =! Effects.glow :what=>:block
+          =! Effects.glow :what=>[1, 100]
           - Colors/
-            @Effects.glow :color=>:fire
-            @Effects.glow :color=>:water
-            @Effects.glow :color=>:forest
-            @Effects.glow :color=>:rainbow
-            @Effects.glow :color=>:fat_rainbow
+            =! Effects.glow :color=>:fire
+            =! Effects.glow :color=>:water
+            =! Effects.glow :color=>:forest
+            =! Effects.glow :color=>:rainbow
+            =! Effects.glow :color=>:fat_rainbow
           - Fade in and out/
-            @Effects.glow :fade_in=>1
-            @Effects.glow :fade_out=>1
+            =! Effects.glow :fade_in=>1
+            =! Effects.glow :fade_out=>1
         - Blink/
           | Makes line blink orange. Using a longer time since the blink happens
           | anyway.
-
-          @Effects.blink :time=>1
-        - Some View methods that use effects/
-          @View.prompt
-          @View.flash
-          @View.flash 'Saved!'
+          =! Effects.blink :time=>1
+        - View methods/
+          =! View.prompt
+          =! View.flash
+          =! View.flash 'Saved!'
       - docs/
         > Keys
         | do+line+effects: make line blink
         | up+do+line+effects: make line blink rainbow color
-
-      > See
-      << themes/
+      - see/
+        <= themes/
       "
-    end
 
     #
     # Effects.glow :color=>:forest
+    # Effects.glow :fade_in=>1
+    # Effects.glow :what=>[1, 100]
     #
     def self.glow options={}
 
@@ -53,13 +50,13 @@ module Xiki
       if what.is_a? Array
         left, right = what
       elsif what == :block
+        # TODO: change this to :section!
         ignore, left, right = View.block_positions "^[|>]"
       elsif what == :paragraph
         left, right = View.paragraph :bounds=>1
       else
         left, right = Line.left, Line.right
       end
-
 
       # Set :times to 1 if no args and fade out
       times = 1 if ! options[:times] && (options[:fade_out] || options[:fade_in])
@@ -93,15 +90,27 @@ module Xiki
         else; [1] + (down + [7] + up + [1]) * times
         end
 
+      delay = options[:delay]
+      delay ||= Environment.gui_emacs ? 0.022 : 0.042
+
+
+      # Try this to capture ^G
+      $el.elvar.inhibit_quit = 1
+
       sequence.each do |i|
         $el.overlay_put over, :face, (faces[i-1] || faces[0])
-        $el.sit_for 0.007
+        $el.sit_for delay
+
+        # Temp for video recording > wait for longer
+        # $el.sit_for 0.05
       end
+
+      $el.elvar.inhibit_quit = nil
+
 
       $el.delete_overlay over
     end
 
-    # Sample usages:
     def self.blink options={}
       what = options[:what]
       what ||= :line
@@ -118,33 +127,42 @@ module Xiki
         return unless left
       end
 
+      if what.is_a? Array
+        left, right = what
+      end
+
+
       left = options[:left] if options[:left]
       right = options[:right] if options[:right]
 
       time = options[:time] || 0.04
       over2 = $el.make_overlay(left, right)
       $el.overlay_put over2, :face, :color_rb_glow2
+      # Ol "!!!"
       $el.sit_for time
       $el.delete_overlay over2
     end
 
-    # Define font
     def self.define_styles
-      Styles.define :color_rb_glow1, :bg => "fec"
-      Styles.define :color_rb_glow2, :bg => "f90"
 
-      Styles.define :red, :fg => "f00"
-      Styles.define :orange, :fg => "f80"
-      Styles.define :yellow, :fg => "ff0"
-      Styles.define :green, :fg => "0f0"
-      Styles.define :blue, :fg => "00f"
-      Styles.define :indigo, :fg => "408"
-      Styles.define :violet, :fg => "82e"
+      Code.cache(:effects_define_styles) do
 
-      Styles.define :purple, :fg => "808"
-      Styles.define :cyan, :fg => "f0f"
+        Styles.define :color_rb_glow1, :bg=>"fec"
+        Styles.define :color_rb_glow2, :bg=>"f90"
+
+        Styles.define :red, :fg=>"f00"
+        Styles.define :orange, :fg=>"f80"
+        Styles.define :yellow, :fg=>"ff0"
+        Styles.define :green, :fg=>"0f0"
+        Styles.define :blue, :fg=>"00f"
+        Styles.define :indigo, :fg=>"408"
+        Styles.define :violet, :fg=>"82e"
+
+        Styles.define :purple, :fg=>"808"
+        Styles.define :cyan, :fg=>"f0f"
+      end
+
     end
 
   end
-  Effects.define_styles
 end

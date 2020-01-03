@@ -1,7 +1,7 @@
-require 'net/http'
-require 'uri'
-require 'timeout'
-require 'xiki/core/keys'
+# require 'net/http'
+# require 'uri'
+# require 'timeout'
+# require 'xiki/core/keys'
 
 module Xiki
   class Redmine
@@ -15,7 +15,6 @@ module Xiki
         + .pages/
         - .start
         - local: http://localhost:3401/wiki/gateway
-        - remote: http://rlitio.chase.com:3401/wiki/1
         "
     end
 
@@ -85,7 +84,7 @@ module Xiki
     end
 
     def self.save
-      name, version = View.buffer_name.split('/')[1..2]
+      name, version = View.name.split('/')[1..2]
       txt = View.txt  # Get text from buffer
       return puts("- Not a redmine page!") unless txt
       self.xiki_to_redmine txt
@@ -131,7 +130,6 @@ module Xiki
         # Inherit notes_mode_map!
         $el.set_keymap_parent $el.elvar.redmine_mode_map, $el.elvar.notes_mode_map
       end
-      Keys.XS(:redmine_mode_map) { Redmine.save }
 
       # Make C-. follow link
       Launcher.add(/\[\[.+\]\]/) do |line|  # Redmine wiki links
@@ -162,7 +160,7 @@ module Xiki
     end
 
     def self.start
-      Rails.start '$o/redmine/trunk', @@url[/\d+/]
+      Rails.start '%o/redmine/trunk', @@url[/\d+/]
     end
 
   end

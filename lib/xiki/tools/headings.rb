@@ -6,7 +6,7 @@ module Xiki
   class Headings
 
     def self.menu target=nil, line=nil
-      todo = Bookmarks['$t']
+      todo = Bookmarks['%links']
 
       # If no target, tell them to enter one
       if target.nil?

@@ -21,18 +21,24 @@ describe Invoker, "#actionify" do
   it "two actions" do
     Invoker.actionify(["act", "act2", "b"], [true, true, nil]).should == ["act2", ["b"]]
   end
+
+  it "doesn't mess up the args" do
+    args = ["Hey you"]
+    Invoker.actionify(args, [true, true, nil]).should == ["hey_you", []]
+    args.should == ["Hey you"]
+  end
 end
 
-describe Invoker, "#extract_ruby_package" do
+describe Invoker, "#extract_ruby_module" do
   it "no module" do
-    Invoker.extract_ruby_package("
+    Invoker.extract_ruby_module("
       class Foo
       end
       ".unindent).should == nil
   end
 
   it "extracts one module" do
-    Invoker.extract_ruby_package("
+    Invoker.extract_ruby_module("
       module Modern
         class Foo
         end
@@ -41,7 +47,7 @@ describe Invoker, "#extract_ruby_package" do
   end
 
   it "extracts two modules" do
-    Invoker.extract_ruby_package("
+    Invoker.extract_ruby_module("
       module Modern
         module Modest
           class Foo
@@ -52,13 +58,21 @@ describe Invoker, "#extract_ruby_package" do
   end
 
   it "isn't confused by stuff after start of class" do
-    Invoker.extract_ruby_package("
+    Invoker.extract_ruby_module("
       module Modern
         # stuff
         class Foo
         end
         module Herring
         end
+      end
+      ".unindent).should == "Modern"
+  end
+
+  it "handles when all on one line" do
+    Invoker.extract_ruby_module("
+      class Modern::Foo
+        # stuff
       end
       ".unindent).should == "Modern"
   end

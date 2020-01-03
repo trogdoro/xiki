@@ -1,0 +1,49 @@
+> Space available
+$ df -H
+
+Shows available disk space on all disks and partitions.
+
+
+- sample output:
+  | Filesystem      Size   Used  Avail Capacity  iused    ifree %iused  Mounted on
+  | /dev/disk1      250G   178G    72G    72% 43435838 17520832   71%   /
+  | devfs           192k   192k     0B   100%      653        0  100%   /dev
+  | map -hosts        0B     0B     0B   100%        0        0  100%   /net
+  | map auto_home     0B     0B     0B   100%        0        0  100%   /home
+
+
+> Find large files on the disk
+& find / -type f -size +1000M
+
+Finds all files larger than a gigabyte. Takes a while to complete.
+
+
+> Mount remote disk
+$ sshfs user@hostname:/path/to/folder /local/folder
+
+Only works on Linux.
+
+
+source:
+https://ubuntu-tutorials.com/2007/01/02/mount-remote-directories-securely-with-ssh-ubuntu-6061-610/
+
+
+> .space
+!.#
+! # Shows percent full, and available space out of total.
+! #
+! # sample output:
+! #   | 71% full
+! #   | 74G of 250G available
+! #
+! df_raw = `df -H`
+! # Extract from 1st line like this:
+! # /dev/disk0s2    250G   109G   141G    44% 26641071 34428369   44%   /
+! df = df_raw[/\d+G +.+%/, 0].split(/ +/)
+!
+! df = "
+!   | #{df[3]} full
+!   | #{df[2]} of #{df[0]} available
+!   ".unindent.strip
+
+

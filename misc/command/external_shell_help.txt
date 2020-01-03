@@ -1,0 +1,50 @@
+Xiki Shell!
+
+Usage:
+  xsh
+  xsh <shell command>
+  xsh -
+  xsh -<topic>
+
+Tutorial:
+  xsh --tutorial
+
+Sample calls:
+  $ xsh --samples
+
+Key shortcuts for your external shell (the default):
+  Ctrl+O   Open xsh (when blank prompt). Or type a shell command
+           and Ctrl+O runs it in xsh.
+  Ctrl+G   Go to previous spot in xsh (when blank prompt). Or type a
+           topic and ^G runs its go action.
+  Ctrl+T   Show tasks for the current dir. Or type a shell command
+           and Ctrl+T shows tasks for it.
+  Ctrl+X   List your Xiki files (when blank prompt). Or type a shell
+           command or topic and Ctrl+X lists its xiki notes and actions.
+  Ctrl+S   Search notes (and actions) shared by others to XikiHub (xiki.com).
+  Alt+R    External shell history, like Ctrl+R (type Option+R on the mac)
+
+Options:
+  -o                   Open xsh.
+  -o shell_command     Runs shell_command in xsh.
+  -g                   Go to previous spot in xsh.
+  -g topic             Go to topic file.
+  -t                   Show tasks for the current dir.
+  -t shell_command     Show tasks for shell_command.
+  -x                   List your Xiki files
+  -x topic             List xiki notes (and actions) for topic.
+  -s search_term       Search notes (and actions) on XikiHub (xiki.com).
+
+  -r   Recent shell history, like Ctrl+R (for external shell)
+  -f   Search filenames
+  -c   Search file contents
+  -e   Edited recently
+  -h   History (internal shell commands)
+  -n   Notes
+  -l   List xsh sessions
+  -b   Bookmarks
+  -i   Recent shell interactions with xsh
+  -d   Diffs
+  --d  debug - Use this to debug xsh startup problems. Doesn't connect
+       to the cached xsh process for faster startup
+

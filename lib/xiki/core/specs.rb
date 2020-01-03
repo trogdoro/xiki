@@ -1,6 +1,3 @@
-gem "rspec"
-require "rspec"
-
 module Xiki
   class Specs
 
@@ -60,7 +57,7 @@ module Xiki
           quote =~ /([\.\/].+):(\d+)/
 
           path, line = $1, $2
-          path.sub! /^\.\//, Bookmarks["$#{bm}"]   # Fix relative paths
+          path.sub! /^\.\//, Bookmarks[":#{bm}"]   # Fix relative paths
 
           View.open path
           View.to_line line.to_i
@@ -79,7 +76,7 @@ module Xiki
         # Try in unit/ dir first
         path = "spec/unit/#{dir}/#{clazz}_spec.rb"
         # Try just spec/ if not found
-        path = "spec/#{dir}/#{clazz}_spec.rb" if ! File.exists?("#{Bookmarks["$#{bm}"]}#{path}")
+        path = "spec/#{dir}/#{clazz}_spec.rb" if ! File.exists?("#{Bookmarks[":#{bm}"]}#{path}")
 
         # If xiki, fix paths
         #       if bm == :x
@@ -89,7 +86,7 @@ module Xiki
 
         if prefix == :u   # If U prefix, jump to test
 
-          View.open "#{Bookmarks["$#{bm}"]}#{path}"
+          View.open "#{Bookmarks[":#{bm}"]}#{path}"
           Keys.clear_prefix
           View.to_highest
           if test =~ /^#/
@@ -106,7 +103,7 @@ module Xiki
         txt.sub! /^\.+\n\nFinished in.+\n\n/, ''   # Remove 1st when passing
         txt.sub! /^\(irb\):.+/m, ''   # Remove everything after (irb)
 
-        txt.gsub! /^#{Bookmarks["$#{bm}"]}/m, './'   # Shorten the paths
+        txt.gsub! /^#{Bookmarks[":#{bm}"]}/m, './'   # Shorten the paths
 
         txt.sub! /nil\n$/, ''
         # CodeTree.no_search_option +
@@ -121,7 +118,7 @@ module Xiki
 
     def self.line_of_test path, test, bm
       found = nil; number = 1
-      IO.foreach(Bookmarks["$#{bm}/#{path}"]) do |line|
+      IO.foreach(Bookmarks[":#{bm}/#{path}"]) do |line|
         if line =~ /^ *describe.+#{test}\b/
           break found = number
         end
@@ -148,7 +145,7 @@ module Xiki
 
       # Assume merb if a merb file exists
       # Merb
-      if File.exists?(Bookmarks["$#{bm}/bin/merb"])
+      if File.exists?(Bookmarks[":#{bm}/bin/merb"])
         command = "Merb::Mailer.delivery_method=:test_send; Spec::Runner::CommandLine.run(Spec::Runner::OptionParser.parse(#{params.inspect}, $out_bufr, $out_bufr)); Merb::Mailer.delivery_method=nil"
       end
       result = RubyConsole[bm].run(command)
@@ -176,8 +173,7 @@ module Xiki
         path << "#{describe}/#{test}/"
       end
 
-
-      View.layout_todo :no_blink=>1
+      View.layout_todo
       View.to_highest
 
       View.insert("\n", :dont_move=>1) unless line.empty?   # Make room if line not blank
@@ -216,7 +212,7 @@ module Xiki
 
       path = View.file.sub /.+\/spec\//, 'spec/'
       command = "rspec #{path}:#{View.line}"
-      result = Console.run command, :dir=>"$x", :sync=>true
+      result = Shell.run command, :dir=>"%xiki", :sync=>true
       result = result.gsub(/^/, '    # ').gsub(/ +$/, '')
 
       Search.forward '^  +end$'
@@ -227,5 +223,4 @@ module Xiki
     end
   end
 
-  Menu.rspec :menu=>"specs"
 end

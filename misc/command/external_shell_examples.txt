@@ -1,0 +1,53 @@
+Examples when using key shortcuts:
+  ls <^X>        List directory, then you can type to filter down
+                 or expand to navigate files and dirs
+  . <^X>         Shows the current dir,
+  -f <^X>        Show tree of files, then you can type to filter
+  . <Ctrl+G>     Shows the current dir, with actions to perform on it
+  :d <^X>        Navigates the desktop dir
+  -b . <^X>      Creates a bookmark for your current dir
+  :foo <^X>      Navigates a "foo" dir you've created
+  -ip <^X>       Show your ip (runs the "ip" xiki command)
+  -tables <^X>   Navigate and update your mysql db tables
+  cd <Ctrl+R>    Shows the previous cd commands you've typed
+  git <Esc, Tab> Shows the previous cd commands you've typed
+  ^html <^X>     Shows headings for your notes about "html"
+
+Examples:
+  xsh
+    Starts up a xsh session in the current dir. You can then
+    type xiki commands or shell commands (precede with '$ ').
+  xsh ls
+    Then you can type to incrementally filter down the output.
+    And you can expand the directories by typing Ctrl+X.
+    Type Ctrl+Q when you're done.
+  xsh -ip
+    Run the 'ip' xiki command.  Xiki commands are kind of like
+    shell commands, but are more interactive and friendly.
+  xsh .
+    Browse the dirs and files in the current directory.
+  xsh ~
+    Browse the dirs and files in your home directory.
+  xsh :d
+    Browse desktop directory
+  xsh -s
+    Recursively show all files and their content. You can then
+    type to incrementally filter.
+  xsh -n
+    Recursively show all files. You can then type to
+    incrementally filter.
+  xsh -s foo
+    Search for 'foo' in all files, showing matching lines as
+    a tree.
+  xsh -n foo
+    Search for 'foo' in all filenames, showing matching lines
+    as a tree.
+
+Advanced Usage:
+  xsh <absolute file path>
+  xsh ./<relative file path>
+  xsh <path of file to run as command>//
+  xsh <something else>
+    Including: urls, code, google searches, css selectors,
+    contacts, sql statements, git commit hashes
+

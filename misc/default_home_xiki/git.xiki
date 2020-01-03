@@ -1,0 +1,116 @@
+> .Create example repository
+& git clone https://github.com/trogdoro/git_example.git; cd git_example; git branch reasonable origin/reasonable; git branch crazy origin/crazy
+
+Check out a simple example git project, which has a few commits and a
+few branches. Then check out all the branches.
+
+
+> .Branch shell action
+$ git branch
+  |:anything
+
+$ git
+  |:    branch     List, create, or delete branches
+
+!.#
+! # Lets you expand "$ git branch", to list branches, switch to, and delete them.
+! #
+! # $ git branch
+! #    : * crazy
+! #    :   master
+! #    :   reasonable
+! #
+!
+! if shell_command == "git"
+!   args.shift
+! end
+!
+! # No args, so make branches start with colons...
+! if args == []
+!   shell_output ||= Shell.command("git branch", :dir=>dir).snippet
+!   return shell_output.gsub(/^\| /, ": ")
+! end
+!
+! # Branch passed, so show options...
+! if args.length == 1
+!   return "
+!     + switch to
+!     + delete
+!   "
+! end
+!
+! branch = args[0][/\w+/]
+!
+! if args[1] == "switch to"
+!   output = Shell.command("git checkout #{branch}", :dir=>dir)
+!   View.message output
+!   shell_output = Shell.command("git branch", :dir=>dir).snippet
+!   shell_output.gsub!(/^\| /, "  : ")
+!   return "=replace/siblings/2/\n#{shell_output}"
+! elsif args[1] == "delete"
+!   return ": " + Shell.command("git branch -d #{branch}", :dir=>dir)
+! end
+!
+! branch.inspect
+! dir.inspect
+
+
+> .Log shell action
+$ git log
+  |:anything
+
+$ git
+  |:    log        Show commit logs
+
+!.#
+! # Lets you expand "log ..." lines.
+! #
+! # $ git
+! #   :    log        Show commit logs
+! #     : 90ade26 Some commit
+! #     : 0c7a353 Some other commit
+! #
+!
+! if ! shell_command
+!   return "| This action makes the '$ git log' shell command interactive."
+! end
+!
+! if shell_command == "git"
+!   args.shift
+! end
+!
+! #return args
+!
+! # Just ": log...", so list commits
+!
+! if args.length == 0
+!   # They didn't pass any args, so default to one commit per line
+!   shell_command = "git log --oneline" if ["git", "git log"].member?(shell_command)
+!   return Shell.command(shell_command, :dir=>dir).quoted.no_trailing
+! end
+!
+! # Commit, so show files in it
+!
+! hash = args[-1][/\w+/]
+! txt = Shell.command("git show #{hash}", :dir=>dir).snippet
+! txt.gsub(/^\| ([+-])/, "|\\1").gsub(/^\| diff /, "| > diff ").gsub(/^\|  /, "|")
+
+
+> .Diff shell action
+$ git diff
+  |:anything
+
+!.
+! # Colorizes diff lines as red and green.
+!
+! shell_output.gsub(/^\| ([+-])/, "|\\1").gsub(/^\|  /, "|")
+!
+
+
+> .Status shell action
+$ git
+  |:    status     Show the working tree status
+
+!.Shell.command('git status').snippet
+
+

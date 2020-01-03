@@ -1,7 +1,7 @@
 module Xiki
   class Buffers
 
-    def self.menu# buffer=nil
+    def self.menu # buffer=nil
       "
       - .current/
       - .tree/
@@ -20,36 +20,70 @@ module Xiki
     # Mapped to open+current and @current
     # Open list of buffers
     def self.current *name
-      prefix = Keys.prefix :clear=>true
+
+      options = yield
+
+      prefix = Keys.prefix :clear=>1
 
       # /, so show list of buffers...
 
       if name.empty?
-        case prefix
+
+        return "* quoted" if options[:task] == []
+
+        quoted = options[:task] == ["quoted"]
 
         # Show all by default
-        when nil, "all"
 
-          return result = Buffers.list.map do |b|
+        if ! prefix || prefix == :u || prefix == "all" || quoted
+
+          result = self.list.map do |b|
+            name = $el.buffer_name(b)
+            next if prefix != :u && name =~ /^\*/
+            next if name =~ /^ \*/
+
+            # Try showing links.notes etc > maybe implement below > move them to the end
+            next if !prefix && ["views/", "edited/"].member?(name)
+
+            next if quoted && (name =~ /^\*/ || ["edited/", "ol", "links.xiki", "notes.xiki", "difflog.xiki"].member?(name))   # Skip the current buffer
             modified = $el.buffer_file_name(b) && $el.buffer_modified_p(b) ? "+" : " "
-            "|#{modified}#{$el.buffer_name(b)}\n"
+
+            # Use ":" if modified or name has crazy chars
+
+            bullet = (modified == "+" || name =~ /[^a-z0-9_ .-]/i) ? ":" : "-"
+
+            txt = "#{bullet}#{modified}#{name}\n"
+
+            # ~quoted, so go grab quote from buffer
+            if quoted
+              part = View.part(b, :context=>(prefix||2))
+              txt << part.gsub(/^/, "  ")
+            end
+            txt
           end.join('')
 
+          # Mabye move these to the bottom > views/ > notes.notes, links.notes
+          # "links.notes", "notes.notes", "difflog.notes"
+
+          if quoted
+            return "- none found" if result == ""
+          end
+          return result
+        end
+
+        case prefix
         # Only files (no buffers)
         when :u
-          return self.list.select{ |b| $el.buffer_file_name(b) }.map{ |b| "| #{$el.buffer_name(b)}\n" }.join('')
+          return self.list.select{ |b| $el.buffer_file_name(b) }.map{ |b| ": #{$el.buffer_name(b)}\n" }.join('')
 
         # Only buffer without files
         when 0;
-          return self.list.select{ |b| ! $el.buffer_file_name(b) }.map{ |b| "| #{$el.buffer_name(b)}\n" }[1..-1].join('')
-
-          # Only files, already handled with :u
-          #       when 1;  return self.list.select{ |b| $el.buffer_file_name(b) }.map{ |b| $el.buffer_name(b) }[1..-1]
+          return self.list.select{ |b| ! $el.buffer_file_name(b) }.map{ |b| ": #{$el.buffer_name(b)}\n" }[1..-1].join('')
 
         when 3;  return self.list.select{ |b| ! $el.buffer_file_name(b) && $el.buffer_name(b) =~ /^#/ }.map{ |b| $el.buffer_name(b) }
         when 4;  return self.list.select{ |b| ! $el.buffer_file_name(b) && $el.buffer_name(b) =~ /^\*console / }.map{ |b| $el.buffer_name(b) }
         when 6;  return self.list.select{ |b| $el.buffer_file_name(b) =~ /\.rb$/ }.map{ |b| $el.buffer_name(b) }
-        when 7;  return self.list.select{ |b| $el.buffer_file_name(b) =~ /\.notes$/ }.map{ |b| $el.buffer_name(b) }
+        when 7;  return self.list.select{ |b| $el.buffer_file_name(b) =~ /\.xiki$/ }.map{ |b| $el.buffer_name(b) }
 
         end
         return
@@ -57,25 +91,38 @@ module Xiki
 
       # /foo, so jump to or delete buffer...
 
-      name = name[0]
-      name.sub! /^\|./, ''
+      name = [": /"] if name == [": "]   # Somehow it cuts off the slash when just "/"
+      name[0].sub! /^\:./, ''
+
+      task = options[:task]
+
+      # Right-clicked, so show options
+      return "* close" if task == []
 
       # If as+delete, just delete buffer, and line
-      if prefix == "delete"
-        Buffers.delete name
-        View.flash "- deleted!", :times=>1
+      if task == ["close"]
+        Buffers.delete name[0]
+        if name.length > 1
+          Tree.to_parent
+          Tree.collapse
+        end
         Line.delete
         return
       end
 
+      return "<* not open" if ! View.buffer_open?(name[0])
 
       # Switch to buffer
       View.to_after_bar if View.in_bar?
-      View.to_buffer(name)
+      View.to_buffer(name[0])
     end
 
-    def self.names_array
-      self.list.map { |b| $el.buffer_name(b) }.to_a
+    def self.list_names options={}
+      list = self.list.map { |b| $el.buffer_name(b) }.to_a
+
+      list = list.select{|o| o !~ /^ ?\*/} if options[:user_only]
+
+      list
     end
 
     def self.list
@@ -108,16 +155,16 @@ module Xiki
         # Show buffers too - wasn't as simple as just removing, because of filename indenting!
 
         next unless file
-        next if file =~ /_ol.notes/
+        next if file =~ /_ol.xiki/
 
         if options[:buffer].nil?   # If we're not searching in one buffer
-          next if ["todo.notes", "files.notes"].
+          next if ["notes.xiki", "links.xiki"].
             member? file.sub(/.+\//, '')
         end
 
         # Skip if a verboten file
         unless options[:buffer]
-          next if file =~ /(\/difflog\.notes|\.log|\/\.emacs)$/
+          next if file =~ /(\/difflog\.xiki|\.log|\/\.emacs)$/
         end
 
         $el.set_buffer b
@@ -127,11 +174,12 @@ module Xiki
         while(true)
           break unless $el.search_forward(string, nil, true)
           unless found_yet
-            found << "- @#{file.sub(/(.+)\//, "\\1\/\n  - ")}\n"
+            found << "=#{file.sub(/(.+)\//, "\\1\/\n  - ")}\n"
 
             found_yet = true
           end
-          found << "    | #{Line.value}\n"
+
+          found << "    : #{Line.value}\n"
           Line.end
         end
         View.to started
@@ -147,7 +195,6 @@ module Xiki
       end
 
       Tree << found
-      # $el.highlight_regexp string, :ls_quote_highlight
     end
 
     def self.from_string name
@@ -166,6 +213,11 @@ module Xiki
       options = {:prompt => "Rename buffer to: "}
       options[:initial_input] = $el.buffer_name if Keys.prefix_u?
       $el.rename_buffer Keys.input(options)
+    end
+
+    # Buffers.file View.buffer
+    def self.file buffer
+      $el.buffer_file_name buffer
     end
 
     def self.name buffer

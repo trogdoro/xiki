@@ -1,0 +1,24 @@
+module Xiki
+  Themes.use 'Rainbow Fonts'
+  Themes.use "Bottom Bar Items"   # Long complicated elisp that draws text
+
+  # Put this last, since it changes the bar, and will thus fix the control lock color
+  Themes.use "Bottom Bar Styles"   # Styles
+
+end
+
+$el.tool_bar_mode -1 if Xiki::Environment.gui_emacs
+
+$el.el4r_lisp_eval %`
+  (progn
+    (custom-set-variables
+      '(tabbar-mode nil)   ; No tabs
+      )
+    (set-face-attribute 'region nil :background "#333333")   ;; More mac-like selection color
+
+    (setq-default
+     frame-title-format
+     '("%b"))
+    (setq frame-title-format '("%b" ))
+  )
+`

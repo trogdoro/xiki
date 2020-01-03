@@ -1,0 +1,114 @@
+> Overview
+This topic has examples of notes that can go into Xiki files. See the
+tutorial if you're looking for more of a guided tour.
+
+<- tutorial
+
+You can put any kind of note in xiki files. A quick random thought,
+your shopping list, commands, url's, lists of things you want to do,
+documentation, actions that perform simple tasks, actions that
+delegate to other actions, actions that are lightweight or even
+sophisticated interfaces to other systems, etc.
+
+Xiki files are just simple text files that go into the "xiki"
+directory in your home directory.
+
+~/xiki/
+
+You can edit them with any text editor, or directly with xsh.
+
+Notes with headings that start with "> ." are called actions. Actions
+are notes that do something when you expand them. They appear like "+
+foo" when expanded to indicate that they are runnable.
+
+Many of these examples are arguably obvious and redundant, but I'm
+leaving them in since they may spark ideas about different uses for
+sticky notes.
+
+
+> Simple note
+Here is a sentence.
+
+
+> Shell command
+$ echo hi
+
+
+> Shell command and description.
+$ echo hello
+
+This paragraph can describe what the shell command does. You can run
+the shell command, of course, by typing Ctrl+O when your cursor is on
+the command. Or type Ctrl+G instead, to go to bash and run the command
+there.
+
+
+> Multiple shell commands
+$ echo one
+
+$ echo two
+
+
+> Multiple shell commands with steps
+1. First run this
+$ echo one
+
+2. Then run this
+$ echo two
+
+
+> Bullet points
+- Bullet point
+- They just start with a dash
+  - Put 2 spaces at the beginning to indent
+    - Or 4 spaces, etc.
+
+
+> File paths
+/etc/
+  + hosts
+
+- Ctrl+O to navigate to the file.
+- Ctrl+G to open it using your default editor.
+- Ctrl+T to delete, rename, filter the contents, etc.
+
+
+> File Snippets
+1. Navigate
+/etc/
+  - hosts
+    : # localhost is used to configure the loopback interface
+    : # when the system is booting.  Do not change this entry.
+
+
+> Urls
+http://xiki.com/examples
+http://xiki.com/tutorial
+
+
+> .Action that opens a url
+http://xiki.com
+
+
+> .Action that runs code
+!.1 + 2
+
+
+> .Action that runs shell command
+$ echo hi
+
+
+> .Action with shell command that runs in bash
+& echo hi
+
+
+> .Action that calls other action
+examples/action with code
+
+
+> .Action that sends stuff to other action
+html/
+  | <h1>Rendered in the browser</h1>
+  | <p>From the action</p>
+
+
